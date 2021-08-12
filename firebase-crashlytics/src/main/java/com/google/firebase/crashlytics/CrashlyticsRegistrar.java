@@ -22,7 +22,6 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -36,7 +35,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseCrashlytics.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.optionalProvider(CrashlyticsNativeComponent.class))
+            .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
@@ -47,8 +46,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
     FirebaseApp app = container.get(FirebaseApp.class);
 
-    Provider<CrashlyticsNativeComponent> nativeComponent =
-        container.getProvider(CrashlyticsNativeComponent.class);
+    Deferred<CrashlyticsNativeComponent> nativeComponent =
+        container.getDeferred(CrashlyticsNativeComponent.class);
 
     Deferred<AnalyticsConnector> analyticsConnector =
         container.getDeferred(AnalyticsConnector.class);

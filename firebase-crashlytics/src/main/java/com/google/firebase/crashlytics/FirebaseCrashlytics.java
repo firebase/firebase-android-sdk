@@ -25,8 +25,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
@@ -38,7 +38,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -61,7 +60,7 @@ public class FirebaseCrashlytics {
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull Provider<CrashlyticsNativeComponent> nativeComponent,
+      @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector) {
 
     Context context = app.getApplicationContext();
@@ -76,8 +75,8 @@ public class FirebaseCrashlytics {
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
     final IdManager idManager =
         new IdManager(context, appIdentifier, firebaseInstallationsApi, arbiter);
-    final ProviderProxyNativeComponent proxyNativeComponent =
-        new ProviderProxyNativeComponent(nativeComponent);
+    final CrashlyticsNativeComponentDeferredProxy deferredNativeComponent =
+        new CrashlyticsNativeComponentDeferredProxy(nativeComponent);
 
     // Integration with Firebase Analytics
     final AnalyticsDeferredProxy analyticsDeferredProxy =
@@ -90,7 +89,7 @@ public class FirebaseCrashlytics {
         new CrashlyticsCore(
             app,
             idManager,
-            proxyNativeComponent,
+            deferredNativeComponent,
             arbiter,
             analyticsDeferredProxy.getDeferredBreadcrumbSource(),
             analyticsDeferredProxy.getAnalyticsEventLogger(),
@@ -98,6 +97,7 @@ public class FirebaseCrashlytics {
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
+
     Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
     final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);

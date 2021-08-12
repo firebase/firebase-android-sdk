@@ -26,6 +26,7 @@ import com.google.firebase.firestore.index.OrderedCodeReader;
 import com.google.firebase.firestore.index.OrderedCodeWriter;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Function;
@@ -49,10 +50,12 @@ final class SQLiteIndexManager implements IndexManager {
 
   private final SQLitePersistence db;
   private final User user;
+  private final LocalSerializer serializer;
 
-  SQLiteIndexManager(SQLitePersistence persistence, User user) {
-    db = persistence;
+  SQLiteIndexManager(SQLitePersistence persistence, User user, LocalSerializer serializer) {
+    this.db = persistence;
     this.user = user;
+    this.serializer = serializer;
   }
 
   @Override
@@ -273,5 +276,26 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     encodeValues(index.popFirst(), values.subList(1, index.size()), enforceArrays, encoders);
+  }
+
+  public void addFieldIndex(FieldIndex index) {
+    int currentMax =
+        db.query("SELECT MAX(index_id) FROM index_configuration")
+            .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
+
+    db.execute(
+        "INSERT OR IGNORE INTO index_configuration ("
+            + "index_id, "
+            + "collection_id, "
+            + "index_proto, "
+            + "active) VALUES(?, ?, ?, ?)",
+        currentMax + 1,
+        index.getCollectionId(),
+        encodeFieldIndex(index),
+        true);
+  }
+
+  private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
+    return serializer.encodeFieldIndex(fieldIndex).toByteArray();
   }
 }

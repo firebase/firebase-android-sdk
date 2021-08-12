@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,10 @@ class MemoryIndexManager implements IndexManager {
   @Override
   public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {
     return null;
+  }
+
+  public void addFieldIndex(FieldIndex index) {
+    // Field indices are not supported with memory persistence.
   }
 
   /**

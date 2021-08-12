@@ -137,6 +137,7 @@ class LicenseResolverPluginTests {
         dependencies {
             implementation 'com.squareup.picasso:picasso:2.71828'
             implementation 'com.squareup.okhttp:okhttp:2.7.5'
+            implementation 'com.github.bumptech.glide:glide:4.11.0'
         }
 
         thirdPartyLicenses {

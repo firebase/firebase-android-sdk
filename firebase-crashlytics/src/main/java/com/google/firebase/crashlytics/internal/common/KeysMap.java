@@ -16,71 +16,68 @@ package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.Logger;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /** Handles any key/values for metadata. */
 public class KeysMap {
+
+  // We use synchronized methods in this class rather than a ConcurrentHashMap because the
+  // getKeys() method would need to return a defensive copy in either case. So using the standard
+  // HashMap with synchronized access is more straightforward, and enables us to continue allowing
+  // NULL values.
   private final Map<String, String> keys = new HashMap<>();
-  private int maxEntries;
-  private int maxEntryLength;
+  private final int maxEntries;
+  private final int maxEntryLength;
 
   public KeysMap(int maxEntries, int maxEntryLength) {
     this.maxEntries = maxEntries;
     this.maxEntryLength = maxEntryLength;
   }
 
+  /** @return defensive, unmodifiable copy of the key/value pairs. */
   @NonNull
-  public Map<String, String> getKeys() {
-    return Collections.unmodifiableMap(keys);
+  public synchronized Map<String, String> getKeys() {
+    return Collections.unmodifiableMap(new HashMap<String, String>(keys));
   }
 
-  public void setKey(String key, String value) {
-    setSyncKeys(
-        new HashMap<String, String>() {
-          {
-            put(sanitizeKey(key), sanitizeAttribute(value));
-          }
-        });
+  public synchronized void setKey(String key, String value) {
+    String sanitizedKey = sanitizeKey(key);
+    // The entry can be added if we're under the size limit or we're updating an existing entry
+    if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
+      keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
+    } else {
+      Logger.getLogger()
+          .w(
+              "Ignored entry \""
+                  + key
+                  + "\" when adding custom keys. Maximum allowable: "
+                  + maxEntries);
+    }
   }
 
-  public void setKeys(Map<String, String> keysAndValues) {
-    setSyncKeys(keysAndValues);
-  }
-
-  /** Gatekeeper function for access to attributes or internalKeys */
-  private synchronized void setSyncKeys(Map<String, String> keysAndValues) {
-    // We want all access to the keys hashmap to be locked so that there is no way to create
-    // a race condition and add more than maxEntries keys.
-
-    // Update any existing keys first, then add any additional keys
-    Map<String, String> currentKeys = new HashMap<String, String>();
-    Map<String, String> newKeys = new HashMap<String, String>();
-
-    // Split into current and new keys
+  public synchronized void setKeys(Map<String, String> keysAndValues) {
+    int nOverLimit = 0;
     for (Map.Entry<String, String> entry : keysAndValues.entrySet()) {
-      String key = sanitizeKey(entry.getKey());
-      String value = (entry.getValue() == null) ? "" : sanitizeAttribute(entry.getValue());
-      if (keys.containsKey(key)) {
-        currentKeys.put(key, value);
+      String sanitizedKey = sanitizeKey(entry.getKey());
+      // The entry can be added if we're under the size limit or we're updating an existing entry
+      if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
+        String value = entry.getValue();
+        keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
       } else {
-        newKeys.put(key, value);
+        ++nOverLimit;
       }
     }
-
-    keys.putAll(currentKeys);
-
-    // Add new keys if there is space
-    if (keys.size() + newKeys.size() > maxEntries) {
-      int keySlotsLeft = maxEntries - keys.size();
-      Logger.getLogger().v("Exceeded maximum number of custom attributes (" + maxEntries + ").");
-      List<String> newKeyList = new ArrayList<>(newKeys.keySet());
-      newKeys.keySet().retainAll(newKeyList.subList(0, keySlotsLeft));
+    if (nOverLimit > 0) {
+      Logger.getLogger()
+          .w(
+              "Ignored "
+                  + nOverLimit
+                  + " entries when adding custom keys. "
+                  + "Maximum allowable: "
+                  + maxEntries);
     }
-    keys.putAll(newKeys);
   }
 
   /** Checks that the key is not null then sanitizes it. */
@@ -91,7 +88,7 @@ public class KeysMap {
     return sanitizeAttribute(key);
   }
 
-  /** Trims the string and truncates it to maxEntryLength. */
+  /** Trims the string and truncates it to maxEntryLength, or returns null if input is null. */
   public String sanitizeAttribute(String input) {
     if (input != null) {
       input = input.trim();

@@ -28,10 +28,7 @@ public enum UpdateStatus {
   /** Download failed */
   DOWNLOAD_FAILED,
 
-  /** Update installed */
-  INSTALLED,
-
-  /** Installation cancelled */
+  /** Installation canceled */
   INSTALL_CANCELED,
 
   /** Installation failed */

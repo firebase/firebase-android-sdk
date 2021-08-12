@@ -39,6 +39,7 @@ import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
@@ -301,6 +302,11 @@ public final class FirestoreClient {
           }
         });
     return completionSource.getTask();
+  }
+
+  public Task<Void> configureIndices(List<FieldIndex> fieldIndices) {
+    verifyNotTerminated();
+    return asyncQueue.enqueue(() -> localStore.configureIndices(fieldIndices));
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

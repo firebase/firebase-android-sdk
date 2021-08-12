@@ -32,6 +32,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -106,6 +107,7 @@ public final class LocalStore implements BundleCallback {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** Manages the list of active field and collection indices. */
   private IndexManager indexManager;
 
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
@@ -148,6 +150,7 @@ public final class LocalStore implements BundleCallback {
     mutationQueue = persistence.getMutationQueue(initialUser);
     indexManager = persistence.getIndexManager(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
+    indexManager = persistence.getIndexManager(initialUser);
     localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue, indexManager);
 
     this.queryEngine = queryEngine;
@@ -707,6 +710,17 @@ public final class LocalStore implements BundleCallback {
 
   public void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
     indexManager.enableIndex(path, definition);
+  }
+
+  public void configureIndices(List<FieldIndex> fieldIndices) {
+    persistence.runTransaction(
+        "Configure indices",
+        () -> {
+          // TODO(indexing): Disable no longer active indices
+          for (FieldIndex fieldIndex : fieldIndices) {
+            indexManager.addFieldIndex(fieldIndex);
+          }
+        });
   }
 
   /** Mutable state for the transaction in allocateQuery. */

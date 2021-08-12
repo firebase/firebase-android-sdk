@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
@@ -91,4 +92,12 @@ public interface IndexManager {
   void enableIndex(ResourcePath collectionPath, IndexDefinition index);
 
   Iterable<DocumentKey> getDocumentsMatchingQuery(Query query);
+
+  /**
+   * Adds a field path index.
+   *
+   * <p>Values for this index are persisted asynchronously. The index will only be used for query
+   * execution once values are persisted.
+   */
+  void addFieldIndex(FieldIndex index);
 }

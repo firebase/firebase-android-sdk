@@ -25,6 +25,7 @@ import android.os.Build;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +35,11 @@ import java.util.List;
 class JniNativeApi implements NativeApi {
 
   private static final boolean LIB_CRASHLYTICS_LOADED;
-  private Context context;
+
+  private static final FilenameFilter APK_FILTER =
+      (file, name) -> name.toLowerCase().endsWith(".apk");
+
+  private final Context context;
 
   static {
     boolean loadSuccessful = false;
@@ -66,26 +71,59 @@ class JniNativeApi implements NativeApi {
     return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP;
   }
 
+  private static String getVersionCodeAsString(PackageInfo pi) {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+        ? Long.toString(pi.getLongVersionCode())
+        : Integer.toString(pi.versionCode);
+  }
+
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-  public static void addSplitSourceDirs(List<String> zipPaths, ApplicationInfo applicationInfo) {
+  public static void addSplitSourceDirs(List<String> zipPaths, PackageInfo packageInfo) {
+    ApplicationInfo applicationInfo = packageInfo.applicationInfo;
     if (applicationInfo.splitSourceDirs != null) {
       Collections.addAll(zipPaths, applicationInfo.splitSourceDirs);
     }
+
+    File verifiedSplitsDir =
+        new File(
+            applicationInfo.dataDir,
+            String.format(
+                "files/splitcompat/%s/verified-splits", getVersionCodeAsString(packageInfo)));
+    if (!verifiedSplitsDir.exists()) {
+      // This is expected if the app does not use dynamic features
+      Logger.getLogger().d("No dynamic features found at " + verifiedSplitsDir.getAbsolutePath());
+      return;
+    }
+
+    File[] allApks = verifiedSplitsDir.listFiles(APK_FILTER);
+    if (allApks == null) {
+      allApks = new File[0];
+    }
+    Logger.getLogger()
+        .d("Found " + allApks.length + " APKs in " + verifiedSplitsDir.getAbsolutePath());
+
+    for (File apk : allApks) {
+      Logger.getLogger().d("Adding " + apk.getName() + " to classpath.");
+      zipPaths.add(apk.getAbsolutePath());
+    }
+  }
+
+  private static int getPackageInfoFlags() {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N
+        ? PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES
+        : PackageManager.GET_SHARED_LIBRARY_FILES;
   }
 
   public String[] makePackagePaths(String arch) {
     try {
       PackageManager pm = context.getPackageManager();
-      PackageInfo pi =
-          pm.getPackageInfo(
-              context.getPackageName(),
-              PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES);
+      PackageInfo pi = pm.getPackageInfo(context.getPackageName(), getPackageInfoFlags());
 
       List<String> zipPaths = new ArrayList<>(10);
       zipPaths.add(pi.applicationInfo.sourceDir);
 
       if (isAtLeastLollipop()) {
-        addSplitSourceDirs(zipPaths, pi.applicationInfo);
+        addSplitSourceDirs(zipPaths, pi);
       }
 
       if (pi.applicationInfo.sharedLibraryFiles != null) {

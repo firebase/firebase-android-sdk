@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,10 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 13;
+  static final int VERSION = 12;
+
+  // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
+  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   /**
    * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
@@ -73,7 +77,8 @@ class SQLiteSchema {
   }
 
   void runMigrations(int fromVersion) {
-    runMigrations(fromVersion, VERSION);
+    runMigrations(
+        fromVersion, Persistence.INDEXING_SUPPORT_ENABLED ? INDEXING_SUPPORT_VERSION : VERSION);
   }
 
   /**
@@ -170,8 +175,9 @@ class SQLiteSchema {
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
 
-    if (fromVersion < 13 && toVersion >= 13) {
-      createLocalDocumentsCollectionIndex();
+    if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
+      Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
+      createFieldIndex();
     }
   }
 
@@ -331,27 +337,37 @@ class SQLiteSchema {
         });
   }
 
-  // TODO(indexing): Put the schema version in this method name.
-  // See
-  // https://docs.google.com/presentation/d/1MMhqn70cgAwdVRlclbHVEcVc-XELzxAtg9_XwlSwnKs/edit#slide=id.g851f78b5bf_1_28
-  private void createLocalDocumentsCollectionIndex() {
+  /**
+   * Creates the necessary tables to support document indexing.
+   *
+   * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
+   * table apply for all users. It is not possible to only enable indices for a subset of users.
+   *
+   * <p>The `index_entries` table holds the index values themselves. An index value is created for
+   * each field combination that matches a configured index. If there are pending mutations that
+   * affect an indexed field, an additional index entry is created per mutated field.
+   */
+  private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"field_index", "index_configuration"},
+        new String[] {"index_configuration", "index_entries"},
         () -> {
           db.execSQL(
               "CREATE TABLE index_configuration ("
-                  + "uid TEXT, "
-                  + "parent_path TEXT, "
-                  + "field_paths BLOB, " // field path, direction pairs
                   + "index_id INTEGER, "
-                  + "PRIMARY KEY (uid, parent_path, field_paths))");
+                  + "collection_id TEXT, " // collection id
+                  + "index_proto BLOB, " // V1 Admin index proto
+                  + "active INTEGER, " // whether index is active
+                  + "update_time_seconds INTEGER, " // time of last document update added to index
+                  + "update_time_nanos INTEGER, "
+                  + "PRIMARY KEY (index_id))");
 
           db.execSQL(
-              "CREATE TABLE field_index ("
+              "CREATE TABLE index_entries ("
                   + "index_id INTEGER, "
                   + "index_value BLOB, " // field value pairs
+                  + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_id TEXT, "
-                  + "PRIMARY KEY (index_id, index_value,  document_id))");
+                  + "PRIMARY KEY (index_id, index_value, uid, document_id))");
         });
   }
 

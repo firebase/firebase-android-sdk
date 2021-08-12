@@ -15,6 +15,7 @@
 package com.google.firebase.encoders.processor;
 
 import androidx.annotation.VisibleForTesting;
+import com.google.auto.common.AnnotationValues;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ArrayListMultimap;
@@ -290,7 +291,8 @@ public class EncodableProcessor extends AbstractProcessor {
                       ClassName.get((TypeElement) desc.type().getAnnotationType().asElement()));
               codeBuilder.add(".withProperty($T.builder()\n", annotationBuilder);
               for (AnnotationProperty property : desc.properties()) {
-                codeBuilder.add("$>.$L($L)\n$<", property.name(), property.value());
+                codeBuilder.add(
+                    "$>.$L($L)\n$<", property.name(), AnnotationValues.toString(property.value()));
               }
               codeBuilder.add("$>.build())\n$<");
             }

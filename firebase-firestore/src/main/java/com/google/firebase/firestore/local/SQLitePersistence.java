@@ -176,7 +176,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   IndexManager getIndexManager(User user) {
-    return new SQLiteIndexManager(this, user);
+    return new SQLiteIndexManager(this, user, serializer);
   }
 
   @Override
