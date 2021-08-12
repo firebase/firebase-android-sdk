@@ -20,6 +20,16 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public final class ReleaseIdentificationUtils {
   private static final String TAG = "ReleaseIdentification";
@@ -39,5 +49,55 @@ public final class ReleaseIdentificationUtils {
       Log.w(TAG, "Could not extract internal app sharing artifact ID");
       return null;
     }
+  }
+
+  public static String calculateApkZipFingerprint(File file){
+    Log.v(TAG, "Calculating release id for ${file.path}");
+    long start = System.currentTimeMillis();
+    long entries = 0;
+    String zipFingerprint = null;
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      ArrayList<Byte> checksums = new ArrayList<>();
+
+      ZipFile zis = new ZipFile(file);
+
+      try {
+        while(zis.entries().hasMoreElements()) {
+          ZipEntry zip = zis.entries().nextElement();
+          entries += 1;
+          checksums.add(Longs.toByteArray(zip.getCrc()));
+        }
+      } finally {
+        zis.close();
+      }
+      byte[] checksumByteArray = convertToByteArray(checksums);
+
+      zipFingerprint = digest.digest
+          digest.digest(checksumByteArray).fold("", { str, it -> str + "%02x".format(it) })
+    } catch (IOException | NoSuchAlgorithmException e) {
+      Log.v(TAG, "id calculation failed for ${file.path}");
+      return null;
+    } finally {
+      long elapsed = System.currentTimeMillis() - start;
+      if (elapsed > 2 * 1000) {
+        Log.v(TAG, "Long id calculation time $elapsed ms and $entries entries for ${file.path}")
+      }
+
+      Log.v(TAG,"Finished calculating entries in  ms");
+      Log.v(TAG,"${file.path} hashes to $hashValue");
+    }
+
+    return zipFingerprint;
+
+  }
+
+  @NonNull
+  private static byte[] convertToByteArray(@NonNull ArrayList list) throws IOException {
+    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(bos);
+      oos.writeObject(list);
+
+      return new bos.toByteArray();
   }
 }
