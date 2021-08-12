@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionNotificationsManager.NOTIFICATION_TAG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +23,8 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -40,6 +43,8 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
+import org.robolectric.shadows.ShadowNotification;
+import org.robolectric.shadows.ShadowNotificationManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class UpdateApkClientTest {
@@ -89,11 +94,13 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
+    List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    updateTask.addOnProgressListener(progressEvents::add);
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, false);
     // wait for error to be caught and set
     Thread.sleep(1000);
 
@@ -110,7 +117,7 @@ public class UpdateApkClientTest {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
@@ -124,7 +131,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
@@ -146,7 +153,7 @@ public class UpdateApkClientTest {
     updateTask.addOnProgressListener(progressEvents::add);
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
@@ -166,5 +173,52 @@ public class UpdateApkClientTest {
     Task<File> task1 = updateApkClient.downloadApk(TEST_URL);
     Task<File> task2 = updateApkClient.downloadApk(TEST_URL);
     assertEquals(task1, task2);
+  }
+
+  @Test
+  public void postProgressUpdate_whenDownloading_updatesNotificationsManagerWithProgress() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    // called from basic configuration
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
+    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
+
+    assertEquals(1, shadowNotificationManager.size());
+    ShadowNotification shadowNotification =
+        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(90, shadowNotification.getProgress());
+    assertEquals("Downloading in-app update...", shadowNotification.getContentTitle().toString());
+  }
+
+  @Test
+  public void postProgressUpdate_whenErrorStatus_updatesNotificationsManagerWithError() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    // called from basic configuration
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
+    updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
+
+    assertEquals(1, shadowNotificationManager.size());
+    ShadowNotification shadowNotification =
+        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
+    assertEquals(100, shadowNotification.getProgress());
+    assertEquals("Download failed", shadowNotification.getContentTitle().toString());
+  }
+
+  @Test
+  public void
+      postProgressUpdate_whenCalledFromAdvancedConfiguration_doesNotShowDownloadNotification() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    // called from advanced configuration
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, false);
+    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
+    assertEquals(0, shadowNotificationManager.size());
   }
 }
