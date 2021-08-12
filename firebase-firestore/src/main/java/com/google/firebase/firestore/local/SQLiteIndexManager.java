@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.Cursor;
@@ -28,9 +29,14 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.QueryPlanner;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
+import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.InvalidProtocolBufferException;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +94,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void addDocument(Document document) {
-    db.query("SELECT index_id, field_paths FROM index_configuration WHERE parent_path = ?")
+    db.query("SELECT index_id, field_paths FROM index_configuration WHERE collection_group = ?")
         .binding(document.getKey().getPath().popLast().canonicalString())
         .forEach(
             row -> {
@@ -131,7 +137,7 @@ final class SQLiteIndexManager implements IndexManager {
     db.execute(
         "INSERT OR IGNORE INTO index_configuration ("
             + "uid, "
-            + "parent_path, "
+            + "collection_group, "
             + "field_paths, " // field path, direction pairs
             + "index_id) VALUES(?, ?, ?, ?)",
         user.getUid(),
@@ -166,7 +172,31 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   @Nullable
   public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {
+    QueryPlanner queryPlanner = new QueryPlanner(query.toTarget());
     ResourcePath parentPath = query.getPath();
+    String collectionId = query.isCollectionGroupQuery() ? query.getCollectionGroup() :  parentPath.getLastSegment();
+FieldIndex bestIndex[] = new
+        FieldIndex[]{new FieldIndex(collectionId)};
+
+    // TODO(indexing): Parent_path should be collection id
+    db.query(
+            "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1").binding(collectionId).forEach(new Consumer<Cursor>() {
+      @Override
+      public void accept(Cursor value) {
+        try {
+          FieldIndex fieldIndex = serializer.decodeFieldIndex(collectionId, Index.parseFrom(value.getBlob(1)));
+          FieldIndex matchingPrefix = queryPlanner.getMatchingPrefix(fieldIndex);
+          if (matchingPrefix.segmentCount()> bestIndex[0].segmentCount()) {
+            bestIndex[0]=matchingPrefix;
+          }
+        } catch (InvalidProtocolBufferException e) {
+          throw fail("Failed to decode index: " + e);
+        }
+      }
+    });
+
+    // best index found
+
     List<IndexManager.IndexDefinition> indexComponents = query.getIndexComponents();
     List<Value> lowerBound = query.getLowerBound();
     boolean lowerInclusive = query.isLowerInclusive();
@@ -286,7 +316,7 @@ final class SQLiteIndexManager implements IndexManager {
     db.execute(
         "INSERT OR IGNORE INTO index_configuration ("
             + "index_id, "
-            + "collection_id, "
+            + "collection_group, "
             + "index_proto, "
             + "active) VALUES(?, ?, ?, ?)",
         currentMax + 1,
