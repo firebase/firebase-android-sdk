@@ -188,9 +188,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       return updateTask;
     }
 
-    UpdateTask updateTask =
-        this.updateAppClient.updateApp(cachedLatestRelease, showDownloadInNotificationManager);
-    return updateTask;
+    return this.updateAppClient.updateApp(cachedLatestRelease, showDownloadInNotificationManager);
   }
 
   /** Returns true if the App Distribution tester is signed in */
