@@ -122,7 +122,7 @@ class FirebaseAppDistributionNotificationsManager {
   private boolean isAdaptiveIcon(int iconId) {
     try {
       Drawable icon = ContextCompat.getDrawable(firebaseApp.getApplicationContext(), iconId);
-      if (VERSION.SDK_INT > Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
+      if (VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
         Log.e(TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
         return true;
       } else {
