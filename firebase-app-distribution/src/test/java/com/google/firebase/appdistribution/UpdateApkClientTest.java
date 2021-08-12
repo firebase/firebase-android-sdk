@@ -181,8 +181,8 @@ public class UpdateApkClientTest {
     NotificationManager notificationManager =
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
-    updateApkClient.setCachedUpdateTask(new UpdateTaskImpl());
-
+    // called from basic configuration
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -198,8 +198,8 @@ public class UpdateApkClientTest {
     NotificationManager notificationManager =
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
-    updateApkClient.setCachedUpdateTask(new UpdateTaskImpl());
-
+    // called from basic configuration
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
     updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -207,5 +207,17 @@ public class UpdateApkClientTest {
         shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
     assertEquals(100, shadowNotification.getProgress());
     assertEquals("Download failed", shadowNotification.getContentTitle().toString());
+  }
+
+  @Test
+  public void
+      postProgressUpdate_whenCalledFromAdvancedConfiguration_doesNotShowDownloadNotification() {
+    Context context = ApplicationProvider.getApplicationContext();
+    NotificationManager notificationManager =
+        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, false);
+    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
+    assertEquals(0, shadowNotificationManager.size());
   }
 }
