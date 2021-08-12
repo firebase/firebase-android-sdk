@@ -47,7 +47,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private UpdateTaskImpl cachedUpdateAppTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
-  private boolean basicConfiguration = false;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -127,7 +126,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                   if (release == null) {
                     return Tasks.forResult(null);
                   }
-                  basicConfiguration = true;
                   return showUpdateAlertDialog(release);
                 });
 
@@ -174,7 +172,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public synchronized UpdateTask updateApp() {
+    return updateApp(false);
+  }
 
+  /**
+   * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
+   * basic configuration and false for advanced configuration.
+   */
+  private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -184,8 +189,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
 
     UpdateTask updateTask =
-        this.updateAppClient.updateApp(cachedLatestRelease, currentActivity, basicConfiguration);
-    basicConfiguration = false;
+        this.updateAppClient.updateApp(cachedLatestRelease, showDownloadInNotificationManager);
     return updateTask;
   }
 
@@ -310,7 +314,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
         (dialogInterface, i) ->
-            updateApp()
+            // show download progress in notification manager
+            updateApp(true)
                 .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(null))
                 .addOnFailureListener(updateAlertDialogTask::setException));
 
@@ -318,7 +323,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
-          basicConfiguration = false;
           dialogInterface.dismiss();
           updateAlertDialogTask.setException(
               new FirebaseAppDistributionException(

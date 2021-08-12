@@ -104,7 +104,7 @@ public class UpdateAppClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, activity, false);
+    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     updateTask.addOnProgressListener(progressEvents::add);
     onCompleteListener.await();
@@ -125,14 +125,14 @@ public class UpdateAppClientTest {
   @Test
   public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() throws Exception {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
-    UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, activity, false);
-    UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, activity, false);
+    UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, false);
+    UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, false);
     assertEquals(updateTask1, updateTask2);
   }
 
   @Test
   public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
-    UpdateTask updateTask = updateAppClient.updateApp(null, activity, false);
+    UpdateTask updateTask = updateAppClient.updateApp(null, false);
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException ex =

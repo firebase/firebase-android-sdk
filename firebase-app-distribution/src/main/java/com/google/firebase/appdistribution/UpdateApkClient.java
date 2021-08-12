@@ -54,7 +54,7 @@ class UpdateApkClient {
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
   private UpdateTaskImpl cachedUpdateTask;
-  private boolean basicConfiguration = false;
+  private boolean showDownloadInNotificationManager = false;
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
@@ -71,8 +71,8 @@ class UpdateApkClient {
   public void updateApk(
       @NonNull UpdateTaskImpl updateTask,
       @NonNull String downloadUrl,
-      @NonNull boolean basicConfiguration) {
-    this.basicConfiguration = basicConfiguration;
+      @NonNull boolean showDownloadInNotificationManager) {
+    this.showDownloadInNotificationManager = showDownloadInNotificationManager;
     this.cachedUpdateTask = updateTask;
     downloadApk(downloadUrl)
         .addOnSuccessListener(
@@ -294,7 +294,7 @@ class UpdateApkClient {
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
-    if (basicConfiguration) {
+    if (showDownloadInNotificationManager) {
       appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
     }
   }
