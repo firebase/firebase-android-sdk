@@ -216,6 +216,7 @@ public class UpdateApkClientTest {
     NotificationManager notificationManager =
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
+    // called from advanced configuration
     updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, false);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
     assertEquals(0, shadowNotificationManager.size());
