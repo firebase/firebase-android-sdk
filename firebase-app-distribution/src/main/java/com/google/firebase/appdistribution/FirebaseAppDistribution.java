@@ -44,7 +44,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private Task<Void> cachedUpdateToLatestReleaseTask;
   private Task<AppDistributionRelease> cachedCheckForUpdateTask;
-  private UpdateTaskImpl cachedUpdateAppTask;
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
 

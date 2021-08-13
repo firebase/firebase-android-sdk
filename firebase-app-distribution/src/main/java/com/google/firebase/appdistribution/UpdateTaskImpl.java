@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
 /** Implementation of UpdateTask, the return type of updateApp. */
 class UpdateTaskImpl extends UpdateTask {
 
-  @NonNull private Task<Void> task;
+  @NonNull private final Task<Void> task;
 
   @Nullable
   @GuardedBy("lock")
@@ -41,7 +41,7 @@ class UpdateTaskImpl extends UpdateTask {
   @GuardedBy("lock")
   private UpdateProgress snapshot;
 
-  private TaskCompletionSource<Void> taskCompletionSource;
+  private final TaskCompletionSource<Void> taskCompletionSource;
 
   UpdateTaskImpl() {
     this.taskCompletionSource = new TaskCompletionSource<Void>();
@@ -153,21 +153,21 @@ class UpdateTaskImpl extends UpdateTask {
 
   @NonNull
   @Override
-  public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener onCompleteListener) {
+  public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener<Void> onCompleteListener) {
     return this.task.addOnCompleteListener(onCompleteListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(
-      @NonNull Executor executor, @NonNull OnCompleteListener onCompleteListener) {
+      @NonNull Executor executor, @NonNull OnCompleteListener<Void> onCompleteListener) {
     return this.task.addOnCompleteListener(executor, onCompleteListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(
-      @NonNull Activity activity, @NonNull OnCompleteListener onCompleteListener) {
+      @NonNull Activity activity, @NonNull OnCompleteListener<Void> onCompleteListener) {
     return this.task.addOnCompleteListener(activity, onCompleteListener);
   }
 
