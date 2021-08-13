@@ -39,6 +39,9 @@ public class UpdateAppClient {
   @GuardedBy("updateAabLock")
   private UpdateTaskImpl cachedAabUpdateTask;
 
+  @GuardedBy("updateAabLock")
+  private AppDistributionReleaseInternal aabReleaseInProgress;
+
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.updateApkClient = new UpdateApkClient(firebaseApp);
   }
@@ -68,6 +71,7 @@ public class UpdateAppClient {
         }
 
         cachedAabUpdateTask = new UpdateTaskImpl();
+        aabReleaseInProgress = latestRelease;
         redirectToPlayForAabUpdate(latestRelease.getDownloadUrl());
 
         return cachedAabUpdateTask;
@@ -129,5 +133,17 @@ public class UpdateAppClient {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.setException(e);
     return updateTask;
+  }
+
+  void tryCancelAabUpdateTask() {
+    synchronized (updateAabLock) {
+      if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
+        cachedAabUpdateTask.setException(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.UPDATE_CANCELED,
+                FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
+                ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
+      }
+    }
   }
 }

@@ -155,7 +155,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                 appDistributionReleaseInternal -> {
                   setCachedLatestRelease(appDistributionReleaseInternal);
                   return Tasks.forResult(
-                      convertToAppDistributionRelease(appDistributionReleaseInternal));
+                      ReleaseUtils.convertToAppDistributionRelease(appDistributionReleaseInternal));
                 });
 
     return cachedCheckForUpdateTask;
@@ -219,6 +219,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
     Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
+    // If app resumes and aab update task is in progress, assume that installation didn't happen so
+    // cancel the task
+    updateAppClient.tryCancelAabUpdateTask();
 
     // SignInResultActivity is only opened after successful redirection from signIn flow,
     // should not be treated as reentering the app
@@ -259,25 +262,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       this.updateAppClient.setCurrentActivity(null);
       this.testerSignInClient.setCurrentActivity(null);
     }
-  }
-
-  private AppDistributionRelease convertToAppDistributionRelease(
-      AppDistributionReleaseInternal internalRelease) {
-    if (internalRelease == null) {
-      return null;
-    }
-    long versionCode;
-    try {
-      versionCode = Long.parseLong(internalRelease.getBuildVersion());
-    } catch (NumberFormatException e) {
-      versionCode = 0;
-    }
-    return AppDistributionRelease.builder()
-        .setVersionCode(versionCode)
-        .setDisplayVersion(internalRelease.getDisplayVersion())
-        .setReleaseNotes(internalRelease.getReleaseNotes())
-        .setBinaryType(internalRelease.getBinaryType())
-        .build();
   }
 
   @VisibleForTesting

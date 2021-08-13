@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -28,10 +29,11 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -42,6 +44,7 @@ public class UpdateAppClientTest {
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
+  private static final Executor testExecutor = Executors.newSingleThreadExecutor();
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -61,8 +64,6 @@ public class UpdateAppClientTest {
 
   private UpdateAppClient updateAppClient;
   private ShadowActivity shadowActivity;
-
-  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -109,6 +110,20 @@ public class UpdateAppClientTest {
             .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
             .build(),
         progressEvents.get(0));
+  }
+
+  @Test
+  public void updateAppTask_onAppResume_setsUpdateCancelled() {
+    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    updateAppClient.tryCancelAabUpdateTask();
+    FirebaseAppDistributionException exception =
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+    assertEquals(
+        ReleaseUtils.convertToAppDistributionRelease(latestRelease), exception.getRelease());
   }
 
   @Test
