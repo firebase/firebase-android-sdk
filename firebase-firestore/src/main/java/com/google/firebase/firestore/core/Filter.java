@@ -62,6 +62,4 @@ public abstract class Filter {
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();
-
-  public abstract IndexManager.IndexComponent getIndexComponent();
 }

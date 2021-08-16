@@ -45,7 +45,7 @@ class MemoryIndexManager implements IndexManager {
   public void addDocument(Document document) {}
 
   @Override
-  public void enableIndex(ResourcePath collectionPath, IndexDefinition index) {}
+  public void enableIndex(ResourcePath collectionPath, FieldIndex index) {}
 
   @Override
   public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {

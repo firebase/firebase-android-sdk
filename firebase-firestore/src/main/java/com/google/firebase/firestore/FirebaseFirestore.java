@@ -215,24 +215,16 @@ public class FirebaseFirestore {
       @NonNull CollectionReference collection,
       @NonNull String fieldPath,
       @NonNull Query.Direction direction) {
-    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
-    definition.add(
-        new IndexManager.IndexComponent(
-            FieldPath.fromServerFormat(fieldPath),
-            direction.equals(Query.Direction.ASCENDING)
-                ? IndexManager.IndexComponent.IndexType.ASC
-                : IndexManager.IndexComponent.IndexType.DESC));
-    enableIndex(collection.query.getPath(), definition);
+    FieldIndex index = new FieldIndex(collection.getId());
+    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.ORDERED);
+    enableIndex(collection.query.getPath(), index);
   }
 
   public void enableArrayContainsIndex(
       @NonNull CollectionReference collection, @NonNull String fieldPath) {
-    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
-    definition.add(
-        new IndexManager.IndexComponent(
-            FieldPath.fromServerFormat(fieldPath),
-            IndexManager.IndexComponent.IndexType.ARRAY_CONTAINS));
-    enableIndex(collection.query.getPath(), definition);
+    FieldIndex index = new FieldIndex(collection.getId());
+    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.CONTAINS);
+    enableIndex(collection.query.getPath(), index);
   }
 
   public void enableIndex(
@@ -241,23 +233,13 @@ public class FirebaseFirestore {
       @NonNull Query.Direction direction1,
       @NonNull String fieldPath2,
       @NonNull Query.Direction direction2) {
-    IndexManager.IndexDefinition definition = new IndexManager.IndexDefinition();
-    definition.add(
-        new IndexManager.IndexComponent(
-            FieldPath.fromServerFormat(fieldPath1),
-            direction1.equals(Query.Direction.ASCENDING)
-                ? IndexManager.IndexComponent.IndexType.ASC
-                : IndexManager.IndexComponent.IndexType.DESC));
-    definition.add(
-        new IndexManager.IndexComponent(
-            FieldPath.fromServerFormat(fieldPath2),
-            direction2.equals(Query.Direction.ASCENDING)
-                ? IndexManager.IndexComponent.IndexType.ASC
-                : IndexManager.IndexComponent.IndexType.DESC));
-    enableIndex(collection.query.getPath(), definition);
+    FieldIndex index = new FieldIndex(collection.getId());
+    index=index.withAddedField(FieldPath.fromServerFormat(fieldPath1), FieldIndex.Segment.Kind.ORDERED);
+    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath2), FieldIndex.Segment.Kind.ORDERED);
+    enableIndex(collection.query.getPath(), index);
   }
 
-  private void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
+  private void enableIndex(ResourcePath path, FieldIndex definition) {
 
     ensureClientConfigured();
     client.enableIndex(path, definition);

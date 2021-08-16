@@ -323,7 +323,7 @@ public final class FirestoreClient {
     }
   }
 
-  public void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
+  public void enableIndex(ResourcePath path, FieldIndex definition) {
     asyncQueue.enqueueAndForget(() -> localStore.enableIndex(path, definition));
   }
 }

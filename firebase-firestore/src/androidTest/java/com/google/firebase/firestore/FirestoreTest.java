@@ -46,6 +46,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -59,12 +60,26 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 // TODO: Add the skipped tests from typescript.
 @RunWith(AndroidJUnit4.class)
 public class FirestoreTest {
+
+  static boolean indexingEnabled = Persistence.INDEXING_SUPPORT_ENABLED;
+
+  @BeforeClass
+  public static void beforeClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = true;
+  }
+
+  @AfterClass
+          public static void afterClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
+  }
 
   @After
   public void tearDown() {

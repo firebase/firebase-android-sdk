@@ -100,7 +100,7 @@ public class QueryPlanner {
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
-    hardAssert(index.getCollectionId().equals(targetCollection), "Collection IDs do not match");
+    hardAssert(index.getCollectionGroup().equals(targetCollection), "Collection IDs do not match");
 
     // Queries without filters only use the orderBy() clause for filtering. This is better than
     // doing a collection-level scan as an orderBy constraint filters out documents that do not
@@ -150,7 +150,7 @@ public class QueryPlanner {
    * indices that serve any of the equalities that the target is filtering by.
    */
   private FieldIndex processMergeJoin(FieldIndex index) {
-    FieldIndex bestMatch = new FieldIndex(index.getCollectionId());
+    FieldIndex bestMatch = new FieldIndex(index.getCollectionGroup());
 
     if (memoizedFilterPermutations == null) {
       // Build a set of filters that represent all possible combinations (all subsets in all
@@ -245,7 +245,7 @@ public class QueryPlanner {
    * are returned that contain a value for each ordered by field.
    */
   private FieldIndex processOrderBy(FieldIndex index, List<FieldIndex.Segment> expectedSegments) {
-    FieldIndex bestMatch = new FieldIndex(index.getCollectionId());
+    FieldIndex bestMatch = new FieldIndex(index.getCollectionGroup());
     for (OrderBy orderBy : target.getOrderBy()) {
       FieldIndex.Segment missingSegment =
           new FieldIndex.Segment(orderBy.getField(), FieldIndex.Segment.Kind.ORDERED);

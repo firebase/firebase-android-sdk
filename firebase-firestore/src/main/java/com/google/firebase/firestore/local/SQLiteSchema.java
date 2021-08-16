@@ -177,7 +177,7 @@ class SQLiteSchema {
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createFieldIndex();
+      createDocumentIndex();
     }
   }
 
@@ -347,7 +347,7 @@ class SQLiteSchema {
    * each field combination that matches a configured index. If there are pending mutations that
    * affect an indexed field, an additional index entry is created per mutated field.
    */
-  private void createFieldIndex() {
+  private void createDocumentIndex() {
     ifTablesDontExist(
         new String[] {"index_configuration", "index_entries"},
         () -> {

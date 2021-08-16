@@ -19,8 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
-import com.google.firebase.firestore.local.IndexManager.IndexComponent;
-import com.google.firebase.firestore.local.IndexManager.IndexDefinition;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -114,23 +112,6 @@ public final class Query {
         null);
   }
 
-  public List<IndexDefinition> getIndexComponents() {
-    List<IndexComponent> unspecifiedComponents = new ArrayList<>();
-    for (Filter filter : filters) {
-      unspecifiedComponents.add(filter.getIndexComponent());
-    }
-    for (OrderBy orderBy : getOrderBy()) {
-      for (int i = 0; i < unspecifiedComponents.size(); ++i) {
-        if (unspecifiedComponents.get(i).getFieldPath().equals(orderBy.field)) {
-          unspecifiedComponents.set(i, orderBy.getIndexComponent());
-        }
-      }
-    }
-    List<IndexDefinition> components = new ArrayList<>();
-    expandIndexComponents(components, unspecifiedComponents);
-    return components;
-  }
-
   public @Nullable List<Value> getLowerBound() {
     List<Value> unspecifiedComponents = new ArrayList<>();
     for (Filter filter : filters) {
@@ -167,40 +148,6 @@ public final class Query {
     return true;
   }
 
-  private void expandIndexComponents(
-      List<IndexDefinition> existing, List<IndexComponent> unspecifiedComponents) {
-    if (!unspecifiedComponents.isEmpty()) {
-      if (existing.isEmpty()) {
-        existing.add(new IndexDefinition());
-      }
-      IndexComponent first = unspecifiedComponents.get(0);
-      if (!first.getType().equals(IndexComponent.IndexType.ANY)) {
-        for (IndexDefinition indexDefinition : existing) {
-          indexDefinition.add(first);
-        }
-      } else {
-        int originalSize = existing.size();
-
-        // Support subsets for index building
-        for (int i = 0; i < originalSize; ++i) {
-          {
-            IndexDefinition original = new IndexDefinition();
-            original.addAll(existing.get(i).subList(0, existing.get(i).size()));
-            original.add(new IndexComponent(first.getFieldPath(), IndexComponent.IndexType.ASC));
-            existing.add(original);
-          }
-          {
-            IndexDefinition original = new IndexDefinition();
-            original.addAll(existing.get(i).subList(0, existing.get(i).size()));
-            original.add(new IndexComponent(first.getFieldPath(), IndexComponent.IndexType.DESC));
-            existing.add(original);
-          }
-        }
-      }
-      expandIndexComponents(
-          existing, unspecifiedComponents.subList(1, unspecifiedComponents.size()));
-    }
-  }
   /** The base path of the query. */
   public ResourcePath getPath() {
     return path;

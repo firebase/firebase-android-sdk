@@ -30,47 +30,6 @@ import java.util.List;
  * Collection Group queries.
  */
 public interface IndexManager {
-  class IndexComponent {
-    public FieldPath getFieldPath() {
-      return fieldPath;
-    }
-
-    public void setFieldPath(FieldPath fieldPath) {
-      this.fieldPath = fieldPath;
-    }
-
-    public IndexType getType() {
-      return type;
-    }
-
-    public void setType(IndexType type) {
-      this.type = type;
-    }
-
-    public enum IndexType {
-      ASC,
-      DESC,
-      ANY,
-      ARRAY_CONTAINS
-    }
-
-    public IndexComponent(FieldPath fieldPath, IndexType type) {
-      this.fieldPath = fieldPath;
-      this.type = type;
-    }
-
-    FieldPath fieldPath;
-    IndexType type;
-  }
-
-  class IndexDefinition extends ArrayList<IndexComponent> {
-    public IndexDefinition popFirst() {
-      IndexDefinition clone = new IndexDefinition();
-      clone.addAll(subList(1, size()));
-      return clone;
-    }
-  }
-
   /**
    * Creates an index entry mapping the collectionId (last segment of the path) to the parent path
    * (either the containing document location or the empty path for root-level collections). Index
@@ -89,7 +48,7 @@ public interface IndexManager {
 
   void addDocument(Document document);
 
-  void enableIndex(ResourcePath collectionPath, IndexDefinition index);
+  void enableIndex(ResourcePath collectionPath, FieldIndex index);
 
   Iterable<DocumentKey> getDocumentsMatchingQuery(Query query);
 

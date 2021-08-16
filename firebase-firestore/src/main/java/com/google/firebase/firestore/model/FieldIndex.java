@@ -83,22 +83,22 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     }
   }
 
-  private final String collectionId;
+  private final String collectionGroup;
   private final List<Segment> segments;
 
-  public FieldIndex(String collectionId) {
-    this.collectionId = collectionId;
+  public FieldIndex(String collectionGroup) {
+    this.collectionGroup = collectionGroup;
     this.segments = new ArrayList<>();
   }
 
-  FieldIndex(String collectionId, List<Segment> segments) {
-    this.collectionId = collectionId;
+  FieldIndex(String collectionGroup, List<Segment> segments) {
+    this.collectionGroup = collectionGroup;
     this.segments = segments;
   }
 
   /** The collection ID this index applies to. */
-  public String getCollectionId() {
-    return collectionId;
+  public String getCollectionGroup() {
+    return collectionGroup;
   }
 
   public Segment getSegment(int index) {
@@ -115,7 +115,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
    * @throws IndexOutOfBoundsException if size > segmentCount
    */
   public FieldIndex prefix(int size) {
-    return new FieldIndex(collectionId, segments.subList(0, size));
+    return new FieldIndex(collectionGroup, segments.subList(0, size));
   }
 
   @NonNull
@@ -128,7 +128,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new Segment(fieldPath, kind));
-    return new FieldIndex(collectionId, newSegments);
+    return new FieldIndex(collectionGroup, newSegments);
   }
 
   @Override
@@ -139,18 +139,18 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     FieldIndex fieldIndex = (FieldIndex) o;
 
     if (!segments.equals(fieldIndex.segments)) return false;
-    return collectionId.equals(fieldIndex.collectionId);
+    return collectionGroup.equals(fieldIndex.collectionGroup);
   }
 
   @Override
   public int hashCode() {
-    int result = collectionId.hashCode();
+    int result = collectionGroup.hashCode();
     result = 31 * result + segments.hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return String.format("FieldIndex{collectionId='%s', segments=%s}", collectionId, segments);
+    return String.format("FieldIndex{collectionId='%s', segments=%s}", collectionGroup, segments);
   }
 }

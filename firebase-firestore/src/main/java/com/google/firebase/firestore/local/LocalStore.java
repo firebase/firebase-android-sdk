@@ -708,7 +708,7 @@ public final class LocalStore implements BundleCallback {
     }
   }
 
-  public void enableIndex(ResourcePath path, IndexManager.IndexDefinition definition) {
+  public void enableIndex(ResourcePath path, FieldIndex definition) {
     indexManager.enableIndex(path, definition);
   }
 

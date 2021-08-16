@@ -16,8 +16,6 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import com.google.firebase.firestore.local.IndexManager;
-import com.google.firebase.firestore.local.IndexManager.IndexComponent.IndexType;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
@@ -198,15 +196,6 @@ public class FieldFilter extends Filter {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
     return getField().canonicalString() + getOperator().toString() + Values.canonicalId(getValue());
-  }
-
-  @Override
-  public IndexManager.IndexComponent getIndexComponent() {
-    return new IndexManager.IndexComponent(
-        field,
-        operator.equals(Operator.ARRAY_CONTAINS) || operator.equals(Operator.ARRAY_CONTAINS_ANY)
-            ? IndexType.ARRAY_CONTAINS
-            : IndexType.ANY);
   }
 
   @Override

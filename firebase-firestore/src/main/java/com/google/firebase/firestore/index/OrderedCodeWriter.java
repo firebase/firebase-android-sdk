@@ -82,13 +82,6 @@ public class OrderedCodeWriter {
     writeSeparatorAscending();
   }
 
-  public void writeBytesDescending(ByteString value) {
-    for (int i = 0; i < value.size(); ++i) {
-      writeByteDescending(value.byteAt(i));
-    }
-    writeSeparatorDescending();
-  }
-
   /**
    * Writes utf8 bytes into this byte sequence, ascending.
    *
@@ -119,36 +112,6 @@ public class OrderedCodeWriter {
     writeSeparatorAscending();
   }
 
-  /**
-   * Writes utf8 bytes into this byte sequence, descending.
-   *
-   * <p>This is a more efficent version of writeBytesDescending(str.getBytes(UTF_8));
-   */
-  public void writeUtf8Descending(CharSequence sequence) {
-    int utf16Length = sequence.length();
-    for (int i = 0; i < utf16Length; i++) {
-      char c = sequence.charAt(i);
-      if (c < 0x80) {
-        writeByteDescending((byte) c);
-      } else if (c < 0x800) {
-        writeByteDescending((byte) ((0xF << 6) | (c >>> 6)));
-        writeByteDescending((byte) (0x80 | (0x3F & c)));
-      } else if ((c < MIN_SURROGATE || MAX_SURROGATE < c)) {
-        writeByteDescending((byte) ((0xF << 5) | (c >>> 12)));
-        writeByteDescending((byte) (0x80 | (0x3F & (c >>> 6))));
-        writeByteDescending((byte) (0x80 | (0x3F & c)));
-      } else {
-        final int codePoint = Character.codePointAt(sequence, i);
-        ++i; // Skip the low surrogate.
-        writeByteDescending((byte) ((0xF << 4) | (codePoint >>> 18)));
-        writeByteDescending((byte) (0x80 | (0x3F & (codePoint >>> 12))));
-        writeByteDescending((byte) (0x80 | (0x3F & (codePoint >>> 6))));
-        writeByteDescending((byte) (0x80 | (0x3F & codePoint)));
-      }
-    }
-    writeSeparatorDescending();
-  }
-
   /** Writes an unsigned long in the ordered code format, ascending. */
   public void writeUnsignedLongAscending(long value) {
     // Values are encoded with a single byte length prefix, followed
@@ -159,21 +122,6 @@ public class OrderedCodeWriter {
     buffer[position++] = (byte) len; // Write the length
     for (int i = position + len - 1; i >= position; --i) {
       buffer[i] = (byte) (value & 0xff);
-      value >>>= 8;
-    }
-    position += len;
-  }
-
-  /** Writes an unsigned long in the ordered code format, descending. */
-  public void writeUnsignedLongDescending(long value) {
-    // Values are encoded with a complemented single byte length prefix,
-    // followed by the complement of the actual value in big-endian format with
-    // leading 0xff bytes dropped.
-    int len = unsignedNumLength(value);
-    ensureAvailable(1 + len);
-    buffer[position++] = (byte) ~len; // Write the length
-    for (int i = position + len - 1; i >= position; --i) {
-      buffer[i] = (byte) ~(value & 0xff);
       value >>>= 8;
     }
     position += len;
@@ -217,11 +165,6 @@ public class OrderedCodeWriter {
     position += len;
   }
 
-  /** Writes a signed long in the ordered code format, descending. */
-  public void writeSignedLongDescending(long value) {
-    writeSignedLongAscending(~value);
-  }
-
   public void writeDoubleAscending(double val) {
     // Based on com.google.storage.megastore.metadata.adapters.DoubleAdapter.
     // This particular encoding has the following properties:
@@ -233,13 +176,6 @@ public class OrderedCodeWriter {
     long v = Double.doubleToLongBits(val);
     v ^= (v < 0) ? DOUBLE_ALL_BITS : DOUBLE_SIGN_MASK;
     writeUnsignedLongAscending(v);
-  }
-
-  public void writeDoubleDescending(double val) {
-    // See note in #writeDoubleAscending
-    long v = Double.doubleToLongBits(val);
-    v ^= (v < 0) ? DOUBLE_ALL_BITS : DOUBLE_SIGN_MASK;
-    writeUnsignedLongDescending(v);
   }
 
   /** Resets the buffer such that it is the same as when it was newly constructed. */
@@ -265,22 +201,6 @@ public class OrderedCodeWriter {
       writeEscapedByteAscending(FF_BYTE);
     } else {
       writeEscapedByteAscending(b);
-    }
-  }
-
-  /**
-   * Writes a single byte descending to the buffer, doing proper escaping as described in {@link
-   * OrderedCodeConstants}.
-   */
-  private void writeByteDescending(byte b) {
-    if (b == ESCAPE1) {
-      writeEscapedByteDescending(ESCAPE1);
-      writeEscapedByteDescending(NULL_BYTE);
-    } else if (b == ESCAPE2) {
-      writeEscapedByteDescending(ESCAPE2);
-      writeEscapedByteDescending(FF_BYTE);
-    } else {
-      writeEscapedByteDescending(b);
     }
   }
 

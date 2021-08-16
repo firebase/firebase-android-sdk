@@ -17,11 +17,9 @@ package com.google.firebase.firestore.index;
 import com.google.firebase.firestore.local.IndexManager;
 import com.google.protobuf.ByteString;
 
-public class IndexByteEncoder {
+public class IndexByteEncoder extends DirectionalIndexByteEncoder{
 
   private final OrderedCodeWriter orderedCode;
-  private final DirectionalIndexByteEncoder ascendingEncoder = new AscendingEncoder();
-  private final DirectionalIndexByteEncoder descendingEncoder = new DescendingEncoder();
 
   public IndexByteEncoder() {
     this.orderedCode = new OrderedCodeWriter();
@@ -30,8 +28,6 @@ public class IndexByteEncoder {
   public void seed(byte[] encodedBytes) {
     orderedCode.seed(encodedBytes);
   }
-
-  private class AscendingEncoder extends DirectionalIndexByteEncoder {
 
     @Override
     public void writeBytes(ByteString val) {
@@ -52,30 +48,6 @@ public class IndexByteEncoder {
     public void writeDouble(double val) {
       orderedCode.writeDoubleAscending(val);
     }
-  }
-
-  private class DescendingEncoder extends DirectionalIndexByteEncoder {
-
-    @Override
-    public void writeBytes(ByteString val) {
-      orderedCode.writeBytesDescending(val);
-    }
-
-    @Override
-    public void writeString(String val) {
-      orderedCode.writeUtf8Descending(val);
-    }
-
-    @Override
-    public void writeLong(long val) {
-      orderedCode.writeSignedLongDescending(val);
-    }
-
-    @Override
-    public void writeDouble(double val) {
-      orderedCode.writeDoubleDescending(val);
-    }
-  }
 
   public byte[] getEncodedBytes() {
     return orderedCode.encodedBytes();
@@ -85,13 +57,4 @@ public class IndexByteEncoder {
     orderedCode.reset();
   }
 
-  public DirectionalIndexByteEncoder forDirection(IndexManager.IndexComponent.IndexType direction) {
-    switch (direction) {
-      case ASC:
-        return ascendingEncoder;
-      case DESC:
-        return descendingEncoder;
-    }
-    throw new IllegalArgumentException("Unexpected direction " + direction);
-  }
 }

@@ -291,7 +291,6 @@ public final class LocalSerializer {
     return new BundledQuery(target, limitType);
   }
 
-
   public Index encodeFieldIndex(FieldIndex fieldIndex) {
     Index.Builder index = Index.newBuilder();
     // The Mobile SDKs treat all indices as collection group indices, as we run all collection group
@@ -312,13 +311,17 @@ public final class LocalSerializer {
     return index.build();
   }
 
-  public FieldIndex decodeFieldIndex(String collectionId, Index index) {
-    FieldIndex fieldIndex= new FieldIndex(collectionId);
-   for (Index.IndexField field : index.getFieldsList()) {
-     fieldIndex = fieldIndex.withAddedField(FieldPath.fromServerFormat(field.getFieldPath()),
-             field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)? FieldIndex.Segment.Kind.CONTAINS: FieldIndex.Segment.Kind.ORDERED);
-   }
+  public FieldIndex decodeFieldIndex(String collection_group, Index index) {
+    FieldIndex fieldIndex = new FieldIndex(collection_group);
+    for (Index.IndexField field : index.getFieldsList()) {
+      fieldIndex =
+          fieldIndex.withAddedField(
+              FieldPath.fromServerFormat(field.getFieldPath()),
+              field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
+                  ? FieldIndex.Segment.Kind.CONTAINS
+                  : FieldIndex.Segment.Kind.ORDERED);
+    }
 
-   return fieldIndex;
+    return fieldIndex;
   }
 }
