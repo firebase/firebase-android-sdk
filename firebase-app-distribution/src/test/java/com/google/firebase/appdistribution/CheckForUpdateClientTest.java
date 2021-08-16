@@ -79,6 +79,7 @@ public class CheckForUpdateClientTest {
           .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE))
           .setDisplayVersion("2.0")
           .setReleaseNotes("Current version.")
+          .setCodeHash(TEST_CODEHASH_2)
           .build();
 
   private CheckForUpdateClient checkForUpdateClient;
@@ -240,6 +241,8 @@ public class CheckForUpdateClientTest {
     when(mockFirebaseAppDistributionTesterApiClient.fetchLatestRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
         .thenReturn(TEST_RELEASE_CURRENT);
+
+    doReturn(TEST_CODEHASH_2).when(checkForUpdateClient).extractApkCodeHash(any());
 
     AppDistributionReleaseInternal release =
         checkForUpdateClient.getLatestReleaseFromClient(

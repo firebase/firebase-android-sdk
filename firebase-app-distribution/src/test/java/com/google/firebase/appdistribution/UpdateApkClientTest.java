@@ -183,7 +183,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, true);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -200,7 +200,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, true);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, true);
     updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -218,7 +218,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from advanced configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, false);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, false);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
     assertEquals(0, shadowNotificationManager.size());
   }

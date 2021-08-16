@@ -70,9 +70,9 @@ public class UpdateAppClient {
       redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl());
     } else {
       this.updateApkClient.updateApk(
-          cachedUpdateAppTask, 
-          latestRelease.getDownloadUrl(), 
-          latestRelease.getCodeHash(), 
+          cachedUpdateAppTask,
+          latestRelease.getDownloadUrl(),
+          latestRelease.getCodeHash(),
           showDownloadInNotificationManager);
     }
     return cachedUpdateAppTask;
