@@ -51,7 +51,8 @@ public final class ReleaseIdentificationUtils {
     }
   }
 
-  public static String calculateApkInternalCodeHash(File file) {
+  @Nullable
+  public static String calculateApkInternalCodeHash(@NonNull File file) {
     Log.v(TAG, String.format("Calculating release id for %s", file.getPath()));
     Log.v(TAG, String.format("File size: %d", file.length()));
 
