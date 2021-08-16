@@ -22,7 +22,6 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
@@ -35,7 +34,6 @@ public class UpdateAppClient {
   private Activity currentActivity;
 
   private final Object activityLock = new Object();
-  private TaskCompletionSource<Void> updateAppTaskCompletionSource = null;
   private UpdateTaskImpl cachedUpdateAppTask;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
@@ -44,7 +42,8 @@ public class UpdateAppClient {
 
   @NonNull
   synchronized UpdateTask updateApp(
-      @NonNull AppDistributionReleaseInternal latestRelease, @NonNull Activity currentActivity) {
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      @NonNull boolean showDownloadInNotificationManager) {
 
     if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
       return cachedUpdateAppTask;
@@ -70,7 +69,8 @@ public class UpdateAppClient {
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
       redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl());
     } else {
-      this.updateApkClient.updateApk(cachedUpdateAppTask, latestRelease.getDownloadUrl());
+      this.updateApkClient.updateApk(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), showDownloadInNotificationManager);
     }
     return cachedUpdateAppTask;
   }
