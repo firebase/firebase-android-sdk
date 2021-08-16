@@ -147,7 +147,8 @@ class CheckForUpdateClient {
         > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
-  private boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
+  @VisibleForTesting
+  boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
     if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo;

@@ -15,10 +15,14 @@
 package com.google.firebase.appdistribution;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,6 +60,8 @@ public class CheckForUpdateClientTest {
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_IAS_ARTIFACT_ID = "ias-artifact-id";
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
+  private static final String TEST_CODEHASH_1 = "abcdef";
+  private static final String TEST_CODEHASH_2 = "ghiklm";
   private static final long INSTALLED_VERSION_CODE = 2;
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_APK =
@@ -64,6 +70,7 @@ public class CheckForUpdateClientTest {
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.APK)
+              .setCodeHash(TEST_CODEHASH_1)
           .build();
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_CURRENT =
@@ -122,11 +129,12 @@ public class CheckForUpdateClientTest {
     shadowPackageManager.installPackage(packageInfo);
 
     checkForUpdateClient =
+            spy(
         new CheckForUpdateClient(
             firebaseApp,
             mockFirebaseAppDistributionTesterApiClient,
             mockFirebaseInstallations,
-            testExecutor);
+            testExecutor));
   }
 
   @Test
@@ -287,5 +295,17 @@ public class CheckForUpdateClientTest {
         checkForUpdateClient.getLatestReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertNull(result);
+  }
+
+  @Test
+  public void isInstalledRelease_whenCodeHashesEqual_returnsTrue() {
+    doReturn(TEST_CODEHASH_1).when(checkForUpdateClient).extractApkCodeHash(any());
+    assertTrue(checkForUpdateClient.isInstalledRelease(TEST_RELEASE_NEWER_APK));
+  }
+
+  @Test
+  public void isInstalledRelease_whenCodeHashesNotEqual_returnsFalse() {
+    doReturn(TEST_CODEHASH_2).when(checkForUpdateClient).extractApkCodeHash(any());
+    assertFalse(checkForUpdateClient.isInstalledRelease(TEST_RELEASE_NEWER_APK));
   }
 }
