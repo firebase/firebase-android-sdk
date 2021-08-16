@@ -176,7 +176,11 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   IndexManager getIndexManager(User user) {
-    return new SQLiteIndexManager(this, user, serializer);
+    if (Persistence.INDEXING_SUPPORT_ENABLED) {
+      return new SQLiteIndexManager(this, user, serializer);
+    } else {
+      return new MemoryIndexManager();
+    }
   }
 
   @Override
