@@ -20,19 +20,19 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class ReleaseIdentificationUtils {
   private static final String TAG = "ReleaseIdentification";
+  private static final int BYTES_IN_LONG = 8;
 
   @Nullable
   public static String extractInternalAppSharingArtifactId(@NonNull Context appContext) {
@@ -51,53 +51,68 @@ public final class ReleaseIdentificationUtils {
     }
   }
 
-  public static String calculateApkZipFingerprint(File file){
-    Log.v(TAG, "Calculating release id for ${file.path}");
+  public static String calculateApkInternalCodeHash(File file) {
+    Log.v(TAG, String.format("Calculating release id for %s", file.getPath()));
+    Log.v(TAG, String.format("File size: %d", file.length()));
+
     long start = System.currentTimeMillis();
     long entries = 0;
     String zipFingerprint = null;
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       ArrayList<Byte> checksums = new ArrayList<>();
-
       ZipFile zis = new ZipFile(file);
-
       try {
-        while(zis.entries().hasMoreElements()) {
-          ZipEntry zip = zis.entries().nextElement();
+        Enumeration<? extends ZipEntry> zipEntries = zis.entries();
+        while (zipEntries.hasMoreElements()) {
+          ZipEntry zip = zipEntries.nextElement();
           entries += 1;
-          checksums.add(Longs.toByteArray(zip.getCrc()));
+          byte[] crcBytes = longToByteArray(zip.getCrc());
+          for (byte b : crcBytes) {
+            checksums.add(b);
+          }
         }
       } finally {
         zis.close();
       }
-      byte[] checksumByteArray = convertToByteArray(checksums);
+      byte[] checksumByteArray = digest.digest(arrayListToByteArray(checksums));
+      StringBuilder sb = new StringBuilder();
+      for (byte b : checksumByteArray) {
+        sb.append(String.format("%02x", b));
+      }
+      zipFingerprint = sb.toString();
 
-      zipFingerprint = digest.digest
-          digest.digest(checksumByteArray).fold("", { str, it -> str + "%02x".format(it) })
     } catch (IOException | NoSuchAlgorithmException e) {
-      Log.v(TAG, "id calculation failed for ${file.path}");
+      Log.v(TAG, String.format("id calculation failed for %s", file.getPath()));
       return null;
     } finally {
       long elapsed = System.currentTimeMillis() - start;
       if (elapsed > 2 * 1000) {
-        Log.v(TAG, "Long id calculation time $elapsed ms and $entries entries for ${file.path}")
+        Log.v(
+            TAG,
+            String.format(
+                "Long id calculation time %d ms and %d entries for %s",
+                elapsed, entries, file.getPath()));
       }
 
-      Log.v(TAG,"Finished calculating entries in  ms");
-      Log.v(TAG,"${file.path} hashes to $hashValue");
+      Log.v(TAG, String.format("Finished calculating %d entries in %d ms", entries, elapsed));
+      Log.v(TAG, String.format("%s hashes to %s", file.getPath(), zipFingerprint));
     }
 
     return zipFingerprint;
-
   }
 
-  @NonNull
-  private static byte[] convertToByteArray(@NonNull ArrayList list) throws IOException {
-    final ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      ObjectOutputStream oos = new ObjectOutputStream(bos);
-      oos.writeObject(list);
+  private static byte[] longToByteArray(long x) {
+    ByteBuffer buffer = ByteBuffer.allocate(BYTES_IN_LONG);
+    buffer.putLong(x);
+    return buffer.array();
+  }
 
-      return new bos.toByteArray();
+  private static byte[] arrayListToByteArray(ArrayList<Byte> list) {
+    byte[] result = new byte[list.size()];
+    for (int i = 0; i < list.size(); i++) {
+      result[i] = list.get(i);
+    }
+    return result;
   }
 }

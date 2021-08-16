@@ -70,7 +70,8 @@ public class UpdateAppClient {
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
       redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl());
     } else {
-      this.updateApkClient.updateApk(cachedUpdateAppTask, latestRelease.getDownloadUrl());
+      this.updateApkClient.updateApk(
+          cachedUpdateAppTask, latestRelease.getDownloadUrl(), latestRelease.getCodeHash());
     }
     return cachedUpdateAppTask;
   }

@@ -48,6 +48,7 @@ public class UpdateApkClientTest {
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_URL = "https://test-url";
+  private static final String TEST_CODE_HASH = "abcdefghijklmnopqrstuvwxyz";
   private static final long TEST_FILE_LENGTH = 1000;
   private static final int RESULT_OK = -1;
   private static final int RESULT_CANCELED = 0;
@@ -93,7 +94,7 @@ public class UpdateApkClientTest {
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH);
     // wait for error to be caught and set
     Thread.sleep(1000);
 
@@ -108,9 +109,9 @@ public class UpdateApkClientTest {
   @Test
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
@@ -122,9 +123,9 @@ public class UpdateApkClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.addOnProgressListener(progressEvents::add);
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
@@ -144,9 +145,9 @@ public class UpdateApkClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.addOnProgressListener(progressEvents::add);
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
 
-    updateApkClient.updateApk(updateTask, TEST_URL);
+    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
@@ -163,8 +164,8 @@ public class UpdateApkClientTest {
 
   @Test
   public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
-    Task<File> task1 = updateApkClient.downloadApk(TEST_URL);
-    Task<File> task2 = updateApkClient.downloadApk(TEST_URL);
+    Task<File> task1 = updateApkClient.downloadApk(TEST_URL, TEST_CODE_HASH);
+    Task<File> task2 = updateApkClient.downloadApk(TEST_URL, TEST_CODE_HASH);
     assertEquals(task1, task2);
   }
 }
