@@ -68,7 +68,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   static Task<String> determineDebugSecret(
       @NonNull FirebaseApp firebaseApp, @NonNull ExecutorService executor) {
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    executor.submit(
+    executor.execute(
         () -> {
           StorageHelper storageHelper =
               new StorageHelper(
