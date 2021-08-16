@@ -126,7 +126,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                   if (release == null) {
                     return Tasks.forResult(null);
                   }
-
                   return showUpdateAlertDialog(release);
                 });
 
@@ -173,7 +172,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public synchronized UpdateTask updateApp() {
+    return updateApp(false);
+  }
 
+  /**
+   * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
+   * basic configuration and false for advanced configuration.
+   */
+  private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -182,7 +188,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       return updateTask;
     }
 
-    return this.updateAppClient.updateApp(cachedLatestRelease, currentActivity);
+    return this.updateAppClient.updateApp(cachedLatestRelease, showDownloadInNotificationManager);
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -306,7 +312,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
         (dialogInterface, i) ->
-            updateApp()
+            // show download progress in notification manager
+            updateApp(true)
                 .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(null))
                 .addOnFailureListener(updateAlertDialogTask::setException));
 

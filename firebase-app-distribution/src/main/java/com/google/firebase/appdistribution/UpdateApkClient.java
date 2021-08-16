@@ -48,12 +48,15 @@ class UpdateApkClient {
   private final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
+  private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
+
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
   private UpdateTaskImpl cachedUpdateTask;
   private ReleaseIdentifierStorage releaseIdentifierStorage;
+  private boolean showDownloadInNotificationManager = false;
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
@@ -65,13 +68,16 @@ class UpdateApkClient {
     this.firebaseApp = firebaseApp;
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
+    this.appDistributionNotificationsManager =
+        new FirebaseAppDistributionNotificationsManager(firebaseApp);
   }
 
   public void updateApk(
       @NonNull UpdateTaskImpl updateTask,
       @NonNull String downloadUrl,
-      @NonNull String releaseExternalCodeHash) {
-
+      @NonNull String releaseExternalCodeHash,
+      @NonNull boolean showDownloadInNotificationManager) {
+    this.showDownloadInNotificationManager = showDownloadInNotificationManager;
     this.cachedUpdateTask = updateTask;
     downloadApk(downloadUrl, releaseExternalCodeHash)
         .addOnSuccessListener(
@@ -296,13 +302,17 @@ class UpdateApkClient {
     }
   }
 
-  private void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
+  @VisibleForTesting
+  void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
     cachedUpdateTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(totalBytes)
             .setApkBytesDownloaded(downloadedBytes)
             .setUpdateStatus(status)
             .build());
+    if (showDownloadInNotificationManager) {
+      appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
+    }
   }
 
   private void postInstallationFailure(Exception e, long fileLength) {
