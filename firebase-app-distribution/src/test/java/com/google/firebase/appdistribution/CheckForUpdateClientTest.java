@@ -70,7 +70,7 @@ public class CheckForUpdateClientTest {
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.APK)
-              .setCodeHash(TEST_CODEHASH_1)
+          .setCodeHash(TEST_CODEHASH_1)
           .build();
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_CURRENT =
@@ -129,12 +129,12 @@ public class CheckForUpdateClientTest {
     shadowPackageManager.installPackage(packageInfo);
 
     checkForUpdateClient =
-            spy(
-        new CheckForUpdateClient(
-            firebaseApp,
-            mockFirebaseAppDistributionTesterApiClient,
-            mockFirebaseInstallations,
-            testExecutor));
+        spy(
+            new CheckForUpdateClient(
+                firebaseApp,
+                mockFirebaseAppDistributionTesterApiClient,
+                mockFirebaseInstallations,
+                testExecutor));
   }
 
   @Test
