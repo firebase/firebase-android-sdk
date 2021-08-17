@@ -150,7 +150,7 @@ class CheckForUpdateClient {
   @VisibleForTesting
   boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
     if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
-      return latestAndInstalledReleaseSameCodeHash(latestRelease);
+      return hasSameCodeHashAsInstallledRelease(latestRelease);
     }
 
     if (latestRelease.getIasArtifactId() == null) {
@@ -190,8 +190,7 @@ class CheckForUpdateClient {
     return releaseIdentifierStorage.getExternalCodeHash(cachedCodeHashes.get(key));
   }
 
-  private boolean latestAndInstalledReleaseSameCodeHash(
-      AppDistributionReleaseInternal latestRelease) {
+  private boolean hasSameCodeHashAsInstallledRelease(AppDistributionReleaseInternal latestRelease) {
     try {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo =

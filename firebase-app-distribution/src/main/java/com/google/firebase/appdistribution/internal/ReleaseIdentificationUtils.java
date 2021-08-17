@@ -62,8 +62,10 @@ public final class ReleaseIdentificationUtils {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       ArrayList<Byte> checksums = new ArrayList<>();
-      // hash the ZipFile to reuse existing checksum data for an intermediate hash which gets mapped
-      // to the codeHash returned from the release backend
+
+      // Since calculating the codeHash returned from the release backend is computationally
+      // expensive, using existing checksum data from the ZipFile we can quickly calculate
+      // an intermediate hash that then gets mapped to the backend's returned release codehash
       ZipFile zis = new ZipFile(file);
       try {
         Enumeration<? extends ZipEntry> zipEntries = zis.entries();
