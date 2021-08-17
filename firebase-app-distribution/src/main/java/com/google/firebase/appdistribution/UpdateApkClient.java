@@ -56,6 +56,7 @@ class UpdateApkClient {
 
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
+
   private ReleaseIdentifierStorage releaseIdentifierStorage;
 
   @GuardedBy("activityLock")
@@ -73,8 +74,9 @@ class UpdateApkClient {
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
   }
 
-  public synchronized UpdateTaskImpl updateApk(@NonNull AppDistributionReleaseInternal latestRelease, 
-       boolean showDownloadNotificationManager) {
+  public synchronized UpdateTaskImpl updateApk(
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      boolean showDownloadNotificationManager) {
     synchronized (updateTaskLock) {
       if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
         return cachedUpdateTask;
@@ -115,8 +117,9 @@ class UpdateApkClient {
 
   @VisibleForTesting
   @NonNull
-
-  Task<File> downloadApk(@NonNull AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
+  Task<File> downloadApk(
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      boolean showDownloadNotificationManager) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       return downloadTaskCompletionSource.getTask();
@@ -124,13 +127,13 @@ class UpdateApkClient {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-
     makeApkDownloadRequest(latestRelease, showDownloadNotificationManager);
     return downloadTaskCompletionSource.getTask();
   }
 
   private void makeApkDownloadRequest(
-      @NonNull AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
+      @NonNull AppDistributionReleaseInternal latestRelease,
+      boolean showDownloadNotificationManager) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -165,7 +168,11 @@ class UpdateApkClient {
   }
 
   private void downloadToDisk(
-      InputStream input, long totalSize, String fileName, AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
+      InputStream input,
+      long totalSize,
+      String fileName,
+      AppDistributionReleaseInternal latestRelease,
+      boolean showDownloadNotificationManager) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();

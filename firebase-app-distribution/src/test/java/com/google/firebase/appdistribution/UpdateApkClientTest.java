@@ -101,13 +101,13 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
+
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
     // wait for error to be caught and set
     Thread.sleep(1000);
-
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
@@ -128,9 +128,9 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallCancelled_setsError() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, false);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
 
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_URL, false);
+    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(progressEvents::add);
     // sleep to wait for installTaskCompletionSource to be set
@@ -149,9 +149,9 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallFailed_setsError() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, false);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
 
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_URL, false);
+    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(progressEvents::add);
     // sleep to wait for installTaskCompletionSource to be set
