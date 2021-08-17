@@ -52,14 +52,14 @@ public class UserDataWriter {
   private final FirebaseFirestore firestore;
   private final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
 
-  UserDataWriter(
+  public UserDataWriter(
       FirebaseFirestore firestore,
       DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {
     this.firestore = firestore;
     this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
-  Object convertValue(Value value) {
+  public Object convertValue(Value value) {
     switch (typeOrder(value)) {
       case TYPE_ORDER_MAP:
         return convertObject(value.getMapValue().getFieldsMap());

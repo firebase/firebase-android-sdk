@@ -7,3 +7,5 @@ memory consumption during the test run.
 
 The Protobuf definition is at 
 `firebase-firestore/src/proto/google/apphosting/datastore/testing/datastore_test_trace.proto`.
+
+These tests are run as part of `:connectedCheck`.

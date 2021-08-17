@@ -1,0 +1,204 @@
+// Copyright 2021 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package com.google.apphosting.datastore.testing;
+
+import "google/firestore/v1/document.proto";
+import "google/firestore/v1/firestore.proto";
+import "google/protobuf/empty.proto";
+
+// NOTE: This is a slightly modified version of the Datastore testing proto:
+// - All Datastore-only functionality has been removed.
+// - StatusProto is inlined.
+//
+// Do not add fields to this proto definition as these fields may already be used in the original
+// source proto.
+
+option java_package = "com.google.apphosting.datastore.testing";
+option java_outer_classname = "DatastoreTestTrace";
+
+// Wire-format for a Status object
+message StatusProto {
+  // Numeric code drawn from the space specified below. Often, this is the
+  // canonical error space, and code is drawn from google3/util/task/codes.proto
+  int32 code = 1;
+
+  // The following are usually only present when code != 0
+  string space = 2;    // Space to which this status belongs
+  string message = 3;  // Detail message
+
+  // The canonical error code (see codes.proto) that most closely
+  // corresponds to this status. May be missing.
+  int32 canonical_code = 6;
+}
+
+message ValidationRule {
+  // Configure the validator to enforce ordering of query results.
+  bool validate_query_result_order = 1;
+
+  // Configure the validator to ensure a replayed query used the same indexes
+  // as the recorded query.
+  bool validate_query_indexes = 2;
+}
+
+message FirestoreV1Action {
+  // Non-streaming ops in the Firestore service API.
+  // See: firestore/v1/firestore.proto
+  message GetDocument {
+    .google.firestore.v1.GetDocumentRequest request = 1;
+    .google.firestore.v1.Document response = 2;
+  }
+
+  message ListDocuments {
+    .google.firestore.v1.ListDocumentsRequest request = 1;
+    .google.firestore.v1.ListDocumentsResponse response = 2;
+  }
+
+  message CreateDocument {
+    .google.firestore.v1.CreateDocumentRequest request = 1;
+    .google.firestore.v1.Document response = 2;
+  }
+
+  message UpdateDocument {
+    .google.firestore.v1.UpdateDocumentRequest request = 1;
+    .google.firestore.v1.Document response = 2;
+  }
+
+  message DeleteDocument {
+    .google.firestore.v1.DeleteDocumentRequest request = 1;
+    .google.protobuf.Empty response = 2;
+  }
+
+  message BeginTransaction {
+    .google.firestore.v1.BeginTransactionRequest request = 1;
+    .google.firestore.v1.BeginTransactionResponse response = 2;
+  }
+
+  message Commit {
+    .google.firestore.v1.CommitRequest request = 1;
+    .google.firestore.v1.CommitResponse response = 2;
+  }
+
+  message Rollback {
+    .google.firestore.v1.RollbackRequest request = 1;
+    .google.protobuf.Empty response = 2;
+  }
+
+  message ListCollectionIds {
+    .google.firestore.v1.ListCollectionIdsRequest request = 1;
+    .google.firestore.v1.ListCollectionIdsResponse response = 2;
+  }
+
+  // APIs with streaming responses
+  message BatchGetDocuments {
+    .google.firestore.v1.BatchGetDocumentsRequest request = 1;
+    // Message for the streaming response. The contents of the stream
+    // be serialized out into this repeated field.
+    repeated .google.firestore.v1.BatchGetDocumentsResponse response = 2;
+  }
+
+  message RunQuery {
+    .google.firestore.v1.RunQueryRequest request = 1;
+    // Repeated field to hold the full conents of the streaming response.
+    repeated .google.firestore.v1.RunQueryResponse response = 2;
+  }
+
+  message Listen {
+    .google.firestore.v1.ListenRequest request = 1;
+    .google.firestore.v1.ListenResponse response = 2;
+  }
+
+  message RemoveListen {
+    // Hint the test runner to remove a Listen, indexed by target_id.
+    // There's no API for this, but it's part of the SDK.
+    int32 target_id = 1;
+  }
+
+  oneof action {
+    GetDocument get_document = 1;
+    ListDocuments list_documents = 2;
+    CreateDocument create_document = 3;
+    UpdateDocument update_document = 4;
+    DeleteDocument delete_document = 5;
+    BeginTransaction begin_transaction = 6;
+    Commit commit = 7;
+    Rollback rollback = 8;
+    ListCollectionIds list_collection_ids = 9;
+    BatchGetDocuments batch_get_documents = 10;
+    RunQuery run_query = 11;
+    Listen listen = 12;
+    RemoveListen remove_listen = 13;
+  }
+
+  // If the operation failed with a Status other than OK, this field
+  // contains that error.
+  //
+  // Note that streaming operations may fail after having successfully delivered
+  // some responses.
+  //
+  // If there was a Java exception when capturing the trace, those are recorded
+  // here with  status code INTERNAL, and should probably not be used
+  // for verification.
+  StatusProto status = 201;
+
+  // This field stores the results of a "SELECT *" query executed immediately
+  // before the current RUN_QUERY action. This allows us to capture the full
+  // contents of a Database at the time the given test Query is executed.
+  RunQuery database_contents_before_action = 202;
+
+  message MatchingDocuments {
+    // Represents the incremental change in a Listen due to the current action.
+    .google.firestore.v1.ListenResponse listen_response = 1;
+    // Represents the accumulated, materialized view of a Listen, which is the
+    // view given by our SDKs.
+    .google.firestore.v1.RunQueryResponse matching_documents = 2;
+  }
+  // The expected results for any extant Listens, keyed by target_id.
+  repeated MatchingDocuments matching_documents = 203;
+}
+
+message DatastoreAction {
+  oneof action {
+    FirestoreV1Action firestore_v1_action = 3;
+  }
+
+  int32 action_id = 200;
+
+  // Validation hints for the replay+validate framework about how to
+  // validate the result of the Datastore operation encoded in this
+  // DatastoreAction.
+  ValidationRule validation_rule = 201;
+}
+
+message TestTrace {
+  string trace_id = 1;
+
+  repeated DatastoreAction action = 2;
+
+  string trace_description = 3;
+}
+
+// This test trace represents independent test cases (e.g. RunQuery actions)
+// that can be executed in arbitrary order.
+message ParallelTestTrace {
+  TestTrace test_trace = 1;
+}
+
+// This test trace represents an ordered sequence of Firestore
+// client/database interactions.
+message TimelineTestTrace {
+  TestTrace test_trace = 1;
+}
