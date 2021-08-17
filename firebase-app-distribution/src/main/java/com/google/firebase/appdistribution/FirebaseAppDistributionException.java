@@ -89,7 +89,7 @@ public class FirebaseAppDistributionException extends FirebaseException {
   }
 
   /** Get cached release when error was thrown */
-  @NonNull
+  @Nullable
   public AppDistributionRelease getRelease() {
     return release;
   }
