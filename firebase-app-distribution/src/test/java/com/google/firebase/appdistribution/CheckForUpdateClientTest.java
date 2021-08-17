@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,6 +40,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;
@@ -47,6 +49,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -121,6 +124,7 @@ public class CheckForUpdateClientTest {
             .build();
     applicationInfo.metaData = new Bundle();
     applicationInfo.metaData.putString(IAS_ARTIFACT_ID_KEY, TEST_IAS_ARTIFACT_ID);
+    applicationInfo.sourceDir = "sourcedir/";
     PackageInfo packageInfo =
         PackageInfoBuilder.newBuilder()
             .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
@@ -310,5 +314,25 @@ public class CheckForUpdateClientTest {
   public void isInstalledRelease_whenCodeHashesNotEqual_returnsFalse() {
     doReturn(TEST_CODEHASH_2).when(checkForUpdateClient).extractApkCodeHash(any());
     assertFalse(checkForUpdateClient.isInstalledRelease(TEST_RELEASE_NEWER_APK));
+  }
+
+  @Test
+  public void extractApkCodeHash_ifKeyInCachedCodeHashes_doesNotRecalculateZipHash() {
+
+    try (MockedStatic mockedReleaseIdentificationUtils =
+        mockStatic(ReleaseIdentificationUtils.class)) {
+      PackageInfo packageInfo =
+          shadowPackageManager.getInternalMutablePackageInfo(
+              ApplicationProvider.getApplicationContext().getPackageName());
+      mockedReleaseIdentificationUtils
+          .when(() -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()))
+          .thenReturn(TEST_CODEHASH_1);
+
+      checkForUpdateClient.extractApkCodeHash(packageInfo);
+      checkForUpdateClient.extractApkCodeHash(packageInfo);
+      // check that calculateApkInternalCodeHash is only called once
+      mockedReleaseIdentificationUtils.verify(
+          () -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()));
+    }
   }
 }

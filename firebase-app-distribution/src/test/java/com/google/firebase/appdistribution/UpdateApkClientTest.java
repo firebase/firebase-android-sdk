@@ -30,6 +30,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +59,16 @@ public class UpdateApkClientTest {
   private static final int RESULT_OK = -1;
   private static final int RESULT_CANCELED = 0;
   private static final int RESULT_FAILED = 1;
+
+  private static final AppDistributionReleaseInternal TEST_RELEASE =
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.APK)
+          .setDownloadUrl(TEST_URL)
+          .setCodeHash(TEST_CODE_HASH)
+          .build();
 
   private UpdateApkClient updateApkClient;
   private TestActivity activity;
@@ -101,7 +112,7 @@ public class UpdateApkClientTest {
     doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH, false);
+    updateApkClient.updateApk(updateTask, TEST_RELEASE, false);
     // wait for error to be caught and set
     Thread.sleep(1000);
 
@@ -116,9 +127,9 @@ public class UpdateApkClientTest {
   @Test
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH, false);
+    updateApkClient.updateApk(updateTask, TEST_RELEASE, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_OK);
@@ -130,9 +141,9 @@ public class UpdateApkClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.addOnProgressListener(progressEvents::add);
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH, false);
+    updateApkClient.updateApk(updateTask, TEST_RELEASE, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_CANCELED);
@@ -152,9 +163,9 @@ public class UpdateApkClientTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.addOnProgressListener(progressEvents::add);
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_URL, TEST_CODE_HASH);
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE);
 
-    updateApkClient.updateApk(updateTask, TEST_URL, TEST_CODE_HASH, false);
+    updateApkClient.updateApk(updateTask, TEST_RELEASE, false);
     // sleep to wait for installTaskCompletionSource to be set
     Thread.sleep(1000);
     updateApkClient.setInstallationResult(RESULT_FAILED);
@@ -171,8 +182,8 @@ public class UpdateApkClientTest {
 
   @Test
   public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
-    Task<File> task1 = updateApkClient.downloadApk(TEST_URL, TEST_CODE_HASH);
-    Task<File> task2 = updateApkClient.downloadApk(TEST_URL, TEST_CODE_HASH);
+    Task<File> task1 = updateApkClient.downloadApk(TEST_RELEASE);
+    Task<File> task2 = updateApkClient.downloadApk(TEST_RELEASE);
     assertEquals(task1, task2);
   }
 
@@ -183,7 +194,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, true);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_RELEASE, true);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -200,7 +211,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, true);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_RELEASE, true);
     updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
 
     assertEquals(1, shadowNotificationManager.size());
@@ -218,7 +229,7 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from advanced configuration
-    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_URL, TEST_CODE_HASH, false);
+    updateApkClient.updateApk(new UpdateTaskImpl(), TEST_RELEASE, false);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING);
     assertEquals(0, shadowNotificationManager.size());
   }

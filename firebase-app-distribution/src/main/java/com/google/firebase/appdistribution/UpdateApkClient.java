@@ -32,6 +32,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -74,12 +75,11 @@ class UpdateApkClient {
 
   public void updateApk(
       @NonNull UpdateTaskImpl updateTask,
-      @NonNull String downloadUrl,
-      @NonNull String releaseExternalCodeHash,
+      @NonNull AppDistributionReleaseInternal latestRelease,
       @NonNull boolean showDownloadInNotificationManager) {
     this.showDownloadInNotificationManager = showDownloadInNotificationManager;
     this.cachedUpdateTask = updateTask;
-    downloadApk(downloadUrl, releaseExternalCodeHash)
+    downloadApk(latestRelease)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
@@ -106,7 +106,7 @@ class UpdateApkClient {
 
   @VisibleForTesting
   @NonNull
-  Task<File> downloadApk(@NonNull String downloadUrl, @NonNull String releaseExternalCodeHash) {
+  Task<File> downloadApk(@NonNull AppDistributionReleaseInternal latestRelease) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       return downloadTaskCompletionSource.getTask();
@@ -114,16 +114,15 @@ class UpdateApkClient {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    makeApkDownloadRequest(downloadUrl, releaseExternalCodeHash);
+    makeApkDownloadRequest(latestRelease);
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(
-      @NonNull String downloadUrl, @NonNull String releaseExternalCodeHash) {
+  private void makeApkDownloadRequest(@NonNull AppDistributionReleaseInternal latestRelease) {
     downloadExecutor.execute(
         () -> {
           try {
-            HttpsURLConnection connection = openHttpsUrlConnection(downloadUrl);
+            HttpsURLConnection connection = openHttpsUrlConnection(latestRelease.getDownloadUrl());
             connection.setRequestMethod(REQUEST_METHOD);
             if (connection.getInputStream() == null) {
               setDownloadTaskCompletionError(
@@ -134,8 +133,7 @@ class UpdateApkClient {
               long responseLength = connection.getContentLength();
               postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(
-                  connection.getInputStream(), responseLength, fileName, releaseExternalCodeHash);
+              downloadToDisk(connection.getInputStream(), responseLength, fileName, latestRelease);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
             setDownloadTaskCompletionErrorWithDefault(
@@ -148,7 +146,10 @@ class UpdateApkClient {
   }
 
   private void downloadToDisk(
-      InputStream input, long totalSize, String fileName, String releaseExternalCodeHash) {
+      InputStream input,
+      long totalSize,
+      String fileName,
+      AppDistributionReleaseInternal latestRelease) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
@@ -198,7 +199,7 @@ class UpdateApkClient {
     String internalCodeHash = calculateApkInternalCodeHash(downloadedFile);
 
     if (internalCodeHash != null) {
-      releaseIdentifierStorage.setCodeHashMap(internalCodeHash, releaseExternalCodeHash);
+      releaseIdentifierStorage.setCodeHashMap(internalCodeHash, latestRelease);
     }
 
     // completion

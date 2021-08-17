@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
 public class ReleaseIdentifierStorage {
 
@@ -30,10 +31,10 @@ public class ReleaseIdentifierStorage {
             RELEASE_IDENTIFIER_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 
-  void setCodeHashMap(String internalCodeHash, String externalCodeHash) {
+  void setCodeHashMap(String internalCodeHash, AppDistributionReleaseInternal latestRelease) {
     this.releaseIdentifierSharedPreferences
         .edit()
-        .putString(internalCodeHash, externalCodeHash)
+        .putString(internalCodeHash, latestRelease.getCodeHash())
         .apply();
   }
 
