@@ -25,7 +25,6 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
@@ -45,8 +44,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Client class that handles updateApp functionality for APKs in {@link UpdateAppClient}. */
 class UpdateApkClient {
-
-  private final int UPDATE_INTERVAL_MS = 250;
+  private static final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "FADUpdateAppClient";
   private static final String REQUEST_METHOD = "GET";
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
@@ -55,14 +53,16 @@ class UpdateApkClient {
   private final Executor downloadExecutor;
   private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
+
+  @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
   private ReleaseIdentifierStorage releaseIdentifierStorage;
-  private boolean showDownloadInNotificationManager = false;
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
 
   private final Object activityLock = new Object();
+  private final Object updateTaskLock = new Object();
 
   public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
     this.downloadExecutor = Executors.newSingleThreadExecutor();
@@ -73,20 +73,25 @@ class UpdateApkClient {
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
   }
 
-  public void updateApk(
-      @NonNull UpdateTaskImpl updateTask,
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      @NonNull boolean showDownloadInNotificationManager) {
-    this.showDownloadInNotificationManager = showDownloadInNotificationManager;
-    this.cachedUpdateTask = updateTask;
-    downloadApk(latestRelease)
+  public synchronized UpdateTaskImpl updateApk(@NonNull AppDistributionReleaseInternal latestRelease, 
+       boolean showDownloadNotificationManager) {
+    synchronized (updateTaskLock) {
+      if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
+        return cachedUpdateTask;
+      }
+
+      cachedUpdateTask = new UpdateTaskImpl();
+    }
+
+    downloadApk(latestRelease, showDownloadNotificationManager)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
                 install(file.getPath())
                     .addOnFailureListener(
                         e -> {
-                          postInstallationFailure(e, file.length());
+                          postInstallationFailure(
+                              e, file.length(), showDownloadNotificationManager);
                           setTaskCompletionErrorWithDefault(
                               e,
                               new FirebaseAppDistributionException(
@@ -102,11 +107,16 @@ class UpdateApkClient {
                       Constants.ErrorMessages.NETWORK_ERROR,
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             });
+
+    synchronized (updateTaskLock) {
+      return cachedUpdateTask;
+    }
   }
 
   @VisibleForTesting
   @NonNull
-  Task<File> downloadApk(@NonNull AppDistributionReleaseInternal latestRelease) {
+
+  Task<File> downloadApk(@NonNull AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       return downloadTaskCompletionSource.getTask();
@@ -114,11 +124,13 @@ class UpdateApkClient {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    makeApkDownloadRequest(latestRelease);
+
+    makeApkDownloadRequest(latestRelease, showDownloadNotificationManager);
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(@NonNull AppDistributionReleaseInternal latestRelease) {
+  private void makeApkDownloadRequest(
+      @NonNull AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
     downloadExecutor.execute(
         () -> {
           try {
@@ -131,9 +143,16 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             } else {
               long responseLength = connection.getContentLength();
-              postUpdateProgress(responseLength, 0, UpdateStatus.PENDING);
+              postUpdateProgress(
+                  responseLength, 0, UpdateStatus.PENDING, showDownloadNotificationManager);
               String fileName = getApplicationName() + ".apk";
-              downloadToDisk(connection.getInputStream(), responseLength, fileName, latestRelease);
+
+              downloadToDisk(
+                  connection.getInputStream(),
+                  responseLength,
+                  fileName,
+                  latestRelease,
+                  showDownloadNotificationManager);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
             setDownloadTaskCompletionErrorWithDefault(
@@ -146,10 +165,7 @@ class UpdateApkClient {
   }
 
   private void downloadToDisk(
-      InputStream input,
-      long totalSize,
-      String fileName,
-      AppDistributionReleaseInternal latestRelease) {
+      InputStream input, long totalSize, String fileName, AppDistributionReleaseInternal latestRelease, boolean showDownloadNotificationManager) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();
@@ -171,12 +187,20 @@ class UpdateApkClient {
         long currentTimeMs = System.currentTimeMillis();
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
-          postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOADING);
+          postUpdateProgress(
+              totalSize,
+              bytesDownloaded,
+              UpdateStatus.DOWNLOADING,
+              showDownloadNotificationManager);
         }
       }
 
     } catch (IOException e) {
-      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
+      postUpdateProgress(
+          totalSize,
+          bytesDownloaded,
+          UpdateStatus.DOWNLOAD_FAILED,
+          showDownloadNotificationManager);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
@@ -187,7 +211,11 @@ class UpdateApkClient {
       // check that file is actual JAR
       new JarFile(apkFile);
     } catch (Exception e) {
-      postUpdateProgress(totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED);
+      postUpdateProgress(
+          totalSize,
+          bytesDownloaded,
+          UpdateStatus.DOWNLOAD_FAILED,
+          showDownloadNotificationManager);
       setDownloadTaskCompletionError(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
@@ -203,7 +231,8 @@ class UpdateApkClient {
     }
 
     // completion
-    postUpdateProgress(totalSize, totalSize, UpdateStatus.DOWNLOADED);
+    postUpdateProgress(
+        totalSize, totalSize, UpdateStatus.DOWNLOADED, showDownloadNotificationManager);
 
     downloadTaskCompletionSource.setResult(apkFile);
   }
@@ -274,7 +303,10 @@ class UpdateApkClient {
   void setInstallationResult(int resultCode) {
     if (resultCode == Activity.RESULT_OK) {
       installTaskCompletionSource.setResult(null);
-      cachedUpdateTask.setResult();
+
+      synchronized (updateTaskLock) {
+        cachedUpdateTask.setResult();
+      }
     } else if (resultCode == Activity.RESULT_CANCELED) {
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
@@ -289,8 +321,10 @@ class UpdateApkClient {
   }
 
   private void setTaskCompletionError(FirebaseAppDistributionException e) {
-    if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
-      cachedUpdateTask.setException(e);
+    synchronized (updateTaskLock) {
+      if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
+        cachedUpdateTask.setException(e);
+      }
     }
   }
 
@@ -304,24 +338,33 @@ class UpdateApkClient {
   }
 
   @VisibleForTesting
-  void postUpdateProgress(long totalBytes, long downloadedBytes, UpdateStatus status) {
-    cachedUpdateTask.updateProgress(
-        UpdateProgress.builder()
-            .setApkFileTotalBytes(totalBytes)
-            .setApkBytesDownloaded(downloadedBytes)
-            .setUpdateStatus(status)
-            .build());
-    if (showDownloadInNotificationManager) {
+  void postUpdateProgress(
+      long totalBytes,
+      long downloadedBytes,
+      UpdateStatus status,
+      boolean showDownloadNotificationManager) {
+    synchronized (updateTaskLock) {
+      cachedUpdateTask.updateProgress(
+          UpdateProgress.builder()
+              .setApkFileTotalBytes(totalBytes)
+              .setApkBytesDownloaded(downloadedBytes)
+              .setUpdateStatus(status)
+              .build());
+    }
+    if (showDownloadNotificationManager) {
       appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
     }
   }
 
-  private void postInstallationFailure(Exception e, long fileLength) {
+  private void postInstallationFailure(
+      Exception e, long fileLength, boolean showDownloadNotificationManager) {
     if (e instanceof FirebaseAppDistributionException
         && ((FirebaseAppDistributionException) e).getErrorCode() == Status.INSTALLATION_CANCELED) {
-      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_CANCELED);
+      postUpdateProgress(
+          fileLength, fileLength, UpdateStatus.INSTALL_CANCELED, showDownloadNotificationManager);
     } else {
-      postUpdateProgress(fileLength, fileLength, UpdateStatus.INSTALL_FAILED);
+      postUpdateProgress(
+          fileLength, fileLength, UpdateStatus.INSTALL_FAILED, showDownloadNotificationManager);
     }
   }
 
@@ -336,10 +379,5 @@ class UpdateApkClient {
     synchronized (activityLock) {
       this.currentActivity = activity;
     }
-  }
-
-  @RestrictTo(RestrictTo.Scope.TESTS)
-  void setCachedUpdateTask(UpdateTaskImpl updateTask) {
-    this.cachedUpdateTask = updateTask;
   }
 }
