@@ -103,7 +103,9 @@ class UpdateApkClient {
                       FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
             });
 
-    return cachedUpdateTask;
+    synchronized (updateTaskLock) {
+      return cachedUpdateTask;
+    }
   }
 
   @VisibleForTesting
