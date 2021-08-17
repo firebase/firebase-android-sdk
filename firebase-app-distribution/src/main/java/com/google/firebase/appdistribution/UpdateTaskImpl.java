@@ -44,7 +44,7 @@ class UpdateTaskImpl extends UpdateTask {
   private final TaskCompletionSource<Void> taskCompletionSource;
 
   UpdateTaskImpl() {
-    this.taskCompletionSource = new TaskCompletionSource<Void>();
+    this.taskCompletionSource = new TaskCompletionSource<>();
     this.task = taskCompletionSource.getTask();
   }
 
