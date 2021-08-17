@@ -390,4 +390,11 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.signOutTester();
     verify(mockSignInStorage).setSignInStatus(false);
   }
+
+  @Test
+  public void updateApp_appResume_tryResetAabUpdateTask() {
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    verify(mockUpdateAppClient, times(1)).tryCancelAabUpdateTask();
+  }
 }

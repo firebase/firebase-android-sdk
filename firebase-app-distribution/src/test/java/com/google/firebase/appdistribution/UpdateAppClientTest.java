@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -33,7 +34,6 @@ import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -41,7 +41,6 @@ import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
 public class UpdateAppClientTest {
-
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
@@ -64,10 +63,7 @@ public class UpdateAppClientTest {
           .setDownloadUrl("https://test-url");
 
   private UpdateAppClient updateAppClient;
-  private com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity activity;
   private ShadowActivity shadowActivity;
-
-  @Mock private OnProgressListener onProgressListener;
 
   static class TestActivity extends Activity {}
 
@@ -87,11 +83,8 @@ public class UpdateAppClientTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    activity =
-        Robolectric.buildActivity(
-                com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity.class)
-            .create()
-            .get();
+    FirebaseAppDistributionTest.TestActivity activity =
+        Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
     this.updateAppClient = new UpdateAppClient(firebaseApp);
@@ -99,15 +92,12 @@ public class UpdateAppClientTest {
   }
 
   @Test
-  public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
+  public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
-    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     updateTask.addOnProgressListener(progressEvents::add);
-    onCompleteListener.await();
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(latestRelease.getDownloadUrl()));
@@ -123,7 +113,21 @@ public class UpdateAppClientTest {
   }
 
   @Test
-  public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() throws Exception {
+  public void updateAppTask_onAppResume_setsUpdateCancelled() {
+    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    updateAppClient.tryCancelAabUpdateTask();
+    FirebaseAppDistributionException exception =
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+    assertEquals(
+        ReleaseUtils.convertToAppDistributionRelease(latestRelease), exception.getRelease());
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() {
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
     UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, false);
     UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, false);
@@ -131,7 +135,7 @@ public class UpdateAppClientTest {
   }
 
   @Test
-  public void updateAppTask_whenNoReleaseAvailable_throwsError() throws Exception {
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() {
     UpdateTask updateTask = updateAppClient.updateApp(null, false);
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
