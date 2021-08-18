@@ -14,6 +14,8 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkInternalCodeHash;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -27,6 +29,10 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.io.File;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -36,6 +42,8 @@ class CheckForUpdateClient {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private static final ConcurrentMap<String, String> cachedCodeHashes = new ConcurrentHashMap<>();
+  private final ReleaseIdentifierStorage releaseIdentifierStorage;
 
   Task<AppDistributionReleaseInternal> cachedCheckForUpdate = null;
   private final Executor checkForUpdateExecutor;
@@ -49,6 +57,8 @@ class CheckForUpdateClient {
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     // TODO: verify if this is best way to use executorservice here
     this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
+    this.releaseIdentifierStorage =
+        new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
   CheckForUpdateClient(
@@ -61,6 +71,8 @@ class CheckForUpdateClient {
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     // TODO: verify if this is best way to use executorservice here
     this.checkForUpdateExecutor = executor;
+    this.releaseIdentifierStorage =
+        new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
   @NonNull
@@ -135,11 +147,10 @@ class CheckForUpdateClient {
         > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
-  private boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
+  @VisibleForTesting
+  boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
     if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
-      // TODO(rachelprince): APK codehash verification. For now assume
-      // the release is identical unless the build version is different
-      return true;
+      return hasSameCodeHashAsInstallledRelease(latestRelease);
     }
 
     if (latestRelease.getIasArtifactId() == null) {
@@ -164,5 +175,40 @@ class CheckForUpdateClient {
           e);
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
+  }
+
+  @VisibleForTesting
+  String extractApkCodeHash(PackageInfo packageInfo) {
+    File sourceFile = new File(packageInfo.applicationInfo.sourceDir);
+
+    String key =
+        String.format(
+            Locale.ENGLISH, "%s.%d", sourceFile.getAbsolutePath(), sourceFile.lastModified());
+    if (!cachedCodeHashes.containsKey(key)) {
+      cachedCodeHashes.put(key, calculateApkInternalCodeHash(sourceFile));
+    }
+    return releaseIdentifierStorage.getExternalCodeHash(cachedCodeHashes.get(key));
+  }
+
+  private boolean hasSameCodeHashAsInstallledRelease(AppDistributionReleaseInternal latestRelease) {
+    try {
+      Context context = firebaseApp.getApplicationContext();
+      PackageInfo metadataPackageInfo =
+          context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+      String externalCodeHash = extractApkCodeHash(metadataPackageInfo);
+      // Will trigger during the first install of the app since no zipHash to externalCodeHash
+      // mapping will have been set in ReleaseIdentifierStorage yet
+      if (externalCodeHash == null) {
+        return false;
+      }
+
+      // If the codeHash for the retrieved latestRelease is equal to the stored codeHash
+      // of the installed release, then they are the same release.
+      return externalCodeHash.equals(latestRelease.getCodeHash());
+    } catch (PackageManager.NameNotFoundException e) {
+      return false;
+    }
   }
 }

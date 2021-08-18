@@ -77,8 +77,7 @@ public class UpdateAppClient {
         return cachedAabUpdateTask;
       }
     } else {
-      return this.updateApkClient.updateApk(
-          latestRelease.getDownloadUrl(), showDownloadInNotificationManager);
+      return this.updateApkClient.updateApk(latestRelease, showDownloadInNotificationManager);
     }
   }
 
