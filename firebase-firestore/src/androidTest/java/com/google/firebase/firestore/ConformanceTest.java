@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.TestUtil.decodeValue;
+import static org.junit.Assert.fail;
 
 import android.content.res.AssetManager;
 import com.google.android.gms.tasks.Tasks;
@@ -62,6 +63,16 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class ConformanceTest {
   private static final FirebaseFirestore firestore = testFirestore();
+  private static TestCaseIgnoreList testCaseIgnoreList;
+
+  static {
+    try {
+      AssetManager assetManager = getInstrumentation().getTargetContext().getAssets();
+      testCaseIgnoreList = new TestCaseIgnoreList(assetManager.open("conformance/ignorelist.txt"));
+    } catch (IOException e) {
+      fail("Failed to load ignorelist: " + e);
+    }
+  }
 
   @Parameterized.Parameters(name = "{0}")
   public static Iterable<String> data() throws IOException {
@@ -87,9 +98,6 @@ public class ConformanceTest {
   private List<TestCase> loadTestCases(String testFileNames) throws IOException {
     AssetManager assetManager = getInstrumentation().getTargetContext().getAssets();
     TestCaseConverter testCaseConverter = new TestCaseConverter();
-    TestCaseIgnoreList testCaseIgnoreList =
-        new TestCaseIgnoreList(assetManager.open("conformance/ignorelist.txt"));
-
     try (InputStream inputStream = assetManager.open("conformance/" + testFileNames)) {
       TestTrace testTrace = TestTrace.parseFrom(inputStream);
       return testCaseConverter.convertTestCases(testTrace).stream()
