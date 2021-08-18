@@ -39,7 +39,6 @@ import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -64,43 +63,39 @@ import org.junit.runners.Parameterized;
 public class ConformanceTest {
   private static final FirebaseFirestore firestore = testFirestore();
 
+  @Parameterized.Parameters(name = "{0}")
+  public static Iterable<String> data() throws IOException {
+    // Enumerate the Protobuf files containing the spec tests.
+    AssetManager assetManager = getInstrumentation().getTargetContext().getAssets();
+    String[] files = assetManager.list("conformance");
+    return Arrays.stream(files)
+        .sorted()
+        .filter(f -> f.endsWith(".pb"))
+        .collect(Collectors.toList());
+  }
+
+  private final List<TestCase> testCases;
+
+  public ConformanceTest(String testFileNames) throws IOException {
+    testCases = loadTestCases(testFileNames);
+  }
+
   /**
    * Loads all backend tests and parses them into {@link TestCase} models. Test cases that are not
    * supported on mobile are filtered.
    */
-  @Parameterized.Parameters(name = "{0}")
-  public static Iterable<TestCase> data() throws IOException {
-    // Enumerate the Protobuf files containing the spec tests.
+  private List<TestCase> loadTestCases(String testFileNames) throws IOException {
     AssetManager assetManager = getInstrumentation().getTargetContext().getAssets();
-    String[] files = assetManager.list("conformance");
-    Arrays.sort(files);
-
     TestCaseConverter testCaseConverter = new TestCaseConverter();
     TestCaseIgnoreList testCaseIgnoreList =
         new TestCaseIgnoreList(assetManager.open("conformance/ignorelist.txt"));
-    List<TestCase> testCases = new ArrayList<>();
 
-    for (String fileName : files) {
-      if (!fileName.endsWith(".pb")) {
-        continue;
-      }
-
-      try (InputStream inputStream = assetManager.open("conformance/" + fileName)) {
-        TestTrace testTrace = TestTrace.parseFrom(inputStream);
-        testCases.addAll(
-            testCaseConverter.convertTestCases(testTrace).stream()
-                .filter(testCaseIgnoreList)
-                .collect(Collectors.toList()));
-      }
+    try (InputStream inputStream = assetManager.open("conformance/" + testFileNames)) {
+      TestTrace testTrace = TestTrace.parseFrom(inputStream);
+      return testCaseConverter.convertTestCases(testTrace).stream()
+          .filter(testCaseIgnoreList)
+          .collect(Collectors.toList());
     }
-
-    return testCases;
-  }
-
-  private final TestCase testCase;
-
-  public ConformanceTest(TestCase testCase) {
-    this.testCase = testCase;
   }
 
   @BeforeClass
@@ -118,11 +113,13 @@ public class ConformanceTest {
 
   @Test
   public void run() throws Exception {
-    ConformanceRuntime runtime = new ConformanceRuntime(firestore, Source.CACHE);
-    executeTestCase(runtime);
+    for (TestCase testCase : testCases) {
+      ConformanceRuntime runtime = new ConformanceRuntime(firestore, Source.CACHE);
+      executeTestCases(testCase, runtime);
+    }
   }
 
-  private void executeTestCase(ConformanceRuntime runtime) throws Exception {
+  private void executeTestCases(TestCase testCase, ConformanceRuntime runtime) throws Exception {
     // Note: This method is copied from Google3 and modified to match the Android API.
 
     TestCollection testCollection;

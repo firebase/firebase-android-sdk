@@ -548,6 +548,7 @@
     runQuery_orderBy_redundantOrder_0
     runQuery_prefixScannerStatsLimits_withLargeInitialLimit_7
     runQuery_readTime_*
+    runQuery_largeBatch_*
     runQuery_startAtEndAt_31
     runQuery_startAtEndAt_33
     runQuery_truncation_1

@@ -66,11 +66,8 @@ public class TestCaseConverter {
   }
 
   public List<TestCase> convertTestCases(DatastoreTestTrace.TestTrace trace) {
-    System.out.printf("\n\nParsing %s\n", trace.getTraceId());
-
     List<TestCase> testCases = new ArrayList<>();
 
-    int testId = 1;
     for (DatastoreTestTrace.DatastoreAction action : trace.getActionList()) {
       if (actionFilter.test(action)) {
         TestCase.Builder builder = TestCase.Builder.builder();
@@ -110,9 +107,8 @@ public class TestCaseConverter {
         builder.setName(String.format("%s_%d", trace.getTraceId(), action.getActionId()));
         testCases.add(builder.build());
       }
-
-      ++testId;
     }
+
     return testCases;
   }
 
