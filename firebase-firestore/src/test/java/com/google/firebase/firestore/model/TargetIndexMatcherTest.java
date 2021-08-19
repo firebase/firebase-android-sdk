@@ -21,7 +21,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
 import java.util.Arrays;
@@ -35,7 +36,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class FieldIndexMatcherTest {
+public class TargetIndexMatcherTest {
   List<Query> queriesWithEqualities =
       Arrays.asList(
           query("collId").filter(filter("a", "==", "a")),
@@ -173,23 +174,23 @@ public class FieldIndexMatcherTest {
   @Test
   public void validatesCollection() {
     {
-      FieldIndexMatcher fieldIndexMatcher = new FieldIndexMatcher(query("collId").toTarget());
+      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
-      assertDoesNotThrow(() -> fieldIndexMatcher.getMatchingPrefix(fieldIndex));
+      assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
-      FieldIndexMatcher fieldIndexMatcher =
-          new FieldIndexMatcher(new Query(path(""), "collId").toTarget());
+      TargetIndexMatcher targetIndexMatcher =
+          new TargetIndexMatcher(new Query(path(""), "collId").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
-      assertDoesNotThrow(() -> fieldIndexMatcher.getMatchingPrefix(fieldIndex));
+      assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
-      FieldIndexMatcher fieldIndexMatcher = new FieldIndexMatcher(query("collId2").toTarget());
+      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId2").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
       expectError(
-          () -> fieldIndexMatcher.getMatchingPrefix(fieldIndex),
+          () -> targetIndexMatcher.servedByIndex(fieldIndex),
           "INTERNAL ASSERTION FAILED: Collection IDs do not match");
     }
   }
@@ -266,11 +267,7 @@ public class FieldIndexMatcherTest {
     Query queriesMultipleFilters =
         query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
 
-    validatePartiallyServesTarget(
-        queriesMultipleFilters,
-        /* expectedSegmentCount= */ 1,
-        "b",
-        FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(queriesMultipleFilters, "b", FieldIndex.Segment.Kind.ORDERED);
     validateDoesNotServeTarget(
         queriesMultipleFilters,
         "c",
@@ -443,26 +440,15 @@ public class FieldIndexMatcherTest {
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
-    FieldIndexMatcher fieldIndexMatcher = new FieldIndexMatcher(query.toTarget());
-    FieldIndex actualIndex = fieldIndexMatcher.getMatchingPrefix(expectedIndex);
-    assertEquals(expectedIndex, actualIndex);
-  }
-
-  private void validatePartiallyServesTarget(
-      Query query,
-      int expectedSegmentCount,
-      String field,
-      FieldIndex.Segment.Kind kind,
-      Object... fieldsAndKind) {
-    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
-    FieldIndexMatcher fieldIndexMatcher = new FieldIndexMatcher(query.toTarget());
-    FieldIndex actualIndex = fieldIndexMatcher.getMatchingPrefix(expectedIndex);
-    assertEquals(expectedSegmentCount, actualIndex.segmentCount());
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
   private void validateDoesNotServeTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
-    validatePartiallyServesTarget(query, 0, field, kind, fieldsAndKind);
+    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
   private FieldIndex buildFieldIndex(

@@ -31,13 +31,12 @@ import java.util.Set;
  * A light query planner for Firestore.
  *
  * <p>This class matches a {@link FieldIndex} against a Firestore Query {@link Target}. It
- * determines whether any part of the index can be used against the target and supports partial
- * index application for all query types. Unlike the backend, the SDK does not reject a query if it
- * is only partially indexed, and can use any existing index definitions to prefilter a result set.
+ * determines whether a given index can be used to serve the specified target.
  *
- * <p>The SDK only maintains two different index kinds and does not distinguish between ascending
- * and descending indices. Instead of ordering query results by their index order, the SDK re-orders
- * all query results locally, which reduces the number of indices it needs to maintain.
+ * <p>Unlike the backend, the SDK only maintains two different index kinds and does not distinguish
+ * between ascending and descending indices. Instead of ordering query results by their index order,
+ * the SDK re-orders all query results locally, which reduces the number of indices it needs to
+ * maintain.
  *
  * <p>The following table showcases some possible index configurations:
  *
@@ -80,7 +79,7 @@ import java.util.Set;
  *     </tbody>
  * </table>
  */
-public class FieldIndexMatcher {
+public class TargetIndexMatcher {
   // The collection ID of the query target.
   private final String collectionId;
 
@@ -90,7 +89,7 @@ public class FieldIndexMatcher {
   // The list of orderBy fields in the query target.
   private final Set<FieldPath> orderByFields = new HashSet<>();
 
-  public FieldIndexMatcher(Target target) {
+  public TargetIndexMatcher(Target target) {
     collectionId =
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
@@ -112,22 +111,18 @@ public class FieldIndexMatcher {
   }
 
   /**
-   * Returns the part of the provided `index` that can be used to prefilter results for the current
-   * Query target. The returned index matches `index` if the full index definition should be used,
-   * but it could also be a prefix of the provided index.
+   * Returns whether the index can be used to serve the TargetIndexMatcher's target.
    *
    * @throws AssertionError if the index is for a different collection
    */
-  public FieldIndex getMatchingPrefix(FieldIndex index) {
+  public boolean servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionId().equals(collectionId), "Collection IDs do not match");
-
-    int i = 0;
-    for (; i < index.segmentCount(); ++i) {
+    for (int i = 0; i < index.segmentCount(); ++i) {
       if (!canUseSegment(index.getSegment(i))) {
-        break;
+        return false;
       }
     }
-    return index.prefix(i);
+    return true;
   }
 
   private boolean canUseSegment(FieldIndex.Segment segment) {
