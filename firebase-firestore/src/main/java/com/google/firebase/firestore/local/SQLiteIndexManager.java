@@ -26,8 +26,8 @@ import com.google.firebase.firestore.index.IndexByteEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
-import com.google.firebase.firestore.model.QueryPlanner;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
 import com.google.firestore.admin.v1.Index;
@@ -149,7 +149,7 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   @Nullable
   public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {
-    QueryPlanner queryPlanner = new QueryPlanner(query.toTarget());
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
     ResourcePath parentPath = query.getPath();
     String collectionId =
         query.isCollectionGroupQuery() ? query.getCollectionGroup() : parentPath.getLastSegment();
@@ -160,22 +160,19 @@ final class SQLiteIndexManager implements IndexManager {
             "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionId)
         .forEach(
-            new Consumer<Cursor>() {
-              @Override
-              public void accept(Cursor value) {
-                try {
-                  FieldIndex fieldIndex =
-                      serializer.decodeFieldIndex(collectionId, Index.parseFrom(value.getBlob(1)));
-                  FieldIndex matchingPrefix = queryPlanner.getMatchingPrefix(fieldIndex);
-                  if (matchingPrefix.segmentCount() > bestIndex[0].segmentCount()) {
-                    bestIndex[0] = matchingPrefix;
-                    bestIndexId[0] = value.getInt(0);
+                value -> {
+                  try {
+                    FieldIndex fieldIndex =
+                        serializer.decodeFieldIndex(collectionId, Index.parseFrom(value.getBlob(1)));
+                    boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
+                    if (matches && fieldIndex.segmentCount() > bestIndex[0].segmentCount()) {
+                      bestIndex[0] = fieldIndex;
+                      bestIndexId[0] = value.getInt(0);
+                    }
+                  } catch (InvalidProtocolBufferException e) {
+                    throw fail("Failed to decode index: " + e);
                   }
-                } catch (InvalidProtocolBufferException e) {
-                  throw fail("Failed to decode index: " + e);
-                }
-              }
-            });
+                });
 
     // best index found
     List<Value> lowerBound = query.getLowerBound();

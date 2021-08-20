@@ -81,7 +81,7 @@ import java.util.Set;
  */
 public class TargetIndexMatcher {
   // The collection ID of the query target.
-  private final String collectionId;
+  private final String collectionGroup;
 
   // The list of filters per field. A target can have duplicate filters for a field.
   private final Map<FieldPath, List<FieldFilter>> fieldFilterFields = new HashMap<>();
@@ -90,7 +90,7 @@ public class TargetIndexMatcher {
   private final Set<FieldPath> orderByFields = new HashSet<>();
 
   public TargetIndexMatcher(Target target) {
-    collectionId =
+    collectionGroup =
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
@@ -116,7 +116,7 @@ public class TargetIndexMatcher {
    * @throws AssertionError if the index is for a different collection
    */
   public boolean servedByIndex(FieldIndex index) {
-    hardAssert(index.getCollectionId().equals(collectionId), "Collection IDs do not match");
+    hardAssert(index.getCollectionGroup().equals(collectionGroup), "Collection IDs do not match");
     for (int i = 0; i < index.segmentCount(); ++i) {
       if (!canUseSegment(index.getSegment(i))) {
         return false;
