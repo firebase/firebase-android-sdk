@@ -86,6 +86,14 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
+  public void cannotUseOverspecifiedIndex() {
+    Query q = query("collId").orderBy(orderBy("a"));
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateDoesNotServeTarget(
+        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+  }
+
+  @Test
   public void equalitiesWithDefaultOrder() {
     for (Query query : queriesWithEqualities) {
       validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
