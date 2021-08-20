@@ -33,9 +33,12 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataReader;
+import com.google.firebase.firestore.UserDataWriter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
@@ -146,6 +149,12 @@ public class TestUtil {
 
   public static ObjectValue wrapObject(Object... entries) {
     return wrapObject(map(entries));
+  }
+
+  public static Object decodeValue(FirebaseFirestore firestore, Value value) {
+    UserDataWriter dataWriter =
+        new UserDataWriter(firestore, DocumentSnapshot.ServerTimestampBehavior.NONE);
+    return dataWriter.convertValue(value);
   }
 
   public static DocumentKey key(String key) {
