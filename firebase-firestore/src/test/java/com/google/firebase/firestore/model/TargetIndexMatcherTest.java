@@ -21,8 +21,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
 import java.util.Arrays;
@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class QueryPlannerTest {
+public class TargetIndexMatcherTest {
   List<Query> queriesWithEqualities =
       Arrays.asList(
           query("collId").filter(filter("a", "==", "a")),
@@ -174,22 +174,23 @@ public class QueryPlannerTest {
   @Test
   public void validatesCollection() {
     {
-      QueryPlanner queryPlanner = new QueryPlanner(query("collId").toTarget());
+      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
-      assertDoesNotThrow(() -> queryPlanner.getMatchingPrefix(fieldIndex));
+      assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
-      QueryPlanner queryPlanner = new QueryPlanner(new Query(path(""), "collId").toTarget());
+      TargetIndexMatcher targetIndexMatcher =
+          new TargetIndexMatcher(new Query(path(""), "collId").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
-      assertDoesNotThrow(() -> queryPlanner.getMatchingPrefix(fieldIndex));
+      assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
-      QueryPlanner queryPlanner = new QueryPlanner(query("collId2").toTarget());
+      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId2").toTarget());
       FieldIndex fieldIndex = new FieldIndex("collId");
       expectError(
-          () -> queryPlanner.getMatchingPrefix(fieldIndex),
+          () -> targetIndexMatcher.servedByIndex(fieldIndex),
           "INTERNAL ASSERTION FAILED: Collection IDs do not match");
     }
   }
@@ -210,13 +211,12 @@ public class QueryPlannerTest {
             .filter(filter("a", "array-contains", "a"))
             .filter(filter("a", ">", "b"))
             .orderBy(orderBy("a", "asc"));
-    QueryPlanner queryPlanner = new QueryPlanner(queriesMultipleFilters.toTarget());
-
-    FieldIndex matching =
-        new FieldIndex("collId")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.CONTAINS)
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED);
-    assertEquals(matching, queryPlanner.getMatchingPrefix(matching));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a",
+        FieldIndex.Segment.Kind.CONTAINS,
+        "a",
+        FieldIndex.Segment.Kind.ORDERED);
   }
 
   @Test
@@ -253,18 +253,27 @@ public class QueryPlannerTest {
   public void withMultipleFilters() {
     Query queriesMultipleFilters =
         query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
-    QueryPlanner queryPlanner = new QueryPlanner(queriesMultipleFilters.toTarget());
+    validateServesTarget(queriesMultipleFilters, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a",
+        FieldIndex.Segment.Kind.ORDERED,
+        "b",
+        FieldIndex.Segment.Kind.ORDERED);
+  }
 
-    FieldIndex fieldIndex = new FieldIndex("collId");
+  @Test
+  public void multipleFiltersRequireMatchingPrefix() {
+    Query queriesMultipleFilters =
+        query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
 
-    FieldIndex matching = fieldIndex.withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED);
-    assertEquals(matching, queryPlanner.getMatchingPrefix(matching));
-
-    matching = matching.withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
-    assertEquals(matching, queryPlanner.getMatchingPrefix(matching));
-
-    FieldIndex notMatching = fieldIndex.withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
-    assertNotEquals(notMatching, queryPlanner.getMatchingPrefix(matching));
+    validateServesTarget(queriesMultipleFilters, "b", FieldIndex.Segment.Kind.ORDERED);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "c",
+        FieldIndex.Segment.Kind.ORDERED,
+        "a",
+        FieldIndex.Segment.Kind.ORDERED);
   }
 
   @Test
@@ -274,13 +283,12 @@ public class QueryPlannerTest {
             .filter(filter("a1", "==", "a"))
             .filter(filter("a2", ">", "b"))
             .orderBy(orderBy("a2", "asc"));
-    QueryPlanner queryPlanner = new QueryPlanner(queriesMultipleFilters.toTarget());
-
-    FieldIndex index =
-        new FieldIndex("collId")
-            .withAddedField(field("a1"), FieldIndex.Segment.Kind.ORDERED)
-            .withAddedField(field("a2"), FieldIndex.Segment.Kind.ORDERED);
-    assertEquals(index, queryPlanner.getMatchingPrefix(index));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a1",
+        FieldIndex.Segment.Kind.ORDERED,
+        "a2",
+        FieldIndex.Segment.Kind.ORDERED);
   }
 
   @Test
@@ -317,6 +325,17 @@ public class QueryPlannerTest {
         FieldIndex.Segment.Kind.ORDERED,
         "__name__",
         FieldIndex.Segment.Kind.ORDERED);
+    // The field index can be used regardless of the order of segments since we only use the orderBy
+    // clause to filter out documents that do not contain field values for the specified fields. The
+    // ordering itself is done during View computation.
+    validateServesTarget(
+        q,
+        "fff",
+        FieldIndex.Segment.Kind.ORDERED,
+        "__name__",
+        FieldIndex.Segment.Kind.ORDERED,
+        "bar",
+        FieldIndex.Segment.Kind.ORDERED);
 
     q =
         query("collId")
@@ -330,6 +349,14 @@ public class QueryPlannerTest {
         "bar",
         FieldIndex.Segment.Kind.ORDERED,
         "__name__",
+        FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(
+        q,
+        "foo",
+        FieldIndex.Segment.Kind.ORDERED,
+        "__name__",
+        FieldIndex.Segment.Kind.ORDERED,
+        "bar",
         FieldIndex.Segment.Kind.ORDERED);
   }
 
@@ -412,21 +439,19 @@ public class QueryPlannerTest {
 
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
-    FieldIndex expectedIndex = getSegments(field, kind, fieldsAndKind);
-    QueryPlanner queryPlanner = new QueryPlanner(query.toTarget());
-    FieldIndex actualIndex = queryPlanner.getMatchingPrefix(expectedIndex);
-    assertEquals(expectedIndex, actualIndex);
+    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
   private void validateDoesNotServeTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
-    FieldIndex expectedIndex = getSegments(field, kind, fieldsAndKind);
-    QueryPlanner queryPlanner = new QueryPlanner(query.toTarget());
-    FieldIndex actualIndex = queryPlanner.getMatchingPrefix(expectedIndex);
-    assertEquals(0, actualIndex.segmentCount());
+    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
-  private FieldIndex getSegments(
+  private FieldIndex buildFieldIndex(
       String field, FieldIndex.Segment.Kind kind, Object[] fieldAndKind) {
     FieldIndex index = new FieldIndex("collId").withAddedField(field(field), kind);
     for (int i = 0; i < fieldAndKind.length; i += 2) {
