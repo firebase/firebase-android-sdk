@@ -34,7 +34,13 @@ public class UpdateAppClient {
   private Activity currentActivity;
 
   private final Object activityLock = new Object();
-  private UpdateTaskImpl cachedUpdateAppTask;
+  private final Object updateAabLock = new Object();
+
+  @GuardedBy("updateAabLock")
+  private UpdateTaskImpl cachedAabUpdateTask;
+
+  @GuardedBy("updateAabLock")
+  private AppDistributionReleaseInternal aabReleaseInProgress;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.updateApkClient = new UpdateApkClient(firebaseApp);
@@ -42,48 +48,50 @@ public class UpdateAppClient {
 
   @NonNull
   synchronized UpdateTask updateApp(
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      @NonNull boolean showDownloadInNotificationManager) {
-
-    if (cachedUpdateAppTask != null && !cachedUpdateAppTask.isComplete()) {
-      return cachedUpdateAppTask;
-    }
-
-    cachedUpdateAppTask = new UpdateTaskImpl();
+      @Nullable AppDistributionReleaseInternal latestRelease,
+      boolean showDownloadInNotificationManager) {
 
     if (latestRelease == null) {
-      cachedUpdateAppTask.setException(
+      return getErrorUpdateTask(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-      return cachedUpdateAppTask;
     }
 
     if (latestRelease.getDownloadUrl() == null) {
-      cachedUpdateAppTask.setException(
+      return getErrorUpdateTask(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-      return cachedUpdateAppTask;
     }
 
     if (latestRelease.getBinaryType() == BinaryType.AAB) {
-      redirectToPlayForAabUpdate(cachedUpdateAppTask, latestRelease.getDownloadUrl());
+      synchronized (updateAabLock) {
+        if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
+          return cachedAabUpdateTask;
+        }
+
+        cachedAabUpdateTask = new UpdateTaskImpl();
+        aabReleaseInProgress = latestRelease;
+        redirectToPlayForAabUpdate(latestRelease.getDownloadUrl());
+
+        return cachedAabUpdateTask;
+      }
     } else {
-      this.updateApkClient.updateApk(
-          cachedUpdateAppTask, latestRelease.getDownloadUrl(), showDownloadInNotificationManager);
+      return this.updateApkClient.updateApk(latestRelease, showDownloadInNotificationManager);
     }
-    return cachedUpdateAppTask;
   }
 
-  private void redirectToPlayForAabUpdate(UpdateTaskImpl updateTask, String downloadUrl) {
+  private void redirectToPlayForAabUpdate(String downloadUrl) {
     Activity currentActivity = getCurrentActivity();
 
     if (currentActivity == null) {
-      updateTask.setException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.APP_BACKGROUNDED,
-              FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-      return;
+      synchronized (updateAabLock) {
+        cachedAabUpdateTask.setException(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.APP_BACKGROUNDED,
+                FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+        return;
+      }
     }
 
     Intent updateIntent = new Intent(Intent.ACTION_VIEW);
@@ -91,13 +99,15 @@ public class UpdateAppClient {
     updateIntent.setData(uri);
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(updateIntent);
-    updateTask.updateProgress(
-        UpdateProgress.builder()
-            .setApkBytesDownloaded(-1)
-            .setApkFileTotalBytes(-1)
-            .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-            .build());
-    updateTask.setResult();
+
+    synchronized (updateAabLock) {
+      cachedAabUpdateTask.updateProgress(
+          UpdateProgress.builder()
+              .setApkBytesDownloaded(-1)
+              .setApkFileTotalBytes(-1)
+              .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+              .build());
+    }
   }
 
   void setInstallationResult(int resultCode) {
@@ -115,6 +125,24 @@ public class UpdateAppClient {
     synchronized (activityLock) {
       this.currentActivity = activity;
       this.updateApkClient.setCurrentActivity(activity);
+    }
+  }
+
+  private UpdateTask getErrorUpdateTask(Exception e) {
+    UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    updateTask.setException(e);
+    return updateTask;
+  }
+
+  void tryCancelAabUpdateTask() {
+    synchronized (updateAabLock) {
+      if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
+        cachedAabUpdateTask.setException(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.UPDATE_CANCELED,
+                FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
+                ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
+      }
     }
   }
 }
