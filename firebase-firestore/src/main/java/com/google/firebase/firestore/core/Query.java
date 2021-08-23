@@ -24,7 +24,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.Assert;
-import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -110,42 +109,6 @@ public final class Query {
         LimitType.LIMIT_TO_FIRST,
         null,
         null);
-  }
-
-  public @Nullable List<Value> getLowerBound() {
-    List<Value> unspecifiedComponents = new ArrayList<>();
-    for (Filter filter : filters) {
-      Value lowerBound = filter.getLowerBound();
-      if (lowerBound == null) return null;
-      unspecifiedComponents.add(lowerBound);
-    }
-    return unspecifiedComponents;
-  }
-
-  public boolean isLowerInclusive() {
-    for (Filter filter : filters) {
-      boolean inclusive = filter.isLowerInclusive();
-      if (!inclusive) return false;
-    }
-    return true;
-  }
-
-  public @Nullable List<Value> getUpperBound() {
-    List<Value> unspecifiedComponents = new ArrayList<>();
-    for (Filter filter : filters) {
-      Value upperBound = filter.getUpperBound();
-      if (upperBound == null) return null;
-      unspecifiedComponents.add(upperBound);
-    }
-    return unspecifiedComponents;
-  }
-
-  public boolean isUpperInclusive() {
-    for (Filter filter : filters) {
-      boolean inclusive = filter.isUpperInclusive();
-      if (!inclusive) return false;
-    }
-    return true;
   }
 
   /** The base path of the query. */

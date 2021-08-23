@@ -33,7 +33,6 @@ import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.GarbageCollectionScheduler;
-import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;

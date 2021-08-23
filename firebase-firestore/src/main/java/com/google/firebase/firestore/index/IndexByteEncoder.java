@@ -14,10 +14,9 @@
 
 package com.google.firebase.firestore.index;
 
-import com.google.firebase.firestore.local.IndexManager;
 import com.google.protobuf.ByteString;
 
-public class IndexByteEncoder extends DirectionalIndexByteEncoder{
+public class IndexByteEncoder extends DirectionalIndexByteEncoder {
 
   private final OrderedCodeWriter orderedCode;
 
@@ -29,25 +28,25 @@ public class IndexByteEncoder extends DirectionalIndexByteEncoder{
     orderedCode.seed(encodedBytes);
   }
 
-    @Override
-    public void writeBytes(ByteString val) {
-      orderedCode.writeBytesAscending(val);
-    }
+  @Override
+  public void writeBytes(ByteString val) {
+    orderedCode.writeBytesAscending(val);
+  }
 
-    @Override
-    public void writeString(String val) {
-      orderedCode.writeUtf8Ascending(val);
-    }
+  @Override
+  public void writeString(String val) {
+    orderedCode.writeUtf8Ascending(val);
+  }
 
-    @Override
-    public void writeLong(long val) {
-      orderedCode.writeSignedLongAscending(val);
-    }
+  @Override
+  public void writeLong(long val) {
+    orderedCode.writeSignedLongAscending(val);
+  }
 
-    @Override
-    public void writeDouble(double val) {
-      orderedCode.writeDoubleAscending(val);
-    }
+  @Override
+  public void writeDouble(double val) {
+    orderedCode.writeDoubleAscending(val);
+  }
 
   public byte[] getEncodedBytes() {
     return orderedCode.encodedBytes();
@@ -56,5 +55,4 @@ public class IndexByteEncoder extends DirectionalIndexByteEncoder{
   public void reset() {
     orderedCode.reset();
   }
-
 }

@@ -77,7 +77,7 @@ public class FirestoreTest {
   }
 
   @AfterClass
-          public static void afterClass() {
+  public static void afterClass() {
     Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
   }
 

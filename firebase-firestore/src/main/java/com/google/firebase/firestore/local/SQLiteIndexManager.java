@@ -20,7 +20,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.database.Cursor;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
 import com.google.firebase.firestore.index.IndexByteEncoder;
 import com.google.firebase.firestore.model.Document;
@@ -28,7 +30,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
-import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
@@ -149,7 +150,8 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   @Nullable
   public Iterable<DocumentKey> getDocumentsMatchingQuery(Query query) {
-    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    Target target = query.toTarget();
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     ResourcePath parentPath = query.getPath();
     String collectionId =
         query.isCollectionGroupQuery() ? query.getCollectionGroup() : parentPath.getLastSegment();
@@ -160,64 +162,50 @@ final class SQLiteIndexManager implements IndexManager {
             "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionId)
         .forEach(
-                value -> {
-                  try {
-                    FieldIndex fieldIndex =
-                        serializer.decodeFieldIndex(collectionId, Index.parseFrom(value.getBlob(1)));
-                    boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-                    if (matches && fieldIndex.segmentCount() > bestIndex[0].segmentCount()) {
-                      bestIndex[0] = fieldIndex;
-                      bestIndexId[0] = value.getInt(0);
-                    }
-                  } catch (InvalidProtocolBufferException e) {
-                    throw fail("Failed to decode index: " + e);
-                  }
-                });
-
-    // best index found
-    List<Value> lowerBound = query.getLowerBound();
-    boolean lowerInclusive = query.isLowerInclusive();
-    List<Value> upperBound = query.getUpperBound();
-    boolean upperInclusive = query.isUpperInclusive();
+            value -> {
+              try {
+                FieldIndex fieldIndex =
+                    serializer.decodeFieldIndex(collectionId, Index.parseFrom(value.getBlob(1)));
+                boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
+                if (matches && fieldIndex.segmentCount() > bestIndex[0].segmentCount()) {
+                  bestIndex[0] = fieldIndex;
+                  bestIndexId[0] = value.getInt(0);
+                }
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
 
     if (bestIndexId[0] == -1) return null;
+
+    Bound lowerBound = target.getLowerBound(bestIndex[0]);
+    @Nullable Bound upperBound = target.getUpperBound(bestIndex[0]);
 
     // Could we do a join here and return the documents?
     ArrayList<DocumentKey> documents = new ArrayList<>();
 
-    if (lowerBound != null && upperBound != null) {
-      List<byte[]> lowerEncoded = encodeValues(bestIndex[0], lowerBound, false);
-      List<byte[]> upperEncoded = encodeValues(bestIndex[0], upperBound, false);
+    if (upperBound != null) {
+      List<byte[]> lowerEncoded = encodeValues(bestIndex[0], lowerBound.getPosition(), false);
+      List<byte[]> upperEncoded = encodeValues(bestIndex[0], upperBound.getPosition(), false);
       for (byte[] b1 : lowerEncoded) {
         for (byte[] b2 : upperEncoded) {
           db.query(
                   "SELECT document_id from field_index WHERE index_id = ? AND index_value "
-                      + (lowerInclusive ? ">=" : ">")
+                      + (lowerBound.isBefore() ? ">=" : ">")
                       + " ? AND index_value "
-                      + (upperInclusive ? "<=" : "<")
+                      + (upperBound.isBefore() ? "<=" : "<")
                       + " ?")
               .binding(bestIndexId[0], b1, b2)
               .forEach(
                   row -> documents.add(DocumentKey.fromPath(parentPath.append(row.getString(0)))));
         }
       }
-    } else if (lowerBound != null) {
-      List<byte[]> lowerEncoded = encodeValues(bestIndex[0], lowerBound, false);
+    } else {
+      List<byte[]> lowerEncoded = encodeValues(bestIndex[0], lowerBound.getPosition(), false);
       for (byte[] b : lowerEncoded) {
         db.query(
                 "SELECT document_id from field_index WHERE index_id = ? AND index_value "
-                    + (lowerInclusive ? ">=" : ">")
-                    + "  ?")
-            .binding(bestIndexId[0], b)
-            .forEach(
-                row -> documents.add(DocumentKey.fromPath(parentPath.append(row.getString(0)))));
-      }
-    } else {
-      List<byte[]> upperEncoded = encodeValues(bestIndex[0], upperBound, false);
-      for (byte[] b : upperEncoded) {
-        db.query(
-                "SELECT document_id from field_index WHERE index_id = ? AND index_value "
-                    + (upperInclusive ? "<=" : "<")
+                    + (lowerBound.isBefore() ? ">=" : ">")
                     + "  ?")
             .binding(bestIndexId[0], b)
             .forEach(
@@ -258,8 +246,7 @@ final class SQLiteIndexManager implements IndexManager {
                 IndexByteEncoder clonedEncoder = new IndexByteEncoder();
                 clonedEncoder.seed(indexByteEncoder.getEncodedBytes());
                 encoders.add(clonedEncoder);
-                FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
-                    value, new IndexByteEncoder());
+                FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, new IndexByteEncoder());
               }
             } else if (!enforceArrays) {
               FirestoreIndexValueWriter.INSTANCE.writeIndexValue(

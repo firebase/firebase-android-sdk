@@ -36,7 +36,6 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
-import com.google.firebase.firestore.local.IndexManager;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -216,14 +215,18 @@ public class FirebaseFirestore {
       @NonNull String fieldPath,
       @NonNull Query.Direction direction) {
     FieldIndex index = new FieldIndex(collection.getId());
-    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.ORDERED);
+    index =
+        index.withAddedField(
+            FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.ORDERED);
     enableIndex(collection.query.getPath(), index);
   }
 
   public void enableArrayContainsIndex(
       @NonNull CollectionReference collection, @NonNull String fieldPath) {
     FieldIndex index = new FieldIndex(collection.getId());
-    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.CONTAINS);
+    index =
+        index.withAddedField(
+            FieldPath.fromServerFormat(fieldPath), FieldIndex.Segment.Kind.CONTAINS);
     enableIndex(collection.query.getPath(), index);
   }
 
@@ -234,8 +237,12 @@ public class FirebaseFirestore {
       @NonNull String fieldPath2,
       @NonNull Query.Direction direction2) {
     FieldIndex index = new FieldIndex(collection.getId());
-    index=index.withAddedField(FieldPath.fromServerFormat(fieldPath1), FieldIndex.Segment.Kind.ORDERED);
-    index= index.withAddedField(FieldPath.fromServerFormat(fieldPath2), FieldIndex.Segment.Kind.ORDERED);
+    index =
+        index.withAddedField(
+            FieldPath.fromServerFormat(fieldPath1), FieldIndex.Segment.Kind.ORDERED);
+    index =
+        index.withAddedField(
+            FieldPath.fromServerFormat(fieldPath2), FieldIndex.Segment.Kind.ORDERED);
     enableIndex(collection.query.getPath(), index);
   }
 
