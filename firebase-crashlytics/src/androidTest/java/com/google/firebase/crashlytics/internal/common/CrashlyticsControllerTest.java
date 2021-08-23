@@ -413,7 +413,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
     when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(false);
-    when(arbiter.waitForDataCollectionPermission())
+    when(arbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(new TaskCompletionSource<Void>().getTask());
     when(arbiter.waitForAutomaticDataCollectionEnabled())
         .thenReturn(new TaskCompletionSource<Void>().getTask());

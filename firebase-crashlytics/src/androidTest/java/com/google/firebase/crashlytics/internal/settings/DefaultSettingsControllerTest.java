@@ -142,7 +142,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     when(mockSettingsJsonParser.parseSettingsJson(fetchedJson)).thenReturn(fetchedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
     final SettingsRequest requestData = buildSettingsRequest();
@@ -187,7 +187,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     when(mockSettingsJsonParser.parseSettingsJson(fetchedJson)).thenReturn(fetchedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
     final SettingsRequest requestData = buildSettingsRequest();
@@ -270,7 +270,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
         .thenReturn(expiredCachedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
     final SettingsRequest requestData = buildSettingsRequest();
@@ -323,7 +323,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
         .thenReturn(expiredCachedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
     final SettingsRequest requestData = buildSettingsRequest();
@@ -360,7 +360,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(null);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
     final SettingsRequest requestData = buildSettingsRequest();
