@@ -299,18 +299,10 @@ public final class LocalSerializer {
     for (FieldIndex.Segment segment : fieldIndex) {
       Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
       indexField.setFieldPath(segment.getFieldPath().canonicalString());
-      switch (segment.getKind()) {
-        case ASCENDING:
-          indexField.setOrder(Index.IndexField.Order.ASCENDING);
-          break;
-        case DESCENDING:
-          indexField.setOrder(Index.IndexField.Order.DESCENDING);
-          break;
-        case CONTAINS:
-          indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
-          break;
-        default:
-          throw fail("Unknown index kind %s", segment.getKind());
+      if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
+        indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
+      } else {
+        indexField.setOrder(Index.IndexField.Order.ASCENDING);
       }
       index.addFields(indexField);
     }

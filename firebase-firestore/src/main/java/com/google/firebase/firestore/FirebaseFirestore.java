@@ -313,15 +313,8 @@ public class FirebaseFirestore {
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
               fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
-            } else if ("ASCENDING".equals(field.optString("order"))) {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
-            } else if ("DESCENDING".equals(field.optString("order"))) {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
             } else {
-              throw new IllegalArgumentException(
-                  String.format(
-                      "Index definition not valid (for field \"%s\" of collection \"%s\")",
-                      fieldPath, fieldIndex.getCollectionId()));
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ORDERED);
             }
             parsedIndices.add(fieldIndex);
           }
