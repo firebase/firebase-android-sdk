@@ -23,9 +23,8 @@ import java.util.List;
  * An index definition for field indices in Firestore.
  *
  * <p>Every index is associated with a collection. The definition contains a list of fields and the
- * indexes sorting order (which can be {@link Segment.Kind#ASCENDING}, {@link
- * Segment.Kind#DESCENDING} or {@link Segment.Kind#CONTAINS} for ArrayContains/ArrayContainsAn
- * queries.
+ * indexes kind (which can be {@link Segment.Kind#ORDERED} or {@link Segment.Kind#CONTAINS} for
+ * ArrayContains/ArrayContainsAny queries.
  *
  * <p>Unlike the backend, the SDK does not differentiate between collection or collection
  * group-scoped indices. Every index can be used for both single collection and collection group
@@ -35,12 +34,10 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
 
   /** An index component consisting of field path and index type. */
   public static final class Segment {
-    /** The type of the index, e.g. for which sorting order it can be used. */
+    /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
-      /** Ascending index. Can be used for <, <=, ==, >=, > and IN with ascending ordering. */
-      ASCENDING,
-      /** Descending index. Can be used for <, <=, ==, >=, > and IN with descending ordering. */
-      DESCENDING,
+      /** Ascending index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
+      ORDERED,
       /** Contains index. Can be used for ArrayContains and ArrayContainsAny */
       CONTAINS
     }
@@ -79,6 +76,11 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
       result = 31 * result + kind.hashCode();
       return result;
     }
+
+    @Override
+    public String toString() {
+      return String.format("Segment{fieldPath=%s, kind=%s}", fieldPath, kind);
+    }
   }
 
   private final String collectionId;
@@ -97,6 +99,23 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   /** The collection ID this index applies to. */
   public String getCollectionId() {
     return collectionId;
+  }
+
+  public Segment getSegment(int index) {
+    return segments.get(index);
+  }
+
+  public int segmentCount() {
+    return segments.size();
+  }
+
+  /**
+   * Returns a new field index that only contains the first `size` segments.
+   *
+   * @throws IndexOutOfBoundsException if size > segmentCount
+   */
+  public FieldIndex prefix(int size) {
+    return new FieldIndex(collectionId, segments.subList(0, size));
   }
 
   @NonNull
@@ -128,5 +147,10 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     int result = collectionId.hashCode();
     result = 31 * result + segments.hashCode();
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("FieldIndex{collectionId='%s', segments=%s}", collectionId, segments);
   }
 }
