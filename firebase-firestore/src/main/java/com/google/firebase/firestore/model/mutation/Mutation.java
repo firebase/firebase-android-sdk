@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -110,15 +109,15 @@ public abstract class Mutation {
    * a document. If the input document doesn't match the expected state, the document is not
    * modified.
    *
-   * It returns a {@link MutationSquash.Type}, indicating what type should the squashed mutation be. This is
-   * to help {@link MutationSquash} to compute a final mutation, what would be saved in storage as the local
-   * view of the document.
+   * <p>It returns a {@link MutationSquash.Type}, indicating what type should the squashed mutation
+   * be. This is to help {@link MutationSquash} to compute a final mutation, what would be saved in
+   * storage as the local view of the document.
    *
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
-   * @param squashTypeSoFar What the squashed mutation type is, so far for the give document after applied
-   *                        previous mutations.
+   * @param squashTypeSoFar What the squashed mutation type is, so far for the give document after
+   *     applied previous mutations.
    */
   public abstract MutationSquash.Type applyToLocalView(
       MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashTypeSoFar);
