@@ -28,7 +28,6 @@ import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.common.base.Preconditions;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -39,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -55,8 +55,7 @@ public class ConfigMetadataClientTest {
   @Before
   public void setUp() {
     SharedPreferences metadata =
-        ApplicationProvider.getApplicationContext()
-            .getSharedPreferences("TEST_FILE_NAME", Context.MODE_PRIVATE);
+        RuntimeEnvironment.application.getSharedPreferences("TEST_FILE_NAME", Context.MODE_PRIVATE);
 
     metadata.edit().clear().commit();
 

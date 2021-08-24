@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.util.ReflectionHelpers;
 
 /** Unit tests for {@link ConfigResolver}. */
@@ -139,10 +140,10 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void setContentProviderContext_contextIsProvided_deviceCacheManagerIsCalled() {
-    testConfigResolver.setContentProviderContext(ApplicationProvider.getApplicationContext());
+    testConfigResolver.setContentProviderContext(RuntimeEnvironment.systemContext);
 
     verify(mockDeviceCacheManager, times(1))
-        .setContext(eq(ApplicationProvider.getApplicationContext()));
+        .setContext(eq(RuntimeEnvironment.systemContext.getApplicationContext()));
   }
 
   @Test

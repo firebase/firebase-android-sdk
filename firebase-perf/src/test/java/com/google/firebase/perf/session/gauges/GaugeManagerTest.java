@@ -26,7 +26,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
@@ -46,6 +45,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 /** Unit tests for {@link com.google.firebase.perf.session.gauges.GaugeManager} */
 @RunWith(RobolectricTestRunner.class)
@@ -74,9 +74,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     mockTransportManager = mock(TransportManager.class);
     mockConfigResolver = mock(ConfigResolver.class);
     fakeGaugeMetadataManager =
-        spy(
-            new GaugeMetadataManager(
-                Runtime.getRuntime(), ApplicationProvider.getApplicationContext()));
+        spy(new GaugeMetadataManager(Runtime.getRuntime(), RuntimeEnvironment.application));
     fakeCpuGaugeCollector = spy(CpuGaugeCollector.getInstance());
     fakeMemoryGaugeCollector = spy(MemoryGaugeCollector.getInstance());
 
@@ -689,7 +687,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isFalse();
 
-    testGaugeManager.setApplicationContext(ApplicationProvider.getApplicationContext());
+    testGaugeManager.setApplicationContext(RuntimeEnvironment.application);
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isTrue();
 

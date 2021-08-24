@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -61,6 +60,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
@@ -166,7 +166,7 @@ public class FirebaseInAppMessagingTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
 
-    application = ApplicationProvider.getApplicationContext();
+    application = RuntimeEnvironment.application;
 
     options =
         new FirebaseOptions.Builder()

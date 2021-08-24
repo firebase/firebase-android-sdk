@@ -22,10 +22,10 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceId;
+import org.robolectric.RuntimeEnvironment;
 
 /** Test helper for Firebase IID robolectric tests. */
 public class FirebaseIidRoboTestHelper {
@@ -72,7 +72,7 @@ public class FirebaseIidRoboTestHelper {
    * requests.
    */
   public static void addGmsCorePackageInfo() {
-    PackageManager pm = ApplicationProvider.getApplicationContext().getPackageManager();
+    PackageManager pm = RuntimeEnvironment.application.getPackageManager();
     PackageInfo gmsPackageInfo = new PackageInfo();
     gmsPackageInfo.packageName = GOOGLE_PLAY_SERVICES_PACKAGE;
     gmsPackageInfo.applicationInfo = new ApplicationInfo();
@@ -82,7 +82,7 @@ public class FirebaseIidRoboTestHelper {
   }
 
   public static void setGmsCoreVersion(int versionCode) throws NameNotFoundException {
-    PackageManager pm = ApplicationProvider.getApplicationContext().getPackageManager();
+    PackageManager pm = RuntimeEnvironment.application.getPackageManager();
     PackageInfo pi = shadowOf(pm).getInternalMutablePackageInfo(GOOGLE_PLAY_SERVICES_PACKAGE);
     pi.versionCode = versionCode;
   }

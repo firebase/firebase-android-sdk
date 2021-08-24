@@ -55,6 +55,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
@@ -81,7 +82,7 @@ public class CctTransportBackendTest {
   private TestClock wallClock = new TestClock(INITIAL_WALL_TIME);
   private TestClock uptimeClock = new TestClock(INITIAL_UPTIME);
   private CctTransportBackend BACKEND =
-      new CctTransportBackend(ApplicationProvider.getApplicationContext(), wallClock, uptimeClock);
+      new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock);
 
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
@@ -132,8 +133,7 @@ public class CctTransportBackendTest {
 
     ConnectivityManager connectivityManager =
         (ConnectivityManager)
-            ApplicationProvider.getApplicationContext()
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
+            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
     NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
 
     verify(
@@ -428,8 +428,7 @@ public class CctTransportBackendTest {
   @Test
   public void send_whenBackendResponseTimesOut_shouldReturnTransientError() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            ApplicationProvider.getApplicationContext(), wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withFixedDelay(500)));
     BackendResponse response = backend.send(getCCTBackendRequest());
 
@@ -439,8 +438,7 @@ public class CctTransportBackendTest {
   @Test
   public void decorate_whenOnline_shouldProperlyPopulateNetworkInfo() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            ApplicationProvider.getApplicationContext(), wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
 
     EventInternal result =
         backend.decorate(
@@ -461,8 +459,7 @@ public class CctTransportBackendTest {
   @Config(shadows = {OfflineConnectivityManagerShadow.class})
   public void decorate_whenOffline_shouldProperlyPopulateNetworkInfo() {
     CctTransportBackend backend =
-        new CctTransportBackend(
-            ApplicationProvider.getApplicationContext(), wallClock, uptimeClock, 300);
+        new CctTransportBackend(RuntimeEnvironment.application, wallClock, uptimeClock, 300);
 
     EventInternal result =
         backend.decorate(

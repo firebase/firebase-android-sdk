@@ -25,7 +25,6 @@ import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.os.Environment;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.StorageUnit;
 import java.io.File;
@@ -39,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.shadows.ShadowEnvironment;
 
 /** Unit tests for {@link com.google.firebase.perf.session.gauges.GaugeMetadataManager} */
@@ -59,7 +59,7 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
   @Before
   public void setUp() {
     initMocks(this);
-    appContext = ApplicationProvider.getApplicationContext();
+    appContext = RuntimeEnvironment.application;
     activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
 
     mockMemory();

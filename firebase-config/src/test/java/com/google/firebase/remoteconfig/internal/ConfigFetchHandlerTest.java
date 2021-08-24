@@ -53,7 +53,6 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -87,6 +86,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -135,7 +135,7 @@ public class ConfigFetchHandlerTest {
     MockitoAnnotations.initMocks(this);
 
     directExecutor = MoreExecutors.directExecutor();
-    context = ApplicationProvider.getApplicationContext();
+    context = RuntimeEnvironment.application.getApplicationContext();
     mockClock = new MockClock(0L);
     metadataClient =
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));

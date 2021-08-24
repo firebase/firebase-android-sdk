@@ -14,7 +14,6 @@
 
 package com.google.firebase.ktx
 
-import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -22,9 +21,10 @@ import com.google.firebase.platforminfo.UserAgentPublisher
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 
 fun withApp(name: String, block: FirebaseApp.() -> Unit) {
-    val app = Firebase.initialize(ApplicationProvider.getApplicationContext(),
+    val app = Firebase.initialize(RuntimeEnvironment.application,
             FirebaseOptions.Builder()
                     .setApplicationId("appId")
                     .build(),
@@ -75,12 +75,12 @@ class KtxTests {
     @Test
     fun `Firebase#initialize(Context, FirebaseOptions) should initialize the app correctly`() {
         val options = FirebaseOptions.Builder().setApplicationId("appId").build()
-        val app = Firebase.initialize(ApplicationProvider.getApplicationContext(), options)
+        val app = Firebase.initialize(RuntimeEnvironment.application, options)
         try {
             assertThat(app).isNotNull()
             assertThat(app.name).isEqualTo(FirebaseApp.DEFAULT_APP_NAME)
             assertThat(app.options).isSameInstanceAs(options)
-            assertThat(app.applicationContext).isSameInstanceAs(ApplicationProvider.getApplicationContext())
+            assertThat(app.applicationContext).isSameInstanceAs(RuntimeEnvironment.application)
         } finally {
             app.delete()
         }
@@ -90,12 +90,12 @@ class KtxTests {
     fun `Firebase#initialize(Context, FirebaseOptions, String) should initialize the app correctly`() {
         val options = FirebaseOptions.Builder().setApplicationId("appId").build()
         val name = "appName"
-        val app = Firebase.initialize(ApplicationProvider.getApplicationContext(), options, name)
+        val app = Firebase.initialize(RuntimeEnvironment.application, options, name)
         try {
             assertThat(app).isNotNull()
             assertThat(app.name).isEqualTo(name)
             assertThat(app.options).isSameInstanceAs(options)
-            assertThat(app.applicationContext).isSameInstanceAs(ApplicationProvider.getApplicationContext())
+            assertThat(app.applicationContext).isSameInstanceAs(RuntimeEnvironment.application)
         } finally {
             app.delete()
         }

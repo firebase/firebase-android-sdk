@@ -26,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
@@ -47,6 +46,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -81,7 +81,7 @@ public class RemoteConfigComponentTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    context = ApplicationProvider.getApplicationContext();
+    context = RuntimeEnvironment.application;
     directExecutor = MoreExecutors.newDirectExecutorService();
 
     defaultApp = initializeFirebaseApp(context);

@@ -22,7 +22,6 @@ import android.app.job.JobScheduler;
 import android.content.Context;
 import android.os.PersistableBundle;
 import android.util.Base64;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -32,6 +31,7 @@ import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(sdk = {LOLLIPOP})
@@ -46,7 +46,7 @@ public class JobInfoSchedulerTest {
   private static final TransportContext UNMETERED_TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").setPriority(Priority.VERY_LOW).build();
 
-  private final Context context = ApplicationProvider.getApplicationContext();
+  private final Context context = RuntimeEnvironment.application;
   private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);

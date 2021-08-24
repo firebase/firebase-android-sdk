@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.dynamiclinks.DynamicLink.AndroidParameters;
@@ -44,6 +43,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 /** Test {@link com.google.firebase.dynamiclinks.DynamicLink}. */
 @RunWith(RobolectricTestRunner.class)
@@ -180,7 +180,7 @@ public class DynamicLinkTest {
     builder.setAndroidParameters(androidBuilder.build());
     Bundle fdlParameters = getFdlParameterBundle();
     assertParameterEquals(
-        ApplicationProvider.getApplicationContext().getPackageName(),
+        RuntimeEnvironment.application.getPackageName(),
         fdlParameters.get(AndroidParameters.KEY_ANDROID_PACKAGE_NAME));
   }
 

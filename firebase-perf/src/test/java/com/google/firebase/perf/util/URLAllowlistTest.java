@@ -21,11 +21,11 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import androidx.test.core.app.ApplicationProvider;
 import java.net.URI;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 /** Unit tests for {@link URLAllowlist}. */
 @RunWith(RobolectricTestRunner.class)
@@ -42,8 +42,7 @@ public class URLAllowlistTest {
   @Test
   public void invalidHostButValidUri_returnsTrue() {
     assertThat(
-            isURLAllowlisted(
-                URI.create("validUriInvalidHostName"), ApplicationProvider.getApplicationContext()))
+            isURLAllowlisted(URI.create("validUriInvalidHostName"), RuntimeEnvironment.application))
         .isTrue();
   }
 
@@ -70,58 +69,45 @@ public class URLAllowlistTest {
 
   @Test
   public void hostLevelDomainsWithConfigFile_respectTheAllowlist() {
-    assertThat(
-            isURLAllowlisted(
-                URI.create("http://google.com"), ApplicationProvider.getApplicationContext()))
+    assertThat(isURLAllowlisted(URI.create("http://google.com"), RuntimeEnvironment.application))
         .isTrue();
-    assertThat(
-            isURLAllowlisted(
-                URI.create("http://gooogle.com"), ApplicationProvider.getApplicationContext()))
+    assertThat(isURLAllowlisted(URI.create("http://gooogle.com"), RuntimeEnvironment.application))
         .isFalse();
   }
 
   @Test
   public void subdomainsWithConfigFile_respectTheAllowlist() {
+    assertThat(isURLAllowlisted(URI.create("http://google.com"), RuntimeEnvironment.application))
+        .isTrue();
     assertThat(
-            isURLAllowlisted(
-                URI.create("http://google.com"), ApplicationProvider.getApplicationContext()))
+            isURLAllowlisted(URI.create("http://mail.google.com"), RuntimeEnvironment.application))
         .isTrue();
     assertThat(
             isURLAllowlisted(
-                URI.create("http://mail.google.com"), ApplicationProvider.getApplicationContext()))
-        .isTrue();
-    assertThat(
-            isURLAllowlisted(
-                URI.create("http://super.mail.google.com"),
-                ApplicationProvider.getApplicationContext()))
+                URI.create("http://super.mail.google.com"), RuntimeEnvironment.application))
         .isTrue();
   }
 
   @Test
   public void wwwDomainsWithConfigFile_respectTheAllowlist() {
     assertThat(
-            isURLAllowlisted(
-                URI.create("http://www.google.com"), ApplicationProvider.getApplicationContext()))
+            isURLAllowlisted(URI.create("http://www.google.com"), RuntimeEnvironment.application))
         .isTrue();
     assertThat(
             isURLAllowlisted(
-                URI.create("http://www.mail.google.com"),
-                ApplicationProvider.getApplicationContext()))
+                URI.create("http://www.mail.google.com"), RuntimeEnvironment.application))
         .isTrue();
     assertThat(
             isURLAllowlisted(
-                URI.create("http://www.super.mail.google.com"),
-                ApplicationProvider.getApplicationContext()))
+                URI.create("http://www.super.mail.google.com"), RuntimeEnvironment.application))
         .isTrue();
 
     assertThat(
-            isURLAllowlisted(
-                URI.create("http://www.gooogle.com"), ApplicationProvider.getApplicationContext()))
+            isURLAllowlisted(URI.create("http://www.gooogle.com"), RuntimeEnvironment.application))
         .isFalse();
     assertThat(
             isURLAllowlisted(
-                URI.create("http://www.mail.gooogle.com"),
-                ApplicationProvider.getApplicationContext()))
+                URI.create("http://www.mail.gooogle.com"), RuntimeEnvironment.application))
         .isFalse();
   }
 
@@ -129,8 +115,7 @@ public class URLAllowlistTest {
   private static Context createDummyContext() throws PackageManager.NameNotFoundException {
     PackageInfo packageInfo = new PackageInfo();
     packageInfo.packageName = "com.bogus";
-    shadowOf(ApplicationProvider.getApplicationContext().getPackageManager())
-        .addPackage(packageInfo);
-    return ApplicationProvider.getApplicationContext().createPackageContext("com.bogus", 0);
+    shadowOf(RuntimeEnvironment.application.getPackageManager()).addPackage(packageInfo);
+    return RuntimeEnvironment.application.createPackageContext("com.bogus", 0);
   }
 }

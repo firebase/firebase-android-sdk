@@ -19,7 +19,6 @@ import static org.junit.Assert.assertThrows;
 
 import android.app.job.JobInfo;
 import android.content.ComponentName;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
@@ -29,6 +28,7 @@ import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class SchedulerConfigTest {
@@ -126,8 +126,7 @@ public class SchedulerConfigTest {
   @Test
   public void configureJob_shouldSetCorrectDelay() {
     ComponentName serviceComponent =
-        new ComponentName(
-            ApplicationProvider.getApplicationContext(), JobInfoSchedulerService.class);
+        new ComponentName(RuntimeEnvironment.application, JobInfoSchedulerService.class);
     SchedulerConfig config = createConfig(Collections.emptySet(), DELTA);
 
     JobInfo job =
@@ -142,8 +141,7 @@ public class SchedulerConfigTest {
   @Test
   public void configureJob_withDefaults_shouldSetCorrectFlags() {
     ComponentName serviceComponent =
-        new ComponentName(
-            ApplicationProvider.getApplicationContext(), JobInfoSchedulerService.class);
+        new ComponentName(RuntimeEnvironment.application, JobInfoSchedulerService.class);
     SchedulerConfig config = createConfig(Collections.emptySet(), DELTA);
 
     JobInfo job =
@@ -159,8 +157,7 @@ public class SchedulerConfigTest {
   @Test
   public void configureJob_whenUnmetered_shouldSetCorrectFlags() {
     ComponentName serviceComponent =
-        new ComponentName(
-            ApplicationProvider.getApplicationContext(), JobInfoSchedulerService.class);
+        new ComponentName(RuntimeEnvironment.application, JobInfoSchedulerService.class);
     SchedulerConfig config =
         createConfig(EnumSet.of(SchedulerConfig.Flag.NETWORK_UNMETERED), DELTA);
 
@@ -177,8 +174,7 @@ public class SchedulerConfigTest {
   @Test
   public void configureJob_whenIdle_shouldSetCorrectFlags() {
     ComponentName serviceComponent =
-        new ComponentName(
-            ApplicationProvider.getApplicationContext(), JobInfoSchedulerService.class);
+        new ComponentName(RuntimeEnvironment.application, JobInfoSchedulerService.class);
     SchedulerConfig config = createConfig(EnumSet.of(SchedulerConfig.Flag.DEVICE_IDLE), DELTA);
 
     JobInfo job =
@@ -194,8 +190,7 @@ public class SchedulerConfigTest {
   @Test
   public void configureJob_whenCharging_shouldSetCorrectFlags() {
     ComponentName serviceComponent =
-        new ComponentName(
-            ApplicationProvider.getApplicationContext(), JobInfoSchedulerService.class);
+        new ComponentName(RuntimeEnvironment.application, JobInfoSchedulerService.class);
     SchedulerConfig config = createConfig(EnumSet.of(SchedulerConfig.Flag.DEVICE_CHARGING), DELTA);
 
     JobInfo job =

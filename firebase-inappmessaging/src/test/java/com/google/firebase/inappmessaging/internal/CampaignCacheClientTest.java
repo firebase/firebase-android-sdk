@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.app.Application;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import com.google.protobuf.Parser;
@@ -36,6 +35,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
@@ -74,7 +74,7 @@ public class CampaignCacheClientTest {
     campaignCacheClient =
         new CampaignCacheClient(
             storageClient,
-            (Application) ApplicationProvider.getApplicationContext(),
+            (Application) RuntimeEnvironment.application.getApplicationContext(),
             new FakeClock(NOW));
 
     storageWriteObserver = TestObserver.create();

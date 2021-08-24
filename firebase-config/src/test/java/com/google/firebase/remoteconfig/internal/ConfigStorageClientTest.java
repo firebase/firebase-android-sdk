@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 
 import android.content.Context;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
@@ -33,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -52,7 +52,7 @@ public class ConfigStorageClientTest {
 
   @Before
   public void setUp() throws Exception {
-    context = ApplicationProvider.getApplicationContext();
+    context = RuntimeEnvironment.application.getApplicationContext();
 
     ConfigStorageClient.clearInstancesForTest();
     storageClient = ConfigStorageClient.getInstance(context, FILE_NAME);

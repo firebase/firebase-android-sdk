@@ -34,6 +34,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.RuntimeEnvironment.application;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -189,7 +190,7 @@ public class FirebaseInAppMessagingDisplayTest {
     activityTwo = Robolectric.buildActivity(TestSecondActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    LayoutInflater inflater = LayoutInflater.from(ApplicationProvider.getApplicationContext());
+    LayoutInflater inflater = LayoutInflater.from(application);
     imageBindingWrapper =
         spy(new ImageBindingWrapper(imageLayoutConfig, inflater, IMAGE_MESSAGE_MODEL));
     modalBindingWrapper =
@@ -216,7 +217,7 @@ public class FirebaseInAppMessagingDisplayTest {
             impressionTimer,
             autoDismissTimer,
             windowManager,
-            ApplicationProvider.getApplicationContext(),
+            application,
             bindingClient,
             animator);
   }
@@ -554,11 +555,7 @@ public class FirebaseInAppMessagingDisplayTest {
     verify(fiamImageRequestCreator).into(any(ImageView.class), callbackArgCaptor.capture());
     callbackArgCaptor.getValue().onSuccess();
 
-    verify(animator)
-        .slideIntoView(
-            eq(ApplicationProvider.getApplicationContext()),
-            any(View.class),
-            eq(FiamAnimator.Position.TOP));
+    verify(animator).slideIntoView(eq(application), any(View.class), eq(FiamAnimator.Position.TOP));
   }
 
   @Test

@@ -17,7 +17,6 @@ package com.google.firebase.storage;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Build;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -34,6 +33,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
@@ -163,7 +163,7 @@ public class StorageReferenceTest {
   public void initWithApp() throws Exception {
     FirebaseApp app2 =
         FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
+            RuntimeEnvironment.application.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setApiKey("fooey")
                 .setApplicationId("fooey")

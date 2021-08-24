@@ -19,7 +19,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.os.Build;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.storage.internal.MockClockHelper;
@@ -32,6 +31,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
@@ -50,7 +50,7 @@ public class PathingTest {
     MockClockHelper.install();
     app =
         FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
+            RuntimeEnvironment.application.getApplicationContext(),
             new FirebaseOptions.Builder().setApiKey("fooey").setApplicationId("fooey").build());
   }
 

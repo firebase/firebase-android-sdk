@@ -16,7 +16,6 @@ package com.google.firebase.datatransport;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
@@ -24,13 +23,14 @@ import com.google.firebase.FirebaseOptions;
 import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.RuntimeEnvironment;
 
 @RunWith(AndroidJUnit4.class)
 public class TransportRegistrationTest {
   private static void withApp(Consumer<FirebaseApp> consumer) {
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
+            RuntimeEnvironment.application,
             new FirebaseOptions.Builder()
                 .setApplicationId("appId")
                 .setProjectId("123")
