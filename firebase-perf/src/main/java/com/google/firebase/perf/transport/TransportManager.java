@@ -78,7 +78,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>TODO(b/172008005): Implement a Callback functionality for the caller/subscriber to know
  * whether the log was actually dispatched or not.
+ *
+ * @hide
  */
+
+/** @hide */
 public class TransportManager implements AppStateCallback {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();

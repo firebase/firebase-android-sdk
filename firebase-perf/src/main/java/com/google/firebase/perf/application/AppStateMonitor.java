@@ -45,7 +45,13 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Trace timer implementation to send foreground and background session log. */
+/**
+ * Trace timer implementation to send foreground and background session log.
+ *
+ * @hide
+ */
+
+/** @hide */
 public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
@@ -122,6 +128,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  /** @hide */
+  /** @hide */
   public void incrementCount(@NonNull String name, long value) {
     // This method is called by RateLimiter.java when a log exceeds rate limit and to be dropped
     // It can be on any thread. sendSessionLog() method is called in callback methods from main UI
@@ -136,16 +144,24 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  /** @hide */
+  /** @hide */
   public void incrementTsnsCount(int value) {
     tsnsCount.addAndGet(value);
   }
 
+  /** @hide */
+  /** @hide */
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
 
+  /** @hide */
+  /** @hide */
   @Override
   public void onActivityDestroyed(Activity activity) {}
 
+  /** @hide */
+  /** @hide */
   @Override
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
@@ -158,6 +174,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  /** @hide */
+  /** @hide */
   @Override
   public synchronized void onActivityStopped(Activity activity) {
     if (isScreenTraceSupported(activity)) {
@@ -176,6 +194,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  /** @hide */
+  /** @hide */
   @Override
   public synchronized void onActivityResumed(Activity activity) {
     // cases:
@@ -206,7 +226,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     return isColdStart;
   }
 
-  /** @return current app state. */
+  /**
+   * @return current app state.
+   * @hide
+   */
+  /** @hide */
   public ApplicationProcessState getAppState() {
     return currentAppState;
   }
@@ -214,8 +238,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   /**
    * Register a subscriber to receive app state update.
    *
-   * @param subscriber an AppStateCallback instance.
+   * @param client an AppStateCallback instance.
+   * @hide
    */
+  /** @hide */
   public void registerForAppState(WeakReference<AppStateCallback> subscriber) {
     synchronized (appStateSubscribers) {
       appStateSubscribers.add(subscriber);
@@ -226,7 +252,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * Unregister the subscriber to stop receiving app state update.
    *
    * @param subscriber an AppStateCallback instance.
+   * @hide
    */
+  /** @hide */
   public void unregisterForAppState(WeakReference<AppStateCallback> subscriber) {
     synchronized (appStateSubscribers) {
       appStateSubscribers.remove(subscriber);
@@ -237,7 +265,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * Register a subscriber to receive app cold start update.
    *
    * @param subscriber the {@link AppColdStartCallback} instance.
+   * @hide
    */
+  /** @hide */
   public void registerForAppColdStart(AppColdStartCallback subscriber) {
     synchronized (appStateSubscribers) {
       appColdStartSubscribers.add(subscriber);
@@ -422,12 +452,23 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
-  /** An interface to be implemented by subscribers which needs to receive app state update. */
+  /**
+   * An interface to be implemented by subscribers which needs to receive app state update.
+   *
+   * @hide
+   */
+  /** @hide */
   public static interface AppStateCallback {
+    /** @hide */
+    /** @hide */
     public void onUpdateAppState(ApplicationProcessState newState);
   }
 
-  /** An interface to be implemented by subscribers which needs to receive app cold start update. */
+  /**
+   * An interface to be implemented by subscribers which needs to receive app cold start update.
+   *
+   * @hide
+   */
   public static interface AppColdStartCallback {
     public void onAppColdStart();
   }
@@ -437,7 +478,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    *
    * @param activity activity object.
    * @return screen trace name.
+   * @hide
    */
+  /** @hide */
   public static String getScreenTraceName(Activity activity) {
     return Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName();
   }

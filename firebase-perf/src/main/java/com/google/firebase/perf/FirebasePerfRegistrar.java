@@ -38,6 +38,7 @@ import java.util.List;
  *
  * @hide
  */
+/** @hide */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
 

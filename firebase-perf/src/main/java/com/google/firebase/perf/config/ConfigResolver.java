@@ -48,7 +48,10 @@ import com.google.firebase.perf.util.Utils;
  * Retrieves configuration value from various config storage sources and returns resolved
  * configuration value to the caller. This class is the single source of truth for all
  * configurations across Firebase Performance.
+ *
+ * @hide
  */
+/** @hide */
 public class ConfigResolver {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();

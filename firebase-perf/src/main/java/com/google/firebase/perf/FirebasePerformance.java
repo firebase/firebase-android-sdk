@@ -266,6 +266,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    *     collection enablement
    * @hide
    */
+  /** @hide */
   public synchronized void setPerformanceCollectionEnabled(@Nullable Boolean enable) {
     // If FirebaseApp is not initialized, Firebase Performance API is not effective yet.
     try {
@@ -327,6 +328,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @hide
    */
   @Override
+  /** @hide */
   public void putAttribute(@NonNull String attribute, @NonNull String value) {
     boolean noError = true;
     try {
@@ -369,6 +371,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @hide
    */
   @Override
+  /** @hide */
   public void removeAttribute(@NonNull String attribute) {
     mCustomAttributes.remove(attribute);
   }
@@ -382,6 +385,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    */
   @Override
   @Nullable
+  /** @hide */
   public String getAttribute(@NonNull String attribute) {
     return mCustomAttributes.get(attribute);
   }
@@ -394,6 +398,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    */
   @Override
   @NonNull
+  /** @hide */
   public Map<String, String> getAttributes() {
     return new HashMap<>(mCustomAttributes);
   }

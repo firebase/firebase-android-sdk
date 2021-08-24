@@ -21,7 +21,10 @@ package com.google.firebase.perf.util;
  * <p>Similar to {@link java.util.concurrent.TimeUnit}, but for storage quantities.
  *
  * <p>Reference: {@link com.google.android.libraries.stitch.util.StorageUnit}
+ *
+ * @hide
  */
+/** @hide */
 public enum StorageUnit {
   TERABYTES(1024L * 1024L * 1024L * 1024L) {
     @Override

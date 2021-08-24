@@ -40,7 +40,10 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The class methods are not generally thread safe, but it is thread safe to read and write to
  * the ConcurrentLinkedQueue.
+ *
+ * @hide
  */
+/** @hide */
 public class CpuGaugeCollector {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();

@@ -38,7 +38,10 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>The source of Remote config is currently Firebase Remote Config. Read more at
  * go/fireperf-remote-config-android.
+ *
+ * @hide
  */
+/** @hide */
 @Keep // Needed because of b/117526359.
 public class RemoteConfigManager {
 

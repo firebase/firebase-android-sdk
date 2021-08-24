@@ -51,6 +51,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    *
    * @hide
    */
+  /** @hide */
   public HttpMetric(
       String url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer) {
     customAttributesMap = new ConcurrentHashMap<>();
@@ -71,6 +72,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    *
    * @hide
    */
+  /** @hide */
   public HttpMetric(
       URL url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer) {
     this(url.toString(), httpMethod, transportManager, timer);
@@ -123,6 +125,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    *
    * @hide
    */
+  /** @hide */
   public void markRequestComplete() {
     networkMetricBuilder.setTimeToRequestCompletedMicros(timer.getDurationMicros());
   }
@@ -132,6 +135,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    *
    * @hide
    */
+  /** @hide */
   public void markResponseStart() {
     networkMetricBuilder.setTimeToResponseInitiatedMicros(timer.getDurationMicros());
   }

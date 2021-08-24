@@ -20,7 +20,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Stores all configuration flag names and their constant values. */
+/**
+ * Stores all configuration flag names and their constant values.
+ *
+ * @hide
+ */
+/** @hide */
 final class ConfigurationConstants {
 
   protected static final class CollectionDeactivated extends ConfigurationFlag<Boolean> {
