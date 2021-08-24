@@ -27,6 +27,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.model.mutation.MutationSquash;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import java.util.HashSet;
 import java.util.List;
@@ -209,7 +210,7 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        mutation.applyToLocalView(document, batch.getLocalWriteTime());
+        mutation.applyToLocalView(document, batch.getLocalWriteTime(), MutationSquash.Type.None);
         if (!document.isFoundDocument()) {
           remoteDocuments = remoteDocuments.remove(key);
         }

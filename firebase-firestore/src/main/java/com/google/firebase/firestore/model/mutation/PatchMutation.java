@@ -126,11 +126,12 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public MutationSquash.Type applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
-      return;
+      return squashType;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
@@ -140,6 +141,19 @@ public final class PatchMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
+
+    if (squashType == MutationSquash.Type.Patch) {
+      return MutationSquash.Type.Patch;
+    } else if (squashType == MutationSquash.Type.None) {
+      if (getPrecondition().isNone()) {
+        return MutationSquash.Type.PatchWithMerge;
+      }
+      return MutationSquash.Type.Patch;
+    } else if (squashType == MutationSquash.Type.PatchWithMerge) {
+      return MutationSquash.Type.PatchWithMerge;
+    }
+    // squashType == Set or Delete, because this mutation is applied.
+    return MutationSquash.Type.Set;
   }
 
   private Map<FieldPath, Value> getPatch() {

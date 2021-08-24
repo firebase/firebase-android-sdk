@@ -86,11 +86,12 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public MutationSquash.Type applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
-      return;
+      return squashType;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
@@ -99,6 +100,7 @@ public final class SetMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), localValue)
         .setHasLocalMutations();
+    return MutationSquash.Type.Set;
   }
 
   /** Returns the object value to use when setting the document. */

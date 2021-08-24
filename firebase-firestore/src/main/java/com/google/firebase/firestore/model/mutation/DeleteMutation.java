@@ -68,11 +68,15 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public MutationSquash.Type applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
       document.convertToNoDocument(SnapshotVersion.NONE);
+      return MutationSquash.Type.Delete;
     }
+
+    return squashType;
   }
 }

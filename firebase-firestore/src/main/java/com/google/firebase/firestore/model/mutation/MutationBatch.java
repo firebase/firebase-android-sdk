@@ -104,7 +104,7 @@ public final class MutationBatch {
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        mutation.applyToLocalView(document, localWriteTime);
+        mutation.applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
       }
     }
 
@@ -112,7 +112,7 @@ public final class MutationBatch {
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        mutation.applyToLocalView(document, localWriteTime);
+        mutation.applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
       }
     }
   }
