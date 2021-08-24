@@ -79,8 +79,8 @@ dependencies {
         implementation project(":firebase-perf")
 
     } else {
-        println("Building with latest public version ':firebase-perf:$latestReleasedVersion' of SDK")
-        implementation "com.google.firebase:firebase-perf:$latestReleasedVersion"
+        println("Building with latest public version ':firebase-perf:$currentReleasedVersion' of SDK")
+        implementation "com.google.firebase:firebase-perf:$currentReleasedVersion"
     }
 
     // Google Deps
