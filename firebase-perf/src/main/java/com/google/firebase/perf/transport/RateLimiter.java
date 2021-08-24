@@ -16,7 +16,6 @@ package com.google.firebase.perf.transport;
 
 import static com.google.firebase.perf.metrics.resource.ResourceType.NETWORK;
 import static com.google.firebase.perf.metrics.resource.ResourceType.TRACE;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
@@ -26,7 +25,6 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.resource.ResourceType;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
-import com.google.firebase.perf.util.Rate;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -36,6 +34,7 @@ import com.google.firebase.perf.v1.SessionVerbosity;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implement the Token Bucket rate limiting algorithm. The token bucket initially holds "capacity"
@@ -61,10 +60,10 @@ final class RateLimiter {
    * Construct a token bucket rate limiter.
    *
    * @param appContext the application's context.
-   * @param rate the Rate object representing the number of tokens generated per specified time unit
+   * @param rate number of token generated per minute.
    * @param capacity token bucket capacity
    */
-  public RateLimiter(@NonNull Context appContext, final Rate rate, final long capacity) {
+  public RateLimiter(@NonNull Context appContext, final double rate, final long capacity) {
     this(rate, capacity, new Clock(), getSamplingBucketId(), ConfigResolver.getInstance());
     this.isLogcatEnabled = Utils.isDebugLoggingEnabled(appContext);
   }
@@ -76,7 +75,7 @@ final class RateLimiter {
   }
 
   RateLimiter(
-      final Rate rate,
+      final double rate,
       final long capacity,
       final Clock clock,
       float samplingBucketId,
@@ -212,29 +211,29 @@ final class RateLimiter {
   static class RateLimiterImpl {
 
     private static final AndroidLogger logger = AndroidLogger.getInstance();
-    private static final long MICROS_IN_A_SECOND = SECONDS.toMicros(1);
+    private static final long MICROS_IN_A_SECOND = TimeUnit.SECONDS.toMicros(1);
 
     private final Clock clock;
     private final boolean isLogcatEnabled;
 
     // Last time a token is consumed.
-    private Timer lastTimeTokenReplenished;
+    private Timer lastTimeTokenConsumed;
 
-    // The Rate object representing the number of tokens generated per specified time unit
-    private Rate rate;
+    // Number of new tokens generated per second.
+    private double rate;
     // Token bucket capacity, also the initial number of tokens in the bucket.
     private long capacity;
     // Number of tokens in the bucket.
     private long tokenCount;
 
-    private Rate foregroundRate;
-    private Rate backgroundRate;
+    private double foregroundRate;
+    private double backgroundRate;
 
     private long foregroundCapacity;
     private long backgroundCapacity;
 
     RateLimiterImpl(
-        final Rate rate,
+        final double rate,
         final long capacity,
         final Clock clock,
         ConfigResolver configResolver,
@@ -244,7 +243,7 @@ final class RateLimiter {
       this.capacity = capacity;
       this.rate = rate;
       tokenCount = capacity;
-      lastTimeTokenReplenished = this.clock.getTime();
+      lastTimeTokenConsumed = this.clock.getTime();
       setRateByReadingRemoteConfigValues(configResolver, type, isLogcatEnabled);
       this.isLogcatEnabled = isLogcatEnabled;
     }
@@ -261,20 +260,11 @@ final class RateLimiter {
       Timer now = clock.getTime();
       long newTokens =
           Math.max(
-              0,
-              (long)
-                  (lastTimeTokenReplenished.getDurationMicros(now)
-                      * rate.getTokensPerSeconds()
-                      / MICROS_IN_A_SECOND));
+              0, (long) (lastTimeTokenConsumed.getDurationMicros(now) * rate / MICROS_IN_A_SECOND));
       tokenCount = Math.min(tokenCount + newTokens, capacity);
-      if (newTokens > 0) {
-        lastTimeTokenReplenished =
-            new Timer(
-                lastTimeTokenReplenished.getMicros()
-                    + (long) (newTokens * MICROS_IN_A_SECOND / rate.getTokensPerSeconds()));
-      }
       if (tokenCount > 0) {
         tokenCount--;
+        lastTimeTokenConsumed = now;
         return true;
       }
       if (isLogcatEnabled) {
@@ -307,7 +297,7 @@ final class RateLimiter {
       long fLimitTime = getFlimitSec(configResolver, type);
       long fLimitEvents = getFlimitEvents(configResolver, type);
 
-      foregroundRate = new Rate(fLimitEvents, fLimitTime, SECONDS);
+      foregroundRate = ((double) fLimitEvents) / fLimitTime;
       foregroundCapacity = fLimitEvents;
       if (isLogcatEnabled) {
         logger.debug(
@@ -319,7 +309,7 @@ final class RateLimiter {
       long bLimitTime = getBlimitSec(configResolver, type);
       long bLimitEvents = getBlimitEvents(configResolver, type);
 
-      backgroundRate = new Rate(bLimitEvents, bLimitTime, SECONDS);
+      backgroundRate = ((double) bLimitEvents) / bLimitTime;
       backgroundCapacity = bLimitEvents;
       if (isLogcatEnabled) {
         logger.debug(
@@ -360,7 +350,7 @@ final class RateLimiter {
     }
 
     @VisibleForTesting
-    Rate getForegroundRate() {
+    double getForegroundRate() {
       return foregroundRate;
     }
 
@@ -370,7 +360,7 @@ final class RateLimiter {
     }
 
     @VisibleForTesting
-    Rate getBackgroundRate() {
+    double getBackgroundRate() {
       return backgroundRate;
     }
 
@@ -380,12 +370,12 @@ final class RateLimiter {
     }
 
     @VisibleForTesting
-    Rate getRate() {
+    double getRate() {
       return rate;
     }
 
     @VisibleForTesting
-    void setRate(Rate newRate) {
+    void setRate(double newRate) {
       rate = newRate;
     }
   }
