@@ -253,7 +253,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     if (!sortedCustomAttributes.isEmpty()) {
       eventBuilder.setApp(
-          capturedEvent.getApp().toBuilder()
+          capturedEvent
+              .getApp()
+              .toBuilder()
               .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
               .setInternalKeys(ImmutableList.from(sortedInternalKeys))
               .build());

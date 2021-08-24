@@ -50,7 +50,3 @@ dependencies {
 test {
     testLogging.showStandardStreams = true
 }
-
-googleJavaFormat {
-    exclude 'src/test/resources/**'
-}

@@ -131,7 +131,9 @@ public class TransportRuntimeTest {
         .thenAnswer(
             (Answer<EventInternal>)
                 invocation ->
-                    invocation.<EventInternal>getArgument(0).toBuilder()
+                    invocation
+                        .<EventInternal>getArgument(0)
+                        .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
     TransportFactory factory = runtime.newFactory(mockBackendName);
@@ -212,7 +214,9 @@ public class TransportRuntimeTest {
         .thenAnswer(
             (Answer<EventInternal>)
                 invocation ->
-                    invocation.<EventInternal>getArgument(0).toBuilder()
+                    invocation
+                        .<EventInternal>getArgument(0)
+                        .toBuilder()
                         .addMetadata(TEST_KEY, TEST_VALUE)
                         .build());
     TransportFactory factory = runtime.newFactory(mockBackendName);

@@ -129,7 +129,8 @@ public class ApiClientTest {
     doNothing().when(providerInstaller).install();
     clock = new FakeClock(new SystemClock().now());
     testFetchEligibleCampaignsResponse =
-        testFetchEligibleCampaignsResponse.toBuilder()
+        testFetchEligibleCampaignsResponse
+            .toBuilder()
             .setExpirationEpochTimestampMillis(clock.now() + TimeUnit.MINUTES.toMillis(5))
             .build();
 
@@ -295,7 +296,8 @@ public class ApiClientTest {
   public void getFiams_protectsFromBadPastCacheTimestamp() {
     // The expiration timestamp is set to duration of 1 day NOT the timestamp of now+1day
     FetchEligibleCampaignsResponse badCacheTimestamp =
-        testFetchEligibleCampaignsResponse.toBuilder()
+        testFetchEligibleCampaignsResponse
+            .toBuilder()
             .setExpirationEpochTimestampMillis(TimeUnit.DAYS.toMillis(1))
             .build();
 
@@ -315,7 +317,8 @@ public class ApiClientTest {
   public void getFiams_protectsFromFutureBadCacheTimestamp() {
     // The expiration timestamp is set to duration of 1 day NOT the timestamp of now+1day
     FetchEligibleCampaignsResponse badCacheTimestamp =
-        testFetchEligibleCampaignsResponse.toBuilder()
+        testFetchEligibleCampaignsResponse
+            .toBuilder()
             .setExpirationEpochTimestampMillis(
                 clock.now() + TimeUnit.DAYS.toMillis(3) + TimeUnit.SECONDS.toMillis(1))
             .build();

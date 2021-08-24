@@ -154,7 +154,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    *     com.google.firebase.iid.FirebaseInstanceId#getInstanceId()}.
    */
   @WorkerThread
-  public void onNewToken(@NonNull String token) {}
+  public void onNewToken(@NonNull String token) {};
 
   /** @hide */
   @Override

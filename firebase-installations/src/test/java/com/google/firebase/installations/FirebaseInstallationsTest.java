@@ -462,7 +462,8 @@ public class FirebaseInstallationsTest {
     when(mockBackend.createFirebaseInstallation(
             anyString(), anyString(), anyString(), anyString(), any()))
         .thenReturn(
-            TEST_INSTALLATION_RESPONSE.toBuilder()
+            TEST_INSTALLATION_RESPONSE
+                .toBuilder()
                 .setUri("/projects/" + TEST_PROJECT_ID + "/installations/" + TEST_FID_2)
                 .setFid(TEST_FID_2)
                 .build());

@@ -169,7 +169,8 @@ public class CrashlyticsReportTest {
     assertNotEquals(testSessionId, testReport.getSession().getIdentifier());
 
     final CrashlyticsReport updatedReport =
-        testReport.toBuilder()
+        testReport
+            .toBuilder()
             .setSession(
                 testReport.getSession().toBuilder().setIdentifierFromUtf8Bytes(utf8Bytes).build())
             .build();
