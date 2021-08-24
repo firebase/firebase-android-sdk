@@ -1,3 +1,7 @@
+# 20.0.2
+- [fixed] The SDK can now continue to issue writes for apps that send an
+  invalid App Check tokens if AppCheck enforcement is not enabled.
+
 # 20.0.1
 - [fixed] Fixed an issue where connections would hang when using appcheck
   without Auth.
