@@ -48,12 +48,12 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Mock private GaugeManager mockGaugeManager;
   @Mock private AppStateMonitor mockAppStateMonitor;
 
-  private NetworkRequestMetricBuilder networkMetricBuilder;
+  private NetworkRequestMetricBuilder builder;
 
   @Before
   public void setUp() {
     initMocks(this);
-    networkMetricBuilder =
+    builder =
         new NetworkRequestMetricBuilder(
             mockTransportManager, mockAppStateMonitor, mockGaugeManager);
   }
@@ -61,130 +61,127 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSetUrl() {
     String url = "www.google.com";
-    NetworkRequestMetric metric = networkMetricBuilder.setUrl(url).build();
+    NetworkRequestMetric metric = builder.setUrl(url).build();
     assertThat(metric.getUrl()).isEqualTo(url);
   }
 
   @Test
   public void testIsReportSent() {
-    assertThat(networkMetricBuilder.isReportSent()).isFalse();
+    assertThat(builder.isReportSent()).isFalse();
   }
 
   @Test
   public void testSetReportSent() {
-    networkMetricBuilder.setReportSent();
-    assertThat(networkMetricBuilder.isReportSent()).isTrue();
+    builder.setReportSent();
+    assertThat(builder.isReportSent()).isTrue();
   }
 
   @Test
   public void testSetHttpMethod() {
     String type = "GET";
-    NetworkRequestMetric metric = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric = builder.setHttpMethod(type).build();
     assertThat(metric.getHttpMethod()).isEqualTo(HttpMethod.GET);
 
     type = "PUT";
-    NetworkRequestMetric metric1 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric1 = builder.setHttpMethod(type).build();
     assertThat(metric1.getHttpMethod()).isEqualTo(HttpMethod.PUT);
 
     type = "POST";
-    NetworkRequestMetric metric2 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric2 = builder.setHttpMethod(type).build();
     assertThat(metric2.getHttpMethod()).isEqualTo(HttpMethod.POST);
 
     type = "DELETE";
-    NetworkRequestMetric metric3 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric3 = builder.setHttpMethod(type).build();
     assertThat(metric3.getHttpMethod()).isEqualTo(HttpMethod.DELETE);
 
     type = "POST";
-    NetworkRequestMetric metric4 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric4 = builder.setHttpMethod(type).build();
     assertThat(metric4.getHttpMethod()).isEqualTo(HttpMethod.POST);
 
     type = "HEAD";
-    NetworkRequestMetric metric5 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric5 = builder.setHttpMethod(type).build();
     assertThat(metric5.getHttpMethod()).isEqualTo(HttpMethod.HEAD);
 
     type = "PATCH";
-    NetworkRequestMetric metric6 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric6 = builder.setHttpMethod(type).build();
     assertThat(metric6.getHttpMethod()).isEqualTo(HttpMethod.PATCH);
 
     type = "OPTIONS";
-    NetworkRequestMetric metric7 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric7 = builder.setHttpMethod(type).build();
     assertThat(metric7.getHttpMethod()).isEqualTo(HttpMethod.OPTIONS);
 
     type = "TRACE";
-    NetworkRequestMetric metric8 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric8 = builder.setHttpMethod(type).build();
     assertThat(metric8.getHttpMethod()).isEqualTo(HttpMethod.TRACE);
 
     type = "CONNECT";
-    NetworkRequestMetric metric9 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric9 = builder.setHttpMethod(type).build();
     assertThat(metric9.getHttpMethod()).isEqualTo(HttpMethod.CONNECT);
 
     type = "UNKNOWN";
-    NetworkRequestMetric metric10 = networkMetricBuilder.setHttpMethod(type).build();
+    NetworkRequestMetric metric10 = builder.setHttpMethod(type).build();
     assertThat(metric10.getHttpMethod()).isEqualTo(HttpMethod.HTTP_METHOD_UNKNOWN);
   }
 
   @Test
   public void testSetRequestPayloadBytes() {
     long bytes = 256;
-    NetworkRequestMetric metric = networkMetricBuilder.setRequestPayloadBytes(bytes).build();
+    NetworkRequestMetric metric = builder.setRequestPayloadBytes(bytes).build();
     assertThat(metric.getRequestPayloadBytes()).isEqualTo(bytes);
   }
 
   @Test
   public void testSetResponsePayloadBytes() {
     long bytes = 256;
-    NetworkRequestMetric metric = networkMetricBuilder.setResponsePayloadBytes(bytes).build();
+    NetworkRequestMetric metric = builder.setResponsePayloadBytes(bytes).build();
     assertThat(metric.getResponsePayloadBytes()).isEqualTo(bytes);
   }
 
   @Test
   public void testSetHttpResponseCode() {
     int code = 200;
-    NetworkRequestMetric metric = networkMetricBuilder.setHttpResponseCode(code).build();
+    NetworkRequestMetric metric = builder.setHttpResponseCode(code).build();
     assertThat(metric.getHttpResponseCode()).isEqualTo(code);
   }
 
   @Test
   public void testSetResponseContentType() {
     String contentType = "text/html";
-    NetworkRequestMetric metric = networkMetricBuilder.setResponseContentType(contentType).build();
+    NetworkRequestMetric metric = builder.setResponseContentType(contentType).build();
     assertThat(metric.getResponseContentType()).isEqualTo(contentType);
   }
 
   @Test
   public void testSetRequestStartTimeMicros() {
     long time = 2000;
-    NetworkRequestMetric metric = networkMetricBuilder.setRequestStartTimeMicros(time).build();
+    NetworkRequestMetric metric = builder.setRequestStartTimeMicros(time).build();
     assertThat(metric.getClientStartTimeUs()).isEqualTo(time);
   }
 
   @Test
   public void testSetRequestEndTimeMicros() {
     long time = 2000;
-    NetworkRequestMetric metric =
-        networkMetricBuilder.setTimeToRequestCompletedMicros(time).build();
+    NetworkRequestMetric metric = builder.setTimeToRequestCompletedMicros(time).build();
     assertThat(metric.getTimeToRequestCompletedUs()).isEqualTo(time);
   }
 
   @Test
   public void testSetTimeToResponseInitiatedMicros() {
     long time = 2000;
-    NetworkRequestMetric metric =
-        networkMetricBuilder.setTimeToResponseInitiatedMicros(time).build();
+    NetworkRequestMetric metric = builder.setTimeToResponseInitiatedMicros(time).build();
     assertThat(metric.getTimeToResponseInitiatedUs()).isEqualTo(time);
   }
 
   @Test
   public void testSetTimeToResponseCompletedMicros() {
     long time = 2000;
-    NetworkRequestMetric metric =
-        networkMetricBuilder.setTimeToResponseCompletedMicros(time).build();
+    NetworkRequestMetric metric = builder.setTimeToResponseCompletedMicros(time).build();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(time);
   }
 
   @Test
   public void testAllNullFields() {
-    NetworkRequestMetric metric = networkMetricBuilder.build();
+    NetworkRequestMetric metric = builder.build();
 
     assertThat(metric.hasUrl()).isFalse();
     assertThat(metric.hasHttpMethod()).isFalse();
@@ -201,19 +198,19 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
   @Test
   public void testNoSessionIdsInNetworkRequestMetricWhenNotStarted() {
-    networkMetricBuilder.setUrl(/* url= */ "www.google.com");
+    builder.setUrl(/* url= */ "www.google.com");
 
-    assertThat(networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(networkMetricBuilder.getSessions()).isEmpty();
+    assertThat(builder.getSessions()).isNotNull();
+    assertThat(builder.getSessions()).isEmpty();
   }
 
   @Test
   public void testSessionIdsInNetworkRequestMetricAfterStarted() {
-    networkMetricBuilder.setUrl(/* url= */ "www.google.com");
-    networkMetricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
+    builder.setUrl(/* url= */ "www.google.com");
+    builder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(networkMetricBuilder.getSessions()).isNotEmpty();
+    assertThat(builder.getSessions()).isNotNull();
+    assertThat(builder.getSessions()).isNotEmpty();
   }
 
   @Test
@@ -222,8 +219,8 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
         NetworkRequestMetricBuilder.builder(mockTransportManager);
     metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(this.networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
+    assertThat(builder.getSessions()).isNotNull();
+    assertThat(builder.getSessions()).isEmpty();
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
     SessionManager.getInstance().updatePerfSession(ApplicationProcessState.FOREGROUND);
@@ -237,8 +234,8 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
         NetworkRequestMetricBuilder.builder(mockTransportManager);
     metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(this.networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
+    assertThat(builder.getSessions()).isNotNull();
+    assertThat(builder.getSessions()).isEmpty();
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
 
@@ -254,8 +251,8 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
         NetworkRequestMetricBuilder.builder(mockTransportManager);
     metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(this.networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
+    assertThat(builder.getSessions()).isNotNull();
+    assertThat(builder.getSessions()).isEmpty();
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
     SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
@@ -265,7 +262,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSetRequestStartTimeMicrosTriggerSingleGaugeCollectionOnVerboseSession() {
     forceVerboseSession();
-    networkMetricBuilder.setRequestStartTimeMicros(2000).build();
+    builder.setRequestStartTimeMicros(2000).build();
     verify(mockGaugeManager).collectGaugeMetricOnce(ArgumentMatchers.nullable(Timer.class));
   }
 
@@ -273,7 +270,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   public void
       testSetRequestStartTimeMicrosDoesNotSingleTriggerGaugeCollectionOnNonVerboseSession() {
     forceNonVerboseSession();
-    networkMetricBuilder.setRequestStartTimeMicros(2000).build();
+    builder.setRequestStartTimeMicros(2000).build();
     verify(mockGaugeManager, never())
         .collectGaugeMetricOnce(ArgumentMatchers.nullable(Timer.class));
   }
@@ -281,7 +278,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSetTimeToResponseCompletedMicrosTriggerSingleGaugeCollectionOnVerboseSession() {
     forceVerboseSession();
-    networkMetricBuilder.setTimeToResponseCompletedMicros(3000).build();
+    builder.setTimeToResponseCompletedMicros(3000).build();
     verify(mockGaugeManager).collectGaugeMetricOnce(ArgumentMatchers.nullable(Timer.class));
   }
 
@@ -289,70 +286,70 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   public void
       testSetTimeToResponseCompletedMicrosDoesNotTriggerSingleGaugeCollectionOnNonVerboseSession() {
     forceNonVerboseSession();
-    networkMetricBuilder.setTimeToResponseCompletedMicros(3000).build();
+    builder.setTimeToResponseCompletedMicros(3000).build();
     verify(mockGaugeManager, never())
         .collectGaugeMetricOnce(ArgumentMatchers.nullable(Timer.class));
   }
 
   @Test
   public void testSettingInvalidContentType() {
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType("");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isTrue();
+    builder.clearBuilderFields();
+    builder.setResponseContentType("");
+    assertThat(builder.build().hasResponseContentType()).isTrue();
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType("a\u001f");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isFalse();
+    builder.clearBuilderFields();
+    builder.setResponseContentType("a\u001f");
+    assertThat(builder.build().hasResponseContentType()).isFalse();
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType("a\u0020");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isTrue();
+    builder.clearBuilderFields();
+    builder.setResponseContentType("a\u0020");
+    assertThat(builder.build().hasResponseContentType()).isTrue();
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType("a\u007f");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isTrue();
+    builder.clearBuilderFields();
+    builder.setResponseContentType("a\u007f");
+    assertThat(builder.build().hasResponseContentType()).isTrue();
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType("a\u0080");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isFalse();
+    builder.clearBuilderFields();
+    builder.setResponseContentType("a\u0080");
+    assertThat(builder.build().hasResponseContentType()).isFalse();
 
     byte[] bytes = new byte[Constants.MAX_CONTENT_TYPE_LENGTH];
     Arrays.fill(bytes, (byte) 'x');
     String str = new String(bytes, StandardCharsets.UTF_8);
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType(str);
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isTrue();
+    builder.clearBuilderFields();
+    builder.setResponseContentType(str);
+    assertThat(builder.build().hasResponseContentType()).isTrue();
 
-    networkMetricBuilder.clearBuilderFields();
-    networkMetricBuilder.setResponseContentType(str + "x");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isFalse();
+    builder.clearBuilderFields();
+    builder.setResponseContentType(str + "x");
+    assertThat(builder.build().hasResponseContentType()).isFalse();
   }
 
   @Test
   public void testSettingNullForContentTypeClearsIt() {
-    networkMetricBuilder.setResponseContentType("application/json");
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isTrue();
+    builder.setResponseContentType("application/json");
+    assertThat(builder.build().hasResponseContentType()).isTrue();
 
-    networkMetricBuilder.setResponseContentType(null);
-    assertThat(networkMetricBuilder.build().hasResponseContentType()).isFalse();
+    builder.setResponseContentType(null);
+    assertThat(builder.build().hasResponseContentType()).isFalse();
   }
 
   @Test
   public void testUpdateSessionWithValidSessionIsAdded() {
-    networkMetricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
+    builder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(networkMetricBuilder.getSessions()).hasSize(1);
-    networkMetricBuilder.updateSession(PerfSession.create());
-    assertThat(networkMetricBuilder.getSessions()).hasSize(2);
+    assertThat(builder.getSessions()).hasSize(1);
+    builder.updateSession(PerfSession.create());
+    assertThat(builder.getSessions()).hasSize(2);
   }
 
   @Test
   public void testUpdateSessionWithNullIsNotAdded() {
-    networkMetricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
+    builder.setRequestStartTimeMicros(/* time= */ 2000);
 
-    assertThat(networkMetricBuilder.getSessions()).hasSize(1);
-    networkMetricBuilder.updateSession(null);
-    assertThat(networkMetricBuilder.getSessions()).hasSize(1);
+    assertThat(builder.getSessions()).hasSize(1);
+    builder.updateSession(null);
+    assertThat(builder.getSessions()).hasSize(1);
   }
 }

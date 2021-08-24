@@ -55,7 +55,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
   @Mock private Clock mClock;
   @Mock private ConfigResolver mockConfigResolver;
 
-  private long currentTime = 0;
+  private long mCurrentTime = 0;
 
   @Before
   public void setUp() {
@@ -64,7 +64,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             new Answer<Timer>() {
               @Override
               public Timer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return new Timer(currentTime, currentTime * 1000);
+                return new Timer(mCurrentTime, mCurrentTime * 1000);
               }
             })
         .when(mClock)
@@ -87,35 +87,35 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
         new RateLimiterImpl(2.0d / 60, 2, mClock, mockConfigResolver, NETWORK, false);
     PerfMetric metric = PerfMetric.getDefaultInstance();
     // clock is 15 seconds, token count is 1.
-    currentTime = 1 * FIFTEEN_SECONDS;
+    mCurrentTime = 1 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 30 seconds, count is 0.
-    currentTime = 2 * FIFTEEN_SECONDS;
+    mCurrentTime = 2 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 45 seconds, count is 0.
-    currentTime = 3 * FIFTEEN_SECONDS;
+    mCurrentTime = 3 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isFalse();
     ;
     // clock is 60 seconds, count is 0
-    currentTime = 4 * FIFTEEN_SECONDS;
+    mCurrentTime = 4 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 75 seconds, count is 0,
-    currentTime = 5 * FIFTEEN_SECONDS;
+    mCurrentTime = 5 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isFalse();
     // clock is 90 seconds, count is 0
-    currentTime = 6 * FIFTEEN_SECONDS;
+    mCurrentTime = 6 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 105 seconds, count is 0
-    currentTime = 7 * FIFTEEN_SECONDS;
+    mCurrentTime = 7 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isFalse();
     // clock is 120 seconds, count is 0,
-    currentTime = 8 * FIFTEEN_SECONDS;
+    mCurrentTime = 8 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 135 seconds, count is 0,
-    currentTime = 9 * FIFTEEN_SECONDS;
+    mCurrentTime = 9 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isFalse();
     // clock is 150 seconds, count is 0,
-    currentTime = 10 * FIFTEEN_SECONDS;
+    mCurrentTime = 10 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
   }
 
@@ -149,43 +149,43 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             .setNetworkRequestMetric(NetworkRequestMetric.getDefaultInstance())
             .build();
     // clock is 15 seconds, token count is 1.
-    currentTime = 1 * FIFTEEN_SECONDS;
+    mCurrentTime = 1 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
     // clock is 30 seconds, count is 0.
-    currentTime = 2 * FIFTEEN_SECONDS;
+    mCurrentTime = 2 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
     // clock is 45 seconds, count is 0.
-    currentTime = 3 * FIFTEEN_SECONDS;
+    mCurrentTime = 3 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isFalse();
     assertThat(limiter.check(network)).isFalse();
     // clock is 60 seconds, count is 0
-    currentTime = 4 * FIFTEEN_SECONDS;
+    mCurrentTime = 4 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
     // clock is 75 seconds, count is 0,
-    currentTime = 5 * FIFTEEN_SECONDS;
+    mCurrentTime = 5 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isFalse();
     assertThat(limiter.check(network)).isFalse();
     // clock is 90 seconds, count is 0
-    currentTime = 6 * FIFTEEN_SECONDS;
+    mCurrentTime = 6 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
     // clock is 105 seconds, count is 0
-    currentTime = 7 * FIFTEEN_SECONDS;
+    mCurrentTime = 7 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isFalse();
     assertThat(limiter.check(network)).isFalse();
     // clock is 120 seconds, count is 0,
-    currentTime = 8 * FIFTEEN_SECONDS;
+    mCurrentTime = 8 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
     // clock is 135 seconds, count is 0,
-    currentTime = 9 * FIFTEEN_SECONDS;
+    mCurrentTime = 9 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isFalse();
     assertThat(limiter.check(network)).isFalse();
     // clock is 150 seconds, count is 0,
-    currentTime = 10 * FIFTEEN_SECONDS;
+    mCurrentTime = 10 * FIFTEEN_SECONDS;
     assertThat(limiter.check(trace)).isTrue();
     assertThat(limiter.check(network)).isTrue();
   }
@@ -410,36 +410,36 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
         new RateLimiterImpl(2.0d / 60, 2, mClock, mockConfigResolver, TRACE, false);
     PerfMetric metric = PerfMetric.getDefaultInstance();
     // clock is 15 seconds, token count is 1.
-    currentTime = 1 * FIFTEEN_SECONDS;
+    mCurrentTime = 1 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 30 seconds, count is 0.
-    currentTime = 2 * FIFTEEN_SECONDS;
+    mCurrentTime = 2 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 45 seconds, count is 0.
-    currentTime = 3 * FIFTEEN_SECONDS;
+    mCurrentTime = 3 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isFalse();
     // clock is 60 seconds, count is 0
-    currentTime = 4 * FIFTEEN_SECONDS;
+    mCurrentTime = 4 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // change rate to 4/minute
     limiter.setRate(4.0d / 60);
     // clock is 75 seconds, count is 0,
-    currentTime = 5 * FIFTEEN_SECONDS;
+    mCurrentTime = 5 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 90 seconds, count is 0
-    currentTime = 6 * FIFTEEN_SECONDS;
+    mCurrentTime = 6 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 105 seconds, count is 0
-    currentTime = 7 * FIFTEEN_SECONDS;
+    mCurrentTime = 7 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 120 seconds, count is 0,
-    currentTime = 8 * FIFTEEN_SECONDS;
+    mCurrentTime = 8 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 135 seconds, count is 0,
-    currentTime = 9 * FIFTEEN_SECONDS;
+    mCurrentTime = 9 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
     // clock is 150 seconds, count is 0,
-    currentTime = 10 * FIFTEEN_SECONDS;
+    mCurrentTime = 10 * FIFTEEN_SECONDS;
     assertThat(limiter.check(metric)).isTrue();
   }
 

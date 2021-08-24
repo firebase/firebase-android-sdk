@@ -63,14 +63,14 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
   private interface ResponseHandlerInterface extends ResponseHandler<HttpResponse> {}
 
   @Mock private TransportManager transportManager;
-  @Mock private Timer timer;
-  @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
+  @Mock private Timer mTimer;
+  @Captor private ArgumentCaptor<NetworkRequestMetric> mArgMetric;
 
   @Before
   public void setUp() {
     initMocks(this);
-    when(timer.getMicros()).thenReturn((long) 1000);
-    when(timer.getDurationMicros()).thenReturn((long) 2000);
+    when(mTimer.getMicros()).thenReturn((long) 1000);
+    when(mTimer.getDurationMicros()).thenReturn((long) 2000);
   }
 
   @Test
@@ -81,13 +81,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(request)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, request, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, request, mTimer, transportManager);
 
     assertSame(httpResponse, response);
-    verify(timer).reset();
+    verify(mTimer).reset();
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetric(metric);
   }
 
@@ -100,13 +100,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(request, context)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, request, context, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, request, context, mTimer, transportManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetric(metric);
   }
 
@@ -119,13 +119,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(host, request)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, host, request, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, host, request, mTimer, transportManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetric(metric);
   }
 
@@ -139,13 +139,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(host, request, c)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, host, request, c, mTimer, transportManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetric(metric);
   }
 
@@ -155,13 +155,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpUriRequest request = mockHttpUriRequest();
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, request, handler, mTimer, transportManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
     ArgumentCaptor<ResponseHandlerInterface> argHandler =
         ArgumentCaptor.forClass(ResponseHandlerInterface.class);
     verify(client).execute(argRequest.capture(), argHandler.capture());
-    verify(timer).reset();
+    verify(mTimer).reset();
     assertSame(argRequest.getValue(), request);
     assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
   }
@@ -173,14 +173,14 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpContext context = mock(HttpContext.class);
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, request, handler, context, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, request, handler, context, mTimer, transportManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
     ArgumentCaptor<ResponseHandlerInterface> argHandler =
         ArgumentCaptor.forClass(ResponseHandlerInterface.class);
     ArgumentCaptor<HttpContext> argContext = ArgumentCaptor.forClass(HttpContext.class);
     verify(client).execute(argRequest.capture(), argHandler.capture(), argContext.capture());
-    verify(timer).reset();
+    verify(mTimer).reset();
     assertSame(argRequest.getValue(), request);
     assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
     assertSame(argContext.getValue(), context);
@@ -193,14 +193,14 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpHost host = mockHttpHost();
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, host, request, handler, mTimer, transportManager);
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
     ArgumentCaptor<ResponseHandlerInterface> argHandler =
         ArgumentCaptor.forClass(ResponseHandlerInterface.class);
     verify(client).execute(argHost.capture(), argRequest.capture(), argHandler.capture());
-    verify(timer).reset();
+    verify(mTimer).reset();
     assertSame(argHost.getValue(), host);
     assertSame(argRequest.getValue(), request);
     assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
@@ -215,7 +215,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
     FirebasePerfHttpClient.execute(
-        client, host, request, handler, context, timer, transportManager);
+        client, host, request, handler, context, mTimer, transportManager);
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
@@ -225,7 +225,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     verify(client)
         .execute(
             argHost.capture(), argRequest.capture(), argHandler.capture(), argContext.capture());
-    verify(timer).reset();
+    verify(mTimer).reset();
     assertSame(argHost.getValue(), host);
     assertSame(argRequest.getValue(), request);
     assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
@@ -244,13 +244,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, request, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, request, mTimer, transportManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -267,13 +267,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, request, context, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, request, context, mTimer, transportManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -290,13 +290,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, host, request, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, host, request, mTimer, transportManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -314,14 +314,14 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, host, request, c, mTimer, transportManager);
 
           assertSame(httpResponse, response);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -337,12 +337,12 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     assertThrows(
         IOException.class,
         () -> {
-          FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager);
+          FirebasePerfHttpClient.execute(client, request, handler, mTimer, transportManager);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -362,12 +362,12 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           FirebasePerfHttpClient.execute(
-              client, request, handler, context, timer, transportManager);
+              client, request, handler, context, mTimer, transportManager);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -386,12 +386,12 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     assertThrows(
         IOException.class,
         () -> {
-          FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager);
+          FirebasePerfHttpClient.execute(client, host, request, handler, mTimer, transportManager);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 
@@ -413,12 +413,12 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           FirebasePerfHttpClient.execute(
-              client, host, request, handler, context, timer, transportManager);
+              client, host, request, handler, context, mTimer, transportManager);
         });
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    verify(timer).reset();
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    verify(mTimer).reset();
+    NetworkRequestMetric metric = mArgMetric.getValue();
     verifyNetworkRequestMetricWithError(metric);
   }
 

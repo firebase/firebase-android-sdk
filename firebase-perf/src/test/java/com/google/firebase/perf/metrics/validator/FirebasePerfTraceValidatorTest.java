@@ -43,9 +43,9 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase {
 
-  private long currentTime = 0;
+  private long mCurrentTime = 0;
 
-  @Mock private Clock clock;
+  @Mock private Clock mClock;
 
   @Before
   public void setUp() {
@@ -54,10 +54,10 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
             new Answer<Timer>() {
               @Override
               public Timer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                return new Timer(currentTime);
+                return new Timer(mCurrentTime);
               }
             })
-        .when(clock)
+        .when(mClock)
         .getTime();
   }
 
@@ -243,10 +243,10 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
     ArgumentCaptor<TraceMetric> argMetric = ArgumentCaptor.forClass(TraceMetric.class);
 
-    Trace trace = new Trace(traceName, transportManager, clock, appStateMonitor);
-    currentTime = expectedClientStartTime;
+    Trace trace = new Trace(traceName, transportManager, mClock, appStateMonitor);
+    mCurrentTime = expectedClientStartTime;
     trace.start();
-    currentTime += expectedTraceDuration;
+    mCurrentTime += expectedTraceDuration;
     trace.stop();
     verify(transportManager)
         .log(argMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));

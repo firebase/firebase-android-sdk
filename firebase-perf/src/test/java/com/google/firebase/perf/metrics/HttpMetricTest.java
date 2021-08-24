@@ -41,41 +41,37 @@ import org.robolectric.RobolectricTestRunner;
 public class HttpMetricTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager transportManager;
-  @Mock private Timer timer;
-  @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
+  @Mock private Timer mTimer;
+  @Captor private ArgumentCaptor<NetworkRequestMetric> mArgMetric;
 
   @Before
   public void setUp() {
     initMocks(this);
-    when(timer.getMicros()).thenReturn(1000L);
-    when(timer.getDurationMicros()).thenReturn(2000L).thenReturn(3000L);
+    when(mTimer.getMicros()).thenReturn(1000L);
+    when(mTimer.getDurationMicros()).thenReturn(2000L).thenReturn(3000L);
   }
 
   @Test
   public void startStop() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    verifyMetric(networkArgumentCaptor.getValue());
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    verifyMetric(mArgMetric.getValue());
   }
 
   @Test
   public void setHttpResponseCode() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.setHttpResponseCode(200);
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     verifyMetric(metricValue);
     assertThat(metricValue.getHttpResponseCode()).isEqualTo(200);
   }
@@ -83,15 +79,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setRequestSize() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.setRequestPayloadSize(256);
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     verifyMetric(metricValue);
     assertThat(metricValue.getRequestPayloadBytes()).isEqualTo(256);
   }
@@ -99,15 +93,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setResponseSize() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.setResponsePayloadSize(256);
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     verifyMetric(metricValue);
     assertThat(metricValue.getResponsePayloadBytes()).isEqualTo(256);
   }
@@ -115,15 +107,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setResponseContentType() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.setResponseContentType("text/html");
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     verifyMetric(metricValue);
     assertThat(metricValue.getResponseContentType()).isEqualTo("text/html");
   }
@@ -131,15 +121,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void markRequestComplete() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.markRequestComplete();
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -151,15 +139,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void markResponseStart() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.markResponseStart();
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -171,15 +157,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -192,15 +176,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putInvalidAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.putAttribute("_invalidattr1", "free");
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -212,15 +194,13 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putAttributeAfterHttpMetricIsStopped() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.stop();
     metric.putAttribute("attr1", "free");
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -232,7 +212,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void removeAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.putAttribute("attr1", "free");
     Map<String, String> attributes = metric.getAttributes();
@@ -242,10 +222,8 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
     assertThat(attributes.size()).isEqualTo(0);
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -257,16 +235,14 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void removeAttributeAfterStopped() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.stop();
     metric.removeAttribute("attr1");
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -279,16 +255,14 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void addAttributeWithSameName() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.putAttribute("attr1", "paid");
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -301,7 +275,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void testMaxAttributes() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       metric.putAttribute("dim" + i, "value" + i);
@@ -311,10 +285,8 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
     }
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);
@@ -332,17 +304,15 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void testMoreThanMaxAttributes() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, mTimer);
     metric.start();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       metric.putAttribute("dim" + i, "value" + i);
     }
     metric.stop();
     verify(transportManager)
-        .log(
-            networkArgumentCaptor.capture(),
-            ArgumentMatchers.nullable(ApplicationProcessState.class));
-    NetworkRequestMetric metricValue = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.nullable(ApplicationProcessState.class));
+    NetworkRequestMetric metricValue = mArgMetric.getValue();
     assertThat(metricValue.getUrl()).isEqualTo("https://www.google.com/");
     assertThat(metricValue.getHttpMethod())
         .isEqualTo(com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod.GET);

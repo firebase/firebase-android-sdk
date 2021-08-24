@@ -80,10 +80,10 @@ public class TraceTest extends FirebasePerformanceTestBase {
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
 
-    appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
+    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
-    configResolver.setApplicationContext(appContext);
+    configResolver.setApplicationContext(context);
   }
 
   @Test

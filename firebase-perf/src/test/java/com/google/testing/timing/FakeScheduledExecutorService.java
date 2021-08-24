@@ -52,7 +52,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
       new PriorityBlockingQueue<DelayedFuture<?>>();
 
   private volatile long nextSequenceId = 0; // for ordering scheduled actions
-  private volatile boolean isRunning = true;
+  private volatile boolean running = true;
 
   public FakeScheduledExecutorService() {
     this.clock = new MockClock();
@@ -60,7 +60,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
 
   @Override
   public boolean isShutdown() {
-    return !isRunning;
+    return !running;
   }
 
   @Override
@@ -70,12 +70,12 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
 
   @Override
   public void shutdown() {
-    isRunning = false;
+    running = false;
   }
 
   @Override
   public List<Runnable> shutdownNow() {
-    isRunning = false;
+    running = false;
     List<Runnable> commands = Lists.newArrayList();
     commands.addAll(executeQueue);
     commands.addAll(scheduledQueue);
@@ -96,7 +96,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
    */
   @Override
   public boolean awaitTermination(long timeout, TimeUnit unit) {
-    checkState(!isRunning);
+    checkState(!running);
     while (!executeQueue.isEmpty()) {
       runNext();
     }
@@ -111,7 +111,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   }
 
   private void assertRunning() {
-    if (!isRunning) {
+    if (!running) {
       throw new RejectedExecutionException();
     }
   }

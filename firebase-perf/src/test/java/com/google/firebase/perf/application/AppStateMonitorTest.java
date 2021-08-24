@@ -32,6 +32,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.WindowManager.LayoutParams;
+import com.google.firebase.perf.FirebasePerformanceInitializer;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
@@ -65,21 +66,22 @@ import org.robolectric.android.controller.ActivityController;
 @RunWith(RobolectricTestRunner.class)
 public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
-  @Mock private Clock clock;
+  @Mock private Clock mClock;
   @Mock private TransportManager transportManager;
 
-  @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
+  @Captor private ArgumentCaptor<TraceMetric> mArgTraceMetric;
+  @Captor private ArgumentCaptor<ApplicationProcessState> mArgRate;
 
-  private long currentTime = 0;
+  private long mCurrentTime = 0;
 
   private Activity activity1;
   private Activity activity2;
 
   @Before
   public void setUp() {
-    currentTime = 0;
+    mCurrentTime = 0;
     initMocks(this);
-    doAnswer((Answer<Timer>) invocationOnMock -> new Timer(currentTime)).when(clock).getTime();
+    doAnswer((Answer<Timer>) invocationOnMock -> new Timer(mCurrentTime)).when(mClock).getTime();
 
     activity1 = createFakeActivity(/* isHardwareAccelerated= */ true);
     activity2 = createFakeActivity(/* isHardwareAccelerated= */ true);
@@ -90,27 +92,27 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void foregroundBackgroundEvent_activityStateChanges_fgBgEventsCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.incrementCount("counter1", 10);
     monitor.onActivityResumed(activity1);
-    Assert.assertEquals(currentTime, monitor.getResumeTime().getMicros());
+    Assert.assertEquals(mCurrentTime, monitor.getResumeTime().getMicros());
     Assert.assertEquals(1, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
     verify(transportManager, times(0))
-        .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
+        .log(mArgTraceMetric.capture(), nullable(ApplicationProcessState.class));
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.incrementCount("counter2", 20);
     monitor.onActivityStopped(activity1);
-    Assert.assertEquals(currentTime, monitor.getPauseTime().getMicros());
+    Assert.assertEquals(mCurrentTime, monitor.getPauseTime().getMicros());
     Assert.assertEquals(0, monitor.getResumed().size());
     Assert.assertFalse(monitor.isForeground());
-    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(1)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
-    TraceMetric metric = argTraceMetric.getValue();
+    TraceMetric metric = mArgTraceMetric.getValue();
     Assert.assertEquals(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), metric.getName());
     Assert.assertEquals(2, metric.getCountersCount());
     Assert.assertEquals(1, metric.getPerfSessionsCount());
@@ -127,18 +129,18 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(0, monitor.getResumed().size());
     Assert.assertFalse(monitor.isForeground());
     // log() should NOT be called again on second onActivityStopped() call.
-    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(1)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to foreground.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.incrementCount("counter3", 30);
     monitor.onActivityResumed(activity1);
-    Assert.assertEquals(currentTime, monitor.getResumeTime().getMicros());
+    Assert.assertEquals(mCurrentTime, monitor.getResumeTime().getMicros());
     Assert.assertEquals(1, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
-    verify(transportManager, times(2)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(2)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
-    metric = argTraceMetric.getValue();
+    metric = mArgTraceMetric.getValue();
     Assert.assertEquals(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), metric.getName());
     Assert.assertEquals(1, metric.getCountersCount());
     assertThat(metric.getCountersMap()).containsEntry("counter3", 30L);
@@ -150,7 +152,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testIncrementCount() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
 
     monitor.incrementCount("counter1", 10);
     monitor.incrementCount("counter2", 20);
@@ -160,8 +162,9 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityResumed(activity1);
     monitor.onActivityStopped(activity1);
 
-    verify(transportManager).log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
-    TraceMetric metric = argTraceMetric.getValue();
+    verify(transportManager)
+        .log(mArgTraceMetric.capture(), nullable(ApplicationProcessState.class));
+    TraceMetric metric = mArgTraceMetric.getValue();
 
     Map<String, Long> counters = metric.getCountersMap();
     Assert.assertEquals(10, (long) counters.get("counter1"));
@@ -170,35 +173,35 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testTwoActivities() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
-    Assert.assertEquals(currentTime, monitor.getResumeTime().getMicros());
+    Assert.assertEquals(mCurrentTime, monitor.getResumeTime().getMicros());
     Assert.assertEquals(1, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
     verify(transportManager, times(0))
-        .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
+        .log(mArgTraceMetric.capture(), nullable(ApplicationProcessState.class));
 
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityResumed(activity2);
     // second activity becomes visible does not change resumeTime.
     Assert.assertEquals(1, monitor.getResumeTime().getMicros());
     // two activities visible.
     Assert.assertEquals(2, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
-    verify(transportManager, times(0)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(0)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to background.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityStopped(activity1);
     Assert.assertNull(monitor.getPauseTime());
     Assert.assertEquals(1, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
-    verify(transportManager, times(0)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(0)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
     // activity2 goes to background.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityStopped(activity2);
     // pauseTime updated.
     Assert.assertEquals(4, monitor.getPauseTime().getMicros());
@@ -206,32 +209,32 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(0, monitor.getResumed().size());
     Assert.assertFalse(monitor.isForeground());
     // send foreground trace log.
-    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(1)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
-    TraceMetric metric = argTraceMetric.getValue();
+    TraceMetric metric = mArgTraceMetric.getValue();
     Assert.assertEquals(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), metric.getName());
     Assert.assertEquals(monitor.getResumeTime().getMicros(), metric.getClientStartTimeUs());
     Assert.assertEquals(
         monitor.getResumeTime().getDurationMicros(monitor.getPauseTime()), metric.getDurationUs());
 
     // activity1 goes to foreground.
-    currentTime = 5;
+    mCurrentTime = 5;
     monitor.onActivityResumed(activity1);
     // resumeTime updated.
-    Assert.assertEquals(currentTime, monitor.getResumeTime().getMicros());
+    Assert.assertEquals(mCurrentTime, monitor.getResumeTime().getMicros());
     Assert.assertEquals(1, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
     // send background trace.
-    verify(transportManager, times(2)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(2)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
-    metric = argTraceMetric.getValue();
+    metric = mArgTraceMetric.getValue();
     Assert.assertEquals(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), metric.getName());
     Assert.assertEquals(monitor.getPauseTime().getMicros(), metric.getClientStartTimeUs());
     Assert.assertEquals(
         monitor.getPauseTime().getDurationMicros(monitor.getResumeTime()), metric.getDurationUs());
 
     // activity2 goes to foreground.
-    currentTime = 6;
+    mCurrentTime = 6;
     monitor.onActivityResumed(activity2);
     // resumeTime does not change because this is second activity becomes visible.
     Assert.assertEquals(5, monitor.getResumeTime().getMicros());
@@ -239,18 +242,18 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(2, monitor.getResumed().size());
     Assert.assertTrue(monitor.isForeground());
     // no new event log.
-    verify(transportManager, times(2)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(2)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
   }
 
   @Test
   public void testAppStateCallbackWithTrace() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    Trace trace = new Trace("TRACE_1", transportManager, clock, monitor);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    Trace trace = new Trace("TRACE_1", transportManager, mClock, monitor);
     // Trace is not started yet, default state is APPLICATION_PROCESS_STATE_UNKNOWN
     Assert.assertEquals(
         ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN, trace.getAppState());
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     // registerForAppState() is called by Trace.start().
     trace.start();
     // Trace started, get state from AppStateMonitor.
@@ -259,14 +262,14 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Assert.assertTrue(monitor.isForeground());
     Assert.assertEquals(FOREGROUND_BACKGROUND, trace.getAppState());
     verify(transportManager, times(0))
-        .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
+        .log(mArgTraceMetric.capture(), nullable(ApplicationProcessState.class));
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityStopped(activity1);
     Assert.assertFalse(monitor.isForeground());
     // Foreground session trace.
-    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(1)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
     // Trace is updated through AppStatCallback.
     Assert.assertEquals(FOREGROUND_BACKGROUND, trace.getAppState());
 
@@ -275,35 +278,35 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // trace has been through FOREGROUND_BACKGROUND
     Assert.assertEquals(FOREGROUND_BACKGROUND, trace.getAppState());
     // a TraceMetric is sent for this trace object.
-    verify(transportManager, times(2)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(2)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
 
-    TraceMetric metric = argTraceMetric.getValue();
+    TraceMetric metric = mArgTraceMetric.getValue();
     Assert.assertEquals("TRACE_1", metric.getName());
   }
 
   @Test
   public void testAppStateCallbackWithNetworkRequestMetricBuilder() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     // registerForAppState() is called by NetworkRequestMetricBuilder's constructor.
     NetworkRequestMetricBuilder builder =
         new NetworkRequestMetricBuilder(
             mock(TransportManager.class), monitor, mock(GaugeManager.class));
     Assert.assertEquals(ApplicationProcessState.BACKGROUND, builder.getAppState());
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
     Assert.assertTrue(monitor.isForeground());
     // builder is updated through AppStateCallback.
     Assert.assertEquals(FOREGROUND_BACKGROUND, builder.getAppState());
     verify(transportManager, times(0))
-        .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
+        .log(mArgTraceMetric.capture(), nullable(ApplicationProcessState.class));
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityStopped(activity1);
     Assert.assertFalse(monitor.isForeground());
     // Foreground session trace.
-    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(1)).log(mArgTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
     // builder is updated again.
     Assert.assertEquals(FOREGROUND_BACKGROUND, builder.getAppState());
 
@@ -314,7 +317,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testRegisterActivityLifecycleCallbacks() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -328,7 +331,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testUnregisterActivityLifecycleCallbacks() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -340,7 +343,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testUnregisterActivityLifecycleCallbacksBeforeItWasRegistered() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -351,7 +354,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void screenTrace_twoActivities_traceStartedAndStoppedWithActivityLifecycle() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
 
     Activity[] arr = {activity1, activity2};
     for (int i = 0; i < arr.length; ++i) {
@@ -359,10 +362,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       // Start and then stop activity to trigger logging of the screen trace
       int startTime = i * 100;
       int endTime = startTime + 10;
-      currentTime = startTime;
+      mCurrentTime = startTime;
       monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
-      currentTime = endTime;
+      mCurrentTime = endTime;
       monitor.onActivityStopped(activity);
       Assert.assertEquals(0, monitor.getActivity2ScreenTrace().size());
     }
@@ -370,7 +373,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void screenTrace_noHardwareAccelerated_traceNotCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ false);
 
@@ -383,7 +386,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void screenTrace_perfMonDisabledAtBuildTime_traceNotCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -401,7 +404,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void screenTrace_perfMonEnabledSwitchAtRuntime_traceCreationDependsOnRuntime() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -416,10 +419,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setIsPerformanceCollectionEnabled(true);
 
     // Assert that screen trace has been created.
-    currentTime = 100;
+    mCurrentTime = 100;
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
-    currentTime = 200;
+    mCurrentTime = 200;
     monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
@@ -435,7 +438,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void screenTrace_perfMonDeactivated_traceNotCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -457,14 +460,14 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void foregroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
 
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground traces has been created because Performance Monitoring is enabled.
@@ -474,11 +477,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
 
     // activity1 comes to foreground.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace is not created because Performance Monitoring is disabled at runtime.
@@ -487,7 +490,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void foregroundTrace_perfMonEnabledAtRuntime_traceCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
@@ -497,11 +500,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace is not created because Performance Monitoring is disabled at build time.
@@ -511,13 +514,13 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to foreground.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityResumed(activity1);
     // Background trace has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to background.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace has been created because Performance Monitoring is enabled.
@@ -526,7 +529,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void foreGroundTrace_perfMonDeactivated_traceCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
@@ -536,11 +539,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to foreground.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace is not created because Performance Monitoring is deactivated at build time.
@@ -550,11 +553,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to foreground.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace is not created because deactivation takes higher priority.
@@ -563,10 +566,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void backgroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
 
     // activity1 comes to background.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
     monitor.onActivityStopped(activity1);
     // Foreground trace has been created because Performance Monitoring is enabled.
@@ -576,18 +579,18 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
 
     // activity1 goes to foreground.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // Background trace is not created because previously Performance Monitoring was enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 comes to background.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // New foreground trace is not created because Performance Monitoring is disabled at runtime.
@@ -596,7 +599,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void backgroundTrace_perfMonEnabledAtRuntime_traceCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
@@ -606,12 +609,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to background.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // Background trace is not created because Performance Monitoring is disabled at build time.
@@ -621,13 +624,13 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to background.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityStopped(activity1);
     // Foreground trace is created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to foreground.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // Background trace is created because Performance Monitoring is enabled.
@@ -636,7 +639,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void backgroundTrace_perfMonDeactivated_traceCreated() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 
@@ -646,12 +649,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // activity1 comes to background.
-    currentTime = 1;
+    mCurrentTime = 1;
     monitor.onActivityResumed(activity1);
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
-    currentTime = 2;
+    mCurrentTime = 2;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // Background trace is not created because Performance Monitoring is deactivated at build time.
@@ -661,11 +664,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     configResolver.setIsPerformanceCollectionEnabled(true);
 
     // activity1 comes to background.
-    currentTime = 3;
+    mCurrentTime = 3;
     monitor.onActivityStopped(activity1);
 
     // activity1 goes to foreground.
-    currentTime = 4;
+    mCurrentTime = 4;
     monitor.onActivityResumed(activity1);
     assertThat(monitor.isForeground()).isTrue();
     // Background trace is not created because deactivation takes higher priority.
@@ -673,51 +676,106 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void activityStateChanges_singleClient_callbackIsCalled() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    Map<Integer, ApplicationProcessState> clientState = new HashMap<>();
+  public void activityStateChanges_singleSubscriber_callbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    final int client1 = 1;
+    final int subscriber1 = 1;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client1, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.FOREGROUND);
 
     // Activity goes to Background
     monitor.onActivityStopped(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.BACKGROUND);
   }
 
   @Test
-  public void activityStateChanges_multipleClients_callbackCalledOnEachClient() {
-    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
-    Map<Integer, ApplicationProcessState> clientState = new HashMap<>();
+  public void activityStateChanges_multipleSubscribers_callbackCalledOnEachSubscriber() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    final int client1 = 1;
+    final int subscriber1 = 1;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client1, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
-    final int client2 = 2;
+    final int subscriber2 = 2;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client2, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber2, newState)));
 
-    final int client3 = 3;
+    final int subscriber3 = 3;
     monitor.registerForAppState(
-        new WeakReference<>(newState -> clientState.put(client3, newState)));
+        new WeakReference<>(newState -> subscriberState.put(subscriber3, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.FOREGROUND);
-    assertThat(clientState.get(client2)).isEqualTo(ApplicationProcessState.FOREGROUND);
-    assertThat(clientState.get(client3)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber2)).isEqualTo(ApplicationProcessState.FOREGROUND);
+    assertThat(subscriberState.get(subscriber3)).isEqualTo(ApplicationProcessState.FOREGROUND);
 
     // Activity goes to Background
     monitor.onActivityStopped(activity1);
-    assertThat(clientState.get(client1)).isEqualTo(ApplicationProcessState.BACKGROUND);
-    assertThat(clientState.get(client2)).isEqualTo(ApplicationProcessState.BACKGROUND);
-    assertThat(clientState.get(client3)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber1)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber2)).isEqualTo(ApplicationProcessState.BACKGROUND);
+    assertThat(subscriberState.get(subscriber3)).isEqualTo(ApplicationProcessState.BACKGROUND);
+  }
+
+  @Test
+  public void appColdStart_singleSubscriber_callbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appHotStart_singleSubscriber_callbackIsNotCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
+
+    // Activity goes to Background
+    monitor.onActivityStopped(activity1);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appColdStart_multipleSubscriber_callbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
+    FirebasePerformanceInitializer mockInitializer2 = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer1);
+    monitor.registerForAppColdStart(mockInitializer2);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer1, times(1)).onAppColdStart();
+    verify(mockInitializer2, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void appColdStart_singleSubscriberRegistersForMultipleTimes_oneCallbackIsCalled() {
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, mClock);
+    FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
+    monitor.registerForAppColdStart(mockInitializer1);
+    monitor.registerForAppColdStart(mockInitializer1);
+
+    // Activity comes to Foreground
+    monitor.onActivityResumed(activity1);
+    verify(mockInitializer1, times(1)).onAppColdStart();
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {

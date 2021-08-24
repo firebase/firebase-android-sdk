@@ -46,17 +46,17 @@ import org.robolectric.RobolectricTestRunner;
 public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager transportManager;
-  @Mock private Timer timer;
-  @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
+  @Mock private Timer mTimer;
+  @Captor private ArgumentCaptor<NetworkRequestMetric> mArgMetric;
 
-  private NetworkRequestMetricBuilder networkMetricBuilder;
+  private NetworkRequestMetricBuilder mBuilder;
 
   @Before
   public void setUp() {
     initMocks(this);
-    when(timer.getMicros()).thenReturn((long) 1000);
-    when(timer.getDurationMicros()).thenReturn((long) 2000);
-    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    when(mTimer.getMicros()).thenReturn((long) 1000);
+    when(mTimer.getDurationMicros()).thenReturn((long) 2000);
+    mBuilder = NetworkRequestMetricBuilder.builder(transportManager);
   }
 
   @Test
@@ -65,10 +65,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).connect();
     assertThrows(
         IOException.class,
-        () -> new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder).connect());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).connect());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -81,14 +81,12 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getContent(classes);
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
-                .getContent(classes));
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getContent(classes));
 
     verify(urlConnection).getContent(classes);
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -98,12 +96,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getInputStream();
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
-                .getInputStream());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getInputStream());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -113,12 +109,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getOutputStream();
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
-                .getOutputStream());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getOutputStream());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -128,11 +122,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getPermission();
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder).getPermission());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getPermission());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -142,12 +135,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getResponseCode();
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
-                .getResponseCode());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getResponseCode());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -157,12 +148,10 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     doThrow(IOException.class).when(urlConnection).getResponseMessage();
     assertThrows(
         IOException.class,
-        () ->
-            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
-                .getResponseMessage());
+        () -> new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getResponseMessage());
     verify(transportManager)
-        .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
-    NetworkRequestMetric metric = networkArgumentCaptor.getValue();
+        .log(mArgMetric.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
+    NetworkRequestMetric metric = mArgMetric.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
   }
 
@@ -174,7 +163,7 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     when(urlConnection.getHeaderFieldDate("content-date", defaultDate)).thenReturn(expectedDate);
 
     Long retDate =
-        new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
+        new InstrURLConnectionBase(urlConnection, mTimer, mBuilder)
             .getHeaderFieldDate("content-date", defaultDate);
 
     assertThat(retDate).isEqualTo(expectedDate);
@@ -184,7 +173,7 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
   public void testGetUrl() throws MalformedURLException {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     URL expectedURL = new URL("http://www.google.com");
-    URL retURL = new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder).getURL();
+    URL retURL = new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).getURL();
     assertThat(retURL).isEqualTo(expectedURL);
   }
 
@@ -193,8 +182,7 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     String expectedStringRepr = "expectedStringRepr";
     when(urlConnection.toString()).thenReturn(expectedStringRepr);
-    String retStringRepr =
-        new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder).toString();
+    String retStringRepr = new InstrURLConnectionBase(urlConnection, mTimer, mBuilder).toString();
     assertThat(retStringRepr).isEqualTo(expectedStringRepr);
   }
 
