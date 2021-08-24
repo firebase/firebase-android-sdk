@@ -373,12 +373,13 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void screenTrace_noHardwareAccelerated_noExceptionThrown() {
+  public void screenTrace_noHardwareAccelerated_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ false);
 
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
+    assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
     // Confirm that this doesn't throw an exception.
     monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
