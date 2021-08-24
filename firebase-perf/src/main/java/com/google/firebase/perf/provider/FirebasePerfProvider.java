@@ -40,18 +40,17 @@ import com.google.firebase.perf.v1.ApplicationProcessState;
 /** Initializes app start time at app startup time. */
 @Keep
 public class FirebasePerfProvider extends ContentProvider {
-
   private static final Timer APP_START_TIME = new Clock().getTime();
-  /** Should match the {@link FirebasePerfProvider} authority if $androidId is empty. */
-  @VisibleForTesting
-  static final String EMPTY_APPLICATION_ID_PROVIDER_AUTHORITY =
-      "com.google.firebase.firebaseperfprovider";
-
-  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  private final Handler mHandler = new Handler(Looper.getMainLooper());
 
   public static Timer getAppStartTime() {
     return APP_START_TIME;
   }
+
+  /** Should match the {@link FirebasePerfProvider} authority if $androidId is empty. */
+  @VisibleForTesting
+  static final String EMPTY_APPLICATION_ID_PROVIDER_AUTHORITY =
+      "com.google.firebase.firebaseperfprovider";
 
   @Override
   public void attachInfo(Context context, ProviderInfo info) {
@@ -70,7 +69,7 @@ public class FirebasePerfProvider extends ContentProvider {
     AppStartTrace appStartTrace = AppStartTrace.getInstance();
     appStartTrace.registerActivityLifecycleCallbacks(getContext());
 
-    mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+    mHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
 
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.

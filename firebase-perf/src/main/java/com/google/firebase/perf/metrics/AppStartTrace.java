@@ -53,10 +53,8 @@ import java.util.concurrent.TimeUnit;
  */
 /** @hide */
 public class AppStartTrace implements ActivityLifecycleCallbacks {
-
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
-
-  private static volatile AppStartTrace instance;
+  private static volatile AppStartTrace sInstance;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -88,143 +86,143 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
+    return sInstance != null ? sInstance : getInstance(TransportManager.getInstance(), new Clock());
   }
 
   static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
-    if (instance == null) {
+    if (sInstance == null) {
       synchronized (AppStartTrace.class) {
-        if (instance == null) {
-          instance = new AppStartTrace(transportManager, clock);
+        if (sInstance == null) {
+          sInstance = new AppStartTrace(transportManager, clock);
         }
       }
     }
-    return instance;
+    return sInstance;
   }
 
-  private boolean isRegisteredForLifecycleCallbacks = false;
+  private boolean mRegistered = false;
   private final TransportManager transportManager;
-  private final Clock clock;
-  private Context appContext;
+  private final Clock mClock;
+  private Context mAppContext;
   /**
-   * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
+   * The first time onCreate() of any activity is called, the activity is saved as mLaunchActivity.
    */
-  private WeakReference<Activity> launchActivity;
+  private WeakReference<Activity> mLaunchActivity;
   /**
-   * The first time onResume() of any activity is called, the activity is saved as appStartActivity
+   * The first time onResume() of any activity is called, the activity is saved as mAppStartActivity
    */
-  private WeakReference<Activity> appStartActivity;
+  private WeakReference<Activity> mAppStartActivity;
 
   /**
    * If the time difference between app starts and creation of any Activity is larger than
    * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
    */
-  private boolean isTooLateToInitUI = false;
+  private boolean mTooLateToInitUI = false;
 
-  private Timer onCreateTime = null;
-  private Timer onStartTime = null;
-  private Timer onResumeTime = null;
+  private Timer mOnCreateTime = null;
+  private Timer mOnStartTime = null;
+  private Timer mOnResumeTime = null;
 
-  private boolean isStartedFromBackground = false;
+  private boolean mIsStartFromBackground = false;
 
   AppStartTrace(@NonNull TransportManager transportManager, @NonNull Clock clock) {
     this.transportManager = transportManager;
-    this.clock = clock;
+    mClock = clock;
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
   public synchronized void registerActivityLifecycleCallbacks(@NonNull Context context) {
     // Make sure the callback is registered only once.
-    if (isRegisteredForLifecycleCallbacks) {
+    if (mRegistered) {
       return;
     }
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
-      isRegisteredForLifecycleCallbacks = true;
-      this.appContext = appContext;
+      mRegistered = true;
+      mAppContext = appContext;
     }
   }
 
   /** Unregister this callback after AppStart trace is logged. */
   public synchronized void unregisterActivityLifecycleCallbacks() {
-    if (!isRegisteredForLifecycleCallbacks) {
+    if (!mRegistered) {
       return;
     }
-    ((Application) appContext).unregisterActivityLifecycleCallbacks(this);
-    isRegisteredForLifecycleCallbacks = false;
+    ((Application) mAppContext).unregisterActivityLifecycleCallbacks(this);
+    mRegistered = false;
   }
 
   @Override
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-    if (isStartedFromBackground || onCreateTime != null // An activity already called onCreate()
+    if (mIsStartFromBackground || mOnCreateTime != null // An activity already called onCreate()
     ) {
       return;
     }
 
-    launchActivity = new WeakReference<Activity>(activity);
-    onCreateTime = clock.getTime();
+    mLaunchActivity = new WeakReference<Activity>(activity);
+    mOnCreateTime = mClock.getTime();
 
-    if (FirebasePerfProvider.getAppStartTime().getDurationMicros(onCreateTime)
+    if (FirebasePerfProvider.getAppStartTime().getDurationMicros(mOnCreateTime)
         > MAX_LATENCY_BEFORE_UI_INIT) {
-      isTooLateToInitUI = true;
+      mTooLateToInitUI = true;
     }
   }
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
-    if (isStartedFromBackground
-        || onStartTime != null // An activity already called onStart()
-        || isTooLateToInitUI) {
+    if (mIsStartFromBackground
+        || mOnStartTime != null // An activity already called onStart()
+        || mTooLateToInitUI) {
       return;
     }
-    onStartTime = clock.getTime();
+    mOnStartTime = mClock.getTime();
   }
 
   @Override
   public synchronized void onActivityResumed(Activity activity) {
-    if (isStartedFromBackground
-        || onResumeTime != null // An activity already called onResume()
-        || isTooLateToInitUI) {
+    if (mIsStartFromBackground
+        || mOnResumeTime != null // An activity already called onResume()
+        || mTooLateToInitUI) {
       return;
     }
 
-    appStartActivity = new WeakReference<Activity>(activity);
+    mAppStartActivity = new WeakReference<Activity>(activity);
 
-    onResumeTime = clock.getTime();
+    mOnResumeTime = mClock.getTime();
     final Timer startTime = FirebasePerfProvider.getAppStartTime();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
                 + activity.getClass().getName()
                 + ": "
-                + startTime.getDurationMicros(onResumeTime)
+                + startTime.getDurationMicros(mOnResumeTime)
                 + " microseconds");
 
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
             .setClientStartTimeUs(startTime.getMicros())
-            .setDurationUs(startTime.getDurationMicros(onResumeTime));
+            .setDurationUs(startTime.getDurationMicros(mOnResumeTime));
     List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
 
     TraceMetric.Builder temp =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
             .setClientStartTimeUs(startTime.getMicros())
-            .setDurationUs(startTime.getDurationMicros(onCreateTime));
+            .setDurationUs(startTime.getDurationMicros(mOnCreateTime));
     subtraces.add(temp.build());
 
     temp = TraceMetric.newBuilder();
     temp.setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
-        .setClientStartTimeUs(onCreateTime.getMicros())
-        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
+        .setClientStartTimeUs(mOnCreateTime.getMicros())
+        .setDurationUs(mOnCreateTime.getDurationMicros(mOnStartTime));
     subtraces.add(temp.build());
 
     temp = TraceMetric.newBuilder();
     temp.setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
-        .setClientStartTimeUs(onStartTime.getMicros())
-        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
+        .setClientStartTimeUs(mOnStartTime.getMicros())
+        .setDurationUs(mOnStartTime.getDurationMicros(mOnResumeTime));
     subtraces.add(temp.build());
 
     metric
@@ -233,7 +231,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
 
-    if (isRegisteredForLifecycleCallbacks) {
+    if (mRegistered) {
       // After AppStart trace is logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
     }
@@ -259,17 +257,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
    * activity's onCreate() method is executed before this runnable.
    */
   public static class StartFromBackgroundRunnable implements Runnable {
-    private final AppStartTrace trace;
+    private final AppStartTrace mTrace;
 
     public StartFromBackgroundRunnable(final AppStartTrace trace) {
-      this.trace = trace;
+      mTrace = trace;
     }
 
     @Override
     public void run() {
       // if no activity has ever been created.
-      if (trace.onCreateTime == null) {
-        trace.isStartedFromBackground = true;
+      if (mTrace.mOnCreateTime == null) {
+        mTrace.mIsStartFromBackground = true;
       }
     }
   }
@@ -277,32 +275,32 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   @VisibleForTesting
   @Nullable
   Activity getLaunchActivity() {
-    return launchActivity.get();
+    return mLaunchActivity.get();
   }
 
   @VisibleForTesting
   @Nullable
   Activity getAppStartActivity() {
-    return appStartActivity.get();
+    return mAppStartActivity.get();
   }
 
   @VisibleForTesting
   Timer getOnCreateTime() {
-    return onCreateTime;
+    return mOnCreateTime;
   }
 
   @VisibleForTesting
   Timer getOnStartTime() {
-    return onStartTime;
+    return mOnStartTime;
   }
 
   @VisibleForTesting
   Timer getOnResumeTime() {
-    return onResumeTime;
+    return mOnResumeTime;
   }
 
   @VisibleForTesting
   void setIsStartFromBackground() {
-    isStartedFromBackground = true;
+    mIsStartFromBackground = true;
   }
 }

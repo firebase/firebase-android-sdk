@@ -22,31 +22,29 @@ import java.io.OutputStream;
 /** Instrument the Output Stream Request with UrlConnection */
 public final class InstrHttpOutputStream extends OutputStream {
 
-  private final OutputStream outputStream;
-  private final Timer timer;
-
-  NetworkRequestMetricBuilder networkMetricBuilder;
-
-  long bytesWritten = -1;
+  private OutputStream mOutputStream;
+  long mBytesWritten = -1;
+  NetworkRequestMetricBuilder mBuilder;
+  private final Timer mTimer;
 
   public InstrHttpOutputStream(
       final OutputStream outputStream, NetworkRequestMetricBuilder builder, Timer timer) {
-    this.outputStream = outputStream;
-    networkMetricBuilder = builder;
-    this.timer = timer;
+    mOutputStream = outputStream;
+    mBuilder = builder;
+    mTimer = timer;
   }
 
   @Override
   public void close() throws IOException {
-    if (bytesWritten != -1) {
-      networkMetricBuilder.setRequestPayloadBytes(bytesWritten);
+    if (mBytesWritten != -1) {
+      mBuilder.setRequestPayloadBytes(mBytesWritten);
     }
-    networkMetricBuilder.setTimeToRequestCompletedMicros(timer.getDurationMicros());
+    mBuilder.setTimeToRequestCompletedMicros(mTimer.getDurationMicros());
     try {
-      outputStream.close();
+      mOutputStream.close();
     } catch (IOException e) {
-      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
+      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(mBuilder);
       throw e;
     }
   }
@@ -54,10 +52,10 @@ public final class InstrHttpOutputStream extends OutputStream {
   @Override
   public void flush() throws IOException {
     try {
-      outputStream.flush();
+      mOutputStream.flush();
     } catch (IOException e) {
-      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
+      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(mBuilder);
       throw e;
     }
   }
@@ -65,12 +63,12 @@ public final class InstrHttpOutputStream extends OutputStream {
   @Override
   public void write(int b) throws IOException {
     try {
-      outputStream.write(b);
-      bytesWritten++;
-      networkMetricBuilder.setRequestPayloadBytes(bytesWritten);
+      mOutputStream.write(b);
+      mBytesWritten++;
+      mBuilder.setRequestPayloadBytes(mBytesWritten);
     } catch (IOException e) {
-      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
+      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(mBuilder);
       throw e;
     }
   }
@@ -78,12 +76,12 @@ public final class InstrHttpOutputStream extends OutputStream {
   @Override
   public void write(byte[] b) throws IOException {
     try {
-      outputStream.write(b);
-      bytesWritten += b.length;
-      networkMetricBuilder.setRequestPayloadBytes(bytesWritten);
+      mOutputStream.write(b);
+      mBytesWritten += b.length;
+      mBuilder.setRequestPayloadBytes(mBytesWritten);
     } catch (IOException e) {
-      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
+      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(mBuilder);
       throw e;
     }
   }
@@ -91,12 +89,12 @@ public final class InstrHttpOutputStream extends OutputStream {
   @Override
   public void write(byte[] b, int off, int len) throws IOException {
     try {
-      outputStream.write(b, off, len);
-      bytesWritten += len;
-      networkMetricBuilder.setRequestPayloadBytes(bytesWritten);
+      mOutputStream.write(b, off, len);
+      mBytesWritten += len;
+      mBuilder.setRequestPayloadBytes(mBytesWritten);
     } catch (IOException e) {
-      networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-      NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
+      mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+      NetworkRequestMetricBuilderUtil.logError(mBuilder);
       throw e;
     }
   }

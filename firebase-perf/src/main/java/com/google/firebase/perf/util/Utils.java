@@ -26,7 +26,7 @@ import okhttp3.HttpUrl;
 /** Utility methods */
 public class Utils {
 
-  private static Boolean isDebugLoggingEnabled = null;
+  private static Boolean mIsDebugLoggingEnabled = null;
 
   /**
    * Strips out the sensitive info like username/password, query parameters if any from the URL
@@ -99,21 +99,21 @@ public class Utils {
    * @hide
    */
   /** @hide */
-  public static boolean isDebugLoggingEnabled(@NonNull Context appContext) {
-    if (isDebugLoggingEnabled != null) {
-      return isDebugLoggingEnabled;
+  public static boolean isDebugLoggingEnabled(@NonNull Context context) {
+    if (mIsDebugLoggingEnabled != null) {
+      return mIsDebugLoggingEnabled;
     }
 
     try {
       // This block of code may take about 10ms to execute,avoid running it from main thread.
       ApplicationInfo ai =
-          appContext
+          context
               .getPackageManager()
-              .getApplicationInfo(appContext.getPackageName(), PackageManager.GET_META_DATA);
+              .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
       Bundle bundle = ai.metaData;
       // No meta data defined so return false because performance is enabled by default
-      isDebugLoggingEnabled = bundle.getBoolean("firebase_performance_logcat_enabled", false);
-      return isDebugLoggingEnabled;
+      mIsDebugLoggingEnabled = bundle.getBoolean("firebase_performance_logcat_enabled", false);
+      return mIsDebugLoggingEnabled;
     } catch (NameNotFoundException | NullPointerException e) {
       AndroidLogger.getInstance().debug("No perf logcat meta data found " + e.getMessage());
     }

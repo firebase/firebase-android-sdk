@@ -26,11 +26,11 @@ public class URLAllowlist {
   private static String[] allowlistedDomains;
 
   /** Returns true if the URL's domain covered by a allowlist rule. */
-  public static boolean isURLAllowlisted(@NonNull URI uri, @NonNull Context appContext) {
-    Resources resources = appContext.getResources();
+  public static boolean isURLAllowlisted(@NonNull URI uri, @NonNull Context context) {
+    Resources resources = context.getResources();
     int resourceId =
         resources.getIdentifier(
-            "firebase_performance_whitelisted_domains", "array", appContext.getPackageName());
+            "firebase_performance_whitelisted_domains", "array", context.getPackageName());
     if (resourceId == 0) {
       return true;
     }

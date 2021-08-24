@@ -26,22 +26,20 @@ import okhttp3.Response;
 
 /** Instruments the callback for the OkHttp Enqueue function */
 public class InstrumentOkHttpEnqueueCallback implements Callback {
-
-  private final Callback callback;
-  private final NetworkRequestMetricBuilder networkMetricBuilder;
-  private final Timer timer;
-
-  private final long startTimeMicros;
+  private final Callback mCallback;
+  private final NetworkRequestMetricBuilder mBuilder;
+  private final long mStartTimeMicros;
+  private final Timer mTimer;
 
   public InstrumentOkHttpEnqueueCallback(
       final Callback callback,
       final TransportManager transportManager,
       Timer timer,
       long startTime) {
-    this.callback = callback;
-    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
-    startTimeMicros = startTime;
-    this.timer = timer;
+    mCallback = callback;
+    mBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    mStartTimeMicros = startTime;
+    mTimer = timer;
   }
 
   @Override
@@ -50,24 +48,24 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
     if (request != null) {
       HttpUrl url = request.url();
       if (url != null) {
-        networkMetricBuilder.setUrl(url.url().toString());
+        mBuilder.setUrl(url.url().toString());
       }
       String method = request.method();
       if (method != null) {
-        networkMetricBuilder.setHttpMethod(request.method());
+        mBuilder.setHttpMethod(request.method());
       }
     }
-    networkMetricBuilder.setRequestStartTimeMicros(startTimeMicros);
-    networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
-    NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
-    callback.onFailure(call, e);
+    mBuilder.setRequestStartTimeMicros(mStartTimeMicros);
+    mBuilder.setTimeToResponseCompletedMicros(mTimer.getDurationMicros());
+    NetworkRequestMetricBuilderUtil.logError(mBuilder);
+    mCallback.onFailure(call, e);
   }
 
   @Override
   public void onResponse(Call call, Response response) throws IOException {
-    long responseCompletedTimeMicros = timer.getDurationMicros();
+    long responseCompletedTimeMicros = mTimer.getDurationMicros();
     FirebasePerfOkHttpClient.sendNetworkMetric(
-        response, networkMetricBuilder, startTimeMicros, responseCompletedTimeMicros);
-    callback.onResponse(call, response);
+        response, mBuilder, mStartTimeMicros, responseCompletedTimeMicros);
+    mCallback.onResponse(call, response);
   }
 }

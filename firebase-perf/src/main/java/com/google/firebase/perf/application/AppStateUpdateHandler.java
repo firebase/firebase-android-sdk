@@ -28,16 +28,15 @@ import java.lang.ref.WeakReference;
 /** @hide */
 public abstract class AppStateUpdateHandler implements AppStateCallback {
 
-  private final AppStateMonitor appStateMonitor;
+  private AppStateMonitor mAppStateMonitor;
+  private ApplicationProcessState mState =
+      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
+  private boolean mIsRegisteredForAppState = false;
   // The weak reference to register/unregister with AppStateMonitor.
   // It must be a weak reference because unregisterForAppState() is called typically from
   // Trace.stop() and user may forget to call Trace.stop(), if it was a strong reference,
   // the registration in AppStateMonitor will prevent Trace to be deallocated.
-  private final WeakReference<AppStateCallback> appStateCallback;
-
-  private boolean isRegisteredForAppState = false;
-  private ApplicationProcessState currentAppState =
-      ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
+  private WeakReference<AppStateCallback> mWeakRef;
 
   /** @hide */
   /** @hide */
@@ -48,35 +47,35 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
   /** @hide */
   /** @hide */
   protected AppStateUpdateHandler(@NonNull AppStateMonitor appStateMonitor) {
-    this.appStateMonitor = appStateMonitor;
-    appStateCallback = new WeakReference<AppStateCallback>(this);
+    mAppStateMonitor = appStateMonitor;
+    mWeakRef = new WeakReference<AppStateCallback>(this);
   }
 
   /** @hide */
   /** @hide */
   protected void registerForAppState() {
-    if (isRegisteredForAppState) {
+    if (mIsRegisteredForAppState) {
       return;
     }
-    currentAppState = appStateMonitor.getAppState();
-    appStateMonitor.registerForAppState(appStateCallback);
-    isRegisteredForAppState = true;
+    mState = mAppStateMonitor.getAppState();
+    mAppStateMonitor.registerForAppState(mWeakRef);
+    mIsRegisteredForAppState = true;
   }
 
   /** @hide */
   /** @hide */
   protected void unregisterForAppState() {
-    if (!isRegisteredForAppState) {
+    if (!mIsRegisteredForAppState) {
       return;
     }
-    appStateMonitor.unregisterForAppState(appStateCallback);
-    isRegisteredForAppState = false;
+    mAppStateMonitor.unregisterForAppState(mWeakRef);
+    mIsRegisteredForAppState = false;
   }
 
   /** @hide */
   /** @hide */
   protected void incrementTsnsCount(int count) {
-    appStateMonitor.incrementTsnsCount(count);
+    mAppStateMonitor.incrementTsnsCount(count);
   }
 
   /** @hide */
@@ -85,19 +84,19 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
   public void onUpdateAppState(ApplicationProcessState newState) {
     // For Trace and NetworkRequestMetricBuilder, the app state means all app states the app
     // has been through during the duration of the trace.
-    if (currentAppState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
-      currentAppState = newState;
-    } else if (currentAppState != newState
+    if (mState == ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
+      mState = newState;
+    } else if (mState != newState
         && newState != ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN) {
       // newState is not unknown and they're not equal, which means one is foreground and the other
       // is background.
-      currentAppState = ApplicationProcessState.FOREGROUND_BACKGROUND;
+      mState = ApplicationProcessState.FOREGROUND_BACKGROUND;
     }
   }
 
   /** @hide */
   /** @hide */
   public ApplicationProcessState getAppState() {
-    return currentAppState;
+    return mState;
   }
 }

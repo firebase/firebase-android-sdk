@@ -44,17 +44,18 @@ class GaugeMetadataManager {
   private final ActivityManager activityManager;
   private final MemoryInfo memoryInfo;
   private final String currentProcessName;
-  private final Context appContext;
+  private final Context applicationContext;
 
-  GaugeMetadataManager(Context appContext) {
-    this(Runtime.getRuntime(), appContext);
+  GaugeMetadataManager(Context applicationContext) {
+    this(Runtime.getRuntime(), applicationContext);
   }
 
   @VisibleForTesting
-  GaugeMetadataManager(Runtime runtime, Context appContext) {
+  GaugeMetadataManager(Runtime runtime, Context applicationContext) {
     this.runtime = runtime;
-    this.appContext = appContext;
-    this.activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
+    this.applicationContext = applicationContext;
+    this.activityManager =
+        (ActivityManager) applicationContext.getSystemService(Context.ACTIVITY_SERVICE);
     memoryInfo = new ActivityManager.MemoryInfo();
     activityManager.getMemoryInfo(memoryInfo);
 
@@ -129,6 +130,6 @@ class GaugeMetadataManager {
       }
     }
 
-    return appContext.getPackageName();
+    return applicationContext.getPackageName();
   }
 }

@@ -94,7 +94,24 @@ public class TransportManager implements AppStateCallback {
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
 
+  private FirebaseApp firebaseApp;
+  @Nullable private FirebasePerformance firebasePerformance;
+  private FirebaseInstallationsApi firebaseInstallationsApi;
+  private Provider<TransportFactory> flgTransportFactoryProvider;
+  private FlgTransport flgTransport;
+
+  private ExecutorService executorService;
+  private ApplicationInfo.Builder applicationInfoBuilder;
+  private Context appContext;
+  private ConfigResolver configResolver;
+  private RateLimiter rateLimiter;
+  private AppStateMonitor appStateMonitor;
+
+  private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
+  private boolean isForegroundState = false;
+
   // Allows for in-memory caching of events while the TransportManager is not initialized
+  private final Map<String, Integer> cacheMap;
   private static final String KEY_AVAILABLE_TRACES_FOR_CACHING = "KEY_AVAILABLE_TRACES_FOR_CACHING";
   private static final String KEY_AVAILABLE_NETWORK_REQUESTS_FOR_CACHING =
       "KEY_AVAILABLE_NETWORK_REQUESTS_FOR_CACHING";
@@ -103,25 +120,8 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
-  private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
-
-  private final AtomicBoolean isTransportInitialized = new AtomicBoolean(false);
-
-  private FirebaseApp firebaseApp;
-  @Nullable private FirebasePerformance firebasePerformance;
-  private FirebaseInstallationsApi firebaseInstallationsApi;
-  private Provider<TransportFactory> flgTransportFactoryProvider;
-  private FlgTransport flgTransport;
-  private ExecutorService executorService;
-  private Context appContext;
-  private ConfigResolver configResolver;
-  private RateLimiter rateLimiter;
-  private AppStateMonitor appStateMonitor;
-  private ApplicationInfo.Builder applicationInfoBuilder;
-
-  private boolean isForegroundState = false;
 
   private TransportManager() {
     // MAX_POOL_SIZE must always be 1. We only allow one thread in this Executor. The reason
@@ -466,10 +466,9 @@ public class TransportManager implements AppStateCallback {
    * https://developer.android.com/guide/topics/manifest/manifest-element#vname) of the android
    * application.
    */
-  private static String getVersionName(final Context appContext) {
+  private static String getVersionName(final Context context) {
     try {
-      PackageInfo pi =
-          appContext.getPackageManager().getPackageInfo(appContext.getPackageName(), 0);
+      PackageInfo pi = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       return pi.versionName == null ? "" : pi.versionName;
     } catch (NameNotFoundException e) {
       return "";

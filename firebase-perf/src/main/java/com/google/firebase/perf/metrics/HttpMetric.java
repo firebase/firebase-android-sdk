@@ -39,10 +39,9 @@ public class HttpMetric implements FirebasePerformanceAttributable {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  private final NetworkRequestMetricBuilder networkMetricBuilder;
-  private final Timer timer;
-  private final Map<String, String> customAttributesMap;
-
+  private NetworkRequestMetricBuilder mMetricBuilder;
+  private Timer mTimer;
+  private final Map<String, String> mAttributes;
   private boolean isStopped = false;
   private boolean isDisabled = false;
 
@@ -54,12 +53,12 @@ public class HttpMetric implements FirebasePerformanceAttributable {
   /** @hide */
   public HttpMetric(
       String url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer) {
-    customAttributesMap = new ConcurrentHashMap<>();
-    this.timer = timer;
+    mAttributes = new ConcurrentHashMap<>();
+    mTimer = timer;
 
-    networkMetricBuilder =
+    mMetricBuilder =
         NetworkRequestMetricBuilder.builder(transportManager).setUrl(url).setHttpMethod(httpMethod);
-    networkMetricBuilder.setManualNetworkRequestMetric();
+    mMetricBuilder.setManualNetworkRequestMetric();
 
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
       logger.info("HttpMetric feature is disabled. URL %s", url);
@@ -84,7 +83,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param responseCode valid values are greater than 0. Invalid usage will be logged.
    */
   public void setHttpResponseCode(int responseCode) {
-    networkMetricBuilder.setHttpResponseCode(responseCode);
+    mMetricBuilder.setHttpResponseCode(responseCode);
   }
 
   /**
@@ -93,7 +92,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param bytes valid values are greater than or equal to 0. Invalid usage will be logged.
    */
   public void setRequestPayloadSize(long bytes) {
-    networkMetricBuilder.setRequestPayloadBytes(bytes);
+    mMetricBuilder.setRequestPayloadBytes(bytes);
   }
 
   /**
@@ -102,7 +101,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param bytes valid values are greater than or equal to 0. Invalid usage will be logged.
    */
   public void setResponsePayloadSize(long bytes) {
-    networkMetricBuilder.setResponsePayloadBytes(bytes);
+    mMetricBuilder.setResponsePayloadBytes(bytes);
   }
 
   /**
@@ -111,13 +110,13 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @param contentType valid string of MIME type. Invalid usage will be logged.
    */
   public void setResponseContentType(@Nullable String contentType) {
-    networkMetricBuilder.setResponseContentType(contentType);
+    mMetricBuilder.setResponseContentType(contentType);
   }
 
   /** Marks the start time of the request */
   public void start() {
-    timer.reset();
-    networkMetricBuilder.setRequestStartTimeMicros(timer.getMicros());
+    mTimer.reset();
+    mMetricBuilder.setRequestStartTimeMicros(mTimer.getMicros());
   }
 
   /**
@@ -127,7 +126,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    */
   /** @hide */
   public void markRequestComplete() {
-    networkMetricBuilder.setTimeToRequestCompletedMicros(timer.getDurationMicros());
+    mMetricBuilder.setTimeToRequestCompletedMicros(mTimer.getDurationMicros());
   }
 
   /**
@@ -137,7 +136,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    */
   /** @hide */
   public void markResponseStart() {
-    networkMetricBuilder.setTimeToResponseInitiatedMicros(timer.getDurationMicros());
+    mMetricBuilder.setTimeToResponseInitiatedMicros(mTimer.getDurationMicros());
   }
 
   /**
@@ -149,9 +148,9 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       return;
     }
 
-    networkMetricBuilder
-        .setTimeToResponseCompletedMicros(timer.getDurationMicros())
-        .setCustomAttributes(customAttributesMap)
+    mMetricBuilder
+        .setTimeToResponseCompletedMicros(mTimer.getDurationMicros())
+        .setCustomAttributes(mAttributes)
         .build();
     isStopped = true;
   }
@@ -174,14 +173,14 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       checkAttribute(attribute, value);
       logger.debug(
           "Setting attribute '%s' to %s on network request '%s'",
-          attribute, value, networkMetricBuilder.getUrl());
+          attribute, value, mMetricBuilder.getUrl());
     } catch (Exception e) {
       logger.error(
           "Cannot set attribute '%s' with value '%s' (%s)", attribute, value, e.getMessage());
       noError = false;
     }
     if (noError) {
-      customAttributesMap.put(attribute, value);
+      mAttributes.put(attribute, value);
     }
   }
 
@@ -193,8 +192,8 @@ public class HttpMetric implements FirebasePerformanceAttributable {
     if (attribute == null || value == null) {
       throw new IllegalArgumentException("Attribute must not have null key or value.");
     }
-    if (!customAttributesMap.containsKey(attribute)
-        && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
+    if (!mAttributes.containsKey(attribute)
+        && mAttributes.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
           String.format(
               Locale.ENGLISH,
@@ -220,7 +219,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       logger.error("Can't remove a attribute from a HttpMetric that's stopped.");
       return;
     }
-    customAttributesMap.remove(attribute);
+    mAttributes.remove(attribute);
   }
 
   /**
@@ -232,7 +231,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
   @Override
   @Nullable
   public String getAttribute(@NonNull String attribute) {
-    return customAttributesMap.get(attribute);
+    return mAttributes.get(attribute);
   }
 
   /**
@@ -243,6 +242,6 @@ public class HttpMetric implements FirebasePerformanceAttributable {
   @Override
   @NonNull
   public Map<String, String> getAttributes() {
-    return new HashMap<>(customAttributesMap);
+    return new HashMap<>(mAttributes);
   }
 }

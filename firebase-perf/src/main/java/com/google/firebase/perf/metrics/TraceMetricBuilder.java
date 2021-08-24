@@ -28,36 +28,35 @@ import java.util.Map;
  */
 /** @hide */
 class TraceMetricBuilder {
-
-  private final Trace trace;
+  private final Trace mTrace;
 
   TraceMetricBuilder(@NonNull Trace trace) {
-    this.trace = trace;
+    mTrace = trace;
   }
 
   TraceMetric build() {
     TraceMetric.Builder traceMetric =
         TraceMetric.newBuilder()
-            .setName(trace.getName())
-            .setClientStartTimeUs(trace.getStartTime().getMicros())
-            .setDurationUs(trace.getStartTime().getDurationMicros(trace.getEndTime()));
-    Map<String, Counter> traceCounters = trace.getCounters();
+            .setName(mTrace.getName())
+            .setClientStartTimeUs(mTrace.getStartTime().getMicros())
+            .setDurationUs(mTrace.getStartTime().getDurationMicros(mTrace.getEndTime()));
+    Map<String, Counter> traceCounters = mTrace.getCounters();
 
     for (Counter counter : traceCounters.values()) {
       traceMetric.putCounters(counter.getName(), counter.getCount());
     }
 
-    List<Trace> subTraces = trace.getSubtraces();
+    List<Trace> subTraces = mTrace.getSubtraces();
     if (!subTraces.isEmpty()) {
       for (Trace subtrace : subTraces) {
         traceMetric.addSubtraces(new TraceMetricBuilder(subtrace).build());
       }
     }
 
-    traceMetric.putAllCustomAttributes(trace.getAttributes());
+    traceMetric.putAllCustomAttributes(mTrace.getAttributes());
 
     com.google.firebase.perf.v1.PerfSession[] perfSessions =
-        PerfSession.buildAndSort(trace.getSessions());
+        PerfSession.buildAndSort(mTrace.getSessions());
     if (perfSessions != null) {
       traceMetric.addAllPerfSessions(Arrays.asList(perfSessions));
     }

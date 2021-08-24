@@ -180,15 +180,15 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
-    Context appContext = firebaseApp.getApplicationContext();
+    Context context = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
-    mMetadataBundle = extractMetadata(appContext);
+    mMetadataBundle = extractMetadata(context);
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
     this.configResolver.setMetadataBundle(mMetadataBundle);
-    this.configResolver.setApplicationContext(appContext);
-    gaugeManager.setApplicationContext(appContext);
+    this.configResolver.setApplicationContext(context);
+    gaugeManager.setApplicationContext(context);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
   }
@@ -444,16 +444,16 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   /**
    * Extracts the metadata bundle from the ApplicationContext.
    *
-   * @param appContext The ApplicationContext.
+   * @param context The ApplicationContext.
    * @return A shallow copy of the bundle containing the metadata extracted from the context.
    */
-  private static ImmutableBundle extractMetadata(Context appContext) {
+  private static ImmutableBundle extractMetadata(Context context) {
     Bundle bundle = null;
     try {
       ApplicationInfo ai =
-          appContext
+          context
               .getPackageManager()
-              .getApplicationInfo(appContext.getPackageName(), PackageManager.GET_META_DATA);
+              .getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA);
 
       bundle = ai.metaData;
     } catch (NameNotFoundException | NullPointerException e) {
