@@ -559,12 +559,17 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void onKill(String reason) {
-    logger.warn(
-        "Firebase Database connection was forcefully killed by the server. Will not attempt"
-            + " reconnect. Reason: "
-            + reason);
+    if (reason.equals("Invalid AppCheck token")) {
+      logger.warn("Detected invalid AppCheck token.Reconnecting");
 
-    interrupt(SERVER_KILL_INTERRUPT_REASON);
+    } else {
+      logger.warn(
+          "Firebase Database connection was forcefully killed by the server. Will not attempt"
+              + " reconnect. Reason: "
+              + reason);
+
+      interrupt(SERVER_KILL_INTERRUPT_REASON);
+    }
   }
 
   @Override
@@ -1077,7 +1082,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                 // just expired. Plus there may be transient issues that resolve themselves.
                 invalidAuthTokenCount++;
                 if (invalidAuthTokenCount >= INVALID_TOKEN_THRESHOLD) {
-                  invalidAuthTokenCount = 0;
                   // Set a long reconnect delay because recovery is unlikely.
                   retryHelper.setMaxDelay();
                   logger.warn(
@@ -1135,7 +1139,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
               // just expired. Plus there may be transient issues that resolve themselves.
               invalidAppCheckTokenCount++;
               if (invalidAppCheckTokenCount >= INVALID_TOKEN_THRESHOLD) {
-                invalidAppCheckTokenCount = 0;
                 // Set a long reconnect delay because recovery is unlikely.
                 retryHelper.setMaxDelay();
                 logger.warn(
