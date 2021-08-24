@@ -52,14 +52,12 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
+            // Since the SDK is eager(auto starts at app start), we use "lazy" dependency for some
+            // components that are not required during initialization so as not to force initialize
+            // them at app startup (refer
+            // https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading).
+            .eagerInDefaultApp()
             .build(),
-        /**
-         * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
-         * com.google.firebase.perf.application.AppStateMonitor#onActivityResumed(Activity)}. we use
-         * "lazy" dependency for some components that are not required during initialization so as
-         * not to force initialize them at app startup (refer
-         * https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading)*
-         */
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
   }
 

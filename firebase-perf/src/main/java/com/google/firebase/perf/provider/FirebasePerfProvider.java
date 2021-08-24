@@ -28,7 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.firebase.perf.FirebasePerformanceInitializer;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
@@ -62,10 +61,7 @@ public class FirebasePerfProvider extends ContentProvider {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setContentProviderContext(getContext());
 
-    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
-    appStateMonitor.registerActivityLifecycleCallbacks(getContext());
-    appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
-
+    AppStateMonitor.getInstance().registerActivityLifecycleCallbacks(getContext());
     AppStartTrace appStartTrace = AppStartTrace.getInstance();
     appStartTrace.registerActivityLifecycleCallbacks(getContext());
 

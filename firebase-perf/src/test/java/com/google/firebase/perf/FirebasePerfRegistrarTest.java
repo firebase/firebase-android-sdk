@@ -48,6 +48,6 @@ public class FirebasePerfRegistrarTest {
             Dependency.required(FirebaseInstallationsApi.class),
             Dependency.requiredProvider(TransportFactory.class));
 
-    assertThat(firebasePerfComponent.isLazy()).isTrue();
+    assertThat(firebasePerfComponent.isEagerInDefaultApp()).isTrue();
   }
 }
