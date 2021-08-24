@@ -35,7 +35,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
@@ -117,8 +116,6 @@ public class TransportManager implements AppStateCallback {
   private RateLimiter rateLimiter;
   private AppStateMonitor appStateMonitor;
   private ApplicationInfo.Builder applicationInfoBuilder;
-  private String packageName;
-  private String projectId;
 
   private boolean isForegroundState = false;
 
@@ -159,7 +156,6 @@ public class TransportManager implements AppStateCallback {
       ExecutorService executorService) {
 
     this.firebaseApp = firebaseApp;
-    this.projectId = firebaseApp.getOptions().getProjectId();
     this.appContext = firebaseApp.getApplicationContext();
     this.firebasePerformance = firebasePerformance;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -194,7 +190,6 @@ public class TransportManager implements AppStateCallback {
       @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
 
     this.firebaseApp = firebaseApp;
-    projectId = firebaseApp.getOptions().getProjectId();
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
 
@@ -206,7 +201,6 @@ public class TransportManager implements AppStateCallback {
   @WorkerThread
   private void syncInit() {
     appContext = firebaseApp.getApplicationContext();
-    packageName = appContext.getPackageName();
     configResolver = ConfigResolver.getInstance();
     rateLimiter = new RateLimiter(appContext, Constants.RATE_PER_MINUTE, Constants.BURST_CAPACITY);
     appStateMonitor = AppStateMonitor.getInstance();
@@ -224,7 +218,7 @@ public class TransportManager implements AppStateCallback {
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
-                .setPackageName(packageName)
+                .setPackageName(appContext.getPackageName())
                 .setSdkVersion(BuildConfig.FIREPERF_VERSION_NAME)
                 .setVersionName(getVersionName(appContext)));
 
@@ -454,15 +448,7 @@ public class TransportManager implements AppStateCallback {
 
   @WorkerThread
   private void dispatchLog(PerfMetric perfMetric) {
-
-    // Logs the metrics to logcat plus console URL for every trace metric.
-    if (perfMetric.hasTraceMetric()) {
-      logger.info(
-          "Logging %s. In a minute, visit the Firebase console to view your data: %s",
-          getLogcatMsg(perfMetric), getConsoleUrl(perfMetric.getTraceMetric()));
-    } else {
-      logger.info("Logging %s", getLogcatMsg(perfMetric));
-    }
+    logger.info("Logging %s", getLogcatMsg(perfMetric));
 
     flgTransport.log(perfMetric);
   }
@@ -611,6 +597,7 @@ public class TransportManager implements AppStateCallback {
 
   private static String getLogcatMsg(TraceMetric traceMetric) {
     long durationInUs = traceMetric.getDurationUs();
+
     return String.format(
         Locale.ENGLISH,
         "trace metric: %s (duration: %.4fms)",
@@ -644,15 +631,6 @@ public class TransportManager implements AppStateCallback {
         gaugeMetric.hasGaugeMetadata(),
         gaugeMetric.getCpuMetricReadingsCount(),
         gaugeMetric.getAndroidMemoryReadingsCount());
-  }
-
-  private String getConsoleUrl(TraceMetric traceMetric) {
-    String traceName = traceMetric.getName();
-    if (traceName.startsWith(Constants.SCREEN_TRACE_PREFIX)) {
-      return ConsoleUrlGenerator.generateScreenTraceUrl(projectId, packageName, traceName);
-    } else {
-      return ConsoleUrlGenerator.generateCustomTraceUrl(projectId, packageName, traceName);
-    }
   }
 
   // endregion
