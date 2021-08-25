@@ -105,19 +105,17 @@ class CheckForUpdateClient {
                             installationTokenResult.getToken());
                     return Tasks.forResult(latestRelease);
                   } catch (FirebaseAppDistributionException ex) {
-                    LogWrapper.getInstance().e(TAG + "Failed to fetch latest release.", ex);
+                    LogWrapper.getInstance().e(TAG + "Failed to fetch latest releases.", ex);
                     return Tasks.forException(ex);
                   }
                 })
             .continueWithTask(
                 checkForUpdateExecutor,
-                task -> {
-                  LogWrapper.getInstance().e(TAG + "Failed to fetch latest release. ",task.getException());
-                    return
+                task ->
                     TaskUtils.handleTaskFailure(
                         task,
                         Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.NETWORK_FAILURE);});
+                        FirebaseAppDistributionException.Status.NETWORK_FAILURE));
 
     return cachedCheckForUpdate;
   }
