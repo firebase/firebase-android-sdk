@@ -91,7 +91,7 @@ class UpdateApkClient {
                 install(file.getPath())
                     .addOnFailureListener(
                         e -> {
-                          LogWrapper.getInstance().e(TAG + "Newest Release failed to install.",e);
+                          LogWrapper.getInstance().e(TAG + "Newest Release failed to install.", e);
                           postInstallationFailure(
                               e, file.length(), showDownloadNotificationManager);
                           setTaskCompletionErrorWithDefault(
@@ -103,7 +103,7 @@ class UpdateApkClient {
         .addOnFailureListener(
             downloadExecutor,
             e -> {
-              LogWrapper.getInstance().e(TAG + "Newest release failed to download.",e);
+              LogWrapper.getInstance().e(TAG + "Newest release failed to download.", e);
               setTaskCompletionErrorWithDefault(
                   e,
                   new FirebaseAppDistributionException(

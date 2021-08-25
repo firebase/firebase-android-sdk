@@ -70,7 +70,8 @@ class TesterSignInClient {
     }
 
     if (this.isCurrentlySigningIn()) {
-      LogWrapper.getInstance().v(TAG + "Detected In-Progress sign in task. Returning the same task.");
+      LogWrapper.getInstance()
+          .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
       return signInTaskCompletionSource.getTask();
     }
 

@@ -19,6 +19,7 @@ import com.google.android.gms.tasks.Tasks;
 
 class TaskUtils {
   private static final String TAG = "TaskUtils:";
+
   static <TResult> Task<TResult> handleTaskFailure(
       Task<TResult> task,
       String defaultErrorMessage,

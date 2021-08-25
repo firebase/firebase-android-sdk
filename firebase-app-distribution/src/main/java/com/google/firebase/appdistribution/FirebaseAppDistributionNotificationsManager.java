@@ -24,7 +24,6 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Build.VERSION;
-import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
@@ -123,7 +122,8 @@ class FirebaseAppDistributionNotificationsManager {
     try {
       Drawable icon = ContextCompat.getDrawable(firebaseApp.getApplicationContext(), iconId);
       if (VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
-        LogWrapper.getInstance().e(TAG + "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
+        LogWrapper.getInstance()
+            .e(TAG + "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
         return true;
       } else {
         // AdaptiveIcons were introduced in API 26

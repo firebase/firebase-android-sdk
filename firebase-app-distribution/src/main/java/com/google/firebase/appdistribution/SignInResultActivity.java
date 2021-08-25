@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import android.os.Bundle;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -25,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
  */
 public class SignInResultActivity extends AppCompatActivity {
   private static final String TAG = "SignInResultActivity:";
+
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
     super.onCreate(savedInstanceBundle);

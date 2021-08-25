@@ -172,7 +172,7 @@ class CheckForUpdateClient {
     try {
       pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.",e);
+      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
@@ -212,7 +212,7 @@ class CheckForUpdateClient {
       // of the installed release, then they are the same release.
       return externalCodeHash.equals(latestRelease.getCodeHash());
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate App.",e);
+      LogWrapper.getInstance().e(TAG + "Unable to locate App.", e);
       return false;
     }
   }

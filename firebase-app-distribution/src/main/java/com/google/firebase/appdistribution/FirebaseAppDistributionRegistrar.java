@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import android.app.Application;
-import android.util.Log;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
@@ -59,8 +58,10 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
       Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
       firebaseApplication.registerActivityLifecycleCallbacks(appDistribution);
     } else {
-      LogWrapper.getInstance().e(
-          TAG + "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
+      LogWrapper.getInstance()
+          .e(
+              TAG
+                  + "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
     }
 
     return appDistribution;

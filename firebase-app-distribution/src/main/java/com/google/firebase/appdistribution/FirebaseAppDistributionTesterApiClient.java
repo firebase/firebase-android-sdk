@@ -83,7 +83,7 @@ class FirebaseAppDistributionTesterApiClient {
 
     } catch (IOException | JSONException e) {
       if (e instanceof JSONException) {
-        LogWrapper.getInstance().e(TAG + "Error parsing the latest release.",e);
+        LogWrapper.getInstance().e(TAG + "Error parsing the latest release.", e);
         throw new FirebaseAppDistributionException(
             Constants.ErrorMessages.JSON_PARSING_ERROR, NETWORK_FAILURE, e);
       }
