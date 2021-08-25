@@ -122,6 +122,19 @@ public abstract class Mutation {
   public abstract MutationSquash.Type applyToLocalView(
       MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashTypeSoFar);
 
+  static class MergeResult {
+    boolean replace;
+    FieldMask mask;
+
+    public MergeResult(boolean replace, FieldMask mask) {
+      this.replace = replace;
+      this.mask = mask;
+    }
+  }
+
+  public abstract MergeResult mergeMutation(
+      MutableDocument document, MergeResult previousResult, Timestamp localWriteTime);
+
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
     return key.equals(other.key) && precondition.equals(other.precondition);

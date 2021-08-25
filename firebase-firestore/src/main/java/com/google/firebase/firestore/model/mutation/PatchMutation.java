@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -154,6 +155,25 @@ public final class PatchMutation extends Mutation {
     }
     // squashType == Set or Delete, because this mutation is applied.
     return MutationSquash.Type.Set;
+  }
+
+  @Override
+  public MergeResult mergeMutation(
+      MutableDocument document, MergeResult previousResult, Timestamp localWriteTime) {
+    if (!getPrecondition().isValidFor(document)) {
+      return previousResult;
+    }
+
+    applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
+
+    // TODO: Precondition would also needed to be passed. Or MergeResult.replace should be an enum
+    // as well, just like MutationSquash.Type above, to support patch and patchWithMerge.
+    if (!previousResult.replace) {
+      previousResult.mask.getMask().addAll(getMask().getMask());
+      return new MergeResult(false, previousResult.mask);
+    }
+
+    return new MergeResult(true, FieldMask.fromSet(new HashSet<>()));
   }
 
   private Map<FieldPath, Value> getPatch() {
