@@ -561,12 +561,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   @Override
   public void onKill(String reason) {
     if (reason.equals(INVALID_APP_CHECK_TOKEN)
-        && invalidAppCheckTokenCount <= INVALID_TOKEN_THRESHOLD) {
+        && invalidAppCheckTokenCount < INVALID_TOKEN_THRESHOLD) {
       invalidAppCheckTokenCount++;
       logger.warn(
           "Detected invalid AppCheck token. Reconnecting ("
-              + invalidAppCheckTokenCount
-              + " attempts)");
+              + (INVALID_TOKEN_THRESHOLD - invalidAppCheckTokenCount)
+              + " attempts remaining)");
     } else {
       logger.warn(
           "Firebase Database connection was forcefully killed by the server. Will not attempt"
