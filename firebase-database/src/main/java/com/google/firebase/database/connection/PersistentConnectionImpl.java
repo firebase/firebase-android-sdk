@@ -269,6 +269,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String SERVER_DATA_TAG = "t";
   private static final String SERVER_DATA_WARNINGS = "w";
   private static final String SERVER_RESPONSE_DATA = "d";
+  private static final String INVALID_APP_CHECK_TOKEN = "Invalid appcheck token";
 
   /** Delay after which a established connection is considered successful */
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
@@ -559,9 +560,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void onKill(String reason) {
-    if (reason.equals("Invalid AppCheck token")) {
-      logger.warn("Detected invalid AppCheck token.Reconnecting");
-
+    if (reason.equals(INVALID_APP_CHECK_TOKEN)
+        && invalidAppCheckTokenCount <= INVALID_TOKEN_THRESHOLD) {
+      invalidAppCheckTokenCount++;
+      logger.warn(
+          "Detected invalid AppCheck token. Reconnecting ("
+              + invalidAppCheckTokenCount
+              + " attempts)");
     } else {
       logger.warn(
           "Firebase Database connection was forcefully killed by the server. Will not attempt"
@@ -1130,24 +1135,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             forceAppCheckTokenRefresh = true;
             String reason = (String) response.get(SERVER_RESPONSE_DATA);
             logger.debug("App check failed: " + status + " (" + reason + ")");
-
             // Note: We don't close the connection as the developer may not have
             // enforcement enabled. The backend closes connections with enforcements.
-            if (status.equals("invalid_token") || status.equals("permission_denied")) {
-              // We'll wait a couple times before logging the warning / increasing the
-              // retry period since app check tokens will report as "invalid" if they're
-              // just expired. Plus there may be transient issues that resolve themselves.
-              invalidAppCheckTokenCount++;
-              if (invalidAppCheckTokenCount >= INVALID_TOKEN_THRESHOLD) {
-                // Set a long reconnect delay because recovery is unlikely.
-                retryHelper.setMaxDelay();
-                logger.warn(
-                    "Provided app check credentials are invalid. This "
-                        + "usually indicates your FirebaseAppCheck was not initialized "
-                        + "correctly.");
-              }
-            }
           }
+
           if (restoreStateAfterComplete) {
             restoreState();
           }
