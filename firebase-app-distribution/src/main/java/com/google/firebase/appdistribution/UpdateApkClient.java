@@ -21,7 +21,6 @@ import static com.google.firebase.appdistribution.internal.ReleaseIdentification
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,7 +44,7 @@ import javax.net.ssl.HttpsURLConnection;
 /** Client class that handles updateApp functionality for APKs in {@link UpdateAppClient}. */
 class UpdateApkClient {
   private static final int UPDATE_INTERVAL_MS = 250;
-  private static final String TAG = "FADUpdateAppClient";
+  private static final String TAG = "UpdateApkClient:";
   private static final String REQUEST_METHOD = "GET";
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
 
@@ -92,6 +91,7 @@ class UpdateApkClient {
                 install(file.getPath())
                     .addOnFailureListener(
                         e -> {
+                          LogWrapper.getInstance().e(TAG + "Newest Release failed to install.",e);
                           postInstallationFailure(
                               e, file.length(), showDownloadNotificationManager);
                           setTaskCompletionErrorWithDefault(
@@ -103,6 +103,7 @@ class UpdateApkClient {
         .addOnFailureListener(
             downloadExecutor,
             e -> {
+              LogWrapper.getInstance().e(TAG + "Newest release failed to download.",e);
               setTaskCompletionErrorWithDefault(
                   e,
                   new FirebaseAppDistributionException(
@@ -253,7 +254,7 @@ class UpdateApkClient {
       Context context = firebaseApp.getApplicationContext();
       return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
     } catch (Exception e) {
-      Log.e(TAG, "Unable to retrieve App name");
+      LogWrapper.getInstance().v(TAG + "Unable to retrieve App name");
       return "";
     }
   }

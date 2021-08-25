@@ -43,6 +43,7 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String CODE_HASH_KEY = "codeHash";
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
+  private static final String TAG = "TesterApiClient:";
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public @NonNull AppDistributionReleaseInternal fetchLatestRelease(
@@ -82,10 +83,10 @@ class FirebaseAppDistributionTesterApiClient {
 
     } catch (IOException | JSONException e) {
       if (e instanceof JSONException) {
+        LogWrapper.getInstance().e(TAG + "Error parsing the latest release.",e);
         throw new FirebaseAppDistributionException(
             Constants.ErrorMessages.JSON_PARSING_ERROR, NETWORK_FAILURE, e);
       }
-
       throw getExceptionForHttpResponse(connection);
     } finally {
       connection.disconnect();
@@ -97,6 +98,7 @@ class FirebaseAppDistributionTesterApiClient {
   private FirebaseAppDistributionException getExceptionForHttpResponse(
       HttpsURLConnection connection) {
     try {
+      LogWrapper.getInstance().e(TAG + "Failed due to " + connection.getResponseMessage());
       switch (connection.getResponseCode()) {
         case 401:
           return new FirebaseAppDistributionException(

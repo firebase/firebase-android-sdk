@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 
 class CheckForUpdateClient {
   private static final int UPDATE_THREAD_POOL_SIZE = 4;
+  private static final String TAG = "CheckForUpdateClient:";
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
@@ -104,16 +105,19 @@ class CheckForUpdateClient {
                             installationTokenResult.getToken());
                     return Tasks.forResult(latestRelease);
                   } catch (FirebaseAppDistributionException ex) {
+                    LogWrapper.getInstance().e(TAG + "Failed to fetch latest release.", ex);
                     return Tasks.forException(ex);
                   }
                 })
             .continueWithTask(
                 checkForUpdateExecutor,
-                task ->
+                task -> {
+                  LogWrapper.getInstance().e(TAG + "Failed to fetch latest release. ",task.getException());
+                    return
                     TaskUtils.handleTaskFailure(
                         task,
                         Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.NETWORK_FAILURE));
+                        FirebaseAppDistributionException.Status.NETWORK_FAILURE);});
 
     return cachedCheckForUpdate;
   }
@@ -134,6 +138,7 @@ class CheckForUpdateClient {
         return null;
       }
     } catch (NumberFormatException e) {
+      LogWrapper.getInstance().e(TAG + "Error retrieving the latest release.", e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.NETWORK_ERROR,
           FirebaseAppDistributionException.Status.NETWORK_FAILURE,
@@ -169,6 +174,7 @@ class CheckForUpdateClient {
     try {
       pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
+      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.",e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
@@ -208,6 +214,7 @@ class CheckForUpdateClient {
       // of the installed release, then they are the same release.
       return externalCodeHash.equals(latestRelease.getCodeHash());
     } catch (PackageManager.NameNotFoundException e) {
+      LogWrapper.getInstance().e(TAG + "Unable to locate App.",e);
       return false;
     }
   }
