@@ -400,6 +400,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public Task<Object> get(List<String> path, Map<String, Object> queryParams) {
     QuerySpec query = new QuerySpec(path, queryParams);
     TaskCompletionSource<Object> source = new TaskCompletionSource<>();
@@ -414,36 +415,29 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
         new OutstandingGet(
             REQUEST_ACTION_GET,
             request,
-            new ConnectionRequestCallback() {
-              @Override
-              public void onResponse(Map<String, Object> response) {
-                String status = (String) response.get(REQUEST_STATUS);
-                if (status.equals("ok")) {
-                  Object body = response.get(SERVER_DATA_UPDATE_BODY);
-                  delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
-                  source.setResult(body);
-                } else {
-                  source.setException(
-                      new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
-                }
+            response -> {
+              String status = (String) response.get(REQUEST_STATUS);
+              if (status.equals("ok")) {
+                Object body = response.get(SERVER_DATA_UPDATE_BODY);
+                delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
+                source.setResult(body);
+              } else {
+                source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
               }
             });
     outstandingGets.put(readId, outstandingGet);
 
     if (!connected()) {
       executorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              if (!outstandingGet.markSent()) {
-                return;
-              }
-              if (logger.logsDebug()) {
-                logger.debug("get " + readId + " timed out waiting for connection");
-              }
-              outstandingGets.remove(readId);
-              source.setException(new Exception("Client is offline"));
+          () -> {
+            if (!outstandingGet.markSent()) {
+              return;
             }
+            if (logger.logsDebug()) {
+              logger.debug("get " + readId + " timed out waiting for connection");
+            }
+            outstandingGets.remove(readId);
+            source.setException(new Exception("Client is offline"));
           },
           GET_CONNECT_TIMEOUT,
           TimeUnit.MILLISECONDS);
