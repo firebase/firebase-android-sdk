@@ -24,7 +24,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,7 +39,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
 class TesterSignInClient {
-  private static final String TAG = "FADSignInTester";
+  private static final String TAG = "TesterSignIn:";
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
   private final String SIGNIN_REDIRECT_URL =
@@ -66,15 +65,19 @@ class TesterSignInClient {
   @NonNull
   public synchronized Task<Void> signInTester() {
     if (signInStorage.getSignInStatus()) {
+      LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
       return Tasks.forResult(null);
     }
 
     if (this.isCurrentlySigningIn()) {
+      LogWrapper.getInstance()
+          .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
       return signInTaskCompletionSource.getTask();
     }
 
     Activity currentActivity = getCurrentActivity();
     if (currentActivity == null) {
+      LogWrapper.getInstance().e(TAG + "No foreground activity found.");
       return Tasks.forException(
           new FirebaseAppDistributionException(
               ErrorMessages.APP_BACKGROUNDED,
@@ -120,6 +123,7 @@ class TesterSignInClient {
                     new OnFailureListener() {
                       @Override
                       public void onFailure(@NonNull Exception e) {
+                        LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
                         setSignInTaskCompletionError(
                             new FirebaseAppDistributionException(
                                 Constants.ErrorMessages.AUTHENTICATION_ERROR,
@@ -135,6 +139,7 @@ class TesterSignInClient {
         new DialogInterface.OnClickListener() {
           @Override
           public void onClick(DialogInterface dialogInterface, int i) {
+            LogWrapper.getInstance().v("Sign in has been canceled.");
             setSignInTaskCompletionError(
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
@@ -172,12 +177,13 @@ class TesterSignInClient {
     try {
       return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
     } catch (Exception e) {
-      Log.e(TAG, "Unable to retrieve App name");
+      LogWrapper.getInstance().e(TAG + "Unable to retrieve App name", e);
       return "";
     }
   }
 
   private void openSignInFlowInBrowser(Activity currentActivity, Uri uri) {
+    LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser at " + uri);
     if (supportsCustomTabs(firebaseApp.getApplicationContext())) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
