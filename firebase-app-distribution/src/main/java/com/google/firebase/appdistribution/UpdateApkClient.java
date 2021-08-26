@@ -284,7 +284,6 @@ class UpdateApkClient {
 
   private void setDownloadTaskCompletionErrorWithDefault(
       Exception e, FirebaseAppDistributionException defaultFirebaseException) {
-    LogWrapper.getInstance().e(TAG + "Download failed to complete ", e);
     if (e instanceof FirebaseAppDistributionException) {
       setDownloadTaskCompletionError((FirebaseAppDistributionException) e);
     } else {
