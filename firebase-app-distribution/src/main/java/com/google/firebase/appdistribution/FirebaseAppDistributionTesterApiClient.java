@@ -98,7 +98,7 @@ class FirebaseAppDistributionTesterApiClient {
   private FirebaseAppDistributionException getExceptionForHttpResponse(
       HttpsURLConnection connection) {
     try {
-      LogWrapper.getInstance().e(TAG + "Failed due to " + connection.getResponseMessage());
+      LogWrapper.getInstance().e(TAG + "Failed due to " + connection.getResponseCode());
       switch (connection.getResponseCode()) {
         case 401:
           return new FirebaseAppDistributionException(

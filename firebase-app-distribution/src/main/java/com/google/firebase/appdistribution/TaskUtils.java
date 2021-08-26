@@ -26,12 +26,10 @@ class TaskUtils {
       FirebaseAppDistributionException.Status defaultErrorStatus) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
+      LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
       if (e instanceof FirebaseAppDistributionException) {
-        LogWrapper.getInstance().e(TAG + "Task failed to complete due to" + e.getMessage(), e);
         return task;
       }
-
-      LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
       return Tasks.forException(
           new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
     }

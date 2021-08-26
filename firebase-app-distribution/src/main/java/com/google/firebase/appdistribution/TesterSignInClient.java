@@ -183,7 +183,7 @@ class TesterSignInClient {
   }
 
   private void openSignInFlowInBrowser(Activity currentActivity, Uri uri) {
-    LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser.");
+    LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser at " + uri);
     if (supportsCustomTabs(firebaseApp.getApplicationContext())) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
