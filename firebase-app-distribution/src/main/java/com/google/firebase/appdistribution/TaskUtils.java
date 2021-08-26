@@ -18,16 +18,18 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 
 class TaskUtils {
+  private static final String TAG = "TaskUtils:";
+
   static <TResult> Task<TResult> handleTaskFailure(
       Task<TResult> task,
       String defaultErrorMessage,
       FirebaseAppDistributionException.Status defaultErrorStatus) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
+      LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
       if (e instanceof FirebaseAppDistributionException) {
         return task;
       }
-
       return Tasks.forException(
           new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
     }
