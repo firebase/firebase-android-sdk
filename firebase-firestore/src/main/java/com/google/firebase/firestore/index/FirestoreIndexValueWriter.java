@@ -22,13 +22,7 @@ import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
 import java.util.Map;
 
-/**
- * Firestore index value writer.
- *
- * <p>See the <a
- * href="https://g3doc.corp.google.com/cloud/datastore/g3doc/architecture/spanner/storage_format.md">storage
- * format design</a> for details.
- */
+/** Firestore index value writer. */
 public class FirestoreIndexValueWriter {
   // Note: This code is copied from the backend. Code that is not used by Firestore was removed.
 
