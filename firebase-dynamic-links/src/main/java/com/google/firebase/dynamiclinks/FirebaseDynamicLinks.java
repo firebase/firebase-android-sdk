@@ -98,7 +98,7 @@ public abstract class FirebaseDynamicLinks {
    *
    * <p>If a dynamic link, the call will also send FirebaseAnalytics dynamic link event.
    */
-  @NonNull
+  @Nullable
   public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Intent intent);
 
   /**
@@ -117,7 +117,7 @@ public abstract class FirebaseDynamicLinks {
    *     previously captured or is in the Uri.
    *     <p>{@link Task#isSuccessful()} will only be false when a processing error occurs.
    */
-  @NonNull
+  @Nullable
   public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Uri dynamicLinkUri);
 
   /**
