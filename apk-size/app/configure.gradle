@@ -26,9 +26,27 @@ if (project.hasProperty('sdks')) {
         sdks.split(',').each { sdk ->
             def (groupId, artifactId, version) = sdk.split(':')
             productFlavors.create(artifactId) {
-                dimension 'apkSize'
+                dimension 'firebase-product'
             }
             dependencies.add("${artifactId}Implementation", sdk)
+        }
+
+        // Only measure per-architecture sizes for firebase-crashlytics-ndk.
+        variantFilter { variant ->
+            def names = variant.flavors*.name
+            if ('firebase-crashlytics-ndk' in names && 'universal' in names
+                    || !('firebase-crashlytics-ndk' in names || 'universal' in names)) {
+                setIgnore(true)
+            }
+        }
+
+        applicationVariants.all { variant ->
+            def product = variant.productFlavors[0].name
+            def abi = variant.productFlavors[1].name
+            def buildType = variant.buildType.name
+            variant.outputs.all {
+                outputFileName = "${product}::${buildType}::${abi}.apk"
+            }
         }
     }
 }

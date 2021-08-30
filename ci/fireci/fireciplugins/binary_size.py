@@ -59,7 +59,7 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
 
   gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir='apk-size', check=False)
 
-  test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes(artifacts)
+  test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes()
   test_report = {'metric': 'BinarySize', 'results': test_results, 'log': log}
 
   uploader.post_report(test_report, metrics_service_url, access_token)
@@ -79,17 +79,17 @@ def _measure_aar_sizes(artifacts):
   return test_results
 
 
-def _measure_apk_sizes(artifacts):
+def _measure_apk_sizes():
   test_results = []
 
-  for artifact in artifacts:
-    group_id, artifact_id, version = artifact.split(':')
-    apk_files = glob.glob(f'./apk-size/**/{artifact_id}/**/*.apk', recursive=True)
+  apk_files = glob.glob(fr'./apk-size/**/*.apk', recursive=True)
+  for apk_file in apk_files:
+    filename = os.path.basename(apk_file)
+    artifact, build_type, abi = os.path.splitext(filename)[0].split('::')
+    apk_type = build_type if abi == 'universal' else f'{build_type}/{abi}'
+    apk_size = os.path.getsize(apk_file)
 
-    for apk_file in apk_files:
-      build_type = re.search(fr'{artifact_id}/([^/]*)/', apk_file).group(1)
-      apk_size = os.path.getsize(apk_file)
-      test_results.append({'sdk': artifact_id, 'type': f'apk ({build_type})', 'value': apk_size})
+    test_results.append({'sdk': artifact, 'type': f'apk ({apk_type})', 'value': apk_size})
 
   return test_results
 
