@@ -155,7 +155,7 @@ dependencies {
     }
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
-    androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'

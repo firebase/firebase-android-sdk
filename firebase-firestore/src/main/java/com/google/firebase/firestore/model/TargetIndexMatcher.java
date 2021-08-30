@@ -80,13 +80,13 @@ import java.util.Set;
  * </table>
  */
 public class TargetIndexMatcher {
-  // The collection ID of the query target.
+  // The collection ID (or collection group) of the query target.
   private final String collectionId;
 
   // The list of filters per field. A target can have duplicate filters for a field.
   private final Map<FieldPath, List<FieldFilter>> fieldFilterFields = new HashMap<>();
 
-  // The list of orderBy fields in the query target.
+  // The set of orderBy fields in the query target.
   private final Set<FieldPath> orderByFields = new HashSet<>();
 
   public TargetIndexMatcher(Target target) {

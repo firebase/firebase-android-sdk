@@ -26,6 +26,10 @@ import java.util.Map;
 public class FirestoreIndexValueWriter {
   // Note: This code is copied from the backend. Code that is not used by Firestore was removed.
 
+  // The client SDK only supports references to documents from the same database. We can skip the
+  // first five segments.
+  public static final int DOCUMENT_NAME_OFFSET = 5;
+
   public static final int INDEX_TYPE_NULL = 5;
   public static final int INDEX_TYPE_BOOLEAN = 10;
   public static final int INDEX_TYPE_NAN = 13;
@@ -149,7 +153,7 @@ public class FirestoreIndexValueWriter {
     ResourcePath path = ResourcePath.fromString(referenceValue);
 
     int numSegments = path.length();
-    for (int index = 6; index < numSegments; ++index) {
+    for (int index = DOCUMENT_NAME_OFFSET; index < numSegments; ++index) {
       String segment = path.getSegment(index);
 
       writeValueTypeLabel(encoder, INDEX_TYPE_REFERENCE_SEGMENT);
