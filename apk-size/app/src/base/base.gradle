@@ -16,7 +16,7 @@
 android {
     productFlavors {
         base {
-            dimension "firebase"
+            dimension "apkSize"
             applicationId "com.google.apksize.base"
         }
     }
