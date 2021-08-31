@@ -57,13 +57,6 @@ android {
             shrinkResources false
         }
     }
-
-    variantFilter { variant ->
-        def buildTypeName = variant.buildType*.name
-        if (buildTypeName.contains('debug')) {
-            setIgnore(true)
-        }
-    }
 }
 
 dependencies {

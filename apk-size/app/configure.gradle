@@ -31,11 +31,14 @@ if (project.hasProperty('sdks')) {
             dependencies.add("${artifactId}Implementation", sdk)
         }
 
-        // Only measure per-architecture sizes for firebase-crashlytics-ndk.
+        // Ignore debug builds as measurements are not reproducible due to disabled ZipAlign.
+        // Ignore per-architecture builds for all products except for firebase-crashlytics-ndk.
         variantFilter { variant ->
-            def names = variant.flavors*.name
-            if ('firebase-crashlytics-ndk' in names && 'universal' in names
-                    || !('firebase-crashlytics-ndk' in names || 'universal' in names)) {
+            def buildType = variant.buildType.name
+            def flavors = variant.flavors*.name
+            if (buildType == 'debug'
+                    || 'firebase-crashlytics-ndk' in flavors && 'universal' in flavors
+                    || !('firebase-crashlytics-ndk' in flavors || 'universal' in flavors)) {
                 setIgnore(true)
             }
         }
