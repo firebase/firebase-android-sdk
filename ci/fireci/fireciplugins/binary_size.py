@@ -86,7 +86,7 @@ def _measure_apk_sizes():
   for apk_file in apk_files:
     filename = os.path.basename(apk_file)
     artifact, build_type, abi = os.path.splitext(filename)[0].split('::')
-    apk_type = build_type if abi == 'universal' else f'{build_type}/{abi}'
+    apk_type = build_type if abi == 'universal' else f'{build_type} / {abi}'
     apk_size = os.path.getsize(apk_file)
 
     test_results.append({'sdk': artifact, 'type': f'apk ({apk_type})', 'value': apk_size})
