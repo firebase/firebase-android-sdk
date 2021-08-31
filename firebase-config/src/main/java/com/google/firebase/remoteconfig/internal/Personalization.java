@@ -61,7 +61,7 @@ public class Personalization {
    *     key}
    */
   public void logArmActive(@NonNull String rcParameter, @NonNull ConfigContainer configContainer) {
-    AnalyticsConnector connector = this.analyticsConnector.get();
+    AnalyticsConnector connector = this.analyticsConnector != null ? this.analyticsConnector.get() : null;
     if (connector == null) {
       return;
     }
