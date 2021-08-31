@@ -50,6 +50,11 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
         return false;
       }
     }
+
+    if (!isValidScreenTrace(traceMetric)) {
+      logger.warn("Invalid Screen Trace:" + traceMetric.getName());
+      return false;
+    }
     return true;
   }
 
@@ -102,6 +107,17 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
       }
     }
     return true;
+  }
+
+  private boolean isValidScreenTrace(@NonNull TraceMetric trace) {
+    if (!trace.getName().startsWith(Constants.SCREEN_TRACE_PREFIX)) {
+      return true;
+    }
+    Long totalFrames = trace.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString());
+    if (totalFrames != null) {
+      return totalFrames.compareTo(0L) > 0;
+    }
+    return false;
   }
 
   private boolean isValidTrace(@Nullable TraceMetric trace, int deep) {
