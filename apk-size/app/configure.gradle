@@ -26,7 +26,7 @@ if (project.hasProperty('sdks')) {
         sdks.split(',').each { sdk ->
             def (groupId, artifactId, version) = sdk.split(':')
             productFlavors.create(artifactId) {
-                dimension 'firebase-product'
+                dimension 'firebase'
             }
             dependencies.add("${artifactId}Implementation", sdk)
         }
