@@ -100,10 +100,10 @@ class FirebaseContextProvider implements ContextProvider {
         .onSuccessTask(
             result -> {
               if (result.getError() != null) {
-                Log.w(
-                    TAG,
-                    "Error getting App Check token; using placeholder token instead. Error: "
-                        + result.getError());
+                // If there was an error getting the App Check token, do NOT send the placeholder
+                // token. Only valid App Check tokens should be sent to the functions backend.
+                Log.w(TAG, "Error getting App Check token. Error: " + result.getError());
+                return Tasks.forResult(null);
               }
               return Tasks.forResult(result.getToken());
             });
