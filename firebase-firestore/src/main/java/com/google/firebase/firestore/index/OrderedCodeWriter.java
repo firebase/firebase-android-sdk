@@ -22,8 +22,8 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 
 /**
- * OrderedCodeWriter is a minimal-allocation implmentation of the writing behavior defined by {@link
- * com.google.bigtable.util.OrderedCode}.
+ * OrderedCodeWriter is a minimal-allocation implmentation of the writing behavior defined by the
+ * backend.
  */
 public class OrderedCodeWriter {
   // Note: This code is copied from the backend. Code that is not used by Firestore was removed.
@@ -36,11 +36,7 @@ public class OrderedCodeWriter {
   public static final byte INFINITY = (byte) 0xff; // Combined with ESCAPE2
   public static final byte FF_BYTE = 0x00; // Combined with ESCAPE2
 
-  /**
-   * These constants are based on {@link
-   * com.google.storage.megastore.metadata.adapters.DoubleAdapter}, see
-   * OrderedCodeWriter::writeDoubleAscending for details.
-   */
+  /** These constants are taken from the backend. */
   public static final long DOUBLE_SIGN_MASK = 0x8000000000000000L;
 
   public static final long DOUBLE_ALL_BITS = 0xFFFFFFFFFFFFFFFFL;
@@ -225,7 +221,6 @@ public class OrderedCodeWriter {
   }
 
   public void writeDoubleAscending(double val) {
-    // Based on com.google.storage.megastore.metadata.adapters.DoubleAdapter.
     // This particular encoding has the following properties:
     // The order matches the IEEE 754 floating-point comparison results with the
     // following exceptions:

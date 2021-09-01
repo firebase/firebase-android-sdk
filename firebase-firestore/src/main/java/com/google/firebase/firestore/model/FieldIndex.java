@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
+import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,7 +34,8 @@ import java.util.List;
 public final class FieldIndex implements Iterable<FieldIndex.Segment> {
 
   /** An index component consisting of field path and index type. */
-  public static final class Segment {
+  @AutoValue
+  public abstract static class Segment {
     /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
       /** Ascending index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
@@ -42,44 +44,15 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
       CONTAINS
     }
 
-    private final FieldPath fieldPath;
-    private final Kind kind;
-
-    public Segment(FieldPath fieldPath, Kind kind) {
-      this.fieldPath = fieldPath;
-      this.kind = kind;
-    }
-
     /** The field path of the component. */
-    public FieldPath getFieldPath() {
-      return fieldPath;
-    }
+    public abstract FieldPath getFieldPath();
 
     /** The indexes sorting order. */
-    public Kind getKind() {
-      return kind;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      Segment segment = (Segment) o;
-      if (!fieldPath.equals(segment.fieldPath)) return false;
-      return kind == segment.kind;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = fieldPath.hashCode();
-      result = 31 * result + kind.hashCode();
-      return result;
-    }
+    public abstract Kind getKind();
 
     @Override
     public String toString() {
-      return String.format("Segment{fieldPath=%s, kind=%s}", fieldPath, kind);
+      return String.format("Segment{fieldPath=%s, kind=%s}", getFieldPath(), getKind());
     }
   }
 
@@ -127,7 +100,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   /** Returns a new field index with additional index segment. */
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
-    newSegments.add(new Segment(fieldPath, kind));
+    newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
     return new FieldIndex(collectionId, newSegments);
   }
 
