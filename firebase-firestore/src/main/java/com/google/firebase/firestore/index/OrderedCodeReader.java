@@ -26,8 +26,8 @@ import static java.lang.Character.MIN_SUPPLEMENTARY_CODE_POINT;
 import static java.lang.Character.MIN_SURROGATE;
 
 /**
- * OrderedCodeReader is a minimal-allocation implementation of the reading behavior defined by
- * {@link com.google.bigtable.util.OrderedCode}.
+ * OrderedCodeReader is a minimal-allocation implementation of the reading behavior defined by our
+ * backend.
  *
  * <p>This class will throw {@link IllegalArgumentException} on invalid input.
  */
