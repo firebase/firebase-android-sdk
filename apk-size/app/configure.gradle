@@ -37,7 +37,7 @@ if (project.hasProperty('sdks')) {
             def buildType = variant.buildType.name
             def flavors = variant.flavors*.name
             if (buildType == 'debug'
-                    || 'firebase-crashlytics-ndk' in flavors && 'universal' in flavors
+                    || ('firebase-crashlytics-ndk' in flavors && 'universal' in flavors)
                     || !('firebase-crashlytics-ndk' in flavors || 'universal' in flavors)) {
                 setIgnore(true)
             }
