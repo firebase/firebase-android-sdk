@@ -160,8 +160,9 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void testNonPositiveScreenTraceTotalFrames() {
-    TraceMetric.Builder trace = createValidTraceMetric().setName(Constants.SCREEN_TRACE_PREFIX + "TestActivity");
+  public void screenTrace_shouldNotAllowNonPositiveTotalFrames() {
+    TraceMetric.Builder trace =
+        createValidTraceMetric().setName(Constants.SCREEN_TRACE_PREFIX + "TestActivity");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
     trace.putCounters(Constants.CounterNames.FRAMES_TOTAL.toString(), 0L);
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();

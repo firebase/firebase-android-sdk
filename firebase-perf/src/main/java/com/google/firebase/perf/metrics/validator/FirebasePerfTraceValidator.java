@@ -50,11 +50,6 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
         return false;
       }
     }
-
-    if (!isValidScreenTrace(traceMetric)) {
-      logger.warn("Invalid Screen Trace:" + traceMetric.getName());
-      return false;
-    }
     return true;
   }
 
@@ -109,15 +104,13 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     return true;
   }
 
+  private boolean isScreenTrace(@NonNull TraceMetric trace) {
+    return trace.getName().startsWith(Constants.SCREEN_TRACE_PREFIX);
+  }
+
   private boolean isValidScreenTrace(@NonNull TraceMetric trace) {
-    if (!trace.getName().startsWith(Constants.SCREEN_TRACE_PREFIX)) {
-      return true;
-    }
     Long totalFrames = trace.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString());
-    if (totalFrames != null) {
-      return totalFrames.compareTo(0L) > 0;
-    }
-    return false;
+    return totalFrames != null && totalFrames.compareTo(0L) > 0;
   }
 
   private boolean isValidTrace(@Nullable TraceMetric trace, int deep) {
@@ -148,6 +141,10 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
       }
     }
     if (!hasValidAttributes(trace.getCustomAttributesMap())) {
+      return false;
+    }
+    if (isScreenTrace(trace) && !isValidScreenTrace(trace)) {
+      logger.warn("non-positive totalFrames in screen trace " + trace.getName());
       return false;
     }
     return true;
