@@ -19,6 +19,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -169,6 +170,23 @@ class UpdateTaskImpl extends UpdateTask {
   public Task<Void> addOnCompleteListener(
       @NonNull Activity activity, @NonNull OnCompleteListener<Void> onCompleteListener) {
     return this.task.addOnCompleteListener(activity, onCompleteListener);
+  }
+
+  @NonNull
+  public Task<Void> addOnCanceledListener(@NonNull OnCanceledListener onCanceledListener) {
+    return this.task.addOnCanceledListener(onCanceledListener);
+  }
+
+  @NonNull
+  public Task<Void> addOnCanceledListener(
+      @NonNull Executor executor, @NonNull OnCanceledListener onCanceledListener) {
+    return this.task.addOnCanceledListener(executor, onCanceledListener);
+  }
+
+  @NonNull
+  public Task<Void> addOnCanceledListener(
+      @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
+    return this.task.addOnCanceledListener(activity, onCanceledListener);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

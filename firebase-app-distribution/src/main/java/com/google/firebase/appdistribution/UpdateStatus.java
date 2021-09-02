@@ -40,10 +40,9 @@ public enum UpdateStatus {
   /** Currently on the latest release */
   NEW_RELEASE_NOT_AVAILABLE,
 
-  /** Release check failed before download started*/
+  /** Release check failed before download started */
   NEW_RELEASE_CHECK_FAILED,
 
   /** Customer canceled the update */
   UPDATE_CANCELED,
-
-  }
+}

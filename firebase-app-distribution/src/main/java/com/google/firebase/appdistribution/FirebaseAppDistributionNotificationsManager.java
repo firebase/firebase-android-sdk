@@ -61,7 +61,7 @@ class FirebaseAppDistributionNotificationsManager {
     notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, builder.build());
   }
 
- // CHECK THIS LATER
+  // CHECK THIS LATER
   private boolean isErrorState(UpdateStatus status) {
     return status.equals(UpdateStatus.DOWNLOAD_FAILED)
         || status.equals(UpdateStatus.INSTALL_FAILED)
