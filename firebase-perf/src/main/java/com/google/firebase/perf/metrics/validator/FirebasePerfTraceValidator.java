@@ -135,16 +135,16 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
       logger.warn("clientStartTimeUs is null.");
       return false;
     }
+    if (isScreenTrace(trace) && !isValidScreenTrace(trace)) {
+      logger.warn("non-positive totalFrames in screen trace " + trace.getName());
+      return false;
+    }
     for (TraceMetric subtrace : trace.getSubtracesList()) {
       if (!isValidTrace(subtrace, deep + 1)) {
         return false;
       }
     }
     if (!hasValidAttributes(trace.getCustomAttributesMap())) {
-      return false;
-    }
-    if (isScreenTrace(trace) && !isValidScreenTrace(trace)) {
-      logger.warn("non-positive totalFrames in screen trace " + trace.getName());
       return false;
     }
     return true;
