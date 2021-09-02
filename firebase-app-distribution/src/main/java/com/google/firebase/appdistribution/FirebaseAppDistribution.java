@@ -52,7 +52,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private AppDistributionReleaseInternal cachedLatestRelease;
   private final SignInStorage signInStorage;
-  private final Executor updateIfNewReleaseExecutor;
+  private final Executor newReleaseExecutor;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -68,7 +68,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.checkForUpdateClient = checkForUpdateClient;
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
-    this.updateIfNewReleaseExecutor = executor;
+    this.newReleaseExecutor = executor;
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -134,6 +134,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
     checkForNewRelease()
         .onSuccessTask(
+            newReleaseExecutor,
             release -> {
               if (release == null) {
                 synchronized (updateTaskLock) {
@@ -150,6 +151,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
               return showUpdateAlertDialog(release);
             })
         .addOnFailureListener(
+            newReleaseExecutor,
             e -> {
               synchronized (updateTaskLock) {
                 cachedUpdateToLatestReleaseTask.updateProgress(
@@ -189,8 +191,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
     cachedCheckForUpdateTask =
         signInTester()
-            .onSuccessTask(unused -> this.checkForUpdateClient.checkForUpdate())
+            .onSuccessTask(newReleaseExecutor, unused -> this.checkForUpdateClient.checkForUpdate())
             .onSuccessTask(
+                newReleaseExecutor,
                 appDistributionReleaseInternal -> {
                   setCachedLatestRelease(appDistributionReleaseInternal);
                   return Tasks.forResult(
