@@ -27,11 +27,11 @@ public abstract class UpdateProgress {
     return new AutoValue_UpdateProgress.Builder();
   }
 
-  /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB. */
+  /** The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB or if no new release is available. */
   @NonNull
   public abstract long getApkBytesDownloaded();
 
-  /** The file size of the APK file to download in bytes. Returns -1 if called on an AAB. */
+  /** The file size of the APK file to download in bytes. Returns -1 if called on an AAB or if no new release is available. */
   @NonNull
   public abstract long getApkFileTotalBytes();
 
