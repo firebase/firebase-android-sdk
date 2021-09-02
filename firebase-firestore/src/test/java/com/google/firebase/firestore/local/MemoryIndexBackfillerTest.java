@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +14,15 @@
 
 package com.google.firebase.firestore.local;
 
-/** Helper interface to control the Garbage Collector. */
-public interface GarbageCollectionScheduler {
-  void start();
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
-  void stop();
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
+public class MemoryIndexBackfillerTest extends IndexBackfillerTestCase {
+  @Override
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createSQLitePersistence();
+  }
 }

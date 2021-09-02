@@ -83,17 +83,18 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteBundleCache bundleCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
-  private final SQLiteLruReferenceDelegate referenceDelegate;
+  private final SQLiteLruReferenceDelegate lruReferenceDelegate;
+  private final SQLiteIndexBackfillerDelegate indexBackfillDelegate;
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
         public void onBegin() {
-          referenceDelegate.onTransactionStarted();
+          lruReferenceDelegate.onTransactionStarted();
         }
 
         @Override
         public void onCommit() {
-          referenceDelegate.onTransactionCommitted();
+          lruReferenceDelegate.onTransactionCommitted();
         }
 
         @Override
@@ -123,7 +124,8 @@ public final class SQLitePersistence extends Persistence {
     this.indexManager = new SQLiteIndexManager(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
-    this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
+    this.lruReferenceDelegate = new SQLiteLruReferenceDelegate(this, params);
+    this.indexBackfillDelegate = new SQLiteIndexBackfillerDelegate(this);
   }
 
   @Override
@@ -145,7 +147,7 @@ public final class SQLitePersistence extends Persistence {
           e);
     }
     targetCache.start();
-    referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
+    lruReferenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
 
   @Override
@@ -163,7 +165,12 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   public SQLiteLruReferenceDelegate getReferenceDelegate() {
-    return referenceDelegate;
+    return lruReferenceDelegate;
+  }
+
+  @Override
+  public SQLiteIndexBackfillerDelegate getIndexBackfillDelegate() {
+    return indexBackfillDelegate;
   }
 
   @Override

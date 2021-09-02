@@ -18,9 +18,9 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.User;
-import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.StartStopScheduler;
 import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -38,8 +38,9 @@ public abstract class ComponentProvider {
   private SyncEngine syncEngine;
   private RemoteStore remoteStore;
   private EventManager eventManager;
-  private ConnectivityMonitor connectityMonitor;
-  @Nullable private GarbageCollectionScheduler gargabeCollectionScheduler;
+  private ConnectivityMonitor connectivityMonitor;
+  @Nullable private StartStopScheduler garbageCollectionScheduler;
+  @Nullable private StartStopScheduler indexBackfillScheduler;
 
   /** Configuration options for the component provider. */
   public static class Configuration {
@@ -103,8 +104,13 @@ public abstract class ComponentProvider {
   }
 
   @Nullable
-  public GarbageCollectionScheduler getGargabeCollectionScheduler() {
-    return gargabeCollectionScheduler;
+  public StartStopScheduler getGarbageCollectionScheduler() {
+    return garbageCollectionScheduler;
+  }
+
+  @Nullable
+  public StartStopScheduler getIndexBackfillScheduler() {
+    return indexBackfillScheduler;
   }
 
   public LocalStore getLocalStore() {
@@ -124,24 +130,27 @@ public abstract class ComponentProvider {
   }
 
   protected ConnectivityMonitor getConnectivityMonitor() {
-    return connectityMonitor;
+    return connectivityMonitor;
   }
 
   public void initialize(Configuration configuration) {
     persistence = createPersistence(configuration);
     persistence.start();
     localStore = createLocalStore(configuration);
-    connectityMonitor = createConnectivityMonitor(configuration);
+    connectivityMonitor = createConnectivityMonitor(configuration);
     remoteStore = createRemoteStore(configuration);
     syncEngine = createSyncEngine(configuration);
     eventManager = createEventManager(configuration);
     localStore.start();
     remoteStore.start();
-    gargabeCollectionScheduler = createGarbageCollectionScheduler(configuration);
+    garbageCollectionScheduler = createGarbageCollectionScheduler(configuration);
+    indexBackfillScheduler = createIndexBackfillScheduler(configuration);
   }
 
-  protected abstract GarbageCollectionScheduler createGarbageCollectionScheduler(
+  protected abstract StartStopScheduler createGarbageCollectionScheduler(
       Configuration configuration);
+
+  protected abstract StartStopScheduler createIndexBackfillScheduler(Configuration configuration);
 
   protected abstract EventManager createEventManager(Configuration configuration);
 

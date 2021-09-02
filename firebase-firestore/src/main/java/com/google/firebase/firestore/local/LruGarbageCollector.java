@@ -111,7 +111,7 @@ public class LruGarbageCollector {
    * This class is responsible for the scheduling of LRU garbage collection. It handles checking
    * whether or not GC is enabled, as well as which delay to use before the next run.
    */
-  public class Scheduler implements GarbageCollectionScheduler {
+  public class Scheduler implements StartStopScheduler {
     private final AsyncQueue asyncQueue;
     private final LocalStore localStore;
     private boolean hasRun = false;
