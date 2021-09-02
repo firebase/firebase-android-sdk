@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.firestore.index.IndexEntry;
 import javax.annotation.Nullable;
 
+// TODO: Update with IndexEntry signatures once they've been fleshed out.
 /**
  * Persistence layers intending to perform index backfills should implement this interface. This
  * interface defines the operations that the Index Backfiller needs from the persistence layer.
