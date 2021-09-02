@@ -209,6 +209,10 @@ public class MutationSquasherTest {
     assertEquals(doc, original);
   }
 
+  // Below tests run on automatically generated mutation list, they are deterministic, but hard to
+  // debug when they fail. They will print the failure case, and the best way to debug is recreate
+  // the case manually in a separate test.
+
   @Test
   public void testSquashMutationWithMultipleDeletes() {
     List<MutableDocument> docs =
