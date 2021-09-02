@@ -31,7 +31,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationSquash;
+import com.google.firebase.firestore.model.mutation.MutationSquasher;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Arrays;
 import java.util.List;
@@ -42,10 +42,10 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-/** Tests Mutations */
+/** Tests MutationSquasher */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class MutationSquashTest {
+public class MutationSquasherTest {
   @Test
   public void testSquashOneSetMutation() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
@@ -54,10 +54,11 @@ public class MutationSquashTest {
 
     Timestamp now = Timestamp.now();
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
-    set.applyToLocalView(setDoc, now, MutationSquash.Type.None);
+    set.applyToLocalView(setDoc, now);
 
-    Mutation squashed = MutationSquash.toMutation(original, setDoc, MutationSquash.Type.Set);
-    squashed.applyToLocalView(original, now, MutationSquash.Type.None);
+    MutationSquasher squasher = new MutationSquasher(setDoc.getKey(), true);
+    squasher.squash(set);
+    squasher.getMutation().applyToLocalView(original, now);
     assertEquals(original, setDoc);
   }
 
@@ -69,10 +70,11 @@ public class MutationSquashTest {
 
     Timestamp now = Timestamp.now();
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, now, MutationSquash.Type.None);
+    patch.applyToLocalView(patchDoc, now);
 
-    Mutation squashed = MutationSquash.toMutation(original, patchDoc, MutationSquash.Type.Patch);
-    squashed.applyToLocalView(original, now, MutationSquash.Type.None);
+    MutationSquasher squasher = new MutationSquasher(patch.getKey(), true);
+    squasher.squash(patch);
+    squasher.getMutation().applyToLocalView(original, now);
     assertEquals(original, patchDoc);
   }
 
@@ -85,10 +87,11 @@ public class MutationSquashTest {
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    MutationSquash.Type type = upsert.applyToLocalView(mergeDoc, now, MutationSquash.Type.None);
+    upsert.applyToLocalView(mergeDoc, now);
 
-    Mutation squashed = MutationSquash.toMutation(original, mergeDoc, type);
-    squashed.applyToLocalView(original, now, MutationSquash.Type.None);
+    MutationSquasher squasher = new MutationSquasher(mergeDoc.getKey(), true);
+    squasher.squash(upsert);
+    squasher.getMutation().applyToLocalView(original, now);
     assertEquals(original, mergeDoc);
   }
 
@@ -99,14 +102,16 @@ public class MutationSquashTest {
 
     Timestamp now = Timestamp.now();
     Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
-    delete.applyToLocalView(doc, now, MutationSquash.Type.None);
+    delete.applyToLocalView(doc, now);
 
     now = Timestamp.now();
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(doc, now, MutationSquash.Type.None);
+    patch.applyToLocalView(doc, now);
 
-    Mutation squashed = MutationSquash.toMutation(original, doc, MutationSquash.Type.Delete);
-    squashed.applyToLocalView(original, now, MutationSquash.Type.None);
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(delete);
+    squasher.squash(patch);
+    squasher.getMutation().applyToLocalView(original, now);
     assertEquals(doc, original);
   }
 
@@ -117,16 +122,90 @@ public class MutationSquashTest {
 
     Timestamp now = Timestamp.now();
     Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
-    delete.applyToLocalView(doc, now, MutationSquash.Type.None);
+    delete.applyToLocalView(doc, now);
 
     now = Timestamp.now();
     Mutation patch =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    patch.applyToLocalView(doc, now, MutationSquash.Type.None);
+    patch.applyToLocalView(doc, now);
 
-    Mutation squashed = MutationSquash.toMutation(original, doc, MutationSquash.Type.Patch);
-    squashed.applyToLocalView(original, now, MutationSquash.Type.None);
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(delete);
+    squasher.squash(patch);
+    squasher.getMutation().applyToLocalView(original, now);
+    assertEquals(doc, original);
+  }
+
+  @Test
+  public void testSquashPatchThenPatchToDeleteField() {
+    MutableDocument doc = doc("collection/key", 0, map("foo", 1));
+    MutableDocument original = doc.clone();
+
+    Timestamp now = Timestamp.now();
+    Mutation patch =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    patch.applyToLocalView(doc, now);
+
+    Mutation patchToDeleteField =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
+    patchToDeleteField.applyToLocalView(doc, now);
+
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(patch);
+    squasher.squash(patchToDeleteField);
+    squasher.getMutation().applyToLocalView(original, now);
+    assertEquals(doc, original);
+  }
+
+  @Test
+  public void testSquashPatchThenMerge() {
+    MutableDocument doc = doc("collection/key", 0, map("foo", 1));
+    MutableDocument original = doc.clone();
+
+    Timestamp now = Timestamp.now();
+    Mutation patch =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    patch.applyToLocalView(doc, now);
+
+    Mutation merge =
+        mergeMutation(
+            "collection/key",
+            map("arrays", FieldValue.arrayUnion(1, 2, 3)),
+            Arrays.asList(field("arrays")));
+    merge.applyToLocalView(doc, now);
+
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(patch);
+    squasher.squash(merge);
+    squasher.getMutation().applyToLocalView(original, now);
+    assertEquals(doc, original);
+  }
+
+  @Test
+  public void testSquashArrayUnionThenRemove() {
+    MutableDocument doc = doc("collection/key", 0, map("foo", 1));
+    MutableDocument original = doc.clone();
+
+    Timestamp now = Timestamp.now();
+    Mutation union =
+        mergeMutation(
+            "collection/key", map("arrays", FieldValue.arrayUnion(1, 2, 3)), Arrays.asList());
+    Mutation remove =
+        mergeMutation(
+            "collection/key",
+            map("foo", "xxx", "arrays", FieldValue.arrayRemove(2)),
+            Arrays.asList(field("foo")));
+    union.applyToLocalView(doc, now);
+    remove.applyToLocalView(doc, now);
+
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(union);
+    squasher.squash(remove);
+    squasher.getMutation().applyToLocalView(original, now);
     assertEquals(doc, original);
   }
 
@@ -140,8 +219,8 @@ public class MutationSquashTest {
     List<Mutation> mutations =
         Lists.newArrayList(
             setMutation("collection/key", map("bar", "bar-value")),
-            new DeleteMutation(key("collection/key"), Precondition.exists(true)),
-            new DeleteMutation(key("collection/key"), Precondition.exists(true)),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
             patchMutation(
                 "collection/key",
                 map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp())));
@@ -164,16 +243,59 @@ public class MutationSquashTest {
         Lists.newArrayList(
             setMutation("collection/key", map("bar", "bar-value")),
             setMutation("collection/key", map("bar.rab", "bar.rab-value")),
-            new DeleteMutation(key("collection/key"), Precondition.exists(true)),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
             patchMutation(
                 "collection/key",
                 map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1))),
             patchMutation(
                 "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete())),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp())),
             mergeMutation(
                 "collection/key",
                 map("arrays", FieldValue.arrayUnion(1, 2, 3)),
                 Arrays.asList(field("arrays"))));
+
+    // Take all possible combinations of the subsets of the mutation list, run each combination for
+    // all possible permutation, for all 3 different type of documents.
+    int caseNumber = 0;
+    for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
+      Set<Set<Mutation>> combinations = Sets.combinations(Sets.newHashSet(mutations), subsetSize);
+      for (Set<Mutation> combination : combinations) {
+        caseNumber += runPermutationTests(docs, Lists.newArrayList(combination));
+      }
+    }
+
+    // There are (0! + 7*1! + 21*2! + 35*3! + 35*4! + 21*5! + 7*6! + 7!) * 3 = 41100 cases.
+    assertEquals(41100, caseNumber);
+  }
+
+  @Test
+  public void testSquashMutationByCombinationsAndPermutations_ArrayTransforms() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 0, map("foo", "foo-value", "bar.baz", 1)),
+            deletedDoc("collection/key", 0),
+            unknownDoc("collection/key", 0));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            mergeMutation(
+                "collection/key",
+                map("foo", "xxx", "arrays", FieldValue.arrayRemove(2)),
+                Arrays.asList(field("foo"))),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-1", "arrays", FieldValue.arrayUnion(4, 5))),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-2", "arrays", FieldValue.arrayRemove(5, 6))),
+            mergeMutation(
+                "collection/key",
+                map("foo", "yyy", "arrays", FieldValue.arrayUnion(1, 2, 3, 999)),
+                Arrays.asList(field("foo"))));
 
     int caseNumber = 0;
     for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
@@ -187,23 +309,28 @@ public class MutationSquashTest {
     assertEquals(5871, caseNumber);
   }
 
+  // For each document in `docs`, calculate the squashed mutations of each possible permutation,
+  // check whether this holds: document + squashed_mutation = document + mutation_list
+  // Returns how many cases it has run.
   private int runPermutationTests(List<MutableDocument> docs, List<Mutation> mutations) {
     Timestamp now = Timestamp.now();
     int caseNumber = 0;
     List<List<Mutation>> permutations = generatePermutations(Lists.newArrayList(mutations));
     for (MutableDocument doc : docs) {
       for (List<Mutation> permutation : permutations) {
+        MutableDocument forReport = doc.clone();
         MutableDocument document = doc.clone();
         MutableDocument docCopy = document.clone();
-        MutationSquash.Type type = MutationSquash.Type.None;
+        MutationSquasher squasher = new MutationSquasher(doc.getKey(), doc.isFoundDocument());
         for (Mutation mutation : permutation) {
-          type = mutation.applyToLocalView(document, now, type);
+          mutation.applyToLocalView(document, now);
+          squasher.squash(mutation);
         }
-        Mutation squashed = MutationSquash.toMutation(docCopy, document, type);
-        if (squashed != null) {
-          squashed.applyToLocalView(docCopy, now, MutationSquash.Type.None);
+        if (squasher.getMutation() != null) {
+          squasher.getMutation().applyToLocalView(docCopy, now);
         }
-        assertEquals(getDescription(caseNumber, permutation, squashed), document, docCopy);
+        assertEquals(
+            getDescription(forReport, permutation, squasher.getMutation()), document, docCopy);
 
         caseNumber += 1;
       }
@@ -211,14 +338,20 @@ public class MutationSquashTest {
     return caseNumber;
   }
 
-  private String getDescription(int caseNumber, List<Mutation> mutations, Mutation squashed) {
+  private String getDescription(
+      MutableDocument document, List<Mutation> mutations, Mutation squashed) {
     StringBuilder builder = new StringBuilder();
-    builder.append("MutationSquash test (" + caseNumber + ") failed with:\n");
+    builder.append("MutationSquash test failed with:\n");
+    builder.append("document:\n");
+    builder.append(document + "\n");
+    builder.append("\n");
+
     builder.append("mutations:\n");
     for (Mutation mutation : mutations) {
       builder.append(mutation.toString() + "\n");
     }
     builder.append("\n");
+
     builder.append("squashed:\n");
     builder.append(squashed == null ? "null" : squashed.toString());
     builder.append("\n\n");

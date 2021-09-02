@@ -40,6 +40,11 @@ public class NumericIncrementTransformOperation implements TransformOperation {
   }
 
   @Override
+  public String toString() {
+    return "NumericIncrement{" + "operand=" + operand + '}';
+  }
+
+  @Override
   public Value applyToLocalView(@Nullable Value previousValue, Timestamp localWriteTime) {
     Value baseValue = computeBaseValue(previousValue);
 

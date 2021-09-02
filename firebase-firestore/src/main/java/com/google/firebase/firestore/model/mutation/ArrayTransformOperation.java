@@ -15,10 +15,12 @@
 package com.google.firebase.firestore.model.mutation;
 
 import androidx.annotation.Nullable;
+import com.google.common.collect.Lists;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -78,6 +80,17 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     return result;
   }
 
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("[");
+    for (Value element : elements) {
+      sb.append(element + "; ");
+    }
+    sb.append("]");
+    return sb.toString();
+  }
+
   /** Applies this ArrayTransformOperation against the specified previousValue. */
   protected abstract Value apply(@Nullable Value previousValue);
 
@@ -101,6 +114,11 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
+    public String toString() {
+      return "Union " + super.toString();
+    }
+
+    @Override
     protected Value apply(@Nullable Value previousValue) {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value unionElement : getElements()) {
@@ -119,6 +137,11 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
 
     @Override
+    public String toString() {
+      return "Remove " + super.toString();
+    }
+
+    @Override
     protected Value apply(@Nullable Value previousValue) {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value removeElement : getElements()) {
@@ -131,6 +154,39 @@ public abstract class ArrayTransformOperation implements TransformOperation {
         }
       }
       return Value.newBuilder().setArrayValue(result).build();
+    }
+  }
+
+  /** An array remove transform operation. */
+  static class ArrayTransformList extends ArrayTransformOperation {
+    private final List<ArrayTransformOperation> operations = Lists.newArrayList();
+
+    ArrayTransformList() {
+      super(new ArrayList<>());
+    }
+
+    void addTransform(ArrayTransformOperation transform) {
+      operations.add(transform);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("Internal operations: ");
+      for (ArrayTransformOperation operation : operations) {
+        sb.append("{" + operation + " }");
+      }
+      return sb.toString();
+    }
+
+    @Override
+    protected Value apply(@Nullable Value previousValue) {
+      Value result = previousValue;
+      for (ArrayTransformOperation transform : operations) {
+        result = transform.apply(result);
+      }
+
+      return result;
     }
   }
 }

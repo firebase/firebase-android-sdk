@@ -60,8 +60,8 @@ public final class VerifyMutation extends Mutation {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 
-  public MutationSquash.Type applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
+  @Override
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }

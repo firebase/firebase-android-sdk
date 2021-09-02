@@ -109,31 +109,11 @@ public abstract class Mutation {
    * a document. If the input document doesn't match the expected state, the document is not
    * modified.
    *
-   * <p>It returns a {@link MutationSquash.Type}, indicating what type should the squashed mutation
-   * be. This is to help {@link MutationSquash} to compute a final mutation, what would be saved in
-   * storage as the local view of the document.
-   *
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
-   * @param squashTypeSoFar What the squashed mutation type is, so far for the give document after
-   *     applied previous mutations.
    */
-  public abstract MutationSquash.Type applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashTypeSoFar);
-
-  static class MergeResult {
-    boolean replace;
-    FieldMask mask;
-
-    public MergeResult(boolean replace, FieldMask mask) {
-      this.replace = replace;
-      this.mask = mask;
-    }
-  }
-
-  public abstract MergeResult mergeMutation(
-      MutableDocument document, MergeResult previousResult, Timestamp localWriteTime);
+  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -148,6 +128,17 @@ public abstract class Mutation {
   /** Helper for derived classes to implement .toString(). */
   String keyAndPreconditionToString() {
     return "key=" + key + ", precondition=" + precondition;
+  }
+
+  String transformsToString() {
+    StringBuilder sb = new StringBuilder();
+    for (FieldTransform transform : getFieldTransforms()) {
+      sb.append("field=");
+      sb.append(transform.getFieldPath());
+      sb.append("; operation=");
+      sb.append(transform.getOperation());
+    }
+    return sb.toString();
   }
 
   void verifyKeyMatches(MutableDocument document) {

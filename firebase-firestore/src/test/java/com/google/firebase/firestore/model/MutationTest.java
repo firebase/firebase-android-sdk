@@ -40,7 +40,6 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.MutationSquash;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firestore.v1.Value;
@@ -64,7 +63,7 @@ public class MutationTest {
     MutableDocument setDoc = doc("collection/key", 0, data);
 
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
-    set.applyToLocalView(setDoc, Timestamp.now(), MutationSquash.Type.None);
+    set.applyToLocalView(setDoc, Timestamp.now());
     assertEquals(doc("collection/key", 0, map("bar", "bar-value")).setHasLocalMutations(), setDoc);
   }
 
@@ -74,7 +73,7 @@ public class MutationTest {
     MutableDocument patchDoc = doc("collection/key", 0, data);
 
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
+    patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
   }
@@ -85,7 +84,7 @@ public class MutationTest {
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    upsert.applyToLocalView(mergeDoc, Timestamp.now(), MutationSquash.Type.None);
+    upsert.applyToLocalView(mergeDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
   }
@@ -96,7 +95,7 @@ public class MutationTest {
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    upsert.applyToLocalView(mergeDoc, Timestamp.now(), MutationSquash.Type.None);
+    upsert.applyToLocalView(mergeDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
   }
@@ -110,7 +109,7 @@ public class MutationTest {
     FieldMask mask = fieldMask("foo.bar");
     Mutation patch = new PatchMutation(key, new ObjectValue(), mask, Precondition.NONE);
 
-    patch.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
+    patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("baz", "baz-value"));
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
   }
@@ -121,7 +120,7 @@ public class MutationTest {
     MutableDocument patchDoc = doc("collection/key", 0, data);
 
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
+    patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
   }
@@ -130,7 +129,7 @@ public class MutationTest {
   public void testPatchingDeletedDocumentsDoesNothing() {
     MutableDocument patchDoc = deletedDoc("collection/key", 0);
     Mutation patch = patchMutation("collection/key", map("foo", "bar"));
-    patch.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
+    patch.applyToLocalView(patchDoc, Timestamp.now());
     assertEquals(deletedDoc("collection/key", 0), patchDoc);
   }
 
@@ -142,7 +141,7 @@ public class MutationTest {
     Timestamp timestamp = Timestamp.now();
     Mutation transform =
         patchMutation("collection/key", map("foo.bar", FieldValue.serverTimestamp()));
-    transform.applyToLocalView(transformedDoc, timestamp, MutationSquash.Type.None);
+    transform.applyToLocalView(transformedDoc, timestamp);
 
     // Server timestamps aren't parsed, so we manually insert it.
     ObjectValue expectedData =
@@ -451,7 +450,7 @@ public class MutationTest {
 
     for (Map<String, Object> transformData : transforms) {
       PatchMutation transform = patchMutation("collection/key", transformData);
-      transform.applyToLocalView(transformedDoc, Timestamp.now(), MutationSquash.Type.None);
+      transform.applyToLocalView(transformedDoc, Timestamp.now());
     }
 
     MutableDocument expectedDoc = doc("collection/key", 0, expectedData).setHasLocalMutations();
@@ -526,7 +525,7 @@ public class MutationTest {
     MutableDocument deletedDoc = doc("collection/key", 0, data);
 
     Mutation delete = deleteMutation("collection/key");
-    delete.applyToLocalView(deletedDoc, Timestamp.now(), MutationSquash.Type.None);
+    delete.applyToLocalView(deletedDoc, Timestamp.now());
     assertEquals(deletedDoc("collection/key", 0), deletedDoc);
   }
 
@@ -683,8 +682,8 @@ public class MutationTest {
     Map<String, Object> increment = map("sum", FieldValue.increment(1));
     Mutation mutation = patchMutation("collection/key", increment);
 
-    mutation.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
-    mutation.applyToLocalView(patchDoc, Timestamp.now(), MutationSquash.Type.None);
+    mutation.applyToLocalView(patchDoc, Timestamp.now());
+    mutation.applyToLocalView(patchDoc, Timestamp.now());
 
     assertEquals(wrap(2L), patchDoc.getField(field("sum")));
   }

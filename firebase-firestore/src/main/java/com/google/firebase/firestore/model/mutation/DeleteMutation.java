@@ -20,7 +20,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import java.util.HashSet;
 
 /** Represents a Delete operation */
 public final class DeleteMutation extends Mutation {
@@ -69,27 +68,11 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public MutationSquash.Type applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
       document.convertToNoDocument(SnapshotVersion.NONE);
-      return MutationSquash.Type.Delete;
     }
-
-    return squashType;
-  }
-
-  @Override
-  public MergeResult mergeMutation(
-      MutableDocument document, MergeResult previousResult, Timestamp localWriteTime) {
-    if (!getPrecondition().isValidFor(document)) {
-      return previousResult;
-    }
-
-    applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
-
-    return new MergeResult(true, FieldMask.fromSet(new HashSet<>()));
   }
 }

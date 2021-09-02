@@ -21,7 +21,6 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -87,12 +86,11 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public MutationSquash.Type applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, MutationSquash.Type squashType) {
+  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
-      return squashType;
+      return;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
@@ -101,17 +99,6 @@ public final class SetMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), localValue)
         .setHasLocalMutations();
-    return MutationSquash.Type.Set;
-  }
-
-  @Override
-  public MergeResult mergeMutation(MutableDocument document, MergeResult previousResult, Timestamp localWriteTime) {
-    if (!this.getPrecondition().isValidFor(document)) {
-      return previousResult;
-    }
-
-    applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
-    return new MergeResult(true, FieldMask.fromSet(new HashSet<>()));
   }
 
   /** Returns the object value to use when setting the document. */

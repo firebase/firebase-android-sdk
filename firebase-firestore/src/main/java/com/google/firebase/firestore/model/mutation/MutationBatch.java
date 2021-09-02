@@ -21,10 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
-import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -102,14 +99,12 @@ public final class MutationBatch {
 
   /** Computes the local view of a document given all the mutations in this batch. */
   public void applyToLocalView(MutableDocument document) {
-    MutableDocument empty = MutableDocument.newFoundDocument(document.getKey(), document.getVersion(), ObjectValue.fromMap(new HashMap<>()));
-    Mutation.MergeResult result = new Mutation.MergeResult(false, FieldMask.fromSet(new HashSet<>()));
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
-      if (mutation.getKey().equals(empty.getKey())) {
-        result = mutation.mergeMutation(empty, result, localWriteTime);
+      if (mutation.getKey().equals(document.getKey())) {
+        mutation.applyToLocalView(document, localWriteTime);
       }
     }
 
@@ -117,25 +112,9 @@ public final class MutationBatch {
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        // mutation.applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
-        result = mutation.mergeMutation(empty, result, localWriteTime);
+        mutation.applyToLocalView(document, localWriteTime);
       }
     }
-
-    Mutation squashed = null;
-    if(result.replace) {
-      if(empty.isNoDocument()) {
-        squashed = new DeleteMutation(empty.getKey(), Precondition.NONE);
-      } else {
-        squashed = new SetMutation(empty.getKey(), empty.getData(), Precondition.NONE);
-      }
-    } else {
-      squashed = new PatchMutation(empty.getKey(), empty.getData(), result.mask, /* should be result.getPrecondition()*/Precondition.exists(true));
-    }
-
-    squashed.applyToLocalView(document, localWriteTime, MutationSquash.Type.None);
-
-    // TODO: return squashed;
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
