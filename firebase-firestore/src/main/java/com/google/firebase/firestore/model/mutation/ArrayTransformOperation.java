@@ -157,7 +157,14 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     }
   }
 
-  /** An array remove transform operation. */
+  /**
+   * An array transform operation that delegate its work to an internal list of other array
+   * transform operations.
+   *
+   * <p>When a list of array transform operations being applied, the order of application needs to
+   * be preserved, and they are not be squashed into one simple mutation. This class exists such
+   * that the squashed array transform operation still has the same order.
+   */
   static class ArrayTransformList extends ArrayTransformOperation {
     private final List<ArrayTransformOperation> operations = Lists.newArrayList();
 
