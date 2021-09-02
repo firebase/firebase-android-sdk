@@ -104,6 +104,15 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     return true;
   }
 
+  private boolean isScreenTrace(@NonNull TraceMetric trace) {
+    return trace.getName().startsWith(Constants.SCREEN_TRACE_PREFIX);
+  }
+
+  private boolean isValidScreenTrace(@NonNull TraceMetric trace) {
+    Long totalFrames = trace.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString());
+    return totalFrames != null && totalFrames.compareTo(0L) > 0;
+  }
+
   private boolean isValidTrace(@Nullable TraceMetric trace, int deep) {
     if (trace == null) {
       logger.warn("TraceMetric is null");
@@ -124,6 +133,10 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     }
     if (!trace.hasClientStartTimeUs()) {
       logger.warn("clientStartTimeUs is null.");
+      return false;
+    }
+    if (isScreenTrace(trace) && !isValidScreenTrace(trace)) {
+      logger.warn("non-positive totalFrames in screen trace " + trace.getName());
       return false;
     }
     for (TraceMetric subtrace : trace.getSubtracesList()) {
