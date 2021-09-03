@@ -47,8 +47,6 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,8 +98,6 @@ public class FirebaseAppDistributionTest {
   @Mock private SignInResultActivity mockSignInResultActivity;
 
   static class TestActivity extends Activity {}
-
-  Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
   public void setup() {
@@ -184,7 +180,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void checkForUpdate_whenCheckForUpdateFails_throwsError() throws Exception {
-    firebaseAppDistribution.setCachedLatestRelease(null);
+    firebaseAppDistribution.setCachedNewRelease(null);
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(
             Tasks.forException(
@@ -198,7 +194,7 @@ public class FirebaseAppDistributionTest {
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertEquals(ErrorMessages.JSON_PARSING_ERROR, e.getMessage());
     assertEquals(Status.NETWORK_FAILURE, e.getErrorCode());
-    assertNull(firebaseAppDistribution.getCachedLatestRelease());
+    assertNull(firebaseAppDistribution.getCachedNewRelease());
   }
 
   @Test
@@ -225,7 +221,7 @@ public class FirebaseAppDistributionTest {
     assertNotNull(task.getResult());
     assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
     assertEquals(
-        TEST_RELEASE_NEWER_AAB_INTERNAL.build(), firebaseAppDistribution.getCachedLatestRelease());
+        TEST_RELEASE_NEWER_AAB_INTERNAL.build(), firebaseAppDistribution.getCachedNewRelease());
   }
 
   @Test
@@ -242,16 +238,15 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenNewAabReleaseAvailable_showsUpdateDialog()
-      throws Exception {
+  public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() throws Exception {
     shadowOf(Looper.getMainLooper()).idle();
     // mockSignInStorage returns false then true to simulate logging in during first signIn check in
-    // updateToLatestRelease
+    // updateIfNewReleaseAvailable
     when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
-    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
-    firebaseAppDistribution.setCachedLatestRelease(latestRelease);
-    when(mockUpdateAppClient.updateApp(latestRelease, true)).thenReturn(new UpdateTaskImpl());
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(newRelease));
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
+    when(mockUpdateAppClient.updateApp(newRelease, true)).thenReturn(new UpdateTaskImpl());
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -275,14 +270,13 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes()
-      throws Exception {
+  public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() throws Exception {
     shadowOf(Looper.getMainLooper()).idle();
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    AppDistributionReleaseInternal latestRelease =
+    AppDistributionReleaseInternal newRelease =
         TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build();
-    when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
-    firebaseAppDistribution.setCachedLatestRelease(latestRelease);
+    when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(newRelease));
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
 
     firebaseAppDistribution.onActivityResumed(activity);
     firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -298,10 +292,10 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenNoReleaseAvailable_updateDialogNotShown() throws Exception {
+  public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() throws Exception {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(null));
-    firebaseAppDistribution.setCachedLatestRelease(null);
+    firebaseAppDistribution.setCachedNewRelease(null);
 
     firebaseAppDistribution.onActivityResumed(activity);
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -319,7 +313,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+  public void updateToNewRelease_whenSignInCancelled_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInClient.signInTester())
         .thenReturn(
@@ -343,7 +337,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenSignInFailed_checkForUpdateNotCalled() {
+  public void updateToNewRelease_whenSignInFailed_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInClient.signInTester())
         .thenReturn(
@@ -367,7 +361,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_whenCheckForUpdateFails_updateAppNotCalled() throws Exception {
+  public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() throws Exception {
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(
             Tasks.forException(
@@ -390,7 +384,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_callsSignInTester() {
+  public void updateToNewRelease_callsSignInTester() {
     shadowOf(Looper.getMainLooper()).idle();
     firebaseAppDistribution.onActivityResumed(activity);
     when(mockCheckForUpdateClient.checkForUpdate())
@@ -423,14 +417,14 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToLatestRelease_recieveProgressUpdateFromUpdateApp() throws Exception {
+  public void updateToNewRelease_recieveProgressUpdateFromUpdateApp() throws Exception {
     shadowOf(Looper.getMainLooper()).idle();
     // mockSignInStorage returns false then true to simulate logging in during first signIn check in
-    // updateToLatestRelease
+    // updateIfNewReleaseAvailable
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
-    firebaseAppDistribution.setCachedLatestRelease(latestRelease);
+    firebaseAppDistribution.setCachedNewRelease(latestRelease);
 
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
     when(mockUpdateAppClient.updateApp(latestRelease, true)).thenReturn(mockTask);
