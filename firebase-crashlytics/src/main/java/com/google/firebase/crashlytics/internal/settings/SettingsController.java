@@ -186,7 +186,7 @@ public class SettingsController implements SettingsDataProvider {
 
     // Kick off fetching fresh settings.
     return dataCollectionArbiter
-        .waitForDataCollectionPermission()
+        .waitForDataCollectionPermission(executor)
         .onSuccessTask(
             executor,
             new SuccessContinuation<Void, Void>() {

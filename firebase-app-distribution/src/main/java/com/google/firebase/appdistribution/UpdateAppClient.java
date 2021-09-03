@@ -29,6 +29,7 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 public class UpdateAppClient {
 
   private final UpdateApkClient updateApkClient;
+  private static final String TAG = "UpdateAppClient";
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
@@ -52,12 +53,14 @@ public class UpdateAppClient {
       boolean showDownloadInNotificationManager) {
 
     if (latestRelease == null) {
+      LogWrapper.getInstance().v(TAG + "No latest release found.");
       return getErrorUpdateTask(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
     }
 
     if (latestRelease.getDownloadUrl() == null) {
+      LogWrapper.getInstance().v(TAG + "Download failed to execute");
       return getErrorUpdateTask(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,

@@ -26,9 +26,30 @@ if (project.hasProperty('sdks')) {
         sdks.split(',').each { sdk ->
             def (groupId, artifactId, version) = sdk.split(':')
             productFlavors.create(artifactId) {
-                dimension 'apkSize'
+                dimension 'firebase'
             }
             dependencies.add("${artifactId}Implementation", sdk)
+        }
+
+        // Ignore debug builds as measurements are not reproducible due to disabled ZipAlign.
+        // Ignore per-architecture builds for all products except for firebase-crashlytics-ndk.
+        variantFilter { variant ->
+            def buildType = variant.buildType.name
+            def flavors = variant.flavors*.name
+            if (buildType == 'debug'
+                    || ('firebase-crashlytics-ndk' in flavors && 'universal' in flavors)
+                    || !('firebase-crashlytics-ndk' in flavors || 'universal' in flavors)) {
+                setIgnore(true)
+            }
+        }
+
+        applicationVariants.all { variant ->
+            def product = variant.productFlavors[0].name
+            def abi = variant.productFlavors[1].name
+            def buildType = variant.buildType.name
+            variant.outputs.all {
+                outputFileName = "${product}::${buildType}::${abi}.apk"
+            }
         }
     }
 }

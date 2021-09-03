@@ -21,7 +21,6 @@ import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
@@ -34,7 +33,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
-  private static final String TAG = "FirebaseAppDistribution";
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
@@ -145,6 +143,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForUpdate() {
     if (cachedCheckForUpdateTask != null && !cachedCheckForUpdateTask.isComplete()) {
+      LogWrapper.getInstance().v("Response in progress");
       return cachedCheckForUpdateTask;
     }
 
@@ -203,9 +202,10 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    Log.d(TAG, "Created activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().v("Created activity: " + activity.getClass().getName());
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
+      LogWrapper.getInstance().v("Sign in completed");
       this.testerSignInClient.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
     }
@@ -213,12 +213,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
-    Log.d(TAG, "Started activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
-    Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Resumed activity: " + activity.getClass().getName());
     // If app resumes and aab update task is in progress, assume that installation didn't happen so
     // cancel the task
     updateAppClient.tryCancelAabUpdateTask();
@@ -231,6 +231,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     // Throw error if app reentered during sign in
     if (this.testerSignInClient.isCurrentlySigningIn()) {
+      LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
       testerSignInClient.setCanceledAuthenticationError();
     }
 
@@ -241,22 +242,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   @Override
   public void onActivityPaused(@NonNull Activity activity) {
-    Log.d(TAG, "Paused activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Paused activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityStopped(@NonNull Activity activity) {
-    Log.d(TAG, "Stopped activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-    Log.d(TAG, "Saved activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Saved activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
-    Log.d(TAG, "Destroyed activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
