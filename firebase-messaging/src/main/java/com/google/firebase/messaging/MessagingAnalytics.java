@@ -28,22 +28,19 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
-import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.encoders.DataEncoder;
-import com.google.firebase.encoders.EncodingException;
-import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallations;
 import com.google.firebase.messaging.Constants.AnalyticsKeys;
 import com.google.firebase.messaging.Constants.FirelogAnalytics;
-import com.google.firebase.messaging.Constants.FirelogAnalytics.EventType;
+import com.google.firebase.messaging.Constants.FirelogAnalytics.MessagePriority;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.ScionAnalytics;
-import com.google.firebase.messaging.FirelogAnalyticsEvent.FirelogAnalyticsEventEncoder;
-import com.google.firebase.messaging.FirelogAnalyticsEvent.FirelogAnalyticsEventWrapper;
-import com.google.firebase.messaging.FirelogAnalyticsEvent.FirelogAnalyticsEventWrapperEncoder;
+import com.google.firebase.messaging.reporting.MessagingClientEvent;
+import com.google.firebase.messaging.reporting.MessagingClientEventExtension;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Provides integration between GCM and Scion.
@@ -61,7 +58,6 @@ import com.google.firebase.messaging.FirelogAnalyticsEvent.FirelogAnalyticsEvent
  *   <li>google.c.a.ts = 1234 # Timestamp of message
  *   <li>google.c.a.udt = 1 # Whether the ts should be used only for DateTime, without timezone
  *   <li>google.c.a.m_l = dev-provided-label # message label provided by the developer
- *   <li>google.c.a.m_c = default-channel # message delivery channel set by FCM Federation backend
  * </ul>
  *
  * @hide
@@ -75,47 +71,29 @@ public class MessagingAnalytics {
   private static final String MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED =
       "delivery_metrics_exported_to_big_query_enabled";
 
-  private static final DataEncoder dataEncoder =
-      new JsonDataEncoderBuilder()
-          .registerEncoder(
-              FirelogAnalyticsEventWrapper.class, new FirelogAnalyticsEventWrapperEncoder())
-          .registerEncoder(FirelogAnalyticsEvent.class, new FirelogAnalyticsEventEncoder())
-          .build();
-
   /** Log that a notification was received by the client app. */
   public static void logNotificationReceived(Intent intent) {
-
-    if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
-      logToScion(ScionAnalytics.EVENT_NOTIFICATION_RECEIVE, intent);
+    if (shouldUploadScionMetrics(intent)) {
+      logToScion(ScionAnalytics.EVENT_NOTIFICATION_RECEIVE, intent.getExtras());
     }
 
-    if (MessagingAnalytics.shouldUploadFirelogAnalytics(intent)) {
-      TransportFactory transportFactory = FirebaseMessaging.getTransportFactory();
-
-      if (transportFactory != null) {
-        Transport<String> transport =
-            transportFactory.getTransport(
-                FirelogAnalytics.FCM_LOG_SOURCE,
-                String.class,
-                Encoding.of("json"),
-                String::getBytes);
-        logToFirelog(EventType.MESSAGE_DELIVERED, intent, transport);
-      } else {
-        Log.e(
-            TAG, "TransportFactory is null. Skip exporting message delivery metrics to Big Query");
-      }
+    if (shouldUploadFirelogAnalytics(intent)) {
+      logToFirelog(
+          MessagingClientEvent.Event.MESSAGE_DELIVERED,
+          intent,
+          FirebaseMessaging.getTransportFactory());
     }
   }
 
   /** Log that a notification was opened. */
-  public static void logNotificationOpen(Intent intent) {
-    setUserPropertyIfRequired(intent);
-    logToScion(ScionAnalytics.EVENT_NOTIFICATION_OPEN, intent);
+  public static void logNotificationOpen(Bundle extras) {
+    setUserPropertyIfRequired(extras);
+    logToScion(ScionAnalytics.EVENT_NOTIFICATION_OPEN, extras);
   }
 
   /** Log that a notification was dismissed. */
   public static void logNotificationDismiss(Intent intent) {
-    logToScion(ScionAnalytics.EVENT_NOTIFICATION_DISMISS, intent);
+    logToScion(ScionAnalytics.EVENT_NOTIFICATION_DISMISS, intent.getExtras());
   }
 
   /**
@@ -124,7 +102,7 @@ public class MessagingAnalytics {
    * <p>In this case, onMessageReceived() is invoked instead of showing a notification to the user.
    */
   public static void logNotificationForeground(Intent intent) {
-    logToScion(ScionAnalytics.EVENT_NOTIFICATION_FOREGROUND, intent);
+    logToScion(ScionAnalytics.EVENT_NOTIFICATION_FOREGROUND, intent.getExtras());
   }
 
   /** check whether we should upload metrics data to scion. */
@@ -133,7 +111,16 @@ public class MessagingAnalytics {
       return false;
     }
 
-    return "1".equals(intent.getStringExtra(Constants.AnalyticsKeys.ENABLED));
+    return shouldUploadScionMetrics(intent.getExtras());
+  }
+
+  /** check whether we should upload metrics data to scion. */
+  public static boolean shouldUploadScionMetrics(Bundle extras) {
+    if (extras == null) {
+      return false;
+    }
+
+    return "1".equals(extras.getString(Constants.AnalyticsKeys.ENABLED));
   }
 
   /** check whether we should upload metrics data to firelog. */
@@ -199,13 +186,13 @@ public class MessagingAnalytics {
   }
 
   /** Set the FIREBASE_LAST_NOTIFICATION user-property in Scion for conversion tracking. */
-  private static void setUserPropertyIfRequired(Intent intent) {
-    if (intent == null) {
+  private static void setUserPropertyIfRequired(Bundle extras) {
+    if (extras == null) {
       return;
     }
+
     // If the user requested to track conversions, set the user property.
-    String shouldTrackConversions =
-        intent.getStringExtra(Constants.AnalyticsKeys.TRACK_CONVERSIONS);
+    String shouldTrackConversions = extras.getString(Constants.AnalyticsKeys.TRACK_CONVERSIONS);
     if ("1".equals(shouldTrackConversions)) {
       // TODO(b/78465387) Use components dependency framework to get analyticsConnector obj
       @SuppressWarnings("FirebaseUseExplicitDependencies")
@@ -217,7 +204,7 @@ public class MessagingAnalytics {
                 + " Setting user property and reengagement event");
       }
       if (analytics != null) {
-        String composerId = intent.getStringExtra(Constants.AnalyticsKeys.COMPOSER_ID);
+        String composerId = extras.getString(Constants.AnalyticsKeys.COMPOSER_ID);
         analytics.setUserProperty(
             ScionAnalytics.ORIGIN_FCM,
             ScionAnalytics.USER_PROPERTY_FIREBASE_LAST_NOTIFICATION,
@@ -250,35 +237,39 @@ public class MessagingAnalytics {
    * <p>Scion schedules tasks to run on worker threads within the client app to send the event.
    */
   @VisibleForTesting
-  static void logToScion(String event, Intent intent) {
+  static void logToScion(String event, Bundle extras) {
+    if (extras == null) {
+      extras = new Bundle();
+    }
+
     Bundle scionPayload = new Bundle();
 
-    String composerId = getComposerId(intent);
+    String composerId = getComposerId(extras);
     if (composerId != null) {
       scionPayload.putString(ScionAnalytics.PARAM_COMPOSER_ID, composerId);
     }
 
-    String composerLabel = getComposerLabel(intent);
+    String composerLabel = getComposerLabel(extras);
     if (composerLabel != null) {
       scionPayload.putString(ScionAnalytics.PARAM_MESSAGE_NAME, composerLabel);
     }
 
-    String messageLabel = getMessageLabel(intent);
+    String messageLabel = getMessageLabel(extras);
     if (!TextUtils.isEmpty(messageLabel)) {
       scionPayload.putString(ScionAnalytics.PARAM_LABEL, messageLabel);
     }
 
-    String messageChannel = getMessageChannel(intent);
+    String messageChannel = getMessageChannel(extras);
     if (!TextUtils.isEmpty(messageChannel)) {
       scionPayload.putString(ScionAnalytics.PARAM_MESSAGE_CHANNEL, messageChannel);
     }
 
-    String topic = getTopic(intent);
+    String topic = getTopic(extras);
     if (topic != null) {
       scionPayload.putString(ScionAnalytics.PARAM_TOPIC, topic);
     }
 
-    String messageTime = getMessageTime(intent);
+    String messageTime = getMessageTime(extras);
     if (messageTime != null) {
       try {
         scionPayload.putInt(ScionAnalytics.PARAM_MESSAGE_TIME, Integer.parseInt(messageTime));
@@ -287,7 +278,7 @@ public class MessagingAnalytics {
       }
     }
 
-    String useDeviceTime = getUseDeviceTime(intent);
+    String useDeviceTime = getUseDeviceTime(extras);
     if (useDeviceTime != null) {
       try {
         scionPayload.putInt(
@@ -297,7 +288,7 @@ public class MessagingAnalytics {
       }
     }
 
-    String messageType = getMessageTypeForScion(intent);
+    String messageType = getMessageTypeForScion(extras);
     if (ScionAnalytics.EVENT_NOTIFICATION_RECEIVE.equals(event)
         || ScionAnalytics.EVENT_NOTIFICATION_FOREGROUND.equals(event)) {
       scionPayload.putString(ScionAnalytics.PARAM_MESSAGE_TYPE, messageType);
@@ -325,16 +316,33 @@ public class MessagingAnalytics {
    * connection in a background thread.
    */
   private static void logToFirelog(
-      @EventType String event, Intent intent, Transport<String> transport) {
-    FirelogAnalyticsEvent firelogAnalyticsEvent = new FirelogAnalyticsEvent(event, intent);
-    FirelogAnalyticsEventWrapper firelogAnalyticsEventWrapper =
-        new FirelogAnalyticsEventWrapper(firelogAnalyticsEvent);
+      MessagingClientEvent.Event event,
+      Intent intent,
+      @Nullable TransportFactory transportFactory) {
+    if (transportFactory == null) {
+      Log.e(TAG, "TransportFactory is null. Skip exporting message delivery metrics to Big Query");
+      return;
+    }
+    MessagingClientEvent clientEvent = eventToProto(event, intent);
+    if (clientEvent == null) {
+      return;
+    }
 
     try {
       // TODO(b/145299499): offload encoding to Firelog Thread
-      transport.send(Event.ofTelemetry(dataEncoder.encode(firelogAnalyticsEventWrapper)));
-    } catch (EncodingException e) {
-      Log.d(TAG, "Failed to encode big query analytics payload. Skip sending");
+      transportFactory
+          .getTransport(
+              FirelogAnalytics.FCM_LOG_SOURCE,
+              MessagingClientEventExtension.class,
+              Encoding.of("proto"),
+              MessagingClientEventExtension::toByteArray)
+          .send(
+              Event.ofTelemetry(
+                  MessagingClientEventExtension.newBuilder()
+                      .setMessagingClientEvent(clientEvent)
+                      .build()));
+    } catch (RuntimeException e) {
+      Log.w(TAG, "Failed to send big query analytics payload.", e);
     }
   }
 
@@ -348,8 +356,8 @@ public class MessagingAnalytics {
   }
 
   @NonNull
-  static int getTtl(Intent intent) {
-    Object ttl = intent.getExtras().get(MessagePayloadKeys.TTL);
+  static int getTtl(Bundle extras) {
+    Object ttl = extras.get(MessagePayloadKeys.TTL);
     if (ttl instanceof Integer) {
       return (int) ttl;
     } else if (ttl instanceof String) {
@@ -364,40 +372,40 @@ public class MessagingAnalytics {
   }
 
   @Nullable
-  static String getCollapseKey(Intent intent) {
-    return intent.getStringExtra(MessagePayloadKeys.COLLAPSE_KEY);
+  static String getCollapseKey(Bundle extras) {
+    return extras.getString(MessagePayloadKeys.COLLAPSE_KEY);
   }
 
   @Nullable
-  static String getComposerId(Intent intent) {
-    return intent.getStringExtra(AnalyticsKeys.COMPOSER_ID);
+  static String getComposerId(Bundle extras) {
+    return extras.getString(AnalyticsKeys.COMPOSER_ID);
   }
 
   @Nullable
-  static String getComposerLabel(Intent intent) {
-    return intent.getStringExtra(AnalyticsKeys.COMPOSER_LABEL);
+  static String getComposerLabel(Bundle extras) {
+    return extras.getString(AnalyticsKeys.COMPOSER_LABEL);
   }
 
   @Nullable
-  static String getMessageLabel(Intent intent) {
-    return intent.getStringExtra(AnalyticsKeys.MESSAGE_LABEL);
+  static String getMessageLabel(Bundle extras) {
+    return extras.getString(AnalyticsKeys.MESSAGE_LABEL);
   }
 
   @Nullable
-  static String getMessageChannel(Intent intent) {
-    return intent.getStringExtra(AnalyticsKeys.MESSAGE_CHANNEL);
+  static String getMessageChannel(Bundle extras) {
+    return extras.getString(AnalyticsKeys.MESSAGE_CHANNEL);
   }
 
   @Nullable
-  static String getMessageTime(Intent intent) {
-    return intent.getStringExtra(AnalyticsKeys.MESSAGE_TIMESTAMP);
+  static String getMessageTime(Bundle extras) {
+    return extras.getString(AnalyticsKeys.MESSAGE_TIMESTAMP);
   }
 
   @Nullable
-  static String getMessageId(Intent intent) {
-    String messageId = intent.getStringExtra(MessagePayloadKeys.MSGID);
+  static String getMessageId(Bundle extras) {
+    String messageId = extras.getString(MessagePayloadKeys.MSGID);
     if (messageId == null) {
-      messageId = intent.getStringExtra(MessagePayloadKeys.MSGID_SERVER);
+      messageId = extras.getString(MessagePayloadKeys.MSGID_SERVER);
     }
     return messageId;
   }
@@ -408,47 +416,54 @@ public class MessagingAnalytics {
   }
 
   @NonNull
-  static String getInstanceId() {
-    return FirebaseInstanceId.getInstance(FirebaseApp.getInstance()).getId();
+  static String getInstanceId(Bundle extras) {
+    String to = extras.getString(MessagePayloadKeys.TO);
+    if (!TextUtils.isEmpty(to)) {
+      return to;
+    }
+    try {
+      return Tasks.await(FirebaseInstallations.getInstance(FirebaseApp.getInstance()).getId());
+    } catch (ExecutionException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @NonNull
-  static String getMessageTypeForScion(Intent intent) {
-    return intent.getExtras() != null && NotificationParams.isNotification(intent.getExtras())
+  static String getMessageTypeForScion(Bundle extras) {
+    return extras != null && NotificationParams.isNotification(extras)
         ? ScionAnalytics.MessageType.DISPLAY_NOTIFICATION
         : ScionAnalytics.MessageType.DATA_MESSAGE;
   }
 
   @NonNull
-  @FirelogAnalytics.MessageType
-  static String getMessageTypeForFirelog(Intent intent) {
-    return intent.getExtras() != null && NotificationParams.isNotification(intent.getExtras())
-        ? FirelogAnalytics.MessageType.DISPLAY_NOTIFICATION
-        : FirelogAnalytics.MessageType.DATA_MESSAGE;
+  static MessagingClientEvent.MessageType getMessageTypeForFirelog(Bundle extras) {
+    return extras != null && NotificationParams.isNotification(extras)
+        ? MessagingClientEvent.MessageType.DISPLAY_NOTIFICATION
+        : MessagingClientEvent.MessageType.DATA_MESSAGE;
   }
 
   @Nullable
-  static String getTopic(Intent intent) {
-    String from = intent.getStringExtra(MessagePayloadKeys.FROM);
+  static String getTopic(Bundle extras) {
+    String from = extras.getString(MessagePayloadKeys.FROM);
     return ((from != null && from.startsWith("/topics/")) ? from : null);
   }
 
   @Nullable
-  static String getUseDeviceTime(Intent intent) {
-    if (intent.hasExtra(AnalyticsKeys.MESSAGE_USE_DEVICE_TIME)) {
-      return intent.getStringExtra(AnalyticsKeys.MESSAGE_USE_DEVICE_TIME);
+  static String getUseDeviceTime(Bundle extras) {
+    if (extras.containsKey(AnalyticsKeys.MESSAGE_USE_DEVICE_TIME)) {
+      return extras.getString(AnalyticsKeys.MESSAGE_USE_DEVICE_TIME);
     }
     return null;
   }
 
   @NonNull
-  static int getPriority(Intent intent) {
-    String priority = intent.getStringExtra(MessagePayloadKeys.DELIVERED_PRIORITY);
+  static int getPriority(Bundle extras) {
+    String priority = extras.getString(MessagePayloadKeys.DELIVERED_PRIORITY);
     if (priority == null) {
-      if ("1".equals(intent.getStringExtra(MessagePayloadKeys.PRIORITY_REDUCED_V19))) {
+      if ("1".equals(extras.getString(MessagePayloadKeys.PRIORITY_REDUCED_V19))) {
         return RemoteMessage.PRIORITY_NORMAL;
       }
-      priority = intent.getStringExtra(MessagePayloadKeys.PRIORITY_V19);
+      priority = extras.getString(MessagePayloadKeys.PRIORITY_V19);
     }
     return getMessagePriority(priority);
   }
@@ -464,29 +479,122 @@ public class MessagingAnalytics {
     }
   }
 
+  @MessagePriority
+  static int getMessagePriorityForFirelog(Bundle extras) {
+    // translate from the RemoteMessage-flavored priority integers into the ones we use for backend
+    // logging
+    int priority = getPriority(extras);
+    if (priority == RemoteMessage.PRIORITY_NORMAL) {
+      return MessagePriority.NORMAL;
+    } else if (priority == RemoteMessage.PRIORITY_HIGH) {
+      return MessagePriority.HIGH;
+    } else {
+      return MessagePriority.UNKNOWN;
+    }
+  }
+
   @Nullable
-  static String getProjectNumber() {
+  static long getProjectNumber(Bundle extras) {
+    if (extras.containsKey(MessagePayloadKeys.SENDER_ID)) {
+      // Sender ID was sent with the message, return that.
+      try {
+        return Long.parseLong(extras.getString(MessagePayloadKeys.SENDER_ID));
+      } catch (NumberFormatException ex) {
+        Log.w(TAG, "error parsing project number", ex);
+      }
+    }
+
+    // Sender ID was not included with the message, get it from the FirebaseApp.
     FirebaseApp app = FirebaseApp.getInstance();
     // Check for an explicit sender id
     String senderId = app.getOptions().getGcmSenderId();
     if (senderId != null) {
-      return senderId;
+      try {
+        return Long.parseLong(senderId);
+      } catch (NumberFormatException ex) {
+        Log.w(TAG, "error parsing sender ID", ex);
+      }
     }
+
     String appId = app.getOptions().getApplicationId();
     if (!appId.startsWith("1:")) {
       // Not v1, server should be updated to accept the full app ID now
-      return appId;
+      try {
+        return Long.parseLong(appId);
+      } catch (NumberFormatException ex) {
+        Log.w(TAG, "error parsing app ID", ex);
+      }
     } else {
       // For v1 app IDs, fall back to parsing the project ID out
       String[] parts = appId.split(":");
       if (parts.length < 2) {
-        return null; // Invalid format
+        return 0L; // Invalid format
       }
       String projectId = parts[1];
       if (projectId.isEmpty()) {
-        return null; // No project ID
+        return 0L; // No project ID
       }
-      return projectId;
+
+      try {
+        return Long.parseLong(projectId);
+      } catch (NumberFormatException ex) {
+        Log.w(TAG, "error parsing app ID", ex);
+      }
     }
+
+    return 0L;
+  }
+
+  static MessagingClientEvent eventToProto(MessagingClientEvent.Event event, Intent intent) {
+    if (intent == null) {
+      return null;
+    }
+    Bundle extras = intent.getExtras();
+    if (extras == null) {
+      // even if no params were passed, we still grab some default values so don't bail just yet
+      extras = Bundle.EMPTY;
+    }
+
+    MessagingClientEvent.Builder builder =
+        MessagingClientEvent.newBuilder()
+            .setTtl(getTtl(extras))
+            .setEvent(event)
+            .setInstanceId(getInstanceId(extras))
+            .setPackageName(getPackageName())
+            .setSdkPlatform(MessagingClientEvent.SDKPlatform.ANDROID)
+            .setMessageType(getMessageTypeForFirelog(extras));
+
+    // nullable parameters
+    String messageId = getMessageId(extras);
+    if (messageId != null) { // shouldn't happen in prod
+      builder.setMessageId(messageId);
+    }
+
+    String topic = getTopic(extras);
+    if (topic != null) {
+      builder.setTopic(topic);
+    }
+
+    String collapseKey = getCollapseKey(extras);
+    if (collapseKey != null) {
+      builder.setCollapseKey(collapseKey);
+    }
+
+    String messageLabel = getMessageLabel(extras);
+    if (messageLabel != null) {
+      builder.setAnalyticsLabel(messageLabel);
+    }
+
+    String composerLabel = getComposerLabel(extras);
+    if (composerLabel != null) {
+      builder.setComposerLabel(composerLabel);
+    }
+
+    long projectNumber = getProjectNumber(extras);
+    if (projectNumber > 0) {
+      builder.setProjectNumber(projectNumber);
+    }
+
+    return builder.build();
   }
 }

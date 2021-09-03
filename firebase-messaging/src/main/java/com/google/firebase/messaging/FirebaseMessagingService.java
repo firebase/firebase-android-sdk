@@ -15,8 +15,6 @@ package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.Constants.TAG;
 
-import android.app.PendingIntent;
-import android.app.PendingIntent.CanceledException;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -24,20 +22,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.iid.MessengerIpcClient;
-import com.google.firebase.iid.ServiceStarter;
-import com.google.firebase.messaging.Constants.IntentActionKeys;
-import com.google.firebase.messaging.Constants.IntentKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Base class for receiving messages from Firebase Cloud Messaging.
@@ -80,8 +69,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   public static final String ACTION_DIRECT_BOOT_REMOTE_INTENT =
       "com.google.firebase.messaging.RECEIVE_DIRECT_BOOT";
 
-  private static final String ACTION_NEW_TOKEN = "com.google.firebase.messaging.NEW_TOKEN";
-  private static final String EXTRA_TOKEN = "token";
+  static final String ACTION_NEW_TOKEN = "com.google.firebase.messaging.NEW_TOKEN";
+  static final String EXTRA_TOKEN = "token";
 
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
 
@@ -150,42 +139,16 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    * changes.
    *
    * @param token The token used for sending messages to this application instance. This token is
-   *     the same as the one retrieved by {@link
-   *     com.google.firebase.iid.FirebaseInstanceId#getInstanceId()}.
+   *     the same as the one retrieved by {@link FirebaseMessaging#getToken()}.
    */
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
+  ;
 
   /** @hide */
   @Override
   protected Intent getStartCommandIntent(Intent originalIntent) {
     return ServiceStarter.getInstance().getMessagingEvent();
-  }
-
-  /** @hide */
-  @Override
-  public boolean handleIntentOnMainThread(Intent intent) {
-    if (IntentActionKeys.NOTIFICATION_OPEN.equals(intent.getAction())) {
-      // This is in response to the user opening the notification, process on the main thread
-      handleNotificationOpen(intent);
-      return true;
-    }
-    return false;
-  }
-
-  private void handleNotificationOpen(Intent intent) {
-    PendingIntent pi = intent.getParcelableExtra(IntentKeys.PENDING_INTENT);
-    if (pi != null) {
-      // Pending intent will asynchronously start the app's Activity
-      try {
-        pi.send();
-      } catch (CanceledException e) {
-        Log.e(TAG, "Notification pending intent canceled"); // Shouldn't happen
-      }
-    }
-    if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
-      MessagingAnalytics.logNotificationOpen(intent);
-    }
   }
 
   /** @hide */
@@ -196,11 +159,6 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     // Using if/else here instead of a switch to reduce code size
     if (ACTION_REMOTE_INTENT.equals(action) || ACTION_DIRECT_BOOT_REMOTE_INTENT.equals(action)) {
       handleMessageIntent(intent);
-    } else if (IntentActionKeys.NOTIFICATION_DISMISS.equals(action)) {
-      // Service started just to send analytics on dismiss
-      if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
-        MessagingAnalytics.logNotificationDismiss(intent);
-      }
     } else if (ACTION_NEW_TOKEN.equals(action)) {
       onNewToken(intent.getStringExtra(EXTRA_TOKEN));
     } else {
@@ -210,30 +168,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
 
   private void handleMessageIntent(Intent intent) {
     String messageId = intent.getStringExtra(MessagePayloadKeys.MSGID);
-    /*
-     * Acknowledge that the message was received asynchronously. This is done before the app has a
-     * chance to actually handle the message so there is a small window for the app to get killed
-     * even though GmsCore got a successful ack (e.g. reboot, app gets oom killed), but given apps
-     * frequently do non-idempotent work on receiving a message (e.g. displaying a notification) it
-     * is safer to not wait for them to finish.
-     *
-     * We ack even if it was a duplicate message as GmsCore would only send a duplicate if it missed
-     * the earlier ack.
-     */
-    Task<Void> ackTask = ackMessage(messageId);
-
     if (!alreadyReceivedMessage(messageId)) {
       passMessageIntentToSdk(intent);
-    }
-
-    // The ack has probably already been sent, but to ensure it has a chance before we finish the
-    // service or broadcast receiver block for a bit. Sending the ack should be very fast as all it
-    // does is bind to GmsCore and send a single message over the binder.
-    try {
-      Tasks.await(ackTask, getAckTimeoutMillis(), TimeUnit.MILLISECONDS);
-    } catch (ExecutionException | InterruptedException | TimeoutException e) {
-      // Just ignore any error as there isn't much we can do
-      Log.w(TAG, "Message ack failed: " + e);
     }
   }
 
@@ -244,9 +180,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     }
     switch (messageType) {
       case MessageTypes.MESSAGE:
-        if (MessagingAnalytics.shouldUploadScionMetrics(intent)) {
-          MessagingAnalytics.logNotificationReceived(intent);
-        }
+        MessagingAnalytics.logNotificationReceived(intent);
 
         dispatchMessage(intent);
         break;
@@ -319,16 +253,6 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     return false;
   }
 
-  private Task<Void> ackMessage(String messageId) {
-    if (TextUtils.isEmpty(messageId)) {
-      return Tasks.forResult(null /* void */);
-    }
-    Bundle data = new Bundle();
-    data.putString(MessagePayloadKeys.MSGID, messageId);
-    return MessengerIpcClient.getInstance(this)
-        .sendOneWayRequest(MessengerIpcClient.What.FCM_ACK, data);
-  }
-
   private String getMessageId(Intent intent) {
     String messageId = intent.getStringExtra(MessagePayloadKeys.MSGID);
     if (messageId == null) {
@@ -340,11 +264,5 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @VisibleForTesting
   static void resetForTesting() {
     recentlyReceivedMessageIds.clear();
-  }
-
-  /** Provided so tests can override if necessary. */
-  @VisibleForTesting
-  long getAckTimeoutMillis() {
-    return TimeUnit.SECONDS.toMillis(1);
   }
 }

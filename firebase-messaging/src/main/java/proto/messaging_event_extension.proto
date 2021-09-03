@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package firebase.messaging.reporting;
+
+import "third_party/firebase/android/firebase_messaging/src/proto/messaging_event.proto";
+
+// LINT.IfChange
+message MessagingClientEventExtension {
+  MessagingClientEvent messaging_client_event = 1;
+}
+// LINT.ThenChange(//depot/google3/logs/proto/firebase/cloud_messaging/client/messaging_event_extension.proto)

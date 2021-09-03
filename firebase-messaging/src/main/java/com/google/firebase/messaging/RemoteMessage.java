@@ -31,7 +31,6 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.ShowFirstParty;
 import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelable;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import java.lang.annotation.Retention;
@@ -299,8 +298,8 @@ public final class RemoteMessage extends AbstractSafeParcelable {
      * Sets the destination of the message.
      *
      * @param to The destination of the message in the format of {@code
-     *     SENDER_ID@gcm.googleapis.com}. The {@code SENDER_ID} should be one of the sender IDs used
-     *     when calling {@link FirebaseInstanceId#getToken(String, String)}.
+     *     SENDER_ID@gcm.googleapis.com}. The {@code SENDER_ID} should be the FirebaseApp gcm sender
+     *     id.
      */
     public Builder(@NonNull String to) {
       if (TextUtils.isEmpty(to)) {
@@ -346,12 +345,6 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
-    /** @hide */
-    @NonNull
-    public Map<String, String> getData() {
-      return this.data;
-    }
-
     /** Clears the message data. */
     @NonNull
     public Builder clearData() {
@@ -379,23 +372,11 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
-    /** @hide */
-    @NonNull
-    public String getMessageId() {
-      return bundle.getString(MessagePayloadKeys.MSGID, "");
-    }
-
     /** Sets the type of message. */
     @NonNull
     public Builder setMessageType(@Nullable String messageType) {
       bundle.putString(MessagePayloadKeys.MESSAGE_TYPE, messageType);
       return this;
-    }
-
-    /** @hide */
-    @Nullable
-    public String getMessageType() {
-      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
     }
 
     /**
@@ -410,12 +391,6 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       return this;
     }
 
-    /** @hide */
-    @IntRange(from = 0, to = 86400)
-    public int getTtl() {
-      return Integer.parseInt(bundle.getString(MessagePayloadKeys.MESSAGE_TYPE, "0"));
-    }
-
     /**
      * Sets the collapse key of the message.
      *
@@ -426,12 +401,6 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     public Builder setCollapseKey(@Nullable String collapseKey) {
       bundle.putString(MessagePayloadKeys.COLLAPSE_KEY, collapseKey);
       return this;
-    }
-
-    /** @hide */
-    @Nullable
-    public String getCollapseKey() {
-      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
     }
   }
 

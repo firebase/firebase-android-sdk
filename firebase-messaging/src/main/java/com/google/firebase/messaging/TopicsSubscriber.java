@@ -30,14 +30,6 @@ import androidx.collection.ArrayMap;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.iid.GmsRpc;
-import com.google.firebase.iid.InstanceIdResult;
-import com.google.firebase.iid.Metadata;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Map;
@@ -59,10 +51,10 @@ class TopicsSubscriber {
   private static final long MIN_DELAY_SEC = 30;
   private static final long MAX_DELAY_SEC = HOURS.toSeconds(8);
 
-  private final FirebaseInstanceId iid;
   private final Context context;
   private final Metadata metadata;
   private final GmsRpc rpc;
+  private final FirebaseMessaging firebaseMessaging;
 
   @GuardedBy("pendingOperations")
   private final Map<String, ArrayDeque<TaskCompletionSource<Void>>> pendingOperations =
@@ -75,27 +67,9 @@ class TopicsSubscriber {
 
   private final TopicsStore store;
 
-  static Task<TopicsSubscriber> createInstance(
-      FirebaseApp firebaseApp,
-      FirebaseInstanceId iid,
-      Metadata metadata,
-      UserAgentPublisher userAgentPublisher,
-      HeartBeatInfo heartBeatInfo,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      Context context,
-      @NonNull ScheduledExecutorService syncExecutor) {
-    return createInstance(
-        iid,
-        metadata,
-        new GmsRpc(
-            firebaseApp, metadata, userAgentPublisher, heartBeatInfo, firebaseInstallationsApi),
-        context,
-        syncExecutor);
-  }
-
   @VisibleForTesting
   static Task<TopicsSubscriber> createInstance(
-      FirebaseInstanceId iid,
+      FirebaseMessaging firebaseMessaging,
       Metadata metadata,
       GmsRpc rpc,
       Context context,
@@ -105,19 +79,25 @@ class TopicsSubscriber {
         () -> {
           TopicsStore topicsStore = TopicsStore.getInstance(context, syncExecutor);
           TopicsSubscriber topicsSubscriber =
-              new TopicsSubscriber(iid, metadata, topicsStore, rpc, context, syncExecutor);
+              new TopicsSubscriber(
+                  firebaseMessaging,
+                  metadata,
+                  topicsStore,
+                  rpc,
+                  context,
+                  syncExecutor);
           return topicsSubscriber;
         });
   }
 
   private TopicsSubscriber(
-      FirebaseInstanceId iid,
+      FirebaseMessaging firebaseMessaging,
       Metadata metadata,
       TopicsStore store,
       GmsRpc rpc,
       Context context,
       @NonNull ScheduledExecutorService syncExecutor) {
-    this.iid = iid;
+    this.firebaseMessaging = firebaseMessaging;
     this.metadata = metadata;
     this.store = store;
     this.rpc = rpc;
@@ -296,22 +276,19 @@ class TopicsSubscriber {
   @WorkerThread
   // TODO: (b/148494404) refactor so we only block once on this code path
   private void blockingSubscribeToTopic(String topic) throws IOException {
-    InstanceIdResult instanceIdResult = awaitTask(iid.getInstanceId());
-    awaitTask(rpc.subscribeToTopic(instanceIdResult.getId(), instanceIdResult.getToken(), topic));
+    awaitTask(rpc.subscribeToTopic(firebaseMessaging.blockingGetToken(), topic));
   }
 
   @WorkerThread
   private void blockingUnsubscribeFromTopic(String topic) throws IOException {
-    InstanceIdResult instanceIdResult = awaitTask(iid.getInstanceId());
-    awaitTask(
-        rpc.unsubscribeFromTopic(instanceIdResult.getId(), instanceIdResult.getToken(), topic));
+    awaitTask(rpc.unsubscribeFromTopic(firebaseMessaging.blockingGetToken(), topic));
   }
 
   /** Awaits an RPC task, rethrowing any IOExceptions or RuntimeExceptions. */
   @WorkerThread
-  private static <T> T awaitTask(Task<T> task) throws IOException {
+  private static <T> void awaitTask(Task<T> task) throws IOException {
     try {
-      return Tasks.await(task, RPC_TIMEOUT_SEC, SECONDS);
+      Tasks.await(task, RPC_TIMEOUT_SEC, SECONDS);
     } catch (ExecutionException e) {
       // The underlying exception should always be an IOException or RuntimeException, which we
       // rethrow.
