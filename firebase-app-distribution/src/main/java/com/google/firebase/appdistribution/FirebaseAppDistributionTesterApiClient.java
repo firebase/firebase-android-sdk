@@ -57,7 +57,8 @@ class FirebaseAppDistributionTesterApiClient {
       connection.setRequestProperty(API_KEY_HEADER, apiKey);
       connection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
 
-      JSONObject latestReleaseJson = readFetchReleaseInputStream(connection.getInputStream());
+      InputStream inputStream = connection.getInputStream();
+      JSONObject latestReleaseJson = readFetchReleaseInputStream(inputStream);
       final String displayVersion = latestReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
       final String buildVersion = latestReleaseJson.getString(BUILD_VERSION_JSON_KEY);
       String releaseNotes = tryGetValue(latestReleaseJson, RELEASE_NOTES_JSON_KEY);
@@ -80,6 +81,7 @@ class FirebaseAppDistributionTesterApiClient {
               .setCodeHash(codeHash)
               .setDownloadUrl(downloadUrl)
               .build();
+      inputStream.close();
 
     } catch (IOException | JSONException e) {
       if (e instanceof JSONException) {

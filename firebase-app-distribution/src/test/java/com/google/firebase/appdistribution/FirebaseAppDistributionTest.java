@@ -126,8 +126,7 @@ public class FirebaseAppDistributionTest {
                 mockTesterSignInClient,
                 mockCheckForUpdateClient,
                 mockUpdateAppClient,
-                mockSignInStorage,
-                testExecutor));
+                mockSignInStorage));
 
     when(mockTesterSignInClient.signInTester()).thenReturn(Tasks.forResult(null));
 

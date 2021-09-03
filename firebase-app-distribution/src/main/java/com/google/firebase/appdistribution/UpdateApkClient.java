@@ -218,7 +218,8 @@ class UpdateApkClient {
 
     try {
       // check that file is actual JAR
-      new JarFile(apkFile);
+      new JarFile(apkFile).close();
+
     } catch (Exception e) {
       postUpdateProgress(
           totalSize,
