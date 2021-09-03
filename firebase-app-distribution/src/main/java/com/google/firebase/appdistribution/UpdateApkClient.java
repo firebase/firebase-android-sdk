@@ -74,8 +74,7 @@ class UpdateApkClient {
   }
 
   public synchronized UpdateTaskImpl updateApk(
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      boolean showDownloadNotificationManager) {
+      @NonNull AppDistributionReleaseInternal newRelease, boolean showDownloadNotificationManager) {
     synchronized (updateTaskLock) {
       if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
         return cachedUpdateTask;
@@ -84,7 +83,7 @@ class UpdateApkClient {
       cachedUpdateTask = new UpdateTaskImpl();
     }
 
-    downloadApk(latestRelease, showDownloadNotificationManager)
+    downloadApk(newRelease, showDownloadNotificationManager)
         .addOnSuccessListener(
             downloadExecutor,
             file ->
@@ -119,8 +118,7 @@ class UpdateApkClient {
   @VisibleForTesting
   @NonNull
   Task<File> downloadApk(
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      boolean showDownloadNotificationManager) {
+      @NonNull AppDistributionReleaseInternal newRelease, boolean showDownloadNotificationManager) {
     if (downloadTaskCompletionSource != null
         && !downloadTaskCompletionSource.getTask().isComplete()) {
       return downloadTaskCompletionSource.getTask();
@@ -128,17 +126,16 @@ class UpdateApkClient {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    makeApkDownloadRequest(latestRelease, showDownloadNotificationManager);
+    makeApkDownloadRequest(newRelease, showDownloadNotificationManager);
     return downloadTaskCompletionSource.getTask();
   }
 
   private void makeApkDownloadRequest(
-      @NonNull AppDistributionReleaseInternal latestRelease,
-      boolean showDownloadNotificationManager) {
+      @NonNull AppDistributionReleaseInternal newRelease, boolean showDownloadNotificationManager) {
     downloadExecutor.execute(
         () -> {
           try {
-            HttpsURLConnection connection = openHttpsUrlConnection(latestRelease.getDownloadUrl());
+            HttpsURLConnection connection = openHttpsUrlConnection(newRelease.getDownloadUrl());
             connection.setRequestMethod(REQUEST_METHOD);
             if (connection.getInputStream() == null) {
               setDownloadTaskCompletionError(
@@ -156,7 +153,7 @@ class UpdateApkClient {
                   connection.getInputStream(),
                   responseLength,
                   fileName,
-                  latestRelease,
+                  newRelease,
                   showDownloadNotificationManager);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
@@ -173,7 +170,7 @@ class UpdateApkClient {
       InputStream input,
       long totalSize,
       String fileName,
-      AppDistributionReleaseInternal latestRelease,
+      AppDistributionReleaseInternal newRelease,
       boolean showDownloadNotificationManager) {
 
     File apkFile = getApkFileForApp(fileName);
@@ -237,7 +234,7 @@ class UpdateApkClient {
     String internalCodeHash = calculateApkInternalCodeHash(downloadedFile);
 
     if (internalCodeHash != null) {
-      releaseIdentifierStorage.setCodeHashMap(internalCodeHash, latestRelease);
+      releaseIdentifierStorage.setCodeHashMap(internalCodeHash, newRelease);
     }
 
     // completion

@@ -36,7 +36,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
-  private final CheckForUpdateClient checkForUpdateClient;
+  private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
   private Activity currentActivity;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
@@ -45,7 +45,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private UpdateTaskImpl cachedUpdateIfNewReleaseTask;
 
   private final Object updateTaskLock = new Object();
-  private Task<AppDistributionRelease> cachedCheckForUpdateTask;
+  private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
 
   private AppDistributionReleaseInternal cachedNewRelease;
   private final SignInStorage signInStorage;
@@ -55,12 +55,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInClient testerSignInClient,
-      @NonNull CheckForUpdateClient checkForUpdateClient,
+      @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
       @NonNull UpdateAppClient updateAppClient,
       @NonNull SignInStorage signInStorage) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
-    this.checkForUpdateClient = checkForUpdateClient;
+    this.checkForNewReleaseClient = checkForNewReleaseClient;
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
   }
@@ -73,7 +73,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this(
         firebaseApp,
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
-        new CheckForUpdateClient(
+        new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
         new UpdateAppClient(firebaseApp),
         signInStorage);
@@ -171,13 +171,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    */
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    if (cachedCheckForUpdateTask != null && !cachedCheckForUpdateTask.isComplete()) {
+    if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
       LogWrapper.getInstance().v("Response in progress");
-      return cachedCheckForUpdateTask;
+      return cachedCheckForNewReleaseTask;
     }
-    cachedCheckForUpdateTask =
+    cachedCheckForNewReleaseTask =
         signInTester()
-            .onSuccessTask(unused -> this.checkForUpdateClient.checkForUpdate())
+            .onSuccessTask(unused -> this.checkForNewReleaseClient.checkForNewRelease())
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
                   setCachedNewRelease(appDistributionReleaseInternal);
@@ -185,7 +185,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                       ReleaseUtils.convertToAppDistributionRelease(appDistributionReleaseInternal));
                 });
 
-    return cachedCheckForUpdateTask;
+    return cachedCheckForNewReleaseTask;
   }
 
   /**
@@ -194,7 +194,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * complete the download and installation.
    *
    * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAILABLE exception if no
-   * new release is cached from checkForUpdate
+   * new release is cached from checkForNewRelease
    */
   @NonNull
   public synchronized UpdateTask updateApp() {

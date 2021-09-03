@@ -36,9 +36,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-class CheckForUpdateClient {
-  private static final int UPDATE_THREAD_POOL_SIZE = 4;
-  private static final String TAG = "CheckForUpdateClient:";
+class CheckForNewReleaseClient {
+  private static final int NEW_RELEASE_THREAD_POOL_SIZE = 4;
+  private static final String TAG = "CheckForNewReleaseClient:";
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
@@ -46,10 +46,10 @@ class CheckForUpdateClient {
   private static final ConcurrentMap<String, String> cachedCodeHashes = new ConcurrentHashMap<>();
   private final ReleaseIdentifierStorage releaseIdentifierStorage;
 
-  Task<AppDistributionReleaseInternal> cachedCheckForUpdate = null;
-  private final Executor checkForUpdateExecutor;
+  Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
+  private final Executor checkForNewReleaseExecutor;
 
-  CheckForUpdateClient(
+  CheckForNewReleaseClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
@@ -57,12 +57,12 @@ class CheckForUpdateClient {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     // TODO: verify if this is best way to use executorservice here
-    this.checkForUpdateExecutor = Executors.newFixedThreadPool(UPDATE_THREAD_POOL_SIZE);
+    this.checkForNewReleaseExecutor = Executors.newFixedThreadPool(NEW_RELEASE_THREAD_POOL_SIZE);
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
-  CheckForUpdateClient(
+  CheckForNewReleaseClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
@@ -71,16 +71,16 @@ class CheckForUpdateClient {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     // TODO: verify if this is best way to use executorservice here
-    this.checkForUpdateExecutor = executor;
+    this.checkForNewReleaseExecutor = executor;
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
   @NonNull
-  public synchronized Task<AppDistributionReleaseInternal> checkForUpdate() {
+  public synchronized Task<AppDistributionReleaseInternal> checkForNewRelease() {
 
-    if (cachedCheckForUpdate != null && !cachedCheckForUpdate.isComplete()) {
-      return cachedCheckForUpdate;
+    if (cachedCheckForNewRelease != null && !cachedCheckForNewRelease.isComplete()) {
+      return cachedCheckForNewRelease;
     }
 
     Task<String> installationIdTask = firebaseInstallationsApi.getId();
@@ -88,50 +88,49 @@ class CheckForUpdateClient {
     Task<InstallationTokenResult> installationAuthTokenTask =
         firebaseInstallationsApi.getToken(false);
 
-    this.cachedCheckForUpdate =
+    this.cachedCheckForNewRelease =
         Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
             .onSuccessTask(
-                checkForUpdateExecutor,
+                checkForNewReleaseExecutor,
                 tasks -> {
                   String fid = installationIdTask.getResult();
                   InstallationTokenResult installationTokenResult =
                       installationAuthTokenTask.getResult();
                   try {
-                    AppDistributionReleaseInternal latestRelease =
-                        getLatestReleaseFromClient(
+                    AppDistributionReleaseInternal newRelease =
+                        getNewReleaseFromClient(
                             fid,
                             firebaseApp.getOptions().getApplicationId(),
                             firebaseApp.getOptions().getApiKey(),
                             installationTokenResult.getToken());
-                    return Tasks.forResult(latestRelease);
+                    return Tasks.forResult(newRelease);
                   } catch (FirebaseAppDistributionException ex) {
                     return Tasks.forException(ex);
                   }
                 })
             .continueWithTask(
-                checkForUpdateExecutor,
+                checkForNewReleaseExecutor,
                 task ->
                     TaskUtils.handleTaskFailure(
                         task,
                         Constants.ErrorMessages.NETWORK_ERROR,
                         FirebaseAppDistributionException.Status.NETWORK_FAILURE));
 
-    return cachedCheckForUpdate;
+    return cachedCheckForNewRelease;
   }
 
   @VisibleForTesting
-  AppDistributionReleaseInternal getLatestReleaseFromClient(
+  AppDistributionReleaseInternal getNewReleaseFromClient(
       String fid, String appId, String apiKey, String authToken)
       throws FirebaseAppDistributionException {
     try {
-      AppDistributionReleaseInternal retrievedLatestRelease =
-          firebaseAppDistributionTesterApiClient.fetchLatestRelease(fid, appId, apiKey, authToken);
+      AppDistributionReleaseInternal retrievedNewRelease =
+          firebaseAppDistributionTesterApiClient.fetchNewRelease(fid, appId, apiKey, authToken);
 
-      if (isNewerBuildVersion(retrievedLatestRelease)
-          || !isInstalledRelease(retrievedLatestRelease)) {
-        return retrievedLatestRelease;
+      if (isNewerBuildVersion(retrievedNewRelease) || !isInstalledRelease(retrievedNewRelease)) {
+        return retrievedNewRelease;
       } else {
-        // Return null if retrieved latest release is older or currently installed
+        // Return null if retrieved new release is older or currently installed
         return null;
       }
     } catch (NumberFormatException e) {
@@ -143,23 +142,23 @@ class CheckForUpdateClient {
     }
   }
 
-  private boolean isNewerBuildVersion(AppDistributionReleaseInternal latestRelease)
+  private boolean isNewerBuildVersion(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
-    return Long.parseLong(latestRelease.getBuildVersion())
+    return Long.parseLong(newRelease.getBuildVersion())
         > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
   @VisibleForTesting
-  boolean isInstalledRelease(AppDistributionReleaseInternal latestRelease) {
-    if (latestRelease.getBinaryType().equals(BinaryType.APK)) {
-      return hasSameCodeHashAsInstallledRelease(latestRelease);
+  boolean isInstalledRelease(AppDistributionReleaseInternal newRelease) {
+    if (newRelease.getBinaryType().equals(BinaryType.APK)) {
+      return hasSameCodeHashAsInstallledRelease(newRelease);
     }
 
-    if (latestRelease.getIasArtifactId() == null) {
+    if (newRelease.getIasArtifactId() == null) {
       return false;
     }
     // AAB BinaryType
-    return latestRelease
+    return newRelease
         .getIasArtifactId()
         .equals(
             ReleaseIdentificationUtils.extractInternalAppSharingArtifactId(
@@ -193,7 +192,7 @@ class CheckForUpdateClient {
     return releaseIdentifierStorage.getExternalCodeHash(cachedCodeHashes.get(key));
   }
 
-  private boolean hasSameCodeHashAsInstallledRelease(AppDistributionReleaseInternal latestRelease) {
+  private boolean hasSameCodeHashAsInstallledRelease(AppDistributionReleaseInternal newRelease) {
     try {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo =
@@ -207,9 +206,9 @@ class CheckForUpdateClient {
         return false;
       }
 
-      // If the codeHash for the retrieved latestRelease is equal to the stored codeHash
+      // If the codeHash for the retrieved newRelease is equal to the stored codeHash
       // of the installed release, then they are the same release.
-      return externalCodeHash.equals(latestRelease.getCodeHash());
+      return externalCodeHash.equals(newRelease.getCodeHash());
     } catch (PackageManager.NameNotFoundException e) {
       LogWrapper.getInstance().e(TAG + "Unable to locate App.", e);
       return false;

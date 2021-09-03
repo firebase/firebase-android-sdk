@@ -49,17 +49,17 @@ public class UpdateAppClient {
 
   @NonNull
   synchronized UpdateTask updateApp(
-      @Nullable AppDistributionReleaseInternal latestRelease,
+      @Nullable AppDistributionReleaseInternal newRelease,
       boolean showDownloadInNotificationManager) {
 
-    if (latestRelease == null) {
-      LogWrapper.getInstance().v(TAG + "No latest release found.");
+    if (newRelease == null) {
+      LogWrapper.getInstance().v(TAG + "New release not found.");
       return getErrorUpdateTask(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
     }
 
-    if (latestRelease.getDownloadUrl() == null) {
+    if (newRelease.getDownloadUrl() == null) {
       LogWrapper.getInstance().v(TAG + "Download failed to execute");
       return getErrorUpdateTask(
           new FirebaseAppDistributionException(
@@ -67,20 +67,20 @@ public class UpdateAppClient {
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
     }
 
-    if (latestRelease.getBinaryType() == BinaryType.AAB) {
+    if (newRelease.getBinaryType() == BinaryType.AAB) {
       synchronized (updateAabLock) {
         if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
           return cachedAabUpdateTask;
         }
 
         cachedAabUpdateTask = new UpdateTaskImpl();
-        aabReleaseInProgress = latestRelease;
-        redirectToPlayForAabUpdate(latestRelease.getDownloadUrl());
+        aabReleaseInProgress = newRelease;
+        redirectToPlayForAabUpdate(newRelease.getDownloadUrl());
 
         return cachedAabUpdateTask;
       }
     } else {
-      return this.updateApkClient.updateApk(latestRelease, showDownloadInNotificationManager);
+      return this.updateApkClient.updateApk(newRelease, showDownloadInNotificationManager);
     }
   }
 
