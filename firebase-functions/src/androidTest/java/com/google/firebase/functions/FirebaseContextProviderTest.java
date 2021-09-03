@@ -33,6 +33,7 @@ public class FirebaseContextProviderTest {
   private static final String AUTH_TOKEN = "authToken";
   private static final String IID_TOKEN = "iidToken";
   private static final String APP_CHECK_TOKEN = "appCheckToken";
+  private static final String ERROR = "errorString";
 
   private static final InternalAuthProvider fixedAuthProvider =
       new TestInternalAuthProvider(() -> AUTH_TOKEN);
@@ -45,6 +46,8 @@ public class FirebaseContextProviderTest {
       new TestFirebaseInstanceIdInternal(IID_TOKEN);
   private static final InternalAppCheckTokenProvider fixedAppCheckProvider =
       new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN);
+  private static final InternalAppCheckTokenProvider errorAppCheckProvider =
+      new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN, ERROR);
 
   @Test
   public void getContext_whenAuthAndAppCheckAreNotAvailable_shouldContainOnlyIid()
@@ -96,6 +99,19 @@ public class FirebaseContextProviderTest {
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+  }
+
+  @Test
+  public void getContext_whenOnlyAppCheckIsAvailableAndHasError_shouldContainOnlyIid()
+      throws ExecutionException, InterruptedException {
+    FirebaseContextProvider contextProvider =
+        new FirebaseContextProvider(
+            absentProvider(), providerOf(fixedIidProvider), deferredOf(errorAppCheckProvider));
+
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    assertThat(context.getAuthToken()).isNull();
+    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getAppCheckToken()).isNull();
   }
 
   @Test
