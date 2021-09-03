@@ -38,7 +38,7 @@ import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.CpuMetricReading;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
-import com.google.testing.timing.FakeScheduledExecutorService;
+import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;

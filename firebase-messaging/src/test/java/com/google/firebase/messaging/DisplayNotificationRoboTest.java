@@ -45,7 +45,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.TestImageServer;
 import java.io.IOException;
@@ -505,7 +505,8 @@ public class DisplayNotificationRoboTest {
   @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
-    metadata.putInt(METADATA_DEFAULT_COLOR, com.google.firebase.messaging.test.R.color.fcm_test_color);
+    metadata.putInt(
+        METADATA_DEFAULT_COLOR, com.google.firebase.messaging.test.R.color.fcm_test_color);
     PackageInfo packageInfo =
         shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;

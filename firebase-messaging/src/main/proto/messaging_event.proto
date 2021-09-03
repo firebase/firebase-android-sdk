@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package firebase.messaging.reporting;
+package reporting;
 
 // Describes a Firebase Messaging event on a client.
 // LINT.IfChange

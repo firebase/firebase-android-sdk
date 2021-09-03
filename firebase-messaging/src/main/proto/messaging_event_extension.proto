@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package firebase.messaging.reporting;
+package reporting;
 
-import "third_party/firebase/android/firebase_messaging/src/proto/messaging_event.proto";
+import "messaging_event.proto";
 
 // LINT.IfChange
 message MessagingClientEventExtension {

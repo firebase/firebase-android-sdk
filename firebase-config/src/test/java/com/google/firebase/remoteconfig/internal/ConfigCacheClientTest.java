@@ -24,7 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;

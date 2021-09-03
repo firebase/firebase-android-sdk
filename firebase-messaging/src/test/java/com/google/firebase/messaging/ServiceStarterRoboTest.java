@@ -28,7 +28,7 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.gcm.shadows.ShadowPowerManager;
+import com.google.firebase.messaging.testing.ShadowPowerManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

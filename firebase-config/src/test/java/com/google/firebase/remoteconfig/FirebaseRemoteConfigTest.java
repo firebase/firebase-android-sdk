@@ -40,7 +40,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;

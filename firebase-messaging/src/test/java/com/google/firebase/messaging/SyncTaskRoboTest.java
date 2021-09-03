@@ -14,10 +14,10 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.iid.FirebaseIidRoboTestHelper.API_KEY;
-import static com.google.firebase.iid.FirebaseIidRoboTestHelper.APP_ID;
-import static com.google.firebase.iid.FirebaseIidRoboTestHelper.PROJECT_ID;
-import static com.google.firebase.iid.FirebaseIidRoboTestHelper.SENDER_ID;
+import static com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper.API_KEY;
+import static com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper.APP_ID;
+import static com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper.PROJECT_ID;
+import static com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper.SENDER_ID;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,8 +37,8 @@ import android.net.NetworkInfo;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseIidRoboTestHelper;
-import com.google.testing.timing.FakeScheduledExecutorService;
+import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
+import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;

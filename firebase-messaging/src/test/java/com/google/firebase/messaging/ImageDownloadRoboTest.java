@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThrows;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.testing.TestImageServer;

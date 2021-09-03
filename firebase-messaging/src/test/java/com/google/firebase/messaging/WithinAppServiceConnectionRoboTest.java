@@ -27,7 +27,7 @@ import android.os.IBinder;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.WithinAppServiceConnection.BindRequest;
-import com.google.testing.timing.FakeScheduledExecutorService;
+import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;

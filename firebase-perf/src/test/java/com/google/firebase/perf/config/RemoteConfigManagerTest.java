@@ -32,7 +32,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.testing.timing.FakeScheduledExecutorService;
+import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

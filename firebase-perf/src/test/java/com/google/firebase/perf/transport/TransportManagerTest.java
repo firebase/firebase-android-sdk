@@ -49,7 +49,7 @@ import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
 import com.google.firebase.perf.v1.PerfMetric;
 import com.google.firebase.perf.v1.PerfSession;
 import com.google.firebase.perf.v1.TraceMetric;
-import com.google.testing.timing.FakeScheduledExecutorService;
+import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

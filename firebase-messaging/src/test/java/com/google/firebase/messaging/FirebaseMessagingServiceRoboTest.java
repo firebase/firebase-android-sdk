@@ -55,13 +55,13 @@ import android.os.Process;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.cloudmessaging.MessengerIpcClient;
-import com.google.android.gms.gcm.shadows.ShadowMessenger;
-import com.google.android.gms.measurement.AnalyticsValidator;
+import com.google.firebase.messaging.shadows.ShadowMessenger;
+import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.analytics.connector.FakeConnectorComponent;
+import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.testing.Bundles;
@@ -411,8 +411,8 @@ public class FirebaseMessagingServiceRoboTest {
       List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
       assertThat(events).hasSize(2);
       AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
-    assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
-    assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
+      assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+      assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
       assertThat(receiveEvent.getParams())
           .string(Analytics.PARAM_MESSAGE_ID)
           .isEqualTo("composer_key");

@@ -3,7 +3,7 @@
 # proto-message: CodeGenConfig
 
 # all types will be vendored in this package
-vendor_package: "com.google"
+vendor_package: "com.google.firebase.messaging"
 
 # marks a type as a "root" message
-include: "firebase.messaging.reporting.MessagingClientEventExtension"
+include: "reporting.MessagingClientEventExtension"

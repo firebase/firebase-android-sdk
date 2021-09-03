@@ -31,7 +31,7 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.libraries.testing.truth.IntentSubject;
+import com.google.firebase.messaging.testing.IntentSubject;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FcmBroadcastProcessor;
 import com.google.firebase.messaging.ServiceStarter;

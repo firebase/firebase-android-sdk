@@ -25,7 +25,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseIidRoboTestHelper;
+import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
