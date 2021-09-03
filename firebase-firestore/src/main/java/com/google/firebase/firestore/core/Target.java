@@ -113,13 +113,10 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by `fieldIndex`.
+   * defined by {@code fieldIndex}.
    *
    * <p>Unlike {@link #getUpperBound}, lower bounds always exist as the SDK can use {@code null} as
    * a starting point for missing boundary values.
-   *
-   * @param fieldIndex The index definition to generate a Bound for
-   * @return A bound that can be used for index scanning
    */
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
@@ -164,6 +161,7 @@ public final class Target {
               lowestValue = cursorValue;
               before = before && startAt.isBefore();
             }
+            break;
           }
         }
       }
@@ -175,14 +173,11 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by `fieldIndex`.
+   * index defined by {@code fieldIndex}.
    *
    * <p>Unlike {@link #getLowerBound}, upper bounds do not always exist since the Firestore does not
    * define a maximum field value. The index scan should not use an upper bound if {@code null} is
    * returned.
-   *
-   * @param fieldIndex The index definition to generate a Bound for
-   * @return A bound that can be used for index scanning
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
@@ -224,12 +219,11 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = endAt.getPosition().get(i);
-            if (largestValue == null) {
+            if (largestValue == null || Values.compare(largestValue, cursorValue) > 0) {
               largestValue = cursorValue;
-            } else if (Values.compare(largestValue, cursorValue) > 0) {
-              largestValue = cursorValue;
+              before = endAt.isBefore();
             }
-            before = endAt.isBefore();
+            break;
           }
         }
       }

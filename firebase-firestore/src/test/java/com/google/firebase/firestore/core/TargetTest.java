@@ -195,6 +195,50 @@ public class TargetTest {
   }
 
   @Test
+  public void startAfterWithFilterQueryBound() {
+    Target target =
+        query("c")
+            .filter(filter("a", ">=", "a1"))
+            .filter(filter("b", "==", "b1"))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"))
+            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b2")), false))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c")
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, false, "a1", "b2");
+
+    Bound upperBound = target.getUpperBound(index);
+    assertNull(upperBound);
+  }
+
+  @Test
+  public void startAfterDoesNotChangeBoundIfNotApplicable() {
+    Target target =
+        query("c")
+            .filter(filter("a", ">=", "a2"))
+            .filter(filter("b", "==", "b2"))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"))
+            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c")
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true, "a2", "b2");
+
+    Bound upperBound = target.getUpperBound(index);
+    assertNull(upperBound);
+  }
+
+  @Test
   public void endAtQueryBound() {
     Target target =
         query("c")
@@ -220,6 +264,28 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
+            .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c")
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true, null, "b2");
+
+    Bound upperBound = target.getUpperBound(index);
+    verifyBound(upperBound, false, "a1", "b1");
+  }
+
+  @Test
+  public void endBeforeWithFilterQueryBound() {
+    Target target =
+        query("c")
+            .filter(filter("a", "<=", "a2"))
+            .filter(filter("b", "==", "b2"))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"))
             .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), true))
             .toTarget();
     FieldIndex index =
@@ -232,6 +298,42 @@ public class TargetTest {
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "a1", "b1");
+  }
+
+  @Test
+  public void endBeforeDoesNotChangeBoundIfNotApplicable() {
+    Target target =
+        query("c")
+            .filter(filter("a", "<=", "a1"))
+            .filter(filter("b", "==", "b1"))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"))
+            .endAt(new Bound(Arrays.asList(wrap("a2"), wrap("b2")), true))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c")
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true, null, "b1");
+
+    Bound upperBound = target.getUpperBound(index);
+    verifyBound(upperBound, false, "a1", "b1");
+  }
+
+  @Test
+  public void partialIndexMatchQueryBound() {
+    Target target =
+        query("c").filter(filter("a", "==", "a")).filter(filter("b", "==", "b")).toTarget();
+    FieldIndex index =
+        new FieldIndex("c").withAddedField(field("a"), FieldIndex.Segment.Kind.CONTAINS);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true, "a");
+
+    Bound upperBound = target.getUpperBound(index);
+    verifyBound(upperBound, false, "a");
   }
 
   private void verifyBound(Bound bound, boolean before, Object... values) {
