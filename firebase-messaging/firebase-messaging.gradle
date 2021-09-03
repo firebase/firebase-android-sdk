@@ -14,6 +14,38 @@
 
 plugins {
     id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+configurations.create("protobuild")
+dependencies {
+    protobuild project(path: ":encoders:protoc-gen-firebase-encoders", configuration: "shadow")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    plugins {
+        firebaseEncoders {
+            path = configurations.protobuild.asPath
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.dependsOn configurations.protobuild
+            task.inputs.file 'code-gen-cfg.textproto'
+            task.plugins {
+                firebaseEncoders {
+                    option file('code-gen-cfg.textproto').path
+                }
+            }
+            // In most cases you don't need the full Java output
+            task.builtins {
+                remove java
+            }
+        }
+    }
 }
 
 firebaseLibrary {
@@ -23,6 +55,16 @@ firebaseLibrary {
 android {
     adbOptions {
         timeOutInMs 60 * 1000
+    }
+
+    sourceSets {
+        main {
+            proto {
+                srcDir 'src/main/proto'
+            }
+            java {
+            }
+        }
     }
 
     lintOptions {
@@ -55,13 +97,19 @@ dependencies {
     implementation project(':transport:transport-backend-cct')
     implementation project(':encoders:firebase-encoders')
     implementation project(':encoders:firebase-encoders-json')
+    implementation project(":encoders:firebase-encoders-proto")
+    implementation project(':protolite-well-known-types')
+    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    annotationProcessor project(":encoders:firebase-encoders-processor")
 
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.protobuf:protobuf-java-util:3.11.0'
     implementation "com.google.android.gms:play-services-tasks:17.0.2"
     implementation "com.google.android.gms:play-services-basement:17.2.1"
     implementation 'com.google.android.gms:play-services-base:17.2.1'
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.0.0"
+    implementation 'com.google.android.gms:play-services-cloud-messaging:16.0.0'
     implementation ("com.google.firebase:firebase-iid:20.2.3") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"

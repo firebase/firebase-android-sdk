@@ -177,7 +177,7 @@ class GmsRpc {
 
   Task<String> getToken() {
     Task<Bundle> rpcTask =
-        startRpc(Metadata.getDefaultSenderId(app), SCOPE_ALL, /* extras= */new Bundle());
+        startRpc(Metadata.getDefaultSenderId(app), SCOPE_ALL, /* extras= */ new Bundle());
     return extractResponseWhenComplete(rpcTask);
   }
 

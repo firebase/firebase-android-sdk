@@ -249,11 +249,7 @@ public class FirebaseMessaging {
 
     topicsSubscriberTask =
         TopicsSubscriber.createInstance(
-            this,
-            metadata,
-            gmsRpc,
-            context,
-            /* syncExecutor= */ newTopicsSyncExecutor());
+            this, metadata, gmsRpc, context, /* syncExecutor= */ newTopicsSyncExecutor());
 
     // During FCM instantiation, as part of the initial setup, we spin up a couple of background
     // threads to handle topic syncing and proxy notification configuration.

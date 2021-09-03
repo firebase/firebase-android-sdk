@@ -115,7 +115,6 @@ class Store {
     edit.commit();
   }
 
-
   /**
    * Token representation including metadata.
    *

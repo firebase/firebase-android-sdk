@@ -80,12 +80,7 @@ class TopicsSubscriber {
           TopicsStore topicsStore = TopicsStore.getInstance(context, syncExecutor);
           TopicsSubscriber topicsSubscriber =
               new TopicsSubscriber(
-                  firebaseMessaging,
-                  metadata,
-                  topicsStore,
-                  rpc,
-                  context,
-                  syncExecutor);
+                  firebaseMessaging, metadata, topicsStore, rpc, context, syncExecutor);
           return topicsSubscriber;
         });
   }

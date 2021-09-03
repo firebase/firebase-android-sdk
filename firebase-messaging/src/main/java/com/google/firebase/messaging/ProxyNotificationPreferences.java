@@ -17,8 +17,8 @@ import static com.google.firebase.messaging.ProxyNotificationPreferences.Prefere
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.annotation.StringDef;
-import android.support.annotation.WorkerThread;
+import androidx.annotation.StringDef;
+import androidx.annotation.WorkerThread;
 
 /**
  * Firebase helper class to store and retrieve firebase related preference values.
