@@ -127,7 +127,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   @Override
   public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
     assertRunning();
-    DelayedFuture future = new DelayedFuture<>(command, delay, unit);
+    DelayedFuture<?> future = new DelayedFuture<>(command, delay, unit);
     scheduledQueue.add(future);
     return future;
   }
@@ -144,7 +144,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   public ScheduledFuture<?> scheduleAtFixedRate(
       Runnable command, long initialDelay, long period, TimeUnit unit) {
     assertRunning();
-    DelayedFuture future = new FixedRateDelayedFuture<>(command, initialDelay, period, unit);
+    DelayedFuture<?> future = new FixedRateDelayedFuture<>(command, initialDelay, period, unit);
     scheduledQueue.add(future);
     return future;
   }
@@ -153,7 +153,7 @@ public class FakeScheduledExecutorService extends AbstractExecutorService
   public ScheduledFuture<?> scheduleWithFixedDelay(
       Runnable command, long initialDelay, long delay, TimeUnit unit) {
     assertRunning();
-    DelayedFuture future = new FixedDelayDelayedFuture<>(command, initialDelay, delay, unit);
+    DelayedFuture<?> future = new FixedDelayDelayedFuture<>(command, initialDelay, delay, unit);
     scheduledQueue.add(future);
     return future;
   }

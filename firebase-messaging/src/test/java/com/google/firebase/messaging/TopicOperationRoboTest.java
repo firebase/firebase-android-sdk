@@ -18,7 +18,7 @@ import static com.google.firebase.messaging.TopicOperation.OPERATION_PAIR_DIVIDE
 import static com.google.firebase.messaging.TopicOperation.TopicOperations.OPERATION_SUBSCRIBE;
 import static com.google.firebase.messaging.TopicOperation.TopicOperations.OPERATION_UNSUBSCRIBE;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

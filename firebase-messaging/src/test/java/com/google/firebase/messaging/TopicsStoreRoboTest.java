@@ -21,7 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
+import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import java.util.Arrays;
 import java.util.List;

@@ -34,9 +34,9 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.iid.FirebaseIidMessengerCompat;
-import com.google.firebase.iid.MessengerIpcClient;
-import com.google.firebase.iid.MessengerIpcClient.What;
+import com.google.android.gms.cloudmessaging.CloudMessagingMessengerCompat;
+import com.google.android.gms.cloudmessaging.MessengerIpcClient;
+import com.google.android.gms.cloudmessaging.MessengerIpcClientConstants.What;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -149,7 +149,7 @@ public final class MessengerIpcClientTester {
   // This always uses MessengerCompat Robolectric messes with the regular Messenger class
   public static MessengerIpcClientTester createWithFirebaseIidMessengerCompat() {
     return new MessengerIpcClientTester(
-        handler -> new FirebaseIidMessengerCompat(handler).getBinder());
+        handler -> new CloudMessagingMessengerCompat(handler).getBinder());
   }
 
   public MessengerIpcClientTester(Function<Handler, IBinder> messengerCompatBinderFactory) {

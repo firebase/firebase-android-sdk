@@ -45,7 +45,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
+import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.TestImageServer;
 import java.io.IOException;
@@ -172,7 +172,7 @@ public class DisplayNotificationRoboTest {
     Notification n = getSingleNotification();
     assertThat(shadowOf(n).getContentTitle().toString()).isEmpty();
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
-    assertEquals(R.drawable.gcm_icon, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
 
   /** Test that a notification with no icon shows the app's icon. */
@@ -239,7 +239,7 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     // check that we fallback to the default app icon, and that we don't use R.
-    assertNotEquals(R.drawable.adaptive_icon, n.icon);
+    assertNotEquals(com.google.firebase.messaging.test.R.drawable.adaptive_icon, n.icon);
   }
 
   /** Test that an adaptive icon is detected and avoided, when passed via metadata (on Android O) */
@@ -247,7 +247,8 @@ public class DisplayNotificationRoboTest {
   @Test
   public void testAdaptiveIcon_viaMetadata() {
     Bundle metadata = new Bundle();
-    metadata.putInt(METADATA_DEFAULT_ICON, R.drawable.adaptive_icon);
+    metadata.putInt(
+        METADATA_DEFAULT_ICON, com.google.firebase.messaging.test.R.drawable.adaptive_icon);
     PackageInfo packageInfo =
         shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;
@@ -260,7 +261,7 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     // check that we fallback to the default app icon, and that we don't use R.
-    assertNotEquals(R.drawable.adaptive_icon, n.icon);
+    assertNotEquals(com.google.firebase.messaging.test.R.drawable.adaptive_icon, n.icon);
   }
 
   /**
@@ -269,7 +270,8 @@ public class DisplayNotificationRoboTest {
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
   public void testAdaptiveIcon_viaDefaultIcon() {
-    setApplicationIcon(context.getPackageName(), R.drawable.adaptive_icon);
+    setApplicationIcon(
+        context.getPackageName(), com.google.firebase.messaging.test.R.drawable.adaptive_icon);
 
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -279,14 +281,15 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     // check that we fallback to the default app icon, and that we don't use R.
-    assertNotEquals(R.drawable.adaptive_icon, n.icon);
+    assertNotEquals(com.google.firebase.messaging.test.R.drawable.adaptive_icon, n.icon);
   }
 
   /** Test that an adaptive icon is ok with Android < O */
   @Config(sdk = Build.VERSION_CODES.N)
   @Test
   public void testAdaptiveIcon_beforeAndroidO() {
-    setApplicationIcon(context.getPackageName(), R.drawable.adaptive_icon);
+    setApplicationIcon(
+        context.getPackageName(), com.google.firebase.messaging.test.R.drawable.adaptive_icon);
 
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -296,14 +299,15 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     // check that we use R and that we don't fallback to the default app icon.
-    assertEquals(R.drawable.adaptive_icon, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.adaptive_icon, n.icon);
   }
 
   /** Test that a non adaptive icon is ok on Android O. */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
   public void testNonAdaptiveIcon_AndroidO() {
-    setApplicationIcon(context.getPackageName(), R.drawable.gcm_icon);
+    setApplicationIcon(
+        context.getPackageName(), com.google.firebase.messaging.test.R.drawable.gcm_icon);
 
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -314,14 +318,15 @@ public class DisplayNotificationRoboTest {
     Notification n = getSingleNotification();
 
     // check that we use R and that we don't fallback to the default app icon.
-    assertEquals(R.drawable.gcm_icon, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
 
   /** Test that a non adaptive icon with gradient is ok on Android O. */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
   public void testNonAdaptiveIconWithGradient_AndroidO() {
-    setApplicationIcon(context.getPackageName(), R.drawable.icon_with_gradient);
+    setApplicationIcon(
+        context.getPackageName(), com.google.firebase.messaging.test.R.drawable.icon_with_gradient);
 
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -331,7 +336,7 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     // check that we use R and that we don't fallback to the default app icon.
-    assertEquals(R.drawable.icon_with_gradient, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.icon_with_gradient, n.icon);
   }
 
   /** Test that a notification with title and icon is displayed. */
@@ -347,7 +352,7 @@ public class DisplayNotificationRoboTest {
     Notification n = getSingleNotification();
     assertEquals("a title", shadowOf(n).getContentTitle().toString());
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
-    assertEquals(R.drawable.gcm_icon, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
 
   /** Test that a notification with title and icon, using the old prefix is displayed. */
@@ -363,7 +368,7 @@ public class DisplayNotificationRoboTest {
     Notification n = getSingleNotification();
     assertEquals("Notification title", shadowOf(n).getContentTitle().toString());
     // ShadowNotification.getSmallIcon() doesn't work so access the real notification
-    assertEquals(R.drawable.gcm_icon, n.icon);
+    assertEquals(com.google.firebase.messaging.test.R.drawable.gcm_icon, n.icon);
   }
 
   /** Test that a notification with body text is displayed. */
@@ -500,7 +505,7 @@ public class DisplayNotificationRoboTest {
   @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
-    metadata.putInt(METADATA_DEFAULT_COLOR, R.color.google_blue);
+    metadata.putInt(METADATA_DEFAULT_COLOR, com.google.firebase.messaging.test.R.color.fcm_test_color);
     PackageInfo packageInfo =
         shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;
@@ -512,7 +517,9 @@ public class DisplayNotificationRoboTest {
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertEquals(context.getResources().getColor(R.color.google_blue), n.color);
+    assertEquals(
+        context.getResources().getColor(com.google.firebase.messaging.test.R.color.fcm_test_color),
+        n.color);
   }
 
   /** Test that a color is ignored pre-Lollipop where it wasn't supported. */
@@ -620,7 +627,10 @@ public class DisplayNotificationRoboTest {
 
     assertEquals(1, shadowOf(notificationManager).size());
     Notification n = shadowOf(notificationManager).getNotification("test_tag", 0);
-    assertEquals("Icon reosurce wasn't updated", R.drawable.gcm_icon2, n.icon);
+    assertEquals(
+        "Icon reosurce wasn't updated",
+        com.google.firebase.messaging.test.R.drawable.gcm_icon2,
+        n.icon);
   }
 
   /**
@@ -647,8 +657,14 @@ public class DisplayNotificationRoboTest {
     Notification first = shadowOf(notificationManager).getNotification("test_tag1", 0);
     Notification second = shadowOf(notificationManager).getNotification("test_tag2", 0);
 
-    assertEquals("First icon resource not correct", R.drawable.gcm_icon, first.icon);
-    assertEquals("Second icon resource not correct", R.drawable.gcm_icon2, second.icon);
+    assertEquals(
+        "First icon resource not correct",
+        com.google.firebase.messaging.test.R.drawable.gcm_icon,
+        first.icon);
+    assertEquals(
+        "Second icon resource not correct",
+        com.google.firebase.messaging.test.R.drawable.gcm_icon2,
+        second.icon);
   }
 
   /**
@@ -678,7 +694,10 @@ public class DisplayNotificationRoboTest {
     Notification n2 = shadowOf(notificationManager).getAllNotifications().get(1);
 
     Set<Integer> expectedIcons =
-        new HashSet<>(Arrays.asList(R.drawable.gcm_icon, R.drawable.gcm_icon2));
+        new HashSet<>(
+            Arrays.asList(
+                com.google.firebase.messaging.test.R.drawable.gcm_icon,
+                com.google.firebase.messaging.test.R.drawable.gcm_icon2));
     assertTrue(expectedIcons.remove(n1.icon));
     assertTrue(expectedIcons.remove(n2.icon));
     assertTrue(expectedIcons.isEmpty());
@@ -689,13 +708,15 @@ public class DisplayNotificationRoboTest {
   public void testTitleResource() {
     Bundle data = new Bundle();
     data.remove(KEY_TITLE);
-    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "gcm_no_args");
+    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "fcm_no_args");
     assertTrue(
         new DisplayNotification(context, new NotificationParams(data), executor)
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertEquals(stringResource(R.string.gcm_no_args), shadowOf(n).getContentTitle().toString());
+    assertEquals(
+        stringResource(com.google.firebase.messaging.test.R.string.fcm_no_args),
+        shadowOf(n).getContentTitle().toString());
   }
 
   /** Test a valid notification using a title resource with args is displayed. */
@@ -703,7 +724,7 @@ public class DisplayNotificationRoboTest {
   public void testTitleResourceWithArgs() {
     Bundle data = new Bundle();
     data.remove(KEY_TITLE);
-    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "gcm_2_args");
+    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "fcm_2_args");
     data.putString(KEY_TITLE + TEXT_ARGS_SUFFIX, jsonArray("arg1", "arg2"));
     assertTrue(
         new DisplayNotification(context, new NotificationParams(data), executor)
@@ -711,7 +732,7 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     assertEquals(
-        stringResource(R.string.gcm_2_args, "arg1", "arg2"),
+        stringResource(com.google.firebase.messaging.test.R.string.fcm_2_args, "arg1", "arg2"),
         shadowOf(n).getContentTitle().toString());
   }
 
@@ -719,20 +740,22 @@ public class DisplayNotificationRoboTest {
   @Test
   public void testBodyResource() {
     Bundle data = new Bundle();
-    data.putString(KEY_BODY + TEXT_RESOURCE_SUFFIX, "gcm_no_args");
+    data.putString(KEY_BODY + TEXT_RESOURCE_SUFFIX, "fcm_no_args");
     assertTrue(
         new DisplayNotification(context, new NotificationParams(data), executor)
             .handleNotification());
 
     Notification n = getSingleNotification();
-    assertEquals(stringResource(R.string.gcm_no_args), shadowOf(n).getContentText().toString());
+    assertEquals(
+        stringResource(com.google.firebase.messaging.test.R.string.fcm_no_args),
+        shadowOf(n).getContentText().toString());
   }
 
   /** Test a valid notification using a body resource with args is displayed. */
   @Test
   public void testBodyResourceWithArgs() {
     Bundle data = new Bundle();
-    data.putString(KEY_BODY + TEXT_RESOURCE_SUFFIX, "gcm_2_args");
+    data.putString(KEY_BODY + TEXT_RESOURCE_SUFFIX, "fcm_2_args");
     data.putString(KEY_BODY + TEXT_ARGS_SUFFIX, jsonArray("arg1", "arg2"));
     assertTrue(
         new DisplayNotification(context, new NotificationParams(data), executor)
@@ -740,7 +763,7 @@ public class DisplayNotificationRoboTest {
 
     Notification n = getSingleNotification();
     assertEquals(
-        stringResource(R.string.gcm_2_args, "arg1", "arg2"),
+        stringResource(com.google.firebase.messaging.test.R.string.fcm_2_args, "arg1", "arg2"),
         shadowOf(n).getContentText().toString());
   }
 
@@ -770,7 +793,7 @@ public class DisplayNotificationRoboTest {
   public void testWrongTitleArgs() {
     Bundle data = new Bundle();
     data.remove(KEY_TITLE);
-    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "gcm_2_args");
+    data.putString(KEY_TITLE + TEXT_RESOURCE_SUFFIX, "fcm_2_args");
     data.putString(KEY_TITLE + TEXT_ARGS_SUFFIX, jsonArray("arg"));
     assertTrue(
         new DisplayNotification(context, new NotificationParams(data), executor)
@@ -797,7 +820,8 @@ public class DisplayNotificationRoboTest {
   public void testImage() {
     Bitmap bitmap =
         TestImageServer.getBitmapFromResource(
-            ApplicationProvider.getApplicationContext(), R.drawable.gcm_icon);
+            ApplicationProvider.getApplicationContext(),
+            com.google.firebase.messaging.test.R.drawable.gcm_icon);
     String url = testImageServer.serveBitmap("/gcm_icon", bitmap);
 
     Bundle data = Bundles.of(KEY_IMAGE, url);
@@ -817,7 +841,8 @@ public class DisplayNotificationRoboTest {
     // notification without the image.
     Bitmap bitmap =
         TestImageServer.getBitmapFromResource(
-            ApplicationProvider.getApplicationContext(), R.drawable.gcm_icon);
+            ApplicationProvider.getApplicationContext(),
+            com.google.firebase.messaging.test.R.drawable.gcm_icon);
     String url = testImageServer.serveBitmapAfterDelay("/timeout", /* delaySeconds= */ 10, bitmap);
 
     Bundle data = Bundles.of(KEY_IMAGE, url);

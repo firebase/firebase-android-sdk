@@ -114,7 +114,6 @@ public class SharedPreferencesQueueRoboTest {
   }
 
   @Test
-  @SuppressWarnings("GuardedBy")
   public void testSerialize() {
     queue.add(TEST_TOPIC + "1");
     queue.add(TEST_TOPIC + "3");
@@ -146,7 +145,6 @@ public class SharedPreferencesQueueRoboTest {
   }
 
   @Test
-  @SuppressWarnings("GuardedBy")
   public void testMultiTransactions() {
     queue.beginTransaction();
     queue.add(TEST_TOPIC);
