@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -140,6 +141,32 @@ public final class PatchMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
+  }
+
+  @Override
+  public Mutation squash(
+      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
+    if (!getPrecondition().isValidFor(document)) {
+      return baseMutation;
+    }
+
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+
+    ObjectValue mergedPatch =
+        baseMutation.getValue() != null ? baseMutation.getValue() : new ObjectValue();
+    mergedPatch.setAll(getPatch());
+    mergedPatch.setAll(transformResults);
+
+    if (baseMutation.getMask() == null) {
+      // TODO: Use strictest preconditions or assert we only use exists
+      return new SetMutation(getKey(), mergedPatch, getPrecondition());
+    } else {
+      HashSet<FieldPath> mergedMaskSet = new HashSet<>(baseMutation.getMask().getMask());
+      mergedMaskSet.addAll(mask.getMask());
+      FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
+      // TODO: Use strictest preconditions or assert we only use exists
+      return new PatchMutation(getKey(), mergedPatch, mergedMask, getPrecondition());
+    }
   }
 
   private Map<FieldPath, Value> getPatch() {

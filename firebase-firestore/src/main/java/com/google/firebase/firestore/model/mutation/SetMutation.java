@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -104,5 +105,20 @@ public final class SetMutation extends Mutation {
   /** Returns the object value to use when setting the document. */
   public ObjectValue getValue() {
     return value;
+  }
+
+  @Override
+  public Mutation squash(
+      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(document)) {
+      return this;
+    } else {
+      return baseMutation;
+    }
+  }
+
+  @Nullable
+  protected FieldMask getMask() {
+    return null;
   }
 }

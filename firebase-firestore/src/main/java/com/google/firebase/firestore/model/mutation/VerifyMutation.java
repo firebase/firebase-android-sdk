@@ -14,9 +14,11 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 
 /**
@@ -62,5 +64,21 @@ public final class VerifyMutation extends Mutation {
 
   public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
+  }
+
+  @Override
+  public Mutation squash(
+      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
+    throw Assert.fail("VerifyMutation should only be used in Transactions.");
+  }
+
+  @Nullable
+  protected ObjectValue getValue() {
+    return null;
+  }
+
+  @Nullable
+  protected FieldMask getMask() {
+    return null;
   }
 }

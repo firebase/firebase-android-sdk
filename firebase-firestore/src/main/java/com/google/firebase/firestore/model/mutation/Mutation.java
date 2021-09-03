@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -114,6 +115,9 @@ public abstract class Mutation {
    *     a part of.
    */
   public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
+
+  public abstract Mutation squash(
+      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -214,4 +218,10 @@ public abstract class Mutation {
 
     return baseObject;
   }
+
+  @Nullable
+  protected abstract ObjectValue getValue();
+
+  @Nullable
+  protected abstract FieldMask getMask();
 }

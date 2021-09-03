@@ -16,9 +16,11 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 
 /** Represents a Delete operation */
@@ -75,4 +77,25 @@ public final class DeleteMutation extends Mutation {
       document.convertToNoDocument(SnapshotVersion.NONE);
     }
   }
+
+  @Override
+  public Mutation squash(
+      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(document)) {
+      return this;
+    } else {
+      return baseMutation;
+    }
+  }
+
+  @Nullable
+  protected ObjectValue getValue() {
+    return null;
+  }
+
+  @Nullable
+  protected FieldMask getMask() {
+    return null;
+  }
+  ;
 }
