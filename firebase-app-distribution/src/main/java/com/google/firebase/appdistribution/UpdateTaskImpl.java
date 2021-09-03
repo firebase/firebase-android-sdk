@@ -173,17 +173,20 @@ class UpdateTaskImpl extends UpdateTask {
   }
 
   @NonNull
+  @Override
   public Task<Void> addOnCanceledListener(@NonNull OnCanceledListener onCanceledListener) {
     return this.task.addOnCanceledListener(onCanceledListener);
   }
 
   @NonNull
+  @Override
   public Task<Void> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener onCanceledListener) {
     return this.task.addOnCanceledListener(executor, onCanceledListener);
   }
 
   @NonNull
+  @Override
   public Task<Void> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
     return this.task.addOnCanceledListener(activity, onCanceledListener);

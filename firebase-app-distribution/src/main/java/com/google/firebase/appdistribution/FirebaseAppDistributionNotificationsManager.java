@@ -66,7 +66,6 @@ class FirebaseAppDistributionNotificationsManager {
     return status.equals(UpdateStatus.DOWNLOAD_FAILED)
         || status.equals(UpdateStatus.INSTALL_FAILED)
         || status.equals(UpdateStatus.INSTALL_CANCELED)
-        || status.equals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
         || status.equals(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
         || status.equals(UpdateStatus.UPDATE_CANCELED);
   }

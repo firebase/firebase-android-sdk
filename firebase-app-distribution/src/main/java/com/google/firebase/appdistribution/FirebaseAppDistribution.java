@@ -128,20 +128,20 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         .onSuccessTask(
             release -> {
               if (release == null) {
-                cachedUpdateIfNewReleaseUpdateProgress(
+                postProgressToCachedUpdateIfNewReleaseTask(
                     UpdateProgress.builder()
                         .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
                         .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
                         .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
                         .build());
-                cachedUpdateIfNewReleaseTaskSetResult();
+                setCachedUpdateIfNewReleaseResult();
                 return Tasks.forResult(null);
               }
               return showUpdateAlertDialog(release);
             })
         .addOnFailureListener(
             e -> {
-              cachedUpdateIfNewReleaseUpdateProgress(
+              postProgressToCachedUpdateIfNewReleaseTask(
                   UpdateProgress.builder()
                       .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
                       .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
@@ -322,12 +322,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     alertDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
-        (dialogInterface, i) ->
-        // show download progress in notification manager
-        {
+        (dialogInterface, i) -> {
           synchronized (updateTaskLock) {
+            // show download progress in notification manager
             updateApp(true)
-                .addOnProgressListener(progress -> cachedUpdateIfNewReleaseUpdateProgress(progress))
+                .addOnProgressListener(
+                    progress -> postProgressToCachedUpdateIfNewReleaseTask(progress))
                 .addOnSuccessListener(unused -> cachedUpdateIfNewReleaseTask.setResult())
                 .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
           }
@@ -339,7 +339,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         (dialogInterface, i) -> {
           dialogInterface.dismiss();
           synchronized (updateTaskLock) {
-            cachedUpdateIfNewReleaseUpdateProgress(
+            postProgressToCachedUpdateIfNewReleaseTask(
                 UpdateProgress.builder()
                     .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
                     .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
@@ -379,13 +379,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     }
   }
 
-  private void cachedUpdateIfNewReleaseUpdateProgress(UpdateProgress progress) {
+  private void postProgressToCachedUpdateIfNewReleaseTask(UpdateProgress progress) {
     synchronized (updateTaskLock) {
       cachedUpdateIfNewReleaseTask.updateProgress(progress);
     }
   }
 
-  private void cachedUpdateIfNewReleaseTaskSetResult() {
+  private void setCachedUpdateIfNewReleaseResult() {
     synchronized (updateTaskLock) {
       cachedUpdateIfNewReleaseTask.setResult();
     }

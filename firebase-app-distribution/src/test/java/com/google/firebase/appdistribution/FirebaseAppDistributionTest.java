@@ -33,7 +33,6 @@ import android.app.Dialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
-import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import androidx.test.core.content.pm.PackageInfoBuilder;
@@ -239,7 +238,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() throws Exception {
-    shadowOf(Looper.getMainLooper()).idle();
     // mockSignInStorage returns false then true to simulate logging in during first signIn check in
     // updateIfNewReleaseAvailable
     when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
@@ -271,7 +269,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() throws Exception {
-    shadowOf(Looper.getMainLooper()).idle();
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease =
         TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build();
@@ -385,7 +382,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_callsSignInTester() {
-    shadowOf(Looper.getMainLooper()).idle();
     firebaseAppDistribution.onActivityResumed(activity);
     when(mockCheckForUpdateClient.checkForUpdate())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
@@ -417,10 +413,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_recieveProgressUpdateFromUpdateApp() throws Exception {
-    shadowOf(Looper.getMainLooper()).idle();
-    // mockSignInStorage returns false then true to simulate logging in during first signIn check in
-    // updateIfNewReleaseAvailable
+  public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() throws Exception {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForUpdateClient.checkForUpdate()).thenReturn(Tasks.forResult(latestRelease));
