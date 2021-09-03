@@ -45,6 +45,16 @@ public class ServerTimestampOperation implements TransformOperation {
     return null; // Server timestamps are idempotent and don't require a base value.
   }
 
+  @Override
+  public TransformOperation mergeInto(TransformOperation previousOperation) {
+    return this;
+  }
+
+  @Override
+  public boolean invalidates(TransformOperation previousOperation) {
+    return previousOperation != null && !(previousOperation instanceof ServerTimestampOperation);
+  }
+
   // NOTE: Since we've guaranteed a singleton instance, we can rely on Object's default
   // implementation of equals() / hashCode().
 }

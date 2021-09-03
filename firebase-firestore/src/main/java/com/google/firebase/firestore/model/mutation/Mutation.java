@@ -202,7 +202,10 @@ public abstract class Mutation {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
-      Value previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
+      Value previousValue =
+          fieldTransform.isApplyOnNull()
+              ? null
+              : mutableDocument.getField(fieldTransform.getFieldPath());
       transformResults.put(
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }

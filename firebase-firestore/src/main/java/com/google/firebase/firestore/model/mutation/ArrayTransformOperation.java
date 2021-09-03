@@ -59,6 +59,28 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   @Override
+  public boolean invalidates(TransformOperation previousOperation) {
+    return previousOperation != null && !(previousOperation instanceof ArrayTransformOperation);
+  }
+
+  @Override
+  public TransformOperation mergeInto(TransformOperation previousOperation) {
+    if (previousOperation == null || !(previousOperation instanceof ArrayTransformOperation)) {
+      return this;
+    }
+
+    ArrayTransformOperationComposite composite;
+    if (previousOperation instanceof ArrayTransformOperationComposite) {
+      composite = (ArrayTransformOperationComposite) previousOperation;
+    } else {
+      composite = new ArrayTransformOperationComposite();
+      composite.addTransform((ArrayTransformOperation) previousOperation);
+    }
+    composite.addTransform(this);
+    return composite;
+  }
+
+  @Override
   @SuppressWarnings("EqualsGetClass") // subtype-sensitive equality is intended.
   public boolean equals(Object o) {
     if (this == o) {
@@ -85,7 +107,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
     StringBuilder sb = new StringBuilder();
     sb.append("[");
     for (Value element : elements) {
-      sb.append(element + "; ");
+      sb.append(Values.canonicalId(element) + "; ");
     }
     sb.append("]");
     return sb.toString();
@@ -158,17 +180,17 @@ public abstract class ArrayTransformOperation implements TransformOperation {
   }
 
   /**
-   * An array transform operation that delegate its work to an internal list of other array
+   * An array transform operation that delegates its work to an internal list of other array
    * transform operations.
    *
-   * <p>When a list of array transform operations being applied, the order of application needs to
-   * be preserved, and they are not be squashed into one simple mutation. This class exists such
-   * that the squashed array transform operation still has the same order.
+   * <p>When a list of array transform operations being applied, the order needs to be preserved,
+   * and they cannot be squashed into one simple mutation. This class exists such that the squashed
+   * array transform operation still has the same order.
    */
-  static class ArrayTransformList extends ArrayTransformOperation {
+  static class ArrayTransformOperationComposite extends ArrayTransformOperation {
     private final List<ArrayTransformOperation> operations = Lists.newArrayList();
 
-    ArrayTransformList() {
+    ArrayTransformOperationComposite() {
       super(new ArrayList<>());
     }
 
@@ -181,7 +203,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
       StringBuilder sb = new StringBuilder();
       sb.append("Internal operations: ");
       for (ArrayTransformOperation operation : operations) {
-        sb.append("{" + operation + " }");
+        sb.append("{" + operation + " }; ");
       }
       return sb.toString();
     }

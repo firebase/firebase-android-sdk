@@ -14,15 +14,12 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,7 +60,7 @@ public class MutationSquasher {
       currentSquashed = mutation;
       exists = false;
     } else if (currentSquashed == null) {
-      squashPatchMutationWithNull((PatchMutation) mutation);
+      squashPatchMutationWithNoMutation((PatchMutation) mutation);
     } else if (currentSquashed instanceof DeleteMutation) {
       squashPatchMutationWithDelete((DeleteMutation) currentSquashed, (PatchMutation) mutation);
     } else if (currentSquashed instanceof SetMutation) {
@@ -74,7 +71,7 @@ public class MutationSquasher {
     }
   }
 
-  private void squashPatchMutationWithNull(PatchMutation mutation) {
+  private void squashPatchMutationWithNoMutation(PatchMutation mutation) {
     if (exists) {
       currentSquashed = mutation;
     } else {
@@ -95,19 +92,10 @@ public class MutationSquasher {
       return;
     }
 
-    PatchMutation patchWithNoTransform =
-        new PatchMutation(
-            mutation.getKey(), mutation.getValue(), mutation.getMask(), mutation.getPrecondition());
-    patchWithNoTransform.applyToLocalView(doc, Timestamp.now());
+    mutation.applyToLocalView(doc, Timestamp.now());
 
     // A Patch on a Delete turns into Set.
-    currentSquashed =
-        new SetMutation(
-            doc.getKey(),
-            doc.getData(),
-            Precondition.NONE,
-            mergeTransforms(
-                previouslySquashed.getFieldTransforms(), mutation.getFieldTransforms()));
+    currentSquashed = new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
     exists = true;
   }
 
@@ -123,27 +111,27 @@ public class MutationSquasher {
             mutation.getKey(), mutation.getValue(), mutation.getMask(), mutation.getPrecondition());
     patchWithNoTransform.applyToLocalView(doc, Timestamp.now());
 
+    // Fields in the mask from `mutation` is taken out of the transform list of `previouslySquashed`
+    // as they will get overwritten.
+    List<FieldTransform> previousTransforms = new ArrayList<>();
+    Set newMutationMask = mutation.getMask().getMask();
+    for (FieldTransform transform : previouslySquashed.getFieldTransforms()) {
+      if (!newMutationMask.contains(transform.getFieldPath())) {
+        previousTransforms.add(transform);
+      }
+    }
+
     // A Patch on a Set is still Set.
     currentSquashed =
         new SetMutation(
             doc.getKey(),
             doc.getData(),
             Precondition.NONE,
-            mergeTransforms(
-                previouslySquashed.getFieldTransforms(), mutation.getFieldTransforms()));
+            mergeTransforms(previousTransforms, mutation.getFieldTransforms()));
   }
 
   private void squashPatchMutationWithPatch(
       PatchMutation previouslySquashed, PatchMutation mutation) {
-    // Fields with transforms from `mutation` is taken out of the mask of `previouslySquashed` as
-    // they will get overwritten.
-    Set previousMask = previouslySquashed.getMask().getMask();
-    for (FieldTransform transform : mutation.getFieldTransforms()) {
-      if (previousMask.contains(transform.getFieldPath())) {
-        previousMask.remove(transform.getFieldPath());
-      }
-    }
-
     // Fields in the mask from `mutation` is taken out of the transform list of `previouslySquashed`
     // as they will get overwritten.
     List<FieldTransform> previousTransforms = new ArrayList<>();
@@ -158,7 +146,7 @@ public class MutationSquasher {
         new PatchMutation(
             mutation.getKey(),
             mergeObjectValue(previouslySquashed.getValue(), mutation.getValue()),
-            mergeMask(FieldMask.fromSet(previousMask), mutation.getMask()),
+            mergeMask(previouslySquashed.getMask(), mutation.getMask()),
             previouslySquashed.getPrecondition(),
             mergeTransforms(previousTransforms, mutation.getFieldTransforms()));
   }
@@ -173,66 +161,10 @@ public class MutationSquasher {
     for (FieldTransform newTransform : newTransforms) {
       transformMap.put(
           newTransform.getFieldPath(),
-          mergeTransform(transformMap.get(newTransform.getFieldPath()), newTransform));
+          newTransform.mergeInto(transformMap.get(newTransform.getFieldPath())));
     }
 
     return new ArrayList(transformMap.values());
-  }
-
-  /** Merges a new transform into a previous transform on the same field. */
-  private static FieldTransform mergeTransform(
-      FieldTransform previous, FieldTransform newTransform) {
-    if (previous == null) {
-      return newTransform;
-    }
-
-    if (newTransform.getOperation() instanceof ServerTimestampOperation) {
-      return newTransform;
-    }
-
-    if (newTransform.getOperation() instanceof ArrayTransformOperation) {
-      // Simply overwrite if `previous` is not array transform.
-      if (!(previous.getOperation() instanceof ArrayTransformOperation)) {
-        return newTransform;
-      }
-
-      // array transforms need to be kept in order, the result is always a `ArrayTransformList`.
-      ArrayTransformOperation.ArrayTransformList result;
-      if (previous.getOperation() instanceof ArrayTransformOperation.ArrayTransformList) {
-        result = (ArrayTransformOperation.ArrayTransformList) previous.getOperation();
-      } else {
-        result = new ArrayTransformOperation.ArrayTransformList();
-        result.addTransform((ArrayTransformOperation) previous.getOperation());
-      }
-
-      result.addTransform((ArrayTransformOperation) newTransform.getOperation());
-      return new FieldTransform(previous.getFieldPath(), result);
-    }
-
-    if (newTransform.getOperation() instanceof NumericIncrementTransformOperation) {
-      // Simply overwrite if `previous` is not array transform.
-      if (!(previous.getOperation() instanceof NumericIncrementTransformOperation)) {
-        return newTransform;
-      }
-
-      // Squashed numeric increment is a new increment with operands from two transforms added
-      // together.
-      NumericIncrementTransformOperation existingOperation =
-          (NumericIncrementTransformOperation) previous.getOperation();
-      NumericIncrementTransformOperation newOperation =
-          (NumericIncrementTransformOperation) newTransform.getOperation();
-      Value newValue =
-          Value.newBuilder()
-              .setIntegerValue(
-                  existingOperation.getOperand().getIntegerValue()
-                      + newOperation.getOperand().getIntegerValue())
-              .build();
-      return new FieldTransform(
-          previous.getFieldPath(), new NumericIncrementTransformOperation(newValue));
-    }
-
-    hardAssert(false, "Cannot reach");
-    return null;
   }
 
   private static ObjectValue mergeObjectValue(ObjectValue previous, ObjectValue newValue) {

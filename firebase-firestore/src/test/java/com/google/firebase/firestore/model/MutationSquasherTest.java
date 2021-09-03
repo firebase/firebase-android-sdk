@@ -209,6 +209,57 @@ public class MutationSquasherTest {
     assertEquals(doc, original);
   }
 
+  @Test
+  public void testSquashSetThenIncrement() {
+    MutableDocument doc = doc("collection/key", 0, map("foo", 1));
+    MutableDocument original = doc.clone();
+
+    Timestamp now = Timestamp.now();
+    Mutation set = setMutation("collection/key", map("foo", 2));
+    Mutation update = patchMutation("collection/key", map("foo", FieldValue.increment(2)));
+    set.applyToLocalView(doc, now);
+    update.applyToLocalView(doc, now);
+
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(set);
+    squasher.squash(update);
+    squasher.getMutation().applyToLocalView(original, now);
+    assertEquals(doc, original);
+  }
+
+  // TODO(wuandy): This test fails because deleting nested fields like bar.baz leaves an empty bar
+  // without
+  // squashing. With squashing bar.baz or bar is completely gone. May not be an actual issue, but we
+  // need
+  // to resolve before merge.
+  @Test
+  public void testSquashFieldDeletionOfNestedField() {
+    MutableDocument doc = doc("collection/key", 0, map("bar.baz", 1));
+    MutableDocument original = doc.clone();
+
+    Timestamp now = Timestamp.now();
+    Mutation patch1 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation patch2 =
+        patchMutation(
+            "collection/key",
+            map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp()));
+    Mutation patch3 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
+    patch1.applyToLocalView(doc, now);
+    patch2.applyToLocalView(doc, now);
+    patch3.applyToLocalView(doc, now);
+
+    MutationSquasher squasher = new MutationSquasher(doc.getKey(), true);
+    squasher.squash(patch1);
+    squasher.squash(patch2);
+    squasher.squash(patch3);
+    squasher.getMutation().applyToLocalView(original, now);
+    assertEquals(doc, original);
+  }
+
   // Below tests run on automatically generated mutation list, they are deterministic, but hard to
   // debug when they fail. They will print the failure case, and the best way to debug is recreate
   // the case manually in a separate test.
@@ -240,7 +291,7 @@ public class MutationSquasherTest {
   public void testSquashMutationByCombinationsAndPermutations() {
     List<MutableDocument> docs =
         Lists.newArrayList(
-            doc("collection/key", 0, map("foo", "foo-value", "bar.baz", 1)),
+            doc("collection/key", 0, map("foo", "foo-value", "bar", 1)),
             deletedDoc("collection/key", 0),
             unknownDoc("collection/key", 0));
     List<Mutation> mutations =
@@ -249,13 +300,12 @@ public class MutationSquasherTest {
             setMutation("collection/key", map("bar.rab", "bar.rab-value")),
             new DeleteMutation(key("collection/key"), Precondition.NONE),
             patchMutation(
-                "collection/key",
-                map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1))),
+                "collection/key", map("foo", "foo-patched-value", "bar", FieldValue.increment(1))),
             patchMutation(
-                "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete())),
+                "collection/key", map("foo", "foo-patched-value", "bar", FieldValue.delete())),
             patchMutation(
                 "collection/key",
-                map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp())),
+                map("foo", "foo-patched-value", "bar", FieldValue.serverTimestamp())),
             mergeMutation(
                 "collection/key",
                 map("arrays", FieldValue.arrayUnion(1, 2, 3)),
@@ -299,6 +349,44 @@ public class MutationSquasherTest {
             mergeMutation(
                 "collection/key",
                 map("foo", "yyy", "arrays", FieldValue.arrayUnion(1, 2, 3, 999)),
+                Arrays.asList(field("foo"))));
+
+    int caseNumber = 0;
+    for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
+      Set<Set<Mutation>> combinations = Sets.combinations(Sets.newHashSet(mutations), subsetSize);
+      for (Set<Mutation> combination : combinations) {
+        caseNumber += runPermutationTests(docs, Lists.newArrayList(combination));
+      }
+    }
+
+    // There are (0! + 6*1! + 15*2! + 20*3! + 15*4! + 6*5! + 6!) * 3 = 5871 cases.
+    assertEquals(5871, caseNumber);
+  }
+
+  @Test
+  public void testSquashMutationByCombinationsAndPermutations_Increments() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 0, map("foo", "foo-value", "bar", 1)),
+            deletedDoc("collection/key", 0),
+            unknownDoc("collection/key", 0));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            mergeMutation(
+                "collection/key",
+                map("foo", "foo-merge", "bar", FieldValue.increment(2)),
+                Arrays.asList(field("foo"))),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-1", "bar", FieldValue.increment(-1.4))),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-2", "bar", FieldValue.increment(3.3))),
+            mergeMutation(
+                "collection/key",
+                map("foo", "yyy", "bar", FieldValue.increment(-41)),
                 Arrays.asList(field("foo"))));
 
     int caseNumber = 0;

@@ -135,13 +135,13 @@ public final class PatchMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue value = document.getData();
     value.setAll(getPatch());
-    value.setAll(transformResults);
     document
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    document.getData().setAll(transformResults);
   }
 
   private Map<FieldPath, Value> getPatch() {

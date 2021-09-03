@@ -85,6 +85,33 @@ public class NumericIncrementTransformOperation implements TransformOperation {
         : Value.newBuilder().setIntegerValue(0).build();
   }
 
+  @Override
+  public TransformOperation mergeInto(TransformOperation previous) {
+    // Simply overwrite if `previous` is not array transform.
+    if (previous == null || !(previous instanceof NumericIncrementTransformOperation)) {
+      return this;
+    }
+
+    // Squashed numeric increment is a new increment with operands from two transforms added
+    // together.
+    NumericIncrementTransformOperation previousOperation =
+        (NumericIncrementTransformOperation) previous;
+    boolean isDoubleResult = isDouble(previousOperation.operand) || isDouble(operand);
+    Value.Builder newValue = Value.newBuilder();
+    if (isDoubleResult) {
+      newValue.setDoubleValue(previousOperation.operandAsDouble() + this.operandAsDouble());
+    } else {
+      newValue.setIntegerValue(previousOperation.operandAsLong() + this.operandAsLong());
+    }
+    return new NumericIncrementTransformOperation(newValue.build());
+  }
+
+  @Override
+  public boolean invalidates(TransformOperation previousOperation) {
+    return previousOperation != null
+        && !(previousOperation instanceof NumericIncrementTransformOperation);
+  }
+
   /**
    * Implementation of Java 8's `addExact()` that resolves positive and negative numeric overflows
    * to Long.MAX_VALUE or Long.MIN_VALUE respectively (instead of throwing an ArithmeticException).

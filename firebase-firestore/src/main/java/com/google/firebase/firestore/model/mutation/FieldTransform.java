@@ -21,6 +21,7 @@ public final class FieldTransform {
 
   private final FieldPath fieldPath;
   private final TransformOperation operation;
+  private boolean applyOnNull = false;
 
   public FieldTransform(FieldPath fieldPath, TransformOperation operation) {
     this.fieldPath = fieldPath;
@@ -33,6 +34,16 @@ public final class FieldTransform {
 
   public TransformOperation getOperation() {
     return operation;
+  }
+
+  public FieldTransform mergeInto(FieldTransform previousTransform) {
+    if (previousTransform == null) {
+      return this;
+    }
+    FieldTransform result =
+        new FieldTransform(fieldPath, operation.mergeInto(previousTransform.getOperation()));
+    result.applyOnNull = operation.invalidates(previousTransform.getOperation());
+    return result;
   }
 
   @Override
@@ -57,5 +68,9 @@ public final class FieldTransform {
     int result = fieldPath.hashCode();
     result = 31 * result + operation.hashCode();
     return result;
+  }
+
+  public boolean isApplyOnNull() {
+    return applyOnNull;
   }
 }

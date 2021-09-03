@@ -46,4 +46,16 @@ public interface TransformOperation {
    */
   @Nullable
   Value computeBaseValue(@Nullable Value previousValue);
+
+  /**
+   * Base current transform on top of {@code previousOperation}, and return a new operation that
+   * would have the same effect as applying two operations in order.
+   */
+  TransformOperation mergeInto(TransformOperation previousOperation);
+
+  /**
+   * Would current operation invalidate a previous operation? This is required because the result of
+   * `mergeInto` call would need to be applied on null value, if true.
+   */
+  boolean invalidates(TransformOperation operation);
 }

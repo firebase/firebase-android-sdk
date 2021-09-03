@@ -67,7 +67,13 @@ public final class SetMutation extends Mutation {
 
   @Override
   public String toString() {
-    return "SetMutation{" + keyAndPreconditionToString() + ", value=" + value + "}";
+    return "SetMutation{"
+        + keyAndPreconditionToString()
+        + ", value="
+        + value
+        + ", transforms={"
+        + transformsToString()
+        + "}";
   }
 
   @Override
@@ -93,12 +99,12 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
-    localValue.setAll(transformResults);
     document
         .convertToFoundDocument(getPostMutationVersion(document), localValue)
         .setHasLocalMutations();
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    document.getData().setAll(transformResults);
   }
 
   /** Returns the object value to use when setting the document. */
