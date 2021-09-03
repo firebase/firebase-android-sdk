@@ -328,7 +328,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
             updateApp(true)
                 .addOnProgressListener(
                     progress -> postProgressToCachedUpdateIfNewReleaseTask(progress))
-                .addOnSuccessListener(unused -> cachedUpdateIfNewReleaseTask.setResult())
+                .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
                 .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
           }
         });
