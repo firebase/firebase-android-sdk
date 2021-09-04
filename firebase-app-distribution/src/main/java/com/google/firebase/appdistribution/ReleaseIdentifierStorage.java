@@ -31,10 +31,10 @@ public class ReleaseIdentifierStorage {
             RELEASE_IDENTIFIER_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 
-  void setCodeHashMap(String internalCodeHash, AppDistributionReleaseInternal latestRelease) {
+  void setCodeHashMap(String internalCodeHash, AppDistributionReleaseInternal newRelease) {
     this.releaseIdentifierSharedPreferences
         .edit()
-        .putString(internalCodeHash, latestRelease.getCodeHash())
+        .putString(internalCodeHash, newRelease.getCodeHash())
         .apply();
   }
 

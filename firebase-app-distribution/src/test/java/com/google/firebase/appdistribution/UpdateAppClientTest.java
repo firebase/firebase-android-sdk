@@ -93,14 +93,14 @@ public class UpdateAppClientTest {
 
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() {
-    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
-    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
+    UpdateTask updateTask = updateAppClient.updateApp(newRelease, false);
     updateTask.addOnProgressListener(progressEvents::add);
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
-        .isEqualTo(Uri.parse(latestRelease.getDownloadUrl()));
+        .isEqualTo(Uri.parse(newRelease.getDownloadUrl()));
 
     assertEquals(1, progressEvents.size());
     assertEquals(
@@ -114,23 +114,22 @@ public class UpdateAppClientTest {
 
   @Test
   public void updateAppTask_onAppResume_setsUpdateCancelled() {
-    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateAppClient.updateApp(latestRelease, false);
+    UpdateTask updateTask = updateAppClient.updateApp(newRelease, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
     updateAppClient.tryCancelAabUpdateTask();
     FirebaseAppDistributionException exception =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-    assertEquals(
-        ReleaseUtils.convertToAppDistributionRelease(latestRelease), exception.getRelease());
+    assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
   }
 
   @Test
   public void updateApp_whenCalledMultipleTimes_returnsSameUpdateTask() {
-    AppDistributionReleaseInternal latestRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
-    UpdateTask updateTask1 = updateAppClient.updateApp(latestRelease, false);
-    UpdateTask updateTask2 = updateAppClient.updateApp(latestRelease, false);
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    UpdateTask updateTask1 = updateAppClient.updateApp(newRelease, false);
+    UpdateTask updateTask2 = updateAppClient.updateApp(newRelease, false);
     assertEquals(updateTask1, updateTask2);
   }
 
