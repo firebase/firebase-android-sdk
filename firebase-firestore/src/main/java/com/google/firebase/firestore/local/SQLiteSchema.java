@@ -367,7 +367,7 @@ class SQLiteSchema {
                   + "index_value BLOB, " // field value pairs
                   + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_id TEXT, "
-                  + "PRIMARY KEY (index_id, uid, document_id))");
+                  + "PRIMARY KEY (index_id, index_value, uid, document_id))");
         });
   }
 
