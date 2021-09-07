@@ -116,8 +116,8 @@ interface MutationQueue {
    *
    * <p>Batches are guaranteed to be sorted by batch ID.
    *
-   * <p>NOTE: A PatchMutation does not need to include all fields in the query filter criteria in
-   * order to be a match (but any fields it does contain do need to match).
+   * <p>NOTE: A Mutation of type PATCH does not need to include all fields in the query filter
+   * criteria in order to be a match (but any fields it does contain do need to match).
    */
   List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query);
 

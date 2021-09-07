@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Represents a Mutation of a document. Different subclasses of Mutation will perform different
- * kinds of changes to a base document. For example, a SetMutation replaces the value of a document
- * and a DeleteMutation deletes a document.
+ * Represents a Mutation of a document. Mutations with different {@code MutationType} will perform
+ * different kinds of changes to a base document. For example, a SET replaces the value of a
+ * document and a DELETE deletes a document.
  *
  * <p>In addition to the value of the document mutations also operate on the version. For local
  * mutations (mutations that haven't been committed yet), we preserve the existing version for Set
@@ -43,15 +43,15 @@ import java.util.Map;
  *
  * <table>
  * <th><td>MUTATION</td><td>APPLIED TO</td><td>RESULTS IN</td></th>
- * <tr><td>SetMutation</td><td>Document(v3)</td><td>Document(v3)</td></tr>
- * <tr><td>SetMutation</td><td>NoDocument(v3)</td><td>Document(v0)</td></tr>
- * <tr><td>SetMutation</td><td>null</td><td>Document(v0)</td></tr>
- * <tr><td>PatchMutation</td><td>Document(v3)</td><td>Document(v3)</td></tr>
- * <tr><td>PatchMutation</td><td>NoDocument(v3)</td><td>NoDocument(v3)</td></tr>
- * <tr><td>PatchMutation</td><td>null</td><td>null</td></tr>
- * <tr><td>DeleteMutation</td><td>Document(v3)</td><td>NoDocument(v0)</td></tr>
- * <tr><td>DeleteMutation</td><td>NoDocument(v3)</td><td>NoDocument(v0)</td></tr>
- * <tr><td>DeleteMutation</td><td>null</td><td>NoDocument(v0)</td></tr>
+ * <tr><td>SET</td><td>Document(v3)</td><td>Document(v3)</td></tr>
+ * <tr><td>SET</td><td>NoDocument(v3)</td><td>Document(v0)</td></tr>
+ * <tr><td>SET</td><td>null</td><td>Document(v0)</td></tr>
+ * <tr><td>PATCH</td><td>Document(v3)</td><td>Document(v3)</td></tr>
+ * <tr><td>PATCH</td><td>NoDocument(v3)</td><td>NoDocument(v3)</td></tr>
+ * <tr><td>PATCH</td><td>null</td><td>null</td></tr>
+ * <tr><td>DELETE</td><td>Document(v3)</td><td>NoDocument(v0)</td></tr>
+ * <tr><td>DELETE</td><td>NoDocument(v3)</td><td>NoDocument(v0)</td></tr>
+ * <tr><td>DELETE</td><td>null</td><td>NoDocument(v0)</td></tr>
  * </table>
  *
  * For acknowledged mutations, we use the updateTime of the WriteResponse as the resulting version
@@ -64,7 +64,7 @@ import java.util.Map;
  * <p>Field transforms are used only with Patch and Set Mutations. We use the `updateTransforms`
  * field to store transforms, rather than the `transforms` message.
  */
-public class Mutation {
+public final class Mutation {
   public enum MutationType {
     /**
      * A mutation that creates or replaces the document at the given key with the object value
@@ -102,8 +102,11 @@ public class Mutation {
 
   private final MutationType type;
 
+  /** Values to update the document, used by SET and PATCH. */
   private final ObjectValue value;
+  /** Mask to indicate which fields should be considered to patch, used by PATCH only. */
   private final FieldMask mask;
+  /** Field transforms to apply to the document, used by SET and PATCH. */
   private final List<FieldTransform> fieldTransforms;
 
   private Mutation(
@@ -296,7 +299,7 @@ public class Mutation {
       case DELETE:
         hardAssert(
             mutationResult.getTransformResults().isEmpty(),
-            "Transform results received by DeleteMutation.");
+            "Transform results received by Mutation.DELETE.");
 
         // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
         // accepted the mutation so the precondition must have held.

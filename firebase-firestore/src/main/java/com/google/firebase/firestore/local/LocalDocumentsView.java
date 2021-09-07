@@ -227,12 +227,13 @@ class LocalDocumentsView {
   }
 
   /**
-   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
-   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
-   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
-   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
-   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
-   * missing results for the query.
+   * It is possible that a {@code Mutation} of {@code Mutation.MutationType.PATCH}can make a
+   * document match a query, even if the version in the {@code RemoteDocumentCache} is not a match
+   * yet (waiting for server to ack). To handle this, we find all document keys affected by the
+   * {@code Mutation.MutationType.PATCH}s that are not in {@code existingDocs} yet, and back fill
+   * them via {@code remoteDocumentCache.getAll}, otherwise those {@code
+   * Mutation.MutationType.PATCH}s will be ignored because no base document can be found, and lead
+   * to missing results for the query.
    */
   private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
       List<MutationBatch> matchingBatches,

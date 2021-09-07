@@ -201,7 +201,7 @@ public class NumericTransformsTest {
     // reproduces the setup that was reported in
     // https://github.com/firebase/firebase-android-sdk/issues/491
     // In our original code, a NumericIncrementTransformOperation could cause us to decode the
-    // ServerTimestamp as part of a PatchMutation, which triggered an assertion failure.
+    // ServerTimestamp as part of a Mutation.PATCH, which triggered an assertion failure.
     Tasks.await(docRef.getFirestore().disableNetwork());
 
     docRef.set(map("val", FieldValue.serverTimestamp()));
