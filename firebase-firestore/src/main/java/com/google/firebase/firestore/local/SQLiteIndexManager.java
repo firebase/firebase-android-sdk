@@ -304,8 +304,9 @@ final class SQLiteIndexManager implements IndexManager {
   /**
    * Creates a separate encoder for each element of an array.
    *
-   * <p>The method appends each value is appended to all existing encoders (e.g. filter("a", "==", "a1").filter("b", "in",
-   * ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is returned.
+   * <p>The method appends each value is appended to all existing encoders (e.g. filter("a", "==",
+   * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
+   * returned.
    */
   private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
     List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
