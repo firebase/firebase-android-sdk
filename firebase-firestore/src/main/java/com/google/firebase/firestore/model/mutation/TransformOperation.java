@@ -54,8 +54,9 @@ public interface TransformOperation {
   TransformOperation mergeInto(TransformOperation previousOperation);
 
   /**
-   * Would current operation invalidate a previous operation? This is required because the result of
-   * `mergeInto` call would need to be applied on null value, if true.
+   * Would current operation invalidate a previous operation applied on the same field?
+   * This is required because the result of `mergeInto` call would need to be applied on null
+   * value, if true.
    */
   boolean invalidates(TransformOperation operation);
 }
