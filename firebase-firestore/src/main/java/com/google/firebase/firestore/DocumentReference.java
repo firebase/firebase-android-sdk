@@ -37,7 +37,7 @@ import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
@@ -244,7 +244,7 @@ public class DocumentReference {
   public Task<Void> delete() {
     return firestore
         .getClient()
-        .write(singletonList(new DeleteMutation(key, Precondition.NONE)))
+        .write(singletonList(Mutation.newDelete(key)))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 

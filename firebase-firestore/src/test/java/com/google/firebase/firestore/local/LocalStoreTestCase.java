@@ -67,7 +67,6 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
@@ -325,8 +324,8 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testMutationBatchKeys() {
-    SetMutation set1 = setMutation("foo/bar", map("foo", "bar"));
-    SetMutation set2 = setMutation("foo/baz", map("foo", "baz"));
+    Mutation set1 = setMutation("foo/bar", map("foo", "bar"));
+    Mutation set2 = setMutation("foo/baz", map("foo", "baz"));
     MutationBatch batch =
         new MutationBatch(1, Timestamp.now(), Collections.emptyList(), asList(set1, set2));
     Set<DocumentKey> keys = batch.getKeys();

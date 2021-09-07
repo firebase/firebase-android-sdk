@@ -56,14 +56,11 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -466,7 +463,7 @@ public class TestUtil {
     return aggregator.createRemoteEvent(doc.getVersion());
   }
 
-  public static SetMutation setMutation(String path, Map<String, Object> values) {
+  public static Mutation setMutation(String path, Map<String, Object> values) {
     UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
     ParsedSetData parsed = dataReader.parseSetData(values);
 
@@ -476,19 +473,19 @@ public class TestUtil {
     Collections.sort(
         fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
 
-    return new SetMutation(key(path), parsed.getData(), Precondition.NONE, fieldTransforms);
+    return Mutation.newSet(key(path), parsed.getData(), Precondition.NONE, fieldTransforms);
   }
 
-  public static PatchMutation patchMutation(String path, Map<String, Object> values) {
+  public static Mutation patchMutation(String path, Map<String, Object> values) {
     return patchMutationHelper(path, values, Precondition.exists(true), null);
   }
 
-  public static PatchMutation mergeMutation(
+  public static Mutation mergeMutation(
       String path, Map<String, Object> values, List<FieldPath> updateMask) {
     return patchMutationHelper(path, values, Precondition.NONE, updateMask);
   }
 
-  private static PatchMutation patchMutationHelper(
+  private static Mutation patchMutationHelper(
       String path,
       Map<String, Object> values,
       Precondition precondition,
@@ -518,7 +515,7 @@ public class TestUtil {
     Collections.sort(
         fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
 
-    return new PatchMutation(
+    return Mutation.newPatch(
         key(path),
         parsed.getData(),
         FieldMask.fromSet(fieldMaskPaths),
@@ -526,12 +523,12 @@ public class TestUtil {
         fieldTransforms);
   }
 
-  public static DeleteMutation deleteMutation(String path) {
-    return new DeleteMutation(key(path), Precondition.NONE);
+  public static Mutation deleteMutation(String path) {
+    return Mutation.newDelete(key(path));
   }
 
-  public static VerifyMutation verifyMutation(String path, int micros) {
-    return new VerifyMutation(key(path), Precondition.updateTime(version(micros)));
+  public static Mutation verifyMutation(String path, int micros) {
+    return Mutation.newVerify(key(path), Precondition.updateTime(version(micros)));
   }
 
   public static MutationResult mutationResult(long version) {

@@ -36,7 +36,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -408,7 +407,7 @@ public abstract class MutationQueueTestCase {
    * Creates a new MutationBatch with the given key, the next batch ID and a set of dummy mutations.
    */
   private MutationBatch addMutationBatch(String key) {
-    SetMutation mutation = setMutation(key, map("a", 1));
+    Mutation mutation = setMutation(key, map("a", 1));
 
     return persistence.runTransaction(
         "New mutation batch",

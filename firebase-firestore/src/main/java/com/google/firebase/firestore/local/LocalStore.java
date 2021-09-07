@@ -40,7 +40,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
@@ -233,7 +232,7 @@ public final class LocalStore implements BundleCallback {
               // NOTE: The base state should only be applied if there's some existing
               // document to override, so use a Precondition of exists=true
               baseMutations.add(
-                  new PatchMutation(
+                  Mutation.newPatch(
                       mutation.getKey(),
                       baseValue,
                       baseValue.getFieldMask(),

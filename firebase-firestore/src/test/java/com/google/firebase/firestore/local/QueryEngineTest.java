@@ -37,9 +37,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
@@ -382,7 +380,7 @@ public class QueryEngineTest {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add an unacknowledged mutation
-    addMutation(new DeleteMutation(key("coll/b"), Precondition.NONE));
+    addMutation(Mutation.newDelete(key("coll/b")));
 
     ImmutableSortedMap<DocumentKey, Document> docs =
         expectFullCollectionScan(

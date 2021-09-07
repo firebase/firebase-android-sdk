@@ -27,7 +27,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
@@ -39,8 +38,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -166,7 +163,7 @@ public final class LocalSerializerTest {
 
     MutationBatch decoded = serializer.decodeMutationBatch(batchProto);
     assertEquals(1, decoded.getMutations().size());
-    assertTrue(decoded.getMutations().get(0) instanceof SetMutation);
+    assertEquals(decoded.getMutations().get(0).getMutationType(), Mutation.MutationType.SET);
     Write encoded = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
     Write expected = new TestWriteBuilder().addSet().addUpdateTransforms().build();
     assertEquals(expected, encoded);
@@ -184,7 +181,7 @@ public final class LocalSerializerTest {
 
     MutationBatch decoded = serializer.decodeMutationBatch(batchProto);
     assertEquals(1, decoded.getMutations().size());
-    assertTrue(decoded.getMutations().get(0) instanceof PatchMutation);
+    assertEquals(decoded.getMutations().get(0).getMutationType(), Mutation.MutationType.PATCH);
     Write encoded = remoteSerializer.encodeMutation(decoded.getMutations().get(0));
     Write expected = new TestWriteBuilder().addPatch().addUpdateTransforms().build();
     assertEquals(expected, encoded);
@@ -256,14 +253,14 @@ public final class LocalSerializerTest {
   @Test
   public void testEncodesMutationBatch() {
     Mutation baseWrite =
-        new PatchMutation(
+        Mutation.newPatch(
             key("foo/bar"),
             TestUtil.wrapObject(map("a", "b")),
             FieldMask.fromSet(Collections.singleton(field("a"))),
             com.google.firebase.firestore.model.mutation.Precondition.NONE);
     Mutation set = setMutation("foo/bar", map("a", "b", "num", 1));
     Mutation patch =
-        new PatchMutation(
+        Mutation.newPatch(
             key("bar/baz"),
             TestUtil.wrapObject(map("a", "b", "num", 1)),
             fieldMask("a"),

@@ -27,7 +27,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -241,7 +240,8 @@ class LocalDocumentsView {
     HashSet<DocumentKey> missingDocKeys = new HashSet<>();
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
-        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
+        if (mutation.getMutationType().equals(Mutation.MutationType.PATCH)
+            && !existingDocs.containsKey(mutation.getKey())) {
           missingDocKeys.add(mutation.getKey());
         }
       }

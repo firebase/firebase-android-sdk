@@ -37,18 +37,14 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
-import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -266,17 +262,30 @@ public final class RemoteSerializer {
   /** Converts a Mutation model to a Write proto */
   public com.google.firestore.v1.Write encodeMutation(Mutation mutation) {
     com.google.firestore.v1.Write.Builder builder = com.google.firestore.v1.Write.newBuilder();
-    if (mutation instanceof SetMutation) {
-      builder.setUpdate(encodeDocument(mutation.getKey(), ((SetMutation) mutation).getValue()));
-    } else if (mutation instanceof PatchMutation) {
-      builder.setUpdate(encodeDocument(mutation.getKey(), ((PatchMutation) mutation).getValue()));
-      builder.setUpdateMask(encodeDocumentMask(((PatchMutation) mutation).getMask()));
-    } else if (mutation instanceof DeleteMutation) {
-      builder.setDelete(encodeKey(mutation.getKey()));
-    } else if (mutation instanceof VerifyMutation) {
-      builder.setVerify(encodeKey(mutation.getKey()));
-    } else {
-      throw fail("unknown mutation type %s", mutation.getClass());
+    switch (mutation.getMutationType()) {
+      case SET:
+        {
+          builder.setUpdate(encodeDocument(mutation.getKey(), mutation.getValue()));
+          break;
+        }
+      case PATCH:
+        {
+          builder.setUpdate(encodeDocument(mutation.getKey(), mutation.getValue()));
+          builder.setUpdateMask(encodeDocumentMask(mutation.getMask()));
+          break;
+        }
+      case DELETE:
+        {
+          builder.setDelete(encodeKey(mutation.getKey()));
+          break;
+        }
+      case VERIFY:
+        {
+          builder.setVerify(encodeKey(mutation.getKey()));
+          break;
+        }
+      default:
+        throw fail("unknown mutation type %s", mutation.getClass());
     }
 
     for (FieldTransform fieldTransform : mutation.getFieldTransforms()) {
@@ -303,14 +312,14 @@ public final class RemoteSerializer {
     switch (mutation.getOperationCase()) {
       case UPDATE:
         if (mutation.hasUpdateMask()) {
-          return new PatchMutation(
+          return Mutation.newPatch(
               decodeKey(mutation.getUpdate().getName()),
               ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
               decodeDocumentMask(mutation.getUpdateMask()),
               precondition,
               fieldTransforms);
         } else {
-          return new SetMutation(
+          return Mutation.newSet(
               decodeKey(mutation.getUpdate().getName()),
               ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
               precondition,
@@ -318,10 +327,10 @@ public final class RemoteSerializer {
         }
 
       case DELETE:
-        return new DeleteMutation(decodeKey(mutation.getDelete()), precondition);
+        return Mutation.newDelete(decodeKey(mutation.getDelete()), precondition);
 
       case VERIFY:
-        return new VerifyMutation(decodeKey(mutation.getVerify()), precondition);
+        return Mutation.newVerify(decodeKey(mutation.getVerify()), precondition);
 
       default:
         throw fail("Unknown mutation operation: %d", mutation.getOperationCase());

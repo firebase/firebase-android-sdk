@@ -40,7 +40,6 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
@@ -107,7 +106,7 @@ public class MutationTest {
 
     DocumentKey key = key("collection/key");
     FieldMask mask = fieldMask("foo.bar");
-    Mutation patch = new PatchMutation(key, new ObjectValue(), mask, Precondition.NONE);
+    Mutation patch = Mutation.newPatch(key, new ObjectValue(), mask, Precondition.NONE);
 
     patch.applyToLocalView(patchDoc, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("baz", "baz-value"));
@@ -289,7 +288,7 @@ public class MutationTest {
   // tests for it currently. We could consider removing this test once we have integration tests.
   @Test
   public void testCreateArrayUnionTransform() {
-    PatchMutation transform =
+    Mutation transform =
         patchMutation(
             "collection/key",
             map(
@@ -318,8 +317,7 @@ public class MutationTest {
   // test once we have integration tests.
   @Test
   public void testCreateArrayRemoveTransform() {
-    PatchMutation transform =
-        patchMutation("collection/key", map("foo", FieldValue.arrayRemove("tag")));
+    Mutation transform = patchMutation("collection/key", map("foo", FieldValue.arrayRemove("tag")));
     assertEquals(1, transform.getFieldTransforms().size());
 
     FieldTransform first = transform.getFieldTransforms().get(0);
@@ -449,7 +447,7 @@ public class MutationTest {
     MutableDocument transformedDoc = doc("collection/key", 0, baseData);
 
     for (Map<String, Object> transformData : transforms) {
-      PatchMutation transform = patchMutation("collection/key", transformData);
+      Mutation transform = patchMutation("collection/key", transformData);
       transform.applyToLocalView(transformedDoc, Timestamp.now());
     }
 

@@ -34,8 +34,6 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -174,8 +172,8 @@ public abstract class LruGarbageCollectorTestCase {
         "Remove queries", () -> garbageCollector.removeTargets(upperBound, activeTargetIds));
   }
 
-  private SetMutation mutation(DocumentKey key) {
-    return new SetMutation(key, testValue, Precondition.NONE);
+  private Mutation mutation(DocumentKey key) {
+    return Mutation.newSet(key, testValue);
   }
 
   @Test

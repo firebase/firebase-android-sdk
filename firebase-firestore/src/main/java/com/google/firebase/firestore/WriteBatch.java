@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Util;
@@ -177,7 +176,7 @@ public class WriteBatch {
   public WriteBatch delete(@NonNull DocumentReference documentRef) {
     firestore.validateReference(documentRef);
     verifyNotCommitted();
-    mutations.add(new DeleteMutation(documentRef.getKey(), Precondition.NONE));
+    mutations.add(Mutation.newDelete(documentRef.getKey()));
     return this;
   }
 

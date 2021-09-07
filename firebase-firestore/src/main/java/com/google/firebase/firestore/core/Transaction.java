@@ -27,10 +27,8 @@ import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.util.Executors;
 import java.util.ArrayList;
@@ -119,7 +117,7 @@ public class Transaction {
   }
 
   public void delete(DocumentKey key) {
-    write(Collections.singletonList(new DeleteMutation(key, precondition(key))));
+    write(Collections.singletonList(Mutation.newDelete(key, precondition(key))));
     writtenDocs.add(key);
   }
 
@@ -137,7 +135,7 @@ public class Transaction {
     }
     // For each document that was read but not written to, we want to perform a `verify` operation.
     for (DocumentKey key : unwritten) {
-      mutations.add(new VerifyMutation(key, precondition(key)));
+      mutations.add(Mutation.newVerify(key, precondition(key)));
     }
     committed = true;
     return datastore

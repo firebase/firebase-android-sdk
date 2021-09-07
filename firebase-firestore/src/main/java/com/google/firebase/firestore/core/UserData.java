@@ -23,9 +23,7 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
@@ -349,9 +347,9 @@ public class UserData {
 
     public Mutation toMutation(DocumentKey key, Precondition precondition) {
       if (fieldMask != null) {
-        return new PatchMutation(key, data, fieldMask, precondition, fieldTransforms);
+        return Mutation.newPatch(key, data, fieldMask, precondition, fieldTransforms);
       } else {
-        return new SetMutation(key, data, precondition, fieldTransforms);
+        return Mutation.newSet(key, data, precondition, fieldTransforms);
       }
     }
   }
@@ -382,7 +380,7 @@ public class UserData {
     }
 
     public Mutation toMutation(DocumentKey key, Precondition precondition) {
-      return new PatchMutation(key, data, fieldMask, precondition, fieldTransforms);
+      return Mutation.newPatch(key, data, fieldMask, precondition, fieldTransforms);
     }
   }
 }
