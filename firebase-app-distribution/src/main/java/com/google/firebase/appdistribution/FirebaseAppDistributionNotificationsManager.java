@@ -24,14 +24,13 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Build.VERSION;
-import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.FirebaseApp;
 
 class FirebaseAppDistributionNotificationsManager {
-  private static final String TAG = "FADNotificationsManager";
+  private static final String TAG = "NotificationsManager:";
   private static final String NOTIFICATION_CHANNEL_ID =
       "com.google.firebase.app.distribution.notification_channel_id";
 
@@ -62,10 +61,13 @@ class FirebaseAppDistributionNotificationsManager {
     notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, builder.build());
   }
 
+  // CHECK THIS LATER
   private boolean isErrorState(UpdateStatus status) {
     return status.equals(UpdateStatus.DOWNLOAD_FAILED)
         || status.equals(UpdateStatus.INSTALL_FAILED)
-        || status.equals(UpdateStatus.INSTALL_CANCELED);
+        || status.equals(UpdateStatus.INSTALL_CANCELED)
+        || status.equals(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
+        || status.equals(UpdateStatus.UPDATE_CANCELED);
   }
 
   private NotificationManager createNotificationManager(Context context) {
@@ -99,7 +101,7 @@ class FirebaseAppDistributionNotificationsManager {
     Context context = firebaseApp.getApplicationContext();
     Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
     if (intent == null) {
-      Log.w(TAG, "No activity found to launch app");
+      LogWrapper.getInstance().w(TAG + "No activity found to launch app");
     }
     return PendingIntent.getActivity(
         firebaseApp.getApplicationContext(), 0, intent, PendingIntent.FLAG_ONE_SHOT);
@@ -123,7 +125,8 @@ class FirebaseAppDistributionNotificationsManager {
     try {
       Drawable icon = ContextCompat.getDrawable(firebaseApp.getApplicationContext(), iconId);
       if (VERSION.SDK_INT >= Build.VERSION_CODES.O && icon instanceof AdaptiveIconDrawable) {
-        Log.e(TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
+        LogWrapper.getInstance()
+            .e(TAG + "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
         return true;
       } else {
         // AdaptiveIcons were introduced in API 26

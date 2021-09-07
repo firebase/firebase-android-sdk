@@ -21,12 +21,11 @@ import android.app.AlertDialog;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
@@ -34,17 +33,21 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import org.jetbrains.annotations.Nullable;
 
 public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
-  private static final String TAG = "FirebaseAppDistribution";
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
-  private final CheckForUpdateClient checkForUpdateClient;
+  private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
   private Activity currentActivity;
+  private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
-  private Task<Void> cachedUpdateToLatestReleaseTask;
-  private Task<AppDistributionRelease> cachedCheckForUpdateTask;
-  private AppDistributionReleaseInternal cachedLatestRelease;
+  @GuardedBy("updateTaskLock")
+  private UpdateTaskImpl cachedUpdateIfNewReleaseTask;
+
+  private final Object updateTaskLock = new Object();
+  private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
+
+  private AppDistributionReleaseInternal cachedNewRelease;
   private final SignInStorage signInStorage;
 
   /** Constructor for FirebaseAppDistribution */
@@ -52,12 +55,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInClient testerSignInClient,
-      @NonNull CheckForUpdateClient checkForUpdateClient,
+      @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
       @NonNull UpdateAppClient updateAppClient,
       @NonNull SignInStorage signInStorage) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
-    this.checkForUpdateClient = checkForUpdateClient;
+    this.checkForNewReleaseClient = checkForNewReleaseClient;
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
   }
@@ -70,7 +73,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this(
         firebaseApp,
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
-        new CheckForUpdateClient(
+        new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
         new UpdateAppClient(firebaseApp),
         signInStorage);
@@ -105,7 +108,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   /**
-   * Updates the app to the latest release, if one is available. Returns the release information or
+   * Updates the app to the newest release, if one is available. Returns the release information or
    * null if no update is found. Performs the following actions: 1. If tester is not signed in,
    * presents the tester with a Google sign in UI 2. Checks if a newer release is available. If so,
    * presents the tester with a confirmation dialog to begin the download. 3. For APKs, downloads
@@ -113,22 +116,46 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * to complete the download and installation.
    */
   @NonNull
-  public synchronized Task<Void> updateToLatestRelease() {
-    if (cachedUpdateToLatestReleaseTask != null && !cachedUpdateToLatestReleaseTask.isComplete()) {
-      return cachedUpdateToLatestReleaseTask;
+  public synchronized UpdateTask updateIfNewReleaseAvailable() {
+    synchronized (updateTaskLock) {
+      if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
+        return cachedUpdateIfNewReleaseTask;
+      }
+
+      cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
     }
-
-    cachedUpdateToLatestReleaseTask =
-        checkForUpdate()
-            .onSuccessTask(
-                release -> {
-                  if (release == null) {
-                    return Tasks.forResult(null);
-                  }
-                  return showUpdateAlertDialog(release);
-                });
-
-    return cachedUpdateToLatestReleaseTask;
+    checkForNewRelease()
+        .onSuccessTask(
+            release -> {
+              if (release == null) {
+                postProgressToCachedUpdateIfNewReleaseTask(
+                    UpdateProgress.builder()
+                        .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                        .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                        .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
+                        .build());
+                setCachedUpdateIfNewReleaseResult();
+                return Tasks.forResult(null);
+              }
+              return showUpdateAlertDialog(release);
+            })
+        .addOnFailureListener(
+            e -> {
+              postProgressToCachedUpdateIfNewReleaseTask(
+                  UpdateProgress.builder()
+                      .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                      .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                      .setUpdateStatus(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
+                      .build());
+              setCachedUpdateIfNewReleaseCompletionError(
+                  e,
+                  new FirebaseAppDistributionException(
+                      Constants.ErrorMessages.NETWORK_ERROR,
+                      FirebaseAppDistributionException.Status.NETWORK_FAILURE));
+            });
+    synchronized (updateTaskLock) {
+      return cachedUpdateIfNewReleaseTask;
+    }
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
@@ -143,31 +170,31 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
    * sign in UI
    */
   @NonNull
-  public synchronized Task<AppDistributionRelease> checkForUpdate() {
-    if (cachedCheckForUpdateTask != null && !cachedCheckForUpdateTask.isComplete()) {
-      return cachedCheckForUpdateTask;
+  public synchronized Task<AppDistributionRelease> checkForNewRelease() {
+    if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
+      LogWrapper.getInstance().v("Response in progress");
+      return cachedCheckForNewReleaseTask;
     }
-
-    cachedCheckForUpdateTask =
+    cachedCheckForNewReleaseTask =
         signInTester()
-            .onSuccessTask(unused -> this.checkForUpdateClient.checkForUpdate())
+            .onSuccessTask(unused -> this.checkForNewReleaseClient.checkForNewRelease())
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
-                  setCachedLatestRelease(appDistributionReleaseInternal);
+                  setCachedNewRelease(appDistributionReleaseInternal);
                   return Tasks.forResult(
                       ReleaseUtils.convertToAppDistributionRelease(appDistributionReleaseInternal));
                 });
 
-    return cachedCheckForUpdateTask;
+    return cachedCheckForNewReleaseTask;
   }
 
   /**
-   * Updates app to the latest release. If the latest release is an APK, downloads the binary and
-   * starts an installation If the latest release is an AAB, directs the tester to the Play app to
+   * Updates app to the newest release. If the newest release is an APK, downloads the binary and
+   * starts an installation If the newest release is an AAB, directs the tester to the Play app to
    * complete the download and installation.
    *
-   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAIALBLE exception if no
-   * new release is cached from checkForUpdate
+   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAILABLE exception if no
+   * new release is cached from checkForNewRelease
    */
   @NonNull
   public synchronized UpdateTask updateApp() {
@@ -187,7 +214,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       return updateTask;
     }
 
-    return this.updateAppClient.updateApp(cachedLatestRelease, showDownloadInNotificationManager);
+    return this.updateAppClient.updateApp(cachedNewRelease, showDownloadInNotificationManager);
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -197,15 +224,16 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   /** Signs out the App Distribution tester */
   public void signOutTester() {
-    this.cachedLatestRelease = null;
+    this.cachedNewRelease = null;
     this.signInStorage.setSignInStatus(false);
   }
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    Log.d(TAG, "Created activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().v("Created activity: " + activity.getClass().getName());
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
+      LogWrapper.getInstance().v("Sign in completed");
       this.testerSignInClient.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
     }
@@ -213,12 +241,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
-    Log.d(TAG, "Started activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
-    Log.d(TAG, "Resumed activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Resumed activity: " + activity.getClass().getName());
     // If app resumes and aab update task is in progress, assume that installation didn't happen so
     // cancel the task
     updateAppClient.tryCancelAabUpdateTask();
@@ -231,6 +259,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     // Throw error if app reentered during sign in
     if (this.testerSignInClient.isCurrentlySigningIn()) {
+      LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
       testerSignInClient.setCanceledAuthenticationError();
     }
 
@@ -241,22 +270,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   @Override
   public void onActivityPaused(@NonNull Activity activity) {
-    Log.d(TAG, "Paused activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Paused activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityStopped(@NonNull Activity activity) {
-    Log.d(TAG, "Stopped activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-    Log.d(TAG, "Saved activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Saved activity: " + activity.getClass().getName());
   }
 
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
-    Log.d(TAG, "Destroyed activity: " + activity.getClass().getName());
+    LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
@@ -265,17 +294,16 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   @VisibleForTesting
-  void setCachedLatestRelease(AppDistributionReleaseInternal latestRelease) {
-    this.cachedLatestRelease = latestRelease;
+  void setCachedNewRelease(AppDistributionReleaseInternal newRelease) {
+    this.cachedNewRelease = newRelease;
   }
 
   @VisibleForTesting
-  AppDistributionReleaseInternal getCachedLatestRelease() {
-    return this.cachedLatestRelease;
+  AppDistributionReleaseInternal getCachedNewRelease() {
+    return this.cachedNewRelease;
   }
 
-  private Task<Void> showUpdateAlertDialog(AppDistributionRelease latestRelease) {
-    TaskCompletionSource<Void> updateAlertDialogTask = new TaskCompletionSource<>();
+  private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
     Context context = firebaseApp.getApplicationContext();
     AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
     alertDialog.setTitle(context.getString(R.string.update_dialog_title));
@@ -284,38 +312,82 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         new StringBuilder(
             String.format(
                 "Version %s (%s) is available.",
-                latestRelease.getDisplayVersion(), latestRelease.getVersionCode()));
+                newRelease.getDisplayVersion(), newRelease.getVersionCode()));
 
-    if (latestRelease.getReleaseNotes() != null && !latestRelease.getReleaseNotes().isEmpty()) {
-      message.append(String.format("\n\nRelease notes: %s", latestRelease.getReleaseNotes()));
+    if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
+      message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
     }
 
     alertDialog.setMessage(message);
     alertDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
-        (dialogInterface, i) ->
+        (dialogInterface, i) -> {
+          synchronized (updateTaskLock) {
             // show download progress in notification manager
             updateApp(true)
-                .addOnSuccessListener(unused -> updateAlertDialogTask.setResult(null))
-                .addOnFailureListener(updateAlertDialogTask::setException));
+                .addOnProgressListener(
+                    progress -> postProgressToCachedUpdateIfNewReleaseTask(progress))
+                .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
+                .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
+          }
+        });
 
     alertDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
           dialogInterface.dismiss();
-          updateAlertDialogTask.setException(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.UPDATE_CANCELED,
-                  FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
+          synchronized (updateTaskLock) {
+            postProgressToCachedUpdateIfNewReleaseTask(
+                UpdateProgress.builder()
+                    .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                    .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                    .setUpdateStatus(UpdateStatus.UPDATE_CANCELED)
+                    .build());
+            setCachedUpdateIfNewReleaseCompletionError(
+                new FirebaseAppDistributionException(
+                    Constants.ErrorMessages.UPDATE_CANCELED,
+                    FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
+          }
         });
 
     alertDialog.show();
-    return updateAlertDialogTask.getTask();
+    synchronized (updateTaskLock) {
+      return cachedUpdateIfNewReleaseTask;
+    }
   }
 
   void setInstallationResult(int resultCode) {
     this.updateAppClient.setInstallationResult(resultCode);
+  }
+
+  private void setCachedUpdateIfNewReleaseCompletionError(FirebaseAppDistributionException e) {
+    synchronized (updateTaskLock) {
+      if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
+        cachedUpdateIfNewReleaseTask.setException(e);
+      }
+    }
+  }
+
+  private void setCachedUpdateIfNewReleaseCompletionError(
+      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
+    if (e instanceof FirebaseAppDistributionException) {
+      setCachedUpdateIfNewReleaseCompletionError((FirebaseAppDistributionException) e);
+    } else {
+      setCachedUpdateIfNewReleaseCompletionError(defaultFirebaseException);
+    }
+  }
+
+  private void postProgressToCachedUpdateIfNewReleaseTask(UpdateProgress progress) {
+    synchronized (updateTaskLock) {
+      cachedUpdateIfNewReleaseTask.updateProgress(progress);
+    }
+  }
+
+  private void setCachedUpdateIfNewReleaseResult() {
+    synchronized (updateTaskLock) {
+      cachedUpdateIfNewReleaseTask.setResult();
+    }
   }
 }

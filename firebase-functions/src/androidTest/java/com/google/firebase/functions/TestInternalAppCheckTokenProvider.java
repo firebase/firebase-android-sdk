@@ -43,6 +43,23 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
         };
   }
 
+  public TestInternalAppCheckTokenProvider(String testToken, String error) {
+    this.testToken =
+        new AppCheckTokenResult() {
+          @NonNull
+          @Override
+          public String getToken() {
+            return testToken;
+          }
+
+          @Nullable
+          @Override
+          public FirebaseException getError() {
+            return new FirebaseException(error);
+          }
+        };
+  }
+
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getToken(boolean forceRefresh) {
