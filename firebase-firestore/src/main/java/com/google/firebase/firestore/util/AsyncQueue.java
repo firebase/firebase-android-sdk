@@ -79,7 +79,10 @@ public class AsyncQueue {
      * A timer used to monitor when a connection attempt in gRPC is unsuccessful and retry
      * accordingly.
      */
-    CONNECTIVITY_ATTEMPT_TIMER
+    CONNECTIVITY_ATTEMPT_TIMER,
+
+    /** A timer used to periodically attempt index backfill. */
+    INDEX_BACKFILL
   }
 
   /**

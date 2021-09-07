@@ -71,8 +71,6 @@ public abstract class Persistence {
 
   abstract ReferenceDelegate getReferenceDelegate();
 
-  abstract IndexBackfillerDelegate getIndexBackfillDelegate();
-
   /**
    * Returns a MutationQueue representing the persisted mutations for the given user.
    *

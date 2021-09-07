@@ -84,7 +84,7 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate lruReferenceDelegate;
-  private final SQLiteIndexBackfillerDelegate indexBackfillDelegate;
+  private final IndexBackfiller indexBackfiller;
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
@@ -125,7 +125,7 @@ public final class SQLitePersistence extends Persistence {
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.lruReferenceDelegate = new SQLiteLruReferenceDelegate(this, params);
-    this.indexBackfillDelegate = new SQLiteIndexBackfillerDelegate(this);
+    this.indexBackfiller = new IndexBackfiller(this);
   }
 
   @Override
@@ -168,9 +168,8 @@ public final class SQLitePersistence extends Persistence {
     return lruReferenceDelegate;
   }
 
-  @Override
-  public SQLiteIndexBackfillerDelegate getIndexBackfillDelegate() {
-    return indexBackfillDelegate;
+  public IndexBackfiller getIndexBackfiller() {
+    return indexBackfiller;
   }
 
   @Override

@@ -35,7 +35,7 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
-import com.google.firebase.firestore.local.StartStopScheduler;
+import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -74,9 +74,9 @@ public final class FirestoreClient {
   private EventManager eventManager;
 
   // LRU-related
-  @Nullable private StartStopScheduler gcScheduler;
+  @Nullable private Scheduler gcScheduler;
 
-  @Nullable private StartStopScheduler indexScheduler;
+  @Nullable private Scheduler indexScheduler;
 
   public FirestoreClient(
       final Context context,
@@ -146,7 +146,7 @@ public final class FirestoreClient {
             gcScheduler.stop();
           }
 
-          if (indexScheduler != null) {
+          if (indexScheduler != null && Persistence.INDEXING_SUPPORT_ENABLED) {
             indexScheduler.stop();
           }
         });
@@ -272,7 +272,7 @@ public final class FirestoreClient {
       gcScheduler.start();
     }
 
-    if (indexScheduler != null) {
+    if (indexScheduler != null && Persistence.INDEXING_SUPPORT_ENABLED) {
       indexScheduler.start();
     }
   }

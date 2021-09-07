@@ -37,7 +37,6 @@ public final class MemoryPersistence extends Persistence {
   private final MemoryBundleCache bundleCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
   private ReferenceDelegate referenceDelegate;
-  private IndexBackfillerDelegate indexBackfillerDelegate;
 
   private boolean started;
 
@@ -62,7 +61,6 @@ public final class MemoryPersistence extends Persistence {
     targetCache = new MemoryTargetCache(this);
     bundleCache = new MemoryBundleCache();
     remoteDocumentCache = new MemoryRemoteDocumentCache(this);
-    indexBackfillerDelegate = new MemoryIndexBackfillerDelegate(this);
   }
 
   @Override
@@ -91,10 +89,6 @@ public final class MemoryPersistence extends Persistence {
 
   private void setReferenceDelegate(ReferenceDelegate delegate) {
     referenceDelegate = delegate;
-  }
-
-  IndexBackfillerDelegate getIndexBackfillDelegate() {
-    return indexBackfillerDelegate;
   }
 
   @Override
