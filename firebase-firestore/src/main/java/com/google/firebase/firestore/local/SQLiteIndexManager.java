@@ -254,11 +254,11 @@ final class SQLiteIndexManager implements IndexManager {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
-      for (IndexByteEncoder encoder : new ArrayList<>(encoders)) {
-        FieldIndex.Segment segment = fieldIndex.getSegment(i);
-        Value value = values.get(i);
+      FieldIndex.Segment segment = fieldIndex.getSegment(i);
+      Value value = values.get(i);
+      for (IndexByteEncoder encoder : encoders) {
         if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
-          expandIndexValues(encoders, value);
+          encoders = expandIndexValues(encoders, value);
         } else {
           hardAssert(
               segment.getKind() == FieldIndex.Segment.Kind.ORDERED,
@@ -279,11 +279,11 @@ final class SQLiteIndexManager implements IndexManager {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
-      for (IndexByteEncoder encoder : new ArrayList<>(encoders)) {
-        FieldIndex.Segment segment = fieldIndex.getSegment(i);
-        Value value = values.get(i);
+      FieldIndex.Segment segment = fieldIndex.getSegment(i);
+      Value value = values.get(i);
+      for (IndexByteEncoder encoder : encoders) {
         if (isMultiValueFilter(target, segment.getFieldPath())) {
-          expandIndexValues(encoders, value);
+          encoders = expandIndexValues(encoders, value);
         } else {
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
         }
@@ -301,20 +301,25 @@ final class SQLiteIndexManager implements IndexManager {
     return result;
   }
 
-  private void expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
-    // Some queries match multiple values (e.g. IN and ArrayContainsAny). These multi-value entries
-    // are appended to existing values (e.g. filter("a", "==", "a1").filter("b", "in",
-    // ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]).
+  /**
+   * Creates a separate encoder for each element of an array.
+   *
+   * <p>Each element is added to the encoders provided as input. A list of new encoders is returned
+   * Each value is appended to all existing values (e.g. filter("a", "==", "a1").filter("b", "in",
+   * ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]).
+   */
+  private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
     List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
-    encoders.clear();
+    List<IndexByteEncoder> results = new ArrayList<>();
     for (Value arrayElement : value.getArrayValue().getValuesList()) {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
         FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder);
-        encoders.add(clonedEncoder);
+        results.add(clonedEncoder);
       }
     }
+    return results;
   }
 
   private boolean isMultiValueFilter(Target target, FieldPath fieldPath) {
