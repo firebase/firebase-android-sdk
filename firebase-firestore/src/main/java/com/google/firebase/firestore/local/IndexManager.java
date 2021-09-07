@@ -21,6 +21,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a set of indexes that are used to execute queries efficiently.
@@ -61,5 +62,5 @@ public interface IndexManager {
    * {@code null} if there is no active index to serve this target.
    */
   @Nullable
-  List<DocumentKey> getDocumentsMatchingTarget(Target target);
+  Set<DocumentKey> getDocumentsMatchingTarget(Target target);
 }

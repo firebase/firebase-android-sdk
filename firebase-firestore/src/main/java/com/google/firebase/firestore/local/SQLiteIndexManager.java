@@ -35,7 +35,9 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
@@ -157,14 +159,14 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
     @Nullable FieldIndex fieldIndex = getMatchingIndex(target);
     if (fieldIndex == null) return null;
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
-    ArrayList<DocumentKey> result = new ArrayList<>();
+    Set<DocumentKey> result = new HashSet<>();
 
     if (upperBound != null) {
       List<byte[]> lowerBoundValues =
@@ -175,6 +177,9 @@ final class SQLiteIndexManager implements IndexManager {
       hardAssert(
           lowerBoundValues.size() == upperBoundValues.size(),
           "Expected upper and lower bound size to match");
+
+      // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
+      // send one query that combines all clauses.
       for (int i = 0; i < lowerBoundValues.size(); ++i) {
         db.query(
                 String.format(
@@ -184,7 +189,6 @@ final class SQLiteIndexManager implements IndexManager {
             .forEach(
                 row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
       }
-
     } else {
       List<byte[]> lowerBoundValues =
           encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
