@@ -292,6 +292,7 @@ final class SQLiteIndexManager implements IndexManager {
     return getEncodedBytes(encoders);
   }
 
+  /** Returns the byte represenation for all encoders. */
   private List<byte[]> getEncodedBytes(List<IndexByteEncoder> encoders) {
     List<byte[]> result = new ArrayList<>();
     for (IndexByteEncoder encoder : encoders) {
