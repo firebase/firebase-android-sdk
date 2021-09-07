@@ -14,6 +14,27 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
+
+import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.MutableDocument;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -21,8 +42,121 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteIndexManagerTest extends IndexManagerTestCase {
+  /** Current state of indexing support. Used for restoring after test run. */
+  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
+
+  @BeforeClass
+  public static void beforeClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = true;
+  }
+
+  @BeforeClass
+  public static void afterClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
+  }
+
+  @Before
+  public void before() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("count"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll/doc1", map("count", 1));
+    addDoc("coll/doc2", map("count", 2));
+    addDoc("coll/doc3", map("count", 3));
+  }
+
   @Override
   Persistence getPersistence() {
     return PersistenceTestHelpers.createSQLitePersistence();
+  }
+
+  @Test
+  public void testEqualityFilter() {
+    Query query = query("coll").filter(filter("count", "==", 2));
+    verifyResults(query, "coll/doc2");
+  }
+
+  @Test
+  public void testLessThanFilter() {
+    Query query = query("coll").filter(filter("count", "<", 2));
+    verifyResults(query, "coll/doc1");
+  }
+
+  @Test
+  public void testLessThanOrEqualsFilter() {
+    Query query = query("coll").filter(filter("count", "<=", 2));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testGreaterThanOrEqualsFilter() {
+    Query query = query("coll").filter(filter("count", ">=", 2));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+  }
+
+  @Test
+  public void testGreaterThanFilter() {
+    Query query = query("coll").filter(filter("count", ">", 2));
+    verifyResults(query, "coll/doc3");
+  }
+
+  @Test
+  public void testRangeFilter() {
+    Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "<", 3));
+    verifyResults(query, "coll/doc2");
+  }
+
+  @Test
+  public void testStartAtFilter() {
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(true, 2));
+    verifyResults(query, "coll/doc2", "coll/doc3");
+  }
+
+  @Test
+  public void testStartAfterFilter() {
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(false, 2));
+    verifyResults(query, "coll/doc3");
+  }
+
+  @Test
+  public void testEndAtFilter() {
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testEndBeforeFilter() {
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
+    verifyResults(query, "coll/doc1");
+  }
+
+  @Test
+  public void testRangeWithBoundFilter() {
+    Query startAt =
+        query("coll")
+            .filter(filter("count", ">=", 1))
+            .filter(filter("count", "<=", 3))
+            .orderBy(orderBy("count"))
+            .startAt(bound(false, 1))
+            .endAt(bound(true, 2));
+    verifyResults(startAt, "coll/doc2");
+  }
+
+  @Test
+  public void testInFilter() {
+    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 2)));
+    verifyResults(query, "coll/doc1", "coll/doc2");
+  }
+
+  // not in, array contains, arrray contains any
+
+  private void addDoc(String key, Map<String, Object> data) {
+    MutableDocument count1Doc = doc(key, 1, data);
+    indexManager.addIndexEntries(count1Doc);
+  }
+
+  private void verifyResults(Query query, String... documents) {
+    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(query.toTarget());
+    List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
+    assertThat(results).containsExactlyElementsIn(keys);
   }
 }
