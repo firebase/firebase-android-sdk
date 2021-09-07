@@ -83,18 +83,18 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteBundleCache bundleCache;
   private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
-  private final SQLiteLruReferenceDelegate lruReferenceDelegate;
+  private final SQLiteLruReferenceDelegate referenceDelegate;
   private final IndexBackfiller indexBackfiller;
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
         public void onBegin() {
-          lruReferenceDelegate.onTransactionStarted();
+          referenceDelegate.onTransactionStarted();
         }
 
         @Override
         public void onCommit() {
-          lruReferenceDelegate.onTransactionCommitted();
+          referenceDelegate.onTransactionCommitted();
         }
 
         @Override
@@ -124,7 +124,7 @@ public final class SQLitePersistence extends Persistence {
     this.indexManager = new SQLiteIndexManager(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
-    this.lruReferenceDelegate = new SQLiteLruReferenceDelegate(this, params);
+    this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
     this.indexBackfiller = new IndexBackfiller(this);
   }
 
@@ -147,7 +147,7 @@ public final class SQLitePersistence extends Persistence {
           e);
     }
     targetCache.start();
-    lruReferenceDelegate.start(targetCache.getHighestListenSequenceNumber());
+    referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
 
   @Override
@@ -165,7 +165,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   public SQLiteLruReferenceDelegate getReferenceDelegate() {
-    return lruReferenceDelegate;
+    return referenceDelegate;
   }
 
   public IndexBackfiller getIndexBackfiller() {
