@@ -60,7 +60,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -73,7 +73,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, new Object[] {null});
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, new Object[] {null});
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -125,7 +125,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test

@@ -157,7 +157,7 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = startAt.getPosition().get(i);
-            if (Values.compare(lowestValue, cursorValue) < 0) {
+            if (Values.compare(lowestValue, cursorValue) <= 0) {
               lowestValue = cursorValue;
               before = before && startAt.isBefore();
             }
@@ -203,10 +203,11 @@ public final class Target {
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
               largestValue = fieldFilter.getValue();
+              before = true;
               break;
             case LESS_THAN:
               largestValue = fieldFilter.getValue();
-              before = true;
+              before = false;
               break;
           }
         }
