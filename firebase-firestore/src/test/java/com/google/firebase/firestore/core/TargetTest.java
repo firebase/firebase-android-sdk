@@ -319,7 +319,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, null, "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a1", "b1");
+    verifyBound(upperBound, true, "a1", "b1");
   }
 
   @Test
@@ -333,7 +333,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a");
+    verifyBound(upperBound, true, "a");
   }
 
   private void verifyBound(Bound bound, boolean before, Object... values) {
