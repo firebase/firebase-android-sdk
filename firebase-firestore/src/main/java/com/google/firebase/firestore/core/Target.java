@@ -20,6 +20,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,10 +131,15 @@ public final class Target {
           FieldFilter fieldFilter = (FieldFilter) filter;
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
-            case NOT_IN:
             case NOT_EQUAL:
             case LESS_THAN_OR_EQUAL:
               // These filters cannot be used as a lower bound. Skip.
+              break;
+            case NOT_IN:
+              lowestValue =
+                  Value.newBuilder()
+                      .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
+                      .build();
               break;
             case EQUAL:
             case IN:

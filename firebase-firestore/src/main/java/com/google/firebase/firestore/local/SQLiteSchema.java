@@ -354,7 +354,7 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE index_configuration ("
                   + "index_id INTEGER, "
-                  + "collection_id TEXT, " // collection id
+                  + "collection_group TEXT, "
                   + "index_proto BLOB, " // V1 Admin index proto
                   + "active INTEGER, " // whether index is active
                   + "update_time_seconds INTEGER, " // time of last document update added to index
@@ -366,8 +366,8 @@ class SQLiteSchema {
                   + "index_id INTEGER, "
                   + "index_value BLOB, " // field value pairs
                   + "uid TEXT, " // user id or null if there are no pending mutations
-                  + "document_id TEXT, "
-                  + "PRIMARY KEY (index_id, index_value, uid, document_id))");
+                  + "document_name TEXT, "
+                  + "PRIMARY KEY (index_id, index_value, uid, document_name))");
         });
   }
 
