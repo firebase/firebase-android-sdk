@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -86,6 +87,11 @@ public final class DeleteMutation extends Mutation {
     } else {
       return baseMutation;
     }
+  }
+
+  @Override
+  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
+    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
   }
 
   @Nullable

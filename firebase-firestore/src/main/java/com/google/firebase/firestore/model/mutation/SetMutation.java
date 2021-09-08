@@ -94,7 +94,7 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
     document
@@ -111,10 +111,26 @@ public final class SetMutation extends Mutation {
   public Mutation squash(
       Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
     if (getPrecondition().isValidFor(document)) {
-      return this;
+      Map<FieldPath, Value> transformResults =
+          localTransformResults(localWriteTime, document, baseMutation);
+      ObjectValue value = getValue();
+      if (!transformResults.isEmpty()) {
+        value = value.clone();
+        value.setAll(transformResults);
+      }
+      return new SetMutation(getKey(), value, getPrecondition());
     } else {
       return baseMutation;
     }
+  }
+
+  @Override
+  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
+    if (getValue().getFieldsMap().containsKey(fieldPath)) {
+      return new FieldUpdate(FieldUpdate.Type.SET, getValue().getFieldsMap().get(fieldPath));
+    }
+
+    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
   }
 
   @Nullable

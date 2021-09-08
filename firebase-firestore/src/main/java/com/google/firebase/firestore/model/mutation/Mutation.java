@@ -191,15 +191,49 @@ public abstract class Mutation {
    * @return A map of fields to transform results.
    */
   protected Map<FieldPath, Value> localTransformResults(
-      Timestamp localWriteTime, MutableDocument mutableDocument) {
+      Timestamp localWriteTime, MutableDocument mutableDocument, Mutation mutation) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
       Value previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
+      if (mutation != null) {
+        FieldUpdate update = getFieldUpdate(fieldTransform.getFieldPath());
+        if (update.type == FieldUpdate.Type.DELETE) {
+          previousValue = null;
+        } else if (update.type == FieldUpdate.Type.SET) {
+          previousValue = update.value;
+        }
+      }
       transformResults.put(
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }
     return transformResults;
+  }
+
+  protected static class FieldUpdate {
+    protected enum Type {
+      ABSENT,
+      DELETE,
+      SET,
+    }
+
+    private Type type;
+    private Value value;
+
+    public FieldUpdate(Type type, Value value) {
+      this.type = type;
+      this.value = value;
+    }
+  }
+
+  protected abstract FieldUpdate getFieldUpdate(FieldPath fieldPath);
+
+  protected List<FieldPath> getFieldTransformPaths() {
+    List<FieldPath> result = new ArrayList<>();
+    for (FieldTransform fieldTransform : fieldTransforms) {
+      result.add(fieldTransform.getFieldPath());
+    }
+    return result;
   }
 
   public ObjectValue extractTransformBaseValue(Document document) {

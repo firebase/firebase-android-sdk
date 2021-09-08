@@ -134,7 +134,7 @@ public final class PatchMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
     ObjectValue value = document.getData();
     value.setAll(getPatch());
     value.setAll(transformResults);
@@ -146,27 +146,53 @@ public final class PatchMutation extends Mutation {
   @Override
   public Mutation squash(
       Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    if (!getPrecondition().isValidFor(document)) {
+    MutableDocument preconditionTest =
+        (baseMutation != null && (baseMutation instanceof DeleteMutation))
+            ? MutableDocument.newNoDocument(getKey(), document.getVersion())
+            : document;
+
+    if (!getPrecondition().isValidFor(preconditionTest)) {
       return baseMutation;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    Map<FieldPath, Value> transformResults =
+        localTransformResults(localWriteTime, document, baseMutation);
 
     ObjectValue mergedPatch =
-        baseMutation.getValue() != null ? baseMutation.getValue() : new ObjectValue();
+        (baseMutation != null && baseMutation.getValue() != null)
+            ? baseMutation.getValue().clone()
+            : new ObjectValue();
     mergedPatch.setAll(getPatch());
     mergedPatch.setAll(transformResults);
 
-    if (baseMutation.getMask() == null) {
+    if (baseMutation != null && baseMutation.getMask() == null) {
       // TODO: Use strictest preconditions or assert we only use exists
-      return new SetMutation(getKey(), mergedPatch, getPrecondition());
+      return new SetMutation(getKey(), mergedPatch, baseMutation.getPrecondition());
     } else {
       HashSet<FieldPath> mergedMaskSet = new HashSet<>(baseMutation.getMask().getMask());
       mergedMaskSet.addAll(mask.getMask());
+      mergedMaskSet.addAll(getFieldTransformPaths());
       FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
       // TODO: Use strictest preconditions or assert we only use exists
-      return new PatchMutation(getKey(), mergedPatch, mergedMask, getPrecondition());
+      return new PatchMutation(
+          getKey(),
+          mergedPatch,
+          mergedMask,
+          baseMutation == null ? getPrecondition() : baseMutation.getPrecondition());
     }
+  }
+
+  @Override
+  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
+    if (!getMask().covers(fieldPath)) {
+      return new FieldUpdate(FieldUpdate.Type.ABSENT, null);
+    }
+
+    if (!getValue().getFieldsMap().containsKey(fieldPath)) {
+      return new FieldUpdate(FieldUpdate.Type.DELETE, null);
+    }
+
+    return new FieldUpdate(FieldUpdate.Type.SET, getValue().getFieldsMap().get(fieldPath));
   }
 
   private Map<FieldPath, Value> getPatch() {
