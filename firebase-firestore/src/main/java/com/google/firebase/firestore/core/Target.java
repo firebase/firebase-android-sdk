@@ -159,7 +159,9 @@ public final class Target {
             Value cursorValue = startAt.getPosition().get(i);
             if (Values.compare(lowestValue, cursorValue) <= 0) {
               lowestValue = cursorValue;
-              before = before && startAt.isBefore();
+              // `before` is shared by all cursor values. If any cursor value is used, we set before
+              // to the cursor's value.
+              before = startAt.isBefore();
             }
             break;
           }
