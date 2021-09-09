@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
-/** Helper interface to control the Garbage Collector. */
-public interface GarbageCollectionScheduler {
+/** Helper interface to control the Garbage Collector and IndexBackfiller. */
+public interface Scheduler {
   void start();
 
   void stop();
