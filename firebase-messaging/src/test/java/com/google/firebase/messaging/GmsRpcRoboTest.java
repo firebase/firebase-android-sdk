@@ -29,7 +29,6 @@ import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.cloudmessaging.MessengerIpcClient;
 import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.android.gms.common.internal.LibraryVersion;
 import com.google.firebase.messaging.shadows.ShadowGoogleSignatureVerifier;
@@ -117,7 +116,6 @@ public class GmsRpcRoboTest {
   public void setUp() {
     context = ApplicationProvider.getApplicationContext();
 
-    MessengerIpcClient.resetForTesting();
 
     FirebaseOptions firebaseOptions =
         new FirebaseOptions.Builder().setApplicationId(APP_ID).setGcmSenderId(SENDER_ID).build();

@@ -54,7 +54,6 @@ import android.os.Looper;
 import android.os.Process;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.cloudmessaging.MessengerIpcClient;
 import com.google.firebase.messaging.shadows.ShadowMessenger;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.common.collect.ImmutableSet;
@@ -120,7 +119,6 @@ public class FirebaseMessagingServiceRoboTest {
 
     context = spy(ApplicationProvider.getApplicationContext());
     FirebaseMessagingService.resetForTesting();
-    MessengerIpcClient.resetForTesting();
     mockAppForeground(false);
 
     receiver = new FirebaseInstanceIdReceiver();

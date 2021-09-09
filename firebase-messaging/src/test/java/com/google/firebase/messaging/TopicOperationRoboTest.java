@@ -18,11 +18,11 @@ import static com.google.firebase.messaging.TopicOperation.OPERATION_PAIR_DIVIDE
 import static com.google.firebase.messaging.TopicOperation.TopicOperations.OPERATION_SUBSCRIBE;
 import static com.google.firebase.messaging.TopicOperation.TopicOperations.OPERATION_UNSUBSCRIBE;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(AndroidJUnit4ClassRunner.class)
 public class TopicOperationRoboTest {
   private static final String TEST_TOPIC = "Test_Topic";
 

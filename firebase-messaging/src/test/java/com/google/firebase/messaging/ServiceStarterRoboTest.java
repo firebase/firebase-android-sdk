@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
-import static com.google.android.libraries.testing.truth.IntentSubject.assertThat;
+import static com.google.firebase.messaging.testing.IntentSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
@@ -28,7 +28,7 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.testing.ShadowPowerManager;
+import org.robolectric.shadows.ShadowPowerManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

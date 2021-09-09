@@ -72,8 +72,7 @@ public class ImageDownloadRoboTest {
   public void regularDownload() throws Exception {
     Bitmap servedBitmap =
         TestImageServer.getBitmapFromResource(
-            ApplicationProvider.getApplicationContext(),
-            com.google.firebase.messaging.test.R.drawable.gcm_icon);
+            ApplicationProvider.getApplicationContext(), R.drawable.gcm_icon);
     String url = testImageServer.serveBitmap("/gcm_icon", servedBitmap);
 
     verifyImageDownloadedSuccessfully(url, servedBitmap);
