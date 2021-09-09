@@ -27,6 +27,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,11 +49,14 @@ public class RemoteConfigManager {
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
+  private static final long MIN_APP_START_CONFIG_FETCH_DELAY = 5000;
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
 
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
+  private long appStartTime;
+  private long appStartConfigFetchDelay;
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
@@ -77,6 +81,8 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
+    this.appStartTime = getCurrentSystemTimeMillis();
+    this.appStartConfigFetchDelay = MIN_APP_START_CONFIG_FETCH_DELAY + new Random().nextInt(25000);
   }
 
   /** Gets the singleton instance. */
@@ -292,7 +298,7 @@ public class RemoteConfigManager {
     if (allRcConfigMap.isEmpty()) { // Initial fetch.
       syncConfigValues(firebaseRemoteConfig.getAll());
     }
-    if (shouldFetchAndActivateRemoteConfigValues()) {
+    if (passesRandomAppStartDelay() && shouldFetchAndActivateRemoteConfigValues()) {
       triggerFirebaseRemoteConfigFetchAndActivateOnSuccessfulFetch();
     }
   }
@@ -349,6 +355,10 @@ public class RemoteConfigManager {
   private boolean shouldFetchAndActivateRemoteConfigValues() {
     return (getCurrentSystemTimeMillis() - firebaseRemoteConfigLastFetchTimestampMs)
         > TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS;
+  }
+
+  private boolean passesRandomAppStartDelay() {
+    return (getCurrentSystemTimeMillis() - appStartTime) > appStartConfigFetchDelay;
   }
 
   /** Gets the version code of the Android app. */
