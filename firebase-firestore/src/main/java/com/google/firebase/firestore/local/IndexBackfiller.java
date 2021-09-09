@@ -20,9 +20,7 @@ import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Implements the steps for backfilling indexes.
- */
+/** Implements the steps for backfilling indexes. */
 public class IndexBackfiller {
   /** How long we wait to try running index backfill after SDK initialization. */
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
@@ -105,14 +103,15 @@ public class IndexBackfiller {
     return new BackfillScheduler(asyncQueue, localStore);
   }
 
-  // TODO: Figure out which index entries to backfill.
+  // TODO(indexing): Figure out which index entries to backfill.
   public Results backfill() {
     int numIndexesWritten = 0;
     int numIndexesRemoved = 0;
     return new Results(/* hasRun= */ true, numIndexesWritten, numIndexesRemoved);
   }
 
-  public void addIndexEntry(IndexEntry entry) {
+  @VisibleForTesting
+  void addIndexEntry(IndexEntry entry) {
     persistence.execute(
         "INSERT OR IGNORE INTO index_entries ("
             + "index_id, "
@@ -125,7 +124,8 @@ public class IndexBackfiller {
         entry.getDocumentId());
   }
 
-  public void removeIndexEntry(int indexId, String uid, String documentId) {
+  @VisibleForTesting
+  void removeIndexEntry(int indexId, String uid, String documentId) {
     persistence.execute(
         "DELETE FROM index_entries "
             + "WHERE index_id = ? "
@@ -139,7 +139,7 @@ public class IndexBackfiller {
 
   @Nullable
   @VisibleForTesting
-  public IndexEntry getIndexEntry(int indexId) {
+  IndexEntry getIndexEntry(int indexId) {
     return persistence
         .query("SELECT index_value, uid, document_id FROM index_entries WHERE index_id = ?")
         .binding(indexId)

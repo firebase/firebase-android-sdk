@@ -18,6 +18,7 @@ package com.google.firebase.firestore.index;
  * Represents an index entry saved by the SDK in the local storage. Temporary placeholder, since
  * we'll probably serialize the indexValue right away rather than store it.
  */
+// TODO(indexing)
 public class IndexEntry {
   private final int indexId;
   private final byte[] indexValue;

@@ -76,7 +76,7 @@ public final class FirestoreClient {
   // LRU-related
   @Nullable private Scheduler gcScheduler;
 
-  @Nullable private Scheduler indexScheduler;
+  @Nullable private Scheduler indexBackfillScheduler;
 
   public FirestoreClient(
       final Context context,
@@ -146,8 +146,8 @@ public final class FirestoreClient {
             gcScheduler.stop();
           }
 
-          if (indexScheduler != null && Persistence.INDEXING_SUPPORT_ENABLED) {
-            indexScheduler.stop();
+          if (indexBackfillScheduler != null) {
+            indexBackfillScheduler.stop();
           }
         });
   }
@@ -262,7 +262,6 @@ public final class FirestoreClient {
     provider.initialize(configuration);
     persistence = provider.getPersistence();
     gcScheduler = provider.getGarbageCollectionScheduler();
-    indexScheduler = provider.getIndexBackfillScheduler();
     localStore = provider.getLocalStore();
     remoteStore = provider.getRemoteStore();
     syncEngine = provider.getSyncEngine();
@@ -272,8 +271,10 @@ public final class FirestoreClient {
       gcScheduler.start();
     }
 
-    if (indexScheduler != null && Persistence.INDEXING_SUPPORT_ENABLED) {
-      indexScheduler.start();
+    if (Persistence.INDEXING_SUPPORT_ENABLED && settings.isPersistenceEnabled()) {
+      indexBackfillScheduler = provider.getIndexBackfillScheduler();
+      hardAssert(indexBackfillScheduler != null, "Index backfill scheduler should not be null.");
+      indexBackfillScheduler.start();
     }
   }
 
