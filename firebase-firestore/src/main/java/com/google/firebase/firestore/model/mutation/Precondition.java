@@ -83,6 +83,18 @@ public final class Precondition {
     }
   }
 
+  /**
+   * Returns true if the preconditions is valid for the given document (or null if no document is
+   * available).
+   */
+  public boolean isValidFor(Mutation m) {
+    if (this.exists != null) {
+      return this.exists ==( m.getValue() != null);
+    } else {
+      return true;
+    }
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

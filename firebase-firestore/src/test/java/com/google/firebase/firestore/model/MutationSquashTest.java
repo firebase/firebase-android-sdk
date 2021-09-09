@@ -31,7 +31,7 @@ import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
-import com.google.firebase.firestore.model.mutation.EmptyMutation;
+import com.google.firebase.firestore.model.mutation.BaseMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Arrays;
@@ -331,12 +331,12 @@ public class MutationSquashTest {
         MutableDocument forReport = doc.clone();
         MutableDocument document = doc.clone();
         MutableDocument docCopy = document.clone();
-        Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString());
+        Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString(), document);
         for (Mutation mutation : permutation) {
           mutation.applyToLocalView(document, now);
-          squashed = mutation.squash(squashed, docCopy, now);
+          squashed = mutation.squash(squashed, now);
         }
-        if (!(squashed instanceof EmptyMutation)) {
+        if (!(squashed instanceof BaseMutation)) {
           squashed.applyToLocalView(docCopy, now);
         }
         assertEquals(getDescription(forReport, permutation, squashed), document, docCopy);
@@ -394,10 +394,10 @@ public class MutationSquashTest {
     MutableDocument toApplySquashedMutation = doc.clone();
     Timestamp now = Timestamp.now();
 
-    Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString());
+    Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString(), toApplySquashedMutation);
     for (Mutation m : mutations) {
       m.applyToLocalView(doc, now);
-      squashed = m.squash(squashed, toApplySquashedMutation, now);
+      squashed = m.squash(squashed, now);
     }
 
     squashed.applyToLocalView(toApplySquashedMutation, now);

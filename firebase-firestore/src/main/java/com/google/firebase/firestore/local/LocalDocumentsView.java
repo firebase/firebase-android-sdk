@@ -26,7 +26,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.EmptyMutation;
+import com.google.firebase.firestore.model.mutation.BaseMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
@@ -217,8 +217,8 @@ class LocalDocumentsView {
         Mutation squashed =
             squashedMutations.containsKey(key)
                 ? squashedMutations.get(key)
-                : new EmptyMutation(key, Precondition.NONE);
-        squashedMutations.put(key, mutation.squash(squashed, document, batch.getLocalWriteTime()));
+                : new BaseMutation(key, Precondition.NONE, document);
+        squashedMutations.put(key, mutation.squash(squashed, batch.getLocalWriteTime()));
       }
     }
 

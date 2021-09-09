@@ -94,7 +94,7 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document.getData());
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
     document
@@ -109,10 +109,10 @@ public final class SetMutation extends Mutation {
 
   @Override
   public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(document)) {
+      Mutation previousMutation, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(previousMutation)) {
       Map<FieldPath, Value> transformResults =
-          localTransformResults(localWriteTime, document, baseMutation);
+          localTransformResults(localWriteTime, previousMutation.getValue());
       ObjectValue value = getValue();
       if (!transformResults.isEmpty()) {
         value = value.clone();
@@ -120,7 +120,7 @@ public final class SetMutation extends Mutation {
       }
       return new SetMutation(getKey(), value, getPrecondition());
     } else {
-      return baseMutation;
+      return previousMutation;
     }
   }
 

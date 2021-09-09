@@ -136,7 +136,7 @@ public final class PatchMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document.getData());
     ObjectValue value = document.getData();
     value.setAll(getPatch());
     value.setAll(transformResults);
@@ -146,47 +146,36 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    verifyKeyMatches(document);
-    hardAssert(baseMutation != null, "baseMutation cannot be null");
+  public Mutation squash(Mutation previousMutation, Timestamp localWriteTime) {
+    hardAssert(previousMutation != null, "previousMutation cannot be null");
 
-    // Builds a document used to test preconditions, this works because squash only consider whether
-    // the document exists or not.
-    MutableDocument preconditionTest = document;
-    if (baseMutation instanceof DeleteMutation) {
-      preconditionTest = MutableDocument.newNoDocument(getKey(), document.getVersion());
-    } else if (!(baseMutation instanceof EmptyMutation)) {
-      preconditionTest = MutableDocument.newFoundDocument(getKey(), document.getVersion(), null);
+    if (!getPrecondition().isValidFor(previousMutation)) {
+      return previousMutation;
     }
 
-    if (!getPrecondition().isValidFor(preconditionTest)) {
-      return baseMutation;
-    }
-
-    // Applying transforms on document + baseMutation.
     Map<FieldPath, Value> transformResults =
-        localTransformResults(localWriteTime, document, baseMutation);
+        localTransformResults(localWriteTime, previousMutation.getValue());
 
     ObjectValue mergedPatch =
-        (baseMutation.getValue() != null) ? baseMutation.getValue().clone() : new ObjectValue();
+        (previousMutation.getValue() != null) ? previousMutation.getValue().clone() : new ObjectValue();
     mergedPatch.setAll(getPatch());
     mergedPatch.setAll(transformResults);
 
-    if (baseMutation instanceof EmptyMutation || baseMutation instanceof PatchMutation) {
-      HashSet<FieldPath> mergedMaskSet = new HashSet<>(baseMutation.getMask().getMask());
-      mergedMaskSet.addAll(mask.getMask());
+    FieldMask mask = previousMutation.getMask();
+    if (mask != null) {
+      HashSet<FieldPath> mergedMaskSet = new HashSet<>(mask.getMask());
+      mergedMaskSet.addAll(this.mask.getMask());
       mergedMaskSet.addAll(getFieldTransformPaths());
       FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
       return new PatchMutation(
           getKey(),
           mergedPatch,
           mergedMask,
-          baseMutation instanceof EmptyMutation
+          previousMutation instanceof BaseMutation
               ? getPrecondition()
-              : baseMutation.getPrecondition());
+              : previousMutation.getPrecondition());
     } else {
-      return new SetMutation(getKey(), mergedPatch, baseMutation.getPrecondition());
+      return new SetMutation(getKey(), mergedPatch, previousMutation.getPrecondition());
     }
   }
 

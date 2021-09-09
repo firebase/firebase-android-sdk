@@ -81,11 +81,11 @@ public final class DeleteMutation extends Mutation {
 
   @Override
   public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(document)) {
+      Mutation previousMutation, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(previousMutation)) {
       return this;
     } else {
-      return baseMutation;
+      return previousMutation;
     }
   }
 

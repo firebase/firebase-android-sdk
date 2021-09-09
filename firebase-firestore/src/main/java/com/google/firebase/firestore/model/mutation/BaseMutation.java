@@ -21,16 +21,22 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
+
+import java.util.Collections;
 import java.util.HashSet;
 
 /**
  * A marker type to indicate an empty mutation that does nothing. This is useful as the initial
  * result of {@code Mutation.squash}.
  */
-public final class EmptyMutation extends Mutation {
+// TODO(mrschmidt): Consider replacing with Set/Patch depending on whether MutableDocument exists
+public final class BaseMutation extends Mutation {
 
-  public EmptyMutation(DocumentKey key, Precondition precondition) {
+  private MutableDocument doc;
+
+  public BaseMutation(DocumentKey key, Precondition precondition, MutableDocument doc) {
     super(key, precondition);
+    this.doc = doc;
   }
 
   @Override
@@ -42,7 +48,7 @@ public final class EmptyMutation extends Mutation {
       return false;
     }
 
-    EmptyMutation that = (EmptyMutation) o;
+    BaseMutation that = (BaseMutation) o;
     return hasSameKeyAndPrecondition(that);
   }
 
@@ -67,7 +73,7 @@ public final class EmptyMutation extends Mutation {
 
   @Override
   public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
+      Mutation baseMutation, Timestamp localWriteTime) {
     throw Assert.fail("EmptyMutation should never be used to squash.");
   }
 
@@ -78,10 +84,11 @@ public final class EmptyMutation extends Mutation {
 
   @Nullable
   protected ObjectValue getValue() {
-    return null;
+    return doc.isFoundDocument() ? doc.getData() : null;
   }
 
+  @Nullable
   protected FieldMask getMask() {
-    return FieldMask.fromSet(new HashSet<>());
+    return doc.isFoundDocument() ? FieldMask.fromSet(Collections.emptySet()) : null;
   }
 }
