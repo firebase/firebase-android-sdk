@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -25,9 +26,12 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.EmptyMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -195,6 +199,7 @@ class LocalDocumentsView {
 
     remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
 
+    Map<DocumentKey, Mutation> squashedMutations = new HashMap<>();
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
         // Only process documents belonging to the collection.
@@ -209,10 +214,19 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        mutation.applyToLocalView(document, batch.getLocalWriteTime());
-        if (!document.isFoundDocument()) {
-          remoteDocuments = remoteDocuments.remove(key);
-        }
+        Mutation squashed =
+            squashedMutations.containsKey(key)
+                ? squashedMutations.get(key)
+                : new EmptyMutation(key, Precondition.NONE);
+        squashedMutations.put(key, mutation.squash(squashed, document, batch.getLocalWriteTime()));
+      }
+    }
+
+    for (Map.Entry<DocumentKey, Mutation> entry : squashedMutations.entrySet()) {
+      MutableDocument document = remoteDocuments.get(entry.getKey());
+      entry.getValue().applyToLocalView(document, Timestamp.now());
+      if (!document.isFoundDocument()) {
+        remoteDocuments = remoteDocuments.remove(entry.getKey());
       }
     }
 

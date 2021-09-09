@@ -60,6 +60,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
+import com.google.firebase.firestore.model.mutation.EmptyMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -541,6 +542,10 @@ public class TestUtil {
 
   public static VerifyMutation verifyMutation(String path, int micros) {
     return new VerifyMutation(key(path), Precondition.updateTime(version(micros)));
+  }
+
+  public static EmptyMutation emptyMutation(String path) {
+    return new EmptyMutation(key(path), Precondition.NONE);
   }
 
   public static MutationResult mutationResult(long version) {

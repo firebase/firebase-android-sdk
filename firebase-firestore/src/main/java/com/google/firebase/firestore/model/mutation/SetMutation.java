@@ -126,8 +126,9 @@ public final class SetMutation extends Mutation {
 
   @Override
   protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    if (getValue().getFieldsMap().containsKey(fieldPath)) {
-      return new FieldUpdate(FieldUpdate.Type.SET, getValue().getFieldsMap().get(fieldPath));
+    Value fieldValue = getValue().get(fieldPath);
+    if (fieldValue != null) {
+      return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
     }
 
     return new FieldUpdate(FieldUpdate.Type.DELETE, null);

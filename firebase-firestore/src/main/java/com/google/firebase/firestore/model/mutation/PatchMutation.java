@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -146,39 +148,45 @@ public final class PatchMutation extends Mutation {
   @Override
   public Mutation squash(
       Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    MutableDocument preconditionTest =
-        (baseMutation != null && (baseMutation instanceof DeleteMutation))
-            ? MutableDocument.newNoDocument(getKey(), document.getVersion())
-            : document;
+    verifyKeyMatches(document);
+    hardAssert(baseMutation != null, "baseMutation cannot be null");
+
+    // Builds a document used to test preconditions, this works because squash only consider whether
+    // the document exists or not.
+    MutableDocument preconditionTest = document;
+    if (baseMutation instanceof DeleteMutation) {
+      preconditionTest = MutableDocument.newNoDocument(getKey(), document.getVersion());
+    } else if (!(baseMutation instanceof EmptyMutation)) {
+      preconditionTest = MutableDocument.newFoundDocument(getKey(), document.getVersion(), null);
+    }
 
     if (!getPrecondition().isValidFor(preconditionTest)) {
       return baseMutation;
     }
 
+    // Applying transforms on document + baseMutation.
     Map<FieldPath, Value> transformResults =
         localTransformResults(localWriteTime, document, baseMutation);
 
     ObjectValue mergedPatch =
-        (baseMutation != null && baseMutation.getValue() != null)
-            ? baseMutation.getValue().clone()
-            : new ObjectValue();
+        (baseMutation.getValue() != null) ? baseMutation.getValue().clone() : new ObjectValue();
     mergedPatch.setAll(getPatch());
     mergedPatch.setAll(transformResults);
 
-    if (baseMutation != null && baseMutation.getMask() == null) {
-      // TODO: Use strictest preconditions or assert we only use exists
-      return new SetMutation(getKey(), mergedPatch, baseMutation.getPrecondition());
-    } else {
+    if (baseMutation instanceof EmptyMutation || baseMutation instanceof PatchMutation) {
       HashSet<FieldPath> mergedMaskSet = new HashSet<>(baseMutation.getMask().getMask());
       mergedMaskSet.addAll(mask.getMask());
       mergedMaskSet.addAll(getFieldTransformPaths());
       FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
-      // TODO: Use strictest preconditions or assert we only use exists
       return new PatchMutation(
           getKey(),
           mergedPatch,
           mergedMask,
-          baseMutation == null ? getPrecondition() : baseMutation.getPrecondition());
+          baseMutation instanceof EmptyMutation
+              ? getPrecondition()
+              : baseMutation.getPrecondition());
+    } else {
+      return new SetMutation(getKey(), mergedPatch, baseMutation.getPrecondition());
     }
   }
 
@@ -188,11 +196,12 @@ public final class PatchMutation extends Mutation {
       return new FieldUpdate(FieldUpdate.Type.ABSENT, null);
     }
 
-    if (!getValue().getFieldsMap().containsKey(fieldPath)) {
+    Value fieldValue = getValue().get(fieldPath);
+    if (fieldValue == null) {
       return new FieldUpdate(FieldUpdate.Type.DELETE, null);
     }
 
-    return new FieldUpdate(FieldUpdate.Type.SET, getValue().getFieldsMap().get(fieldPath));
+    return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
   }
 
   private Map<FieldPath, Value> getPatch() {
