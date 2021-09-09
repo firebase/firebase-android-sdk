@@ -50,147 +50,77 @@ public class MutationSquashTest {
   @Test
   public void testSquashOneSetMutation() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
-    MutableDocument setDoc = doc("collection/key", 0, data);
-    MutableDocument original = setDoc.clone();
-
-    Timestamp now = Timestamp.now();
-    Mutation set = setMutation("collection/key", map("bar", "bar-value"));
-    set.applyToLocalView(setDoc, now);
-
-    Mutation squashed = set.squash(emptyMutation("collection/key"), original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(setDoc, original);
+    squashRoundTrips(
+        doc("collection/key", 0, data), setMutation("collection/key", map("bar", "bar-value")));
   }
 
   @Test
   public void testSquashOnePatchMutation() {
     Map<String, Object> data = map("foo", map("bar", "bar-value"), "baz", "baz-value");
-    MutableDocument patchDoc = doc("collection/key", 0, data);
-    MutableDocument original = patchDoc.clone();
-
-    Timestamp now = Timestamp.now();
-    Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, now);
-
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = patch.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(patchDoc, original);
+    squashRoundTrips(
+        doc("collection/key", 0, data),
+        patchMutation("collection/key", map("foo.bar", "new-bar-value")));
   }
 
   @Test
   public void testSquashWithPatchWithMerge() {
-    MutableDocument mergeDoc = deletedDoc("collection/key", 0);
-    MutableDocument original = mergeDoc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    upsert.applyToLocalView(mergeDoc, now);
-
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = upsert.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(mergeDoc, original);
+    squashRoundTrips(deletedDoc("collection/key", 0), upsert);
   }
 
   @Test
   public void testSquashWithDeleteThenPatch() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
-    delete.applyToLocalView(doc, now);
-
-    now = Timestamp.now();
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = delete.squash(squashed, original, now);
-    squashed = patch.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, delete, patch);
   }
 
   @Test
   public void testSquashWithDeleteThenMerge() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
-    delete.applyToLocalView(doc, now);
-
-    now = Timestamp.now();
     Mutation patch =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    patch.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = delete.squash(squashed, original, now);
-    squashed = patch.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, delete, patch);
   }
 
   @Test
   public void testSquashPatchThenPatchToDeleteField() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation patch =
         patchMutation(
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
-    patch.applyToLocalView(doc, now);
-
     Mutation patchToDeleteField =
         patchMutation(
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
-    patchToDeleteField.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = patch.squash(squashed, original, now);
-    squashed = patchToDeleteField.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, patch, patchToDeleteField);
   }
 
   @Test
   public void testSquashPatchThenMerge() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation patch =
         patchMutation(
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
-    patch.applyToLocalView(doc, now);
-
     Mutation merge =
         mergeMutation(
             "collection/key",
             map("arrays", FieldValue.arrayUnion(1, 2, 3)),
             Arrays.asList(field("arrays")));
-    merge.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = patch.squash(squashed, original, now);
-    squashed = merge.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, patch, merge);
   }
 
   @Test
   public void testSquashArrayUnionThenRemove() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation union =
         mergeMutation(
             "collection/key", map("arrays", FieldValue.arrayUnion(1, 2, 3)), Arrays.asList());
@@ -199,53 +129,29 @@ public class MutationSquashTest {
             "collection/key",
             map("foo", "xxx", "arrays", FieldValue.arrayRemove(2)),
             Arrays.asList(field("foo")));
-    union.applyToLocalView(doc, now);
-    remove.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = union.squash(squashed, original, now);
-    squashed = remove.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, union, remove);
   }
 
   @Test
   public void testSquashSetThenIncrement() {
     MutableDocument doc = doc("collection/key", 0, map("foo", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation set = setMutation("collection/key", map("foo", 2));
     Mutation update = patchMutation("collection/key", map("foo", FieldValue.increment(2)));
-    set.applyToLocalView(doc, now);
-    update.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = set.squash(squashed, original, now);
-    squashed = update.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, set, update);
   }
 
   @Test
   public void testSquashSetThenPatchOnDeletedDoc() {
     MutableDocument doc = deletedDoc("collection/key", 0);
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
     Mutation patch =
         patchMutation(
             "collection/key",
             map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp()));
-    set.applyToLocalView(doc, now);
-    patch.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = set.squash(squashed, original, now);
-    squashed = patch.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, set, patch);
   }
 
   // TODO(overlay): This test fails because deleting nested fields like bar.baz leaves an empty bar
@@ -256,9 +162,6 @@ public class MutationSquashTest {
   @Test
   public void testSquashFieldDeletionOfNestedField() {
     MutableDocument doc = doc("collection/key", 0, map("bar.baz", 1));
-    MutableDocument original = doc.clone();
-
-    Timestamp now = Timestamp.now();
     Mutation patch1 =
         patchMutation(
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
@@ -269,16 +172,8 @@ public class MutationSquashTest {
     Mutation patch3 =
         patchMutation(
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
-    patch1.applyToLocalView(doc, now);
-    patch2.applyToLocalView(doc, now);
-    patch3.applyToLocalView(doc, now);
 
-    Mutation squashed = emptyMutation("collection/key");
-    squashed = patch1.squash(squashed, original, now);
-    squashed = patch2.squash(squashed, original, now);
-    squashed = patch3.squash(squashed, original, now);
-    squashed.applyToLocalView(original, now);
-    assertEquals(doc, original);
+    squashRoundTrips(doc, patch1, patch2, patch3);
   }
 
   // Below tests run on automatically generated mutation list, they are deterministic, but hard to
@@ -493,5 +388,20 @@ public class MutationSquashTest {
       }
     }
     return returnValue;
+  }
+
+  private void squashRoundTrips(MutableDocument doc, Mutation... mutations) {
+    MutableDocument toApplySquashedMutation = doc.clone();
+    Timestamp now = Timestamp.now();
+
+    Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString());
+    for (Mutation m : mutations) {
+      m.applyToLocalView(doc, now);
+      squashed = m.squash(squashed, toApplySquashedMutation, now);
+    }
+
+    squashed.applyToLocalView(toApplySquashedMutation, now);
+
+    assertEquals(doc, toApplySquashedMutation);
   }
 }
