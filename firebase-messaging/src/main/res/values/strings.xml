@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Name of the notification category ("channel") used to display the notifications received
+       from the app's server via FCM, when the developer doesn't set their own value.
+       This text is shown when the user long-clicks the notification,
+       or opens the app's notification-settings. -->
+    <string name="fcm_fallback_notification_channel_label">Miscellaneous</string>
+</resources>
