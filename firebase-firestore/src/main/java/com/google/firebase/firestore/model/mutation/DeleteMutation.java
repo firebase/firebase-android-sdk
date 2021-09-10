@@ -83,7 +83,7 @@ public final class DeleteMutation extends Mutation {
   public Mutation squash(MutableDocument document,
                         @Nullable Mutation previousMutation, Timestamp localWriteTime) {
     if (getPrecondition().isValidFor(document)) {
-      applyToLocalView(document, localWriteTime);
+      document.convertToNoDocument(SnapshotVersion.NONE);
       return this;
     } else {
       return previousMutation;

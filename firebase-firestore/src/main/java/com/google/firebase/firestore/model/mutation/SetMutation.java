@@ -94,12 +94,17 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document.getData());
+    ObjectValue newValue = apply(document.getData(), localWriteTime);
+    document
+            .convertToFoundDocument(getPostMutationVersion(document), newValue)
+            .setHasLocalMutations();
+  }
+
+  private ObjectValue apply(ObjectValue previousData, Timestamp localWriteTime) {
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, previousData);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
-    document
-        .convertToFoundDocument(getPostMutationVersion(document), localValue)
-        .setHasLocalMutations();
+    return localValue;
   }
 
   /** Returns the object value to use when setting the document. */
@@ -111,15 +116,11 @@ public final class SetMutation extends Mutation {
   public Mutation squash(MutableDocument currentDocument,
       @Nullable Mutation previousMutation, Timestamp localWriteTime) {
     if (getPrecondition().isValidFor(currentDocument)) {
-      Map<FieldPath, Value> transformResults =
-          localTransformResults(localWriteTime, currentDocument.getData());
-      ObjectValue value = getValue();
-      if (!transformResults.isEmpty()) {
-        value = value.clone();
-        value.setAll(transformResults);
-      }
-      applyToLocalView(currentDocument, localWriteTime);
-      return new SetMutation(getKey(), value, Precondition.NONE);
+      ObjectValue newValue = apply(currentDocument.getData(), localWriteTime);
+      currentDocument
+              .convertToFoundDocument(getPostMutationVersion(currentDocument), newValue)
+              .setHasLocalMutations();
+      return new SetMutation(getKey(), newValue, Precondition.NONE);
     } else {
       return previousMutation;
     }
