@@ -77,12 +77,11 @@ public final class SetMutation extends Mutation {
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
-    ObjectValue newData = value.clone();
     Map<FieldPath, Value> transformResults =
         serverTransformResults(document, mutationResult.getTransformResults());
-    newData.setAll(transformResults);
+    ObjectValue newValue = apply(transformResults);
     document
-        .convertToFoundDocument(mutationResult.getVersion(), newData)
+        .convertToFoundDocument(mutationResult.getVersion(), newValue)
         .setHasCommittedMutations();
   }
 
@@ -94,14 +93,14 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    ObjectValue newValue = apply(document.getData(), localWriteTime);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document.getData());
+    ObjectValue newValue = apply(transformResults);
     document
             .convertToFoundDocument(getPostMutationVersion(document), newValue)
             .setHasLocalMutations();
   }
 
-  private ObjectValue apply(ObjectValue previousData, Timestamp localWriteTime) {
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, previousData);
+  private ObjectValue apply(Map<FieldPath, Value> transformResults) {
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
     return localValue;
@@ -116,7 +115,8 @@ public final class SetMutation extends Mutation {
   public Mutation squash(MutableDocument currentDocument,
       @Nullable Mutation previousMutation, Timestamp localWriteTime) {
     if (getPrecondition().isValidFor(currentDocument)) {
-      ObjectValue newValue = apply(currentDocument.getData(), localWriteTime);
+      Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, currentDocument.getData());
+      ObjectValue newValue = apply(transformResults);
       currentDocument
               .convertToFoundDocument(getPostMutationVersion(currentDocument), newValue)
               .setHasLocalMutations();
