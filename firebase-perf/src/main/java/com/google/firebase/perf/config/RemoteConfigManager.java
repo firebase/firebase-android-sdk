@@ -78,7 +78,8 @@ public class RemoteConfigManager {
     this(
         executor,
         firebaseRemoteConfig,
-        MIN_APP_START_CONFIG_FETCH_DELAY_MS + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+        MIN_APP_START_CONFIG_FETCH_DELAY_MS
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
   }
 
   @VisibleForTesting
@@ -298,10 +299,11 @@ public class RemoteConfigManager {
 
   /**
    * Triggers a fetch and async activate from Firebase Remote Config if:
+   *
    * <ol>
-   * <li>Firebase Remote Config is available,
-   * <li>Time-since-app-start has passed a randomized delay-time, and
-   * <li>At least 12 hours have passed since the previous fetch.
+   *   <li>Firebase Remote Config is available,
+   *   <li>Time-since-app-start has passed a randomized delay-time (b/187985523), and
+   *   <li>At least 12 hours have passed since the previous fetch.
    * </ol>
    */
   private void triggerRemoteConfigFetchIfNecessary() {
