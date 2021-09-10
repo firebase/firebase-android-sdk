@@ -57,6 +57,7 @@ public final class FirebaseFirestoreSettings {
       host = settings.host;
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
+      cacheSizeBytes = settings.cacheSizeBytes;
     }
 
     /**
