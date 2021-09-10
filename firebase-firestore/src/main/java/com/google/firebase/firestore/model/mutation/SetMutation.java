@@ -108,30 +108,21 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public Mutation squash(
-      Mutation previousMutation, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(previousMutation)) {
+  public Mutation squash(MutableDocument currentDocument,
+      @Nullable Mutation previousMutation, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(currentDocument)) {
       Map<FieldPath, Value> transformResults =
-          localTransformResults(localWriteTime, previousMutation.getValue());
+          localTransformResults(localWriteTime, currentDocument.getData());
       ObjectValue value = getValue();
       if (!transformResults.isEmpty()) {
         value = value.clone();
         value.setAll(transformResults);
       }
-      return new SetMutation(getKey(), value, getPrecondition());
+      applyToLocalView(currentDocument, localWriteTime);
+      return new SetMutation(getKey(), value, Precondition.NONE);
     } else {
       return previousMutation;
     }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    Value fieldValue = getValue().get(fieldPath);
-    if (fieldValue != null) {
-      return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
-    }
-
-    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
   }
 
   @Nullable

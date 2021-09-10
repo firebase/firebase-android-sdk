@@ -16,7 +16,6 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.emptyMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -26,12 +25,13 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static org.junit.Assert.assertEquals;
 
+import androidx.annotation.Nullable;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
-import com.google.firebase.firestore.model.mutation.BaseMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Arrays;
@@ -331,12 +331,12 @@ public class MutationSquashTest {
         MutableDocument forReport = doc.clone();
         MutableDocument document = doc.clone();
         MutableDocument docCopy = document.clone();
-        Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString(), document);
+        Mutation squashed = null;
         for (Mutation mutation : permutation) {
           mutation.applyToLocalView(document, now);
-          squashed = mutation.squash(squashed, now);
+          squashed = mutation.squash(docCopy, squashed, now);
         }
-        if (!(squashed instanceof BaseMutation)) {
+        if (squashed != null) {
           squashed.applyToLocalView(docCopy, now);
         }
         assertEquals(getDescription(forReport, permutation, squashed), document, docCopy);
@@ -348,7 +348,7 @@ public class MutationSquashTest {
   }
 
   private String getDescription(
-      MutableDocument document, List<Mutation> mutations, Mutation squashed) {
+      MutableDocument document, List<Mutation> mutations, @Nullable Mutation squashed) {
     StringBuilder builder = new StringBuilder();
     builder.append("MutationSquash test failed with:\n");
     builder.append("document:\n");
@@ -362,7 +362,7 @@ public class MutationSquashTest {
     builder.append("\n");
 
     builder.append("squashed:\n");
-    builder.append(squashed == null ? "null" : squashed.toString());
+    builder.append(squashed == null ? "null" : squashed);
     builder.append("\n\n");
 
     return builder.toString();
@@ -394,10 +394,10 @@ public class MutationSquashTest {
     MutableDocument toApplySquashedMutation = doc.clone();
     Timestamp now = Timestamp.now();
 
-    Mutation squashed = emptyMutation(doc.getKey().getPath().canonicalString(), toApplySquashedMutation);
+    Mutation squashed = null;
     for (Mutation m : mutations) {
       m.applyToLocalView(doc, now);
-      squashed = m.squash(squashed, now);
+      squashed = m.squash(toApplySquashedMutation,squashed, now);
     }
 
     squashed.applyToLocalView(toApplySquashedMutation, now);

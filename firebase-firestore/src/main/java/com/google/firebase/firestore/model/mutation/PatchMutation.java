@@ -16,6 +16,8 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -23,6 +25,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -146,51 +149,35 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public Mutation squash(Mutation previousMutation, Timestamp localWriteTime) {
-    hardAssert(previousMutation != null, "previousMutation cannot be null");
-
-    if (!getPrecondition().isValidFor(previousMutation)) {
+  public Mutation squash(MutableDocument currentDocument, @Nullable Mutation previousMutation, Timestamp localWriteTime) {
+    if (!getPrecondition().isValidFor(currentDocument)) {
       return previousMutation;
     }
 
     Map<FieldPath, Value> transformResults =
-        localTransformResults(localWriteTime, previousMutation.getValue());
+        localTransformResults(localWriteTime, currentDocument.getData());
 
     ObjectValue mergedPatch =
-        (previousMutation.getValue() != null) ? previousMutation.getValue().clone() : new ObjectValue();
+        (previousMutation != null && previousMutation.getValue() != null) ? previousMutation.getValue().clone() : new ObjectValue();
     mergedPatch.setAll(getPatch());
     mergedPatch.setAll(transformResults);
 
-    FieldMask mask = previousMutation.getMask();
+    FieldMask mask = previousMutation != null ? previousMutation.getMask() : FieldMask.fromSet(Collections.emptySet());
     if (mask != null) {
       HashSet<FieldPath> mergedMaskSet = new HashSet<>(mask.getMask());
       mergedMaskSet.addAll(this.mask.getMask());
       mergedMaskSet.addAll(getFieldTransformPaths());
       FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
+      applyToLocalView(currentDocument, localWriteTime);
       return new PatchMutation(
           getKey(),
           mergedPatch,
           mergedMask,
-          previousMutation instanceof BaseMutation
-              ? getPrecondition()
-              : previousMutation.getPrecondition());
+          Precondition.NONE); // None since we already know the mutation passed the check
     } else {
-      return new SetMutation(getKey(), mergedPatch, previousMutation.getPrecondition());
+      applyToLocalView(currentDocument, localWriteTime);
+      return new SetMutation(getKey(), mergedPatch, Precondition.NONE);
     }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    if (!getMask().covers(fieldPath)) {
-      return new FieldUpdate(FieldUpdate.Type.ABSENT, null);
-    }
-
-    Value fieldValue = getValue().get(fieldPath);
-    if (fieldValue == null) {
-      return new FieldUpdate(FieldUpdate.Type.DELETE, null);
-    }
-
-    return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
   }
 
   private Map<FieldPath, Value> getPatch() {

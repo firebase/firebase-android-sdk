@@ -80,18 +80,14 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public Mutation squash(
-      Mutation previousMutation, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(previousMutation)) {
+  public Mutation squash(MutableDocument document,
+                        @Nullable Mutation previousMutation, Timestamp localWriteTime) {
+    if (getPrecondition().isValidFor(document)) {
+      applyToLocalView(document, localWriteTime);
       return this;
     } else {
       return previousMutation;
     }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
   }
 
   @Nullable

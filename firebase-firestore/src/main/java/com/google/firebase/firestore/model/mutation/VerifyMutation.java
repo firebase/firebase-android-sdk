@@ -69,12 +69,7 @@ public final class VerifyMutation extends Mutation {
 
   @Override
   public Mutation squash(
-      Mutation baseMutation,  Timestamp localWriteTime) {
-    throw Assert.fail("VerifyMutation should only be used in Transactions.");
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
+          MutableDocument document, Mutation baseMutation,  Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 

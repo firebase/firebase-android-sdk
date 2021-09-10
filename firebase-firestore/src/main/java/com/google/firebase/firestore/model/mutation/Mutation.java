@@ -130,8 +130,8 @@ public abstract class Mutation {
    *     a part of.
    * @return A new mutation squashed mutation.
    */
-  public abstract Mutation squash(
-      Mutation previousMutation, Timestamp localWriteTime);
+  @Nullable public abstract Mutation squash(MutableDocument currentDocument,
+      @Nullable Mutation previousMutation, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
