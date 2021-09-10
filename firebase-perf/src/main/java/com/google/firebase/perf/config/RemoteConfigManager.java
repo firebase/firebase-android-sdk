@@ -49,7 +49,8 @@ public class RemoteConfigManager {
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
-  private static final long MIN_APP_START_CONFIG_FETCH_DELAY = 5000;
+  private static final long MIN_APP_START_CONFIG_FETCH_DELAY_MS = 5000;
+  private static final int RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
@@ -77,7 +78,7 @@ public class RemoteConfigManager {
     this(
         executor,
         firebaseRemoteConfig,
-        MIN_APP_START_CONFIG_FETCH_DELAY + new Random().nextInt(25000));
+        MIN_APP_START_CONFIG_FETCH_DELAY_MS + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
   }
 
   @VisibleForTesting
@@ -296,8 +297,12 @@ public class RemoteConfigManager {
   }
 
   /**
-   * Triggers a fetch and async activate from Firebase Remote Config if Firebase Remote Config is
-   * available, and at least 12 hours have passed since the previous fetch.
+   * Triggers a fetch and async activate from Firebase Remote Config if:
+   * <ol>
+   * <li>Firebase Remote Config is available,
+   * <li>Time-since-app-start has passed a randomized delay-time, and
+   * <li>At least 12 hours have passed since the previous fetch.
+   * </ol>
    */
   private void triggerRemoteConfigFetchIfNecessary() {
     if (!isFirebaseRemoteConfigAvailable()) {
