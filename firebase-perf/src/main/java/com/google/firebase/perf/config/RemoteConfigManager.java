@@ -53,10 +53,10 @@ public class RemoteConfigManager {
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
+  private final long appStartTime;
+  private final long appStartConfigFetchDelay;
 
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
-  private long appStartTime;
-  private long appStartConfigFetchDelay;
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
@@ -73,8 +73,16 @@ public class RemoteConfigManager {
         );
   }
 
-  @VisibleForTesting
   RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
+    this(
+        executor,
+        firebaseRemoteConfig,
+        MIN_APP_START_CONFIG_FETCH_DELAY + new Random().nextInt(25000));
+  }
+
+  @VisibleForTesting
+  RemoteConfigManager(
+      Executor executor, FirebaseRemoteConfig firebaseRemoteConfig, long fetchDelay) {
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
     this.allRcConfigMap =
@@ -82,7 +90,7 @@ public class RemoteConfigManager {
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
     this.appStartTime = getCurrentSystemTimeMillis();
-    this.appStartConfigFetchDelay = MIN_APP_START_CONFIG_FETCH_DELAY + new Random().nextInt(25000);
+    this.appStartConfigFetchDelay = fetchDelay;
   }
 
   /** Gets the singleton instance. */
@@ -358,7 +366,7 @@ public class RemoteConfigManager {
   }
 
   private boolean passesRandomAppStartDelay() {
-    return (getCurrentSystemTimeMillis() - appStartTime) > appStartConfigFetchDelay;
+    return (getCurrentSystemTimeMillis() - appStartTime) >= appStartConfigFetchDelay;
   }
 
   /** Gets the version code of the Android app. */
