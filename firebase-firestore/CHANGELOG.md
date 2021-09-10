@@ -1,3 +1,7 @@
+# 23.0.4
+- [fixed] Fixed an issue where some fields were missed when copying in the
+  `FirebaseFirestoreSettings.Builder` copy constructor.
+
 # 23.0.3
 - [fixed] Fixed an issue when loading a data bundle with
   multi-byte Unicode characters leads to failures.
