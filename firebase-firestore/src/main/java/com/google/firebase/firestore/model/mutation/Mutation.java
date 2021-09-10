@@ -130,8 +130,11 @@ public abstract class Mutation {
    *     a part of.
    * @return A new mutation squashed mutation.
    */
-  @Nullable public abstract Mutation squash(MutableDocument currentDocument,
-      @Nullable Mutation previousMutation, Timestamp localWriteTime);
+  @Nullable
+  public abstract Mutation squash(
+      MutableDocument currentDocument,
+      @Nullable Mutation previousMutation,
+      Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -209,7 +212,8 @@ public abstract class Mutation {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
-      Value previousValue = previousData != null ? previousData.get(fieldTransform.getFieldPath()) : null;
+      Value previousValue =
+          previousData != null ? previousData.get(fieldTransform.getFieldPath()) : null;
       transformResults.put(
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }

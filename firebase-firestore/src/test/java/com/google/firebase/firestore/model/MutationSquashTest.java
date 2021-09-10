@@ -26,7 +26,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static org.junit.Assert.assertEquals;
 
 import androidx.annotation.Nullable;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
@@ -397,7 +396,7 @@ public class MutationSquashTest {
     Mutation squashed = null;
     for (Mutation m : mutations) {
       m.applyToLocalView(doc, now);
-      squashed = m.squash(toApplySquashedMutation,squashed, now);
+      squashed = m.squash(toApplySquashedMutation, squashed, now);
     }
 
     squashed.applyToLocalView(toApplySquashedMutation, now);

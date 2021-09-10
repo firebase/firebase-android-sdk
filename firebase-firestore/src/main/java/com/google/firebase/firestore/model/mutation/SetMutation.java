@@ -93,11 +93,12 @@ public final class SetMutation extends Mutation {
       return;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document.getData());
+    Map<FieldPath, Value> transformResults =
+        localTransformResults(localWriteTime, document.getData());
     ObjectValue newValue = apply(transformResults);
     document
-            .convertToFoundDocument(getPostMutationVersion(document), newValue)
-            .setHasLocalMutations();
+        .convertToFoundDocument(getPostMutationVersion(document), newValue)
+        .setHasLocalMutations();
   }
 
   private ObjectValue apply(Map<FieldPath, Value> transformResults) {
@@ -112,14 +113,17 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public Mutation squash(MutableDocument currentDocument,
-      @Nullable Mutation previousMutation, Timestamp localWriteTime) {
+  public Mutation squash(
+      MutableDocument currentDocument,
+      @Nullable Mutation previousMutation,
+      Timestamp localWriteTime) {
     if (getPrecondition().isValidFor(currentDocument)) {
-      Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, currentDocument.getData());
+      Map<FieldPath, Value> transformResults =
+          localTransformResults(localWriteTime, currentDocument.getData());
       ObjectValue newValue = apply(transformResults);
       currentDocument
-              .convertToFoundDocument(getPostMutationVersion(currentDocument), newValue)
-              .setHasLocalMutations();
+          .convertToFoundDocument(getPostMutationVersion(currentDocument), newValue)
+          .setHasLocalMutations();
       return new SetMutation(getKey(), newValue, Precondition.NONE);
     } else {
       return previousMutation;

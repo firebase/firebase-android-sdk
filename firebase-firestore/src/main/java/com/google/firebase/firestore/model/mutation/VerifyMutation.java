@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model.mutation;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
@@ -69,7 +68,7 @@ public final class VerifyMutation extends Mutation {
 
   @Override
   public Mutation squash(
-          MutableDocument document, Mutation baseMutation,  Timestamp localWriteTime) {
+      MutableDocument document, Mutation baseMutation, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 

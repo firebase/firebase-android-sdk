@@ -29,7 +29,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -213,10 +212,7 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        Mutation squashed =
-            squashedMutations.containsKey(key)
-                ? squashedMutations.get(key)
-                : null;
+        Mutation squashed = squashedMutations.containsKey(key) ? squashedMutations.get(key) : null;
         squashedMutations.put(key, mutation.squash(document, squashed, batch.getLocalWriteTime()));
       }
     }
