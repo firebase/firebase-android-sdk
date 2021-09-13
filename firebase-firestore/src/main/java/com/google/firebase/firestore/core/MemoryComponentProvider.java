@@ -17,10 +17,10 @@ package com.google.firebase.firestore.core;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.DefaultQueryEngine;
-import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
+import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
@@ -36,8 +36,13 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   @Nullable
-  protected GarbageCollectionScheduler createGarbageCollectionScheduler(
-      Configuration configuration) {
+  protected Scheduler createGarbageCollectionScheduler(Configuration configuration) {
+    return null;
+  }
+
+  @Override
+  @Nullable
+  protected Scheduler createIndexBackfillScheduler(Configuration configuration) {
     return null;
   }
 

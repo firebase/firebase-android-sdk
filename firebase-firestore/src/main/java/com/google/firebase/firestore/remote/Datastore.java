@@ -92,10 +92,19 @@ public class Datastore {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
+    this.channel =
+        initializeChannel(
+            databaseInfo, workerQueue, credentialsProvider, context, metadataProvider);
+  }
 
-    channel =
-        new FirestoreChannel(
-            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
+  FirestoreChannel initializeChannel(
+      DatabaseInfo databaseInfo,
+      AsyncQueue workerQueue,
+      CredentialsProvider credentialsProvider,
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
+    return new FirestoreChannel(
+        workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {
