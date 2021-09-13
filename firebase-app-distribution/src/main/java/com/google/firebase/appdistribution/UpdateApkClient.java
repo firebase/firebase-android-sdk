@@ -181,7 +181,13 @@ class UpdateApkClient {
     long bytesDownloaded = 0;
     try (BufferedOutputStream outputStream =
         new BufferedOutputStream(
-            firebaseApp.getApplicationContext().openFileOutput(fileName, Context.MODE_PRIVATE))) {
+            firebaseApp
+                .getApplicationContext()
+                .openFileOutput(
+                    fileName,
+                    android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N
+                        ? Context.MODE_PRIVATE
+                        : Context.MODE_WORLD_READABLE))) {
 
       byte[] data = new byte[8 * 1024];
       int readSize = input.read(data);
