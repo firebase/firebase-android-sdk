@@ -100,15 +100,15 @@ dependencies {
     implementation project(":encoders:firebase-encoders-proto")
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.annotation:annotation:1.2.0'
     implementation 'com.google.protobuf:protobuf-java-util:3.11.0'
-    implementation "com.google.android.gms:play-services-tasks:17.0.2"
-    implementation "com.google.android.gms:play-services-basement:17.2.1"
-    implementation 'com.google.android.gms:play-services-base:17.2.1'
-    implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
+    implementation "com.google.android.gms:play-services-tasks:17.2.1"
+    implementation "com.google.android.gms:play-services-basement:17.6.0"
+    implementation 'com.google.android.gms:play-services-base:17.6.0'
+    implementation 'com.google.firebase:firebase-measurement-connector:19.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.1.0"
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.0'
-    implementation ("com.google.firebase:firebase-iid:20.2.3") {
+    implementation ("com.google.firebase:firebase-iid:21.1.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-installations-interop"

@@ -31,7 +31,6 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.testing.IntentSubject;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FcmBroadcastProcessor;
 import com.google.firebase.messaging.ServiceStarter;
@@ -107,9 +106,9 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
     Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
 
     sendOrderedBroadcastBlocking(intent);
-
-    verify(serviceStarter).startMessagingService(any(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    verify(serviceStarter, atLeastOnce())
+        .startMessagingService(any(Context.class), intentCaptor.capture());
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
   }
 
   @Test
@@ -121,7 +120,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
 
     verify(serviceStarter, atLeastOnce())
         .startMessagingService(nullable(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
   }
 
@@ -136,7 +135,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
 
     verify(serviceStarter, atLeastOnce())
         .startMessagingService(nullable(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
   }
 
@@ -148,8 +147,9 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
     Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
     sendOrderedBroadcastBlocking(intent);
 
-    verify(serviceStarter).startMessagingService(nullable(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    verify(serviceStarter, atLeastOnce())
+        .startMessagingService(nullable(Context.class), intentCaptor.capture());
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
   }
 
@@ -162,8 +162,9 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
     intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
     sendOrderedBroadcastBlocking(intent);
 
-    verify(serviceStarter).startMessagingService(nullable(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    verify(serviceStarter, atLeastOnce())
+        .startMessagingService(nullable(Context.class), intentCaptor.capture());
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
   }
 
@@ -178,8 +179,9 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
     Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
     sendOrderedBroadcastBlocking(intent);
 
-    verify(serviceStarter).startMessagingService(nullable(Context.class), intentCaptor.capture());
-    IntentSubject.assertThat(intentCaptor.getValue()).exactlyMatches(intent);
+    verify(serviceStarter, atLeastOnce())
+        .startMessagingService(nullable(Context.class), intentCaptor.capture());
+    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).hasSize(1);
   }
 

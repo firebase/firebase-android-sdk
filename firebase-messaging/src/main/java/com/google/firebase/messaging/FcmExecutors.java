@@ -15,8 +15,8 @@ package com.google.firebase.messaging;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import com.google.firebase.messaging.threads.PoolableExecutors;
 import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
+import com.google.firebase.messaging.threads.PoolableExecutors;
 import com.google.firebase.messaging.threads.ThreadPriority;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;

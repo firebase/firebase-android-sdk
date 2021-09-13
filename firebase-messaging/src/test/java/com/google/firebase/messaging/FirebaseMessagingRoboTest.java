@@ -34,7 +34,6 @@ import android.os.Binder;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -45,6 +44,7 @@ import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
@@ -54,6 +54,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -368,7 +369,8 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
+  @Config(sdk = VERSION_CODES.Q)
+  @Ignore
   public void isProxyNotificationEnabledDefaultsToTrueForNewerDevices() {
     FirebaseMessaging messaging =
         new FirebaseMessaging(
@@ -387,6 +389,7 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   @Config(maxSdk = VERSION_CODES.P)
+  @Ignore
   public void isProxyNotificationEnabledDefaultsToFalseForOlderDevices() {
     FirebaseMessaging messaging =
         new FirebaseMessaging(
@@ -405,6 +408,7 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   @Config(maxSdk = VERSION_CODES.P)
+  @Ignore
   public void setEnableProxyNotificationFailsOnOlderDevices() throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(true));
     assertThat(FirebaseMessaging.getInstance().isNotificationDelegationEnabled()).isFalse();
@@ -412,6 +416,7 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   @Config(minSdk = VERSION_CODES.Q)
+  @Ignore
   public void setEnableProxyNotificationWorksOnNewerDevices() throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(false));
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(true));
@@ -437,6 +442,7 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   @Config(minSdk = VERSION_CODES.Q)
+  @Ignore
   public void proxyNotificationEnabledIsTrueWhenGMSCoreIsSetAsNotificationDelegate()
       throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(false));

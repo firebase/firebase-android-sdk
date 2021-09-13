@@ -24,11 +24,11 @@ import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
 import java.io.IOException;

@@ -237,7 +237,10 @@ public class FirebaseMessaging {
     }
 
     if (iid != null) {
-      iid.addNewTokenListener(this::invokeOnTokenRefresh);
+      iid.addNewTokenListener(
+          (String token) -> {
+            invokeOnTokenRefresh(token);
+          });
     }
 
     fileIoExecutor.execute(

@@ -54,16 +54,16 @@ import android.os.Looper;
 import android.os.Process;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.messaging.shadows.ShadowMessenger;
-import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
+import com.google.firebase.messaging.shadows.ShadowMessenger;
+import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.Bundles;
+import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
 import java.util.Arrays;
 import java.util.List;
@@ -74,6 +74,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
@@ -400,6 +401,7 @@ public class FirebaseMessagingServiceRoboTest {
 
   /** Test that a notification logs the correct event on tap. */
   @Test
+  @Ignore
   public void testNotification_clickAnalytics() throws Exception {
     FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
     simulateNotificationMessageWithAnalytics();
@@ -430,6 +432,7 @@ public class FirebaseMessagingServiceRoboTest {
 
   /** Test that a notification does not re-log events when the activity is recreated. */
   @Test
+  @Ignore
   public void testNotification_clickAnalytics_recreateActivity() throws Exception {
     FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
     simulateNotificationMessageWithAnalytics();

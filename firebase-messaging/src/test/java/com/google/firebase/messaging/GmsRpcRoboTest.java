@@ -28,23 +28,26 @@ import static org.mockito.Mockito.when;
 import android.app.Application;
 import android.os.Build;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.cloudmessaging.Rpc;
-import com.google.android.gms.common.internal.LibraryVersion;
-import com.google.firebase.messaging.shadows.ShadowGoogleSignatureVerifier;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.base.Supplier;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatResult;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.messaging.shadows.ShadowGoogleSignatureVerifier;
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
+import com.google.firebase.messaging.testing.LibraryVersion;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Rule;
@@ -116,11 +119,26 @@ public class GmsRpcRoboTest {
   public void setUp() {
     context = ApplicationProvider.getApplicationContext();
 
-
     FirebaseOptions firebaseOptions =
         new FirebaseOptions.Builder().setApplicationId(APP_ID).setGcmSenderId(SENDER_ID).build();
     FirebaseApp app = mock(FirebaseApp.class);
-    HeartBeatInfo heartBeatInfoObject = i -> HeartBeatInfo.HeartBeat.GLOBAL;
+    HeartBeatInfo heartBeatInfoObject =
+        new HeartBeatInfo() {
+          @Override
+          public HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
+            return HeartBeat.GLOBAL;
+          }
+
+          @Override
+          public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
+            return null;
+          }
+
+          @Override
+          public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
+            return null;
+          }
+        };
     Provider<HeartBeatInfo> heartBeatInfo = () -> heartBeatInfoObject;
     UserAgentPublisher userAgentPublisherObject = () -> USER_AGENT;
     Provider<UserAgentPublisher> userAgentPublisher = () -> userAgentPublisherObject;

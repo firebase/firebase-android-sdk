@@ -70,26 +70,26 @@ import org.robolectric.annotation.Implements;
 @Implements(GoogleSignatureVerifier.class)
 public class ShadowGoogleSignatureVerifier {
 
-    private static GoogleSignatureVerifier sMockVerifier = null;
+  private static GoogleSignatureVerifier sMockVerifier = null;
 
-    public static void setVerifier(GoogleSignatureVerifier mockVerifier) {
-        sMockVerifier = mockVerifier;
-    }
+  public static void setVerifier(GoogleSignatureVerifier mockVerifier) {
+    sMockVerifier = mockVerifier;
+  }
 
-    /** Reset the Mock used by this shadow class. */
-    public static void reset() {
-        sMockVerifier = null;
-    }
+  /** Reset the Mock used by this shadow class. */
+  public static void reset() {
+    sMockVerifier = null;
+  }
 
-    @Implementation
-    public static GoogleSignatureVerifier getInstance(Context context) {
-        return getInstance();
-    }
+  @Implementation
+  public static GoogleSignatureVerifier getInstance(Context context) {
+    return getInstance();
+  }
 
-    public static GoogleSignatureVerifier getInstance() {
-        if (sMockVerifier == null) {
-            sMockVerifier = Mockito.mock(GoogleSignatureVerifier.class);
-        }
-        return Preconditions.checkNotNull(sMockVerifier);
+  public static GoogleSignatureVerifier getInstance() {
+    if (sMockVerifier == null) {
+      sMockVerifier = Mockito.mock(GoogleSignatureVerifier.class);
     }
+    return Preconditions.checkNotNull(sMockVerifier);
+  }
 }
