@@ -22,7 +22,9 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -205,14 +207,49 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpArrayValueFilter();
     setUpSingleValueFilter();
     addDoc("coll/nonmatching", map("values", 1));
-    Query query =
-            query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1)));
+    Query query = query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1)));
     verifyResults(query, "coll/doc1");
   }
 
+  @Test
+  public void testNoMatchingFilter() {
+    setUpSingleValueFilter();
+    Query query = query("coll").filter(filter("unknown", "==", true));
+    assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
+  }
+
+  @Test
+  public void testNoMatchingDocs() {
+    setUpSingleValueFilter();
+    Query query = query("coll").filter(filter("count", "==", -1));
+    verifyResults(query);
+  }
+
+  @Test
+  public void testEqualityFilterWithNonMatchingType() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll/boolean", map("value", true));
+    addDoc("coll/string", map("value", "true"));
+    addDoc("coll/number", map("value", 1));
+    Query query = query("coll").filter(filter("value", "==", true));
+    verifyResults(query, "coll/boolean");
+  }
+
+  @Test
+  public void testCollectionGroup() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll1").withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll1/doc1", map("value", true));
+    addDoc("coll2/doc2/coll1/doc1", map("value", true));
+    addDoc("coll2/doc2", map("value", true));
+    Query query = new Query(path(""), "coll1").filter(filter("value", "==", true));
+    verifyResults(query, "coll1/doc1", "coll2/doc2/coll1/doc1");
+  }
+
   private void addDoc(String key, Map<String, Object> data) {
-    MutableDocument count1Doc = doc(key, 1, data);
-    indexManager.addIndexEntries(count1Doc);
+    MutableDocument doc = doc(key, 1, data);
+    indexManager.addIndexEntries(doc);
   }
 
   private void verifyResults(Query query, String... documents) {

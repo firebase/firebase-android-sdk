@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -41,6 +42,8 @@ import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
+  private static final String TAG = SQLiteIndexManager.class.getSimpleName();
+
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
    * avoid re-writing the same entry repeatedly.
@@ -107,7 +110,8 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void addIndexEntries(Document document) {
-    String collectionGroup = document.getKey().getPath().popLast().canonicalString();
+    ResourcePath documentPath = document.getKey().getPath();
+    String collectionGroup = documentPath.getSegment(documentPath.length() - 2);
     db.query(
             "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionGroup)
@@ -122,6 +126,14 @@ final class SQLiteIndexManager implements IndexManager {
                 List<Value> values = extractFieldValue(document, fieldIndex);
                 if (values == null) return;
 
+                if (Logger.isDebugEnabled()) {
+                  Logger.warn(
+                      TAG,
+                      "Adding index values for document '%s' to index '%s'",
+                      documentPath,
+                      fieldIndex);
+                }
+
                 List<byte[]> encodeValues = encodeDocumentValues(fieldIndex, values);
                 for (byte[] encoded : encodeValues) {
                   // TODO(indexing): Handle different values for different users
@@ -132,7 +144,7 @@ final class SQLiteIndexManager implements IndexManager {
                           + "document_name) VALUES(?, ?, ?)",
                       indexId,
                       encoded,
-                      document.getKey().getPath().canonicalString());
+                      documentPath.canonicalString());
                 }
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
@@ -165,6 +177,16 @@ final class SQLiteIndexManager implements IndexManager {
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
+
+    if (Logger.isDebugEnabled()) {
+      Logger.warn(
+          TAG,
+          "Using index '%s' to execute '%s' (Lower bound: %s, Upper bound: %s)",
+          fieldIndex,
+          target,
+          lowerBound,
+          upperBound);
+    }
 
     Set<DocumentKey> result = new HashSet<>();
 
@@ -202,6 +224,8 @@ final class SQLiteIndexManager implements IndexManager {
                 row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
       }
     }
+
+    Logger.debug(TAG, "Index scan returned %s documents", result.size());
     return result;
   }
 
@@ -304,7 +328,8 @@ final class SQLiteIndexManager implements IndexManager {
   /**
    * Creates a separate encoder for each element of an array.
    *
-   * <p>The method appends each value to all existing encoders (e.g. filter("a", "==", "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
+   * <p>The method appends each value to all existing encoders (e.g. filter("a", "==",
+   * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */
   private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
