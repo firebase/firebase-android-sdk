@@ -48,7 +48,7 @@ public class InstallActivity extends AppCompatActivity {
     Uri apkUri =
         FileProvider.getUriForFile(
             getApplicationContext(),
-            getApplicationContext().getPackageName() + ".provider",
+            getApplicationContext().getPackageName() + ".appdistro.fileprovider",
             new File(path));
     String APK_MIME_TYPE = "application/vnd.android.package-archive";
     intent.setDataAndType(apkUri, APK_MIME_TYPE);
