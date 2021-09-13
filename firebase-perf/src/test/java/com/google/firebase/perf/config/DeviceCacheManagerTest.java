@@ -17,8 +17,8 @@ package com.google.firebase.perf.config;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
+import com.google.firebase.perf.FirebasePerformanceTestBase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
