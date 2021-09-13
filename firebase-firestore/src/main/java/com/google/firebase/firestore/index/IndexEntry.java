@@ -23,13 +23,13 @@ public class IndexEntry {
   private final int indexId;
   private final byte[] indexValue;
   private final String uid;
-  private final String documentId;
+  private final String documentName;
 
-  public IndexEntry(int indexId, byte[] indexValue, String uid, String documentId) {
+  public IndexEntry(int indexId, byte[] indexValue, String uid, String documentName) {
     this.indexId = indexId;
     this.indexValue = indexValue;
     this.uid = uid;
-    this.documentId = documentId;
+    this.documentName = documentName;
   }
 
   public int getIndexId() {
@@ -44,7 +44,7 @@ public class IndexEntry {
     return uid;
   }
 
-  public String getDocumentId() {
-    return documentId;
+  public String getDocumentName() {
+    return documentName;
   }
 }
