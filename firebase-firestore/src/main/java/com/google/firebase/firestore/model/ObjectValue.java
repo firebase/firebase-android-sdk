@@ -89,7 +89,7 @@ public final class ObjectValue implements Cloneable {
         fields.add(currentPath);
       }
     }
-    return FieldMask.fromSet(fields);
+    return FieldMask.someFieldsMask(fields);
   }
 
   /**

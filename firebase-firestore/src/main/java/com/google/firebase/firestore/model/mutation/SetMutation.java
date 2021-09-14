@@ -87,11 +87,11 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
-      return;
+      return mask;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
@@ -100,38 +100,13 @@ public final class SetMutation extends Mutation {
     document
         .convertToFoundDocument(getPostMutationVersion(document), localValue)
         .setHasLocalMutations();
+    // SetMutation overwrites all fields.
+    return FieldMask.allFieldsMask();
   }
 
   /** Returns the object value to use when setting the document. */
   public ObjectValue getValue() {
     return value;
-  }
-
-  @Override
-  public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(document)) {
-      Map<FieldPath, Value> transformResults =
-          localTransformResults(localWriteTime, document, baseMutation);
-      ObjectValue value = getValue();
-      if (!transformResults.isEmpty()) {
-        value = value.clone();
-        value.setAll(transformResults);
-      }
-      return new SetMutation(getKey(), value, getPrecondition());
-    } else {
-      return baseMutation;
-    }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    Value fieldValue = getValue().get(fieldPath);
-    if (fieldValue != null) {
-      return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
-    }
-
-    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
   }
 
   @Nullable

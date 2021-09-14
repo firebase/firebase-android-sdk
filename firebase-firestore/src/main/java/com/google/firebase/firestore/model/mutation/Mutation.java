@@ -113,26 +113,10 @@ public abstract class Mutation {
    * @param document The document to mutate.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
+   * @param mask The fields that have been updated before applying this mutation.
+   * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
-  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
-
-  /**
-   * Builds a new mutation that would do the same as applying {@code baseMutation}, then {@code
-   * this} on the given document. Consider this as a git rebase operation.
-   *
-   * <p>One thing to note is the returned mutation should never have any un-applied transforms, if
-   * {@code this} has outstanding transforms, they need to be applied first, and their final value
-   * should be saved in the value of the returning mutation.
-   *
-   * @param baseMutation The mutation to first apply to the document. This is either {@code
-   *     EmptyMutation} or from previous calls to {@code squash}.
-   * @param document The document for which this squashing is applied to.
-   * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
-   *     a part of.
-   * @return A new mutation squashed mutation.
-   */
-  public abstract Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime);
+  public abstract FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -213,42 +197,11 @@ public abstract class Mutation {
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
       Value previousValue = mutableDocument.getField(fieldTransform.getFieldPath());
-      if (mutation != null && !(mutation instanceof EmptyMutation)) {
-        FieldUpdate update = mutation.getFieldUpdate(fieldTransform.getFieldPath());
-        if (update.type == FieldUpdate.Type.DELETE) {
-          previousValue = null;
-        } else if (update.type == FieldUpdate.Type.SET) {
-          previousValue = update.value;
-        }
-      }
       transformResults.put(
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }
     return transformResults;
   }
-
-  /** A class specifying what a mutation would do to a field in a document. */
-  protected static class FieldUpdate {
-    protected enum Type {
-      // This mutation would do nothing.
-      ABSENT,
-      // This mutation would delete the field in question.
-      DELETE,
-      // This mutation would set the field in question to a value.
-      SET,
-    }
-
-    private Type type;
-    private Value value;
-
-    public FieldUpdate(Type type, Value value) {
-      this.type = type;
-      this.value = value;
-    }
-  }
-
-  /** Returns what this mutation would do to a given {@code FieldPath}. */
-  protected abstract FieldUpdate getFieldUpdate(FieldPath fieldPath);
 
   protected List<FieldPath> getFieldTransformPaths() {
     List<FieldPath> result = new ArrayList<>();

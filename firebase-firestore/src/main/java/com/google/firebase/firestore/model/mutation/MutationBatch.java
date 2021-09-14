@@ -99,13 +99,13 @@ public final class MutationBatch {
 
   /** Computes the local view of a document given all the mutations in this batch. */
   public void applyToLocalView(MutableDocument document) {
-    Mutation squashed = new EmptyMutation(document.getKey(), Precondition.NONE);
+    FieldMask mutatedFields = FieldMask.someFieldsMask(new HashSet<>());
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        squashed = mutation.squash(squashed, document, localWriteTime);
+        mutatedFields = mutation.applyToLocalView(document, localWriteTime, mutatedFields);
       }
     }
 
@@ -113,11 +113,11 @@ public final class MutationBatch {
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        squashed = mutation.squash(squashed, document, localWriteTime);
+        mutatedFields = mutation.applyToLocalView(document, localWriteTime, mutatedFields);
       }
     }
 
-    squashed.applyToLocalView(document, localWriteTime);
+    // TODO(Overlay): Calculate squashed mutation here.
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */

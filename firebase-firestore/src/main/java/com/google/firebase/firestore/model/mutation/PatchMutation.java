@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -129,79 +127,30 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
-      return;
+      return mask;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
+    Map<FieldPath, Value> patches = getPatch();
     ObjectValue value = document.getData();
-    value.setAll(getPatch());
+    value.setAll(patches);
     value.setAll(transformResults);
     document
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
-  }
 
-  @Override
-  public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    verifyKeyMatches(document);
-    hardAssert(baseMutation != null, "baseMutation cannot be null");
-
-    // Builds a document used to test preconditions, this works because squash only consider whether
-    // the document exists or not.
-    MutableDocument preconditionTest = document;
-    if (baseMutation instanceof DeleteMutation) {
-      preconditionTest = MutableDocument.newNoDocument(getKey(), document.getVersion());
-    } else if (!(baseMutation instanceof EmptyMutation)) {
-      preconditionTest = MutableDocument.newFoundDocument(getKey(), document.getVersion(), null);
+    if(mask.isAllFields()) {
+      return mask;
     }
 
-    if (!getPrecondition().isValidFor(preconditionTest)) {
-      return baseMutation;
-    }
-
-    // Applying transforms on document + baseMutation.
-    Map<FieldPath, Value> transformResults =
-        localTransformResults(localWriteTime, document, baseMutation);
-
-    ObjectValue mergedPatch =
-        (baseMutation.getValue() != null) ? baseMutation.getValue().clone() : new ObjectValue();
-    mergedPatch.setAll(getPatch());
-    mergedPatch.setAll(transformResults);
-
-    if (baseMutation instanceof EmptyMutation || baseMutation instanceof PatchMutation) {
-      HashSet<FieldPath> mergedMaskSet = new HashSet<>(baseMutation.getMask().getMask());
-      mergedMaskSet.addAll(mask.getMask());
-      mergedMaskSet.addAll(getFieldTransformPaths());
-      FieldMask mergedMask = FieldMask.fromSet(mergedMaskSet);
-      return new PatchMutation(
-          getKey(),
-          mergedPatch,
-          mergedMask,
-          baseMutation instanceof EmptyMutation
-              ? getPrecondition()
-              : baseMutation.getPrecondition());
-    } else {
-      return new SetMutation(getKey(), mergedPatch, baseMutation.getPrecondition());
-    }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    if (!getMask().covers(fieldPath)) {
-      return new FieldUpdate(FieldUpdate.Type.ABSENT, null);
-    }
-
-    Value fieldValue = getValue().get(fieldPath);
-    if (fieldValue == null) {
-      return new FieldUpdate(FieldUpdate.Type.DELETE, null);
-    }
-
-    return new FieldUpdate(FieldUpdate.Type.SET, fieldValue);
+    HashSet<FieldPath> mergedMaskSet = new HashSet<>(mask.getMask());
+    mergedMaskSet.addAll(this.mask.getMask());
+    mergedMaskSet.addAll(getFieldTransformPaths());
+    return FieldMask.someFieldsMask(mergedMaskSet);
   }
 
   private Map<FieldPath, Value> getPatch() {

@@ -368,7 +368,7 @@ public final class RemoteSerializer {
     for (int i = 0; i < count; i++) {
       paths.add(FieldPath.fromServerFormat(mask.getFieldPaths(i)));
     }
-    return FieldMask.fromSet(paths);
+    return FieldMask.someFieldsMask(paths);
   }
 
   private DocumentTransform.FieldTransform encodeFieldTransform(FieldTransform fieldTransform) {

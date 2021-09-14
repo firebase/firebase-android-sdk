@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -71,27 +70,15 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
       document.convertToNoDocument(SnapshotVersion.NONE);
+      return FieldMask.allFieldsMask();
     }
-  }
 
-  @Override
-  public Mutation squash(
-      Mutation baseMutation, MutableDocument document, Timestamp localWriteTime) {
-    if (getPrecondition().isValidFor(document)) {
-      return this;
-    } else {
-      return baseMutation;
-    }
-  }
-
-  @Override
-  protected FieldUpdate getFieldUpdate(FieldPath fieldPath) {
-    return new FieldUpdate(FieldUpdate.Type.DELETE, null);
+    return mask;
   }
 
   @Nullable

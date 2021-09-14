@@ -84,7 +84,7 @@ public final class SetOptions {
       fieldPaths.add(FieldPath.fromDotSeparatedPath(field).getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
+    return new SetOptions(true, FieldMask.someFieldsMask(fieldPaths));
   }
 
   /**
@@ -105,7 +105,7 @@ public final class SetOptions {
       fieldPaths.add(FieldPath.fromDotSeparatedPath(field).getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
+    return new SetOptions(true, FieldMask.someFieldsMask(fieldPaths));
   }
 
   /**
@@ -125,7 +125,7 @@ public final class SetOptions {
       fieldPaths.add(field.getInternalPath());
     }
 
-    return new SetOptions(true, FieldMask.fromSet(fieldPaths));
+    return new SetOptions(true, FieldMask.someFieldsMask(fieldPaths));
   }
 
   @Override
