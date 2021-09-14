@@ -344,12 +344,41 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       this.data.putAll(data);
       return this;
     }
+    /** @hide */
+    @NonNull
+    public Map<String, String> getData() {
+      return this.data;
+    }
 
     /** Clears the message data. */
     @NonNull
     public Builder clearData() {
       data.clear();
       return this;
+    }
+
+    /** @hide */
+    @NonNull
+    public String getMessageId() {
+      return bundle.getString(MessagePayloadKeys.MSGID, "");
+    }
+
+    /** @hide */
+    @Nullable
+    public String getMessageType() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+    }
+
+    /** @hide */
+    @Nullable
+    public String getCollapseKey() {
+      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+    }
+
+    /** @hide */
+    @IntRange(from = 0, to = 86400)
+    public int getTtl() {
+      return Integer.parseInt(bundle.getString(MessagePayloadKeys.MESSAGE_TYPE, "0"));
     }
 
     /** @hide */
