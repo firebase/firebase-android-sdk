@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
+import androidx.annotation.GuardedBy;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import org.junit.Before;
@@ -29,6 +30,8 @@ public class SharedPreferencesQueueRoboTest {
   private static final String ITEM_SEPARATOR = ",";
   private static final String TEST_TOPIC = "Test_Topic";
   private final FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
+
+  @GuardedBy("this")
   private SharedPreferencesQueue queue;
 
   @Before
