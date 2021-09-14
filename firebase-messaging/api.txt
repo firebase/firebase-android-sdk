@@ -2,16 +2,19 @@
 package com.google.firebase.messaging {
 
   public class FirebaseMessaging {
-    method @Deprecated public boolean deliveryMetricsExportToBigQueryEnabled();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> deleteToken();
+    method @NonNull public boolean deliveryMetricsExportToBigQueryEnabled();
     method @NonNull public static com.google.firebase.messaging.FirebaseMessaging getInstance();
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getToken();
     method public boolean isAutoInitEnabled();
-    method public boolean isDeliveryMetricsExportToBigQueryEnabled();
+    method public boolean isNotificationDelegationEnabled();
     method public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
     method public void setAutoInitEnabled(boolean);
     method public void setDeliveryMetricsExportToBigQuery(boolean);
+    method public com.google.android.gms.tasks.Task<java.lang.Void> setNotificationDelegationEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> subscribeToTopic(@NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> unsubscribeFromTopic(@NonNull String);
-    field public static final String INSTANCE_ID_SCOPE = "FCM";
+    field @Deprecated public static final String INSTANCE_ID_SCOPE = "FCM";
   }
 
   public class FirebaseMessagingService extends android.app.Service {

@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
+
 import androidx.annotation.GuardedBy;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
