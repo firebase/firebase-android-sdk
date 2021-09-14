@@ -18,9 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import android.os.Environment;
-import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.CpuMetricReading;
+import com.google.testing.timing.FakeScheduledExecutorService;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;

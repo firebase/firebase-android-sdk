@@ -17,10 +17,10 @@ package com.google.firebase.perf.session.gauges;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import com.google.firebase.perf.util.StorageUnit;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
+import com.google.testing.timing.FakeScheduledExecutorService;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
