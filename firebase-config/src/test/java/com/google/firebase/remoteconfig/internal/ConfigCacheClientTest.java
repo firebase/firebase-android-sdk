@@ -24,10 +24,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
-import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
