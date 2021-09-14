@@ -878,14 +878,14 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
       Task<Boolean> fakeTask,
       boolean initializeFrc,
       Map<String, FirebaseRemoteConfigValue> configs,
-      long fetchDelay) {
+      long appStartConfigFetchDelayInMs) {
     simulateFirebaseRemoteConfigLastFetchStatus(FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS);
     when(mockFirebaseRemoteConfig.fetchAndActivate()).thenReturn(fakeTask);
     when(mockFirebaseRemoteConfig.getAll()).thenReturn(configs);
     if (initializeFrc) {
-      return new RemoteConfigManager(fakeExecutor, mockFirebaseRemoteConfig, fetchDelay);
+      return new RemoteConfigManager(fakeExecutor, mockFirebaseRemoteConfig, appStartConfigFetchDelayInMs);
     } else {
-      return new RemoteConfigManager(fakeExecutor, /* firebaseRemoteConfig= */ null, fetchDelay);
+      return new RemoteConfigManager(fakeExecutor, /* firebaseRemoteConfig= */ null, appStartConfigFetchDelayInMs);
     }
   }
 

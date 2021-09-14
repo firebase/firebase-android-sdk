@@ -27,10 +27,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +50,7 @@ public class RemoteConfigManager {
       TimeUnit.HOURS.toMillis(12);
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
   private static final long MIN_APP_START_CONFIG_FETCH_DELAY_MS = 5000;
-  private static final long RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
+  private static final int RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
@@ -79,7 +79,7 @@ public class RemoteConfigManager {
         executor,
         firebaseRemoteConfig,
         MIN_APP_START_CONFIG_FETCH_DELAY_MS
-            + ThreadLocalRandom.current().nextLong(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
   }
 
   @VisibleForTesting
