@@ -36,10 +36,10 @@ private val NULLABLE_ANNOTATIONS = listOf("Nullable", "CheckForNull")
 private val NOT_NULL_ANNOTATIONS = listOf("NonNull", "NotNull", "Nonnull")
 
 private val ANDROIDX_ANNOTATIONS = listOf(
-        "android.support.annotation.NonNull",
+        "androidx.annotation.Nullable",
         "androidx.annotation.NonNull",
         "android.support.annotation.Nullable",
-        "androidx.annotation.NonNull")
+        "android.support.annotation.NonNull")
 
 class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
     companion object Issues {
