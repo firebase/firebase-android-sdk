@@ -100,7 +100,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:19.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.1.0"
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.0'
-    implementation ("com.google.firebase:firebase-iid:21.1.0") {
+    testImplementation ("com.google.firebase:firebase-iid:21.1.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-installations-interop"
