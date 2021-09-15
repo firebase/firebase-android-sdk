@@ -46,11 +46,11 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String TAG = "TesterApiClient:";
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public @NonNull AppDistributionReleaseInternal fetchLatestRelease(
+  public @NonNull AppDistributionReleaseInternal fetchNewRelease(
       @NonNull String fid, @NonNull String appId, @NonNull String apiKey, @NonNull String authToken)
       throws FirebaseAppDistributionException {
 
-    AppDistributionReleaseInternal latestRelease;
+    AppDistributionReleaseInternal newRelease;
     HttpsURLConnection connection = openHttpsUrlConnection(appId, fid);
     try {
       connection.setRequestMethod(REQUEST_METHOD);
@@ -58,20 +58,20 @@ class FirebaseAppDistributionTesterApiClient {
       connection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
 
       InputStream inputStream = connection.getInputStream();
-      JSONObject latestReleaseJson = readFetchReleaseInputStream(inputStream);
-      final String displayVersion = latestReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
-      final String buildVersion = latestReleaseJson.getString(BUILD_VERSION_JSON_KEY);
-      String releaseNotes = tryGetValue(latestReleaseJson, RELEASE_NOTES_JSON_KEY);
-      String codeHash = tryGetValue(latestReleaseJson, CODE_HASH_KEY);
-      String iasArtifactId = tryGetValue(latestReleaseJson, IAS_ARTIFACT_ID_KEY);
-      String downloadUrl = tryGetValue(latestReleaseJson, DOWNLOAD_URL_KEY);
+      JSONObject newReleaseJson = readFetchReleaseInputStream(inputStream);
+      final String displayVersion = newReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
+      final String buildVersion = newReleaseJson.getString(BUILD_VERSION_JSON_KEY);
+      String releaseNotes = tryGetValue(newReleaseJson, RELEASE_NOTES_JSON_KEY);
+      String codeHash = tryGetValue(newReleaseJson, CODE_HASH_KEY);
+      String iasArtifactId = tryGetValue(newReleaseJson, IAS_ARTIFACT_ID_KEY);
+      String downloadUrl = tryGetValue(newReleaseJson, DOWNLOAD_URL_KEY);
 
       final BinaryType binaryType =
-          latestReleaseJson.getString(BINARY_TYPE_JSON_KEY).equals("APK")
+          newReleaseJson.getString(BINARY_TYPE_JSON_KEY).equals("APK")
               ? BinaryType.APK
               : BinaryType.AAB;
 
-      latestRelease =
+      newRelease =
           AppDistributionReleaseInternal.builder()
               .setDisplayVersion(displayVersion)
               .setBuildVersion(buildVersion)
@@ -85,7 +85,7 @@ class FirebaseAppDistributionTesterApiClient {
 
     } catch (IOException | JSONException e) {
       if (e instanceof JSONException) {
-        LogWrapper.getInstance().e(TAG + "Error parsing the latest release.", e);
+        LogWrapper.getInstance().e(TAG + "Error parsing the new release.", e);
         throw new FirebaseAppDistributionException(
             Constants.ErrorMessages.JSON_PARSING_ERROR, NETWORK_FAILURE, e);
       }
@@ -94,7 +94,7 @@ class FirebaseAppDistributionTesterApiClient {
       connection.disconnect();
     }
 
-    return latestRelease;
+    return newRelease;
   }
 
   private FirebaseAppDistributionException getExceptionForHttpResponse(
@@ -136,19 +136,19 @@ class FirebaseAppDistributionTesterApiClient {
 
   private JSONObject readFetchReleaseInputStream(InputStream in)
       throws FirebaseAppDistributionException, IOException {
-    JSONObject latestRelease;
+    JSONObject newRelease;
     InputStream jsonIn = new BufferedInputStream(in);
     String result = convertInputStreamToString(jsonIn);
     try {
       JSONObject json = new JSONObject(result);
-      latestRelease = json.getJSONArray("releases").getJSONObject(0);
+      newRelease = json.getJSONArray("releases").getJSONObject(0);
     } catch (JSONException e) {
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.JSON_PARSING_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
           e);
     }
-    return latestRelease;
+    return newRelease;
   }
 
   HttpsURLConnection openHttpsUrlConnection(String appId, String fid)

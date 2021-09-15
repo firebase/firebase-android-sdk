@@ -45,14 +45,22 @@ public class InstallActivity extends AppCompatActivity {
     String path = originalIntent.getStringExtra("INSTALL_PATH");
     Intent intent = new Intent(Intent.ACTION_VIEW);
     intent.putExtra(Intent.EXTRA_RETURN_RESULT, true);
-    Uri apkUri =
-        FileProvider.getUriForFile(
-            getApplicationContext(),
-            getApplicationContext().getPackageName() + ".provider",
-            new File(path));
+    File apkFile = new File(path);
     String APK_MIME_TYPE = "application/vnd.android.package-archive";
-    intent.setDataAndType(apkUri, APK_MIME_TYPE);
-    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+      Uri apkUri =
+          FileProvider.getUriForFile(
+              getApplicationContext(),
+              getApplicationContext().getPackageName() + ".appdistro.fileprovider",
+              apkFile);
+      intent.setDataAndType(apkUri, APK_MIME_TYPE);
+      intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    } else {
+      LogWrapper.getInstance().d("Requesting a vanilla URI");
+      intent.setDataAndType(Uri.fromFile(apkFile), APK_MIME_TYPE);
+    }
+
     mStartForResult.launch(intent);
   }
 

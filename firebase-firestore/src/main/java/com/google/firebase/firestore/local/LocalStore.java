@@ -803,6 +803,10 @@ public final class LocalStore implements BundleCallback {
         "Collect garbage", () -> garbageCollector.collect(queryDataByTarget));
   }
 
+  public IndexBackfiller.Results backfillIndexes(IndexBackfiller indexBackfiller) {
+    return persistence.runTransaction("Backfill Indexes", () -> indexBackfiller.backfill());
+  }
+
   /**
    * Creates a new target using the given bundle name, which will be used to hold the keys of all
    * documents from the bundle in query-document mappings. This ensures that the loaded documents do

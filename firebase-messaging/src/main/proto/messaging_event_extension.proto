@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.local;
+syntax = "proto3";
 
-/** Helper interface to control the Garbage Collector. */
-public interface GarbageCollectionScheduler {
-  void start();
+package reporting;
 
-  void stop();
+import "messaging_event.proto";
+
+// LINT.IfChange
+message MessagingClientEventExtension {
+  MessagingClientEvent messaging_client_event = 1;
 }
+// LINT.ThenChange(//depot/google3/logs/proto/firebase/cloud_messaging/client/messaging_event_extension.proto)

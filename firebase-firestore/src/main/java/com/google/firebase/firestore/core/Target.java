@@ -17,7 +17,11 @@ package com.google.firebase.firestore.core;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +35,7 @@ public final class Target {
 
   private @Nullable String memoizedCannonicalId;
 
-  private final List<OrderBy> orderBy;
+  private final List<OrderBy> orderBys;
   private final List<Filter> filters;
 
   private final ResourcePath path;
@@ -55,13 +59,13 @@ public final class Target {
       ResourcePath path,
       @Nullable String collectionGroup,
       List<Filter> filters,
-      List<OrderBy> orderBy,
+      List<OrderBy> orderBys,
       long limit,
       @Nullable Bound startAt,
       @Nullable Bound endAt) {
     this.path = path;
     this.collectionGroup = collectionGroup;
-    this.orderBy = orderBy;
+    this.orderBys = orderBys;
     this.filters = filters;
     this.limit = limit;
     this.startAt = startAt;
@@ -107,8 +111,143 @@ public final class Target {
     return endAt;
   }
 
+  /**
+   * Returns a lower bound of field values that can be used as a starting point to scan the index
+   * defined by {@code fieldIndex}.
+   *
+   * <p>Unlike {@link #getUpperBound}, lower bounds always exist as the SDK can use {@code null} as
+   * a starting point for missing boundary values.
+   */
+  public Bound getLowerBound(FieldIndex fieldIndex) {
+    List<Value> values = new ArrayList<>();
+    boolean before = true;
+
+    // Go through all filters to find a value for the current field segment
+    for (FieldIndex.Segment segment : fieldIndex) {
+      Value lowestValue = Values.NULL_VALUE;
+      for (Filter filter : filters) {
+        if (filter.getField().equals(segment.getFieldPath())) {
+          FieldFilter fieldFilter = (FieldFilter) filter;
+          switch (fieldFilter.getOperator()) {
+            case LESS_THAN:
+            case NOT_IN:
+            case NOT_EQUAL:
+            case LESS_THAN_OR_EQUAL:
+              // These filters cannot be used as a lower bound. Skip.
+              break;
+            case EQUAL:
+            case IN:
+            case ARRAY_CONTAINS_ANY:
+            case ARRAY_CONTAINS:
+            case GREATER_THAN_OR_EQUAL:
+              lowestValue = fieldFilter.getValue();
+              break;
+            case GREATER_THAN:
+              lowestValue = fieldFilter.getValue();
+              before = false;
+              break;
+          }
+        }
+      }
+
+      // If there is a startAt bound, compare the values against the existing boundary to see
+      // if we can narrow the scope.
+      if (startAt != null) {
+        for (int i = 0; i < orderBys.size(); ++i) {
+          OrderBy orderBy = this.orderBys.get(i);
+          if (orderBy.getField().equals(segment.getFieldPath())) {
+            Value cursorValue = startAt.getPosition().get(i);
+            if (Values.compare(lowestValue, cursorValue) <= 0) {
+              lowestValue = cursorValue;
+              // `before` is shared by all cursor values. If any cursor value is used, we set before
+              // to the cursor's value.
+              before = startAt.isBefore();
+            }
+            break;
+          }
+        }
+      }
+      values.add(lowestValue);
+    }
+
+    return new Bound(values, before);
+  }
+
+  /**
+   * Returns an upper bound of field values that can be used as an ending point when scanning the
+   * index defined by {@code fieldIndex}.
+   *
+   * <p>Unlike {@link #getLowerBound}, upper bounds do not always exist since the Firestore does not
+   * define a maximum field value. The index scan should not use an upper bound if {@code null} is
+   * returned.
+   */
+  public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
+    List<Value> values = new ArrayList<>();
+    boolean before = false;
+
+    for (FieldIndex.Segment segment : fieldIndex) {
+      @Nullable Value largestValue = null;
+
+      // Go through all filters to find a value for the current field segment
+      for (Filter filter : filters) {
+        if (filter.getField().equals(segment.getFieldPath())) {
+          FieldFilter fieldFilter = (FieldFilter) filter;
+          switch (fieldFilter.getOperator()) {
+            case GREATER_THAN:
+            case NOT_IN:
+            case NOT_EQUAL:
+            case GREATER_THAN_OR_EQUAL:
+              // These filters cannot be used as an upper bound. Skip.
+              break;
+            case EQUAL:
+            case IN:
+            case ARRAY_CONTAINS_ANY:
+            case ARRAY_CONTAINS:
+            case LESS_THAN_OR_EQUAL:
+              largestValue = fieldFilter.getValue();
+              before = true;
+              break;
+            case LESS_THAN:
+              largestValue = fieldFilter.getValue();
+              before = false;
+              break;
+          }
+        }
+      }
+
+      // If there is an endAt bound, compare the values against the existing boundary to see
+      // if we can narrow the scope.
+      if (endAt != null) {
+        for (int i = 0; i < orderBys.size(); ++i) {
+          OrderBy orderBy = this.orderBys.get(i);
+          if (orderBy.getField().equals(segment.getFieldPath())) {
+            Value cursorValue = endAt.getPosition().get(i);
+            if (largestValue == null || Values.compare(largestValue, cursorValue) > 0) {
+              largestValue = cursorValue;
+              before = endAt.isBefore();
+            }
+            break;
+          }
+        }
+      }
+
+      if (largestValue == null) {
+        // No upper bound exists
+        return null;
+      }
+
+      values.add(largestValue);
+    }
+
+    if (values.isEmpty()) {
+      return null;
+    }
+
+    return new Bound(values, before);
+  }
+
   public List<OrderBy> getOrderBy() {
-    return this.orderBy;
+    return this.orderBys;
   }
 
   /** Returns a canonical string representing this target. */
@@ -177,7 +316,7 @@ public final class Target {
     if (limit != target.limit) {
       return false;
     }
-    if (!orderBy.equals(target.orderBy)) {
+    if (!orderBys.equals(target.orderBys)) {
       return false;
     }
     if (!filters.equals(target.filters)) {
@@ -194,7 +333,7 @@ public final class Target {
 
   @Override
   public int hashCode() {
-    int result = orderBy.hashCode();
+    int result = orderBys.hashCode();
     result = 31 * result + (collectionGroup != null ? collectionGroup.hashCode() : 0);
     result = 31 * result + filters.hashCode();
     result = 31 * result + path.hashCode();
@@ -223,13 +362,13 @@ public final class Target {
       }
     }
 
-    if (!orderBy.isEmpty()) {
+    if (!orderBys.isEmpty()) {
       builder.append(" order by ");
-      for (int i = 0; i < orderBy.size(); i++) {
+      for (int i = 0; i < orderBys.size(); i++) {
         if (i > 0) {
           builder.append(", ");
         }
-        builder.append(orderBy.get(i));
+        builder.append(orderBys.get(i));
       }
     }
 

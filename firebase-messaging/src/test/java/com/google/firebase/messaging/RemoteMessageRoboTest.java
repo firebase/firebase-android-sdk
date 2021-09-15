@@ -56,16 +56,12 @@ import static com.google.firebase.messaging.RemoteMessageBuilder.messagesEqual;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcel;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
-import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -81,20 +77,14 @@ public class RemoteMessageRoboTest {
   private static final String EXTRA_TTL = "google.ttl";
   private static final long[] VIBRATE_TIMINGS_TEST = {1000L, 2000L, 3000L};
 
-  private FirebaseInstanceId iid;
-
   @Before
   public void setUp() {
     // Clear static singleton instances
     FirebaseApp.clearInstancesForTest();
-    FirebaseInstanceId.clearInstancesForTest();
-    iid =
-        FirebaseIidRoboTestHelper.initMockFirebaseIid(ApplicationProvider.getApplicationContext());
   }
 
   @Test
   public void testBuilder() {
-    doReturn("default_token").when(iid).getToken();
     final byte[] rawData = {42, 123, 0, 1};
     RemoteMessage message =
         new RemoteMessage.Builder("test_to")
@@ -106,7 +96,7 @@ public class RemoteMessageRoboTest {
             .setCollapseKey("test_collapse_key")
             .build();
     assertEquals("test_to", message.getTo());
-    assertNull("default_token", message.getFrom());
+    assertNull(message.getFrom());
     assertNull(message.getSenderId());
     assertEquals(1, message.getData().size());
     assertEquals("value", message.getData().get("key"));

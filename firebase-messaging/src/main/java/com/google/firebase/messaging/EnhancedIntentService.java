@@ -22,11 +22,11 @@ import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.MainThread;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.iid.WakeLockHolder;
-import com.google.firebase.iid.WithinAppServiceBinder;
+import com.google.firebase.messaging.WithinAppServiceBinder.IntentHandler;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -51,7 +51,15 @@ public abstract class EnhancedIntentService extends Service {
       Log.d(TAG, "Service received bind request");
     }
     if (binder == null) {
-      binder = new WithinAppServiceBinder(this::processIntent);
+      binder =
+          new WithinAppServiceBinder(
+              new IntentHandler() {
+                @KeepForSdk
+                @Override
+                public Task<Void> handle(Intent intent) {
+                  return processIntent(intent);
+                }
+              });
     }
     return binder;
   }
