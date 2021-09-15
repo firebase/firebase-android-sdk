@@ -17,7 +17,8 @@ jobs:
     name: Check if released version changed
     # This step checks several things, and sets released_version_changed=1 only if all are true:
     # - The push must target the main branch.
-    # - The push must modify a gradle.properties file, specifically a "latestReleasedVersion=" line.
+    # - The push must modify a gradle.properties file.
+    # - The push must change a "latestReleasedVersion=" line in a gradle.properties file.
     runs-on: ubuntu-latest
     outputs:
       released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
@@ -31,14 +32,12 @@ jobs:
       - name: Check if version was updated in git history
         id: check_version
         run: |
-          # Query the git history for all gradle.properties files between this PR and the main branch..
+          # Query the git history for all gradle.properties files changed by this push.
           # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
-          # Get the latest common commit between this and the main branch (usually just the main branch's HEAD).
-          MERGE_BASE=$(git merge-base HEAD ${{ github.event.before }})
-          if (git diff "${MERGE_BASE}" -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
+          if (git diff '${{ github.event.before }}' -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
             echo "::set-output name=released_version_changed::1"
           else
-            echo "No change to latestReleasedVersion detected. (merge-base: ${MERGE_BASE})"
+            echo "No change to latestReleasedVersion detected since ${{ github.event.before }}"
           fi
 
   trigger_cpp_sdk_update:
@@ -72,4 +71,4 @@ jobs:
 
       - name: Trigger firebase-cpp-sdk update
         run: |
-          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.event.head_commit.sha }})." -s 10 -A
+          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.event.head.sha }})." -s 10 -A
