@@ -44,7 +44,7 @@ jobs:
           if (git diff "${MERGE_BASE}" -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
             echo "::set-output name=released_version_changed::1"
           else
-            echo "No change to latestReleasedVersion (since ${MERGE_BASE}) detected."
+            echo "No change to latestReleasedVersion detected. (merge-base: ${MERGE_BASE})"
           fi
 
   trigger_cpp_sdk_update:
