@@ -89,7 +89,7 @@ public final class ObjectValue implements Cloneable {
         fields.add(currentPath);
       }
     }
-    return FieldMask.someFieldsMask(fields);
+    return FieldMask.fromSet(fields);
   }
 
   /**
@@ -123,8 +123,6 @@ public final class ObjectValue implements Cloneable {
    * <p>This method applies any outstanding modifications and memoizes the result. Further
    * invocations are based on this memoized result.
    */
-  // TODO(Overlay): This might become a hot spot with Mutation.getFieldUpdate introduction, maybe
-  // we can memorize result here.
   private Value buildProto() {
     MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
     if (mergedResult != null) {

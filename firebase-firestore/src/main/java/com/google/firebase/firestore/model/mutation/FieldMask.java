@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.firestore.model.FieldPath;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,25 +27,27 @@ import java.util.Set;
  * object foo. If foo is not an object, foo is replaced with an object containing foo.
  */
 public final class FieldMask {
-  public static FieldMask someFieldsMask(Set<FieldPath> mask) {
-    return new FieldMask(mask, Scope.Some);
+  public static FieldMask fromSet(Set<FieldPath> mask) {
+    return new FieldMask(mask, Scope.BY_MASK);
   }
 
   public static FieldMask allFieldsMask() {
-    return new FieldMask(new HashSet<FieldPath>(), Scope.All_Fields);
+    return new FieldMask(new HashSet<FieldPath>(), Scope.ALL_FIELDS);
   }
 
   public static FieldMask emptyMask() {
-    return new FieldMask(new HashSet<FieldPath>(), Scope.None);
+    return new FieldMask(new HashSet<FieldPath>(), Scope.NONE);
   }
 
   private final Set<FieldPath> mask;
-  private enum Scope{
-    All_Fields,
-    None,
-    Some
+
+  private enum Scope {
+    ALL_FIELDS,
+    NONE,
+    BY_MASK
   }
-  private Scope scope = Scope.None;
+
+  private Scope scope = Scope.NONE;
 
   private FieldMask(Set<FieldPath> mask, Scope scope) {
     this.mask = mask;
@@ -96,14 +97,14 @@ public final class FieldMask {
   }
 
   public boolean isAllFields() {
-    return scope == Scope.All_Fields;
+    return scope == Scope.ALL_FIELDS;
   }
 
   public boolean isNoneFields() {
-    return scope == Scope.None;
+    return scope == Scope.NONE;
   }
 
-  public boolean isSomeFields() {
-    return scope == Scope.Some;
+  public boolean isByMask() {
+    return scope == Scope.BY_MASK;
   }
 }

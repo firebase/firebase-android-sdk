@@ -116,7 +116,8 @@ public abstract class Mutation {
    * @param mask The fields that have been updated before applying this mutation.
    * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
-  public abstract FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask);
+  public abstract FieldMask applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, FieldMask mask);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {

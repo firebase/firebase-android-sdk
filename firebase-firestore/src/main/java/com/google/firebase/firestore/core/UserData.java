@@ -138,7 +138,7 @@ public class UserData {
      */
     public ParsedSetData toMergeData(ObjectValue data) {
       return new ParsedSetData(
-          data, FieldMask.someFieldsMask(fieldMask), unmodifiableList(fieldTransforms));
+          data, FieldMask.fromSet(fieldMask), unmodifiableList(fieldTransforms));
     }
 
     /**
@@ -184,7 +184,7 @@ public class UserData {
      */
     public ParsedUpdateData toUpdateData(ObjectValue data) {
       return new ParsedUpdateData(
-          data, FieldMask.someFieldsMask(fieldMask), unmodifiableList(fieldTransforms));
+          data, FieldMask.fromSet(fieldMask), unmodifiableList(fieldTransforms));
     }
   }
 

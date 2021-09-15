@@ -99,7 +99,7 @@ public final class MutationBatch {
 
   /** Computes the local view of a document given all the mutations in this batch. */
   public void applyToLocalView(MutableDocument document) {
-    FieldMask mutatedFields = FieldMask.someFieldsMask(new HashSet<>());
+    FieldMask mutatedFields = FieldMask.fromSet(new HashSet<>());
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {

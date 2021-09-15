@@ -259,7 +259,7 @@ public final class LocalSerializerTest {
         new PatchMutation(
             key("foo/bar"),
             TestUtil.wrapObject(map("a", "b")),
-            FieldMask.someFieldsMask(Collections.singleton(field("a"))),
+            FieldMask.fromSet(Collections.singleton(field("a"))),
             com.google.firebase.firestore.model.mutation.Precondition.NONE);
     Mutation set = setMutation("foo/bar", map("a", "b", "num", 1));
     Mutation patch =

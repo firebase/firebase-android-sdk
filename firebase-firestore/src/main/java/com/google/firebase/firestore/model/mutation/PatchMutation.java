@@ -127,7 +127,8 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
+  public FieldMask applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
@@ -143,14 +144,14 @@ public final class PatchMutation extends Mutation {
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
 
-    if(mask.isAllFields()) {
+    if (mask.isAllFields()) {
       return mask;
     }
 
     HashSet<FieldPath> mergedMaskSet = new HashSet<>(mask.getMask());
     mergedMaskSet.addAll(this.mask.getMask());
     mergedMaskSet.addAll(getFieldTransformPaths());
-    return FieldMask.someFieldsMask(mergedMaskSet);
+    return FieldMask.fromSet(mergedMaskSet);
   }
 
   private Map<FieldPath, Value> getPatch() {

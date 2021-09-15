@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -30,7 +29,6 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +211,8 @@ class LocalDocumentsView {
           remoteDocuments = remoteDocuments.insert(key, document);
         }
         // TODO(Overlay): Here we should be reading squashed mutation and apply that instead.
-        mutation.applyToLocalView(document, batch.getLocalWriteTime(), FieldMask.someFieldsMask(new HashSet<>()));
+        mutation.applyToLocalView(
+            document, batch.getLocalWriteTime(), FieldMask.fromSet(new HashSet<>()));
         if (!document.isFoundDocument()) {
           remoteDocuments = remoteDocuments.remove(key);
         }

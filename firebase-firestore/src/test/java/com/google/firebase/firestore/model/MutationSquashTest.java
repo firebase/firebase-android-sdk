@@ -26,7 +26,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static org.junit.Assert.assertEquals;
 
 import androidx.annotation.Nullable;
-
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
@@ -38,9 +37,8 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firestore.v1.Value;
-
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -407,7 +405,7 @@ public class MutationSquashTest {
 
     Mutation squashed = getSquashedMutation(doc, mask);
 
-    if(squashed != null) {
+    if (squashed != null) {
       squashed.applyToLocalView(toApplySquashedMutation, now, FieldMask.emptyMask());
     }
 
@@ -415,22 +413,41 @@ public class MutationSquashTest {
   }
 
   @Nullable
+  // TODO(Overlay): This is production code, find a place for this.
   private Mutation getSquashedMutation(MutableDocument doc, FieldMask mask) {
     Mutation squashed = null;
-    if(mask.isAllFields()) {
-      if(doc.isNoDocument()) {
+    if (mask.isAllFields()) {
+      if (doc.isNoDocument()) {
         squashed = new DeleteMutation(doc.getKey(), Precondition.NONE);
       } else {
         squashed = new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
       }
-    } else if (mask.isSomeFields()){
-      HashMap<FieldPath, Value> value = new HashMap<>();
-      for(FieldPath path: mask.getMask()) {
-        value.put(path, doc.getData().get(path));
-      }
+    } else if (mask.isByMask()) {
+      ObjectValue docValue = doc.getData();
       ObjectValue objectValue = new ObjectValue();
-      objectValue.setAll(value);
-      squashed = new PatchMutation(doc.getKey(), doc.getData(), mask, Precondition.NONE);
+      HashSet<FieldPath> maskSet = new HashSet<>();
+      for (FieldPath path : mask.getMask()) {
+        if (!maskSet.contains(path)) {
+          Value value = docValue.get(path);
+          // If it is deleting a nested field, we take the immediate parent as the mask used to
+          // construct resulting mutation.
+          // Justification: Nested fields can create parent fields implicitly, if they are
+          // deleted in later mutations, there is no trace that the empty parent fields should
+          // still remain (which is expected).
+          // Consider mutation (foo.bar 1), then mutation (foo.bar delete()).
+          // This leaves the final result (foo, {}). Despite `doc` has the correct result,
+          // `foo` is not in `mask`, and the resulting mutation will miss `foo` completely without
+          // this logic.
+          if (value == null && path.length() > 1) {
+            path = path.popLast();
+          }
+          objectValue.set(path, docValue.get(path));
+          maskSet.add(path);
+        }
+      }
+      squashed =
+          new PatchMutation(
+              doc.getKey(), objectValue, FieldMask.fromSet(maskSet), Precondition.NONE);
     }
     return squashed;
   }

@@ -125,7 +125,7 @@ public class TestUtil {
     for (int i = 0; i < fields.length; i++) {
       mask[i] = field(fields[i]);
     }
-    return FieldMask.someFieldsMask(new HashSet<>(Arrays.asList(mask)));
+    return FieldMask.fromSet(new HashSet<>(Arrays.asList(mask)));
   }
 
   public static final Map<String, Object> EMPTY_MAP = new HashMap<>();
@@ -530,7 +530,7 @@ public class TestUtil {
     return new PatchMutation(
         key(path),
         parsed.getData(),
-        FieldMask.someFieldsMask(fieldMaskPaths),
+        FieldMask.fromSet(fieldMaskPaths),
         precondition,
         fieldTransforms);
   }

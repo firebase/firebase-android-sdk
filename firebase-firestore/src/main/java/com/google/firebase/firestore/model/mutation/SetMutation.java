@@ -87,7 +87,8 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public FieldMask applyToLocalView(MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
+  public FieldMask applyToLocalView(
+      MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
