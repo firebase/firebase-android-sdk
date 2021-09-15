@@ -34,7 +34,7 @@ jobs:
         id: check_version
         run: |
           if [[ '${{ github.event.pull_request.base.ref }}' != '${{env.mainBranch}}' ]]; then
-            echo 'Wrong base branch: ${{ github.event.pull_request.base.ref }}'
+            echo 'Non-main branch: ${{ github.event.pull_request.base.ref }}'
             exit 0
           fi
           # Query the git history for all gradle.properties files between this PR and the main branch..
@@ -43,6 +43,8 @@ jobs:
           MERGE_BASE=$(git merge-base HEAD origin/${{ env.mainBranch }})
           if (git diff "${MERGE_BASE}" -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
             echo "::set-output name=released_version_changed::1"
+          else
+            echo "No change to latestReleasedVersion (since ${MERGE_BASE}) detected."
           fi
 
   trigger_cpp_sdk_update:
