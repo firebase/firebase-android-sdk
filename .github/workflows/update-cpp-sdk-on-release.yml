@@ -1,3 +1,7 @@
+# Whenever a new Firebase Android SDK is released, this workflow triggers
+# *another* workflow on the Firebase C++ SDK, which will check for the Android
+# version update and create a PR updating its dependencies if any version
+# numbers changed.
 name: update-cpp-sdk-on-release
 on:
   pull_request:
