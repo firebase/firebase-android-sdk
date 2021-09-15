@@ -100,12 +100,6 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:19.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.1.0"
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.0'
-    testImplementation ("com.google.firebase:firebase-iid:21.1.0") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-        exclude group: "com.google.firebase", module: "firebase-installations-interop"
-        exclude group: "com.google.firebase", module: "firebase-installations"
-    }
     implementation ("com.google.api-client:google-api-client:1.30.9") {
         exclude group: "org.apache.httpcomponents", module: "httpclient"
     }
@@ -123,6 +117,12 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.android.gms:play-services-vision:19.0.0'
+    testImplementation ("com.google.firebase:firebase-iid:21.1.0") {
+        exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
+        exclude group: "com.google.firebase", module: "firebase-installations-interop"
+        exclude group: "com.google.firebase", module: "firebase-installations"
+    }
 
     testImplementation 'com.android.support.test:runner:1.0.2'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
