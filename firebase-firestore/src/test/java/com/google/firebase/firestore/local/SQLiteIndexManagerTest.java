@@ -78,9 +78,27 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void addsDocuments() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("exists"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll/doc1", map("exists", 1));
+    addDoc("coll/doc2", map());
+  }
+
+  @Test
   public void testEqualityFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "==", 2));
+    verifyResults(query, "coll/doc2");
+  }
+
+  @Test
+  public void testNestedFieldEqualityFilter() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("a.b"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll/doc1", map("a", map("b", 1)));
+    addDoc("coll/doc2", map("a", map("b", 2)));
+    Query query = query("coll").filter(filter("a.b", "==", 2));
     verifyResults(query, "coll/doc2");
   }
 
@@ -145,14 +163,14 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testEndAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
     verifyResults(query, "coll/doc1", "coll/doc2");
   }
 
   @Test
   public void testEndBeforeFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
     verifyResults(query, "coll/doc1");
   }
 
@@ -165,7 +183,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .filter(filter("count", "<=", 3))
             .orderBy(orderBy("count"))
             .startAt(bound(false, 1))
-            .endAt(bound(true, 2));
+            .endAt(bound(false, 2));
     verifyResults(startAt, "coll/doc2");
   }
 

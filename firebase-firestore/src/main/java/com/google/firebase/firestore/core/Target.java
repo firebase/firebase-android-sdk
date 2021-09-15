@@ -217,11 +217,11 @@ public final class Target {
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
               largestValue = fieldFilter.getValue();
-              before = true;
+              before = false;
               break;
             case LESS_THAN:
               largestValue = fieldFilter.getValue();
-              before = false;
+              before = true;
               break;
           }
         }
