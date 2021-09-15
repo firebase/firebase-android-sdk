@@ -8,6 +8,8 @@ on:
     branches:
       # Change the below line if the main branch is renamed.
       - 'master'
+      # For debugging only.
+      - 'feature/update-cpp-repo-on-releases'
     paths:
       # Only run this if a gradle.properties file is touched.
       - '**/gradle.properties'
