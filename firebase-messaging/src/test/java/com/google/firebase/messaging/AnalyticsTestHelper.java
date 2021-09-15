@@ -16,6 +16,10 @@ package com.google.firebase.messaging;
 /** Helper for firebase messaging analytics tests. */
 public class AnalyticsTestHelper {
 
+  /**
+   * These constants must be kept in sync with:
+   * com/google/android/gms/measurement/AppMeasurement.java
+   */
   public interface Analytics {
     static final String ORIGIN_FCM = "fcm";
     static final String PARAM_SOURCE = "source";
@@ -26,6 +30,7 @@ public class AnalyticsTestHelper {
     static final String PARAM_MESSAGE_ID = "_nmid";
     static final String PARAM_MESSAGE_NAME = "_nmn";
     static final String PARAM_MESSAGE_TIME = "_nmt";
+    static final String PARAM_MESSAGE_TYPE = "_nmc";
     static final String PARAM_MESSAGE_DEVICE_TIME = "_ndt";
     static final String EVENT_FIREBASE_CAMPAIGN = "_cmp";
     static final String EVENT_NOTIFICATION_RECEIVE = "_nr";

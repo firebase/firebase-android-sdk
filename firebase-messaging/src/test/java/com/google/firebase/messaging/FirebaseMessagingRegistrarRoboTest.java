@@ -15,15 +15,15 @@ package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Transformer;
-import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.iid.FirebaseInstanceId;
-import com.google.firebase.messaging.FirebaseMessagingRegistrar.DevNullTransportFactory;
+import com.google.firebase.events.Subscriber;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.List;
 import java.util.Set;
 import org.junit.Test;
@@ -33,35 +33,6 @@ import org.robolectric.RobolectricTestRunner;
 /** Tests the behavior of the FirebaseMessagingRegistrar for 3p apps} */
 @RunWith(RobolectricTestRunner.class)
 public final class FirebaseMessagingRegistrarRoboTest {
-  @Test
-  public void testDetermineFactory_nullFactory() {
-    assertThat(FirebaseMessagingRegistrar.determineFactory(null))
-        .isInstanceOf(DevNullTransportFactory.class);
-  }
-
-  @Test
-  public void testDetermineFactory_nonNullFactory() {
-    TransportFactory dummyTransportFactory =
-        new TransportFactory() {
-          @Override
-          public <T> Transport<T> getTransport(
-              String name, Class<T> payloadType, Transformer<T, byte[]> payloadTransformer) {
-            return null;
-          }
-
-          @Override
-          public <T> Transport<T> getTransport(
-              String name,
-              Class<T> payloadType,
-              Encoding payloadEncoding,
-              Transformer<T, byte[]> payloadTransformer) {
-            return null;
-          }
-        };
-
-    assertThat(FirebaseMessagingRegistrar.determineFactory(dummyTransportFactory))
-        .isEqualTo(/* Returns differently in 1p usage */ dummyTransportFactory);
-  }
 
   @Test
   public void testGetComponents() {
@@ -71,8 +42,14 @@ public final class FirebaseMessagingRegistrarRoboTest {
     Component<?> component = components.get(0);
     Set<Dependency> dependencies = component.getDependencies();
 
-    assertThat(dependencies).contains(Dependency.required(FirebaseApp.class));
-    assertThat(dependencies).contains(Dependency.required(FirebaseInstanceId.class));
-    assertThat(dependencies).contains(Dependency.optional(TransportFactory.class));
+    assertThat(dependencies)
+        .containsAtLeast(
+            Dependency.required(FirebaseApp.class),
+            Dependency.optional(FirebaseInstanceIdInternal.class),
+            Dependency.optionalProvider(UserAgentPublisher.class),
+            Dependency.optionalProvider(HeartBeatInfo.class),
+            Dependency.optional(TransportFactory.class),
+            Dependency.required(FirebaseInstallationsApi.class),
+            Dependency.required(Subscriber.class));
   }
 }
