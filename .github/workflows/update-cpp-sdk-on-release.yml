@@ -4,23 +4,20 @@
 # numbers changed.
 name: update-cpp-sdk-on-release
 on:
-  pull_request:
-    types:
-      - closed
-
-env:
-  # If the main branch of this repo is ever renamed, change it here.
-  mainBranch: master
+  push:
+    branches:
+      # Change the below line if the main branch is renamed.
+      - 'master'
+    paths:
+      # Only run this if a gradle.properties file is touched.
+      - '**/gradle.properties'
 
 jobs:
   check_if_version_changed:
     name: Check if released version changed
     # This step checks several things, and sets released_version_changed=1 only if all are true:
-    # - The PR must target the main branch as the base branch.
-    # - The PR must NOT come from a fork.
-    # - The closed PR must be merged.
-    # - The PR must modify a gradle.properties file, specifically a "latestReleasedVersion=" line.
-    if: ${{ (github.event.pull_request.base.repo.url == github.event.pull_request.head.repo.url) && github.event.pull_request.merged }}
+    # - The push must target the main branch.
+    # - The push must modify a gradle.properties file, specifically a "latestReleasedVersion=" line.
     runs-on: ubuntu-latest
     outputs:
       released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
@@ -28,20 +25,16 @@ jobs:
       - uses: actions/checkout@v2.3.1
         with:
           # Check out the actual head of the PR, not the merge commit.
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.head.sha }}
           # Specify fetch-depth so we can query the log, the default is a shallow clone.
           fetch-depth: 0
       - name: Check if version was updated in git history
         id: check_version
         run: |
-          if [[ '${{ github.event.pull_request.base.ref }}' != '${{env.mainBranch}}' ]]; then
-            echo 'Non-main branch: ${{ github.event.pull_request.base.ref }}'
-            exit 0
-          fi
           # Query the git history for all gradle.properties files between this PR and the main branch..
           # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
           # Get the latest common commit between this and the main branch (usually just the main branch's HEAD).
-          MERGE_BASE=$(git merge-base HEAD origin/${{ env.mainBranch }})
+          MERGE_BASE=$(git merge-base HEAD ${{ github.event.before }})
           if (git diff "${MERGE_BASE}" -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
             echo "::set-output name=released_version_changed::1"
           else
@@ -79,4 +72,4 @@ jobs:
 
       - name: Trigger firebase-cpp-sdk update
         run: |
-          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/pulls/${{ github.event.pull_request.number }})." -s 10 -A
+          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.event.head_commit.sha }})." -s 10 -A
