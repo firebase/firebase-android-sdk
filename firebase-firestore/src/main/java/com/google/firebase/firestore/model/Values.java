@@ -458,6 +458,7 @@ public class Values {
     return value;
   }
 
+  /** Returns the lowest value for the given value type (inclusive). */
   public static Value getFirstValue(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
@@ -490,6 +491,9 @@ public class Values {
     }
   }
 
+  /**
+   * Returns the largest value for the given value type (exclusive). Returns {@code null} for maps.
+   */
   public static @Nullable Value getNextValue(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
@@ -512,6 +516,7 @@ public class Values {
       case ARRAY_VALUE:
         return getFirstValue(Value.ValueTypeCase.MAP_VALUE);
       case MAP_VALUE:
+        // There is no type that sorts higher than a map.
         return null;
       default:
         throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
