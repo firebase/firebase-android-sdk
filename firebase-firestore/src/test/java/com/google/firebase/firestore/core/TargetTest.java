@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
@@ -69,7 +70,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, false, "bar");
@@ -82,7 +83,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "bar");
@@ -98,7 +99,7 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob());
   }
 
   @Test
@@ -111,7 +112,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob());
   }
 
   @Test
@@ -150,7 +151,7 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob());
   }
 
   @Test
@@ -175,7 +176,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(true, "a1", "b2"))
+            .startAt(bound(true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -183,10 +184,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "a1", "b2");
+    verifyBound(lowerBound, true, "a1", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob(), "b1");
   }
 
   @Test
@@ -197,7 +198,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(false, "a1", "b2"))
+            .startAt(bound(false, "a2", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -205,10 +206,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, false, "a1", "b2");
+    verifyBound(lowerBound, false, "a2", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob(), "b1");
   }
 
   @Test
@@ -230,7 +231,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a2", "b2");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true, blob(), "b2");
   }
 
   @Test
@@ -263,7 +264,7 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b2");
+    verifyBound(lowerBound, true, "", "b2");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, false, "a1", "b1");
@@ -285,7 +286,7 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b2");
+    verifyBound(lowerBound, true, "", "b2");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "a1", "b1");
@@ -307,7 +308,7 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b1");
+    verifyBound(lowerBound, true, "", "b1");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "a1", "b1");

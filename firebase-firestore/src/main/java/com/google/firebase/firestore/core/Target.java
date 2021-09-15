@@ -14,6 +14,11 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.model.Values.getFirstValue;
+import static com.google.firebase.firestore.model.Values.getNextValue;
+import static com.google.firebase.firestore.model.Values.max;
+import static com.google.firebase.firestore.model.Values.min;
+
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -126,20 +131,23 @@ public final class Target {
     // Go through all filters to find a value for the current field segment
     for (FieldIndex.Segment segment : fieldIndex) {
       Value lowestValue = Values.NULL_VALUE;
+
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+
+          Value newValue = null;
+          boolean newBefore = true;
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
             case LESS_THAN_OR_EQUAL:
-              // TODO(indexing): Implement type clamping. Only field values with the same type
-              // should match the query.
+              newValue = getFirstValue(fieldFilter.getValue().getValueTypeCase());
               break;
             case NOT_EQUAL:
-              // These filters cannot be used as a lower bound. Skip.
+              newValue = Values.NULL_VALUE;
               break;
             case NOT_IN:
-              lowestValue =
+              newValue =
                   Value.newBuilder()
                       .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
                       .build();
@@ -149,12 +157,17 @@ public final class Target {
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case GREATER_THAN_OR_EQUAL:
-              lowestValue = fieldFilter.getValue();
+              newValue = fieldFilter.getValue();
               break;
             case GREATER_THAN:
-              lowestValue = fieldFilter.getValue();
-              before = false;
+              newValue = fieldFilter.getValue();
+              newBefore = false;
               break;
+          }
+
+          if (max(lowestValue, newValue) == newValue) {
+            lowestValue = newValue;
+            before = newBefore;
           }
         }
       }
@@ -166,7 +179,7 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = startAt.getPosition().get(i);
-            if (Values.compare(lowestValue, cursorValue) <= 0) {
+            if (max(lowestValue, cursorValue) == cursorValue) {
               lowestValue = cursorValue;
               // `before` is shared by all cursor values. If any cursor value is used, we set before
               // to the cursor's value.
@@ -176,6 +189,7 @@ public final class Target {
           }
         }
       }
+
       values.add(lowestValue);
     }
 
@@ -201,6 +215,9 @@ public final class Target {
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+
+          Value newValue = null;
+          boolean newBefore = true;
           switch (fieldFilter.getOperator()) {
             case NOT_IN:
             case NOT_EQUAL:
@@ -208,21 +225,24 @@ public final class Target {
               break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
-              // TODO(indexing): Implement type clamping. Only field values with the same type
-              // should match the query.
+              newValue = getNextValue(fieldFilter.getValue().getValueTypeCase());
               break;
             case EQUAL:
             case IN:
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
-              largestValue = fieldFilter.getValue();
-              before = true;
+              newValue = fieldFilter.getValue();
               break;
             case LESS_THAN:
-              largestValue = fieldFilter.getValue();
-              before = false;
+              newValue = fieldFilter.getValue();
+              newBefore = false;
               break;
+          }
+
+          if (min(largestValue, newValue) == newValue) {
+            largestValue = newValue;
+            before = newBefore;
           }
         }
       }
@@ -234,7 +254,7 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = endAt.getPosition().get(i);
-            if (largestValue == null || Values.compare(largestValue, cursorValue) > 0) {
+            if (min(largestValue, cursorValue) == cursorValue) {
               largestValue = cursorValue;
               before = endAt.isBefore();
             }

@@ -25,6 +25,7 @@ import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.ArrayValueOrBuilder;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.NullValue;
 import com.google.protobuf.Timestamp;
 import com.google.type.LatLng;
@@ -208,6 +209,30 @@ public class Values {
         return compareMaps(left.getMapValue(), right.getMapValue());
       default:
         throw fail("Invalid value type: " + leftType);
+    }
+  }
+
+  public static @Nullable Value max(@Nullable Value left, @Nullable Value right) {
+    if (left == null && right == null) {
+      return null;
+    } else if (left == null) {
+      return right;
+    } else if (right == null) {
+      return left;
+    } else {
+      return compare(left, right) > 0 ? left : right;
+    }
+  }
+
+  public static @Nullable Value min(@Nullable Value left, @Nullable Value right) {
+    if (left == null && right == null) {
+      return null;
+    } else if (left == null) {
+      return right;
+    } else if (right == null) {
+      return left;
+    } else {
+      return compare(left, right) < 0 ? left : right;
     }
   }
 
@@ -431,5 +456,65 @@ public class Values {
                     databaseId.getProjectId(), databaseId.getDatabaseId(), key.toString()))
             .build();
     return value;
+  }
+
+  public static Value getFirstValue(Value.ValueTypeCase valueTypeCase) {
+    switch (valueTypeCase) {
+      case NULL_VALUE:
+        return Values.NULL_VALUE;
+      case BOOLEAN_VALUE:
+        return Value.newBuilder().setBooleanValue(false).build();
+      case INTEGER_VALUE:
+      case DOUBLE_VALUE:
+        return Value.newBuilder().setDoubleValue(Double.NaN).build();
+      case TIMESTAMP_VALUE:
+        return Value.newBuilder()
+            .setTimestampValue(Timestamp.newBuilder().setSeconds(Long.MIN_VALUE))
+            .build();
+      case STRING_VALUE:
+        return Value.newBuilder().setStringValue("").build();
+      case BYTES_VALUE:
+        return Value.newBuilder().setBytesValue(ByteString.EMPTY).build();
+      case REFERENCE_VALUE:
+        return refValue(DatabaseId.EMPTY, DocumentKey.empty());
+      case GEO_POINT_VALUE:
+        return Value.newBuilder()
+            .setGeoPointValue(LatLng.newBuilder().setLatitude(-90.0).setLongitude(-180.0))
+            .build();
+      case ARRAY_VALUE:
+        return Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build();
+      case MAP_VALUE:
+        return Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build();
+      default:
+        throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
+    }
+  }
+
+  public static @Nullable Value getNextValue(Value.ValueTypeCase valueTypeCase) {
+    switch (valueTypeCase) {
+      case NULL_VALUE:
+        return getFirstValue(Value.ValueTypeCase.BOOLEAN_VALUE);
+      case BOOLEAN_VALUE:
+        return getFirstValue(Value.ValueTypeCase.INTEGER_VALUE);
+      case INTEGER_VALUE:
+      case DOUBLE_VALUE:
+        return getFirstValue(Value.ValueTypeCase.TIMESTAMP_VALUE);
+      case TIMESTAMP_VALUE:
+        return getFirstValue(Value.ValueTypeCase.STRING_VALUE);
+      case STRING_VALUE:
+        return getFirstValue(Value.ValueTypeCase.BYTES_VALUE);
+      case BYTES_VALUE:
+        return getFirstValue(Value.ValueTypeCase.REFERENCE_VALUE);
+      case REFERENCE_VALUE:
+        return getFirstValue(Value.ValueTypeCase.GEO_POINT_VALUE);
+      case GEO_POINT_VALUE:
+        return getFirstValue(Value.ValueTypeCase.ARRAY_VALUE);
+      case ARRAY_VALUE:
+        return getFirstValue(Value.ValueTypeCase.MAP_VALUE);
+      case MAP_VALUE:
+        return null;
+      default:
+        throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
+    }
   }
 }

@@ -143,14 +143,14 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testEndAtFilter() {
+  public void testEndBeforeFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
     verifyResults(query, "coll/doc1", "coll/doc2");
   }
 
   @Test
-  public void testEndBeforeFilter() {
+  public void testEndAtFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
     verifyResults(query, "coll/doc1");
