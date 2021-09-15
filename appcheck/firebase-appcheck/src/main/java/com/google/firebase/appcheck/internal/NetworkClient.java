@@ -16,9 +16,14 @@ package com.google.firebase.appcheck.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+import android.content.Context;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.FirebaseAppCheck;
@@ -40,6 +45,8 @@ import org.json.JSONException;
  */
 public class NetworkClient {
 
+  private static final String TAG = NetworkClient.class.getName();
+
   private static final String SAFETY_NET_EXCHANGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1beta/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
   private static final String DEBUG_EXCHANGE_URL_TEMPLATE =
@@ -49,7 +56,10 @@ public class NetworkClient {
   private static final String UTF_8 = "UTF-8";
   @VisibleForTesting static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
   @VisibleForTesting static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
+  static final String X_ANDROID_PACKAGE = "X-Android-Package";
+  static final String X_ANDROID_CERT = "X-Android-Cert";
 
+  private final Context context;
   private final DefaultFirebaseAppCheck firebaseAppCheck;
   private final String apiKey;
   private final String appId;
@@ -65,6 +75,7 @@ public class NetworkClient {
 
   public NetworkClient(@NonNull FirebaseApp firebaseApp) {
     checkNotNull(firebaseApp);
+    this.context = firebaseApp.getApplicationContext();
     this.firebaseAppCheck = (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp);
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.appId = firebaseApp.getOptions().getApplicationId();
@@ -97,6 +108,10 @@ public class NetworkClient {
             X_FIREBASE_CLIENT_LOG_TYPE, firebaseAppCheck.getHeartbeatCode());
       }
 
+      // Headers for Android API key restrictions.
+      urlConnection.setRequestProperty(X_ANDROID_PACKAGE, context.getPackageName());
+      urlConnection.setRequestProperty(X_ANDROID_CERT, getFingerprintHashForPackage());
+
       try (OutputStream out =
           new BufferedOutputStream(urlConnection.getOutputStream(), requestBytes.length)) {
         out.write(requestBytes, /* off= */ 0, requestBytes.length);
@@ -127,6 +142,23 @@ public class NetworkClient {
       return AppCheckTokenResponse.fromJsonString(responseBody);
     } finally {
       urlConnection.disconnect();
+    }
+  }
+
+  /** Gets the Android package's SHA-1 fingerprint. */
+  private String getFingerprintHashForPackage() {
+    byte[] hash;
+
+    try {
+      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        return null;
+      }
+      return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+    } catch (NameNotFoundException e) {
+      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      return null;
     }
   }
 
