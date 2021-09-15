@@ -21,6 +21,7 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,7 +36,8 @@ final class SharedPreferencesQueue {
   private final String itemSeparator;
 
   @GuardedBy("internalQueue")
-  private final ArrayDeque<String> internalQueue = new ArrayDeque<>();
+  @VisibleForTesting
+  final ArrayDeque<String> internalQueue = new ArrayDeque<>();
 
   private final Executor syncExecutor;
 
@@ -176,11 +178,32 @@ final class SharedPreferencesQueue {
     bulkOperation = true;
   }
 
+  @VisibleForTesting
+  void beginTransactionSync() {
+    synchronized (internalQueue) {
+      beginTransaction();
+    }
+  }
+
   /** Commits bulk operation transactions. See {@link SharedPreferencesQueue#beginTransaction()}. */
   @GuardedBy("internalQueue")
   public void commitTransaction() {
     bulkOperation = false;
     syncStateAsync();
+  }
+
+  @VisibleForTesting
+  void commitTransactionSync() {
+    synchronized (internalQueue) {
+      commitTransaction();
+    }
+  }
+
+  @VisibleForTesting
+  public String serializeSync() {
+    synchronized (internalQueue) {
+      return serialize();
+    }
   }
 
   public boolean remove(@Nullable Object o) {

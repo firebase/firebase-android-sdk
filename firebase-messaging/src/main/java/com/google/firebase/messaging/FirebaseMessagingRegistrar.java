@@ -14,21 +14,15 @@
 package com.google.firebase.messaging;
 
 import androidx.annotation.Keep;
-import androidx.annotation.VisibleForTesting;
-import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Event;
-import com.google.android.datatransport.Transformer;
-import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
-import com.google.android.datatransport.TransportScheduleCallback;
-import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -50,64 +44,24 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseMessaging.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseInstanceId.class))
-            .add(Dependency.required(UserAgentPublisher.class))
-            .add(Dependency.required(HeartBeatInfo.class))
+            .add(Dependency.optional(FirebaseInstanceIdInternal.class))
+            .add(Dependency.optionalProvider(UserAgentPublisher.class))
+            .add(Dependency.optionalProvider(HeartBeatInfo.class))
             .add(Dependency.optional(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.required(Subscriber.class))
             .factory(
                 container ->
                     new FirebaseMessaging(
                         container.get(FirebaseApp.class),
-                        container.get(FirebaseInstanceId.class),
-                        container.get(UserAgentPublisher.class),
-                        container.get(HeartBeatInfo.class),
+                        container.get(FirebaseInstanceIdInternal.class),
+                        container.getProvider(UserAgentPublisher.class),
+                        container.getProvider(HeartBeatInfo.class),
                         container.get(FirebaseInstallationsApi.class),
-                        determineFactory(container.get(TransportFactory.class))))
+                        container.get(TransportFactory.class),
+                        container.get(Subscriber.class)))
             .alwaysEager()
             .build(),
         LibraryVersionComponent.create("fire-fcm", BuildConfig.VERSION_NAME));
-  }
-
-  @VisibleForTesting
-  static TransportFactory determineFactory(TransportFactory realFactory) {
-    // in 1p context there is no dependency on firebase-datatransport, so the factory may be
-    // missing. Note that it is possible for it to be present if another SDK(e.g. fiam) is used in
-    // the 1p app.
-    if (realFactory == null
-        || !CCTDestination.LEGACY_INSTANCE.getSupportedEncodings().contains(Encoding.of("json"))) {
-      return new DevNullTransportFactory();
-    }
-
-    return realFactory;
-  }
-
-  /** Produces Transports that don't send events anywhere. */
-  @VisibleForTesting
-  public static class DevNullTransportFactory implements TransportFactory {
-    @Override
-    public <T> Transport<T> getTransport(
-        String name, Class<T> payloadType, Transformer<T, byte[]> payloadTransformer) {
-      return new DevNullTransport<>();
-    }
-
-    @Override
-    public <T> Transport<T> getTransport(
-        String name,
-        Class<T> payloadType,
-        Encoding payloadEncoding,
-        Transformer<T, byte[]> payloadTransformer) {
-      return new DevNullTransport<>();
-    }
-  }
-
-  private static class DevNullTransport<T> implements Transport<T> {
-    @Override
-    public void send(Event<T> event) {}
-
-    @Override
-    public void schedule(Event<T> event, TransportScheduleCallback callback) {
-      callback.onSchedule(null);
-    }
   }
 }

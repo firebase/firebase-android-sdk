@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.os.PowerManager.WakeLock;
 import androidx.collection.ArrayMap;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.iid.WakeLockHolder;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;

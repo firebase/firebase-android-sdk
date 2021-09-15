@@ -29,6 +29,7 @@ public class SharedPreferencesQueueRoboTest {
   private static final String ITEM_SEPARATOR = ",";
   private static final String TEST_TOPIC = "Test_Topic";
   private final FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
+
   private SharedPreferencesQueue queue;
 
   @Before
@@ -114,12 +115,11 @@ public class SharedPreferencesQueueRoboTest {
   }
 
   @Test
-  @SuppressWarnings("GuardedBy")
   public void testSerialize() {
     queue.add(TEST_TOPIC + "1");
     queue.add(TEST_TOPIC + "3");
     queue.add(TEST_TOPIC + "2");
-    assertThat(queue.serialize())
+    assertThat(queue.serializeSync())
         .isEqualTo(
             TEST_TOPIC
                 + "1"
@@ -146,15 +146,16 @@ public class SharedPreferencesQueueRoboTest {
   }
 
   @Test
-  @SuppressWarnings("GuardedBy")
   public void testMultiTransactions() {
-    queue.beginTransaction();
+    synchronized (queue.internalQueue) {
+      queue.beginTransactionSync();
+    }
     queue.add(TEST_TOPIC);
 
     // transaction should not be visible from other queue instances yet
     assertThat(initQueue(false).toList()).isEmpty();
 
-    queue.commitTransaction();
+    queue.commitTransactionSync();
     executePendingOperations();
 
     assertThat(initQueue(false).toList()).containsExactly(TEST_TOPIC);
