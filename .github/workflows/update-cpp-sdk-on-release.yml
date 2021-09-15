@@ -18,7 +18,7 @@ jobs:
     # - The PR must NOT come from a fork.
     # - The closed PR must be merged.
     # - The PR must modify a gradle.properties file, specifically a "latestReleasedVersion=" line.
-    if: github.event.pull_request.base.ref == '${{env.mainBranch}}' && github.event.pull_request.base.repo.url == github.event.pull_request.head.repo.url
+    if: github.event.pull_request.base.repo.url == github.event.pull_request.head.repo.url
     #&& github.event.pull_request.merged }}
     runs-on: ubuntu-latest
     outputs:
@@ -33,6 +33,10 @@ jobs:
       - name: Check if version was updated in git history
         id: check_version
         run: |
+          if [[ '${{ github.event.pull_request.base.ref }}' != '${{env.mainBranch}}' ]]; then
+            echo 'Wrong base branch: ${{ github.event.pull_request.base.ref }}'
+            exit 0
+          fi
           # Query the git history for all gradle.properties files between this PR and the main branch..
           # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
           # Get the latest common commit between this and the main branch (usually just the main branch's HEAD).
