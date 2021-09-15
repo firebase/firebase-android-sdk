@@ -36,7 +36,7 @@ private val NULLABLE_ANNOTATIONS = listOf("Nullable", "CheckForNull")
 private val NOT_NULL_ANNOTATIONS = listOf("NonNull", "NotNull", "Nonnull")
 
 private val ANDROIDX_ANNOTATIONS = listOf(
-        "androidx.annotation.Nullable",
+        "android.support.annotation.NonNull",
         "androidx.annotation.NonNull",
         "android.support.annotation.Nullable",
         "androidx.annotation.NonNull")
