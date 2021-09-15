@@ -158,11 +158,6 @@ public class MutationSquashTest {
     squashRoundTrips(doc, set, patch);
   }
 
-  // TODO(overlay): This test fails because deleting nested fields like bar.baz leaves an empty bar
-  // without
-  // squashing. With squashing bar.baz or bar is completely gone. May not be an actual issue, but we
-  // need
-  // to resolve this before merge.
   @Test
   public void testSquashFieldDeletionOfNestedField() {
     MutableDocument doc = doc("collection/key", 0, map("bar.baz", 1));
