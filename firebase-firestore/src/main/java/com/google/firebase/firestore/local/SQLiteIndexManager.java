@@ -206,6 +206,7 @@ final class SQLiteIndexManager implements IndexManager {
 
       // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
       // send one query that combines all clauses.
+      // TODO(indexing): Add limit handling
       for (int i = 0; i < lowerBoundValues.size(); ++i) {
         db.query(
                 String.format(
