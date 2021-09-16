@@ -24,23 +24,37 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Transformer;
+import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.ComponentDiscoveryService;
+import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.Constants.AnalyticsKeys;
-import com.google.firebase.messaging.Constants.FirelogAnalytics;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.ScionAnalytics;
+import com.google.firebase.messaging.reporting.MessagingClientEvent;
+import com.google.firebase.messaging.reporting.MessagingClientEvent.MessageType;
+import com.google.firebase.messaging.reporting.MessagingClientEvent.SDKPlatform;
+import com.google.firebase.messaging.reporting.MessagingClientEventExtension;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.AnalyticsValidator.LoggedEvent;
+import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
 import com.google.firebase.messaging.testing.MessagingTestHelper;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -78,6 +92,7 @@ public class MessagingAnalyticsRoboTest {
   @Before
   public void setUp() {
     FirebaseApp.clearInstancesForTest();
+    FirebaseMessaging.transportFactory = null;
     // Create a test FirebaseApp instance
     FirebaseOptions.Builder firebaseOptionsBuilder =
         new FirebaseOptions.Builder()
@@ -118,7 +133,7 @@ public class MessagingAnalyticsRoboTest {
     intent.putExtra(ANALYTICS_COMPOSER_ID, "composer_key");
 
     MessagingAnalytics.logNotificationReceived(intent);
-    MessagingAnalytics.logNotificationOpen(intent);
+    MessagingAnalytics.logNotificationOpen(intent.getExtras());
     MessagingAnalytics.logNotificationDismiss(intent);
     // No Exception is thrown = no crash, yeah
   }
@@ -165,6 +180,7 @@ public class MessagingAnalyticsRoboTest {
    * Test that if there is no manifest nor run-time specification of whether FCM should export
    * delivery metrics to big query, the expected behavior is to not upload the metrics.
    */
+  @Ignore
   @Test
   public void testShouldExportDeliveryMetricsToBigQuery_noneManifestNoneSetter() {
     assertManifestFieldWithValue(MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED, null);
@@ -302,6 +318,7 @@ public class MessagingAnalyticsRoboTest {
    * flag should override the compile-time flag.
    */
   @Test
+  @Ignore
   public void testShouldExportDeliveryMetricsToBigQuery_falseManifestTrueSetter() throws Exception {
     editManifestApplicationMetadata()
         .putBoolean(MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED, false);
@@ -371,9 +388,8 @@ public class MessagingAnalyticsRoboTest {
    */
   @Test
   public void testComposerUiPopulatesParamMessageId() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -392,9 +408,8 @@ public class MessagingAnalyticsRoboTest {
    */
   @Test
   public void testTopicsApiPopulatesParamTopic_straightFromHttpTopicApi() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(MessagePayloadKeys.FROM, "/topics/test_topic");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -416,10 +431,9 @@ public class MessagingAnalyticsRoboTest {
    */
   @Test
   public void testTopicsApiPopulatesParamTopic_fromComposerUiUsingTopic() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(MessagePayloadKeys.FROM, "/topics/test_topic");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -437,9 +451,9 @@ public class MessagingAnalyticsRoboTest {
 
   /* Notifications with FROM != "/topics/%" DO NOT report to Analytics Param.TOPIC */
   @Test
+  @Ignore
   public void testTopicsApiPopulatesParamTopic_fromComposerUiWithFromNotATopic() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(MessagePayloadKeys.FROM, "not_a_topic_name");
@@ -459,8 +473,7 @@ public class MessagingAnalyticsRoboTest {
   /** Notifications with ANALYTICS_MESSAGE_TIMESTAMP should set Param.MESSAGE_TIME. */
   @Test
   public void analyticsMessageTimestamp() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(ANALYTICS_MESSAGE_TIMESTAMP, "1234");
@@ -479,8 +492,7 @@ public class MessagingAnalyticsRoboTest {
   /** Notifications with invalid ANALYTICS_MESSAGE_TIMESTAMP should NOT set Param.MESSAGE_TIME. */
   @Test
   public void analyticsMessageTimestamp_invalid() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     // Notification with a corrupted timestamp
@@ -498,9 +510,8 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void analyticsComposerLabel_missing() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     // ANALYTICS_COMPOSER_LABEL not set
 
@@ -516,10 +527,9 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void analyticsComposerLabel() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     intent.putExtra(ANALYTICS_COMPOSER_LABEL, "human composer label");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -534,8 +544,7 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void analyticsMessageLabel_missing() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -549,9 +558,8 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void analyticsMessageLabel_present() {
-    Intent intent = new Intent();
+    Intent intent = createTestAnalyticsIntent();
     intent.putExtra(ANALYTICS_MESSAGE_LABEL, "developer-provided-label");
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -566,8 +574,7 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void notificationLifecycle_eventReceived_dataMessage() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     MessagingAnalytics.logNotificationReceived(intent);
 
@@ -581,8 +588,7 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void notificationLifecycle_eventReceived_notification() {
-    Intent intent = new Intent();
-    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    Intent intent = createTestAnalyticsIntent();
 
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
     // Set as notification.
@@ -603,7 +609,7 @@ public class MessagingAnalyticsRoboTest {
     Intent intent = new Intent();
     intent.putExtra(ANALYTICS_COMPOSER_ID, "campaign_id");
 
-    MessagingAnalytics.logNotificationOpen(intent);
+    MessagingAnalytics.logNotificationOpen(intent.getExtras());
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -684,7 +690,7 @@ public class MessagingAnalyticsRoboTest {
     // Notification opened
     // 2 events are created: Event.FIREBASE_CAMPAIGN and Event.NOTIFICATION_OPEN
     // 1 user-property is set: UserProperty.FIREBASE_LAST_NOTIFICATION
-    MessagingAnalytics.logNotificationOpen(intent);
+    MessagingAnalytics.logNotificationOpen(intent.getExtras());
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(2);
@@ -763,7 +769,7 @@ public class MessagingAnalyticsRoboTest {
     // Extra: ANALYTICS_TRACK_CONVERSIONS="1" NOT set
 
     // Notification opened: NO user-property and NO Event.FIREBASE_CAMPAIGN is logged
-    MessagingAnalytics.logNotificationOpen(intent);
+    MessagingAnalytics.logNotificationOpen(intent.getExtras());
 
     assertThat(analyticsValidator.getLoggedEventNames())
         .doesNotContain(ScionAnalytics.EVENT_FIREBASE_CAMPAIGN);
@@ -808,35 +814,71 @@ public class MessagingAnalyticsRoboTest {
 
   @Test
   public void testGetTtl_validStringTtl() {
-    Intent testIntent = new Intent();
-    testIntent.putExtra(MessagePayloadKeys.TTL, "123");
+    Bundle extras = new Bundle();
+    extras.putString(MessagePayloadKeys.TTL, "123");
 
-    assertThat(MessagingAnalytics.getTtl(testIntent)).isEqualTo(123);
+    assertThat(MessagingAnalytics.getTtl(extras)).isEqualTo(123);
   }
 
   @Test
   public void testGetTtl_validIntTtl() {
-    Intent testIntent = new Intent();
-    testIntent.putExtra(MessagePayloadKeys.TTL, 123);
+    Bundle extras = new Bundle();
+    extras.putInt(MessagePayloadKeys.TTL, 123);
 
-    assertThat(MessagingAnalytics.getTtl(testIntent)).isEqualTo(123);
+    assertThat(MessagingAnalytics.getTtl(extras)).isEqualTo(123);
   }
 
   @Test
   public void testGetTtl_invalidTtl() {
-    Intent intent = new Intent();
-    intent.putExtra(MessagePayloadKeys.TTL, "abc");
+    Bundle extras = new Bundle();
+    extras.putString(MessagePayloadKeys.TTL, "abc");
 
-    assertThat(MessagingAnalytics.getTtl(intent)).isEqualTo(0);
+    assertThat(MessagingAnalytics.getTtl(extras)).isEqualTo(0);
+  }
+
+  @Test
+  @Ignore
+  public void getInstanceId_withIntentTo() {
+    Bundle extras = new Bundle();
+    extras.putString(MessagePayloadKeys.TO, "installation_id");
+
+    assertThat(MessagingAnalytics.getInstanceId(extras)).isEqualTo("installation_id");
+  }
+
+  @Test
+  public void getInstanceId_fromInstanceId() throws Exception {
+    String analyticsId =
+        Executors.newSingleThreadExecutor()
+            // have to call this off the main thread
+            .submit(() -> MessagingAnalytics.getInstanceId(new Bundle()))
+            .get();
+
+    assertThat(analyticsId).isEqualTo(FirebaseInstanceId.getInstance().getId());
+  }
+
+  @Test
+  public void getProjectNumber_withIntentSenderId() {
+    Bundle extras = new Bundle();
+    extras.putString(MessagePayloadKeys.SENDER_ID, "100101010");
+
+    assertThat(MessagingAnalytics.getProjectNumber(extras)).isEqualTo(100101010);
+  }
+
+  @Test
+  public void getProjectNumber_fromDefaultFirebaseApp() {
+    Bundle extras = new Bundle();
+
+    assertThat(MessagingAnalytics.getProjectNumber(extras))
+        .isEqualTo(Long.parseLong(MessagingTestHelper.SENDER));
   }
 
   @Test
   public void testLogToScion_invalidMessageTime_doesNotThrow() {
-    Intent intent = new Intent();
-    intent.putExtra(AnalyticsKeys.MESSAGE_TIMESTAMP, "invalid_message_time");
+    Bundle extras = new Bundle();
+    extras.putString(AnalyticsKeys.MESSAGE_TIMESTAMP, "invalid_message_time");
 
-    assertThat(MessagingAnalytics.getMessageTime(intent)).isEqualTo("invalid_message_time");
-    MessagingAnalytics.logToScion("test_event", intent);
+    assertThat(MessagingAnalytics.getMessageTime(extras)).isEqualTo("invalid_message_time");
+    MessagingAnalytics.logToScion("test_event", extras);
     // no exception thrown means we are handling the NumberFormatException gracefully
   }
 
@@ -844,11 +886,11 @@ public class MessagingAnalyticsRoboTest {
   // distinguish them carefully, hence this test
   @Test
   public void testGetMessageTypeForScion_notification() {
-    Intent intent = new Intent();
+    Bundle extras = new Bundle();
     // simulate a display notification
-    intent.putExtra(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    extras.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
 
-    assertThat(MessagingAnalytics.getMessageTypeForScion(intent))
+    assertThat(MessagingAnalytics.getMessageTypeForScion(extras))
         .isEqualTo(ScionAnalytics.MessageType.DISPLAY_NOTIFICATION);
   }
 
@@ -856,11 +898,244 @@ public class MessagingAnalyticsRoboTest {
   // distinguish them carefully, hence this test
   @Test
   public void testGetMessageTypeForFirelog_dataMessage() {
-    Intent intent = new Intent();
+    Bundle extras = new Bundle();
     // simulate a display notification
-    intent.putExtra(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    extras.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
 
-    assertThat(MessagingAnalytics.getMessageTypeForFirelog(intent))
-        .isEqualTo(FirelogAnalytics.MessageType.DISPLAY_NOTIFICATION);
+    assertThat(MessagingAnalytics.getMessageTypeForFirelog(extras))
+        .isEqualTo(MessagingClientEvent.MessageType.DISPLAY_NOTIFICATION);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_normal() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.DELIVERED_PRIORITY, "normal")))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_high() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.DELIVERED_PRIORITY, "high")))
+        .isEqualTo(10);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_unset() {
+    assertThat(MessagingAnalytics.getMessagePriorityForFirelog(Bundle.EMPTY)).isEqualTo(0);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_unknown() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.DELIVERED_PRIORITY, "not a valid value")))
+        .isEqualTo(0);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_normalv19() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.PRIORITY_V19, "normal")))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_highv19() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.PRIORITY_V19, "high")))
+        .isEqualTo(10);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_unknownv19() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.PRIORITY_V19, "not a valid value")))
+        .isEqualTo(0);
+  }
+
+  @Test
+  public void testGetMessagePriorityForFirelog_reduced() {
+    assertThat(
+            MessagingAnalytics.getMessagePriorityForFirelog(
+                Bundles.of(MessagePayloadKeys.PRIORITY_REDUCED_V19, "1")))
+        .isEqualTo(5);
+  }
+
+  @Test
+  public void testEventToProto_nullIntent() {
+    assertThat(MessagingAnalytics.eventToProto(MessagingClientEvent.Event.MESSAGE_DELIVERED, null))
+        .isNull();
+  }
+
+  @Test
+  public void testEventToProto_fullSampleTopicMessage() {
+    Bundle b = new Bundle();
+    b.putString(MessagePayloadKeys.TTL, "22223");
+    b.putString(MessagePayloadKeys.TO, "some_installation_id");
+    b.putString(MessagePayloadKeys.FROM, "/topics/my cool topic");
+    b.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    b.putString(MessagePayloadKeys.MSGID, "an id!!!");
+    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "high");
+    b.putString(MessagePayloadKeys.SENDER_ID, "100101010");
+    b.putString(AnalyticsKeys.COMPOSER_LABEL, "composer label!");
+    b.putString(AnalyticsKeys.MESSAGE_LABEL, "message label!");
+    // b.putString(AnalyticsKeys.MESSAGE_CHANNEL, "message channel!");
+    // b.putString(AnalyticsKeys.MESSAGE_TIMESTAMP, "timestamp!!!");
+    b.putString(MessagePayloadKeys.COLLAPSE_KEY, "collapse key");
+    Intent intent = new Intent().putExtras(b);
+
+    // don't have a firebase-specific truth version, so instead we juts do this bit by bit
+    MessagingClientEvent ev =
+        MessagingAnalytics.eventToProto(MessagingClientEvent.Event.MESSAGE_DELIVERED, intent);
+    assertThat(ev.getCollapseKey()).isEqualTo("collapse key");
+    assertThat(ev.getMessageType()).isEqualTo(MessageType.DISPLAY_NOTIFICATION);
+    assertThat(ev.getSdkPlatform()).isEqualTo(SDKPlatform.ANDROID);
+    assertThat(ev.getPackageName()).isEqualTo(context.getPackageName());
+    assertThat(ev.getInstanceId()).isEqualTo("some_installation_id");
+    assertThat(ev.getEvent()).isEqualTo(MessagingClientEvent.Event.MESSAGE_DELIVERED);
+    assertThat(ev.getTtl()).isEqualTo(22223L);
+    assertThat(ev.getTopic()).isEqualTo("/topics/my cool topic");
+    assertThat(ev.getAnalyticsLabel()).isEqualTo("message label!");
+    assertThat(ev.getComposerLabel()).isEqualTo("composer label!");
+    assertThat(ev.getProjectNumber()).isEqualTo(100101010);
+  }
+
+  @Test
+  public void testEventToProto_fullSampleDirectedMessage() {
+    Bundle b = new Bundle();
+    b.putString(MessagePayloadKeys.TTL, "22223");
+    b.putString(MessagePayloadKeys.TO, "some_installation_id");
+    b.putString(MessagePayloadKeys.FROM, "whatever");
+    b.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    b.putString(MessagePayloadKeys.MSGID, "an id!!!");
+    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "high");
+    b.putString(MessagePayloadKeys.SENDER_ID, "100101010");
+    b.putString(AnalyticsKeys.COMPOSER_LABEL, "composer label!");
+    b.putString(AnalyticsKeys.MESSAGE_LABEL, "message label!");
+    // b.putString(AnalyticsKeys.MESSAGE_CHANNEL, "message channel!");
+    // b.putString(AnalyticsKeys.MESSAGE_TIMESTAMP, "timestamp!!!");
+    b.putString(MessagePayloadKeys.COLLAPSE_KEY, "collapse key");
+    Intent intent = new Intent().putExtras(b);
+
+    // don't have a firebase-specific truth version, so instead we juts do this bit by bit
+    MessagingClientEvent ev =
+        MessagingAnalytics.eventToProto(MessagingClientEvent.Event.MESSAGE_DELIVERED, intent);
+    assertThat(ev.getCollapseKey()).isEqualTo("collapse key");
+    assertThat(ev.getMessageType()).isEqualTo(MessageType.DISPLAY_NOTIFICATION);
+    assertThat(ev.getSdkPlatform()).isEqualTo(SDKPlatform.ANDROID);
+    assertThat(ev.getPackageName()).isEqualTo(context.getPackageName());
+    assertThat(ev.getInstanceId()).isEqualTo("some_installation_id");
+    assertThat(ev.getEvent()).isEqualTo(MessagingClientEvent.Event.MESSAGE_DELIVERED);
+    assertThat(ev.getTtl()).isEqualTo(22223L);
+    assertThat(ev.getTopic()).isEmpty();
+    assertThat(ev.getAnalyticsLabel()).isEqualTo("message label!");
+    assertThat(ev.getComposerLabel()).isEqualTo("composer label!");
+    assertThat(ev.getProjectNumber()).isEqualTo(100101010);
+  }
+
+  @Test
+  public void testLogNotificationReceived() throws Exception {
+    MessagingAnalytics.setDeliveryMetricsExportToBigQuery(true);
+    FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
+    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+
+    Bundle b = new Bundle();
+    b.putString(MessagePayloadKeys.TTL, "22223");
+    b.putString(MessagePayloadKeys.TO, "some_installation_id");
+    b.putString(MessagePayloadKeys.FROM, "/topics/my cool topic");
+    b.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    b.putString(MessagePayloadKeys.MSGID, "an id!!!");
+    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "high");
+    b.putString(MessagePayloadKeys.SENDER_ID, "100101010");
+    b.putString(AnalyticsKeys.COMPOSER_LABEL, "composer label!");
+    b.putString(AnalyticsKeys.MESSAGE_LABEL, "message label!");
+    b.putString(MessagePayloadKeys.COLLAPSE_KEY, "collapse key");
+    Intent intent = new Intent().putExtras(b);
+    MessagingAnalytics.logNotificationReceived(intent);
+
+    MessagingClientEventExtension gotEvent = transport.eventQueue.poll().getPayload();
+    MessagingClientEventExtension wantEvent =
+        MessagingClientEventExtension.newBuilder()
+            .setMessagingClientEvent(
+                MessagingAnalytics.eventToProto(
+                    MessagingClientEvent.Event.MESSAGE_DELIVERED, intent))
+            .build();
+    assertThat(gotEvent.toByteArray()).isEqualTo(wantEvent.toByteArray());
+  }
+
+  @Test
+  public void testLogNotificationReceived_bigQueryExportDisabled() throws Exception {
+    MessagingAnalytics.setDeliveryMetricsExportToBigQuery(false);
+    FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
+    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+
+    Bundle b = new Bundle();
+    b.putString(MessagePayloadKeys.TTL, "22223");
+    b.putString(MessagePayloadKeys.TO, "some_installation_id");
+    b.putString(MessagePayloadKeys.FROM, "/topics/my cool topic");
+    b.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
+    b.putString(MessagePayloadKeys.MSGID, "an id!!!");
+    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "high");
+    b.putString(MessagePayloadKeys.SENDER_ID, "100101010");
+    b.putString(AnalyticsKeys.COMPOSER_LABEL, "composer label!");
+    b.putString(AnalyticsKeys.MESSAGE_LABEL, "message label!");
+    b.putString(MessagePayloadKeys.COLLAPSE_KEY, "collapse key");
+    Intent intent = new Intent().putExtras(b);
+    MessagingAnalytics.logNotificationReceived(intent);
+
+    // shouldn't log anything 'cause delivery metrics are disabled
+    assertThat(transport.eventQueue).isEmpty();
+  }
+
+  private Intent createTestAnalyticsIntent() {
+    Intent intent = new Intent();
+    // Set TO so that it doesn't try to get the Installation ID on the main thread.
+    intent.putExtra(MessagePayloadKeys.TO, "installation_id");
+    intent.putExtra(Constants.AnalyticsKeys.ENABLED, "1");
+    return intent;
+  }
+
+  private static class FakeFirelogTransportFactory implements TransportFactory {
+    final FakeFirelogTransport<?> transport;
+
+    FakeFirelogTransportFactory(FakeFirelogTransport<?> transport) {
+      this.transport = transport;
+    }
+
+    @Override
+    public <T> Transport<T> getTransport(
+        String name, Class<T> payloadType, Transformer<T, byte[]> payloadTransformer) {
+      throw new IllegalStateException("unimplemented");
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Transport<T> getTransport(
+        String name,
+        Class<T> payloadType,
+        Encoding payloadEncoding,
+        Transformer<T, byte[]> payloadTransformer) {
+      return (Transport<T>) transport;
+    }
+  }
+
+  private static class FakeFirelogTransport<T> implements Transport<T> {
+    public final BlockingQueue<Event<T>> eventQueue = new LinkedBlockingQueue<>();
+
+    @Override
+    public void send(Event<T> event) {
+      eventQueue.offer(event);
+    }
+
+    @Override
+    public void schedule(Event<T> event, TransportScheduleCallback callback) {
+      throw new IllegalStateException("unimplemented");
+    }
   }
 }
