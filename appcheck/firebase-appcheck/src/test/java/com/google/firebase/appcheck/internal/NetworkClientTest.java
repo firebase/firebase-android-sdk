@@ -20,10 +20,13 @@ import static com.google.firebase.appcheck.internal.AppCheckTokenResponse.TIME_T
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.CODE_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.ERROR_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.MESSAGE_KEY;
+import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_CERT;
+import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_PACKAGE;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT_LOG_TYPE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -116,13 +119,7 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-
-    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
-    String heartBeatCode =
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
-    assertThat(userAgent).contains(SDK_NAME);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -146,13 +143,7 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-
-    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
-    String heartBeatCode =
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
-    assertThat(userAgent).contains(SDK_NAME);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -174,13 +165,7 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-
-    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
-    String heartBeatCode =
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
-    assertThat(userAgent).contains(SDK_NAME);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -204,13 +189,7 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(outputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-
-    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
-    String heartBeatCode =
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
-    assertThat(userAgent).contains(SDK_NAME);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -220,6 +199,20 @@ public class NetworkClientTest {
         () ->
             networkClient.exchangeAttestationForAppCheckToken(
                 JSON_REQUEST.getBytes(), NetworkClient.UNKNOWN));
+  }
+
+  private void verifyRequestHeaders() {
+    String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
+    String heartBeatCode =
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
+
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
+    verify(mockHttpUrlConnection)
+        .setRequestProperty(
+            X_ANDROID_PACKAGE, ApplicationProvider.getApplicationContext().getPackageName());
+    verify(mockHttpUrlConnection).setRequestProperty(eq(X_ANDROID_CERT), any());
+    assertThat(userAgent).contains(SDK_NAME);
   }
 
   private static JSONObject createAttestationResponse() throws Exception {

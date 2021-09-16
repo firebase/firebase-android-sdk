@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -35,7 +36,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -620,10 +620,10 @@ public class QueryTest {
     query = baseQuery.limitToFirst(1);
     assertFalse(query.matchesAllDocuments());
 
-    query = baseQuery.startAt(new Bound(Collections.emptyList(), true));
+    query = baseQuery.startAt(bound(true));
     assertFalse(query.matchesAllDocuments());
 
-    query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
+    query = baseQuery.endAt(bound(true));
     assertFalse(query.matchesAllDocuments());
   }
 

@@ -23,6 +23,7 @@ import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -308,5 +309,19 @@ public final class LocalSerializer {
     }
 
     return index.build();
+  }
+
+  public FieldIndex decodeFieldIndex(String collection_group, int indexId, Index index) {
+    FieldIndex fieldIndex = new FieldIndex(collection_group, indexId);
+    for (Index.IndexField field : index.getFieldsList()) {
+      fieldIndex =
+          fieldIndex.withAddedField(
+              FieldPath.fromServerFormat(field.getFieldPath()),
+              field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
+                  ? FieldIndex.Segment.Kind.CONTAINS
+                  : FieldIndex.Segment.Kind.ORDERED);
+    }
+
+    return fieldIndex;
   }
 }

@@ -33,7 +33,6 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.iid.Metadata;
 import java.io.IOException;
 
 /** Background task to perform topic sync operations with the Firebase backend using a bg thread */

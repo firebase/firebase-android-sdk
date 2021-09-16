@@ -34,7 +34,7 @@ public class FirestoreIndexValueWriter {
   public static final int INDEX_TYPE_BOOLEAN = 10;
   public static final int INDEX_TYPE_NAN = 13;
   public static final int INDEX_TYPE_NUMBER = 15;
-  public static final int INDEX_TYPE_TIMESTAMP = 10;
+  public static final int INDEX_TYPE_TIMESTAMP = 20;
   public static final int INDEX_TYPE_STRING = 25;
   public static final int INDEX_TYPE_BLOB = 30;
   public static final int INDEX_TYPE_REFERENCE = 37;

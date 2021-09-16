@@ -13,11 +13,12 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
+import static androidx.test.ext.truth.os.BundleSubject.assertThat;
+import static com.google.android.gms.common.GoogleApiAvailabilityLight.GOOGLE_PLAY_SERVICES_PACKAGE;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +26,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -34,6 +34,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.Application;
@@ -47,26 +48,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Process;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
-import com.google.firebase.iid.MessengerIpcClient;
-import com.google.firebase.iid.ServiceStarter;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
 import com.google.firebase.messaging.shadows.ShadowMessenger;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
-import com.google.firebase.messaging.testing.MessengerIpcClientTester;
-import com.google.firebase.messaging.testing.MessengerIpcClientTester.Request;
+import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -76,8 +74,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
@@ -87,6 +85,7 @@ import org.robolectric.android.controller.ServiceController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.LooperMode.Mode;
+import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(shadows = {ShadowMessenger.class})
@@ -102,6 +101,9 @@ public class FirebaseMessagingServiceRoboTest {
   // Extra for the token within a NEW_TOKEN event
   private static final String EXTRA_TOKEN = "token";
 
+  // blank activity
+  public static class MyTestActivity extends Activity {}
+
   private static final AnalyticsValidator analyticsValidator =
       FakeConnectorComponent.getAnalyticsValidator();
 
@@ -110,6 +112,7 @@ public class FirebaseMessagingServiceRoboTest {
   private FirebaseMessagingService service;
   private NotificationManager notificationManager;
   private ExecutorService executorService;
+  private FirebaseApp firebaseApp;
 
   @Before
   public void setUp() {
@@ -117,7 +120,6 @@ public class FirebaseMessagingServiceRoboTest {
 
     context = spy(ApplicationProvider.getApplicationContext());
     FirebaseMessagingService.resetForTesting();
-    MessengerIpcClient.resetForTesting();
     mockAppForeground(false);
 
     receiver = new FirebaseInstanceIdReceiver();
@@ -135,13 +137,15 @@ public class FirebaseMessagingServiceRoboTest {
     // Create a test FirebaseApp instance
     FirebaseOptions.Builder firebaseOptionsBuilder =
         new FirebaseOptions.Builder()
-            .setApplicationId("test_app_id")
-            .setApiKey("api_key")
-            .setGcmSenderId("1234567890");
-    FirebaseApp.initializeApp(context, firebaseOptionsBuilder.build());
+            .setApplicationId(FirebaseIidRoboTestHelper.APP_ID)
+            .setApiKey(FirebaseIidRoboTestHelper.API_KEY)
+            .setGcmSenderId(FirebaseIidRoboTestHelper.SENDER_ID)
+            .setProjectId(FirebaseIidRoboTestHelper.PROJECT_ID);
+    firebaseApp = FirebaseApp.initializeApp(context, firebaseOptionsBuilder.build());
     analyticsValidator.reset();
 
     // Disable receivers registered in the manifest.
+    // TODO(ciarandowney): use the generic version instead of casting
     shadowOf((Application) ApplicationProvider.getApplicationContext()).clearRegisteredReceivers();
 
     executorService = Executors.newSingleThreadExecutor();
@@ -191,11 +195,10 @@ public class FirebaseMessagingServiceRoboTest {
     AnalyticsValidator.LoggedEvent event = events.get(0);
     assertThat(event.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
     assertThat(event.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
-    assertThat(event.getParams().getString(Analytics.PARAM_MESSAGE_ID)).isEqualTo("composer_key");
-    assertThat(event.getParams().getString(Analytics.PARAM_MESSAGE_NAME))
-        .isEqualTo("composer_label");
-    assertThat(event.getParams().getInt(Analytics.PARAM_MESSAGE_TIME)).isEqualTo(1234567890);
-    assertThat(event.getParams().containsKey(Analytics.PARAM_TOPIC)).isFalse();
+    assertThat(event.getParams()).string(Analytics.PARAM_MESSAGE_ID).isEqualTo("composer_key");
+    assertThat(event.getParams()).string(Analytics.PARAM_MESSAGE_NAME).isEqualTo("composer_label");
+    assertThat(event.getParams()).integer(Analytics.PARAM_MESSAGE_TIME).isEqualTo(1234567890);
+    assertThat(event.getParams()).doesNotContainKey(Analytics.PARAM_TOPIC);
   }
 
   /** Test that an Intent with no extras (getExtras() returns null) doesn't result in a crash. */
@@ -204,137 +207,25 @@ public class FirebaseMessagingServiceRoboTest {
     RemoteMessageBuilder builder = new RemoteMessageBuilder();
     Intent intent = builder.buildIntent();
     assertNull("Test isn't passing intent with null extras", intent.getExtras());
-    startServiceViaReceiver(intent);
-    verify(service).onMessageReceived(argThat(builder.buildMatcher()));
-  }
 
-  @Test
-  public void testAckSentForMessage() throws Exception {
-    String messageId = "a.message.id";
-    MessengerIpcClientTester messengerIpcClientTester =
-        MessengerIpcClientTester.createWithFirebaseIidMessengerCompat();
+    sendBroadcastToReceiver(intent);
 
-    startServiceViaReceiver(new RemoteMessageBuilder().setMessageId(messageId).buildIntent());
-
-    verifyAckSent(messengerIpcClientTester, messageId);
-  }
-
-  /**
-   * Verifies an ack for the given {@code messageId} was sent by polling a single request off the
-   * {@link MessengerIpcClientTester} queue.
-   */
-  private static void verifyAckSent(
-      MessengerIpcClientTester messengerIpcClientTester, String messageId)
-      throws InterruptedException {
-    Request request = messengerIpcClientTester.pollSentRequestWithTimeout();
-    assertThat(request).isNotNull();
-    assertThat(request.what).isEqualTo(MessengerIpcClient.What.FCM_ACK);
-
-    Bundle requestData = new Bundle();
-    requestData.putString(RemoteMessageBuilder.EXTRA_MSGID, messageId);
-    Bundles.assertEquals(requestData, request.data);
-  }
-
-  @Test
-  public void testAckSentForMessage_evenWhenOnMessageReceivedBlocks() throws Exception {
-    CountDownLatch foreverLatch = new CountDownLatch(1);
-    // Block until test is over
-    setOnMessageReceivedImplementation(foreverLatch::await);
-
-    try {
-      String messageId = "a.message.id";
-      MessengerIpcClientTester messengerIpcClientTester =
-          MessengerIpcClientTester.createWithFirebaseIidMessengerCompat();
-
-      // Run the service in a background thread so that the blocking doesn't block the test
-      handleIntent(
-          new RemoteMessageBuilder().setMessageId(messageId).buildIntent(), 2, TimeUnit.SECONDS);
-
-      verifyAckSent(messengerIpcClientTester, messageId);
-    } finally {
-      foreverLatch.countDown();
-    }
-  }
-
-  @Test
-  public void testWaitsForAckToSend() throws Exception {
-    setAckTimeoutMillis(TimeUnit.SECONDS.toMillis(3));
-
-    MessengerIpcClientTester messengerIpcClientTester =
-        MessengerIpcClientTester.createWithFirebaseIidMessengerCompat();
-    // Request isn't finished until it is acked
-    messengerIpcClientTester.setAckOneWayRequests(false);
-
-    CountDownLatch serviceFinished =
-        handleIntent(
-            new RemoteMessageBuilder().setMessageId("a.message.id").buildIntent(),
-            1,
-            TimeUnit.SECONDS);
-
-    Request request = messengerIpcClientTester.pollSentRequestWithTimeout(1, TimeUnit.SECONDS);
-    assertThat(request.what).isEqualTo(MessengerIpcClient.What.FCM_ACK);
-
-    // Service shouldn't finish
-    assertThat(serviceFinished.await(100, TimeUnit.MILLISECONDS)).isFalse();
-
-    // Acking the request (from GmsCore) should allow the service to finish
-    request.sendAck();
-
-    assertThat(serviceFinished.await(100, TimeUnit.MILLISECONDS)).isTrue();
-  }
-
-  @Test
-  public void testTimesOutWaitingForAckToSend() throws Exception {
-    // set a higher ack timeout to decrease chance of flakes
-    setAckTimeoutMillis(TimeUnit.SECONDS.toMillis(3));
-
-    MessengerIpcClientTester messengerIpcClientTester =
-        MessengerIpcClientTester.createWithFirebaseIidMessengerCompat();
-    // Request isn't finished until it is acked
-    messengerIpcClientTester.setAckOneWayRequests(false);
-
-    long startedAtMillis = System.currentTimeMillis();
-
-    CountDownLatch serviceFinished =
-        handleIntent(
-            new RemoteMessageBuilder().setMessageId("a.message.id").buildIntent(),
-            1,
-            TimeUnit.SECONDS);
-
-    Request request =
-        messengerIpcClientTester.pollSentRequestWithTimeout(500, TimeUnit.MILLISECONDS);
-    assertThat(request.what).isEqualTo(MessengerIpcClient.What.FCM_ACK);
-
-    long millisUntilTimeout =
-        (startedAtMillis + TimeUnit.SECONDS.toMillis(3)) - System.currentTimeMillis();
-
-    assertWithMessage("polling took too long, service already finished")
-        .that(millisUntilTimeout)
-        .isGreaterThan(TimeUnit.SECONDS.toMillis(1));
-
-    // Service shouldn't finish until timeout
-    assertThat(serviceFinished.await(1, TimeUnit.SECONDS)).isFalse();
-    // But should be timed out after 1s
-    millisUntilTimeout =
-        (startedAtMillis + TimeUnit.SECONDS.toMillis(3)) - System.currentTimeMillis();
-    assertThat(serviceFinished.await(millisUntilTimeout, TimeUnit.SECONDS)).isTrue();
+    // Broadcast with no extras shouldn't cause the service to be started at all, since there's no
+    // message for the receiver to send to the service.
+    assertThat(shadowOf(context).getNextStartedService()).isNull();
   }
 
   @Test
   public void testDuplicateMessageDropped() throws Exception {
     String messageId = "a.message.id";
-    MessengerIpcClientTester messengerIpcClientTester =
-        MessengerIpcClientTester.createWithFirebaseIidMessengerCompat();
 
     Intent messageIntent = new RemoteMessageBuilder().setMessageId(messageId).buildIntent();
     startServiceViaReceiver(messageIntent);
     verify(service).onMessageReceived(any(RemoteMessage.class));
-    verifyAckSent(messengerIpcClientTester, messageId);
 
-    // Second time message shouldn't be passed to onMessageReceived(), but ack should still be sent
+    // Second time message shouldn't be passed to onMessageReceived().
     startServiceViaReceiver(messageIntent);
     verify(service, times(1)).onMessageReceived(any(RemoteMessage.class));
-    verifyAckSent(messengerIpcClientTester, messageId);
   }
 
   @Test
@@ -418,11 +309,9 @@ public class FirebaseMessagingServiceRoboTest {
   public void testOnNewToken() throws Exception {
     Intent intent = new Intent(ACTION_NEW_TOKEN);
     intent.putExtra(EXTRA_TOKEN, "token123");
-    ServiceStarter.startMessagingServiceViaReceiver(context, intent);
 
-    List<Intent> broadcastIntents = shadowOf(context).getBroadcastIntents();
-    assertThat(broadcastIntents).hasSize(1);
-    startServiceViaReceiver(broadcastIntents.get(0));
+    ServiceStarter.getInstance().startMessagingService(context, intent);
+    processInternalStartService(context);
 
     verify(service).onNewToken("token123");
   }
@@ -440,7 +329,7 @@ public class FirebaseMessagingServiceRoboTest {
     verifyNoServiceMethodsInvoked();
 
     // Check a notification was posted
-    assertEquals(1, shadowOf(notificationManager).size());
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
   }
 
   /**
@@ -461,7 +350,7 @@ public class FirebaseMessagingServiceRoboTest {
     verify(service).onMessageReceived(argThat(builder.buildMatcher()));
 
     // Notification manager should not have been invoked
-    assertTrue(shadowOf(notificationManager).getAllNotifications().isEmpty());
+    assertThat(shadowOf(notificationManager).getAllNotifications()).isEmpty();
   }
 
   /**
@@ -484,12 +373,16 @@ public class FirebaseMessagingServiceRoboTest {
     AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
     assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
     assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
-    assertThat(receiveEvent.getParams().getString(Analytics.PARAM_MESSAGE_ID))
+    assertThat(receiveEvent.getParams())
+        .string(Analytics.PARAM_MESSAGE_ID)
         .isEqualTo("composer_key");
-    assertThat(receiveEvent.getParams().getString(Analytics.PARAM_MESSAGE_NAME))
+    assertThat(receiveEvent.getParams())
+        .string(Analytics.PARAM_MESSAGE_NAME)
         .isEqualTo("composer_label");
-    assertThat(receiveEvent.getParams().getInt(Analytics.PARAM_MESSAGE_TIME)).isEqualTo(1234567890);
-    assertThat(receiveEvent.getParams().containsKey(Analytics.PARAM_TOPIC)).isFalse();
+    assertThat(receiveEvent.getParams())
+        .integer(Analytics.PARAM_MESSAGE_TIME)
+        .isEqualTo(1234567890);
+    assertThat(receiveEvent.getParams()).doesNotContainKey(Analytics.PARAM_TOPIC);
 
     AnalyticsValidator.LoggedEvent foregroundEvent = events.get(1);
     assertThat(foregroundEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
@@ -497,41 +390,78 @@ public class FirebaseMessagingServiceRoboTest {
     Bundles.assertEquals(foregroundEvent.getParams(), receiveEvent.getParams());
   }
 
-  /** Test that a notification logs the correct event on click. */
   @Test
-  public void testNotification_clickAnalytics() throws Exception {
+  public void testNotification_hasDifferentIntentsForContentAndDismiss() throws Exception {
+    FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
     simulateNotificationMessageWithAnalytics();
 
-    assertEquals(1, shadowOf(notificationManager).size());
-    Notification n = shadowOf(notificationManager).getAllNotifications().remove(0);
+    Notification n = getSingleShownNotification();
     assertOpenDismissPendingIntentsDiffer(n);
-    dispatchToReceiver(n.contentIntent);
+  }
 
-    List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
-    assertThat(events).hasSize(2);
-    AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
-    assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
-    assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
-    assertThat(receiveEvent.getParams().getString(Analytics.PARAM_MESSAGE_ID))
-        .isEqualTo("composer_key");
-    assertThat(receiveEvent.getParams().getString(Analytics.PARAM_MESSAGE_NAME))
-        .isEqualTo("composer_label");
-    assertThat(receiveEvent.getParams().getInt(Analytics.PARAM_MESSAGE_TIME)).isEqualTo(1234567890);
-    assertThat(receiveEvent.getParams().containsKey(Analytics.PARAM_TOPIC)).isFalse();
+  /** Test that a notification logs the correct event on tap. */
+  @Test
+  @Ignore
+  public void testNotification_clickAnalytics() throws Exception {
+    FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
+    simulateNotificationMessageWithAnalytics();
 
-    AnalyticsValidator.LoggedEvent openEvent = events.get(1);
-    assertThat(openEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
-    assertThat(openEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_OPEN);
-    // Remove the message type param from receiveEvent before checking equality since that
-    // param should only be included on receive, not dismiss.
-    receiveEvent.getParams().remove("_nmc");
-    Bundles.assertEquals(openEvent.getParams(), receiveEvent.getParams());
+    try (ActivityScenario<MyTestActivity> as =
+        dispatchActivityIntentToActivity(getSingleShownNotification().contentIntent)) {
+      List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
+      assertThat(events).hasSize(2);
+      AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
+      assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+      assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
+      assertThat(receiveEvent.getParams())
+          .string(Analytics.PARAM_MESSAGE_ID)
+          .isEqualTo("composer_key");
+      assertThat(receiveEvent.getParams())
+          .string(Analytics.PARAM_MESSAGE_NAME)
+          .isEqualTo("composer_label");
+      assertThat(receiveEvent.getParams())
+          .integer(Analytics.PARAM_MESSAGE_TIME)
+          .isEqualTo(1234567890);
+      assertThat(receiveEvent.getParams()).doesNotContainKey(Analytics.PARAM_TOPIC);
 
-    // App's main activity should be started
-    assertThat(
-            shadowOf((Application) ApplicationProvider.getApplicationContext())
-                .getNextStartedActivity())
-        .isNotNull();
+      AnalyticsValidator.LoggedEvent openEvent = events.get(1);
+      assertThat(openEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+      assertThat(openEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_OPEN);
+    }
+  }
+
+  /** Test that a notification does not re-log events when the activity is recreated. */
+  @Test
+  @Ignore
+  public void testNotification_clickAnalytics_recreateActivity() throws Exception {
+    FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
+    simulateNotificationMessageWithAnalytics();
+
+    try (ActivityScenario<MyTestActivity> scenario =
+        dispatchActivityIntentToActivity(getSingleShownNotification().contentIntent)) {
+      // even after recreating, the events should only have been logged once
+      scenario.recreate();
+
+      List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
+      assertThat(events).hasSize(2);
+      AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
+      assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+      assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
+      assertThat(receiveEvent.getParams())
+          .string(Analytics.PARAM_MESSAGE_ID)
+          .isEqualTo("composer_key");
+      assertThat(receiveEvent.getParams())
+          .string(Analytics.PARAM_MESSAGE_NAME)
+          .isEqualTo("composer_label");
+      assertThat(receiveEvent.getParams())
+          .integer(Analytics.PARAM_MESSAGE_TIME)
+          .isEqualTo(1234567890);
+      assertThat(receiveEvent.getParams()).doesNotContainKey(Analytics.PARAM_TOPIC);
+
+      AnalyticsValidator.LoggedEvent openEvent = events.get(1);
+      assertThat(openEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+      assertThat(openEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_OPEN);
+    }
   }
 
   /** Test that a notification logs the correct event on dismiss. */
@@ -539,10 +469,9 @@ public class FirebaseMessagingServiceRoboTest {
   public void testNotification_dismissAnalytics() throws Exception {
     simulateNotificationMessageWithAnalytics();
 
-    assertEquals(1, shadowOf(notificationManager).size());
-    Notification n = shadowOf(notificationManager).getAllNotifications().remove(0);
+    Notification n = getSingleShownNotification();
     assertOpenDismissPendingIntentsDiffer(n);
-    dispatchToReceiver(n.deleteIntent);
+    dispatchBroadcastIntentToReceiver(n.deleteIntent);
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(2);
@@ -597,7 +526,7 @@ public class FirebaseMessagingServiceRoboTest {
     startServiceViaReceiver(builder.buildIntent());
 
     verifyNoServiceMethodsInvoked();
-    assertEquals(0, shadowOf(notificationManager).size());
+    assertThat(shadowOf(notificationManager).getAllNotifications()).isEmpty();
 
     List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
     assertThat(events).hasSize(1);
@@ -650,7 +579,13 @@ public class FirebaseMessagingServiceRoboTest {
     startServiceViaReceiver(builder.buildIntent());
   }
 
-  private void dispatchToReceiver(PendingIntent pi) throws InterruptedException {
+  private Notification getSingleShownNotification() {
+    List<Notification> notifs = shadowOf(notificationManager).getAllNotifications();
+    assertThat(notifs).hasSize(1);
+    return notifs.remove(0);
+  }
+
+  private void dispatchBroadcastIntentToReceiver(PendingIntent pi) throws InterruptedException {
     Intent intent = shadowOf(pi).getSavedIntent();
 
     // Ensure the intent is a broadcast to the receiver, then dispatch it
@@ -658,7 +593,13 @@ public class FirebaseMessagingServiceRoboTest {
 
     assertEquals(
         intent.getComponent(), new ComponentName(context, FirebaseInstanceIdReceiver.class));
-    startServiceViaReceiver(intent);
+    sendBroadcastToReceiver(intent);
+    ShadowLooper.idleMainLooper();
+  }
+
+  private ActivityScenario<MyTestActivity> dispatchActivityIntentToActivity(PendingIntent pi)
+      throws Exception {
+    return ActivityScenario.<MyTestActivity>launch(shadowOf(pi).getSavedIntent());
   }
 
   private ArgumentMatcher<Exception> sendException(final int errorCode, final String message) {
@@ -693,8 +634,9 @@ public class FirebaseMessagingServiceRoboTest {
   }
 
   private void assertOpenDismissPendingIntentsDiffer(Notification n) {
-    assertNotEquals(
-        shadowOf(n.contentIntent).getRequestCode(), shadowOf(n.deleteIntent).getRequestCode());
+    assertWithMessage("Expected content intent to be different from delete intent")
+        .that(shadowOf(n.contentIntent).getRequestCode())
+        .isNotEqualTo(shadowOf(n.deleteIntent).getRequestCode());
   }
 
   private void verifyNoServiceMethodsInvoked() {
@@ -704,24 +646,7 @@ public class FirebaseMessagingServiceRoboTest {
     verify(service, never()).onSendError(anyString(), any(Exception.class));
   }
 
-  private void setOnMessageReceivedImplementation(ThrowingRunnable runnable) {
-    doAnswer(
-            invocation -> {
-              runnable.run();
-              return null; // returns void
-            })
-        .when(service)
-        .onMessageReceived(any(RemoteMessage.class));
-  }
-
-  private void setAckTimeoutMillis(long timeoutMillis) {
-    doReturn(timeoutMillis).when(service).getAckTimeoutMillis();
-  }
-
-  public void startServiceViaReceiver(Intent intent) throws InterruptedException {
-    // Throw away any other service starts that may have happened before this one
-    shadowOf(context).clearStartedServices();
-
+  public void sendBroadcastToReceiver(Intent intent) throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(1);
 
     HandlerThread handlerThread = new HandlerThread("receiver-handler-thread");
@@ -759,7 +684,12 @@ public class FirebaseMessagingServiceRoboTest {
       context.unregisterReceiver(receiver);
       handlerThread.quitSafely();
     }
+  }
 
+  public void startServiceViaReceiver(Intent intent) throws InterruptedException {
+    // Throw away any other service starts that may have happened before this one
+    shadowOf(context).clearStartedServices();
+    sendBroadcastToReceiver(intent);
     processInternalStartService(context);
   }
 
@@ -768,8 +698,12 @@ public class FirebaseMessagingServiceRoboTest {
    */
   public void processInternalStartService(Application application) throws InterruptedException {
     Intent serviceIntent = shadowOf(application).getNextStartedService();
-    assertEquals(application.getPackageName(), serviceIntent.getPackage());
+    if (serviceIntent != null && serviceIntent.getPackage().equals(GOOGLE_PLAY_SERVICES_PACKAGE)) {
+      // Ack may have triggered call to GmsCore to establish Rpc, ignore that service call.
+      serviceIntent = shadowOf(application).getNextStartedService();
+    }
     assertNotNull("No service found for: " + serviceIntent, serviceIntent);
+    assertEquals(application.getPackageName(), serviceIntent.getPackage());
 
     service.onStartCommand(serviceIntent, 0 /* flags */, 1 /* startId */);
     flushTasks();

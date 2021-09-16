@@ -15,6 +15,10 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
+import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
@@ -22,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /** An in-memory implementation of IndexManager. */
 class MemoryIndexManager implements IndexManager {
@@ -39,8 +44,20 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
+  public void addIndexEntries(Document document) {
+    // Field indices are not supported with memory persistence.
+  }
+
+  @Override
   public void addFieldIndex(FieldIndex index) {
     // Field indices are not supported with memory persistence.
+  }
+
+  @Override
+  @Nullable
+  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
+    // Field indices are not supported with memory persistence.
+    return null;
   }
 
   /**

@@ -22,11 +22,13 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,9 +50,13 @@ public class RemoteConfigManager {
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
+  private static final long MIN_APP_START_CONFIG_FETCH_DELAY_MS = 5000;
+  private static final int RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
+  private final long appStartTimeInMs;
+  private final long appStartConfigFetchDelayInMs;
 
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
 
@@ -69,14 +75,28 @@ public class RemoteConfigManager {
         );
   }
 
-  @VisibleForTesting
   RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
+    this(
+        executor,
+        firebaseRemoteConfig,
+        MIN_APP_START_CONFIG_FETCH_DELAY_MS
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+  }
+
+  @VisibleForTesting
+  RemoteConfigManager(
+      Executor executor,
+      FirebaseRemoteConfig firebaseRemoteConfig,
+      long appStartConfigFetchDelayInMs) {
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
     this.allRcConfigMap =
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
+    this.appStartTimeInMs =
+        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
   /** Gets the singleton instance. */
@@ -282,8 +302,13 @@ public class RemoteConfigManager {
   }
 
   /**
-   * Triggers a fetch and async activate from Firebase Remote Config if Firebase Remote Config is
-   * available, and at least 12 hours have passed since the previous fetch.
+   * Triggers a fetch and async activate from Firebase Remote Config if:
+   *
+   * <ol>
+   *   <li>Firebase Remote Config is available,
+   *   <li>Time-since-app-start has passed a randomized delay-time (b/187985523), and
+   *   <li>At least 12 hours have passed since the previous fetch.
+   * </ol>
    */
   private void triggerRemoteConfigFetchIfNecessary() {
     if (!isFirebaseRemoteConfigAvailable()) {
@@ -339,6 +364,22 @@ public class RemoteConfigManager {
     return firebaseRemoteConfig != null;
   }
 
+  /** Returns true if a RC fetch should be made, false otherwise. */
+  private boolean shouldFetchAndActivateRemoteConfigValues() {
+    long currentTimeInMs = getCurrentSystemTimeMillis();
+    return hasAppStartConfigFetchDelayElapsed(currentTimeInMs)
+        && hasLastFetchBecomeStale(currentTimeInMs);
+  }
+
+  /**
+   * Delay fetch by some random time since app start. This is to prevent b/187985523.
+   *
+   * @return true if the random delay has elapsed, false otherwise
+   */
+  private boolean hasAppStartConfigFetchDelayElapsed(long currentTimeInMs) {
+    return (currentTimeInMs - appStartTimeInMs) >= appStartConfigFetchDelayInMs;
+  }
+
   // We want to fetch once when the app starts and every 12 hours after that.
   // The reason we maintain our own timestamps and do not use FRC's is because FRC only updates
   // the last successful fetch timestamp AFTER successfully fetching - which might mean that
@@ -346,8 +387,8 @@ public class RemoteConfigManager {
   // we update the timestamp before a successful fetch and reset it back if the fetch was
   // unsuccessful, making sure that a fetch is triggered again.
   // TODO(b/132369190): This shouldn't be needed once the feature is implemented in FRC.
-  private boolean shouldFetchAndActivateRemoteConfigValues() {
-    return (getCurrentSystemTimeMillis() - firebaseRemoteConfigLastFetchTimestampMs)
+  private boolean hasLastFetchBecomeStale(long currentTimeInMs) {
+    return (currentTimeInMs - firebaseRemoteConfigLastFetchTimestampMs)
         > TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS;
   }
 

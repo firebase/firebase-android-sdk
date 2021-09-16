@@ -57,21 +57,36 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   }
 
   private final String collectionId;
+  private final int indexId;
   private final List<Segment> segments;
 
-  public FieldIndex(String collectionId) {
+  public FieldIndex(String collectionId, int indexId) {
     this.collectionId = collectionId;
     this.segments = new ArrayList<>();
+    this.indexId = indexId;
   }
 
-  FieldIndex(String collectionId, List<Segment> segments) {
+  public FieldIndex(String collectionId) {
+    this(collectionId, -1);
+  }
+
+  FieldIndex(String collectionId, int indexId, List<Segment> segments) {
     this.collectionId = collectionId;
     this.segments = segments;
+    this.indexId = indexId;
   }
 
   /** The collection ID this index applies to. */
   public String getCollectionId() {
     return collectionId;
+  }
+
+  /**
+   * The index ID. Returns -1 if the index ID is not available (e.g. the index has not yet been
+   * persisted).
+   */
+  public int getIndexId() {
+    return indexId;
   }
 
   public Segment getSegment(int index) {
@@ -80,15 +95,6 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
 
   public int segmentCount() {
     return segments.size();
-  }
-
-  /**
-   * Returns a new field index that only contains the first `size` segments.
-   *
-   * @throws IndexOutOfBoundsException if size > segmentCount
-   */
-  public FieldIndex prefix(int size) {
-    return new FieldIndex(collectionId, segments.subList(0, size));
   }
 
   @NonNull
@@ -101,7 +107,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
-    return new FieldIndex(collectionId, newSegments);
+    return new FieldIndex(collectionId, indexId, newSegments);
   }
 
   @Override
