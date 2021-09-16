@@ -448,7 +448,7 @@ public final class Query {
     if (startAt != null && !startAt.sortsBeforeDocument(getOrderBy(), doc)) {
       return false;
     }
-    if (endAt != null && endAt.sortsBeforeDocument(getOrderBy(), doc)) {
+    if (endAt != null && !endAt.sortsAfterDocument(getOrderBy(), doc)) {
       return false;
     }
     return true;

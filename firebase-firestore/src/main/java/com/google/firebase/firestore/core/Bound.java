@@ -76,6 +76,17 @@ public final class Bound {
 
   /** Returns true if a document sorts before a bound using the provided sort order. */
   public boolean sortsBeforeDocument(List<OrderBy> orderBy, Document document) {
+    int comparison = compareToDocument(orderBy, document);
+    return inclusive ? comparison <= 0 : comparison < 0;
+  }
+
+  /** Returns true if a document sorts after a bound using the provided sort order. */
+  public boolean sortsAfterDocument(List<OrderBy> orderBy, Document document) {
+    int comparison = compareToDocument(orderBy, document);
+    return inclusive ? comparison >= 0 : comparison > 0;
+  }
+
+  private int compareToDocument(List<OrderBy> orderBy, Document document) {
     hardAssert(position.size() <= orderBy.size(), "Bound has more components than query's orderBy");
     int comparison = 0;
     for (int i = 0; i < position.size(); i++) {
@@ -103,8 +114,7 @@ public final class Bound {
         break;
       }
     }
-
-    return inclusive ? comparison <= 0 : comparison < 0;
+    return comparison;
   }
 
   @Override
