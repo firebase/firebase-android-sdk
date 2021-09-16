@@ -96,6 +96,8 @@ final class SQLiteIndexManager implements IndexManager {
         db.query("SELECT MAX(index_id) FROM index_configuration")
             .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
 
+    // TODO(indexing): Properly dedupe indices to avoid duplicate index entries (by comparing
+    // collection_group+index_proto)
     db.execute(
         "INSERT OR IGNORE INTO index_configuration ("
             + "index_id, "
