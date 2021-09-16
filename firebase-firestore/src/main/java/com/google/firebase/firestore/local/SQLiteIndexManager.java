@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -134,8 +135,8 @@ final class SQLiteIndexManager implements IndexManager {
                       fieldIndex);
                 }
 
-                List<byte[]> encodeValues = encodeDocumentValues(fieldIndex, values);
-                for (byte[] encoded : encodeValues) {
+                Object[] encodeValues = encodeDocumentValues(fieldIndex, values);
+                for (Object encoded : encodeValues) {
                   // TODO(indexing): Handle different values for different users
                   db.execute(
                       "INSERT OR IGNORE INTO index_entries ("
@@ -176,12 +177,10 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
-    String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
-
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
-      Logger.warn(
+      Logger.debug(
           TAG,
           "Using index '%s' to execute '%s' (Lower bound: %s, Upper bound: %s)",
           fieldIndex,
@@ -191,47 +190,59 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Set<DocumentKey> result = new HashSet<>();
+    BindArgs bindArgs;
 
+    Object[] lowerBoundValues = encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
+    String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
     if (upperBound != null) {
-      List<byte[]> lowerBoundValues =
-          encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
-      List<byte[]> upperBoundValues =
-          encodeTargetValues(fieldIndex, target, upperBound.getPosition());
-
-      hardAssert(
-          lowerBoundValues.size() == upperBoundValues.size(),
-          "Expected upper and lower bound size to match");
-
+      Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
       String upperBoundOp = upperBound.isBefore() ? "<" : "<="; // `endBefore()` versus `endAt()`
-
-      // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
-      // send one query that combines all clauses.
-      // TODO(indexing): Add limit handling
-      for (int i = 0; i < lowerBoundValues.size(); ++i) {
-        db.query(
-                String.format(
-                    "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
-                    lowerBoundOp, upperBoundOp))
-            .binding(fieldIndex.getIndexId(), lowerBoundValues.get(i), upperBoundValues.get(i))
-            .forEach(
-                row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
-      }
+      bindArgs = generateBindArgs(lowerBoundValues, lowerBoundOp, upperBoundValues, upperBoundOp);
     } else {
-      List<byte[]> lowerBoundValues =
-          encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
-      for (byte[] lowerBoundValue : lowerBoundValues) {
-        db.query(
-                String.format(
-                    "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s  ?",
-                    lowerBoundOp))
-            .binding(fieldIndex.getIndexId(), lowerBoundValue)
-            .forEach(
-                row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
-      }
+      bindArgs = generateBindArgs(lowerBoundValues, lowerBoundOp);
     }
+
+    String sql =
+        String.format(
+            "SELECT document_name from index_entries WHERE index_id = %s AND (%s)",
+            fieldIndex.getIndexId(), bindArgs.sql);
+    db.query(sql)
+        .binding(bindArgs.bindArgs)
+        .forEach(
+            row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
+
+    // TODO(indexing): Add limit handling
 
     Logger.debug(TAG, "Index scan returned %s documents", result.size());
     return result;
+  }
+
+  /** Returns a SQL filter that concatenates all {@code value} into a disjunction. */
+  private BindArgs generateBindArgs(Object[] values, String op) {
+    String[] filters = new String[values.length];
+    for (int i = 0; i < values.length; ++i) {
+      filters[i] = String.format("index_value %s ?", op);
+    }
+    return new BindArgs(TextUtils.join(" OR ", filters), values);
+  }
+
+  /**
+   * Returns a SQL filter that combines each element from the left list with each element from the
+   * right list and returns all combinations (e.g. `(left1 AND right1) OR (left1 AND right2) ...`).
+   */
+  private BindArgs generateBindArgs(Object[] left, String leftOp, Object[] right, String rightOp) {
+    String[] filters = new String[left.length * right.length];
+    Object[] bingArgs = new Object[left.length * right.length * 2];
+    int i = 0;
+    for (Object value1 : left) {
+      for (Object value2 : right) {
+        filters[i] = String.format("index_value %s ? AND index_value %s ?", leftOp, rightOp);
+        bingArgs[i * 2] = value1;
+        bingArgs[i * 2 + 1] = value2;
+        ++i;
+      }
+    }
+    return new BindArgs(TextUtils.join(" OR ", filters), bingArgs);
   }
 
   /**
@@ -278,7 +289,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given field values according to the specification in {@code fieldIndex}. For
    * CONTAINS indices, a list of possible values is returned.
    */
-  private List<byte[]> encodeDocumentValues(FieldIndex fieldIndex, List<Value> values) {
+  private Object[] encodeDocumentValues(FieldIndex fieldIndex, List<Value> values) {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
@@ -302,8 +313,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given field values according to the specification in {@code target}. For IN and
    * ArrayContainsAny queries, a list of possible values is returned.
    */
-  private List<byte[]> encodeTargetValues(
-      FieldIndex fieldIndex, Target target, List<Value> values) {
+  private Object[] encodeTargetValues(FieldIndex fieldIndex, Target target, List<Value> values) {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
@@ -321,10 +331,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   /** Returns the byte representation for all encoders. */
-  private List<byte[]> getEncodedBytes(List<IndexByteEncoder> encoders) {
-    List<byte[]> result = new ArrayList<>();
-    for (IndexByteEncoder encoder : encoders) {
-      result.add(encoder.getEncodedBytes());
+  private Object[] getEncodedBytes(List<IndexByteEncoder> encoders) {
+    Object[] result = new Object[encoders.size()];
+    for (int i = 0; i < encoders.size(); ++i) {
+      result[i] = encoders.get(i).getEncodedBytes();
     }
     return result;
   }
@@ -367,5 +377,16 @@ final class SQLiteIndexManager implements IndexManager {
 
   private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
+  }
+
+  /** Stores a SQL statement of filters and their corresponding bind arguments. */
+  static class BindArgs {
+    final String sql;
+    final Object[] bindArgs;
+
+    BindArgs(String sql, Object[] bindArgs) {
+      this.sql = sql;
+      this.bindArgs = bindArgs;
+    }
   }
 }
