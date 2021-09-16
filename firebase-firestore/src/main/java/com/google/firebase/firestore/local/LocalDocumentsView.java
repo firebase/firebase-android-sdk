@@ -210,9 +210,9 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        // TODO(Overlay): Here we should be reading squashed mutation and apply that instead.
+        // TODO(Overlay): Here we should be reading overlay mutation and apply that instead.
         mutation.applyToLocalView(
-            document, batch.getLocalWriteTime(), FieldMask.fromSet(new HashSet<>()));
+            document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
         if (!document.isFoundDocument()) {
           remoteDocuments = remoteDocuments.remove(key);
         }

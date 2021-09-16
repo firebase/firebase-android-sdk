@@ -16,7 +16,6 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -111,13 +110,13 @@ public abstract class Mutation {
    * modified.
    *
    * @param document The document to mutate.
+   * @param previousMask The fields that have been updated before applying this mutation.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
-   * @param mask The fields that have been updated before applying this mutation.
    * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
   public abstract FieldMask applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, FieldMask mask);
+      MutableDocument document, FieldMask previousMask, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -188,12 +187,10 @@ public abstract class Mutation {
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
    * @param mutableDocument The document to apply transforms on.
-   * @param mutation The mutation to be applied to {@code mutableDocument} to get field values on
-   *     which transforms will be applied on.
    * @return A map of fields to transform results.
    */
   protected Map<FieldPath, Value> localTransformResults(
-      Timestamp localWriteTime, MutableDocument mutableDocument, Mutation mutation) {
+      Timestamp localWriteTime, MutableDocument mutableDocument) {
     Map<FieldPath, Value> transformResults = new HashMap<>(fieldTransforms.size());
     for (FieldTransform fieldTransform : fieldTransforms) {
       TransformOperation transform = fieldTransform.getOperation();
@@ -202,14 +199,6 @@ public abstract class Mutation {
           fieldTransform.getFieldPath(), transform.applyToLocalView(previousValue, localWriteTime));
     }
     return transformResults;
-  }
-
-  protected List<FieldPath> getFieldTransformPaths() {
-    List<FieldPath> result = new ArrayList<>();
-    for (FieldTransform fieldTransform : fieldTransforms) {
-      result.add(fieldTransform.getFieldPath());
-    }
-    return result;
   }
 
   public ObjectValue extractTransformBaseValue(Document document) {
@@ -228,10 +217,4 @@ public abstract class Mutation {
 
     return baseObject;
   }
-
-  @Nullable
-  protected abstract ObjectValue getValue();
-
-  @Nullable
-  protected abstract FieldMask getMask();
 }

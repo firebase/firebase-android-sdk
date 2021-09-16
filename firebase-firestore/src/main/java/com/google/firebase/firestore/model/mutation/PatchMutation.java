@@ -128,14 +128,14 @@ public final class PatchMutation extends Mutation {
 
   @Override
   public FieldMask applyToLocalView(
-      MutableDocument document, Timestamp localWriteTime, FieldMask mask) {
+      MutableDocument document, FieldMask previousMask, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
-      return mask;
+      return previousMask;
     }
 
-    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document, null);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     Map<FieldPath, Value> patches = getPatch();
     ObjectValue value = document.getData();
     value.setAll(patches);
@@ -144,14 +144,22 @@ public final class PatchMutation extends Mutation {
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
 
-    if (mask.isAllFields()) {
-      return mask;
+    if (previousMask.isAllFields()) {
+      return previousMask;
     }
 
-    HashSet<FieldPath> mergedMaskSet = new HashSet<>(mask.getMask());
+    HashSet<FieldPath> mergedMaskSet = new HashSet<>(previousMask.getMask());
     mergedMaskSet.addAll(this.mask.getMask());
     mergedMaskSet.addAll(getFieldTransformPaths());
     return FieldMask.fromSet(mergedMaskSet);
+  }
+
+  private List<FieldPath> getFieldTransformPaths() {
+    List<FieldPath> result = new ArrayList<>();
+    for (FieldTransform fieldTransform : getFieldTransforms()) {
+      result.add(fieldTransform.getFieldPath());
+    }
+    return result;
   }
 
   private Map<FieldPath, Value> getPatch() {

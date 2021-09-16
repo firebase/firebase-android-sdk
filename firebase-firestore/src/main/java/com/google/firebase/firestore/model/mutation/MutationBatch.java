@@ -105,7 +105,7 @@ public final class MutationBatch {
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        mutatedFields = mutation.applyToLocalView(document, localWriteTime, mutatedFields);
+        mutatedFields = mutation.applyToLocalView(document, mutatedFields, localWriteTime);
       }
     }
 
@@ -113,11 +113,11 @@ public final class MutationBatch {
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
       if (mutation.getKey().equals(document.getKey())) {
-        mutatedFields = mutation.applyToLocalView(document, localWriteTime, mutatedFields);
+        mutatedFields = mutation.applyToLocalView(document, mutatedFields, localWriteTime);
       }
     }
 
-    // TODO(Overlay): Calculate squashed mutation here.
+    // TODO(Overlay): Calculate overlay mutation here.
   }
 
   /** Computes the local view for all provided documents given the mutations in this batch. */
