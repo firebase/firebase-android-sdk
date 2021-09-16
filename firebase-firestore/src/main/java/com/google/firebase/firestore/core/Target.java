@@ -14,6 +14,9 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.model.Values.max;
+import static com.google.firebase.firestore.model.Values.min;
+
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -121,25 +124,29 @@ public final class Target {
    */
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
-    boolean before = true;
+    boolean inclusive = true;
 
     // Go through all filters to find a value for the current field segment
     for (FieldIndex.Segment segment : fieldIndex) {
-      Value lowestValue = Values.NULL_VALUE;
+      Value segmentValue = Values.NULL_VALUE;
+      boolean segmentInclusive = true;
+
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+          Value filterValue = null;
+          boolean filterInclusive = true;
+
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
             case LESS_THAN_OR_EQUAL:
-              // TODO(indexing): Implement type clamping. Only field values with the same type
-              // should match the query.
+              filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
               break;
             case NOT_EQUAL:
-              // These filters cannot be used as a lower bound. Skip.
+              filterValue = Values.NULL_VALUE;
               break;
             case NOT_IN:
-              lowestValue =
+              filterValue =
                   Value.newBuilder()
                       .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
                       .build();
@@ -149,12 +156,17 @@ public final class Target {
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case GREATER_THAN_OR_EQUAL:
-              lowestValue = fieldFilter.getValue();
+              filterValue = fieldFilter.getValue();
               break;
             case GREATER_THAN:
-              lowestValue = fieldFilter.getValue();
-              before = false;
+              filterValue = fieldFilter.getValue();
+              filterInclusive = false;
               break;
+          }
+
+          if (max(segmentValue, filterValue) == filterValue) {
+            segmentValue = filterValue;
+            segmentInclusive = filterInclusive;
           }
         }
       }
@@ -166,20 +178,20 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = startAt.getPosition().get(i);
-            if (Values.compare(lowestValue, cursorValue) <= 0) {
-              lowestValue = cursorValue;
-              // `before` is shared by all cursor values. If any cursor value is used, we set before
-              // to the cursor's value.
-              before = startAt.isBefore();
+            if (max(segmentValue, cursorValue) == cursorValue) {
+              segmentValue = cursorValue;
+              segmentInclusive = startAt.isBefore();
             }
             break;
           }
         }
       }
-      values.add(lowestValue);
+
+      values.add(segmentValue);
+      inclusive &= segmentInclusive;
     }
 
-    return new Bound(values, before);
+    return new Bound(values, inclusive);
   }
 
   /**
@@ -192,15 +204,19 @@ public final class Target {
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
-    boolean before = false;
+    boolean inclusive = true;
 
     for (FieldIndex.Segment segment : fieldIndex) {
-      @Nullable Value largestValue = null;
+      @Nullable Value segmentValue = null;
+      boolean segmentInclusive = true;
 
       // Go through all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+          Value filterValue = null;
+          boolean filterInclusive = true;
+
           switch (fieldFilter.getOperator()) {
             case NOT_IN:
             case NOT_EQUAL:
@@ -208,21 +224,25 @@ public final class Target {
               break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
-              // TODO(indexing): Implement type clamping. Only field values with the same type
-              // should match the query.
+              filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
+              filterInclusive = false;
               break;
             case EQUAL:
             case IN:
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
-              largestValue = fieldFilter.getValue();
-              before = false;
+              filterValue = fieldFilter.getValue();
               break;
             case LESS_THAN:
-              largestValue = fieldFilter.getValue();
-              before = true;
+              filterValue = fieldFilter.getValue();
+              filterInclusive = false;
               break;
+          }
+
+          if (min(segmentValue, filterValue) == filterValue) {
+            segmentValue = filterValue;
+            segmentInclusive = filterInclusive;
           }
         }
       }
@@ -234,28 +254,29 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = endAt.getPosition().get(i);
-            if (largestValue == null || Values.compare(largestValue, cursorValue) > 0) {
-              largestValue = cursorValue;
-              before = endAt.isBefore();
+            if (min(segmentValue, cursorValue) == cursorValue) {
+              segmentValue = cursorValue;
+              segmentInclusive = !endAt.isBefore();
             }
             break;
           }
         }
       }
 
-      if (largestValue == null) {
+      if (segmentValue == null) {
         // No upper bound exists
         return null;
       }
 
-      values.add(largestValue);
+      values.add(segmentValue);
+      inclusive &= segmentInclusive;
     }
 
     if (values.isEmpty()) {
       return null;
     }
 
-    return new Bound(values, before);
+    return new Bound(values, !inclusive);
   }
 
   public List<OrderBy> getOrderBy() {

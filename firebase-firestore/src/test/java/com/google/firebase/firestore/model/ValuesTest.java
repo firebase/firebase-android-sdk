@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model;
 
+import static com.google.firebase.firestore.model.Values.getLowerBound;
+import static com.google.firebase.firestore.model.Values.getUpperBound;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.dbId;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
@@ -30,6 +32,7 @@ import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 import org.junit.Test;
@@ -62,11 +65,11 @@ public class ValuesTest {
     new EqualsTester()
         .addEqualityGroup(wrap(true), wrap(true))
         .addEqualityGroup(wrap(false), wrap(false))
-        .addEqualityGroup(wrap(null), new EqualsWrapper(Values.NULL_VALUE))
+        .addEqualityGroup(wrap((Object) null), wrap(Values.NULL_VALUE))
         .addEqualityGroup(
             wrap(0.0 / 0.0),
             wrap(Double.longBitsToDouble(0x7ff8000000000000L)),
-            new EqualsWrapper(Values.NAN_VALUE))
+            wrap(Values.NAN_VALUE))
         // -0.0 and 0.0 compareTo the same but are not equal.
         .addEqualityGroup(wrap(-0.0))
         .addEqualityGroup(wrap(0.0))
@@ -86,15 +89,14 @@ public class ValuesTest {
         .addEqualityGroup(wrap(timestamp2))
         // NOTE: ServerTimestamps can't be parsed via wrap().
         .addEqualityGroup(
-            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)),
-            new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
+            wrap(ServerTimestamps.valueOf(new Timestamp(date1), null)),
+            wrap(ServerTimestamps.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(wrap(ServerTimestamps.valueOf(new Timestamp(date2), null)))
         .addEqualityGroup(wrap(geoPoint1), wrap(new GeoPoint(1, 0)))
         .addEqualityGroup(wrap(geoPoint2))
-        .addEqualityGroup(
-            wrap(ref("coll/doc1")), new EqualsWrapper(wrapRef(dbId("project"), key("coll/doc1"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
+        .addEqualityGroup(wrap(ref("coll/doc1")), wrap(wrapRef(dbId("project"), key("coll/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("project", "bar"), key("coll/doc2"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("project", "baz"), key("coll/doc2"))))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
@@ -112,7 +114,7 @@ public class ValuesTest {
         .permitInconsistencyWithEquals()
 
         // null first
-        .addEqualityGroup(wrap(null))
+        .addEqualityGroup(wrap((Object) null))
 
         // booleans
         .addEqualityGroup(wrap(false))
@@ -144,9 +146,8 @@ public class ValuesTest {
         .addEqualityGroup(wrap(date2))
 
         // server timestamps come after all concrete timestamps.
-        // NOTE: server timestamps can't be parsed with wrap().
-        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date1), null)))
-        .addEqualityGroup(new EqualsWrapper(ServerTimestamps.valueOf(new Timestamp(date2), null)))
+        .addEqualityGroup(wrap(ServerTimestamps.valueOf(new Timestamp(date1), null)))
+        .addEqualityGroup(wrap(ServerTimestamps.valueOf(new Timestamp(date2), null)))
 
         // strings
         .addEqualityGroup(wrap(""))
@@ -168,12 +169,12 @@ public class ValuesTest {
         .addEqualityGroup(wrap(blob(255)))
 
         // resource names
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
-        .addEqualityGroup(new EqualsWrapper(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c1/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c1/doc2"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c10/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p1", "d1"), key("c2/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p1", "d2"), key("c1/doc1"))))
+        .addEqualityGroup(wrap(wrapRef(dbId("p2", "d1"), key("c1/doc1"))))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(-90, -180)))
@@ -201,6 +202,99 @@ public class ValuesTest {
         .addEqualityGroup(wrap(map("foo", 1)))
         .addEqualityGroup(wrap(map("foo", 2)))
         .addEqualityGroup(wrap(map("foo", "0")))
+        .testCompare();
+  }
+
+  @Test
+  public void testLowerBound() {
+    new ComparatorTester()
+        // null first
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.NULL_VALUE)), wrap((Object) null))
+
+        // booleans
+        .addEqualityGroup(wrap(false), wrap(getLowerBound(Value.ValueTypeCase.BOOLEAN_VALUE)))
+        .addEqualityGroup(wrap(true))
+
+        // numbers
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.DOUBLE_VALUE)), wrap(Double.NaN))
+        .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
+        .addEqualityGroup(wrap(Long.MIN_VALUE))
+
+        // dates
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.TIMESTAMP_VALUE)))
+        .addEqualityGroup(wrap(date1))
+
+        // strings
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.STRING_VALUE)), wrap(""))
+        .addEqualityGroup(wrap("\000"))
+
+        // blobs
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.BYTES_VALUE)), wrap(blob()))
+        .addEqualityGroup(wrap(blob(0)))
+
+        // resource names
+        .addEqualityGroup(
+            wrap(getLowerBound(Value.ValueTypeCase.REFERENCE_VALUE)),
+            wrap(wrapRef(dbId("", ""), key(""))))
+        .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
+
+        // geo points
+        .addEqualityGroup(
+            wrap(getLowerBound(Value.ValueTypeCase.GEO_POINT_VALUE)), wrap(new GeoPoint(-90, -180)))
+        .addEqualityGroup(wrap(new GeoPoint(-90, 0)))
+
+        // arrays
+        .addEqualityGroup(
+            wrap(getLowerBound(Value.ValueTypeCase.ARRAY_VALUE)), wrap(Collections.emptyList()))
+        .addEqualityGroup(wrap(Collections.singletonList(false)))
+
+        // objects
+        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.MAP_VALUE)), wrap(map()))
+        .testCompare();
+  }
+
+  @Test
+  public void testNextValue() {
+    new ComparatorTester()
+        // null first
+        .addEqualityGroup(wrap((Object) null))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.NULL_VALUE)))
+
+        // booleans
+        .addEqualityGroup(wrap(true))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.BOOLEAN_VALUE)))
+
+        // numbers
+        .addEqualityGroup(wrap(Long.MAX_VALUE))
+        .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.DOUBLE_VALUE)))
+
+        // dates
+        .addEqualityGroup(wrap(date1))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.TIMESTAMP_VALUE)))
+
+        // strings
+        .addEqualityGroup(wrap("\000"))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.STRING_VALUE)))
+
+        // blobs
+        .addEqualityGroup(wrap(blob(255)))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.BYTES_VALUE)))
+
+        // resource names
+        .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.REFERENCE_VALUE)))
+
+        // geo points
+        .addEqualityGroup(wrap(new GeoPoint(90, 180)))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.GEO_POINT_VALUE)))
+
+        // arrays
+        .addEqualityGroup(wrap(Collections.singletonList(false)))
+        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.ARRAY_VALUE)))
+
+        // objects
+        .addEqualityGroup(wrap(map("a", "b")))
         .testCompare();
   }
 
@@ -255,6 +349,10 @@ public class ValuesTest {
     public int compareTo(EqualsWrapper o) {
       return Values.compare(proto, o.proto);
     }
+  }
+
+  private EqualsWrapper wrap(Value value) {
+    return new EqualsWrapper(value);
   }
 
   private EqualsWrapper wrap(Object entry) {
