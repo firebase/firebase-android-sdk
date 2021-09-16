@@ -34,7 +34,6 @@ import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
-import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -674,20 +673,10 @@ public class QueryTest {
         "collection|f:aarray_containsa|ob:__name__asc");
     assertCanonicalId(baseQuery.orderBy(orderBy("a")), "collection|f:|ob:aasc__name__asc");
     assertCanonicalId(
-        baseQuery
-            .orderBy(orderBy("a"))
-            .startAt(
-                new Bound(
-                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
-                    true)),
+        baseQuery.orderBy(orderBy("a")).startAt(bound(true, "foo", Arrays.asList(1, 2, 3))),
         "collection|f:|ob:aasc__name__asc|lb:b:foo,[1,2,3]");
     assertCanonicalId(
-        baseQuery
-            .orderBy(orderBy("a"))
-            .endAt(
-                new Bound(
-                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
-                    false)),
+        baseQuery.orderBy(orderBy("a")).endAt(bound(true, "foo", Arrays.asList(1, 2, 3))),
         "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
     assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
     assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");

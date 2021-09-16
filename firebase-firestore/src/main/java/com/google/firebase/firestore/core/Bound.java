@@ -38,33 +38,31 @@ import java.util.List;
  */
 public final class Bound {
 
-  /** Whether this bound is just before or just after the provided position */
-  private final boolean before;
+  /**
+   * Whether this bound includes the provided position (e.g. for {#code startAt()} or {#code
+   * endAt()})
+   */
+  private final boolean inclusive;
 
   /** The index position of this bound */
   private final List<Value> position;
 
-  public Bound(List<Value> position, boolean before) {
+  public Bound(List<Value> position, boolean inclusive) {
     this.position = position;
-    this.before = before;
+    this.inclusive = inclusive;
   }
 
   public List<Value> getPosition() {
     return position;
   }
 
-  public boolean isBefore() {
-    return before;
+  public boolean isInclusive() {
+    return inclusive;
   }
 
-  public String canonicalString() {
+  public String positionString() {
     // TODO: Make this collision robust.
     StringBuilder builder = new StringBuilder();
-    if (before) {
-      builder.append("b:");
-    } else {
-      builder.append("a:");
-    }
     boolean first = true;
     for (Value indexComponent : position) {
       if (!first) {
@@ -106,7 +104,7 @@ public final class Bound {
       }
     }
 
-    return before ? comparison <= 0 : comparison < 0;
+    return inclusive ? comparison <= 0 : comparison < 0;
   }
 
   @Override
@@ -120,12 +118,12 @@ public final class Bound {
 
     Bound bound = (Bound) o;
 
-    return before == bound.before && position.equals(bound.position);
+    return inclusive == bound.inclusive && position.equals(bound.position);
   }
 
   @Override
   public int hashCode() {
-    int result = (before ? 1 : 0);
+    int result = (inclusive ? 1 : 0);
     result = 31 * result + position.hashCode();
     return result;
   }
@@ -133,8 +131,8 @@ public final class Bound {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("Bound(before=");
-    builder.append(before);
+    builder.append("Bound(inclusive=");
+    builder.append(inclusive);
     builder.append(", position=");
     for (int i = 0; i < position.size(); i++) {
       if (i > 0) {

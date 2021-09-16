@@ -176,7 +176,7 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
-    String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
+    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
 
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
@@ -202,7 +202,7 @@ final class SQLiteIndexManager implements IndexManager {
           lowerBoundValues.size() == upperBoundValues.size(),
           "Expected upper and lower bound size to match");
 
-      String upperBoundOp = upperBound.isBefore() ? "<" : "<="; // `endBefore()` versus `endAt()`
+      String upperBoundOp = upperBound.isInclusive() ? "<=" : "<";
 
       // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
       // send one query that combines all clauses.
