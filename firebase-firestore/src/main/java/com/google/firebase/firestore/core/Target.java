@@ -20,6 +20,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,10 +131,18 @@ public final class Target {
           FieldFilter fieldFilter = (FieldFilter) filter;
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
-            case NOT_IN:
-            case NOT_EQUAL:
             case LESS_THAN_OR_EQUAL:
+              // TODO(indexing): Implement type clamping. Only field values with the same type
+              // should match the query.
+              break;
+            case NOT_EQUAL:
               // These filters cannot be used as a lower bound. Skip.
+              break;
+            case NOT_IN:
+              lowestValue =
+                  Value.newBuilder()
+                      .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
+                      .build();
               break;
             case EQUAL:
             case IN:
@@ -193,11 +202,14 @@ public final class Target {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
           switch (fieldFilter.getOperator()) {
-            case GREATER_THAN:
             case NOT_IN:
             case NOT_EQUAL:
-            case GREATER_THAN_OR_EQUAL:
               // These filters cannot be used as an upper bound. Skip.
+              break;
+            case GREATER_THAN_OR_EQUAL:
+            case GREATER_THAN:
+              // TODO(indexing): Implement type clamping. Only field values with the same type
+              // should match the query.
               break;
             case EQUAL:
             case IN:
@@ -205,11 +217,11 @@ public final class Target {
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
               largestValue = fieldFilter.getValue();
-              before = true;
+              before = false;
               break;
             case LESS_THAN:
               largestValue = fieldFilter.getValue();
-              before = false;
+              before = true;
               break;
           }
         }
@@ -358,7 +370,7 @@ public final class Target {
         if (i > 0) {
           builder.append(" and ");
         }
-        builder.append(filters.get(i).toString());
+        builder.append(filters.get(i));
       }
     }
 

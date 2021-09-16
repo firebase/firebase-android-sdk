@@ -14,9 +14,14 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.Nullable;
+import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a set of indexes that are used to execute queries efficiently.
@@ -41,6 +46,9 @@ public interface IndexManager {
    */
   List<ResourcePath> getCollectionParents(String collectionId);
 
+  /** Adds index entries for all indexed fields in the given document. */
+  void addIndexEntries(Document document);
+
   /**
    * Adds a field path index.
    *
@@ -48,4 +56,11 @@ public interface IndexManager {
    * execution once values are persisted.
    */
   void addFieldIndex(FieldIndex index);
+
+  /**
+   * Returns the documents that match the given target based on the configured indices. Returns
+   * {@code null} if there is no active index to serve this target.
+   */
+  @Nullable
+  Set<DocumentKey> getDocumentsMatchingTarget(Target target);
 }

@@ -65,7 +65,7 @@ public class SQLiteIndexBackfillerTest {
   @Test
   public void addAndRemoveIndexEntry() {
     IndexEntry testEntry =
-        new IndexEntry(1, "TEST_BLOB".getBytes(), "sample-uid", "sample-documentId");
+        new IndexEntry(1, "TEST_BLOB".getBytes(), "sample-uid", "coll/sample-documentId");
     persistence.runTransaction(
         "testAddAndRemoveIndexEntry",
         () -> {
@@ -73,10 +73,10 @@ public class SQLiteIndexBackfillerTest {
           IndexEntry entry = backfiller.getIndexEntry(1);
           assertNotNull(entry);
           assertEquals("TEST_BLOB", new String(entry.getIndexValue()));
-          assertEquals("sample-documentId", entry.getDocumentId());
+          assertEquals("coll/sample-documentId", entry.getDocumentName());
           assertEquals("sample-uid", entry.getUid());
 
-          backfiller.removeIndexEntry(1, "sample-uid", "sample-documentId");
+          backfiller.removeIndexEntry(1, "sample-uid", "coll/sample-documentId");
           entry = backfiller.getIndexEntry(1);
           assertNull(entry);
         });

@@ -117,23 +117,23 @@ public class IndexBackfiller {
             + "index_id, "
             + "index_value, "
             + "uid, "
-            + "document_id) VALUES(?, ?, ?, ?)",
+            + "document_name) VALUES(?, ?, ?, ?)",
         entry.getIndexId(),
         entry.getIndexValue(),
         entry.getUid(),
-        entry.getDocumentId());
+        entry.getDocumentName());
   }
 
   @VisibleForTesting
-  void removeIndexEntry(int indexId, String uid, String documentId) {
+  void removeIndexEntry(int indexId, String uid, String documentName) {
     persistence.execute(
         "DELETE FROM index_entries "
             + "WHERE index_id = ? "
             + "AND uid = ?"
-            + "AND document_id = ?",
+            + "AND document_name = ?",
         indexId,
         uid,
-        documentId);
+        documentName);
     ;
   }
 
@@ -141,7 +141,7 @@ public class IndexBackfiller {
   @VisibleForTesting
   IndexEntry getIndexEntry(int indexId) {
     return persistence
-        .query("SELECT index_value, uid, document_id FROM index_entries WHERE index_id = ?")
+        .query("SELECT index_value, uid, document_name FROM index_entries WHERE index_id = ?")
         .binding(indexId)
         .firstValue(
             row ->

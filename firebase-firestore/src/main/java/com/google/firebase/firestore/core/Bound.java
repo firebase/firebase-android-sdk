@@ -132,6 +132,17 @@ public final class Bound {
 
   @Override
   public String toString() {
-    return "Bound{before=" + before + ", position=" + position + '}';
+    StringBuilder builder = new StringBuilder();
+    builder.append("Bound(before=");
+    builder.append(before);
+    builder.append(", position=");
+    for (int i = 0; i < position.size(); i++) {
+      if (i > 0) {
+        builder.append(" and ");
+      }
+      builder.append(Values.canonicalId(position.get(i)));
+    }
+    builder.append(")");
+    return builder.toString();
   }
 }
