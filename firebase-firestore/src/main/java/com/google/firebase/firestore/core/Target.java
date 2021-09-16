@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.model.Values.getLowestValue;
-import static com.google.firebase.firestore.model.Values.getNextValue;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
@@ -142,7 +140,7 @@ public final class Target {
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
             case LESS_THAN_OR_EQUAL:
-              filterValue = getLowestValue(fieldFilter.getValue().getValueTypeCase());
+              filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
               break;
             case NOT_EQUAL:
               filterValue = Values.NULL_VALUE;
@@ -226,7 +224,7 @@ public final class Target {
               break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
-              filterValue = getNextValue(fieldFilter.getValue().getValueTypeCase());
+              filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
               filterInclusive = false;
               break;
             case EQUAL:
