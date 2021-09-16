@@ -459,7 +459,7 @@ public class Values {
   }
 
   /** Returns the lowest value for the given value type (inclusive). */
-  public static Value getFirstValue(Value.ValueTypeCase valueTypeCase) {
+  public static Value getLowestValue(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
         return Values.NULL_VALUE;
@@ -497,24 +497,24 @@ public class Values {
   public static @Nullable Value getNextValue(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
-        return getFirstValue(Value.ValueTypeCase.BOOLEAN_VALUE);
+        return getLowestValue(Value.ValueTypeCase.BOOLEAN_VALUE);
       case BOOLEAN_VALUE:
-        return getFirstValue(Value.ValueTypeCase.INTEGER_VALUE);
+        return getLowestValue(Value.ValueTypeCase.INTEGER_VALUE);
       case INTEGER_VALUE:
       case DOUBLE_VALUE:
-        return getFirstValue(Value.ValueTypeCase.TIMESTAMP_VALUE);
+        return getLowestValue(Value.ValueTypeCase.TIMESTAMP_VALUE);
       case TIMESTAMP_VALUE:
-        return getFirstValue(Value.ValueTypeCase.STRING_VALUE);
+        return getLowestValue(Value.ValueTypeCase.STRING_VALUE);
       case STRING_VALUE:
-        return getFirstValue(Value.ValueTypeCase.BYTES_VALUE);
+        return getLowestValue(Value.ValueTypeCase.BYTES_VALUE);
       case BYTES_VALUE:
-        return getFirstValue(Value.ValueTypeCase.REFERENCE_VALUE);
+        return getLowestValue(Value.ValueTypeCase.REFERENCE_VALUE);
       case REFERENCE_VALUE:
-        return getFirstValue(Value.ValueTypeCase.GEO_POINT_VALUE);
+        return getLowestValue(Value.ValueTypeCase.GEO_POINT_VALUE);
       case GEO_POINT_VALUE:
-        return getFirstValue(Value.ValueTypeCase.ARRAY_VALUE);
+        return getLowestValue(Value.ValueTypeCase.ARRAY_VALUE);
       case ARRAY_VALUE:
-        return getFirstValue(Value.ValueTypeCase.MAP_VALUE);
+        return getLowestValue(Value.ValueTypeCase.MAP_VALUE);
       case MAP_VALUE:
         // There is no type that sorts higher than a map.
         return null;

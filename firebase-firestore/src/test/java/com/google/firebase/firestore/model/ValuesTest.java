@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.model.Values.getFirstValue;
+import static com.google.firebase.firestore.model.Values.getLowestValue;
 import static com.google.firebase.firestore.model.Values.getNextValue;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.dbId;
@@ -210,47 +210,48 @@ public class ValuesTest {
     new ComparatorTester()
 
         // null first
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.NULL_VALUE)), wrap((Object) null))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.NULL_VALUE)), wrap((Object) null))
 
         // booleans
-        .addEqualityGroup(wrap(false), wrap(getFirstValue(Value.ValueTypeCase.BOOLEAN_VALUE)))
+        .addEqualityGroup(wrap(false), wrap(getLowestValue(Value.ValueTypeCase.BOOLEAN_VALUE)))
         .addEqualityGroup(wrap(true))
 
         // numbers
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.DOUBLE_VALUE)), wrap(Double.NaN))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.DOUBLE_VALUE)), wrap(Double.NaN))
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
 
         // dates
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.TIMESTAMP_VALUE)))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.TIMESTAMP_VALUE)))
         .addEqualityGroup(wrap(date1))
 
         // strings
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.STRING_VALUE)), wrap(""))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.STRING_VALUE)), wrap(""))
         .addEqualityGroup(wrap("\000"))
 
         // blobs
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.BYTES_VALUE)), wrap(blob()))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.BYTES_VALUE)), wrap(blob()))
         .addEqualityGroup(wrap(blob(0)))
 
         // resource names
         .addEqualityGroup(
-            wrap(getFirstValue(Value.ValueTypeCase.REFERENCE_VALUE)),
+            wrap(getLowestValue(Value.ValueTypeCase.REFERENCE_VALUE)),
             wrap(wrapRef(dbId("", ""), key(""))))
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
 
         // geo points
         .addEqualityGroup(
-            wrap(getFirstValue(Value.ValueTypeCase.GEO_POINT_VALUE)), wrap(new GeoPoint(-90, -180)))
+            wrap(getLowestValue(Value.ValueTypeCase.GEO_POINT_VALUE)),
+            wrap(new GeoPoint(-90, -180)))
         .addEqualityGroup(wrap(new GeoPoint(-90, 0)))
 
         // arrays
         .addEqualityGroup(
-            wrap(getFirstValue(Value.ValueTypeCase.ARRAY_VALUE)), wrap(Collections.emptyList()))
+            wrap(getLowestValue(Value.ValueTypeCase.ARRAY_VALUE)), wrap(Collections.emptyList()))
         .addEqualityGroup(wrap(Collections.singletonList(false)))
 
         // objects
-        .addEqualityGroup(wrap(getFirstValue(Value.ValueTypeCase.MAP_VALUE)), wrap(map()))
+        .addEqualityGroup(wrap(getLowestValue(Value.ValueTypeCase.MAP_VALUE)), wrap(map()))
         .testCompare();
   }
 

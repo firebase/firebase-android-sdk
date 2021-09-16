@@ -60,7 +60,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -73,7 +73,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -125,7 +125,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -311,7 +311,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "a1", "b1");
+    verifyBound(upperBound, false, "a1", "b1");
   }
 
   @Test
@@ -325,7 +325,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "a");
+    verifyBound(upperBound, false, "a");
   }
 
   private void verifyBound(Bound bound, boolean before, Object... values) {

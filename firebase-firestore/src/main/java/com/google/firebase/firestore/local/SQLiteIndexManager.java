@@ -110,8 +110,8 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void addIndexEntries(Document document) {
-    ResourcePath documentPath = document.getKey().getPath();
-    String collectionGroup = documentPath.getSegment(documentPath.length() - 2);
+    DocumentKey documentKey = document.getKey();
+    String collectionGroup = documentKey.getCollectionGroup();
     db.query(
             "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionGroup)
@@ -127,10 +127,10 @@ final class SQLiteIndexManager implements IndexManager {
                 if (values == null) return;
 
                 if (Logger.isDebugEnabled()) {
-                  Logger.warn(
+                  Logger.debug(
                       TAG,
                       "Adding index values for document '%s' to index '%s'",
-                      documentPath,
+                      documentKey,
                       fieldIndex);
                 }
 
@@ -144,7 +144,7 @@ final class SQLiteIndexManager implements IndexManager {
                           + "document_name) VALUES(?, ?, ?)",
                       indexId,
                       encoded,
-                      documentPath.canonicalString());
+                      documentKey.toString());
                 }
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
@@ -176,6 +176,8 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
+    String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
+
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
@@ -200,13 +202,16 @@ final class SQLiteIndexManager implements IndexManager {
           lowerBoundValues.size() == upperBoundValues.size(),
           "Expected upper and lower bound size to match");
 
+      String upperBoundOp = upperBound.isBefore() ? "<" : "<="; // `endBefore()` versus `endAt()`
+
       // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
       // send one query that combines all clauses.
+      // TODO(indexing): Add limit handling
       for (int i = 0; i < lowerBoundValues.size(); ++i) {
         db.query(
                 String.format(
                     "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
-                    lowerBound.isBefore() ? ">=" : ">", upperBound.isBefore() ? "<=" : "<"))
+                    lowerBoundOp, upperBoundOp))
             .binding(fieldIndex.getIndexId(), lowerBoundValues.get(i), upperBoundValues.get(i))
             .forEach(
                 row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
@@ -218,7 +223,7 @@ final class SQLiteIndexManager implements IndexManager {
         db.query(
                 String.format(
                     "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s  ?",
-                    lowerBound.isBefore() ? ">=" : ">"))
+                    lowerBoundOp))
             .binding(fieldIndex.getIndexId(), lowerBoundValue)
             .forEach(
                 row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
@@ -259,15 +264,14 @@ final class SQLiteIndexManager implements IndexManager {
                 throw fail("Failed to decode index: " + e);
               }
             });
-    ;
 
     if (activeIndices.isEmpty()) {
       return null;
     }
 
     // Return the index with the most number of segments
-    Collections.sort(activeIndices, (l, r) -> Integer.compare(r.segmentCount(), l.segmentCount()));
-    return activeIndices.get(0);
+    return Collections.max(
+        activeIndices, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
   }
 
   /**

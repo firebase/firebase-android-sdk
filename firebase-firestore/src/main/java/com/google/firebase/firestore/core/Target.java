@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.model.Values.getFirstValue;
+import static com.google.firebase.firestore.model.Values.getLowestValue;
 import static com.google.firebase.firestore.model.Values.getNextValue;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
@@ -126,28 +126,29 @@ public final class Target {
    */
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
-    boolean before = true;
+    boolean inclusive = true;
 
     // Go through all filters to find a value for the current field segment
     for (FieldIndex.Segment segment : fieldIndex) {
-      Value lowestValue = Values.NULL_VALUE;
+      Value segmentValue = Values.NULL_VALUE;
+      boolean segmentInclusive = true;
 
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+          Value filterValue = null;
+          boolean filterInclusive = true;
 
-          Value newValue = null;
-          boolean newBefore = true;
           switch (fieldFilter.getOperator()) {
             case LESS_THAN:
             case LESS_THAN_OR_EQUAL:
-              newValue = getFirstValue(fieldFilter.getValue().getValueTypeCase());
+              filterValue = getLowestValue(fieldFilter.getValue().getValueTypeCase());
               break;
             case NOT_EQUAL:
-              newValue = Values.NULL_VALUE;
+              filterValue = Values.NULL_VALUE;
               break;
             case NOT_IN:
-              newValue =
+              filterValue =
                   Value.newBuilder()
                       .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
                       .build();
@@ -157,17 +158,17 @@ public final class Target {
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case GREATER_THAN_OR_EQUAL:
-              newValue = fieldFilter.getValue();
+              filterValue = fieldFilter.getValue();
               break;
             case GREATER_THAN:
-              newValue = fieldFilter.getValue();
-              newBefore = false;
+              filterValue = fieldFilter.getValue();
+              filterInclusive = false;
               break;
           }
 
-          if (max(lowestValue, newValue) == newValue) {
-            lowestValue = newValue;
-            before = newBefore;
+          if (max(segmentValue, filterValue) == filterValue) {
+            segmentValue = filterValue;
+            segmentInclusive = filterInclusive;
           }
         }
       }
@@ -179,21 +180,20 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = startAt.getPosition().get(i);
-            if (max(lowestValue, cursorValue) == cursorValue) {
-              lowestValue = cursorValue;
-              // `before` is shared by all cursor values. If any cursor value is used, we set before
-              // to the cursor's value.
-              before = startAt.isBefore();
+            if (max(segmentValue, cursorValue) == cursorValue) {
+              segmentValue = cursorValue;
+              segmentInclusive = startAt.isBefore();
             }
             break;
           }
         }
       }
 
-      values.add(lowestValue);
+      values.add(segmentValue);
+      inclusive &= segmentInclusive;
     }
 
-    return new Bound(values, before);
+    return new Bound(values, inclusive);
   }
 
   /**
@@ -206,18 +206,19 @@ public final class Target {
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
-    boolean before = false;
+    boolean inclusive = true;
 
     for (FieldIndex.Segment segment : fieldIndex) {
-      @Nullable Value largestValue = null;
+      @Nullable Value segmentValue = null;
+      boolean segmentInclusive = true;
 
       // Go through all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
+          Value filterValue = null;
+          boolean filterInclusive = true;
 
-          Value newValue = null;
-          boolean newBefore = true;
           switch (fieldFilter.getOperator()) {
             case NOT_IN:
             case NOT_EQUAL:
@@ -225,24 +226,25 @@ public final class Target {
               break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
-              newValue = getNextValue(fieldFilter.getValue().getValueTypeCase());
+              filterValue = getNextValue(fieldFilter.getValue().getValueTypeCase());
+              filterInclusive = false;
               break;
             case EQUAL:
             case IN:
             case ARRAY_CONTAINS_ANY:
             case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
-              newValue = fieldFilter.getValue();
+              filterValue = fieldFilter.getValue();
               break;
             case LESS_THAN:
-              newValue = fieldFilter.getValue();
-              newBefore = false;
+              filterValue = fieldFilter.getValue();
+              filterInclusive = false;
               break;
           }
 
-          if (min(largestValue, newValue) == newValue) {
-            largestValue = newValue;
-            before = newBefore;
+          if (min(segmentValue, filterValue) == filterValue) {
+            segmentValue = filterValue;
+            segmentInclusive = filterInclusive;
           }
         }
       }
@@ -254,28 +256,29 @@ public final class Target {
           OrderBy orderBy = this.orderBys.get(i);
           if (orderBy.getField().equals(segment.getFieldPath())) {
             Value cursorValue = endAt.getPosition().get(i);
-            if (min(largestValue, cursorValue) == cursorValue) {
-              largestValue = cursorValue;
-              before = endAt.isBefore();
+            if (min(segmentValue, cursorValue) == cursorValue) {
+              segmentValue = cursorValue;
+              segmentInclusive = !endAt.isBefore();
             }
             break;
           }
         }
       }
 
-      if (largestValue == null) {
+      if (segmentValue == null) {
         // No upper bound exists
         return null;
       }
 
-      values.add(largestValue);
+      values.add(segmentValue);
+      inclusive &= segmentInclusive;
     }
 
     if (values.isEmpty()) {
       return null;
     }
 
-    return new Bound(values, before);
+    return new Bound(values, !inclusive);
   }
 
   public List<OrderBy> getOrderBy() {
