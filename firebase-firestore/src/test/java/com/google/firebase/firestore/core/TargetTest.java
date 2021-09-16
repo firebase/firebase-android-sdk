@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -26,8 +27,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +59,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -73,7 +72,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, new Object[] {null});
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -86,7 +85,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, new Object[] {null});
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -125,7 +124,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -156,11 +155,7 @@ public class TargetTest {
 
   @Test
   public void startAtQueryBound() {
-    Target target =
-        query("c")
-            .orderBy(orderBy("foo"))
-            .startAt(new Bound(Collections.singletonList(wrap("bar")), true))
-            .toTarget();
+    Target target = query("c").orderBy(orderBy("foo")).startAt(bound(true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
@@ -180,7 +175,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b2")), true))
+            .startAt(bound(true, "a1", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -202,7 +197,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b2")), false))
+            .startAt(bound(false, "a1", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -224,7 +219,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .startAt(bound(false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -240,11 +235,7 @@ public class TargetTest {
 
   @Test
   public void endAtQueryBound() {
-    Target target =
-        query("c")
-            .orderBy(orderBy("foo"))
-            .endAt(new Bound(Collections.singletonList(wrap("bar")), true))
-            .toTarget();
+    Target target = query("c").orderBy(orderBy("foo")).endAt(bound(true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
@@ -264,7 +255,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .endAt(bound(false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -286,7 +277,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), true))
+            .endAt(bound(true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -308,7 +299,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a2"), wrap("b2")), true))
+            .endAt(bound(false, "a2", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -319,7 +310,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, null, "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "a1", "b1");
+    verifyBound(upperBound, false, "a1", "b1");
   }
 
   @Test
@@ -333,7 +324,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "a");
+    verifyBound(upperBound, false, "a");
   }
 
   private void verifyBound(Bound bound, boolean before, Object... values) {
