@@ -190,26 +190,26 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Set<DocumentKey> result = new HashSet<>();
-    BindArgs bindArgs;
+    SQLitePersistence.Query query;
 
     Object[] lowerBoundValues = encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
     String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
     if (upperBound != null) {
       Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
       String upperBoundOp = upperBound.isBefore() ? "<" : "<="; // `endBefore()` versus `endAt()`
-      bindArgs = generateBindArgs(lowerBoundValues, lowerBoundOp, upperBoundValues, upperBoundOp);
+      query =
+          generateQuery(
+              fieldIndex.getIndexId(),
+              lowerBoundValues,
+              lowerBoundOp,
+              upperBoundValues,
+              upperBoundOp);
     } else {
-      bindArgs = generateBindArgs(lowerBoundValues, lowerBoundOp);
+      query = generateQuery(fieldIndex.getIndexId(), lowerBoundValues, lowerBoundOp);
     }
 
-    String sql =
-        String.format(
-            "SELECT document_name from index_entries WHERE index_id = %s AND (%s)",
-            fieldIndex.getIndexId(), bindArgs.sql);
-    db.query(sql)
-        .binding(bindArgs.bindArgs)
-        .forEach(
-            row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
+    query.forEach(
+        row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
 
     // TODO(indexing): Add limit handling
 
@@ -217,32 +217,46 @@ final class SQLiteIndexManager implements IndexManager {
     return result;
   }
 
-  /** Returns a SQL filter that concatenates all {@code value} into a disjunction. */
-  private BindArgs generateBindArgs(Object[] values, String op) {
-    String[] filters = new String[values.length];
-    for (int i = 0; i < values.length; ++i) {
-      filters[i] = String.format("index_value %s ?", op);
+  /** Returns a SQL query on 'index_entries' that unions all bounds. */
+  private SQLitePersistence.Query generateQuery(int indexId, Object[] bounds, String op) {
+    String[] statements = new String[bounds.length];
+    Object[] bingArgs = new Object[bounds.length * 2];
+    for (int i = 0; i < bounds.length; ++i) {
+      statements[i] =
+          String.format(
+              "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?",
+              op);
+      bingArgs[i * 2] = indexId;
+      bingArgs[i * 2 + 1] = bounds[i];
     }
-    return new BindArgs(TextUtils.join(" OR ", filters), values);
+    String sql = TextUtils.join(" UNION ", statements);
+    return db.query(sql).binding(bingArgs);
   }
 
-  /**
-   * Returns a SQL filter that combines each element from the left list with each element from the
-   * right list and returns all combinations (e.g. `(left1 AND right1) OR (left1 AND right2) ...`).
-   */
-  private BindArgs generateBindArgs(Object[] left, String leftOp, Object[] right, String rightOp) {
-    String[] filters = new String[left.length * right.length];
-    Object[] bingArgs = new Object[left.length * right.length * 2];
+  /** Returns a SQL query on 'index_entries' that unions all bounds. */
+  private SQLitePersistence.Query generateQuery(
+      int indexId,
+      Object[] lowerBounds,
+      String lowerBoundOp,
+      Object[] upperBounds,
+      String upperBoundOp) {
+    String[] statements = new String[lowerBounds.length * upperBounds.length];
+    Object[] bingArgs = new Object[lowerBounds.length * upperBounds.length * 3];
     int i = 0;
-    for (Object value1 : left) {
-      for (Object value2 : right) {
-        filters[i] = String.format("index_value %s ? AND index_value %s ?", leftOp, rightOp);
-        bingArgs[i * 2] = value1;
-        bingArgs[i * 2 + 1] = value2;
+    for (Object value1 : lowerBounds) {
+      for (Object value2 : upperBounds) {
+        statements[i] =
+            String.format(
+                "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
+                lowerBoundOp, upperBoundOp);
+        bingArgs[i * 3] = indexId;
+        bingArgs[i * 3 + 1] = value1;
+        bingArgs[i * 3 + 2] = value2;
         ++i;
       }
     }
-    return new BindArgs(TextUtils.join(" OR ", filters), bingArgs);
+    String sql = TextUtils.join(" UNION ", statements);
+    return db.query(sql).binding(bingArgs);
   }
 
   /**
@@ -377,16 +391,5 @@ final class SQLiteIndexManager implements IndexManager {
 
   private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
-  }
-
-  /** Stores a SQL statement of filters and their corresponding bind arguments. */
-  static class BindArgs {
-    final String sql;
-    final Object[] bindArgs;
-
-    BindArgs(String sql, Object[] bindArgs) {
-      this.sql = sql;
-      this.bindArgs = bindArgs;
-    }
   }
 }
