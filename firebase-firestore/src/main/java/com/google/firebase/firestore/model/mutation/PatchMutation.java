@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
+
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -127,8 +129,8 @@ public final class PatchMutation extends Mutation {
   }
 
   @Override
-  public FieldMask applyToLocalView(
-      MutableDocument document, FieldMask previousMask, Timestamp localWriteTime) {
+  public @Nullable FieldMask applyToLocalView(
+          MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
@@ -144,8 +146,8 @@ public final class PatchMutation extends Mutation {
         .convertToFoundDocument(getPostMutationVersion(document), document.getData())
         .setHasLocalMutations();
 
-    if (previousMask.isAllFields()) {
-      return previousMask;
+    if (previousMask == null) {
+      return null;
     }
 
     HashSet<FieldPath> mergedMaskSet = new HashSet<>(previousMask.getMask());

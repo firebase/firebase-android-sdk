@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.firestore.model.FieldPath;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -28,30 +27,13 @@ import java.util.Set;
  */
 public final class FieldMask {
   public static FieldMask fromSet(Set<FieldPath> mask) {
-    return new FieldMask(mask, Scope.BY_MASK);
-  }
-
-  public static FieldMask allFieldsMask() {
-    return new FieldMask(new HashSet<FieldPath>(), Scope.ALL_FIELDS);
-  }
-
-  public static FieldMask emptyMask() {
-    return new FieldMask(new HashSet<FieldPath>(), Scope.NONE);
+    return new FieldMask(mask);
   }
 
   private final Set<FieldPath> mask;
 
-  private enum Scope {
-    ALL_FIELDS,
-    NONE,
-    BY_MASK
-  }
-
-  private Scope scope = Scope.NONE;
-
-  private FieldMask(Set<FieldPath> mask, Scope scope) {
+  private FieldMask(Set<FieldPath> mask) {
     this.mask = mask;
-    this.scope = scope;
   }
 
   @Override
@@ -94,17 +76,5 @@ public final class FieldMask {
 
   public Set<FieldPath> getMask() {
     return mask;
-  }
-
-  public boolean isAllFields() {
-    return scope == Scope.ALL_FIELDS;
-  }
-
-  public boolean isNoneFields() {
-    return scope == Scope.NONE;
-  }
-
-  public boolean isByMask() {
-    return scope == Scope.BY_MASK;
   }
 }
