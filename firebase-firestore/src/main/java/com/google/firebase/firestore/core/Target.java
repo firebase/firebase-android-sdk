@@ -180,7 +180,7 @@ public final class Target {
             Value cursorValue = startAt.getPosition().get(i);
             if (max(segmentValue, cursorValue) == cursorValue) {
               segmentValue = cursorValue;
-              segmentInclusive = startAt.isBefore();
+              segmentInclusive = startAt.isInclusive();
             }
             break;
           }
@@ -256,7 +256,7 @@ public final class Target {
             Value cursorValue = endAt.getPosition().get(i);
             if (min(segmentValue, cursorValue) == cursorValue) {
               segmentValue = cursorValue;
-              segmentInclusive = !endAt.isBefore();
+              segmentInclusive = endAt.isInclusive();
             }
             break;
           }
@@ -276,7 +276,7 @@ public final class Target {
       return null;
     }
 
-    return new Bound(values, !inclusive);
+    return new Bound(values, inclusive);
   }
 
   public List<OrderBy> getOrderBy() {
@@ -318,12 +318,14 @@ public final class Target {
 
     if (startAt != null) {
       builder.append("|lb:");
-      builder.append(startAt.canonicalString());
+      builder.append(startAt.isInclusive() ? "b:" : "a:");
+      builder.append(startAt.positionString());
     }
 
     if (endAt != null) {
       builder.append("|ub:");
-      builder.append(endAt.canonicalString());
+      builder.append(endAt.isInclusive() ? "a:" : "b:");
+      builder.append(endAt.positionString());
     }
 
     memoizedCannonicalId = builder.toString();

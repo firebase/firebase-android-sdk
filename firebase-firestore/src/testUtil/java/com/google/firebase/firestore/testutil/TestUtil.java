@@ -288,8 +288,12 @@ public class TestUtil {
     return OrderBy.getInstance(direction, field(key));
   }
 
-  public static Bound bound(boolean before, Object... values) {
-    return new Bound(Arrays.stream(values).map(v -> wrap(v)).collect(Collectors.toList()), before);
+  public static Bound bound(boolean inclusive, Object... values) {
+    return new Bound(
+        Arrays.stream(values)
+            .map(v -> v instanceof Value ? (Value) v : wrap(v))
+            .collect(Collectors.toList()),
+        inclusive);
   }
 
   public static void testEquality(List<List<Integer>> equalityGroups) {

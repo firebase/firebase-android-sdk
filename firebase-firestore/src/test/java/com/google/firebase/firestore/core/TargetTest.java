@@ -60,7 +60,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -73,7 +73,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    verifyBound(upperBound, false, "bar");
   }
 
   @Test
@@ -86,7 +86,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -99,7 +99,7 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob());
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
@@ -112,7 +112,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob());
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
@@ -125,7 +125,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
@@ -151,12 +151,13 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob());
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
   public void startAtQueryBound() {
-    Target target = query("c").orderBy(orderBy("foo")).startAt(bound(true, "bar")).toTarget();
+    Target target =
+        query("c").orderBy(orderBy("foo")).startAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
@@ -176,7 +177,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(true, "a1", "b1"))
+            .startAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -187,7 +188,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a1", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob(), "b1");
+    verifyBound(upperBound, false, blob(), "b1");
   }
 
   @Test
@@ -198,7 +199,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(false, "a2", "b1"))
+            .startAt(bound(/* inclusive= */ false, "a2", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -209,7 +210,7 @@ public class TargetTest {
     verifyBound(lowerBound, false, "a2", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob(), "b1");
+    verifyBound(upperBound, false, blob(), "b1");
   }
 
   @Test
@@ -220,7 +221,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(false, "a1", "b1"))
+            .startAt(bound(/* inclusive= */ false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -231,12 +232,13 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a2", "b2");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, blob(), "b2");
+    verifyBound(upperBound, false, blob(), "b2");
   }
 
   @Test
   public void endAtQueryBound() {
-    Target target = query("c").orderBy(orderBy("foo")).endAt(bound(true, "bar")).toTarget();
+    Target target =
+        query("c").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
@@ -256,29 +258,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(bound(false, "a1", "b1"))
-            .toTarget();
-    FieldIndex index =
-        new FieldIndex("c")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
-
-    Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "", "b2");
-
-    Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a1", "b1");
-  }
-
-  @Test
-  public void endBeforeWithFilterQueryBound() {
-    Target target =
-        query("c")
-            .filter(filter("a", "<=", "a2"))
-            .filter(filter("b", "==", "b2"))
-            .orderBy(orderBy("a"))
-            .orderBy(orderBy("b"))
-            .endAt(bound(true, "a1", "b1"))
+            .endAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -293,6 +273,28 @@ public class TargetTest {
   }
 
   @Test
+  public void endBeforeWithFilterQueryBound() {
+    Target target =
+        query("c")
+            .filter(filter("a", "<=", "a2"))
+            .filter(filter("b", "==", "b2"))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"))
+            .endAt(bound(/* inclusive= */ false, "a1", "b1"))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c")
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true, "", "b2");
+
+    Bound upperBound = target.getUpperBound(index);
+    verifyBound(upperBound, false, "a1", "b1");
+  }
+
+  @Test
   public void endBeforeDoesNotChangeBoundIfNotApplicable() {
     Target target =
         query("c")
@@ -300,7 +302,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(bound(false, "a2", "b2"))
+            .endAt(bound(/* inclusive= */ false, "a2", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -311,7 +313,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a1", "b1");
+    verifyBound(upperBound, true, "a1", "b1");
   }
 
   @Test
@@ -325,11 +327,11 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a");
+    verifyBound(upperBound, true, "a");
   }
 
-  private void verifyBound(Bound bound, boolean before, Object... values) {
-    assertEquals("before", before, bound.isBefore());
+  private void verifyBound(Bound bound, boolean inclusive, Object... values) {
+    assertEquals("inclusive", inclusive, bound.isInclusive());
     List<Value> position = bound.getPosition();
     assertEquals("size", values.length, position.size());
     for (int i = 0; i < values.length; ++i) {
