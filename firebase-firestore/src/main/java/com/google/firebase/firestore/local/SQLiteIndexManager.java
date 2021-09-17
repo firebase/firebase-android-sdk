@@ -110,8 +110,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getUpdateTime().getSeconds(),
-        index.getUpdateTime().getNanoseconds());
+        index.getVersion().getTimestamp().getSeconds(),
+        index.getVersion().getTimestamp().getNanoseconds());
   }
 
   @Override

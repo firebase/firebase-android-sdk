@@ -32,6 +32,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -272,12 +273,12 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
-            .withUpdateTime(new Timestamp(10, 20)));
+            .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
 
     List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes();
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.get(0);
-    assertEquals(index.getUpdateTime(), new Timestamp(10, 20));
+    assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
   }
 
   private void addDoc(String key, Map<String, Object> data) {
