@@ -220,8 +220,8 @@ final class SQLiteIndexManager implements IndexManager {
   /** Returns a SQL query on 'index_entries' that unions all bounds. */
   private SQLitePersistence.Query generateQuery(int indexId, Object[] bounds, String op) {
     String statement =
-            String.format(
-                    "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?", op);
+        String.format(
+            "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?", op);
     String sql = repeatSequence(statement, bounds.length, " UNION ");
 
     Object[] bingArgs = new Object[bounds.length * 2];
@@ -241,19 +241,18 @@ final class SQLiteIndexManager implements IndexManager {
       Object[] upperBounds,
       String upperBoundOp) {
     String statement =
-            String.format(
-                    "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
-                    lowerBoundOp, upperBoundOp);
+        String.format(
+            "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
+            lowerBoundOp, upperBoundOp);
     String sql = repeatSequence(statement, lowerBounds.length * upperBounds.length, " UNION ");
 
     Object[] bingArgs = new Object[lowerBounds.length * upperBounds.length * 3];
     int i = 0;
     for (Object value1 : lowerBounds) {
       for (Object value2 : upperBounds) {
-        bingArgs[i * 3] = indexId;
-        bingArgs[i * 3 + 1] = value1;
-        bingArgs[i * 3 + 2] = value2;
-        ++i;
+        bingArgs[i++] = indexId;
+        bingArgs[i++] = value1;
+        bingArgs[i++] = value2;
       }
     }
 
