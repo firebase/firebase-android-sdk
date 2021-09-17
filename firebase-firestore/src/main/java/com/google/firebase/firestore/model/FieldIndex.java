@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.Timestamp;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -56,29 +57,32 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     }
   }
 
-  private final String collectionId;
+  private final String collectionGroup;
   private final int indexId;
   private final List<Segment> segments;
+  private final Timestamp updateTime;
 
-  public FieldIndex(String collectionId, int indexId) {
-    this.collectionId = collectionId;
+  public FieldIndex(String collectionGroup, int indexId) {
+    this.collectionGroup = collectionGroup;
     this.segments = new ArrayList<>();
     this.indexId = indexId;
+    this.updateTime = new Timestamp(0L, 0);
   }
 
   public FieldIndex(String collectionId) {
     this(collectionId, -1);
   }
 
-  FieldIndex(String collectionId, int indexId, List<Segment> segments) {
-    this.collectionId = collectionId;
+  FieldIndex(String collectionGroup, int indexId, List<Segment> segments, Timestamp updateTime) {
+    this.collectionGroup = collectionGroup;
     this.segments = segments;
     this.indexId = indexId;
+    this.updateTime = updateTime;
   }
 
   /** The collection ID this index applies to. */
-  public String getCollectionId() {
-    return collectionId;
+  public String getCollectionGroup() {
+    return collectionGroup;
   }
 
   /**
@@ -97,6 +101,10 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     return segments.size();
   }
 
+  public Timestamp getUpdateTime() {
+    return updateTime;
+  }
+
   @NonNull
   @Override
   public Iterator<Segment> iterator() {
@@ -107,7 +115,12 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
-    return new FieldIndex(collectionId, indexId, newSegments);
+    return new FieldIndex(collectionGroup, indexId, newSegments, updateTime);
+  }
+
+  /** Returns a new field index with the updated updateTime. */
+  public FieldIndex withUpdateTime(Timestamp updateTime) {
+    return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
 
   @Override
@@ -118,18 +131,19 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     FieldIndex fieldIndex = (FieldIndex) o;
 
     if (!segments.equals(fieldIndex.segments)) return false;
-    return collectionId.equals(fieldIndex.collectionId);
+    return collectionGroup.equals(fieldIndex.collectionGroup);
   }
 
   @Override
   public int hashCode() {
-    int result = collectionId.hashCode();
+    int result = collectionGroup.hashCode();
     result = 31 * result + segments.hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return String.format("FieldIndex{collectionId='%s', segments=%s}", collectionId, segments);
+    return String.format(
+        "FieldIndex{collectionGroup='%s', segments=%s}", collectionGroup, segments);
   }
 }

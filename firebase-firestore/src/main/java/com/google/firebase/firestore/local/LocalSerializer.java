@@ -311,8 +311,9 @@ public final class LocalSerializer {
     return index.build();
   }
 
-  public FieldIndex decodeFieldIndex(String collection_group, int indexId, Index index) {
-    FieldIndex fieldIndex = new FieldIndex(collection_group, indexId);
+  public FieldIndex decodeFieldIndex(
+      String collectionGroup, int indexId, Index index, int updateSeconds, int updateNanos) {
+    FieldIndex fieldIndex = new FieldIndex(collectionGroup, indexId);
     for (Index.IndexField field : index.getFieldsList()) {
       fieldIndex =
           fieldIndex.withAddedField(
@@ -321,7 +322,7 @@ public final class LocalSerializer {
                   ? FieldIndex.Segment.Kind.CONTAINS
                   : FieldIndex.Segment.Kind.ORDERED);
     }
-
+    fieldIndex = fieldIndex.withUpdateTime(new Timestamp(updateSeconds, updateNanos));
     return fieldIndex;
   }
 }
