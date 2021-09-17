@@ -16,8 +16,8 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.repeatSequence;
 
-import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -219,17 +219,17 @@ final class SQLiteIndexManager implements IndexManager {
 
   /** Returns a SQL query on 'index_entries' that unions all bounds. */
   private SQLitePersistence.Query generateQuery(int indexId, Object[] bounds, String op) {
-    String[] statements = new String[bounds.length];
+    String statement =
+            String.format(
+                    "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?", op);
+    String sql = repeatSequence(statement, bounds.length, " UNION ");
+
     Object[] bingArgs = new Object[bounds.length * 2];
     for (int i = 0; i < bounds.length; ++i) {
-      statements[i] =
-          String.format(
-              "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?",
-              op);
       bingArgs[i * 2] = indexId;
       bingArgs[i * 2 + 1] = bounds[i];
     }
-    String sql = TextUtils.join(" UNION ", statements);
+
     return db.query(sql).binding(bingArgs);
   }
 
@@ -240,22 +240,23 @@ final class SQLiteIndexManager implements IndexManager {
       String lowerBoundOp,
       Object[] upperBounds,
       String upperBoundOp) {
-    String[] statements = new String[lowerBounds.length * upperBounds.length];
+    String statement =
+            String.format(
+                    "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
+                    lowerBoundOp, upperBoundOp);
+    String sql = repeatSequence(statement, lowerBounds.length * upperBounds.length, " UNION ");
+
     Object[] bingArgs = new Object[lowerBounds.length * upperBounds.length * 3];
     int i = 0;
     for (Object value1 : lowerBounds) {
       for (Object value2 : upperBounds) {
-        statements[i] =
-            String.format(
-                "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
-                lowerBoundOp, upperBoundOp);
         bingArgs[i * 3] = indexId;
         bingArgs[i * 3 + 1] = value1;
         bingArgs[i * 3 + 2] = value2;
         ++i;
       }
     }
-    String sql = TextUtils.join(" UNION ", statements);
+
     return db.query(sql).binding(bingArgs);
   }
 
