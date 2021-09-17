@@ -149,28 +149,28 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testStartAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "coll/doc2", "coll/doc3");
   }
 
   @Test
   public void testStartAfterFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "coll/doc3");
   }
 
   @Test
   public void testEndAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "coll/doc1", "coll/doc2");
   }
 
   @Test
   public void testEndBeforeFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "coll/doc1");
   }
 
@@ -182,8 +182,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .filter(filter("count", ">=", 1))
             .filter(filter("count", "<=", 3))
             .orderBy(orderBy("count"))
-            .startAt(bound(false, 1))
-            .endAt(bound(true, 2));
+            .startAt(bound(/* inclusive= */ false, 1))
+            .endAt(bound(/* inclusive= */ true, 2));
     verifyResults(startAt, "coll/doc2");
   }
 

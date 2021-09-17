@@ -579,7 +579,8 @@ public class BundleSerializerTest {
             + "from: [ { collectionId: 'coll' } ],\n"
             + "orderBy: [ { field: { fieldPath: 'foo' } } ],\n"
             + "startAt: { values: [ { stringValue: 'bar' } ], before: true } }";
-    Query query = TestUtil.query("coll").orderBy(orderBy("foo")).startAt(bound(true, "bar"));
+    Query query =
+        TestUtil.query("coll").orderBy(orderBy("foo")).startAt(bound(/* inclusive= */ true, "bar"));
     assertDecodesNamedQuery(json, query);
   }
 
@@ -590,7 +591,8 @@ public class BundleSerializerTest {
             + "from: [ { collectionId: 'coll' } ],\n"
             + "orderBy: [ { field: { fieldPath: 'foo' } } ],\n"
             + "endAt: { values: [ { stringValue: 'bar' } ], before: true } }";
-    Query query = TestUtil.query("coll").orderBy(orderBy("foo")).endAt(bound(false, "bar"));
+    Query query =
+        TestUtil.query("coll").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ false, "bar"));
     assertDecodesNamedQuery(json, query);
   }
 

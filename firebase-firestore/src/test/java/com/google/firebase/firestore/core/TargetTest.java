@@ -156,7 +156,8 @@ public class TargetTest {
 
   @Test
   public void startAtQueryBound() {
-    Target target = query("c").orderBy(orderBy("foo")).startAt(bound(true, "bar")).toTarget();
+    Target target =
+        query("c").orderBy(orderBy("foo")).startAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
@@ -176,7 +177,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(true, "a1", "b1"))
+            .startAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -198,7 +199,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(false, "a2", "b1"))
+            .startAt(bound(/* inclusive= */ false, "a2", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -220,7 +221,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(bound(false, "a1", "b1"))
+            .startAt(bound(/* inclusive= */ false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -236,7 +237,8 @@ public class TargetTest {
 
   @Test
   public void endAtQueryBound() {
-    Target target = query("c").orderBy(orderBy("foo")).endAt(bound(true, "bar")).toTarget();
+    Target target =
+        query("c").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
@@ -256,7 +258,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(bound(true, "a1", "b1"))
+            .endAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -278,7 +280,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(bound(false, "a1", "b1"))
+            .endAt(bound(/* inclusive= */ false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -300,7 +302,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(bound(false, "a2", "b2"))
+            .endAt(bound(/* inclusive= */ false, "a2", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")

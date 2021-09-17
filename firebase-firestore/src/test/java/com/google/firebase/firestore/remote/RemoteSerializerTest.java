@@ -977,8 +977,8 @@ public final class RemoteSerializerTest {
   public void testEncodesBounds() {
     Query q =
         Query.atPath(ResourcePath.fromString("docs"))
-            .startAt(bound(true, refValue(databaseId, key("foo/bar"))))
-            .endAt(bound(true, refValue(databaseId, key("foo/baz"))));
+            .startAt(bound(/* inclusive= */ true, refValue(databaseId, key("foo/bar"))))
+            .endAt(bound(/* inclusive= */ true, refValue(databaseId, key("foo/baz"))));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =

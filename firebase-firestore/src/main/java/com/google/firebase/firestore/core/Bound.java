@@ -56,6 +56,11 @@ public final class Bound {
     return position;
   }
 
+  /**
+   * Whether the bound includes the documents that lie directly on the bound. Returns {@code true}
+   * for {@code startAt()} and {@code endAt()} and false for {@code startAfter()} and {@code
+   * endBefore()}.
+   */
   public boolean isInclusive() {
     return inclusive;
   }
