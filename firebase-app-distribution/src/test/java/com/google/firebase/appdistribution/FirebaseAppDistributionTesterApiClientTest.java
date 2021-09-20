@@ -19,6 +19,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -45,6 +47,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
   private static final String INVALID_RESPONSE = "InvalidResponse";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
+  private Context applicationContext;
   @Mock private HttpsURLConnection mockHttpsURLConnection;
 
   @Before
@@ -59,6 +62,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Mockito.doReturn(mockHttpsURLConnection)
         .when(firebaseAppDistributionTesterApiClient)
         .openHttpsUrlConnection(TEST_APP_ID_1, TEST_FID_1);
+
+    applicationContext = ApplicationProvider.getApplicationContext();
   }
 
   @Test
@@ -69,7 +74,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
     AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
     assertEquals(release.getBinaryType(), BinaryType.APK);
     assertEquals(release.getBuildVersion(), "3");
     assertEquals(release.getDisplayVersion(), "3.0");
@@ -86,7 +91,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
     AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
     assertEquals(release.getBinaryType(), BinaryType.AAB);
     assertEquals(release.getBuildVersion(), "3");
     assertEquals(release.getDisplayVersion(), "3.0");
@@ -105,7 +110,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
     assertEquals("Failed to authenticate the tester", ex.getMessage());
@@ -121,7 +126,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
     assertEquals("Failed to authorize the tester", ex.getMessage());
@@ -137,7 +142,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
     assertEquals("Tester or release not found", ex.getMessage());
@@ -153,7 +158,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, ex.getErrorCode());
     assertEquals("Failed to fetch releases due to timeout", ex.getMessage());
@@ -169,7 +174,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, ex.getErrorCode());
     assertEquals("Failed to fetch releases due to unknown network error", ex.getMessage());
@@ -185,7 +190,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             FirebaseAppDistributionException.class,
             () ->
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
-                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN));
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertEquals(FirebaseAppDistributionException.Status.UNKNOWN, ex.getErrorCode());
     assertEquals("Error parsing service response", ex.getMessage());
