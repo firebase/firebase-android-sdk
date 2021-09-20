@@ -14,10 +14,16 @@
 
 package com.google.firebase.appdistribution;
 
+import static android.content.ContentValues.TAG;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.util.Log;
 import androidx.annotation.NonNull;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +42,9 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String REQUEST_METHOD = "GET";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
+  private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
+  private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
+
   private static final String BUILD_VERSION_JSON_KEY = "buildVersion";
   private static final String DISPLAY_VERSION_JSON_KEY = "displayVersion";
   private static final String RELEASE_NOTES_JSON_KEY = "releaseNotes";
@@ -43,11 +52,17 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String CODE_HASH_KEY = "codeHash";
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
+
   private static final String TAG = "TesterApiClient:";
+
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public @NonNull AppDistributionReleaseInternal fetchNewRelease(
-      @NonNull String fid, @NonNull String appId, @NonNull String apiKey, @NonNull String authToken)
+      @NonNull String fid,
+      @NonNull String appId,
+      @NonNull String apiKey,
+      @NonNull String authToken,
+      @NonNull Context context)
       throws FirebaseAppDistributionException {
 
     AppDistributionReleaseInternal newRelease;
@@ -56,6 +71,9 @@ class FirebaseAppDistributionTesterApiClient {
       connection.setRequestMethod(REQUEST_METHOD);
       connection.setRequestProperty(API_KEY_HEADER, apiKey);
       connection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
+      connection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+      connection.addRequestProperty(
+          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage(context));
 
       InputStream inputStream = connection.getInputStream();
       JSONObject newReleaseJson = readFetchReleaseInputStream(inputStream);
@@ -184,5 +202,28 @@ class FirebaseAppDistributionTesterApiClient {
       result.write(buffer, 0, length);
     }
     return result.toString();
+  }
+
+  /**
+   * Gets the Android package's SHA-1 fingerprint.
+   *
+   * @param context
+   */
+  private String getFingerprintHashForPackage(Context context) {
+    byte[] hash;
+
+    try {
+      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        return null;
+      } else {
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      return null;
+    }
   }
 }
