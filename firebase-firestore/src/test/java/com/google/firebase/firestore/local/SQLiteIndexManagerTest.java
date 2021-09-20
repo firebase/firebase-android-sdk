@@ -24,12 +24,15 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -263,6 +266,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll2/doc2", map("value", true));
     Query query = new Query(path(""), "coll1").filter(filter("value", "==", true));
     verifyResults(query, "coll1/doc1", "coll2/doc2/coll1/doc1");
+  }
+
+  @Test
+  public void testUpdateTime() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
+            .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
+
+    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes();
+    assertEquals(indexes.size(), 1);
+    FieldIndex index = indexes.get(0);
+    assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
   }
 
   private void addDoc(String key, Map<String, Object> data) {
