@@ -17,7 +17,6 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -72,6 +71,9 @@ public abstract class Mutation {
   private final Precondition precondition;
 
   private final List<FieldTransform> fieldTransforms;
+
+  // TODO(Overlay): Serialize this field for local storage.
+  private SnapshotVersion postMutationVersion = null;
 
   Mutation(DocumentKey key, Precondition precondition) {
     this(key, precondition, new ArrayList<>());
@@ -141,13 +143,21 @@ public abstract class Mutation {
         "Can only apply a mutation to a document with the same key");
   }
 
+  Mutation withPostMutationVersion(SnapshotVersion version) {
+    postMutationVersion = version;
+    return this;
+  }
+
   /**
-   * Returns the version from the given document for use as the result of a mutation. Mutations are
-   * defined to return the version of the base document only if it is an existing document. Deleted
-   * and unknown documents have a post-mutation version of {@code SnapshotVersion.NONE}.
+   * Returns the version for the given document for use as the result of a mutation.
+   *
+   * <p>Returns {@code postMutationVersion} if it is set, otherwise returns the version of the base
+   * document if it is not unknown. Returns {@code SnapshotVersion.NONE} for unknown documents.
    */
-  static SnapshotVersion getPostMutationVersion(MutableDocument document) {
-    if (document.isFoundDocument()) {
+  SnapshotVersion getPostMutationVersion(MutableDocument document) {
+    if (postMutationVersion != null) {
+      return postMutationVersion;
+    } else if (document.isFoundDocument()) {
       return document.getVersion();
     } else {
       return SnapshotVersion.NONE;

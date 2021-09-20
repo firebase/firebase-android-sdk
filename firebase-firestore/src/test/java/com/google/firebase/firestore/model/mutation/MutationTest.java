@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model;
+package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -39,15 +39,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
-import com.google.firebase.firestore.model.mutation.DeleteMutation;
-import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.mutation.FieldTransform;
-import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.mutation.SetMutation;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
+import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collection;
@@ -89,13 +87,13 @@ public class MutationTest {
 
   @Test
   public void testAppliesPatchWithMergeToDocuments() {
-    MutableDocument mergeDoc = deletedDoc("collection/key", 1);
+    MutableDocument mergeDoc = deletedDoc("collection/key", 0);
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), mergeDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -990,7 +988,7 @@ public class MutationTest {
         Collections2.permutations(Lists.newArrayList(mutations));
     for (MutableDocument doc : docs) {
       for (List<Mutation> permutation : permutations) {
-        verifyOverlayRoundTrips(doc, permutation.toArray(new Mutation[]{}));
+        verifyOverlayRoundTrips(doc, permutation.toArray(new Mutation[] {}));
         testCases += 1;
       }
     }
@@ -1029,25 +1027,26 @@ public class MutationTest {
     }
 
     Mutation overlay = null;
-    boolean isLatencyCompensatedDelete = docForMutations.getVersion().equals(SnapshotVersion.NONE) && docForMutations.isNoDocument();
+    boolean isLatencyCompensatedDelete =
+        docForMutations.getVersion().equals(SnapshotVersion.NONE) && docForMutations.isNoDocument();
     if (docForMutations.hasLocalMutations() || isLatencyCompensatedDelete) {
-       overlay = getOverlayMutation(docForMutations, mask);
+      overlay = getOverlayMutation(docForMutations, mask);
       overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
     }
 
     assertEquals(
-            getDescription(doc, Arrays.asList(mutations), overlay),
-            docForOverlay,
-            docForMutations);
+        getDescription(doc, Arrays.asList(mutations), overlay), docForOverlay, docForMutations);
   }
 
   // TODO(Overlay): This is production code, find a place for this.
   private Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
     if (mask == null) {
       if (doc.isNoDocument()) {
-        return new DeleteMutation(doc.getKey(), Precondition.NONE);
+        return new DeleteMutation(doc.getKey(), Precondition.NONE)
+            .withPostMutationVersion(doc.getVersion());
       } else {
-        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
+        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE)
+            .withPostMutationVersion(doc.getVersion());
       }
     } else {
       ObjectValue docValue = doc.getData();
@@ -1072,9 +1071,9 @@ public class MutationTest {
           maskSet.add(path);
         }
       }
-      return
-          new PatchMutation(
-              doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
+      return new PatchMutation(
+              doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE)
+          .withPostMutationVersion(doc.getVersion());
     }
   }
 }
