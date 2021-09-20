@@ -389,7 +389,7 @@ final class SQLiteIndexManager implements IndexManager {
     List<FieldIndex> allIndexes = new ArrayList<>();
     db.query(
             "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
-                + "WHERE active")
+                + "WHERE active = 1")
         .forEach(
             row -> {
               try {
