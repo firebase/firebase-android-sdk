@@ -15,14 +15,36 @@
 package com.google.firebase.crashlytics.internal.unity;
 
 import android.content.Context;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 
 public class ResourceUnityVersionProvider implements UnityVersionProvider {
 
+  private static final String UNITY_EDITOR_VERSION =
+      "com.google.firebase.crashlytics.unity_version";
+
+  private static boolean isUnityVersionSet = false;
+  private static String unityVersion = null;
+
   private final Context context;
 
-  private boolean hasRead = false;
-  private String unityVersion;
+  /**
+   * @return the Unity Editor version resolved from String resources, or <code>null</code> if the
+   *     value was not present. This method can be invoked directly; access via the instance method
+   *     from UnityVersionProvider is provided to support mocking while testing.
+   */
+  public static synchronized String resolveUnityEditorVersion(Context context) {
+    if (isUnityVersionSet) {
+      return unityVersion;
+    }
+    final int id = CommonUtils.getResourcesIdentifier(context, UNITY_EDITOR_VERSION, "string");
+    if (id != 0) {
+      unityVersion = context.getResources().getString(id);
+      isUnityVersionSet = true;
+      Logger.getLogger().v("Unity Editor version is: " + unityVersion);
+    }
+    return unityVersion;
+  }
 
   public ResourceUnityVersionProvider(Context context) {
     this.context = context;
@@ -30,13 +52,6 @@ public class ResourceUnityVersionProvider implements UnityVersionProvider {
 
   @Override
   public String getUnityVersion() {
-    if (!hasRead) {
-      unityVersion = CommonUtils.resolveUnityEditorVersion(context);
-      hasRead = true;
-    }
-    if (unityVersion != null) {
-      return unityVersion;
-    }
-    return null;
+    return resolveUnityEditorVersion(this.context);
   }
 }
