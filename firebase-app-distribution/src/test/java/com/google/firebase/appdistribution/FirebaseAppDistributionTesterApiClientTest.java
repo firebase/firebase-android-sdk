@@ -81,6 +81,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     assertEquals(release.getReleaseNotes(), "This is a test release.");
     assertEquals(release.getDownloadUrl(), "http://test-url-apk");
     assertEquals(release.getCodeHash(), "code-hash-apk-1");
+    assertEquals(release.getApkHash(), "apk-hash-1");
   }
 
   @Test

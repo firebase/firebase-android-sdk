@@ -66,14 +66,13 @@ class CheckForNewReleaseClient {
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull ReleaseIdentifierStorage releaseIdentifierStorage,
       @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    // TODO: verify if this is best way to use executorservice here
+    this.releaseIdentifierStorage = releaseIdentifierStorage;
     this.checkForNewReleaseExecutor = executor;
-    this.releaseIdentifierStorage =
-        new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
   @NonNull
@@ -152,7 +151,7 @@ class CheckForNewReleaseClient {
   @VisibleForTesting
   boolean isInstalledRelease(AppDistributionReleaseInternal newRelease) {
     if (newRelease.getBinaryType().equals(BinaryType.APK)) {
-      return hasSameCodeHashAsInstallledRelease(newRelease);
+      return hasSameApkHashAsInstalledRelease(newRelease);
     }
 
     if (newRelease.getIasArtifactId() == null) {
@@ -181,7 +180,7 @@ class CheckForNewReleaseClient {
   }
 
   @VisibleForTesting
-  String extractApkCodeHash(PackageInfo packageInfo) {
+  String extractApkHash(PackageInfo packageInfo) {
     File sourceFile = new File(packageInfo.applicationInfo.sourceDir);
 
     String key =
@@ -190,26 +189,28 @@ class CheckForNewReleaseClient {
     if (!cachedCodeHashes.containsKey(key)) {
       cachedCodeHashes.put(key, calculateApkInternalCodeHash(sourceFile));
     }
-    return releaseIdentifierStorage.getExternalCodeHash(cachedCodeHashes.get(key));
+    return cachedCodeHashes.get(key);
   }
 
-  private boolean hasSameCodeHashAsInstallledRelease(AppDistributionReleaseInternal newRelease) {
+  private boolean hasSameApkHashAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
     try {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo =
           context
               .getPackageManager()
               .getPackageInfo(context.getPackageName(), PackageManager.GET_META_DATA);
-      String externalCodeHash = extractApkCodeHash(metadataPackageInfo);
-      // Will trigger during the first install of the app since no zipHash to externalCodeHash
-      // mapping will have been set in ReleaseIdentifierStorage yet
-      if (externalCodeHash == null) {
-        return false;
-      }
+      String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
 
-      // If the codeHash for the retrieved newRelease is equal to the stored codeHash
+      if (installedReleaseApkHash.isEmpty() || newRelease.getApkHash().isEmpty()) {
+        // We don't have enough information about the APK hashes. Fallback to the external codehash.
+        // TODO: Consider removing this when all returned releases have the efficient ApkHash
+        String externalCodeHash =
+            releaseIdentifierStorage.getExternalCodeHash(installedReleaseApkHash);
+        return externalCodeHash != null && externalCodeHash.equals(newRelease.getCodeHash());
+      }
+      // If the hash of the zipped APK for the retrieved newRelease is equal to the stored hash
       // of the installed release, then they are the same release.
-      return externalCodeHash.equals(newRelease.getCodeHash());
+      return installedReleaseApkHash.equals(newRelease.getApkHash());
     } catch (PackageManager.NameNotFoundException e) {
       LogWrapper.getInstance().e(TAG + "Unable to locate App.", e);
       return false;
