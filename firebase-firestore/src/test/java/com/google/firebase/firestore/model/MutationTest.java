@@ -526,7 +526,7 @@ public class MutationTest {
 
     Mutation delete = deleteMutation("collection/key");
     delete.applyToLocalView(deletedDoc, Timestamp.now());
-    assertEquals(deletedDoc("collection/key", 0), deletedDoc);
+    assertEquals(deletedDoc("collection/key", 0).setHasLocalMutations(), deletedDoc);
   }
 
   @Test

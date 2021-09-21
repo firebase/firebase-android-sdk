@@ -96,9 +96,7 @@ public final class SetMutation extends Mutation {
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
-    document
-        .convertToFoundDocument(getPostMutationVersion(document), localValue)
-        .setHasLocalMutations();
+    document.convertToFoundDocument(document.getVersion(), localValue).setHasLocalMutations();
   }
 
   /** Returns the object value to use when setting the document. */

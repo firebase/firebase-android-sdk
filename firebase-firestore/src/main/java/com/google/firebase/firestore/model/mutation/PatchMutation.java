@@ -138,7 +138,7 @@ public final class PatchMutation extends Mutation {
     value.setAll(getPatch());
     value.setAll(transformResults);
     document
-        .convertToFoundDocument(getPostMutationVersion(document), document.getData())
+        .convertToFoundDocument(document.getVersion(), document.getData())
         .setHasLocalMutations();
   }
 
