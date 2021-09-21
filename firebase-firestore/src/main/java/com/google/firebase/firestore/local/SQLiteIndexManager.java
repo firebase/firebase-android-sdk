@@ -205,7 +205,7 @@ final class SQLiteIndexManager implements IndexManager {
     String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
     if (upperBound != null) {
       Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
-      String upperBoundOp = upperBound.isInclusive() ? "<" : "<=";
+      String upperBoundOp = upperBound.isInclusive() ? "<=" : "<";
       query =
           generateQuery(
               fieldIndex.getIndexId(),
