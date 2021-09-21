@@ -20,7 +20,6 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
-import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
 import java.io.File;
 
 /** The Crashlytics NDK Kit provides crash reporting functionality for Android NDK users. */
@@ -31,18 +30,15 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
 
   private static FirebaseCrashlyticsNdk instance;
 
-  static FirebaseCrashlyticsNdk create(@NonNull Context context) {
+  static FirebaseCrashlyticsNdk create(
+      @NonNull Context context, boolean installHandlerDuringPrepareSession) {
     final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
     final CrashpadController controller =
         new CrashpadController(
             context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
 
-    // The signal handler is installed immediately for non-Unity apps. For Unity apps, it will
-    // be installed when the Firebase Unity SDK explicitly calls installSignalHandler().
-    boolean installHandlerOnPrepSession =
-        (ResourceUnityVersionProvider.resolveUnityEditorVersion(context) == null);
-    instance = new FirebaseCrashlyticsNdk(controller, installHandlerOnPrepSession);
+    instance = new FirebaseCrashlyticsNdk(controller, installHandlerDuringPrepareSession);
     return instance;
   }
 
@@ -52,8 +48,8 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     void installHandler();
   }
 
-  private volatile boolean installHandlerDuringPrepareSession;
-  private volatile SignalHandlerInstaller signalHandlerInstaller;
+  private boolean installHandlerDuringPrepareSession;
+  private SignalHandlerInstaller signalHandlerInstaller;
 
   FirebaseCrashlyticsNdk(
       @NonNull CrashpadController controller, boolean installHandlerDuringPrepareSession) {
@@ -114,14 +110,23 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
    * session is prepared. Used by Firebase Crashlytics for Unity.
    */
   public synchronized void installSignalHandler() {
-    if (signalHandlerInstaller == null) {
+    // If the handler is already initialized, execute it immediately.
+    // Otherwise, set installHandlerDuringPrepareSession=true so it will be installed as soon as it
+    // is available.
+    if (signalHandlerInstaller != null) {
+      signalHandlerInstaller.installHandler();
+      return;
+    }
+    if (installHandlerDuringPrepareSession) {
+      // If installHandlerDuringPrepareSession is already true, we can no-op. The signal handler
+      // was likely already installed (during prep). This method probably should not have been
+      // called, so log a warning.
+      Logger.getLogger().w("Native signal handler already installed; skipping re-install.");
+    } else {
       Logger.getLogger()
           .d(
-              "Native signal handler install requested, but the FirebaseCrashlyticsNdk session"
-                  + "has not been prepared...Deferring installation.");
+              "Deferring signal handler installation until the FirebaseCrashlyticsNdk session has been prepared");
       installHandlerDuringPrepareSession = true;
-    } else {
-      signalHandlerInstaller.installHandler();
     }
   }
 
