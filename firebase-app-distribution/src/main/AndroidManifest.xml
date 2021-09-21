@@ -43,7 +43,7 @@
         </activity>
 
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="com.google.firebase.appdistribution.FirebaseAppDistributionFileProvider"
             android:authorities="${applicationId}.FirebaseAppDistributionFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
