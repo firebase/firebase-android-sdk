@@ -444,8 +444,9 @@ public abstract class LocalStoreTestCase {
     }
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    int expectedVersion = garbageCollectorIsEager() ? 0 : 2;
+    assertChanged(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(3);
@@ -464,8 +465,8 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -566,7 +567,7 @@ public abstract class LocalStoreTestCase {
   public void testHandlesDeleteMutationThenAck() {
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     acknowledgeMutation(1);
     assertRemoved("foo/bar");
@@ -589,7 +590,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
 
     // Remove the target so only the mutation is pinning the document.
     releaseTarget(targetId);
@@ -608,12 +609,12 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(2);
@@ -731,11 +732,11 @@ public abstract class LocalStoreTestCase {
   public void testHandlesDeleteMutationThenPatchMutationThenAckThenAck() {
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     acknowledgeMutation(2); // delete mutation
     assertRemoved("foo/bar");
@@ -798,17 +799,17 @@ public abstract class LocalStoreTestCase {
     writeMutation(deleteMutation("foo/baz"));
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(3);
     assertNotContains("foo/bar");
     assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(4);
     assertNotContains("foo/bar");
     assertNotContains("foo/bah");
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(5);
     assertNotContains("foo/bar");
@@ -831,17 +832,17 @@ public abstract class LocalStoreTestCase {
     writeMutation(deleteMutation("foo/baz"));
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // patch mutation
     assertNotContains("foo/bar");
     assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // set mutation
     assertNotContains("foo/bar");
     assertNotContains("foo/bah");
-    assertContains(deletedDoc("foo/baz", 0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // delete mutation
     assertNotContains("foo/bar");
