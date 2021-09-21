@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
@@ -96,8 +97,6 @@ final class SQLiteIndexManager implements IndexManager {
         db.query("SELECT MAX(index_id) FROM index_configuration")
             .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
 
-    // TODO(indexing): Properly dedupe indices to avoid duplicate index entries (by comparing
-    // collection_group+index_proto)
     db.execute(
         "INSERT OR IGNORE INTO index_configuration ("
             + "index_id, "
@@ -145,8 +144,8 @@ final class SQLiteIndexManager implements IndexManager {
                       fieldIndex);
                 }
 
-                List<byte[]> encodeValues = encodeDocumentValues(fieldIndex, values);
-                for (byte[] encoded : encodeValues) {
+                Object[] encodeValues = encodeDocumentValues(fieldIndex, values);
+                for (Object encoded : encodeValues) {
                   // TODO(indexing): Handle different values for different users
                   db.execute(
                       "INSERT OR IGNORE INTO index_entries ("
@@ -187,12 +186,10 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     Bound lowerBound = target.getLowerBound(fieldIndex);
-    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
-
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
-      Logger.warn(
+      Logger.debug(
           TAG,
           "Using index '%s' to execute '%s' (Lower bound: %s, Upper bound: %s)",
           fieldIndex,
@@ -202,47 +199,73 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Set<DocumentKey> result = new HashSet<>();
+    SQLitePersistence.Query query;
 
+    Object[] lowerBoundValues = encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
+    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
     if (upperBound != null) {
-      List<byte[]> lowerBoundValues =
-          encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
-      List<byte[]> upperBoundValues =
-          encodeTargetValues(fieldIndex, target, upperBound.getPosition());
-
-      hardAssert(
-          lowerBoundValues.size() == upperBoundValues.size(),
-          "Expected upper and lower bound size to match");
-
+      Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
       String upperBoundOp = upperBound.isInclusive() ? "<=" : "<";
-
-      // TODO(indexing): To avoid reading the same documents multiple times, we should ideally only
-      // send one query that combines all clauses.
-      // TODO(indexing): Add limit handling
-      for (int i = 0; i < lowerBoundValues.size(); ++i) {
-        db.query(
-                String.format(
-                    "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
-                    lowerBoundOp, upperBoundOp))
-            .binding(fieldIndex.getIndexId(), lowerBoundValues.get(i), upperBoundValues.get(i))
-            .forEach(
-                row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
-      }
+      query =
+          generateQuery(
+              fieldIndex.getIndexId(),
+              lowerBoundValues,
+              lowerBoundOp,
+              upperBoundValues,
+              upperBoundOp);
     } else {
-      List<byte[]> lowerBoundValues =
-          encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
-      for (byte[] lowerBoundValue : lowerBoundValues) {
-        db.query(
-                String.format(
-                    "SELECT document_name from index_entries WHERE index_id = ? AND index_value %s  ?",
-                    lowerBoundOp))
-            .binding(fieldIndex.getIndexId(), lowerBoundValue)
-            .forEach(
-                row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
-      }
+      query = generateQuery(fieldIndex.getIndexId(), lowerBoundValues, lowerBoundOp);
     }
+
+    query.forEach(
+        row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
+
+    // TODO(indexing): Add limit handling
 
     Logger.debug(TAG, "Index scan returned %s documents", result.size());
     return result;
+  }
+
+  /** Returns a SQL query on 'index_entries' that unions all bounds. */
+  private SQLitePersistence.Query generateQuery(int indexId, Object[] bounds, String op) {
+    String statement =
+        String.format(
+            "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ?", op);
+    String sql = repeatSequence(statement, bounds.length, " UNION ");
+
+    Object[] bingArgs = new Object[bounds.length * 2];
+    for (int i = 0; i < bounds.length; ++i) {
+      bingArgs[i * 2] = indexId;
+      bingArgs[i * 2 + 1] = bounds[i];
+    }
+
+    return db.query(sql).binding(bingArgs);
+  }
+
+  /** Returns a SQL query on 'index_entries' that unions all bounds. */
+  private SQLitePersistence.Query generateQuery(
+      int indexId,
+      Object[] lowerBounds,
+      String lowerBoundOp,
+      Object[] upperBounds,
+      String upperBoundOp) {
+    String statement =
+        String.format(
+            "SELECT document_name FROM index_entries WHERE index_id = ? AND index_value %s ? AND index_value %s ?",
+            lowerBoundOp, upperBoundOp);
+    String sql = repeatSequence(statement, lowerBounds.length * upperBounds.length, " UNION ");
+
+    Object[] bingArgs = new Object[lowerBounds.length * upperBounds.length * 3];
+    int i = 0;
+    for (Object value1 : lowerBounds) {
+      for (Object value2 : upperBounds) {
+        bingArgs[i++] = indexId;
+        bingArgs[i++] = value1;
+        bingArgs[i++] = value2;
+      }
+    }
+
+    return db.query(sql).binding(bingArgs);
   }
 
   /**
@@ -293,7 +316,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given field values according to the specification in {@code fieldIndex}. For
    * CONTAINS indices, a list of possible values is returned.
    */
-  private List<byte[]> encodeDocumentValues(FieldIndex fieldIndex, List<Value> values) {
+  private Object[] encodeDocumentValues(FieldIndex fieldIndex, List<Value> values) {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
@@ -317,8 +340,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given field values according to the specification in {@code target}. For IN and
    * ArrayContainsAny queries, a list of possible values is returned.
    */
-  private List<byte[]> encodeTargetValues(
-      FieldIndex fieldIndex, Target target, List<Value> values) {
+  private Object[] encodeTargetValues(FieldIndex fieldIndex, Target target, List<Value> values) {
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
     for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
@@ -336,10 +358,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   /** Returns the byte representation for all encoders. */
-  private List<byte[]> getEncodedBytes(List<IndexByteEncoder> encoders) {
-    List<byte[]> result = new ArrayList<>();
-    for (IndexByteEncoder encoder : encoders) {
-      result.add(encoder.getEncodedBytes());
+  private Object[] getEncodedBytes(List<IndexByteEncoder> encoders) {
+    Object[] result = new Object[encoders.size()];
+    for (int i = 0; i < encoders.size(); ++i) {
+      result[i] = encoders.get(i).getEncodedBytes();
     }
     return result;
   }
