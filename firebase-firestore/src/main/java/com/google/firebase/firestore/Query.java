@@ -705,7 +705,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*before=*/ true);
+    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*inclusive=*/ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -719,7 +719,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(Object... fieldValues) {
-    Bound bound = boundFromFields("startAt", fieldValues, /*before=*/ true);
+    Bound bound = boundFromFields("startAt", fieldValues, /*inclusive=*/ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -733,7 +733,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*before=*/ false);
+    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*inclusive=*/ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -748,7 +748,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(Object... fieldValues) {
-    Bound bound = boundFromFields("startAfter", fieldValues, /*before=*/ false);
+    Bound bound = boundFromFields("startAfter", fieldValues, /*inclusive=*/ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -762,7 +762,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*before=*/ true);
+    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*inclusive=*/ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -776,7 +776,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(Object... fieldValues) {
-    Bound bound = boundFromFields("endBefore", fieldValues, /*before=*/ true);
+    Bound bound = boundFromFields("endBefore", fieldValues, /*inclusive=*/ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -790,7 +790,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*before=*/ false);
+    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*inclusive=*/ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -804,7 +804,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(Object... fieldValues) {
-    Bound bound = boundFromFields("endAt", fieldValues, /*before=*/ false);
+    Bound bound = boundFromFields("endAt", fieldValues, /*inclusive=*/ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -818,7 +818,7 @@ public class Query {
    * any of the fields in the order by are an uncommitted server timestamp.
    */
   private Bound boundFromDocumentSnapshot(
-      String methodName, DocumentSnapshot snapshot, boolean before) {
+      String methodName, DocumentSnapshot snapshot, boolean inclusive) {
     checkNotNull(snapshot, "Provided snapshot must not be null.");
     if (!snapshot.exists()) {
       throw new IllegalArgumentException(
@@ -857,11 +857,11 @@ public class Query {
         }
       }
     }
-    return new Bound(components, before);
+    return new Bound(components, inclusive);
   }
 
   /** Converts a list of field values to Bound. */
-  private Bound boundFromFields(String methodName, Object[] values, boolean before) {
+  private Bound boundFromFields(String methodName, Object[] values, boolean inclusive) {
     // Use explicit order by's because it has to match the query the user made
     List<OrderBy> explicitOrderBy = query.getExplicitOrderBy();
     if (values.length > explicitOrderBy.size()) {
@@ -913,7 +913,7 @@ public class Query {
       }
     }
 
-    return new Bound(components, before);
+    return new Bound(components, inclusive);
   }
 
   /**

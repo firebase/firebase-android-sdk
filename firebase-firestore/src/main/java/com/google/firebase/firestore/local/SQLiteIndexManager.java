@@ -102,11 +102,15 @@ final class SQLiteIndexManager implements IndexManager {
             + "index_id, "
             + "collection_group, "
             + "index_proto, "
-            + "active) VALUES(?, ?, ?, ?)",
+            + "active, "
+            + "update_time_seconds, "
+            + "update_time_nanos) VALUES(?, ?, ?, ?, ?, ?)",
         currentMax + 1,
-        index.getCollectionId(),
+        index.getCollectionGroup(),
         encodeFieldIndex(index),
-        true);
+        true,
+        index.getVersion().getTimestamp().getSeconds(),
+        index.getVersion().getTimestamp().getNanoseconds());
   }
 
   @Override
@@ -114,7 +118,8 @@ final class SQLiteIndexManager implements IndexManager {
     DocumentKey documentKey = document.getKey();
     String collectionGroup = documentKey.getCollectionGroup();
     db.query(
-            "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
+            "SELECT index_id, index_proto, update_time_seconds, update_time_nanos "
+                + "FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionGroup)
         .forEach(
             row -> {
@@ -122,7 +127,11 @@ final class SQLiteIndexManager implements IndexManager {
                 int indexId = row.getInt(0);
                 FieldIndex fieldIndex =
                     serializer.decodeFieldIndex(
-                        collectionGroup, row.getInt(0), Index.parseFrom(row.getBlob(1)));
+                        collectionGroup,
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(1)),
+                        row.getInt(2),
+                        row.getInt(3));
 
                 List<Value> values = extractFieldValue(document, fieldIndex);
                 if (values == null) return;
@@ -193,10 +202,10 @@ final class SQLiteIndexManager implements IndexManager {
     SQLitePersistence.Query query;
 
     Object[] lowerBoundValues = encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
-    String lowerBoundOp = lowerBound.isBefore() ? ">=" : ">"; // `startAt()` versus `startAfter()`
+    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
     if (upperBound != null) {
       Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
-      String upperBoundOp = upperBound.isBefore() ? "<" : "<="; // `endBefore()` versus `endAt()`
+      String upperBoundOp = upperBound.isInclusive() ? "<" : "<=";
       query =
           generateQuery(
               fieldIndex.getIndexId(),
@@ -273,14 +282,18 @@ final class SQLiteIndexManager implements IndexManager {
     List<FieldIndex> activeIndices = new ArrayList<>();
 
     db.query(
-            "SELECT index_id, index_proto FROM index_configuration WHERE collection_group = ? AND active = 1")
+            "SELECT index_id, index_proto, update_time_seconds, update_time_nanos FROM index_configuration WHERE collection_group = ? AND active = 1")
         .binding(collectionGroup)
         .forEach(
             row -> {
               try {
                 FieldIndex fieldIndex =
                     serializer.decodeFieldIndex(
-                        collectionGroup, row.getInt(0), Index.parseFrom(row.getBlob(1)));
+                        collectionGroup,
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(1)),
+                        row.getInt(2),
+                        row.getInt(3));
                 boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
                 if (matches) {
                   activeIndices.add(fieldIndex);
@@ -391,5 +404,29 @@ final class SQLiteIndexManager implements IndexManager {
 
   private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
+  }
+
+  // TODO(indexing): Add support for fetching last N updated entries.
+  public List<FieldIndex> getFieldIndexes() {
+    List<FieldIndex> allIndexes = new ArrayList<>();
+    db.query(
+            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
+                + "WHERE active = 1")
+        .forEach(
+            row -> {
+              try {
+                allIndexes.add(
+                    serializer.decodeFieldIndex(
+                        row.getString(1),
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(2)),
+                        row.getInt(3),
+                        row.getInt(4)));
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
+
+    return allIndexes;
   }
 }

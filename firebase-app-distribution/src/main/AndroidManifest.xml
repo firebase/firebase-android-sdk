@@ -43,13 +43,13 @@
         </activity>
 
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.appdistro.fileprovider"
+            android:name="com.google.firebase.appdistribution.FirebaseAppDistributionFileProvider"
+            android:authorities="${applicationId}.FirebaseAppDistributionFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/appdistro_provider_paths" />
+                android:resource="@xml/firebase_app_distribution_provider_paths" />
         </provider>
     </application>
 </manifest>

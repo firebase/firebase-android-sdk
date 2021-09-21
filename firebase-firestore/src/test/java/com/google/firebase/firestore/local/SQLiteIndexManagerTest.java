@@ -24,12 +24,15 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -149,28 +152,28 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testStartAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "coll/doc2", "coll/doc3");
   }
 
   @Test
   public void testStartAfterFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "coll/doc3");
   }
 
   @Test
   public void testEndAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "coll/doc1", "coll/doc2");
   }
 
   @Test
   public void testEndBeforeFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "coll/doc1");
   }
 
@@ -182,8 +185,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .filter(filter("count", ">=", 1))
             .filter(filter("count", "<=", 3))
             .orderBy(orderBy("count"))
-            .startAt(bound(false, 1))
-            .endAt(bound(false, 2));
+            .startAt(bound(/* inclusive= */ false, 1))
+            .endAt(bound(/* inclusive= */ true, 2));
     verifyResults(startAt, "coll/doc2");
   }
 
@@ -263,6 +266,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll2/doc2", map("value", true));
     Query query = new Query(path(""), "coll1").filter(filter("value", "==", true));
     verifyResults(query, "coll1/doc1", "coll2/doc2/coll1/doc1");
+  }
+
+  @Test
+  public void testUpdateTime() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
+            .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
+
+    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes();
+    assertEquals(indexes.size(), 1);
+    FieldIndex index = indexes.get(0);
+    assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
   }
 
   private void addDoc(String key, Map<String, Object> data) {
