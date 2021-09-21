@@ -58,7 +58,7 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private File mockFilesDirectory;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
-  @Mock private LogFileManager.DirectoryProvider mockLogFileDirecotryProvider;
+  @Mock private LogFileManager.DirectoryProvider mockLogFileDirectoryProvider;
 
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
       new CrashlyticsNativeComponentDeferredProxy(
@@ -153,7 +153,7 @@ public class CrashlyticsControllerRobolectricTest {
             appData,
             null,
             null,
-            mockLogFileDirecotryProvider,
+            mockLogFileDirectoryProvider,
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class));
