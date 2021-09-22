@@ -44,7 +44,6 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ServerTimestamps;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
@@ -87,13 +86,13 @@ public class MutationTest {
 
   @Test
   public void testAppliesPatchWithMergeToDocuments() {
-    MutableDocument mergeDoc = deletedDoc("collection/key", 0);
+    MutableDocument mergeDoc = deletedDoc("collection/key", 2);
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
+    assertEquals(doc("collection/key", 2, expectedData).setHasLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -533,7 +532,7 @@ public class MutationTest {
 
     Mutation delete = deleteMutation("collection/key");
     delete.applyToLocalView(deletedDoc, /* previousMask= */ null, Timestamp.now());
-    assertEquals(deletedDoc("collection/key", 0), deletedDoc);
+    assertEquals(deletedDoc("collection/key", 1).setHasLocalMutations(), deletedDoc);
   }
 
   @Test
@@ -1068,7 +1067,7 @@ public class MutationTest {
         }
       }
       return new PatchMutation(
-              doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
+          doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
     }
   }
 }

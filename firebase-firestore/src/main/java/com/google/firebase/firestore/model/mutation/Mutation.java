@@ -71,9 +71,6 @@ public abstract class Mutation {
 
   private final List<FieldTransform> fieldTransforms;
 
-  // TODO(Overlay): Serialize this field for local storage.
-  private SnapshotVersion postMutationVersion = null;
-
   Mutation(DocumentKey key, Precondition precondition) {
     this(key, precondition, new ArrayList<>());
   }
