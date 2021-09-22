@@ -8,6 +8,7 @@
     "downloadUrl":"http://test-url-apk",
     "latest": true,
     "codeHash": "code-hash-apk-1",
+    "apkHash": "apk-hash-1",
     "fileSize": "3725041",
     "expirationTime": "2021-12-04T17:10:03Z",
     "binaryType": "APK"

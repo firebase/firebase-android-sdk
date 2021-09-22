@@ -55,6 +55,10 @@ public abstract class AppDistributionReleaseInternal {
   @Nullable
   public abstract String getCodeHash();
 
+  /** Efficient hash of an Android apk. Used to identify a release */
+  @Nullable
+  public abstract String getApkHash();
+
   /**
    * IAS artifact id. This value is inserted into the manifest of APK's installed via Used to map a
    * release to an APK installed via an app bundle
@@ -84,6 +88,9 @@ public abstract class AppDistributionReleaseInternal {
 
     @NonNull
     public abstract Builder setCodeHash(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setApkHash(@NonNull String value);
 
     @NonNull
     public abstract Builder setIasArtifactId(@NonNull String value);

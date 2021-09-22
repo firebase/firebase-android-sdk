@@ -50,6 +50,7 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String RELEASE_NOTES_JSON_KEY = "releaseNotes";
   private static final String BINARY_TYPE_JSON_KEY = "binaryType";
   private static final String CODE_HASH_KEY = "codeHash";
+  private static final String APK_HASH_KEY = "apkHash";
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
@@ -81,6 +82,7 @@ class FirebaseAppDistributionTesterApiClient {
       final String buildVersion = newReleaseJson.getString(BUILD_VERSION_JSON_KEY);
       String releaseNotes = tryGetValue(newReleaseJson, RELEASE_NOTES_JSON_KEY);
       String codeHash = tryGetValue(newReleaseJson, CODE_HASH_KEY);
+      String apkHash = tryGetValue(newReleaseJson, APK_HASH_KEY);
       String iasArtifactId = tryGetValue(newReleaseJson, IAS_ARTIFACT_ID_KEY);
       String downloadUrl = tryGetValue(newReleaseJson, DOWNLOAD_URL_KEY);
 
@@ -97,6 +99,7 @@ class FirebaseAppDistributionTesterApiClient {
               .setBinaryType(binaryType)
               .setIasArtifactId(iasArtifactId)
               .setCodeHash(codeHash)
+              .setApkHash(apkHash)
               .setDownloadUrl(downloadUrl)
               .build();
       inputStream.close();
