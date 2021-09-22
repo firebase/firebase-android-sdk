@@ -1027,9 +1027,7 @@ public class MutationTest {
     }
 
     Mutation overlay = null;
-    boolean isLatencyCompensatedDelete =
-        docForMutations.getVersion().equals(SnapshotVersion.NONE) && docForMutations.isNoDocument();
-    if (docForMutations.hasLocalMutations() || isLatencyCompensatedDelete) {
+    if (docForMutations.hasLocalMutations()) {
       overlay = getOverlayMutation(docForMutations, mask);
       overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
     }
