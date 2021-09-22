@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import static com.google.firebase.appdistribution.BinaryType.APK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -64,27 +65,12 @@ public class CheckForNewReleaseClientTest {
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_IAS_ARTIFACT_ID = "ias-artifact-id";
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
-  private static final String TEST_CODEHASH_1 = "abcdef";
-  private static final String TEST_CODEHASH_2 = "ghiklm";
-  private static final long INSTALLED_VERSION_CODE = 2;
-
-  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_APK =
-      AppDistributionReleaseInternal.builder()
-          .setBuildVersion("3")
-          .setDisplayVersion("3.0")
-          .setReleaseNotes("Newer version.")
-          .setBinaryType(BinaryType.APK)
-          .setCodeHash(TEST_CODEHASH_1)
-          .build();
-
-  private static final AppDistributionReleaseInternal TEST_RELEASE_CURRENT =
-      AppDistributionReleaseInternal.builder()
-          .setBinaryType(BinaryType.APK)
-          .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE))
-          .setDisplayVersion("2.0")
-          .setReleaseNotes("Current version.")
-          .setCodeHash(TEST_CODEHASH_2)
-          .build();
+  private static final String NEW_CODEHASH = "abcdef";
+  private static final String CURRENT_CODEHASH = "ghiklm";
+  private static final String NEW_APK_HASH = "newApkHash";
+  private static final String CURRENT_APK_HASH = "currentApkHash";
+  private static final long INSTALLED_VERSION_CODE = 1;
+  private static final long NEW_VERSION_CODE = 2;
 
   private CheckForNewReleaseClient checkForNewReleaseClient;
   private ShadowPackageManager shadowPackageManager;
@@ -93,6 +79,7 @@ public class CheckForNewReleaseClientTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
+  @Mock private ReleaseIdentifierStorage mockReleaseIdentifierStorage;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -142,6 +129,7 @@ public class CheckForNewReleaseClientTest {
                 firebaseApp,
                 mockFirebaseAppDistributionTesterApiClient,
                 mockFirebaseInstallations,
+                mockReleaseIdentifierStorage,
                 testExecutor));
   }
 
@@ -166,7 +154,7 @@ public class CheckForNewReleaseClientTest {
   public void checkForNewRelease_succeeds() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
-        .thenReturn(TEST_RELEASE_NEWER_APK);
+        .thenReturn(getTestNewRelease().build());
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
@@ -177,7 +165,7 @@ public class CheckForNewReleaseClientTest {
     task.addOnCompleteListener(testExecutor, onCompleteListener);
 
     AppDistributionReleaseInternal appDistributionReleaseInternal = onCompleteListener.await();
-    assertEquals(TEST_RELEASE_NEWER_APK, appDistributionReleaseInternal);
+    assertEquals(getTestNewRelease().build(), appDistributionReleaseInternal);
     verify(mockFirebaseInstallations, times(1)).getId();
     verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
@@ -186,7 +174,7 @@ public class CheckForNewReleaseClientTest {
   public void checkForNewRelease_nonAppDistroFailure() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
-        .thenReturn(TEST_RELEASE_CURRENT);
+        .thenReturn(getTestInstalledRelease().build());
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
     when(mockFirebaseInstallations.getToken(false))
@@ -235,23 +223,23 @@ public class CheckForNewReleaseClientTest {
       throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
-        .thenReturn(TEST_RELEASE_NEWER_APK);
+        .thenReturn(getTestNewRelease().build());
 
     AppDistributionReleaseInternal release =
         checkForNewReleaseClient.getNewReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
 
     assertNotNull(release);
-    assertEquals(TEST_RELEASE_NEWER_APK.getBuildVersion(), release.getBuildVersion());
+    assertEquals(Long.toString(NEW_VERSION_CODE), release.getBuildVersion());
   }
 
   @Test
   public void getNewReleaseFromClient_whenNewReleaseIsSameRelease_returnsNull() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
-        .thenReturn(TEST_RELEASE_CURRENT);
+        .thenReturn(getTestInstalledRelease().build());
 
-    doReturn(TEST_CODEHASH_2).when(checkForNewReleaseClient).extractApkCodeHash(any());
+    doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
 
     AppDistributionReleaseInternal release =
         checkForNewReleaseClient.getNewReleaseFromClient(
@@ -265,10 +253,7 @@ public class CheckForNewReleaseClientTest {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
         .thenReturn(
-            AppDistributionReleaseInternal.builder()
-                .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
-                .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
-                .setCodeHash("codehash")
+            getTestNewRelease()
                 .setDownloadUrl("http://fake-download-url")
                 .setIasArtifactId("test-ias-artifact-id-2")
                 .setBinaryType(BinaryType.AAB)
@@ -278,10 +263,7 @@ public class CheckForNewReleaseClientTest {
         checkForNewReleaseClient.getNewReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
     assertEquals(
-        AppDistributionReleaseInternal.builder()
-            .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
-            .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
-            .setCodeHash("codehash")
+        getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
             .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
@@ -295,10 +277,7 @@ public class CheckForNewReleaseClientTest {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
         .thenReturn(
-            AppDistributionReleaseInternal.builder()
-                .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
-                .setDisplayVersion(TEST_RELEASE_CURRENT.getDisplayVersion())
-                .setCodeHash("codehash")
+            getTestInstalledRelease()
                 .setDownloadUrl("http://fake-download-url")
                 .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
                 .setBinaryType(BinaryType.AAB)
@@ -311,19 +290,31 @@ public class CheckForNewReleaseClientTest {
   }
 
   @Test
-  public void isInstalledRelease_whenCodeHashesEqual_returnsTrue() {
-    doReturn(TEST_CODEHASH_1).when(checkForNewReleaseClient).extractApkCodeHash(any());
-    assertTrue(checkForNewReleaseClient.isInstalledRelease(TEST_RELEASE_NEWER_APK));
+  public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue() {
+    doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
+    assertTrue(
+        checkForNewReleaseClient.isSameAsInstalledRelease(getTestInstalledRelease().build()));
   }
 
   @Test
-  public void isInstalledRelease_whenCodeHashesNotEqual_returnsFalse() {
-    doReturn(TEST_CODEHASH_2).when(checkForNewReleaseClient).extractApkCodeHash(any());
-    assertFalse(checkForNewReleaseClient.isInstalledRelease(TEST_RELEASE_NEWER_APK));
+  public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse() {
+    doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
+    assertFalse(checkForNewReleaseClient.isSameAsInstalledRelease(getTestNewRelease().build()));
   }
 
   @Test
-  public void extractApkCodeHash_ifKeyInCachedCodeHashes_doesNotRecalculateZipHash() {
+  public void isSameAsInstalledRelease_ifApkHashNotPresent_fallsBackToExternalCodeHash() {
+    doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
+    when(mockReleaseIdentifierStorage.getExternalCodeHash(any())).thenReturn(CURRENT_CODEHASH);
+
+    assertFalse(
+        checkForNewReleaseClient.isSameAsInstalledRelease(
+            getTestNewRelease().setApkHash("").build()));
+    verify(mockReleaseIdentifierStorage).getExternalCodeHash(CURRENT_APK_HASH);
+  }
+
+  @Test
+  public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash() {
 
     try (MockedStatic mockedReleaseIdentificationUtils =
         mockStatic(ReleaseIdentificationUtils.class)) {
@@ -331,14 +322,34 @@ public class CheckForNewReleaseClientTest {
           shadowPackageManager.getInternalMutablePackageInfo(
               ApplicationProvider.getApplicationContext().getPackageName());
       mockedReleaseIdentificationUtils
-          .when(() -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()))
-          .thenReturn(TEST_CODEHASH_1);
+          .when(() -> ReleaseIdentificationUtils.calculateApkHash(any()))
+          .thenReturn(NEW_CODEHASH);
 
-      checkForNewReleaseClient.extractApkCodeHash(packageInfo);
-      checkForNewReleaseClient.extractApkCodeHash(packageInfo);
+      checkForNewReleaseClient.extractApkHash(packageInfo);
+      checkForNewReleaseClient.extractApkHash(packageInfo);
       // check that calculateApkInternalCodeHash is only called once
       mockedReleaseIdentificationUtils.verify(
-          () -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()));
+          () -> ReleaseIdentificationUtils.calculateApkHash(any()));
     }
+  }
+
+  private AppDistributionReleaseInternal.Builder getTestNewRelease() {
+    return AppDistributionReleaseInternal.builder()
+        .setBuildVersion(Long.toString(NEW_VERSION_CODE))
+        .setDisplayVersion("2.0")
+        .setReleaseNotes("Newer version.")
+        .setCodeHash(NEW_CODEHASH)
+        .setBinaryType(APK)
+        .setApkHash(NEW_APK_HASH);
+  }
+
+  private AppDistributionReleaseInternal.Builder getTestInstalledRelease() {
+    return AppDistributionReleaseInternal.builder()
+        .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE))
+        .setDisplayVersion("1.0")
+        .setReleaseNotes("Current version.")
+        .setCodeHash(CURRENT_CODEHASH)
+        .setBinaryType(APK)
+        .setApkHash(CURRENT_APK_HASH);
   }
 }
