@@ -125,7 +125,8 @@ class CheckForNewReleaseClient {
       throws FirebaseAppDistributionException {
     try {
       AppDistributionReleaseInternal retrievedNewRelease =
-          firebaseAppDistributionTesterApiClient.fetchNewRelease(fid, appId, apiKey, authToken);
+          firebaseAppDistributionTesterApiClient.fetchNewRelease(
+              fid, appId, apiKey, authToken, firebaseApp.getApplicationContext());
 
       if (isNewerBuildVersion(retrievedNewRelease) || !isInstalledRelease(retrievedNewRelease)) {
         return retrievedNewRelease;

@@ -14,13 +14,13 @@
 
 package com.google.firebase.firestore.bundle;
 
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -578,14 +578,9 @@ public class BundleSerializerTest {
         "{\n"
             + "from: [ { collectionId: 'coll' } ],\n"
             + "orderBy: [ { field: { fieldPath: 'foo' } } ],\n"
-            + "startAt: { values: [ { stringValue: 'bar' } ], before: false } }";
+            + "startAt: { values: [ { stringValue: 'bar' } ], before: true } }";
     Query query =
-        TestUtil.query("coll")
-            .orderBy(orderBy("foo"))
-            .startAt(
-                new Bound(
-                    Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
-                    false));
+        TestUtil.query("coll").orderBy(orderBy("foo")).startAt(bound(/* inclusive= */ true, "bar"));
     assertDecodesNamedQuery(json, query);
   }
 
@@ -597,12 +592,7 @@ public class BundleSerializerTest {
             + "orderBy: [ { field: { fieldPath: 'foo' } } ],\n"
             + "endAt: { values: [ { stringValue: 'bar' } ], before: true } }";
     Query query =
-        TestUtil.query("coll")
-            .orderBy(orderBy("foo"))
-            .endAt(
-                new Bound(
-                    Collections.singletonList(Value.newBuilder().setStringValue("bar").build()),
-                    true));
+        TestUtil.query("coll").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ false, "bar"));
     assertDecodesNamedQuery(json, query);
   }
 

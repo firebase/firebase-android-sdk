@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 /** Represents a particular database in Firestore */
 public final class DatabaseId implements Comparable<DatabaseId> {
   public static final String DEFAULT_DATABASE_ID = "(default)";
+  public static final DatabaseId EMPTY = DatabaseId.forDatabase("", "");
 
   public static DatabaseId forProject(String projectId) {
     return forDatabase(projectId, DEFAULT_DATABASE_ID);

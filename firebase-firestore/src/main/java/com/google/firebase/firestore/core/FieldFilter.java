@@ -137,7 +137,7 @@ public class FieldFilter extends Filter {
 
   @Override
   public String toString() {
-    return field.canonicalString() + " " + operator + " " + value;
+    return field.canonicalString() + " " + operator + " " + Values.canonicalId(value);
   }
 
   @Override

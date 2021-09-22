@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.model.Values.refValue;
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -38,7 +40,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.ArrayContainsAnyFilter;
-import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.InFilter;
 import com.google.firebase.firestore.core.KeyFieldFilter;
@@ -976,8 +977,8 @@ public final class RemoteSerializerTest {
   public void testEncodesBounds() {
     Query q =
         Query.atPath(ResourcePath.fromString("docs"))
-            .startAt(new Bound(asList(Values.refValue(databaseId, key("foo/bar"))), true))
-            .endAt(new Bound(asList(Values.refValue(databaseId, key("foo/baz"))), false));
+            .startAt(bound(/* inclusive= */ true, refValue(databaseId, key("foo/bar"))))
+            .endAt(bound(/* inclusive= */ true, refValue(databaseId, key("foo/baz"))));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
     StructuredQuery.Builder structuredQueryBuilder =

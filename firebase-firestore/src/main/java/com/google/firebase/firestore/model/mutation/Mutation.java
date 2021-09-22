@@ -23,7 +23,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -141,27 +140,6 @@ public abstract class Mutation {
     hardAssert(
         document.getKey().equals(getKey()),
         "Can only apply a mutation to a document with the same key");
-  }
-
-  Mutation withPostMutationVersion(SnapshotVersion version) {
-    postMutationVersion = version;
-    return this;
-  }
-
-  /**
-   * Returns the version for the given document for use as the result of a mutation.
-   *
-   * <p>Returns {@code postMutationVersion} if it is set, otherwise returns the version of the base
-   * document if it is not unknown. Returns {@code SnapshotVersion.NONE} for unknown documents.
-   */
-  SnapshotVersion getPostMutationVersion(MutableDocument document) {
-    if (postMutationVersion != null) {
-      return postMutationVersion;
-    } else if (document.isFoundDocument()) {
-      return document.getVersion();
-    } else {
-      return SnapshotVersion.NONE;
-    }
   }
 
   /**

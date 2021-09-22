@@ -67,9 +67,6 @@ public class CommonUtils {
       "com.google.firebase.crashlytics.mapping_file_id";
   static final String LEGACY_MAPPING_FILE_ID_RESOURCE_NAME = "com.crashlytics.android.build_id";
 
-  private static final String UNITY_EDITOR_VERSION =
-      "com.google.firebase.crashlytics.unity_version";
-
   private static final long UNCALCULATED_TOTAL_RAM = -1;
   static final int BYTES_IN_A_GIGABYTE = 1073741824;
   static final int BYTES_IN_A_MEGABYTE = 1048576;
@@ -599,20 +596,6 @@ public class CommonUtils {
       mappingFileId = context.getResources().getString(id);
     }
     return mappingFileId;
-  }
-
-  /**
-   * @return the Unity Editor version resolved from String resources, or <code>null</code> if the
-   *     value was not present.
-   */
-  public static String resolveUnityEditorVersion(Context context) {
-    String version = null;
-    final int id = CommonUtils.getResourcesIdentifier(context, UNITY_EDITOR_VERSION, "string");
-    if (id != 0) {
-      version = context.getResources().getString(id);
-      Logger.getLogger().v("Unity Editor version is: " + version);
-    }
-    return version;
   }
 
   public static void closeQuietly(Closeable closeable) {

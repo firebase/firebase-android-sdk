@@ -116,7 +116,7 @@ public class TargetIndexMatcher {
    * @throws AssertionError if the index is for a different collection
    */
   public boolean servedByIndex(FieldIndex index) {
-    hardAssert(index.getCollectionId().equals(collectionId), "Collection IDs do not match");
+    hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
     for (int i = 0; i < index.segmentCount(); ++i) {
       if (!canUseSegment(index.getSegment(i))) {
         return false;

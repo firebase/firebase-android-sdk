@@ -99,7 +99,7 @@ public final class SetMutation extends Mutation {
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
     document
-        .convertToFoundDocument(getPostMutationVersion(document), localValue)
+        .convertToFoundDocument(document.getVersion(), localValue)
         .setHasLocalMutations();
     // SetMutation overwrites all fields.
     return null;

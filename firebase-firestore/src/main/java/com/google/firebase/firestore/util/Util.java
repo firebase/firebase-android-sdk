@@ -234,4 +234,17 @@ public class Util {
     }
     return Util.compareIntegers(left.size(), right.size());
   }
+
+  public static String repeatSequence(CharSequence sequence, int count, CharSequence delimiter) {
+    if (count == 0) {
+      return "";
+    }
+    final StringBuilder sb = new StringBuilder();
+    sb.append(sequence);
+    for (int i = 1; i < count; i++) {
+      sb.append(delimiter);
+      sb.append(sequence);
+    }
+    return sb.toString();
+  }
 }

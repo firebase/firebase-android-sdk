@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.testutil.TestUtil.blob;
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -26,8 +28,6 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -70,7 +70,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, false, "bar");
@@ -83,7 +83,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    verifyBound(lowerBound, true, "");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "bar");
@@ -99,7 +99,7 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
@@ -112,7 +112,7 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
@@ -151,16 +151,13 @@ public class TargetTest {
     verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob());
   }
 
   @Test
   public void startAtQueryBound() {
     Target target =
-        query("c")
-            .orderBy(orderBy("foo"))
-            .startAt(new Bound(Collections.singletonList(wrap("bar")), true))
-            .toTarget();
+        query("c").orderBy(orderBy("foo")).startAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
@@ -180,7 +177,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b2")), true))
+            .startAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -188,10 +185,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "a1", "b2");
+    verifyBound(lowerBound, true, "a1", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob(), "b1");
   }
 
   @Test
@@ -202,7 +199,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b2")), false))
+            .startAt(bound(/* inclusive= */ false, "a2", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -210,10 +207,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, false, "a1", "b2");
+    verifyBound(lowerBound, false, "a2", "b1");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob(), "b1");
   }
 
   @Test
@@ -224,7 +221,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .startAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .startAt(bound(/* inclusive= */ false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -235,16 +232,13 @@ public class TargetTest {
     verifyBound(lowerBound, true, "a2", "b2");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, false, blob(), "b2");
   }
 
   @Test
   public void endAtQueryBound() {
     Target target =
-        query("c")
-            .orderBy(orderBy("foo"))
-            .endAt(new Bound(Collections.singletonList(wrap("bar")), true))
-            .toTarget();
+        query("c").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
@@ -264,7 +258,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), false))
+            .endAt(bound(/* inclusive= */ true, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -272,10 +266,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b2");
+    verifyBound(lowerBound, true, "", "b2");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "a1", "b1");
+    verifyBound(upperBound, true, "a1", "b1");
   }
 
   @Test
@@ -286,7 +280,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b2"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a1"), wrap("b1")), true))
+            .endAt(bound(/* inclusive= */ false, "a1", "b1"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -294,10 +288,10 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b2");
+    verifyBound(lowerBound, true, "", "b2");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "a1", "b1");
+    verifyBound(upperBound, false, "a1", "b1");
   }
 
   @Test
@@ -308,7 +302,7 @@ public class TargetTest {
             .filter(filter("b", "==", "b1"))
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"))
-            .endAt(new Bound(Arrays.asList(wrap("a2"), wrap("b2")), true))
+            .endAt(bound(/* inclusive= */ false, "a2", "b2"))
             .toTarget();
     FieldIndex index =
         new FieldIndex("c")
@@ -316,7 +310,7 @@ public class TargetTest {
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, null, "b1");
+    verifyBound(lowerBound, true, "", "b1");
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "a1", "b1");
@@ -336,8 +330,8 @@ public class TargetTest {
     verifyBound(upperBound, true, "a");
   }
 
-  private void verifyBound(Bound bound, boolean before, Object... values) {
-    assertEquals("before", before, bound.isBefore());
+  private void verifyBound(Bound bound, boolean inclusive, Object... values) {
+    assertEquals("inclusive", inclusive, bound.isInclusive());
     List<Value> position = bound.getPosition();
     assertEquals("size", values.length, position.size());
     for (int i = 0; i < values.length; ++i) {

@@ -42,7 +42,7 @@ public abstract class IndexManagerTestCase {
   @Rule public TestName name = new TestName();
 
   private Persistence persistence;
-  private IndexManager indexManager;
+  protected IndexManager indexManager;
 
   @Before
   public void setUp() {

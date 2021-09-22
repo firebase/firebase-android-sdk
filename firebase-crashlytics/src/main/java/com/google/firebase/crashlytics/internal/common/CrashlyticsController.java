@@ -577,7 +577,7 @@ class CrashlyticsController {
     StaticSessionData.OsData osData = createOsData(getContext());
     StaticSessionData.DeviceData deviceData = createDeviceData(getContext());
 
-    nativeComponent.openSession(
+    nativeComponent.prepareNativeSession(
         sessionIdentifier,
         generator,
         startedAtSeconds,

@@ -56,22 +56,40 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     }
   }
 
-  private final String collectionId;
+  private final String collectionGroup;
+  private final int indexId;
   private final List<Segment> segments;
+  private final SnapshotVersion version;
 
-  public FieldIndex(String collectionId) {
-    this.collectionId = collectionId;
+  public FieldIndex(String collectionGroup, int indexId) {
+    this.collectionGroup = collectionGroup;
     this.segments = new ArrayList<>();
+    this.indexId = indexId;
+    this.version = SnapshotVersion.NONE;
   }
 
-  FieldIndex(String collectionId, List<Segment> segments) {
-    this.collectionId = collectionId;
+  public FieldIndex(String collectionId) {
+    this(collectionId, -1);
+  }
+
+  FieldIndex(String collectionGroup, int indexId, List<Segment> segments, SnapshotVersion version) {
+    this.collectionGroup = collectionGroup;
     this.segments = segments;
+    this.indexId = indexId;
+    this.version = version;
   }
 
   /** The collection ID this index applies to. */
-  public String getCollectionId() {
-    return collectionId;
+  public String getCollectionGroup() {
+    return collectionGroup;
+  }
+
+  /**
+   * The index ID. Returns -1 if the index ID is not available (e.g. the index has not yet been
+   * persisted).
+   */
+  public int getIndexId() {
+    return indexId;
   }
 
   public Segment getSegment(int index) {
@@ -82,13 +100,8 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     return segments.size();
   }
 
-  /**
-   * Returns a new field index that only contains the first `size` segments.
-   *
-   * @throws IndexOutOfBoundsException if size > segmentCount
-   */
-  public FieldIndex prefix(int size) {
-    return new FieldIndex(collectionId, segments.subList(0, size));
+  public SnapshotVersion getVersion() {
+    return version;
   }
 
   @NonNull
@@ -101,7 +114,12 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
-    return new FieldIndex(collectionId, newSegments);
+    return new FieldIndex(collectionGroup, indexId, newSegments, version);
+  }
+
+  /** Returns a new field index with the updated version. */
+  public FieldIndex withVersion(SnapshotVersion version) {
+    return new FieldIndex(collectionGroup, indexId, segments, version);
   }
 
   @Override
@@ -112,18 +130,22 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     FieldIndex fieldIndex = (FieldIndex) o;
 
     if (!segments.equals(fieldIndex.segments)) return false;
-    return collectionId.equals(fieldIndex.collectionId);
+    if (!version.equals(fieldIndex.version)) return false;
+    return collectionGroup.equals(fieldIndex.collectionGroup);
   }
 
   @Override
   public int hashCode() {
-    int result = collectionId.hashCode();
+    int result = collectionGroup.hashCode();
     result = 31 * result + segments.hashCode();
+    result = 31 * result + version.hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return String.format("FieldIndex{collectionId='%s', segments=%s}", collectionId, segments);
+    return String.format(
+        "FieldIndex{collectionGroup='%s', segments=%s, version=%s}",
+        collectionGroup, segments, version);
   }
 }

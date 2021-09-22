@@ -1040,11 +1040,9 @@ public class MutationTest {
   private Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
     if (mask == null) {
       if (doc.isNoDocument()) {
-        return new DeleteMutation(doc.getKey(), Precondition.NONE)
-            .withPostMutationVersion(doc.getVersion());
+        return new DeleteMutation(doc.getKey(), Precondition.NONE);
       } else {
-        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE)
-            .withPostMutationVersion(doc.getVersion());
+        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
       }
     } else {
       ObjectValue docValue = doc.getData();
@@ -1070,8 +1068,7 @@ public class MutationTest {
         }
       }
       return new PatchMutation(
-              doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE)
-          .withPostMutationVersion(doc.getVersion());
+              doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
     }
   }
 }

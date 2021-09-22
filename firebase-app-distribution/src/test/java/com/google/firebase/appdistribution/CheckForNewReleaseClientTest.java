@@ -29,6 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
@@ -87,6 +88,7 @@ public class CheckForNewReleaseClientTest {
 
   private CheckForNewReleaseClient checkForNewReleaseClient;
   private ShadowPackageManager shadowPackageManager;
+  private Context applicationContext;
 
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
@@ -117,6 +119,7 @@ public class CheckForNewReleaseClientTest {
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
+    applicationContext = ApplicationProvider.getApplicationContext();
 
     ApplicationInfo applicationInfo =
         ApplicationInfoBuilder.newBuilder()
@@ -161,7 +164,8 @@ public class CheckForNewReleaseClientTest {
 
   @Test
   public void checkForNewRelease_succeeds() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(any(), any(), any(), any()))
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
         .thenReturn(TEST_RELEASE_NEWER_APK);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
@@ -180,7 +184,8 @@ public class CheckForNewReleaseClientTest {
 
   @Test
   public void checkForNewRelease_nonAppDistroFailure() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(any(), any(), any(), any()))
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
         .thenReturn(TEST_RELEASE_CURRENT);
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
@@ -210,7 +215,8 @@ public class CheckForNewReleaseClientTest {
     FirebaseAppDistributionException expectedException =
         new FirebaseAppDistributionException(
             "test", FirebaseAppDistributionException.Status.UNKNOWN);
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(any(), any(), any(), any()))
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
         .thenThrow(expectedException);
 
     TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
@@ -228,7 +234,7 @@ public class CheckForNewReleaseClientTest {
   public void getNewReleaseFromClient_whenNewReleaseIsNewerBuildThanInstalled_returnsRelease()
       throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
         .thenReturn(TEST_RELEASE_NEWER_APK);
 
     AppDistributionReleaseInternal release =
@@ -242,7 +248,7 @@ public class CheckForNewReleaseClientTest {
   @Test
   public void getNewReleaseFromClient_whenNewReleaseIsSameRelease_returnsNull() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN))
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
         .thenReturn(TEST_RELEASE_CURRENT);
 
     doReturn(TEST_CODEHASH_2).when(checkForNewReleaseClient).extractApkCodeHash(any());
@@ -256,7 +262,8 @@ public class CheckForNewReleaseClientTest {
 
   @Test
   public void handleNewReleaseFromClient_whenNewAabIsAvailable_returnsRelease() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(any(), any(), any(), any()))
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
         .thenReturn(
             AppDistributionReleaseInternal.builder()
                 .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
@@ -285,7 +292,8 @@ public class CheckForNewReleaseClientTest {
   @Test
   public void handleNewReleaseFromClient_whenNewReleaseIsSameAsInstalledAab_returnsNull()
       throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(any(), any(), any(), any()))
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
         .thenReturn(
             AppDistributionReleaseInternal.builder()
                 .setBuildVersion(TEST_RELEASE_CURRENT.getBuildVersion())
