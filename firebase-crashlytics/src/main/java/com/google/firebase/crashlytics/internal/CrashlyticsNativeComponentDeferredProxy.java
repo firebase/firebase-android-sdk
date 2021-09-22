@@ -47,7 +47,7 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
   }
 
   @Override
-  public void openSession(
+  public void prepareNativeSession(
       @NonNull String sessionId,
       @NonNull String generator,
       long startedAtSeconds,
@@ -57,7 +57,9 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
 
     this.deferredNativeComponent.whenAvailable(
         nativeComponent -> {
-          nativeComponent.get().openSession(sessionId, generator, startedAtSeconds, sessionData);
+          nativeComponent
+              .get()
+              .prepareNativeSession(sessionId, generator, startedAtSeconds, sessionData);
         });
   }
 

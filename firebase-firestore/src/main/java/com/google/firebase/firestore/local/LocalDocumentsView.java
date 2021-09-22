@@ -25,6 +25,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
@@ -209,7 +210,9 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        mutation.applyToLocalView(document, batch.getLocalWriteTime());
+        // TODO(Overlay): Here we should be reading overlay mutation and apply that instead.
+        mutation.applyToLocalView(
+            document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
         if (!document.isFoundDocument()) {
           remoteDocuments = remoteDocuments.remove(key);
         }
