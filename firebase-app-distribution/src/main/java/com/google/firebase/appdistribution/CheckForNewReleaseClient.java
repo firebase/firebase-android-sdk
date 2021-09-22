@@ -14,7 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
-import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkInternalCodeHash;
+import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkHash;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -43,7 +43,7 @@ class CheckForNewReleaseClient {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private static final ConcurrentMap<String, String> cachedCodeHashes = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
   private final ReleaseIdentifierStorage releaseIdentifierStorage;
 
   Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
@@ -127,7 +127,8 @@ class CheckForNewReleaseClient {
           firebaseAppDistributionTesterApiClient.fetchNewRelease(
               fid, appId, apiKey, authToken, firebaseApp.getApplicationContext());
 
-      if (isNewerBuildVersion(retrievedNewRelease) || !isInstalledRelease(retrievedNewRelease)) {
+      if (isNewerBuildVersion(retrievedNewRelease)
+          || !isSameAsInstalledRelease(retrievedNewRelease)) {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
@@ -149,9 +150,9 @@ class CheckForNewReleaseClient {
   }
 
   @VisibleForTesting
-  boolean isInstalledRelease(AppDistributionReleaseInternal newRelease) {
+  boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
     if (newRelease.getBinaryType().equals(BinaryType.APK)) {
-      return hasSameApkHashAsInstalledRelease(newRelease);
+      return hasSameHashAsInstalledRelease(newRelease);
     }
 
     if (newRelease.getIasArtifactId() == null) {
@@ -186,13 +187,13 @@ class CheckForNewReleaseClient {
     String key =
         String.format(
             Locale.ENGLISH, "%s.%d", sourceFile.getAbsolutePath(), sourceFile.lastModified());
-    if (!cachedCodeHashes.containsKey(key)) {
-      cachedCodeHashes.put(key, calculateApkInternalCodeHash(sourceFile));
+    if (!cachedApkHashes.containsKey(key)) {
+      cachedApkHashes.put(key, calculateApkHash(sourceFile));
     }
-    return cachedCodeHashes.get(key);
+    return cachedApkHashes.get(key);
   }
 
-  private boolean hasSameApkHashAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
+  private boolean hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
     try {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo =

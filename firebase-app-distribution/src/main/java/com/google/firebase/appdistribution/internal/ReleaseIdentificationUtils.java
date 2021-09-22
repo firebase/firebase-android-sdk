@@ -52,7 +52,7 @@ public final class ReleaseIdentificationUtils {
   }
 
   @Nullable
-  public static String calculateApkInternalCodeHash(@NonNull File file) {
+  public static String calculateApkHash(@NonNull File file) {
     Log.v(TAG, String.format("Calculating release id for %s", file.getPath()));
     Log.v(TAG, String.format("File size: %d", file.length()));
 
@@ -64,8 +64,10 @@ public final class ReleaseIdentificationUtils {
       ArrayList<Byte> checksums = new ArrayList<>();
 
       // Since calculating the codeHash returned from the release backend is computationally
-      // expensive, using existing checksum data from the ZipFile we can quickly calculate
-      // an intermediate hash that then gets mapped to the backend's returned release codehash
+      // expensive, we has the existing checksum data from the ZipFile and compare it to
+      // (1) the apk hash returned by the backend, or (2) look up a mapping from the apk zip hash to
+      // the
+      // full codehash, and compare that to the codehash to the backend
       ZipFile zis = new ZipFile(file);
       try {
         Enumeration<? extends ZipEntry> zipEntries = zis.entries();

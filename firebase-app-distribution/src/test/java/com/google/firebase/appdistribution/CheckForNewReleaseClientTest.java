@@ -290,29 +290,31 @@ public class CheckForNewReleaseClientTest {
   }
 
   @Test
-  public void isInstalledRelease_whenApkHashesEqual_returnsTrue() {
+  public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue() {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
-    assertTrue(checkForNewReleaseClient.isInstalledRelease(getTestInstalledRelease().build()));
+    assertTrue(
+        checkForNewReleaseClient.isSameAsInstalledRelease(getTestInstalledRelease().build()));
   }
 
   @Test
-  public void isInstalledRelease_whenApkHashesNotEqual_returnsFalse() {
+  public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse() {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
-    assertFalse(checkForNewReleaseClient.isInstalledRelease(getTestNewRelease().build()));
+    assertFalse(checkForNewReleaseClient.isSameAsInstalledRelease(getTestNewRelease().build()));
   }
 
   @Test
-  public void isInstalledRelease_ifApkHashNotPresent_fallsBackToExternalCodeHash() {
+  public void isSameAsInstalledRelease_ifApkHashNotPresent_fallsBackToExternalCodeHash() {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
     when(mockReleaseIdentifierStorage.getExternalCodeHash(any())).thenReturn(CURRENT_CODEHASH);
 
     assertFalse(
-        checkForNewReleaseClient.isInstalledRelease(getTestNewRelease().setApkHash("").build()));
+        checkForNewReleaseClient.isSameAsInstalledRelease(
+            getTestNewRelease().setApkHash("").build()));
     verify(mockReleaseIdentifierStorage).getExternalCodeHash(CURRENT_APK_HASH);
   }
 
   @Test
-  public void extractApkCodeHash_ifKeyInCachedCodeHashes_doesNotRecalculateZipHash() {
+  public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash() {
 
     try (MockedStatic mockedReleaseIdentificationUtils =
         mockStatic(ReleaseIdentificationUtils.class)) {
@@ -320,14 +322,14 @@ public class CheckForNewReleaseClientTest {
           shadowPackageManager.getInternalMutablePackageInfo(
               ApplicationProvider.getApplicationContext().getPackageName());
       mockedReleaseIdentificationUtils
-          .when(() -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()))
+          .when(() -> ReleaseIdentificationUtils.calculateApkHash(any()))
           .thenReturn(NEW_CODEHASH);
 
       checkForNewReleaseClient.extractApkHash(packageInfo);
       checkForNewReleaseClient.extractApkHash(packageInfo);
       // check that calculateApkInternalCodeHash is only called once
       mockedReleaseIdentificationUtils.verify(
-          () -> ReleaseIdentificationUtils.calculateApkInternalCodeHash(any()));
+          () -> ReleaseIdentificationUtils.calculateApkHash(any()));
     }
   }
 
