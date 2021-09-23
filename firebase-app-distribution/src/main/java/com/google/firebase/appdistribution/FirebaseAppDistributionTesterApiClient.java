@@ -223,7 +223,7 @@ class FirebaseAppDistributionTesterApiClient {
       } else {
         String shaHash = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
         LogWrapper.getInstance()
-            .v("Sha-1 fingerprint for package " + context.getPackageName() + " is" + shaHash);
+            .v("Package " + context.getPackageName() + " has Sha-1 fingerprint" + shaHash);
         return shaHash;
       }
     } catch (PackageManager.NameNotFoundException e) {
