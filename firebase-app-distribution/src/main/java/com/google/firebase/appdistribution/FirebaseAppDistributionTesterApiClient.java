@@ -14,13 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
-import static android.content.ContentValues.TAG;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
@@ -219,13 +217,15 @@ class FirebaseAppDistributionTesterApiClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        LogWrapper.getInstance().e(TAG + "Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
-        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+        String shaHash = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+        LogWrapper.getInstance().v("Sha-1 fingerprint for package " + context.getPackageName() + " is" + shaHash);
+        return shaHash;
       }
     } catch (PackageManager.NameNotFoundException e) {
-      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      LogWrapper.getInstance().e(TAG + "No such package: " + context.getPackageName(), e);
       return null;
     }
   }

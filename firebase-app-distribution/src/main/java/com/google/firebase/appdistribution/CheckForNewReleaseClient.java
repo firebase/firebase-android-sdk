@@ -207,6 +207,7 @@ class CheckForNewReleaseClient {
         // TODO: Consider removing this when all returned releases have the efficient ApkHash
         String externalCodeHash =
             releaseIdentifierStorage.getExternalCodeHash(installedReleaseApkHash);
+        LogWrapper.getInstance().v(TAG + "Defaulting to external codehash " + externalCodeHash);
         return externalCodeHash != null && externalCodeHash.equals(newRelease.getCodeHash());
       }
       // If the hash of the zipped APK for the retrieved newRelease is equal to the stored hash
