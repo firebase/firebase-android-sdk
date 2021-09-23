@@ -27,10 +27,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -81,16 +83,18 @@ public class FirebaseFirestore {
 
   private static final String TAG = "FirebaseFirestore";
   private final Context context;
-  // This is also used as private lock object for this instance. There is nothing inherent about
-  // databaseId itself that needs locking; it just saves us creating a separate lock object.
+  // This is also used as private lock object for this instance. There is
+  // nothing inherent about databaseId itself that needs locking; it just saves
+  // us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
+  private final FirebaseAppCheckTokenProvider appCheckTokenProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
-  // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
-  // this instance.
+  // When user requests to terminate, use this to notify
+  // `FirestoreMultiDbComponent` to deregister this instance.
   private final InstanceRegistry instanceRegistry;
   @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
@@ -124,7 +128,8 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @NonNull Deferred<InternalAuthProvider> authProvider,
+      @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
+      @Nullable Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -136,12 +141,16 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider provider = new FirebaseAuthCredentialsProvider(authProvider);
+    CredentialsProvider authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
 
-    // Firestore uses a different database for each app name. Note that we don't use
-    // app.getPersistenceKey() here because it includes the application ID which is related
-    // to the project ID. We already include the project ID when resolving the database,
-    // so there is no need to include it in the persistence key.
+    FirebaseAppCheckTokenProvider appCheckProvider =
+        new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
+
+    // Firestore uses a different database for each app name. Note that we don't
+    // use app.getPersistenceKey() here because it includes the application ID
+    // which is related to the project ID. We already include the project ID
+    // when resolving the database, so there is no need to include it in the
+    // persistence key.
     String persistenceKey = app.getName();
 
     FirebaseFirestore firestore =
@@ -149,7 +158,8 @@ public class FirebaseFirestore {
             context,
             databaseId,
             persistenceKey,
-            provider,
+            authProvider,
+            appCheckProvider,
             queue,
             app,
             instanceRegistry,
@@ -163,6 +173,7 @@ public class FirebaseFirestore {
       DatabaseId databaseId,
       String persistenceKey,
       CredentialsProvider credentialsProvider,
+      FirebaseAppCheckTokenProvider appCheckTokenProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
@@ -172,6 +183,7 @@ public class FirebaseFirestore {
     this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
     this.credentialsProvider = checkNotNull(credentialsProvider);
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
@@ -197,8 +209,9 @@ public class FirebaseFirestore {
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
 
-      // As a special exception, don't throw if the same settings are passed repeatedly. This
-      // should make it simpler to get a Firestore instance in an activity.
+      // As a special exception, don't throw if the same settings are passed
+      // repeatedly. This should make it simpler to get a Firestore instance in
+      // an activity.
       if (client != null && !this.settings.equals(settings)) {
         throw new IllegalStateException(
             "FirebaseFirestore has already been started and its settings can no longer be changed. "
@@ -289,14 +302,16 @@ public class FirebaseFirestore {
   Task<Void> configureIndices(String json) {
     ensureClientConfigured();
 
-    // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
-    // available.");
+    // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support
+    // is not yet available.");
 
     List<FieldIndex> parsedIndices = new ArrayList<>();
 
-    // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
-    // format of the index definition. Unlike the backend, the SDK does not distinguish between
-    // collection ID and collection group indices and hence the queryScope field is ignored.
+    // See
+    // https://firebase.google.com/docs/reference/firestore/indexes/#json_format
+    // for the format of the index definition. Unlike the backend, the SDK does
+    // not distinguish between collection ID and collection group indices and
+    // hence the queryScope field is ignored.
 
     try {
       JSONObject jsonObject = new JSONObject(json);
@@ -481,7 +496,8 @@ public class FirebaseFirestore {
   public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
 
-    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    // The client must be initialized to ensure that all subsequent API usage
+    // throws an exception.
     this.ensureClientConfigured();
     return client.terminate();
   }

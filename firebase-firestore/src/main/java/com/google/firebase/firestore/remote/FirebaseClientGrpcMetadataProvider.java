@@ -44,6 +44,9 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
   private static final Metadata.Key<String> GMP_APP_ID_HEADER =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER);
 
+  private static final Metadata.Key<String> APPCHECK_HEADER =
+      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
+
   public FirebaseClientGrpcMetadataProvider(
       @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
       @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider,
