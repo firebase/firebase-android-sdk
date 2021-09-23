@@ -19,6 +19,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.appdistribution.LogWrapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
