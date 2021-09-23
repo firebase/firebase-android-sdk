@@ -172,7 +172,7 @@ public final class Target {
               filterInclusive = false;
               break;
             default:
-              // Remaining filters cannot be used as upper bounds.
+              // Remaining filters cannot be used as lower bounds.
           }
 
           if (max(segmentValue, filterValue) == filterValue) {
