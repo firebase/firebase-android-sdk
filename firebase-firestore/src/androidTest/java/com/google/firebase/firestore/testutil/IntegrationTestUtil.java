@@ -271,6 +271,7 @@ public class IntegrationTestUtil {
             databaseId,
             persistenceKey,
             MockCredentialsProvider.instance(),
+            new EmptyAppCheckTokenProvider(),
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});

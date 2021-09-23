@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
@@ -128,6 +129,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
+  @Nullable private String appCheckToken;
 
   /**
    * A list of up to MAX_PENDING_WRITES writes that we have fetched from the LocalStore via
@@ -150,11 +152,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
-      ConnectivityMonitor connectivityMonitor) {
+      ConnectivityMonitor connectivityMonitor,
+      AppCheckTokenProvider appCheckTokenProvider) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
     this.connectivityMonitor = connectivityMonitor;
+    this.appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
@@ -237,6 +241,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 // reset.
                 Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
                 restartNetwork();
+              });
+        });
+
+    appCheckTokenProvider.setChangeListener(
+        token -> {
+          workerQueue.enqueueAndForget(
+              () -> {
+                appCheckToken = token;
+                enableNetwork();
               });
         });
   }
@@ -506,7 +519,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   public boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
-    return networkEnabled;
+    // If the AppCheck token has not been retrieved yet `appCheckToken` will be null, and we should
+    // not interact with the server until we have the token.
+    return networkEnabled && appCheckToken != null;
   }
 
   /**

@@ -27,10 +27,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
@@ -50,6 +53,7 @@ import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -86,6 +90,7 @@ public class FirebaseFirestore {
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
+  private final AppCheckTokenProvider appCheckTokenProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
@@ -124,7 +129,8 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @NonNull Deferred<InternalAuthProvider> authProvider,
+      @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
+      @NonNull Provider<InternalAppCheckTokenProvider> appCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -136,7 +142,10 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider provider = new FirebaseAuthCredentialsProvider(authProvider);
+    CredentialsProvider authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
+
+    AppCheckTokenProvider appCheckProvider =
+        new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
@@ -149,7 +158,8 @@ public class FirebaseFirestore {
             context,
             databaseId,
             persistenceKey,
-            provider,
+            authProvider,
+            appCheckProvider,
             queue,
             app,
             instanceRegistry,
@@ -163,6 +173,7 @@ public class FirebaseFirestore {
       DatabaseId databaseId,
       String persistenceKey,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
@@ -172,6 +183,7 @@ public class FirebaseFirestore {
     this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
     this.credentialsProvider = checkNotNull(credentialsProvider);
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
@@ -242,7 +254,13 @@ public class FirebaseFirestore {
 
       client =
           new FirestoreClient(
-              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
+              context,
+              databaseInfo,
+              settings,
+              credentialsProvider,
+              appCheckTokenProvider,
+              asyncQueue,
+              metadataProvider);
     }
   }
 

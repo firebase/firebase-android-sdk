@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import android.content.Context;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -30,6 +31,7 @@ public final class AccessHelper {
       DatabaseId databaseId,
       String persistenceKey,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       AsyncQueue asyncQueue,
       FirebaseApp firebaseApp,
       FirebaseFirestore.InstanceRegistry instanceRegistry) {
@@ -38,6 +40,7 @@ public final class AccessHelper {
         databaseId,
         persistenceKey,
         credentialsProvider,
+        appCheckTokenProvider,
         asyncQueue,
         firebaseApp,
         instanceRegistry,
