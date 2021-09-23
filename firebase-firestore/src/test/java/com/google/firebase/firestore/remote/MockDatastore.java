@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.TargetData;
@@ -26,6 +27,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.spec.SpecTestCase;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
@@ -115,17 +117,19 @@ public class MockDatastore extends Datastore {
         if (targetChange.getCause() != null && !targetChange.getCause().isOk()) {
           for (Integer targetId : targetChange.getTargetIds()) {
             if (!activeTargets.containsKey(targetId)) {
-              // Technically removing an unknown target is valid (e.g. it could race with a
-              // server-side removal), but we want to pay extra careful attention in tests
-              // that we only remove targets we listened too.
+              // Technically removing an unknown target is valid (e.g. it could
+              // race with a server-side removal), but we want to pay extra
+              // careful attention in tests that we only remove targets we
+              // listened too.
               throw new IllegalStateException("Removing a non-active target");
             }
             activeTargets.remove(targetId);
           }
         }
         if (!targetChange.getTargetIds().isEmpty()) {
-          // If the list of target IDs is not empty, we reset the snapshot version to NONE as
-          // done in `RemoteSerializer.decodeVersionFromListenResponse()`.
+          // If the list of target IDs is not empty, we reset the snapshot
+          // version to NONE as done in
+          // `RemoteSerializer.decodeVersionFromListenResponse()`.
           snapshotVersion = SnapshotVersion.NONE;
         }
       }
@@ -216,7 +220,13 @@ public class MockDatastore extends Datastore {
   private int watchStreamRequestCount;
 
   public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue, Context context) {
-    super(databaseInfo, workerQueue, new EmptyCredentialsProvider(), context, null);
+    super(
+        databaseInfo,
+        workerQueue,
+        new EmptyCredentialsProvider(),
+        new EmptyAppCheckTokenProvider(),
+        context,
+        null);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
 
@@ -225,6 +235,7 @@ public class MockDatastore extends Datastore {
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return null;
@@ -285,7 +296,8 @@ public class MockDatastore extends Datastore {
 
   /** Returns the map of active targets on the watch stream, keyed by target ID. */
   public Map<Integer, TargetData> activeTargets() {
-    // Make a defensive copy as the watch stream continues to modify the Map of active targets.
+    // Make a defensive copy as the watch stream continues to modify the Map of
+    // active targets.
     return new HashMap<>(watchStream.activeTargets);
   }
 

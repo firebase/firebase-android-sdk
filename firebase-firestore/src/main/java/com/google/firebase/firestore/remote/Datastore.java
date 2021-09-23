@@ -19,6 +19,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -87,6 +88,7 @@ public class Datastore {
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
@@ -94,17 +96,28 @@ public class Datastore {
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
     this.channel =
         initializeChannel(
-            databaseInfo, workerQueue, credentialsProvider, context, metadataProvider);
+            databaseInfo,
+            workerQueue,
+            credentialsProvider,
+            appCheckTokenProvider,
+            context,
+            metadataProvider);
   }
 
   FirestoreChannel initializeChannel(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return new FirestoreChannel(
-        workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
+        workerQueue,
+        context,
+        credentialsProvider,
+        appCheckTokenProvider,
+        databaseInfo,
+        metadataProvider);
   }
 
   void shutdown() {
@@ -253,8 +266,9 @@ public class Datastore {
     Status.Code code = status.getCode();
     Throwable t = status.getCause();
 
-    // Check for the presence of a cipher error in the event of an SSLHandshakeException. This is
-    // the special case of SSLHandshakeException that contains the cipher error.
+    // Check for the presence of a cipher error in the event of an
+    // SSLHandshakeException. This is the special case of SSLHandshakeException
+    // that contains the cipher error.
     boolean hasCipherError = false;
     if (t instanceof SSLHandshakeException && t.getMessage().contains("no ciphers available")) {
       hasCipherError = true;

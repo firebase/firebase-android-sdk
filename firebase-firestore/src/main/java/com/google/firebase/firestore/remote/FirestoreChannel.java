@@ -22,6 +22,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -49,6 +50,9 @@ public class FirestoreChannel {
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
+  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
+      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
+
   /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
   // Note: there is no good way to get the Java language version on Android
   // (System.getProperty("java.version") returns "0", for example).
@@ -58,6 +62,8 @@ public class FirestoreChannel {
   private final AsyncQueue asyncQueue;
 
   private final CredentialsProvider credentialsProvider;
+
+  private final AppCheckTokenProvider appCheckTokenProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
@@ -71,11 +77,13 @@ public class FirestoreChannel {
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.credentialsProvider = credentialsProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
@@ -141,17 +149,17 @@ public class FirestoreChannel {
 
                 @Override
                 public void onReady() {
-                  // `onReady` indicates that the channel can transmit accepted messages directly,
-                  // without needing to "excessively" buffer them internally. We currently
-                  // ignore this notification in our client.
+                  // `onReady` indicates that the channel can transmit accepted messages
+                  // directly, without needing to "excessively" buffer them internally.
+                  // We currently ignore this notification in our client.
                 }
               },
               requestHeaders());
 
           observer.onOpen();
 
-          // Make sure to allow the first incoming message, all subsequent messages will be
-          // accepted by our onMessage() handler above.
+          // Make sure to allow the first incoming message, all subsequent messages
+          // will be accepted by our onMessage() handler above.
           call[0].request(1);
         });
 
@@ -164,8 +172,9 @@ public class FirestoreChannel {
 
       @Override
       public void halfClose() {
-        // We allow stream closure even if the stream has not started. This can happen when a user
-        // calls `disableNetwork()` immediately after client startup.
+        // We allow stream closure even if the stream has not started. This can
+        // happen when a user calls `disableNetwork()` immediately after client
+        // startup.
         if (call[0] == null) {
           clientCall.addOnSuccessListener(asyncQueue.getExecutor(), ClientCall::halfClose);
         } else {
@@ -210,7 +219,8 @@ public class FirestoreChannel {
                   },
                   requestHeaders());
 
-              // Make sure to allow the first incoming message, all subsequent messages
+              // Make sure to allow the first incoming message, all subsequent
+              // messages
               call.request(1);
 
               call.sendMessage(request);
@@ -235,7 +245,8 @@ public class FirestoreChannel {
                   new ClientCall.Listener<RespT>() {
                     @Override
                     public void onMessage(RespT message) {
-                      // This should only be called once, so setting the result directly is fine
+                      // This should only be called once, so setting the result directly
+                      // is fine
                       tcs.setResult(message);
                     }
 
@@ -255,9 +266,10 @@ public class FirestoreChannel {
                   },
                   requestHeaders());
 
-              // Make sure to allow the first incoming message. Set to 2 so if there there is a
-              // second message the client will fail fast (by setting the result of the
-              // TaskCompletionSource) twice instead of going unnoticed.
+              // Make sure to allow the first incoming message. Set to 2 so if there
+              // there is a second message the client will fail fast (by setting the
+              // result of the TaskCompletionSource) twice instead of going
+              // unnoticed.
               call.request(2);
 
               call.sendMessage(request);
@@ -294,8 +306,16 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
-    // This header is used to improve routing and project isolation by the backend.
+    // This header is used to improve routing and project isolation by the
+    // backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
+
+    // Add the AppCheck token to the header, if available.
+    String appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
+    if (appCheckToken != null) {
+      headers.put(X_FIREBASE_APPCHECK, appCheckToken);
+    }
+
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }

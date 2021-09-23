@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleReader;
@@ -63,6 +64,7 @@ public final class FirestoreClient {
 
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
+  private final AppCheckTokenProvider appCheckTokenProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
   private final GrpcMetadataProvider metadataProvider;
@@ -83,10 +85,12 @@ public final class FirestoreClient {
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       final AsyncQueue asyncQueue,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.bundleSerializer =
@@ -95,9 +99,10 @@ public final class FirestoreClient {
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
 
-    // Defer initialization until we get the current user from the changeListener. This is
-    // guaranteed to be synchronously dispatched onto our worker queue, so we will be initialized
-    // before any subsequently queued work runs.
+    // Defer initialization until we get the current user from the
+    // changeListener. This is guaranteed to be synchronously dispatched onto
+    // our worker queue, so we will be initialized before any subsequently
+    // queued work runs.
     asyncQueue.enqueueAndForget(
         () -> {
           try {
@@ -154,8 +159,9 @@ public final class FirestoreClient {
 
   /** Returns true if this client has been terminated. */
   public boolean isTerminated() {
-    // Technically, the asyncQueue is still running, but only accepting tasks related to terminating
-    // or supposed to be run after terminate(). It is effectively terminated to the eyes of users.
+    // Technically, the asyncQueue is still running, but only accepting tasks
+    // related to terminating or supposed to be run after terminate(). It is
+    // effectively terminated to the eyes of users.
     return this.asyncQueue.isShuttingDown();
   }
 
@@ -170,8 +176,8 @@ public final class FirestoreClient {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
-    // Checks for terminate but does not raise error, allowing it to be a no-op if client is already
-    // terminated.
+    // Checks for terminate but does not raise error, allowing it to be a no-op
+    // if client is already terminated.
     if (this.isTerminated()) {
       return;
     }
@@ -238,13 +244,19 @@ public final class FirestoreClient {
   }
 
   private void initialize(Context context, User user, FirebaseFirestoreSettings settings) {
-    // Note: The initialization work must all be synchronous (we can't dispatch more work) since
-    // external write/listen operations could get queued to run before that subsequent work
-    // completes.
+    // Note: The initialization work must all be synchronous (we can't dispatch
+    // more work) since external write/listen operations could get queued to run
+    // before that subsequent work completes.
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
     Datastore datastore =
-        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
+        new Datastore(
+            databaseInfo,
+            asyncQueue,
+            credentialsProvider,
+            appCheckTokenProvider,
+            context,
+            metadataProvider);
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             context,
@@ -320,7 +332,8 @@ public final class FirestoreClient {
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
-    // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
+    // Checks for shutdown but does not raise error, allowing remove after
+    // shutdown to be a no-op.
     if (isTerminated()) {
       return;
     }

@@ -31,6 +31,7 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
@@ -89,7 +90,7 @@ public class FirebaseFirestore {
   private final DatabaseId databaseId;
   private final String persistenceKey;
   private final CredentialsProvider credentialsProvider;
-  private final FirebaseAppCheckTokenProvider appCheckTokenProvider;
+  private final AppCheckTokenProvider appCheckTokenProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
@@ -143,7 +144,7 @@ public class FirebaseFirestore {
 
     CredentialsProvider authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
 
-    FirebaseAppCheckTokenProvider appCheckProvider =
+    AppCheckTokenProvider appCheckProvider =
         new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't
@@ -173,7 +174,7 @@ public class FirebaseFirestore {
       DatabaseId databaseId,
       String persistenceKey,
       CredentialsProvider credentialsProvider,
-      FirebaseAppCheckTokenProvider appCheckTokenProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
@@ -255,7 +256,13 @@ public class FirebaseFirestore {
 
       client =
           new FirestoreClient(
-              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
+              context,
+              databaseInfo,
+              settings,
+              credentialsProvider,
+              appCheckTokenProvider,
+              asyncQueue,
+              metadataProvider);
     }
   }
 
