@@ -39,36 +39,36 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
    */
   @Nullable private InternalAppCheckTokenProvider internalAppCheckTokenProvider;
 
+  /** The AppCheck token string. May be null if the token has not been retrieved yet. */
+  @Nullable private String appCheckToken;
+
   /** Creates a new FirebaseAppCheckTokenProvider. */
   public FirebaseAppCheckTokenProvider(
       Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider) {
     deferredAppCheckTokenProvider.whenAvailable(
         provider -> {
           internalAppCheckTokenProvider = provider.get();
+          appCheckToken = getCurrentAppCheckToken();
+          try {
+            Task<AppCheckTokenResult> pendingResult =
+                internalAppCheckTokenProvider.getToken(/* forceRefresh= */ false);
+            AppCheckTokenResult result =
+                Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+            if (result.getError() != null) {
+              Logger.warn(
+                  LOG_TAG,
+                  "Error getting App Check token; using placeholder token instead. Error: "
+                      + result.getError());
+            }
+            appCheckToken = result.getToken();
+          } catch (ExecutionException | InterruptedException | TimeoutException e) {
+            Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + e);
+          }
         });
   }
 
   @Nullable
   public String getCurrentAppCheckToken() {
-    if (internalAppCheckTokenProvider == null) {
-      return null;
-    }
-
-    try {
-      Task<AppCheckTokenResult> pendingResult =
-          internalAppCheckTokenProvider.getToken(/* forceRefresh= */ false);
-      AppCheckTokenResult result =
-          Tasks.await(pendingResult, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-      if (result.getError() != null) {
-        Logger.warn(
-            LOG_TAG,
-            "Error getting App Check token; using placeholder token instead. Error: "
-                + result.getError());
-      }
-      return result.getToken();
-    } catch (ExecutionException | InterruptedException | TimeoutException e) {
-      Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + e);
-    }
-    return null;
+    return appCheckToken;
   }
 }

@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -50,9 +49,6 @@ public class FirestoreChannel {
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
-  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
-      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
-
   /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
   // Note: there is no good way to get the Java language version on Android
   // (System.getProperty("java.version") returns "0", for example).
@@ -62,8 +58,6 @@ public class FirestoreChannel {
   private final AsyncQueue asyncQueue;
 
   private final CredentialsProvider credentialsProvider;
-
-  private final AppCheckTokenProvider appCheckTokenProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
@@ -77,13 +71,11 @@ public class FirestoreChannel {
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
-      AppCheckTokenProvider appCheckTokenProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.credentialsProvider = credentialsProvider;
-    this.appCheckTokenProvider = appCheckTokenProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
@@ -309,13 +301,6 @@ public class FirestoreChannel {
     // This header is used to improve routing and project isolation by the
     // backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-
-    // Add the AppCheck token to the header, if available.
-    String appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
-    if (appCheckToken != null) {
-      headers.put(X_FIREBASE_APPCHECK, appCheckToken);
-    }
-
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }
