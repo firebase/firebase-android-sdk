@@ -48,7 +48,6 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
     deferredAppCheckTokenProvider.whenAvailable(
         provider -> {
           internalAppCheckTokenProvider = provider.get();
-          appCheckToken = getCurrentAppCheckToken();
           try {
             Task<AppCheckTokenResult> pendingResult =
                 internalAppCheckTokenProvider.getToken(/* forceRefresh= */ false);
