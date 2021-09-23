@@ -141,17 +141,17 @@ public class FirestoreChannel {
 
                 @Override
                 public void onReady() {
-                  // `onReady` indicates that the channel can transmit accepted messages
-                  // directly, without needing to "excessively" buffer them internally.
-                  // We currently ignore this notification in our client.
+                  // `onReady` indicates that the channel can transmit accepted messages directly,
+                  // without needing to "excessively" buffer them internally. We currently
+                  // ignore this notification in our client.
                 }
               },
               requestHeaders());
 
           observer.onOpen();
 
-          // Make sure to allow the first incoming message, all subsequent messages
-          // will be accepted by our onMessage() handler above.
+          // Make sure to allow the first incoming message, all subsequent messages will be
+          // accepted by our onMessage() handler above.
           call[0].request(1);
         });
 
@@ -164,9 +164,8 @@ public class FirestoreChannel {
 
       @Override
       public void halfClose() {
-        // We allow stream closure even if the stream has not started. This can
-        // happen when a user calls `disableNetwork()` immediately after client
-        // startup.
+        // We allow stream closure even if the stream has not started. This can happen when a user
+        // calls `disableNetwork()` immediately after client startup.
         if (call[0] == null) {
           clientCall.addOnSuccessListener(asyncQueue.getExecutor(), ClientCall::halfClose);
         } else {
@@ -211,8 +210,7 @@ public class FirestoreChannel {
                   },
                   requestHeaders());
 
-              // Make sure to allow the first incoming message, all subsequent
-              // messages
+              // Make sure to allow the first incoming message, all subsequent messages
               call.request(1);
 
               call.sendMessage(request);
@@ -237,8 +235,7 @@ public class FirestoreChannel {
                   new ClientCall.Listener<RespT>() {
                     @Override
                     public void onMessage(RespT message) {
-                      // This should only be called once, so setting the result directly
-                      // is fine
+                      // This should only be called once, so setting the result directly is fine
                       tcs.setResult(message);
                     }
 
@@ -258,10 +255,9 @@ public class FirestoreChannel {
                   },
                   requestHeaders());
 
-              // Make sure to allow the first incoming message. Set to 2 so if there
-              // there is a second message the client will fail fast (by setting the
-              // result of the TaskCompletionSource) twice instead of going
-              // unnoticed.
+              // Make sure to allow the first incoming message. Set to 2 so if there there is a
+              // second message the client will fail fast (by setting the result of the
+              // TaskCompletionSource) twice instead of going unnoticed.
               call.request(2);
 
               call.sendMessage(request);
@@ -298,8 +294,7 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
-    // This header is used to improve routing and project isolation by the
-    // backend.
+    // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);

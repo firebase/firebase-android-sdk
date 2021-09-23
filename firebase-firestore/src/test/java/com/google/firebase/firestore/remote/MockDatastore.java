@@ -115,19 +115,17 @@ public class MockDatastore extends Datastore {
         if (targetChange.getCause() != null && !targetChange.getCause().isOk()) {
           for (Integer targetId : targetChange.getTargetIds()) {
             if (!activeTargets.containsKey(targetId)) {
-              // Technically removing an unknown target is valid (e.g. it could
-              // race with a server-side removal), but we want to pay extra
-              // careful attention in tests that we only remove targets we
-              // listened too.
+              // Technically removing an unknown target is valid (e.g. it could race with a
+              // server-side removal), but we want to pay extra careful attention in tests
+              // that we only remove targets we listened too.
               throw new IllegalStateException("Removing a non-active target");
             }
             activeTargets.remove(targetId);
           }
         }
         if (!targetChange.getTargetIds().isEmpty()) {
-          // If the list of target IDs is not empty, we reset the snapshot
-          // version to NONE as done in
-          // `RemoteSerializer.decodeVersionFromListenResponse()`.
+          // If the list of target IDs is not empty, we reset the snapshot version to NONE as
+          // done in `RemoteSerializer.decodeVersionFromListenResponse()`.
           snapshotVersion = SnapshotVersion.NONE;
         }
       }
@@ -287,8 +285,7 @@ public class MockDatastore extends Datastore {
 
   /** Returns the map of active targets on the watch stream, keyed by target ID. */
   public Map<Integer, TargetData> activeTargets() {
-    // Make a defensive copy as the watch stream continues to modify the Map of
-    // active targets.
+    // Make a defensive copy as the watch stream continues to modify the Map of active targets.
     return new HashMap<>(watchStream.activeTargets);
   }
 

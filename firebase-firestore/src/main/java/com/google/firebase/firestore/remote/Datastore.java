@@ -253,9 +253,8 @@ public class Datastore {
     Status.Code code = status.getCode();
     Throwable t = status.getCause();
 
-    // Check for the presence of a cipher error in the event of an
-    // SSLHandshakeException. This is the special case of SSLHandshakeException
-    // that contains the cipher error.
+    // Check for the presence of a cipher error in the event of an SSLHandshakeException. This is
+    // the special case of SSLHandshakeException that contains the cipher error.
     boolean hasCipherError = false;
     if (t instanceof SSLHandshakeException && t.getMessage().contains("no ciphers available")) {
       hasCipherError = true;

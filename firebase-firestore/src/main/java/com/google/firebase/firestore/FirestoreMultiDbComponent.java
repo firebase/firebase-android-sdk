@@ -83,9 +83,9 @@ class FirestoreMultiDbComponent
 
   @Override
   public synchronized void onDeleted(String firebaseAppName, FirebaseOptions options) {
-    // Shut down all database instances and remove them from the registry map.
-    // To avoid ConcurrentModificationException, make a copy of the entries
-    // instead of using an iterator from the `instances` map directly.
+    // Shut down all database instances and remove them from the registry map. To avoid
+    // ConcurrentModificationException, make a copy of the entries instead of using an iterator from
+    // the `instances` map directly.
     for (Map.Entry<String, FirebaseFirestore> entry : new ArrayList<>(instances.entrySet())) {
       entry.getValue().terminate();
       hardAssert(

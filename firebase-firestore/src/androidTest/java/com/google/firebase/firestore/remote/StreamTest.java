@@ -293,8 +293,8 @@ public class StreamTest {
     WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
 
-    // Simulate callback from GRPC with an unauthenticated error -- this should
-    // invalidate the token.
+    // Simulate callback from GRPC with an unauthenticated error -- this should invalidate the
+    // token.
     testQueue.runSync(() -> writeStream.handleServerClose(Status.UNAUTHENTICATED));
     waitForWriteStreamOpen(testQueue, writeStream, callback);
 
