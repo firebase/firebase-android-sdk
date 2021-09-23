@@ -132,6 +132,7 @@ class CheckForNewReleaseClient {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
+        LogWrapper.getInstance().v(TAG + "New Release is older or is currently installed");
         return null;
       }
     } catch (NumberFormatException e) {
