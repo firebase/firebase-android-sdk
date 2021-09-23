@@ -104,7 +104,7 @@ public final class ReleaseIdentificationUtils {
       }
 
       LogWrapper.getInstance()
-          .v(TAG + String.format("Finished calculating %d entries in %d ms" + entries, elapsed));
+          .v(TAG + String.format("Finished calculating %d entries in %d ms", entries, elapsed));
       LogWrapper.getInstance()
           .v(TAG + String.format("%s hashes to %s", file.getPath(), zipFingerprint));
     }
