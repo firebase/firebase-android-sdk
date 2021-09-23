@@ -112,7 +112,7 @@ class FirebaseAppDistributionTesterApiClient {
     } finally {
       connection.disconnect();
     }
-
+    LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
     return newRelease;
   }
 
@@ -217,13 +217,9 @@ class FirebaseAppDistributionTesterApiClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        LogWrapper.getInstance()
-            .e(TAG + "Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
         String shaHash = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
-        LogWrapper.getInstance()
-            .v("Package " + context.getPackageName() + " has Sha-1 fingerprint" + shaHash);
         return shaHash;
       }
     } catch (PackageManager.NameNotFoundException e) {
