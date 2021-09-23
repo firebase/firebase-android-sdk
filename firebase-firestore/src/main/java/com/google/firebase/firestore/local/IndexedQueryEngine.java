@@ -71,7 +71,7 @@ public class IndexedQueryEngine implements QueryEngine {
     Target target = query.toTarget();
 
     FieldIndex fieldIndex = indexManager.getFieldIndex(target);
-    // TODO(Indexing): Fall back to DefaultQueryEngine if index-free queries is available
+    // TODO(indexing): Fall back to DefaultQueryEngine if index-free queries is available
     if (fieldIndex != null) {
       // If there is an index, use the index to execute the query up to its last update time.
       // Results that have not yet been written to the index get merged into the result.
