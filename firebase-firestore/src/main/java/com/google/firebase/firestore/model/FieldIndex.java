@@ -59,7 +59,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   private final String collectionGroup;
   private final int indexId;
   private final List<Segment> segments;
-  private final SnapshotVersion version;
+  private SnapshotVersion version;
 
   public FieldIndex(String collectionGroup, int indexId) {
     this.collectionGroup = collectionGroup;
@@ -120,6 +120,11 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   /** Returns a new field index with the updated version. */
   public FieldIndex withVersion(SnapshotVersion version) {
     return new FieldIndex(collectionGroup, indexId, segments, version);
+  }
+
+  /** Set the version on the field index with the updated version */
+  public void setVersion(SnapshotVersion newVersion) {
+    this.version = newVersion;
   }
 
   @Override

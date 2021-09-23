@@ -275,10 +275,28 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
             .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
 
-    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes();
+    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes(0);
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.get(0);
     assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
+  }
+
+  // TODO(indexing): add tests to check we're only fetching active entries
+  @Test
+  public void testGetIndexConfigFetchesByIndexId() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1").withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED));
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll2").withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS));
+
+    List<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes(2);
+    assertEquals(indexes.size(), 1);
+
+    indexes = sqLiteIndexManager.getFieldIndexes(0);
+    assertEquals(indexes.size(), 2);
+    assertEquals(indexes.get(0).getCollectionGroup(), "coll1");
+    assertEquals(indexes.get(1).getCollectionGroup(), "coll2");
   }
 
   private void addDoc(String key, Map<String, Object> data) {

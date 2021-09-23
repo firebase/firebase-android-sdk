@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
+import android.database.sqlite.SQLiteStatement;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -30,15 +31,18 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
@@ -113,6 +117,23 @@ final class SQLiteIndexManager implements IndexManager {
         index.getVersion().getTimestamp().getNanoseconds());
   }
 
+  public void updateFieldIndex(FieldIndex index) {
+    db.execute(
+        "REPLACE INTO index_configuration ("
+            + "index_id, "
+            + "collection_group, "
+            + "index_proto, "
+            + "active, "
+            + "update_time_seconds, "
+            + "update_time_nanos) VALUES(?, ?, ?, ?, ?, ?)",
+        index.getIndexId(),
+        index.getCollectionGroup(),
+        encodeFieldIndex(index),
+        true,
+        index.getVersion().getTimestamp().getSeconds(),
+        index.getVersion().getTimestamp().getNanoseconds());
+  }
+
   @Override
   public void addIndexEntries(Document document) {
     DocumentKey documentKey = document.getKey();
@@ -124,7 +145,6 @@ final class SQLiteIndexManager implements IndexManager {
         .forEach(
             row -> {
               try {
-                int indexId = row.getInt(0);
                 FieldIndex fieldIndex =
                     serializer.decodeFieldIndex(
                         collectionGroup,
@@ -133,33 +153,49 @@ final class SQLiteIndexManager implements IndexManager {
                         row.getInt(2),
                         row.getInt(3));
 
-                List<Value> values = extractFieldValue(document, fieldIndex);
-                if (values == null) return;
+                addIndexEntry(document, Collections.singletonList(fieldIndex), null);
 
-                if (Logger.isDebugEnabled()) {
-                  Logger.debug(
-                      TAG,
-                      "Adding index values for document '%s' to index '%s'",
-                      documentKey,
-                      fieldIndex);
-                }
-
-                Object[] encodeValues = encodeDocumentValues(fieldIndex, values);
-                for (Object encoded : encodeValues) {
-                  // TODO(indexing): Handle different values for different users
-                  db.execute(
-                      "INSERT OR IGNORE INTO index_entries ("
-                          + "index_id, "
-                          + "index_value, "
-                          + "document_name) VALUES(?, ?, ?)",
-                      indexId,
-                      encoded,
-                      documentKey.toString());
-                }
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
               }
             });
+  }
+
+  public int addIndexEntry(
+      Document document,
+      Collection<FieldIndex> fieldIndexes,
+      @Nullable Map<FieldIndex, SnapshotVersion> fieldIndexToSnapshotVersion) {
+    DocumentKey documentKey = document.getKey();
+    int entriesWritten = 0;
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      List<Value> values = extractFieldValue(document, fieldIndex);
+      if (values == null) continue;
+
+      if (fieldIndexToSnapshotVersion != null
+          && (!fieldIndexToSnapshotVersion.containsKey(fieldIndex)
+              || fieldIndexToSnapshotVersion.get(fieldIndex).compareTo(document.getVersion())
+                  < 0)) {
+        fieldIndexToSnapshotVersion.put(fieldIndex, document.getVersion());
+      }
+
+      if (Logger.isDebugEnabled()) {
+        Logger.debug(
+            TAG, "Adding index values for document '%s' to index '%s'", documentKey, fieldIndex);
+      }
+      Object[] encodeValues = encodeDocumentValues(fieldIndex, values);
+      for (Object encoded : encodeValues) {
+        SQLiteStatement indexAdder =
+            db.prepare(
+                "INSERT OR IGNORE INTO index_entries ("
+                    + "index_id, "
+                    + "index_value, "
+                    + "document_name) VALUES(?, ?, ?)");
+        // TODO(indexing): Handle different values for different users
+        entriesWritten +=
+            db.execute(indexAdder, fieldIndex.getIndexId(), encoded, documentKey.toString());
+      }
+    }
+    return entriesWritten;
   }
 
   /**
@@ -407,11 +443,12 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   // TODO(indexing): Add support for fetching last N updated entries.
-  public List<FieldIndex> getFieldIndexes() {
+  public List<FieldIndex> getFieldIndexes(int sinceIndexId) {
     List<FieldIndex> allIndexes = new ArrayList<>();
     db.query(
             "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
-                + "WHERE active = 1")
+                + "WHERE active = 1 AND index_id >= ?")
+        .binding(sinceIndexId)
         .forEach(
             row -> {
               try {

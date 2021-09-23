@@ -14,15 +14,24 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.index.IndexEntry;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -49,12 +58,20 @@ public class SQLiteIndexBackfillerTest {
   @Rule public TestName name = new TestName();
 
   private SQLitePersistence persistence;
+  private SQLiteIndexManager indexManager;
   private IndexBackfiller backfiller;
+  private LocalStore localStore;
 
   @Before
   public void setUp() {
     persistence = PersistenceTestHelpers.createSQLitePersistence();
+    indexManager = (SQLiteIndexManager) persistence.getIndexManager();
     backfiller = persistence.getIndexBackfiller();
+    CountingQueryEngine queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
+    localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
+
+    //    writeIndexConfigs();
+    //    addInitialTestDocuments();
   }
 
   @After
@@ -63,7 +80,74 @@ public class SQLiteIndexBackfillerTest {
   }
 
   @Test
-  public void addAndRemoveIndexEntry() {
+  public void testBackfillFetchesNewIndexes() {
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "foo");
+    backfiller.backfill(localStore);
+    assertEquals(2, backfiller.getFieldIndexQueue().size());
+    addFieldIndex("coll3", "foo");
+    addFieldIndex("coll4", "foo");
+    addFieldIndex("coll5", "foo");
+    backfiller.backfill(localStore);
+    assertEquals(5, backfiller.getFieldIndexQueue().size());
+    for (int i = 0; i < 5; i++) {
+      assertEquals("coll" + (i + 1), backfiller.getFieldIndexQueue().get(i).getCollectionGroup());
+    }
+  }
+
+  @Test
+  public void testBackfillMovesProcessedFieldIndexesToTheEndOfQueue() {
+    for (int i = 0; i < 5; i++) {
+      addFieldIndex("coll" + i, "foo");
+    }
+    backfiller.setMaxFieldIndexesToProcess(2);
+    backfiller.backfill(localStore);
+
+    // Processed field indexes should go to the back of the queue.
+    assertEquals(5, backfiller.getFieldIndexQueue().size());
+    assertEquals(1, backfiller.getFieldIndexQueue().get(3).getIndexId());
+    assertEquals(2, backfiller.getFieldIndexQueue().get(4).getIndexId());
+
+    backfiller.backfill(localStore);
+    assertEquals(3, backfiller.getFieldIndexQueue().get(3).getIndexId());
+    assertEquals(4, backfiller.getFieldIndexQueue().get(4).getIndexId());
+  }
+
+  // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
+  @Test
+  @Ignore
+  public void testBackfillWritesToIndexConfigOnCompletion() {
+    // Check that index_config is updated to new version after each write.
+    addFieldIndex("coll1", "foo");
+    addDocumentToCache("coll1/docA", "foo", version(10, 20));
+    backfiller.backfill(localStore);
+    assertEquals(version(10, 20), indexManager.getFieldIndexes(0).get(0).getVersion());
+
+    addDocumentToCache("coll1/docA", "foo", version(20, 30));
+    backfiller.backfill(localStore);
+    assertEquals(version(2, 30), indexManager.getFieldIndexes(0).get(0).getVersion());
+  }
+
+  // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
+  @Test
+  @Ignore
+  public void testBackfillFetchesDocumentsWithSnapshotVersion() {}
+
+  @Test
+  public void testBackfillWritesIndexEntries() {
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "bar");
+    addDocumentToCache("coll1/docA", "foo", version(10, 0));
+    addDocumentToCache("coll1/docB", "boo", version(10, 0));
+    addDocumentToCache("coll2/docA", "bar", version(10, 0));
+    addDocumentToCache("coll2/docB", "car", version(10, 0));
+
+    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    assertEquals(2, results.getEntriesAdded());
+  }
+
+  @Test
+  public void testAddAndRemoveIndexEntry() {
     IndexEntry testEntry =
         new IndexEntry(1, "TEST_BLOB".getBytes(), "sample-uid", "coll/sample-documentId");
     persistence.runTransaction(
@@ -80,5 +164,17 @@ public class SQLiteIndexBackfillerTest {
           entry = backfiller.getIndexEntry(1);
           assertNull(entry);
         });
+  }
+
+  void addFieldIndex(String collectionId, String fieldName) {
+    indexManager.addFieldIndex(
+        new FieldIndex(collectionId)
+            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED));
+  }
+
+  private void addDocumentToCache(String path, String field, SnapshotVersion readTime) {
+    MutableDocument doc = doc(path, 10, map(field, 2));
+    persistence.runTransaction(
+        "Add cache entry", () -> persistence.getRemoteDocumentCache().add(doc, readTime));
   }
 }
