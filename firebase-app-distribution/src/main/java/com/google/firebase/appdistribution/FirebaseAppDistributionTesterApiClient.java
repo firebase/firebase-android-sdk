@@ -14,13 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
-import static android.content.ContentValues.TAG;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
@@ -114,7 +112,7 @@ class FirebaseAppDistributionTesterApiClient {
     } finally {
       connection.disconnect();
     }
-
+    LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
     return newRelease;
   }
 
@@ -219,13 +217,12 @@ class FirebaseAppDistributionTesterApiClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      LogWrapper.getInstance().e(TAG + "No such package: " + context.getPackageName(), e);
       return null;
     }
   }
