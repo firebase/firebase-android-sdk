@@ -44,7 +44,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void addIndexEntries(Document document) {
+  public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
     // Field indices are not supported with memory persistence.
   }
 
@@ -53,11 +53,17 @@ class MemoryIndexManager implements IndexManager {
     // Field indices are not supported with memory persistence.
   }
 
+  @Nullable
+  @Override
+  public FieldIndex getFieldIndex(Target target) {
+    return null;
+  }
+
   @Override
   @Nullable
-  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
     // Field indices are not supported with memory persistence.
-    return null;
+    return Collections.emptySet();
   }
 
   /**

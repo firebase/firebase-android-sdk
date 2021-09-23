@@ -70,11 +70,6 @@ class CountingQueryEngine implements QueryEngine {
     return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
   }
 
-  @Override
-  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
-    queryEngine.handleDocumentChange(oldDocument, newDocument);
-  }
-
   /** Returns the query engine that is used as the backing implementation. */
   QueryEngine getSubject() {
     return queryEngine;

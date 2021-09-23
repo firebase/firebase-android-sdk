@@ -14,32 +14,21 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.local.IndexedQueryEngine.extractBestIndexRange;
-import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.auth.User;
-import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.IndexRange;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
-import com.google.firebase.firestore.testutil.TestUtil;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -48,241 +37,55 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class IndexedQueryEngineTest {
+  /** Current state of indexing support. Used for restoring after test run. */
+  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
+
   private IndexedQueryEngine queryEngine;
+  private IndexManager indexManager;
   private RemoteDocumentCache remoteDocuments;
 
-  // Version numbers used for document updates.
-  private static final int ORIGINAL_VERSION = 0;
-  private static final int UPDATED_VERSION = 1;
+  @BeforeClass
+  public static void beforeClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = true;
+  }
 
-  // Documents used in the verify the index lookups.
-  private static final MutableDocument NON_MATCHING_DOC =
-      doc("coll/a", ORIGINAL_VERSION, map("a", "b"));
-  private static final MutableDocument MATCHING_DOC = doc("coll/a", UPDATED_VERSION, map("a", "a"));
-  private static final MutableDocument IGNORED_DOC = doc("coll/b", ORIGINAL_VERSION, map("b", "b"));
+  @BeforeClass
+  public static void afterClass() {
+    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
+  }
 
   @Before
   public void setUp() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-
     SQLitePersistence persistence = PersistenceTestHelpers.createSQLitePersistence();
-    SQLiteCollectionIndex index = new SQLiteCollectionIndex(persistence, User.UNAUTHENTICATED);
+    indexManager = persistence.getIndexManager();
     remoteDocuments = persistence.getRemoteDocumentCache();
-    queryEngine = new IndexedQueryEngine(index);
-  }
-
-  private void addDocument(MutableDocument newDoc) {
-    // Use document version as read time as the IndexedQueryEngine does not rely on read time.
-    remoteDocuments.add(newDoc, newDoc.getVersion());
-    queryEngine.handleDocumentChange(
-        deletedDoc(newDoc.getKey().toString(), ORIGINAL_VERSION), newDoc);
-  }
-
-  private void removeDocument(MutableDocument oldDoc) {
-    remoteDocuments.remove(oldDoc.getKey());
-    queryEngine.handleDocumentChange(
-        oldDoc, deletedDoc(oldDoc.getKey().toString(), UPDATED_VERSION));
-  }
-
-  private void updateDocument(MutableDocument oldDoc, MutableDocument newDoc) {
-    remoteDocuments.add(newDoc, newDoc.getVersion());
-    queryEngine.handleDocumentChange(oldDoc, newDoc);
+    queryEngine = new IndexedQueryEngine(indexManager);
+    queryEngine.setLocalDocumentsView(
+        new LocalDocumentsView(
+            remoteDocuments, persistence.getMutationQueue(User.UNAUTHENTICATED), indexManager));
   }
 
   @Test
-  public void valueSelectivity() {
-    List<Filter> highSelectivity =
-        Arrays.asList(
-            filter("high", "==", 0.1),
-            filter("high", "==", 1),
-            filter("high", "==", new Date()),
-            filter("high", "==", "foo"),
-            filter("high", "==", null),
-            filter("high", "==", Double.NaN),
-            filter("high", "==", TestUtil.ref("a/b")),
-            filter("high", "==", new GeoPoint(0.0, 0.0)),
-            filter("high", "==", Blob.fromBytes(new byte[] {})));
+  public void combinesIndexedWithNonIndexedResults() {
+    MutableDocument doc1 = doc("coll/a", 1, map("foo", true));
+    MutableDocument doc2 = doc("coll/b", 2, map("foo", true));
+    MutableDocument doc3 = doc("coll/c", 3, map("foo", true));
 
-    List<Filter> lowSelectivity =
-        Arrays.asList(
-            filter("low", "==", true),
-            filter("low", "==", false),
-            filter("low", "==", Arrays.asList("foo", "bar")),
-            filter("low", "==", map("a", "b")));
+    remoteDocuments.add(doc1, doc1.getVersion());
+    indexManager.handleDocumentChange(null, doc1);
 
-    for (Filter lowSelectivityFilter : lowSelectivity) {
-      Query query = query("a").filter(lowSelectivityFilter);
-      IndexRange indexRange = extractBestIndexRange(query);
-      assertThat(field("low")).isEqualTo(indexRange.getFieldPath());
+    remoteDocuments.add(doc2, doc2.getVersion());
+    indexManager.handleDocumentChange(null, doc2);
 
-      for (Filter highSelectivityFilter : highSelectivity) {
-        Query modifiedQuery = query.filter(highSelectivityFilter);
-        IndexRange modifiedRange = extractBestIndexRange(modifiedQuery);
-        assertThat(field("high")).isEqualTo(modifiedRange.getFieldPath());
-      }
-    }
-  }
+    remoteDocuments.add(doc3, doc3.getVersion());
 
-  @Test
-  public void filterSelectivity() {
-    List<Filter> highSelectivity = Collections.singletonList(filter("high", "==", 1));
-
-    List<Filter> lowSelectivity =
-        Arrays.asList(
-            filter("low", ">", 1),
-            filter("low", ">=", 1),
-            filter("low", "<", 1),
-            filter("low", "<=", 1));
-
-    for (Filter lowSelectivityFilter : lowSelectivity) {
-      Query query = query("a").filter(lowSelectivityFilter);
-      IndexRange indexRange = extractBestIndexRange(query);
-      assertThat(field("low")).isEqualTo(indexRange.getFieldPath());
-
-      for (Filter highSelectivityFilter : highSelectivity) {
-        Query modifiedQuery = query.filter(highSelectivityFilter);
-        IndexRange modifiedRange = extractBestIndexRange(modifiedQuery);
-        assertThat(field("high")).isEqualTo(modifiedRange.getFieldPath());
-      }
-    }
-  }
-
-  @Test
-  public void noIndexRangeForEmptyQuery() {
-    Query query = query("a");
-    IndexRange indexRange = extractBestIndexRange(query);
-    assertThat(indexRange).isNull();
-  }
-
-  @Test
-  public void usesFirstOrderBy() {
-    Query query = query("a").orderBy(TestUtil.orderBy("a")).orderBy(TestUtil.orderBy("b"));
-    IndexRange indexRange = extractBestIndexRange(query);
-    assertThat(field("a")).isEqualTo(indexRange.getFieldPath());
-  }
-
-  @Test
-  public void preferFilterOverOrderBy() {
-    Query queryWithoutFilter = query("a").orderBy(TestUtil.orderBy("a"));
-    Query queryWithFilter =
-        query("a")
-            .orderBy(TestUtil.orderBy("a"))
-            .orderBy(TestUtil.orderBy("b"))
-            // We need to specify this filter since the first filter needs to match the orderBy.
-            .filter(filter("a", ">=", true))
-            .filter(filter("c", "==", true));
-
-    IndexRange indexRangeWithoutFilter = extractBestIndexRange(queryWithoutFilter);
-    IndexRange indexRangeWithFilter = extractBestIndexRange(queryWithFilter);
-
-    assertThat(field("a")).isEqualTo(indexRangeWithoutFilter.getFieldPath());
-    assertThat(field("c")).isEqualTo(indexRangeWithFilter.getFieldPath());
-  }
-
-  @Test
-  public void preferEqualsOverInequality() {
-    Query queryWithInequality = query("a").filter(filter("a", ">=", true));
-    Query queryWithEquality =
-        query("a").filter(filter("a", ">=", true)).filter(filter("b", "==", true));
-
-    IndexRange indexRangeWithInequality = extractBestIndexRange(queryWithInequality);
-    IndexRange indexRangeWithEquality = extractBestIndexRange(queryWithEquality);
-
-    assertThat(field("a")).isEqualTo(indexRangeWithInequality.getFieldPath());
-    assertThat(field("b")).isEqualTo(indexRangeWithEquality.getFieldPath());
-  }
-
-  @Test
-  public void preferHighSelectivityTypes() {
-    Query queryWithLowSelectivity = query("a").filter(filter("a", "==", true));
-    Query queryWithHighSelectivity =
-        query("a").filter(filter("a", "==", true)).filter(filter("b", "==", 1.0));
-
-    IndexRange indexRangeWithLowSelectivity = extractBestIndexRange(queryWithLowSelectivity);
-    IndexRange indexRangeWithHighSelectivity = extractBestIndexRange(queryWithHighSelectivity);
-
-    assertThat(field("a")).isEqualTo(indexRangeWithLowSelectivity.getFieldPath());
-    assertThat(field("b")).isEqualTo(indexRangeWithHighSelectivity.getFieldPath());
-  }
-
-  @Test
-  @Ignore("Pending cr/164068667")
-  public void addDocumentQuery() {
-    addDocument(IGNORED_DOC);
-    addDocument(MATCHING_DOC);
-    Query query = query("coll").filter(filter("a", "==", "a"));
-
+    Query queryWithFilter = query("coll").filter(filter("foo", "==", true));
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
+            queryWithFilter, SnapshotVersion.NONE, DocumentKey.emptyKeySet());
 
-    assertThat(results).doesNotContain(IGNORED_DOC.getKey());
-    assertThat(results).contains(MATCHING_DOC.getKey());
-  }
-
-  @Test
-  @Ignore("Pending cr/164068667")
-  public void updateDocumentQuery() {
-    addDocument(IGNORED_DOC);
-    addDocument(NON_MATCHING_DOC);
-    updateDocument(NON_MATCHING_DOC, MATCHING_DOC);
-    Query query = query("coll").filter(filter("a", "==", "a"));
-
-    ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
-
-    assertThat(results).doesNotContain(IGNORED_DOC.getKey());
-    assertThat(results).contains(MATCHING_DOC.getKey());
-  }
-
-  @Test
-  @Ignore("Pending cr/164068667")
-  public void removeDocumentQuery() {
-    addDocument(IGNORED_DOC);
-    addDocument(MATCHING_DOC);
-    removeDocument(MATCHING_DOC);
-    Query query = query("coll").filter(filter("a", "==", "a"));
-
-    ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
-
-    assertThat(results).doesNotContain(IGNORED_DOC.getKey());
-    assertThat(results).doesNotContain(MATCHING_DOC.getKey());
-  }
-
-  @Test
-  @Ignore("Pending cr/164068667")
-  public void nestedQuery() {
-    MutableDocument nonMatchingDoc = doc("coll/a", ORIGINAL_VERSION, map("a", map("a", "b")));
-    MutableDocument matchingDoc = doc("coll/a", UPDATED_VERSION, map("a", map("a", "a")));
-    MutableDocument ignoredDoc = doc("coll/b", ORIGINAL_VERSION, map("a", map("a", "b")));
-    addDocument(nonMatchingDoc);
-    addDocument(ignoredDoc);
-    updateDocument(nonMatchingDoc, matchingDoc);
-    Query query = query("coll").filter(filter("a.a", "==", "a"));
-
-    ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
-
-    assertThat(results).doesNotContain(ignoredDoc.getKey());
-    assertThat(results).contains(matchingDoc.getKey());
-  }
-
-  @Test
-  @Ignore("Pending cr/164068667")
-  public void orderByQuery() {
-    addDocument(IGNORED_DOC);
-    addDocument(MATCHING_DOC);
-    Query query = query("coll").orderBy(TestUtil.orderBy("a"));
-
-    ImmutableSortedMap<DocumentKey, Document> results =
-        queryEngine.getDocumentsMatchingQuery(
-            query, /* lastLimboFreeSnapshotVersion= */ null, DocumentKey.emptyKeySet());
-
-    assertThat(results).doesNotContain(IGNORED_DOC.getKey());
-    assertThat(results).contains(MATCHING_DOC.getKey());
+    assertTrue(results.containsKey(doc1.getKey()));
+    assertTrue(results.containsKey(doc2.getKey()));
+    assertTrue(results.containsKey(doc3.getKey()));
   }
 }

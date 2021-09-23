@@ -109,13 +109,16 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getVersion().getTimestamp().getSeconds(),
-        index.getVersion().getTimestamp().getNanoseconds());
+        index.getUpdateTime().getTimestamp().getSeconds(),
+        index.getUpdateTime().getTimestamp().getNanoseconds());
   }
 
   @Override
-  public void addIndexEntries(Document document) {
-    DocumentKey documentKey = document.getKey();
+  public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
+    hardAssert(oldDocument == null, "Support for updating documents is not yet available");
+    hardAssert(newDocument != null, "Support for removing documents is not yet available");
+
+    DocumentKey documentKey = newDocument.getKey();
     String collectionGroup = documentKey.getCollectionGroup();
     db.query(
             "SELECT index_id, index_proto, update_time_seconds, update_time_nanos "
@@ -133,7 +136,7 @@ final class SQLiteIndexManager implements IndexManager {
                         row.getInt(2),
                         row.getInt(3));
 
-                List<Value> values = extractFieldValue(document, fieldIndex);
+                List<Value> values = extractFieldValue(newDocument, fieldIndex);
                 if (values == null) return;
 
                 if (Logger.isDebugEnabled()) {
@@ -181,18 +184,15 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
-    @Nullable FieldIndex fieldIndex = getMatchingIndex(target);
-    if (fieldIndex == null) return null;
-
-    Bound lowerBound = target.getLowerBound(fieldIndex);
-    @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
+  public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex index, Target target) {
+    Bound lowerBound = target.getLowerBound(index);
+    @Nullable Bound upperBound = target.getUpperBound(index);
 
     if (Logger.isDebugEnabled()) {
       Logger.debug(
           TAG,
           "Using index '%s' to execute '%s' (Lower bound: %s, Upper bound: %s)",
-          fieldIndex,
+          index,
           target,
           lowerBound,
           upperBound);
@@ -201,20 +201,16 @@ final class SQLiteIndexManager implements IndexManager {
     Set<DocumentKey> result = new HashSet<>();
     SQLitePersistence.Query query;
 
-    Object[] lowerBoundValues = encodeTargetValues(fieldIndex, target, lowerBound.getPosition());
+    Object[] lowerBoundValues = encodeTargetValues(index, target, lowerBound.getPosition());
     String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
     if (upperBound != null) {
-      Object[] upperBoundValues = encodeTargetValues(fieldIndex, target, upperBound.getPosition());
+      Object[] upperBoundValues = encodeTargetValues(index, target, upperBound.getPosition());
       String upperBoundOp = upperBound.isInclusive() ? "<=" : "<";
       query =
           generateQuery(
-              fieldIndex.getIndexId(),
-              lowerBoundValues,
-              lowerBoundOp,
-              upperBoundValues,
-              upperBoundOp);
+              index.getIndexId(), lowerBoundValues, lowerBoundOp, upperBoundValues, upperBoundOp);
     } else {
-      query = generateQuery(fieldIndex.getIndexId(), lowerBoundValues, lowerBoundOp);
+      query = generateQuery(index.getIndexId(), lowerBoundValues, lowerBoundOp);
     }
 
     query.forEach(
@@ -268,11 +264,9 @@ final class SQLiteIndexManager implements IndexManager {
     return db.query(sql).binding(bingArgs);
   }
 
-  /**
-   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
-   * index is configured.
-   */
-  private @Nullable FieldIndex getMatchingIndex(Target target) {
+  @Nullable
+  @Override
+  public FieldIndex getFieldIndex(Target target) {
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
         target.getCollectionGroup() != null

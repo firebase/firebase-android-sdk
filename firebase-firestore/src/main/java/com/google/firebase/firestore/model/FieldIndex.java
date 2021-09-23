@@ -59,24 +59,25 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   private final String collectionGroup;
   private final int indexId;
   private final List<Segment> segments;
-  private final SnapshotVersion version;
+  private final SnapshotVersion updateTime;
 
   public FieldIndex(String collectionGroup, int indexId) {
     this.collectionGroup = collectionGroup;
     this.segments = new ArrayList<>();
     this.indexId = indexId;
-    this.version = SnapshotVersion.NONE;
+    this.updateTime = SnapshotVersion.NONE;
   }
 
   public FieldIndex(String collectionId) {
     this(collectionId, -1);
   }
 
-  FieldIndex(String collectionGroup, int indexId, List<Segment> segments, SnapshotVersion version) {
+  FieldIndex(
+      String collectionGroup, int indexId, List<Segment> segments, SnapshotVersion updateTime) {
     this.collectionGroup = collectionGroup;
     this.segments = segments;
     this.indexId = indexId;
-    this.version = version;
+    this.updateTime = updateTime;
   }
 
   /** The collection ID this index applies to. */
@@ -100,8 +101,8 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     return segments.size();
   }
 
-  public SnapshotVersion getVersion() {
-    return version;
+  public SnapshotVersion getUpdateTime() {
+    return updateTime;
   }
 
   @NonNull
@@ -114,12 +115,12 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
     List<Segment> newSegments = new ArrayList<>(segments);
     newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
-    return new FieldIndex(collectionGroup, indexId, newSegments, version);
+    return new FieldIndex(collectionGroup, indexId, newSegments, updateTime);
   }
 
   /** Returns a new field index with the updated version. */
-  public FieldIndex withVersion(SnapshotVersion version) {
-    return new FieldIndex(collectionGroup, indexId, segments, version);
+  public FieldIndex withUpdateTime(SnapshotVersion updateTime) {
+    return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
 
   @Override
@@ -130,7 +131,7 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     FieldIndex fieldIndex = (FieldIndex) o;
 
     if (!segments.equals(fieldIndex.segments)) return false;
-    if (!version.equals(fieldIndex.version)) return false;
+    if (!updateTime.equals(fieldIndex.updateTime)) return false;
     return collectionGroup.equals(fieldIndex.collectionGroup);
   }
 
@@ -138,14 +139,14 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
   public int hashCode() {
     int result = collectionGroup.hashCode();
     result = 31 * result + segments.hashCode();
-    result = 31 * result + version.hashCode();
+    result = 31 * result + updateTime.hashCode();
     return result;
   }
 
   @Override
   public String toString() {
     return String.format(
-        "FieldIndex{collectionGroup='%s', segments=%s, version=%s}",
-        collectionGroup, segments, version);
+        "FieldIndex{collectionGroup='%s', segments=%s, updateTime=%s}",
+        collectionGroup, segments, updateTime);
   }
 }
