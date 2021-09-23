@@ -141,6 +141,7 @@ dependencies {
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
     implementation project(':firebase-components')
+    implementation project(':appcheck:firebase-appcheck-interop')
 
 
     //To provide @Generated annotations

@@ -22,9 +22,11 @@ import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
+import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,16 +44,19 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final Deferred<InternalAuthProvider> authProvider;
+  private final Provider<InternalAppCheckTokenProvider> appCheckProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
+      @NonNull Provider<InternalAppCheckTokenProvider> appCheckProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
     this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
@@ -63,7 +68,7 @@ class FirestoreMultiDbComponent
     if (firestore == null) {
       firestore =
           FirebaseFirestore.newInstance(
-              context, app, authProvider, databaseId, this, metadataProvider);
+              context, app, authProvider, appCheckProvider, databaseId, this, metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;
