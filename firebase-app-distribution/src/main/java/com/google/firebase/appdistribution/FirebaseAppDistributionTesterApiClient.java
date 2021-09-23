@@ -217,11 +217,13 @@ class FirebaseAppDistributionTesterApiClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        LogWrapper.getInstance().e(TAG + "Could not get fingerprint hash for package: " + context.getPackageName());
+        LogWrapper.getInstance()
+            .e(TAG + "Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
         String shaHash = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
-        LogWrapper.getInstance().v("Sha-1 fingerprint for package " + context.getPackageName() + " is" + shaHash);
+        LogWrapper.getInstance()
+            .v("Sha-1 fingerprint for package " + context.getPackageName() + " is" + shaHash);
         return shaHash;
       }
     } catch (PackageManager.NameNotFoundException e) {
