@@ -52,7 +52,7 @@ public class LogWrapper {
     Log.e(LOG_TAG, msg);
   }
 
-  public void e(@NonNull String msg, Throwable tr) {
+  public void e(@NonNull String msg, @NonNull Throwable tr) {
     Log.e(LOG_TAG, msg, tr);
   }
 
