@@ -30,27 +30,27 @@ public class LogWrapper {
     return instance;
   }
 
-  void d(String msg) {
+  public void d(String msg) {
     Log.d(LOG_TAG, msg);
   }
 
-  void v(String msg) {
+  public void v(String msg) {
     Log.v(LOG_TAG, msg);
   }
 
-  void i(String msg) {
+  public void i(String msg) {
     Log.i(LOG_TAG, msg);
   }
 
-  void w(String msg) {
+  public void w(String msg) {
     Log.w(LOG_TAG, msg);
   }
 
-  void e(String msg) {
+  public void e(String msg) {
     Log.e(LOG_TAG, msg);
   }
 
-  void e(String msg, Throwable tr) {
+  public void e(String msg, Throwable tr) {
     Log.e(LOG_TAG, msg, tr);
   }
 
