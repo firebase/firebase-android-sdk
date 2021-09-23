@@ -219,8 +219,7 @@ class FirebaseAppDistributionTesterApiClient {
       if (hash == null) {
         return null;
       } else {
-        String shaHash = Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
-        return shaHash;
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
       LogWrapper.getInstance().e(TAG + "No such package: " + context.getPackageName(), e);
