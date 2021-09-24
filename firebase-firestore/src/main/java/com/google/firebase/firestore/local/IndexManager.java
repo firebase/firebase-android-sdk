@@ -46,7 +46,7 @@ public interface IndexManager {
    */
   List<ResourcePath> getCollectionParents(String collectionId);
 
-  /** Updates the index entries for the given document.*/
+  /** Updates the index entries for the given document. */
   void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument);
 
   /**
