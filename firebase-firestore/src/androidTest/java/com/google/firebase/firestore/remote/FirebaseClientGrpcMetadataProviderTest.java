@@ -21,7 +21,10 @@ import static org.mockito.Mockito.when;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.firestore.testutil.ImmediateDeferred;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
@@ -41,6 +44,9 @@ public class FirebaseClientGrpcMetadataProviderTest {
           .setProjectId("projectid")
           .build();
 
+  private Deferred<InternalAppCheckTokenProvider> mockAppCheckTokenProvider =
+      new ImmediateDeferred<>(mock(InternalAppCheckTokenProvider.class));
+
   private static final Metadata.Key<String> HEART_BEAT_HEADER =
       Metadata.Key.of("x-firebase-client-log-type", Metadata.ASCII_STRING_MARSHALLER);
 
@@ -57,7 +63,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeatProvider.get()).thenReturn(null);
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -69,7 +75,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeatProvider.get()).thenReturn(null);
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -81,7 +87,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeatProvider.get()).thenReturn(mockHeartBeat);
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(0);
   }
@@ -95,7 +101,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("2");
@@ -112,7 +118,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("1");
@@ -129,7 +135,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(3);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("3");
@@ -146,7 +152,7 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
         new FirebaseClientGrpcMetadataProvider(
-            mockUserAgentProvider, mockHeartBeatProvider, options);
+            mockUserAgentProvider, mockHeartBeatProvider, options, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(2);
     assertThat(metadata.get(USER_AGENT_HEADER)).isEqualTo("foo:1.2.1");
@@ -161,7 +167,8 @@ public class FirebaseClientGrpcMetadataProviderTest {
     when(mockHeartBeat.getHeartBeatCode(any())).thenReturn(HeartBeatInfo.HeartBeat.SDK);
     when(mockUserAgent.getUserAgent()).thenReturn("foo:1.2.1");
     GrpcMetadataProvider metadataProvider =
-        new FirebaseClientGrpcMetadataProvider(mockUserAgentProvider, mockHeartBeatProvider, null);
+        new FirebaseClientGrpcMetadataProvider(
+            mockUserAgentProvider, mockHeartBeatProvider, null, mockAppCheckTokenProvider);
     metadataProvider.updateMetadata(metadata);
     assertThat(metadata.keys().size()).isEqualTo(2);
     assertThat(metadata.get(HEART_BEAT_HEADER)).isEqualTo("1");
