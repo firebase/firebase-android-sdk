@@ -31,7 +31,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
@@ -42,7 +41,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
@@ -153,7 +151,7 @@ final class SQLiteIndexManager implements IndexManager {
                         row.getInt(2),
                         row.getInt(3));
 
-                addIndexEntry(document, Collections.singletonList(fieldIndex), null);
+                addIndexEntry(document, Collections.singletonList(fieldIndex));
 
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
@@ -161,21 +159,23 @@ final class SQLiteIndexManager implements IndexManager {
             });
   }
 
-  public int addIndexEntry(
-      Document document,
-      Collection<FieldIndex> fieldIndexes,
-      @Nullable Map<FieldIndex, SnapshotVersion> fieldIndexToSnapshotVersion) {
+  /**
+   * Writes index entries for the field indexes that apply to the provided document. Updates the
+   * field index's version if the document version is greater.
+   *
+   * @param document The provided document to index.
+   * @param fieldIndexes A list of field indexes to apply.
+   * @return The number of index entries written
+   */
+  public int addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
     DocumentKey documentKey = document.getKey();
     int entriesWritten = 0;
     for (FieldIndex fieldIndex : fieldIndexes) {
       List<Value> values = extractFieldValue(document, fieldIndex);
       if (values == null) continue;
 
-      if (fieldIndexToSnapshotVersion != null
-          && (!fieldIndexToSnapshotVersion.containsKey(fieldIndex)
-              || fieldIndexToSnapshotVersion.get(fieldIndex).compareTo(document.getVersion())
-                  < 0)) {
-        fieldIndexToSnapshotVersion.put(fieldIndex, document.getVersion());
+      if (document.getVersion().compareTo(fieldIndex.getVersion()) > 0) {
+        fieldIndex.setVersion(document.getVersion());
       }
 
       if (Logger.isDebugEnabled()) {

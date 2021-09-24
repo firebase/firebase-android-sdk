@@ -69,9 +69,6 @@ public class SQLiteIndexBackfillerTest {
     backfiller = persistence.getIndexBackfiller();
     CountingQueryEngine queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
     localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
-
-    //    writeIndexConfigs();
-    //    addInitialTestDocuments();
   }
 
   @After
@@ -119,11 +116,11 @@ public class SQLiteIndexBackfillerTest {
   public void testBackfillWritesToIndexConfigOnCompletion() {
     // Check that index_config is updated to new version after each write.
     addFieldIndex("coll1", "foo");
-    addDocumentToCache("coll1/docA", "foo", version(10, 20));
+    addDoc("coll1/docA", "foo", version(10, 20));
     backfiller.backfill(localStore);
     assertEquals(version(10, 20), indexManager.getFieldIndexes(0).get(0).getVersion());
 
-    addDocumentToCache("coll1/docA", "foo", version(20, 30));
+    addDoc("coll1/docA", "foo", version(20, 30));
     backfiller.backfill(localStore);
     assertEquals(version(2, 30), indexManager.getFieldIndexes(0).get(0).getVersion());
   }
@@ -137,10 +134,10 @@ public class SQLiteIndexBackfillerTest {
   public void testBackfillWritesIndexEntries() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "bar");
-    addDocumentToCache("coll1/docA", "foo", version(10, 0));
-    addDocumentToCache("coll1/docB", "boo", version(10, 0));
-    addDocumentToCache("coll2/docA", "bar", version(10, 0));
-    addDocumentToCache("coll2/docB", "car", version(10, 0));
+    addDoc("coll1/docA", "foo", version(10, 0));
+    addDoc("coll1/docB", "boo", version(10, 0));
+    addDoc("coll2/docA", "bar", version(10, 0));
+    addDoc("coll2/docB", "car", version(10, 0));
 
     IndexBackfiller.Results results = backfiller.backfill(localStore);
     assertEquals(2, results.getEntriesAdded());
@@ -172,9 +169,8 @@ public class SQLiteIndexBackfillerTest {
             .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED));
   }
 
-  private void addDocumentToCache(String path, String field, SnapshotVersion readTime) {
+  private void addDoc(String path, String field, SnapshotVersion readTime) {
     MutableDocument doc = doc(path, 10, map(field, 2));
-    persistence.runTransaction(
-        "Add cache entry", () -> persistence.getRemoteDocumentCache().add(doc, readTime));
+    persistence.getRemoteDocumentCache().add(doc, readTime);
   }
 }

@@ -25,6 +25,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -141,9 +142,11 @@ public class IndexBackfiller {
   }
 
   private void fetchNewFieldIndexes() {
+    // TODO: Store fetched field indexes in memory in the SQLiteIndexManager and allow fetching
+    // new updates.
     List<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(lastFieldIndexId + 1);
 
-    if (fieldIndexes.size() > 0) {
+    if (!fieldIndexes.isEmpty()) {
       fieldIndexQueue.addAll(fieldIndexes);
 
       // Since index configuration entries are sorted by index id, we can set the last fetched id to
@@ -155,7 +158,6 @@ public class IndexBackfiller {
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
   private int writeIndexEntries(LocalStore localStore) {
     int numIndexesWritten = 0;
-    SnapshotVersion lastReadTime = null;
 
     // TODO(indexing): Track the number of entries written and process more field indexes if
     // we're under the maximum.
@@ -163,20 +165,10 @@ public class IndexBackfiller {
     List<FieldIndex> fieldIndexesToProcess = fieldIndexQueue.subList(0, lastArrayIndex);
 
     // Create a map of each collection group to all the FieldIndexes on it.
-    Map<String, ArrayList<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
-
-    // Map of field index to the most recent snapshot version written.
-    Map<FieldIndex, SnapshotVersion> fieldIndexToNewestVersion = new HashMap<>();
+    Map<String, List<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
 
     for (FieldIndex fieldIndex : fieldIndexesToProcess) {
 
-      // Use the lowest version number as the base.
-      lastReadTime =
-          lastReadTime != null
-              ? fieldIndex.getVersion().compareTo(lastReadTime) < 0
-                  ? fieldIndex.getVersion()
-                  : lastReadTime
-              : fieldIndex.getVersion();
       String collectionGroup = fieldIndex.getCollectionGroup();
 
       if (collectionToFieldIndexes.containsKey(collectionGroup)) {
@@ -190,24 +182,25 @@ public class IndexBackfiller {
     for (String collectionGroup : collectionToFieldIndexes.keySet()) {
       Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
+      // Use the lowest version of all field indexes as the base version.
+      SnapshotVersion lowestVersion =
+          getLowestSnapshotVersion(collectionToFieldIndexes.get(collectionGroup));
+
       // TODO(indexing): Make sure the docs matching the query are sorted by read time.
       // TODO(indexing): Use limit queries to allow incremental progress.
       // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
       ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-          localStore.getDocumentsMatchingQuery(query, lastReadTime);
+          localStore.getDocumentsMatchingQuery(query, lowestVersion);
       for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
         Document document = entry.getValue();
-        numIndexesWritten +=
-            indexManager.addIndexEntry(document, fieldIndexesToProcess, fieldIndexToNewestVersion);
+        numIndexesWritten += indexManager.addIndexEntry(document, fieldIndexesToProcess);
       }
     }
 
     // Update index configurations with the progress made.
     // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
     // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex fieldIndex : fieldIndexToNewestVersion.keySet()) {
-      SnapshotVersion newVersion = fieldIndexToNewestVersion.get(fieldIndex);
-      fieldIndex.setVersion(newVersion);
+    for (FieldIndex fieldIndex : fieldIndexesToProcess) {
       indexManager.updateFieldIndex(fieldIndex);
     }
 
@@ -218,6 +211,18 @@ public class IndexBackfiller {
     }
 
     return numIndexesWritten;
+  }
+
+  private SnapshotVersion getLowestSnapshotVersion(List<FieldIndex> fieldIndexes) {
+    Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
+    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      lowestVersion =
+          fieldIndex.getVersion().compareTo(lowestVersion) < 0
+              ? fieldIndex.getVersion()
+              : lowestVersion;
+    }
+    return lowestVersion;
   }
 
   @VisibleForTesting
