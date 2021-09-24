@@ -240,10 +240,7 @@ final class SQLiteIndexManager implements IndexManager {
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp) {
-    int statementCount =
-        max(arrayValues.size(), 1)
-            * lowerBounds.length
-            * (upperBounds == null ? 1 : upperBounds.length);
+    int statementCount = max(arrayValues.size(), 1) * lowerBounds.length;
     int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
     Object[] bindArgs = new Object[statementCount * bindsPerStatement];
 
@@ -282,16 +279,17 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object arrayValue,
       Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
-    for (Object lower : lowerBounds) {
-      for (int i = 0; i < (upperBounds != null ? upperBounds.length : 1); ++i) {
-        bindArgs[offset++] = indexId;
-        if (arrayValue != null) {
-          bindArgs[offset++] = arrayValue;
-        }
-        bindArgs[offset++] = lower;
-        if (upperBounds != null) {
-          bindArgs[offset++] = upperBounds[i];
-        }
+    hardAssert(
+        upperBounds == null || upperBounds.length == lowerBounds.length,
+        "Length of upper and lower bound should match");
+    for (int i = 0; i < lowerBounds.length; ++i) {
+      bindArgs[offset++] = indexId;
+      if (arrayValue != null) {
+        bindArgs[offset++] = arrayValue;
+      }
+      bindArgs[offset++] = lowerBounds[i];
+      if (upperBounds != null) {
+        bindArgs[offset++] = upperBounds[i];
       }
     }
     return offset;
