@@ -183,7 +183,8 @@ class SQLiteSchema {
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
     if (fromVersion < OVERLAY_SUPPORT_VERSION && toVersion >= OVERLAY_SUPPORT_VERSION) {
-      Preconditions.checkState(Persistence.OVERLAY_SUPPORT_ENABLED);
+      Preconditions.checkState(
+          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
     }
 

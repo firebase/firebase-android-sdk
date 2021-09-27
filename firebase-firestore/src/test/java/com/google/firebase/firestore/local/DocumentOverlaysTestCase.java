@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -43,19 +44,27 @@ public abstract class DocumentOverlaysTestCase {
 
   private Persistence persistence;
   private DocumentOverlays overlays;
-  private boolean overlayEnabled = false;
+  private static boolean overlayEnabled = false;
+
+  @BeforeClass
+  public static void beforeClass() {
+    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
+  }
+
+  @BeforeClass
+  public static void afterClass() {
+    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
+  }
 
   @Before
   public void setUp() {
-    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
     persistence = getPersistence();
     overlays = persistence.getDocumentOverlays();
   }
 
   @After
   public void tearDown() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
     persistence.shutdown();
   }
 
