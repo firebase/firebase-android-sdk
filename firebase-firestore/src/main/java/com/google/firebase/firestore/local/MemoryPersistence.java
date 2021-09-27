@@ -36,6 +36,7 @@ public final class MemoryPersistence extends Persistence {
   private final MemoryTargetCache targetCache;
   private final MemoryBundleCache bundleCache;
   private final MemoryRemoteDocumentCache remoteDocumentCache;
+  private final MemoryDocumentOverlays documentOverlays;
   private ReferenceDelegate referenceDelegate;
 
   private boolean started;
@@ -61,6 +62,7 @@ public final class MemoryPersistence extends Persistence {
     targetCache = new MemoryTargetCache(this);
     bundleCache = new MemoryBundleCache();
     remoteDocumentCache = new MemoryRemoteDocumentCache(this);
+    documentOverlays = new MemoryDocumentOverlays();
   }
 
   @Override
@@ -123,6 +125,11 @@ public final class MemoryPersistence extends Persistence {
   @Override
   BundleCache getBundleCache() {
     return bundleCache;
+  }
+
+  @Override
+  DocumentOverlays getDocumentOverlays() {
+    return documentOverlays;
   }
 
   @Override
