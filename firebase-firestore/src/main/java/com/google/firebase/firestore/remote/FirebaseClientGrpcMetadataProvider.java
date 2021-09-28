@@ -83,7 +83,7 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
 
   private void maybeAddAppCheckToken(@NonNull Metadata metadata) {
     String appCheckToken = appCheckProvider.getCurrentAppCheckToken();
-    if (appCheckToken != null) {
+    if (appCheckToken != null && !appCheckToken.isEmpty()) {
       metadata.put(X_FIREBASE_APPCHECK, appCheckToken);
     }
   }
