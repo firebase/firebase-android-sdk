@@ -256,7 +256,7 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder statement = new StringBuilder();
     statement.append(
         "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
-    statement.append(arrayValues.isEmpty() ? "AND array_value IS NULL ": "AND array_value = ? ");
+    statement.append(arrayValues.isEmpty() ? "AND array_value IS NULL " : "AND array_value = ? ");
     statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
