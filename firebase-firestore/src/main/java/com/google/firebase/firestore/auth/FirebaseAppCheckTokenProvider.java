@@ -33,19 +33,20 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
 
   private static final int MAXIMUM_TOKEN_WAIT_TIME_MS = 30000;
 
-  /** The AppCheck token string. May be null if the token has not been retrieved yet. */
-  @Nullable private String appCheckToken;
-
   /**
    * The Task for retrieving the AppCheck token. May be null if the "AppCheck" module is not
    * available.
    */
-  @Nullable private Task<String> getTokenTask;
+  private final Task<String> getTokenTask;
 
   /** Creates a new FirebaseAppCheckTokenProvider. */
   public FirebaseAppCheckTokenProvider(
       Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider) {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    getTokenTask = taskCompletionSource.getTask();
+
     if (deferredAppCheckTokenProvider == null) {
+      taskCompletionSource.setResult(null);
       return;
     }
 
@@ -53,49 +54,36 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
         provider -> {
           InternalAppCheckTokenProvider internalAppCheckTokenProvider = provider.get();
           if (internalAppCheckTokenProvider == null) {
+            taskCompletionSource.setResult(null);
             return;
           }
-          Task<AppCheckTokenResult> pendingResult =
-              internalAppCheckTokenProvider.getToken(/* forceRefresh= */ false);
-          if (pendingResult == null) {
-            return;
-          }
-          TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-          getTokenTask = taskCompletionSource.getTask();
-          pendingResult.addOnCompleteListener(
-              task -> {
-                if (task.isSuccessful()) {
-                  AppCheckTokenResult result = task.getResult();
-                  if (result.getError() != null) {
-                    Logger.warn(
-                        LOG_TAG,
-                        "Error getting App Check token; using placeholder token instead. Error: "
-                            + result.getError());
-                  }
-                  appCheckToken = result.getToken();
-                  taskCompletionSource.setResult(result.getToken());
-                } else {
-                  Logger.warn(
-                      LOG_TAG, "Unexpected error getting App Check token: " + task.getException());
-                  appCheckToken = null;
-                }
-              });
+          internalAppCheckTokenProvider
+              .getToken(/* forceRefresh= */ false)
+              .addOnCompleteListener(
+                  task -> {
+                    if (task.isSuccessful()) {
+                      AppCheckTokenResult result = task.getResult();
+                      if (result.getError() != null) {
+                        Logger.warn(
+                            LOG_TAG,
+                            "Error getting App Check token; using placeholder token instead. Error: "
+                                + result.getError());
+                      }
+                      taskCompletionSource.setResult(result.getToken());
+                    } else {
+                      Logger.warn(
+                          LOG_TAG,
+                          "Unexpected error getting App Check token: " + task.getException());
+                      taskCompletionSource.setResult(null);
+                    }
+                  });
         });
   }
 
   @Nullable
   public String getCurrentAppCheckToken() {
-    if (appCheckToken != null) {
-      return appCheckToken;
-    }
-
-    if (getTokenTask == null) {
-      return null;
-    }
-
     try {
-      Tasks.await(getTokenTask, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-      return appCheckToken;
+      return Tasks.await(getTokenTask, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
     } catch (ExecutionException | InterruptedException | TimeoutException e) {
       Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + e);
       return null;
