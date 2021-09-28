@@ -102,12 +102,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
-          instance = new AppStartTrace(transportManager, clock, new ThreadPoolExecutor(
-              CORE_POOL_SIZE,
-              MAX_POOL_SIZE,
-              /* keepAliveTime= */ 10,
-              TimeUnit.SECONDS,
-              new LinkedBlockingQueue<>()));
+          instance =
+              new AppStartTrace(
+                  transportManager,
+                  clock,
+                  new ThreadPoolExecutor(
+                      CORE_POOL_SIZE,
+                      MAX_POOL_SIZE,
+                      /* keepAliveTime= */ 10,
+                      TimeUnit.SECONDS,
+                      new LinkedBlockingQueue<>()));
         }
       }
     }
@@ -140,7 +144,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   private boolean isStartedFromBackground = false;
 
-  AppStartTrace(@NonNull TransportManager transportManager, @NonNull Clock clock, @NonNull ExecutorService executorService) {
+  AppStartTrace(
+      @NonNull TransportManager transportManager,
+      @NonNull Clock clock,
+      @NonNull ExecutorService executorService) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.executorService = executorService;
@@ -240,13 +247,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     subtraces.add(traceMetricBuilder.build());
 
     traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder.setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
+    traceMetricBuilder
+        .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
         .setClientStartTimeUs(onCreateTime.getMicros())
         .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
     subtraces.add(traceMetricBuilder.build());
 
     traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder.setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
+    traceMetricBuilder
+        .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
         .setClientStartTimeUs(onStartTime.getMicros())
         .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
     subtraces.add(traceMetricBuilder.build());
