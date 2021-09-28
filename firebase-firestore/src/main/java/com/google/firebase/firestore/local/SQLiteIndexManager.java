@@ -240,24 +240,30 @@ final class SQLiteIndexManager implements IndexManager {
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp) {
+    // The number of total statements we union together. This is similar to a distributed normal
+    // form, but adapted for array values. We create a single statement per value in an
+    // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
     int statementCount =
         max(arrayValues.size(), 1)
             * lowerBounds.length
             * (upperBounds == null ? 1 : upperBounds.length);
+    // The number of "question marks" per single statement
     int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
     Object[] bindArgs = new Object[statementCount * bindsPerStatement];
 
+    // Build the statement. We always include the lower bound, and optionally include an array value
+    // and an upper bound.
     StringBuilder statement = new StringBuilder();
     statement.append(
         "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
-    if (!arrayValues.isEmpty()) {
-      statement.append("AND array_value = ? ");
-    }
+    statement.append(arrayValues.isEmpty() ? "AND array_value IS NULL ": "AND array_value = ? ");
     statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
     }
 
+    // Create the UNION statement by repeating the above generated statement. We can then add
+    // ordering and a limit clause.
     String sql = repeatSequence(statement, statementCount, " UNION ");
     if (target.getLimit() != -1) {
       String direction = target.getFirstOrderBy().getDirection().canonicalString();
@@ -265,6 +271,7 @@ final class SQLiteIndexManager implements IndexManager {
       sql += "LIMIT " + target.getLimit() + " ";
     }
 
+    // Fill in the bind ("question marks") variables.
     Iterator<Value> arrayValueIterator = arrayValues.iterator();
     for (int offset = 0; offset < bindArgs.length; ) {
       Object arrayValue = encode(arrayValueIterator.hasNext() ? arrayValueIterator.next() : null);
@@ -282,6 +289,7 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object arrayValue,
       Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
+    // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
     for (Object lower : lowerBounds) {
       for (int i = 0; i < (upperBounds != null ? upperBounds.length : 1); ++i) {
         bindArgs[offset++] = indexId;
