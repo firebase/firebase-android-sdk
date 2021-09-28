@@ -65,6 +65,8 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
 
   @Override
   public void updateMetadata(@NonNull Metadata metadata) {
+    maybeAddAppCheckToken(metadata);
+
     if (heartBeatInfoProvider.get() == null || userAgentPublisherProvider.get() == null) {
       return;
     }
@@ -77,7 +79,6 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
 
     metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
     maybeAddGmpAppId(metadata);
-    maybeAddAppCheckToken(metadata);
   }
 
   private void maybeAddAppCheckToken(@NonNull Metadata metadata) {
