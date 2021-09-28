@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.auth;
 
-/** A CredentialsProvider has a method to fetch an authorization token. */
+/** An AppCheckTokenProvider has a method to fetch an AppCheck token. */
 public abstract class AppCheckTokenProvider {
   /** Returns the current AppCheck Token. */
   public abstract String getCurrentAppCheckToken();
