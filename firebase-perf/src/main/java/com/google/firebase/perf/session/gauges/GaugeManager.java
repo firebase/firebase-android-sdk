@@ -50,7 +50,7 @@ public class GaugeManager {
   private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long INVALID_GAUGE_COLLECTION_FREQUENCY = -1;
 
-  private final ScheduledExecutorService gaugeManagerExecutor;
+  private ScheduledExecutorService gaugeManagerExecutor;
   private final ConfigResolver configResolver;
   private final CpuGaugeCollector cpuGaugeCollector;
   private final MemoryGaugeCollector memoryGaugeCollector;
@@ -64,7 +64,7 @@ public class GaugeManager {
 
   private GaugeManager() {
     this(
-        Executors.newSingleThreadScheduledExecutor(),
+        null,
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
@@ -133,6 +133,9 @@ public class GaugeManager {
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
     try {
+      if (gaugeManagerExecutor == null) {
+        gaugeManagerExecutor = Executors.newSingleThreadScheduledExecutor();
+      }
       gaugeManagerDataCollectionJob =
           gaugeManagerExecutor.scheduleAtFixedRate(
               () -> {

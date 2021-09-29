@@ -48,7 +48,7 @@ public class MemoryGaugeCollector {
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
   private static final int UNSET_MEMORY_METRIC_COLLECTION_RATE = -1;
 
-  private final ScheduledExecutorService memoryMetricCollectorExecutor;
+  private ScheduledExecutorService memoryMetricCollectorExecutor;
   /* This is populated by MemoryGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
   private final Runtime runtime;
@@ -57,7 +57,7 @@ public class MemoryGaugeCollector {
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
   private MemoryGaugeCollector() {
-    this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
+    this(null, Runtime.getRuntime());
   }
 
   @VisibleForTesting
@@ -129,6 +129,9 @@ public class MemoryGaugeCollector {
     this.memoryMetricCollectionRateMs = memoryMetricCollectionRate;
 
     try {
+      if (memoryMetricCollectorExecutor == null) {
+        memoryMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
+      }
       memoryMetricCollectorJob =
           memoryMetricCollectorExecutor.scheduleAtFixedRate(
               () -> {
@@ -147,6 +150,9 @@ public class MemoryGaugeCollector {
 
   private synchronized void scheduleMemoryMetricCollectionOnce(Timer referenceTime) {
     try {
+      if (memoryMetricCollectorExecutor == null) {
+        memoryMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
+      }
       @SuppressWarnings("FutureReturnValueIgnored")
       ScheduledFuture unusedFuture =
           memoryMetricCollectorExecutor.schedule(
