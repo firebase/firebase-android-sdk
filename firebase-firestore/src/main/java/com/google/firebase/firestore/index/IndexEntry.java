@@ -21,13 +21,16 @@ package com.google.firebase.firestore.index;
 // TODO(indexing)
 public class IndexEntry {
   private final int indexId;
-  private final byte[] indexValue;
+  private final byte[] arrayValue;
+  private final byte[] directionalValue;
   private final String uid;
   private final String documentName;
 
-  public IndexEntry(int indexId, byte[] indexValue, String uid, String documentName) {
+  public IndexEntry(
+      int indexId, byte[] arrayValue, byte[] directionalValue, String uid, String documentName) {
     this.indexId = indexId;
-    this.indexValue = indexValue;
+    this.arrayValue = arrayValue;
+    this.directionalValue = directionalValue;
     this.uid = uid;
     this.documentName = documentName;
   }
@@ -36,8 +39,12 @@ public class IndexEntry {
     return indexId;
   }
 
-  public byte[] getIndexValue() {
-    return indexValue;
+  public byte[] getArrayValue() {
+    return arrayValue;
+  }
+
+  public byte[] getDirectionalValue() {
+    return directionalValue;
   }
 
   public String getUid() {

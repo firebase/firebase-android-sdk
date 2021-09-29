@@ -297,7 +297,8 @@ public final class LocalSerializer {
     // queries against each collection separately.
     index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
 
-    for (FieldIndex.Segment segment : fieldIndex) {
+    for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
+      FieldIndex.Segment segment = fieldIndex.getSegment(i);
       Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
       indexField.setFieldPath(segment.getFieldPath().canonicalString());
       if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {

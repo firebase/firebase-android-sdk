@@ -364,10 +364,11 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE index_entries ("
                   + "index_id INTEGER, "
-                  + "index_value BLOB, " // field value pairs
+                  + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
+                  + "directional_value BLOB, " // index values for equality and inequalities
                   + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_name TEXT, "
-                  + "PRIMARY KEY (index_id, index_value, uid, document_name))");
+                  + "PRIMARY KEY (index_id, array_value, directional_value, uid, document_name))");
         });
   }
 
