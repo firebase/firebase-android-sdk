@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -64,6 +65,33 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   private static volatile AppStartTrace instance;
   private static ExecutorService executorService;
+
+  private boolean isRegisteredForLifecycleCallbacks = false;
+  private final TransportManager transportManager;
+  private final Clock clock;
+  private Context appContext;
+  /**
+   * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
+   */
+  private WeakReference<Activity> launchActivity;
+  /**
+   * The first time onResume() of any activity is called, the activity is saved as appStartActivity
+   */
+  private WeakReference<Activity> appStartActivity;
+
+  /**
+   * If the time difference between app starts and creation of any Activity is larger than
+   * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
+   */
+  private boolean isTooLateToInitUI = false;
+
+  private Timer appStartTime = null;
+  private Timer onCreateTime = null;
+  private Timer onStartTime = null;
+  private Timer onResumeTime = null;
+
+  private PerfSession startSession;
+  private boolean isStartedFromBackground = false;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -117,32 +145,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
     return instance;
   }
-
-  private boolean isRegisteredForLifecycleCallbacks = false;
-  private final TransportManager transportManager;
-  private final Clock clock;
-  private Context appContext;
-  /**
-   * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
-   */
-  private WeakReference<Activity> launchActivity;
-  /**
-   * The first time onResume() of any activity is called, the activity is saved as appStartActivity
-   */
-  private WeakReference<Activity> appStartActivity;
-
-  /**
-   * If the time difference between app starts and creation of any Activity is larger than
-   * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
-   */
-  private boolean isTooLateToInitUI = false;
-
-  private Timer appStartTime = null;
-  private Timer onCreateTime = null;
-  private Timer onStartTime = null;
-  private Timer onResumeTime = null;
-
-  private boolean isStartedFromBackground = false;
 
   AppStartTrace(
       @NonNull TransportManager transportManager,
@@ -214,6 +216,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     onResumeTime = clock.getTime();
     this.appStartTime = FirebasePerfProvider.getAppStartTime();
+    this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
@@ -260,9 +263,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
         .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
     subtraces.add(traceMetricBuilder.build());
 
-    metric
-        .addAllSubtraces(subtraces)
-        .addPerfSessions(SessionManager.getInstance().perfSession().build());
+    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
