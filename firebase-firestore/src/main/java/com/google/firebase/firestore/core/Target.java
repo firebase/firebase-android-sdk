@@ -138,17 +138,15 @@ public final class Target {
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
    * defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getUpperBound}, lower bounds always exist as the SDK can use {@code null} as
-   * a starting point for missing boundary values.
    */
+  @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
     // Go through all filters to find a value for the current field segment
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      Value segmentValue = Values.NULL_VALUE;
+      Value segmentValue = null;
       boolean segmentInclusive = true;
 
       for (Filter filter : filters) {
@@ -196,6 +194,11 @@ public final class Target {
             break;
           }
         }
+      }
+
+      if (segmentValue == null) {
+        // No lower bound exists
+        return null;
       }
 
       values.add(segmentValue);

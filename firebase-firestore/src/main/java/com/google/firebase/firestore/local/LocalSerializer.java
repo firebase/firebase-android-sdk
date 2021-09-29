@@ -303,8 +303,10 @@ public final class LocalSerializer {
       indexField.setFieldPath(segment.getFieldPath().canonicalString());
       if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
         indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
-      } else {
+      } else if (segment.getKind() == FieldIndex.Segment.Kind.ASC) {
         indexField.setOrder(Index.IndexField.Order.ASCENDING);
+      } else {
+        indexField.setOrder(Index.IndexField.Order.DESCENDING);
       }
       index.addFields(indexField);
     }
@@ -321,7 +323,9 @@ public final class LocalSerializer {
               FieldPath.fromServerFormat(field.getFieldPath()),
               field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
                   ? FieldIndex.Segment.Kind.CONTAINS
-                  : FieldIndex.Segment.Kind.ORDERED);
+                  : (field.getOrder().equals(Index.IndexField.Order.ASCENDING)
+                      ? FieldIndex.Segment.Kind.ASC
+                      : FieldIndex.Segment.Kind.DESC));
     }
     fieldIndex =
         fieldIndex.withVersion(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));

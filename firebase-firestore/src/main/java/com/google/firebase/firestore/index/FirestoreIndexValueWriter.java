@@ -42,6 +42,11 @@ public class FirestoreIndexValueWriter {
   public static final int INDEX_TYPE_ARRAY = 50;
   public static final int INDEX_TYPE_MAP = 55;
   public static final int INDEX_TYPE_REFERENCE_SEGMENT = 60;
+  public static final int INDEX_TYPE_MAXIMUM = 1000000000;
+
+  // A terminator that indicates that a truncatable value was not truncated.
+  // This must be smaller than all other type labels.
+  public static final int NOT_TRUNCATED = 2;
 
   public static final FirestoreIndexValueWriter INSTANCE = new FirestoreIndexValueWriter();
 
@@ -77,7 +82,11 @@ public class FirestoreIndexValueWriter {
           break;
         }
         writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
-        encoder.writeDouble(number);
+        if (number == -0.0) {
+          encoder.writeDouble(0.0); // -0.0, 0 and 0.0 are all considered the same
+        } else {
+          encoder.writeDouble(number);
+        }
         break;
       case INTEGER_VALUE:
         writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
@@ -97,10 +106,10 @@ public class FirestoreIndexValueWriter {
       case BYTES_VALUE:
         writeValueTypeLabel(encoder, INDEX_TYPE_BLOB);
         encoder.writeBytes(indexValue.getBytesValue());
+        writeTruncationMarker(encoder);
         break;
       case REFERENCE_VALUE:
         writeIndexEntityRef(indexValue.getReferenceValue(), encoder);
-
         break;
       case GEO_POINT_VALUE:
         LatLng geoPoint = indexValue.getGeoPointValue();
@@ -138,6 +147,7 @@ public class FirestoreIndexValueWriter {
       writeIndexString(key, encoder);
       writeIndexValueAux(value, encoder);
     }
+    writeTruncationMarker(encoder);
   }
 
   private void writeIndexArray(ArrayValue arrayIndexValue, DirectionalIndexByteEncoder encoder) {
@@ -145,23 +155,28 @@ public class FirestoreIndexValueWriter {
     for (Value element : arrayIndexValue.getValuesList()) {
       writeIndexValueAux(element, encoder);
     }
+    writeTruncationMarker(encoder);
   }
 
   private void writeIndexEntityRef(String referenceValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_REFERENCE);
 
     ResourcePath path = ResourcePath.fromString(referenceValue);
-
     int numSegments = path.length();
     for (int index = DOCUMENT_NAME_OFFSET; index < numSegments; ++index) {
       String segment = path.getSegment(index);
-
       writeValueTypeLabel(encoder, INDEX_TYPE_REFERENCE_SEGMENT);
       writeUnlabeledIndexString(segment, encoder);
     }
+
+    writeTruncationMarker(encoder);
   }
 
   private void writeValueTypeLabel(DirectionalIndexByteEncoder encoder, int typeOrder) {
     encoder.writeLong(typeOrder);
+  }
+
+  private void writeTruncationMarker(DirectionalIndexByteEncoder encoder) {
+    encoder.writeLong(NOT_TRUNCATED); // DO I need this?
   }
 }

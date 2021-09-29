@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
+import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -166,8 +167,8 @@ final class SQLiteIndexManager implements IndexManager {
                   addSingleEntry(
                       documentKey,
                       indexId,
-                      encode(i < arrayValues.size() ? arrayValues.get(i) : null),
-                      encode(directionalValues));
+                      encodeAscending(i < arrayValues.size() ? arrayValues.get(i) : null),
+                      encode(fieldIndex, directionalValues));
                 }
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
@@ -178,6 +179,8 @@ final class SQLiteIndexManager implements IndexManager {
   private void addSingleEntry(
       DocumentKey documentKey, int indexId, @Nullable Object arrayIndex, Object directionalIndex) {
     // TODO(indexing): Handle different values for different users
+    System.out.println(
+        "Adding entry for key: " + documentKey + " data: " + toBytes((byte[]) directionalIndex));
     db.execute(
         "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?)",
@@ -187,6 +190,14 @@ final class SQLiteIndexManager implements IndexManager {
         documentKey.toString());
   }
 
+  private String toBytes(byte[] directionalIndex) {
+    List<String> tokens = new ArrayList<>();
+    for (byte b : directionalIndex) {
+      tokens.add("" + b);
+    }
+    return "[" + TextUtils.join(", ", tokens) + "]";
+  }
+
   @Override
   @Nullable
   public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
@@ -194,7 +205,7 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     List<Value> arrayValues = target.getArrayValues(fieldIndex);
-    Bound lowerBound = target.getLowerBound(fieldIndex);
+    @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
@@ -209,10 +220,15 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Object[] lowerBoundValues = encodeBound(fieldIndex, target, lowerBound);
-    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
+    String lowerBoundOp = lowerBound != null && lowerBound.isInclusive() ? ">=" : ">";
     Object[] upperBoundValues = encodeBound(fieldIndex, target, upperBound);
     String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
 
+    //    if (target.getFirstOrderBy().getDirection().equals(OrderBy.Direction.DESCENDING)) {
+    //
+    //       upperBoundOp = lowerBound.isInclusive() ? ">=" : ">";
+    //      lowerBoundOp= upperBound != null && upperBound.isInclusive() ? "<=" : "<";
+    //    }
     SQLitePersistence.Query query =
         generateQuery(
             target,
@@ -236,15 +252,23 @@ final class SQLiteIndexManager implements IndexManager {
       Target target,
       int indexId,
       List<Value> arrayValues,
-      Object[] lowerBounds,
+      @Nullable Object[] lowerBounds,
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp) {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
-    int statementCount = max(arrayValues.size(), 1) * lowerBounds.length;
-    int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
+    int statementCount =
+        max(arrayValues.size(), 1)
+            * Math.max(
+                lowerBounds != null ? lowerBounds.length : 1,
+                upperBounds != null ? upperBounds.length : 1);
+    int bindsPerStatement =
+        1
+            + (arrayValues.isEmpty() ? 0 : 1)
+            + (upperBounds != null ? 1 : 0)
+            + (lowerBounds != null ? 1 : 0);
     Object[] bindArgs = new Object[statementCount * bindsPerStatement];
 
     // Build the statement. We always include the lower bound, and optionally include an array value
@@ -255,24 +279,29 @@ final class SQLiteIndexManager implements IndexManager {
     if (!arrayValues.isEmpty()) {
       statement.append("AND array_value = ? ");
     }
-    statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    if (lowerBounds != null) {
+      statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    }
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
     }
 
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
-    String sql = repeatSequence(statement, statementCount, " UNION ");
+    // TODO(indexing): Verify that we can manually add a __name__ desc index
+    String sql =
+        repeatSequence(statement, statementCount, " UNION ")
+            + " ORDER BY directional_value, document_name ";
     if (target.getLimit() != -1) {
-      String direction = target.getFirstOrderBy().getDirection().canonicalString();
-      sql += "ORDER BY directional_value " + direction + ", document_name " + direction + " ";
       sql += "LIMIT " + target.getLimit() + " ";
     }
 
+    System.out.println("Using query: " + sql);
     // Fill in the bind ("question marks") variables.
     Iterator<Value> arrayValueIterator = arrayValues.iterator();
     for (int offset = 0; offset < bindArgs.length; ) {
-      Object arrayValue = encode(arrayValueIterator.hasNext() ? arrayValueIterator.next() : null);
+      Object arrayValue =
+          encodeAscending(arrayValueIterator.hasNext() ? arrayValueIterator.next() : null);
       offset = fillBounds(bindArgs, offset, indexId, arrayValue, lowerBounds, upperBounds);
     }
 
@@ -285,19 +314,43 @@ final class SQLiteIndexManager implements IndexManager {
       int offset,
       int indexId,
       @Nullable Object arrayValue,
-      Object[] lowerBounds,
+      @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
-    hardAssert(
-        upperBounds == null || upperBounds.length == lowerBounds.length,
-        "Length of upper and lower bound should match");
+
     // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
-    for (int i = 0; i < lowerBounds.length; ++i) {
+
+    //    hardAssert(
+    //        upperBounds == null || upperBounds.length == lowerBounds.length,
+    //        "Length of upper and lower bound should match");
+
+    if (lowerBounds == null && upperBounds == null && arrayValue == null) {
       bindArgs[offset++] = indexId;
-      if (arrayValue != null) {
-        bindArgs[offset++] = arrayValue;
+    } else if (lowerBounds == null && upperBounds == null) {
+      bindArgs[offset++] = indexId;
+      bindArgs[offset++] = arrayValue;
+    } else if (lowerBounds == null) {
+      for (Object upperBound : upperBounds) {
+        bindArgs[offset++] = indexId;
+        if (arrayValue != null) {
+          bindArgs[offset++] = arrayValue;
+        }
+        bindArgs[offset++] = upperBound;
       }
-      bindArgs[offset++] = lowerBounds[i];
-      if (upperBounds != null) {
+    } else if (upperBounds == null) {
+      for (Object lowerBound : lowerBounds) {
+        bindArgs[offset++] = indexId;
+        if (arrayValue != null) {
+          bindArgs[offset++] = arrayValue;
+        }
+        bindArgs[offset++] = lowerBound;
+      }
+    } else {
+      for (int i = 0; i < lowerBounds.length; ++i) {
+        bindArgs[offset++] = indexId;
+        if (arrayValue != null) {
+          bindArgs[offset++] = arrayValue;
+        }
+        bindArgs[offset++] = lowerBounds[i];
         bindArgs[offset++] = upperBounds[i];
       }
     }
@@ -349,17 +402,29 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   /** Encodes a list of values to the index format. */
-  private Object encode(List<Value> values) {
+  private Object encode(FieldIndex fieldIndex, List<Value> values) {
     IndexByteEncoder encoder = new IndexByteEncoder();
-    for (Value value : values) {
-      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+    List<FieldIndex.Segment> directionalSegments = fieldIndex.getDirectionalSegments();
+    for (int i = 0; i < values.size(); ++i) {
+      if (directionalSegments.get(i).getKind().equals(FieldIndex.Segment.Kind.ASC)) {
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getAscending());
+
+        encoder.getAscending().writeInfinity();
+      } else {
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getDescending());
+
+        encoder.getAscending().writeInfinity();
+      }
     }
     return encoder.getEncodedBytes();
   }
 
-  /** Encodes a value to the index format. */
-  private @Nullable Object encode(@Nullable Value value) {
-    return value != null ? encode(Collections.singletonList(value)) : null;
+  /** Encodes a single value to the ascending index format. */
+  private @Nullable Object encodeAscending(@Nullable Value value) {
+    if (value == null) return null;
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getAscending());
+    return encoder.getEncodedBytes();
   }
 
   /**
@@ -378,12 +443,20 @@ final class SQLiteIndexManager implements IndexManager {
       Value value = position.next();
       for (IndexByteEncoder encoder : encoders) {
         if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
-          encoders = expandIndexValues(encoders, value);
+          encoders = expandIndexValues(encoders, segment, value);
+        } else if (segment.getKind().equals(FieldIndex.Segment.Kind.ASC)) {
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+              value,
+              encoder
+                  .getAscending()); // https://source.corp.google.com/piper///depot/google3/java/com/google/cloud/datastore/encoding/StorageFormats.java;l=277?q=%22writeMaxValue%22%20max%20-f:tests%20lang:java if (position.hasNext())
+          encoder.getAscending().writeInfinity();
         } else {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getDescending());
+          encoder.getAscending().writeInfinity();
         }
       }
     }
+
     return getEncodedBytes(encoders);
   }
 
@@ -403,14 +476,21 @@ final class SQLiteIndexManager implements IndexManager {
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */
-  private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
+  private List<IndexByteEncoder> expandIndexValues(
+      List<IndexByteEncoder> encoders, FieldIndex.Segment segment, Value value) {
     List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
     List<IndexByteEncoder> results = new ArrayList<>();
     for (Value arrayElement : value.getArrayValue().getValuesList()) {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder);
+        if (segment.getKind().equals(FieldIndex.Segment.Kind.ASC)) {
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+              arrayElement, clonedEncoder.getAscending());
+        } else {
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+              arrayElement, clonedEncoder.getDescending());
+        }
         results.add(clonedEncoder);
       }
     }

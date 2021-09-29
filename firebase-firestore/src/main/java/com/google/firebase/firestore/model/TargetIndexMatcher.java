@@ -22,10 +22,8 @@ import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A light query planner for Firestore.
@@ -87,7 +85,7 @@ public class TargetIndexMatcher {
   private final Map<FieldPath, List<FieldFilter>> fieldFilterFields = new HashMap<>();
 
   // The set of orderBy fields in the query target.
-  private final Set<FieldPath> orderByFields = new HashSet<>();
+  private final Map<FieldPath, OrderBy.Direction> orderByFields = new HashMap<>();
 
   public TargetIndexMatcher(Target target) {
     collectionId =
@@ -106,7 +104,7 @@ public class TargetIndexMatcher {
     }
 
     for (OrderBy orderBy : target.getOrderBy()) {
-      orderByFields.add(orderBy.getField());
+      orderByFields.put(orderBy.getField(), orderBy.getDirection());
     }
   }
 
@@ -137,14 +135,16 @@ public class TargetIndexMatcher {
             }
             break;
           default:
-            if (segment.getKind().equals(FieldIndex.Segment.Kind.ORDERED)) {
+            if (!segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS)) {
               return true;
             }
         }
       }
     }
 
-    return orderByFields.contains(segment.getFieldPath())
-        && segment.getKind().equals(FieldIndex.Segment.Kind.ORDERED);
+    return orderByFields.containsKey(segment.getFieldPath())
+        && (orderByFields.get(segment.getFieldPath()).equals(OrderBy.Direction.ASCENDING)
+            ? segment.getKind().equals(FieldIndex.Segment.Kind.ASC)
+            : segment.getKind().equals(FieldIndex.Segment.Kind.DESC));
   }
 }

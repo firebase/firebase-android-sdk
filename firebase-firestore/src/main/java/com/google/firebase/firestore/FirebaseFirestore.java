@@ -313,8 +313,10 @@ public class FirebaseFirestore {
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
               fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
+            } else if ("ASC".equals(field.optString("valueConfig"))) {
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASC);
             } else {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ORDERED);
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESC);
             }
             parsedIndices.add(fieldIndex);
           }
