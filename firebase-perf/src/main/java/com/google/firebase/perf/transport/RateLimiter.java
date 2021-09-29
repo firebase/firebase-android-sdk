@@ -29,11 +29,9 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Rate;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.Utils;
-import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.PerfMetric;
 import com.google.firebase.perf.v1.PerfSession;
 import com.google.firebase.perf.v1.SessionVerbosity;
-import com.google.firebase.perf.v1.TraceMetric;
 import java.util.List;
 import java.util.Random;
 
@@ -107,46 +105,47 @@ final class RateLimiter {
   }
 
   /**
-   * Check if we should log the {@link PerfMetric} to transport.
+   * Check if the {@link PerfMetric} should be rate limited.
    *
-   * <p>Cases in which we don't log a {@link PerfMetric} to transport:
-   *
-   * <ul>
-   *   <li>It is a {@link TraceMetric}, the {@link PerfSession} is not verbose and trace metrics are
-   *       sampled.
-   *   <li>It is a {@link NetworkRequestMetric}, the {@link PerfSession} is not verbose and network
-   *       requests are sampled.
-   *   <li>The number of metrics being sent exceeds what the rate limiter allows.
-   * </ul>
+   * @param metric {@link PerfMetric} object.
+   * @return true if event is rated limited, false if event is not rate limited.
+   */
+  boolean isEventRateLimited(PerfMetric metric) {
+    if (!isRateLimitApplicable(metric)) {
+      // Apply rate limiting on this metric.
+      return false;
+    }
+
+    if (metric.hasNetworkRequestMetric()) {
+      return !networkLimiter.check(metric);
+    } else if (metric.hasTraceMetric()) {
+      return !traceLimiter.check(metric);
+    } else {
+      // Should not reach here
+      return true;
+    }
+  }
+
+  /**
+   * Check if the {@link PerfMetric} should be sampled. A {@link PerfMetric} is considered sampled
+   * if the device isn't allowed to send the event type and it is not part of a verbose session.
    *
    * @param metric {@link PerfMetric} object.
    * @return true if allowed, false if not allowed.
    */
-  boolean check(PerfMetric metric) {
+  boolean isEventSampled(PerfMetric metric) {
     if (metric.hasTraceMetric()
-        && !isDeviceAllowedToSendTraces()
-        && !hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList())) {
+        && !(isDeviceAllowedToSendTraces()
+            || hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList()))) {
       return false;
     }
 
     if (metric.hasNetworkRequestMetric()
-        && !isDeviceAllowedToSendNetworkEvents()
-        && !hasVerboseSessions(metric.getNetworkRequestMetric().getPerfSessionsList())) {
+        && !(isDeviceAllowedToSendNetworkEvents()
+            || hasVerboseSessions(metric.getNetworkRequestMetric().getPerfSessionsList()))) {
       return false;
     }
-
-    if (!isRateLimited(metric)) {
-      // Do not apply rate limiting on this metric.
-      return true;
-    }
-
-    if (metric.hasNetworkRequestMetric()) {
-      return networkLimiter.check(metric);
-    } else if (metric.hasTraceMetric()) {
-      return traceLimiter.check(metric);
-    } else {
-      return false;
-    }
+    return true;
   }
 
   /**
@@ -174,7 +173,7 @@ final class RateLimiter {
    * @param metric {@link PerfMetric} object.
    * @return true if applying rate limiting. false if not.
    */
-  boolean isRateLimited(@NonNull PerfMetric metric) {
+  boolean isRateLimitApplicable(@NonNull PerfMetric metric) {
     if (metric.hasTraceMetric()
         && (metric
                 .getTraceMetric()
