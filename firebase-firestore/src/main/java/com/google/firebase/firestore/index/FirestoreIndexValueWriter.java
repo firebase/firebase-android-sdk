@@ -63,6 +63,7 @@ public class FirestoreIndexValueWriter {
   /** Writes an index value. */
   public void writeIndexValue(Value value, DirectionalIndexByteEncoder encoder) {
     writeIndexValueAux(value, encoder);
+    encoder.writeInfinity();
   }
 
   private void writeIndexValueAux(Value indexValue, DirectionalIndexByteEncoder encoder) {

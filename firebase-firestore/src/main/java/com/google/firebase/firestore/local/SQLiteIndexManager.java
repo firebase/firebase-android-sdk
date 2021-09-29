@@ -391,7 +391,6 @@ final class SQLiteIndexManager implements IndexManager {
     for (int i = 0; i < values.size(); ++i) {
       DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(directionalSegments.get(i).getKind());
       FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), directionalEncoder);
-      directionalEncoder.writeInfinity();
     }
     return encoder.getEncodedBytes();
   }
@@ -424,7 +423,6 @@ final class SQLiteIndexManager implements IndexManager {
         } else{
           DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
-          directionalEncoder.writeInfinity();
         }
       }
     }
@@ -456,11 +454,7 @@ final class SQLiteIndexManager implements IndexManager {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-
-        DirectionalIndexByteEncoder directionalEncoder = clonedEncoder.forKind(segment.getKind());
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, directionalEncoder);
-        directionalEncoder.writeInfinity();
-
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder.forKind(segment.getKind()));
         results.add(clonedEncoder);
       }
     }
