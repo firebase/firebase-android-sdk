@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 public class SQLiteDocumentOverlay implements DocumentOverlay {
@@ -43,7 +44,8 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
             row -> {
               if (row != null) {
                 try {
-                  return serializer.decodeMutation(row.getBlob(0));
+                  Write mutation = Write.parseFrom(row.getBlob(0));
+                  return serializer.decodeMutation(mutation);
                 } catch (InvalidProtocolBufferException e) {
                   throw fail("Overlay failed to parse: %s", e);
                 }
@@ -60,7 +62,7 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
             + "(uid, path, overlay_mutation) VALUES (?, ?, ?)",
         uid,
         EncodedPath.encode(key.getPath()),
-        serializer.encodeMutation(mutation));
+        serializer.encodeMutation(mutation).toByteArray());
   }
 
   @Override

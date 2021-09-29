@@ -21,20 +21,20 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 /**
  * Provides methods to read and write document overlays.
  *
- * <p>An overlay is a saved {@code Mutation}, that gives a local view of a document when applied to
+ * <p>An overlay is a saved {@link Mutation}, that gives a local view of a document when applied to
  * the remote version of the document.
  */
 public interface DocumentOverlay {
   /**
-   * Gets the saved overlay mutation for the given user and the given document key. Returns null if
-   * there is no overlay for the user and document combination.
+   * Gets the saved overlay mutation for the given document key. Returns null if there is no overlay
+   * for that key.
    */
   @Nullable
   Mutation getOverlay(DocumentKey key);
 
-  /** Saves the given mutation as overlay for the user and document key. */
+  /** Saves the given mutation as overlay for the given document key. */
   void saveOverlay(DocumentKey key, Mutation mutation);
 
-  /** Removes the overlay associated for the given user and document key. */
+  /** Removes the overlay associated for the given document key. */
   void removeOverlay(DocumentKey key);
 }

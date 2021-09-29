@@ -35,7 +35,6 @@ import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -328,12 +327,11 @@ public final class LocalSerializer {
     return fieldIndex;
   }
 
-  public Mutation decodeMutation(byte[] blob) throws InvalidProtocolBufferException {
-    Write mutation = Write.parseFrom(blob);
+  public Mutation decodeMutation(Write mutation) {
     return rpcSerializer.decodeMutation(mutation);
   }
 
-  public byte[] encodeMutation(Mutation mutation) {
-    return rpcSerializer.encodeMutation(mutation).toByteArray();
+  public Write encodeMutation(Mutation mutation) {
+    return rpcSerializer.encodeMutation(mutation);
   }
 }
