@@ -243,11 +243,7 @@ final class SQLiteIndexManager implements IndexManager {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
-    int statementCount =
-        max(arrayValues.size(), 1)
-            * lowerBounds.length
-            * (upperBounds == null ? 1 : upperBounds.length);
-    // The number of "question marks" per single statement
+    int statementCount = max(arrayValues.size(), 1) * lowerBounds.length;
     int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
     Object[] bindArgs = new Object[statementCount * bindsPerStatement];
 
@@ -256,7 +252,9 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder statement = new StringBuilder();
     statement.append(
         "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
-    statement.append(arrayValues.isEmpty() ? "AND array_value IS NULL " : "AND array_value = ? ");
+    if (!arrayValues.isEmpty()) {
+      statement.append("AND array_value = ? ");
+    }
     statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
@@ -289,17 +287,18 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object arrayValue,
       Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
+    hardAssert(
+        upperBounds == null || upperBounds.length == lowerBounds.length,
+        "Length of upper and lower bound should match");
     // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
-    for (Object lower : lowerBounds) {
-      for (int i = 0; i < (upperBounds != null ? upperBounds.length : 1); ++i) {
-        bindArgs[offset++] = indexId;
-        if (arrayValue != null) {
-          bindArgs[offset++] = arrayValue;
-        }
-        bindArgs[offset++] = lower;
-        if (upperBounds != null) {
-          bindArgs[offset++] = upperBounds[i];
-        }
+    for (int i = 0; i < lowerBounds.length; ++i) {
+      bindArgs[offset++] = indexId;
+      if (arrayValue != null) {
+        bindArgs[offset++] = arrayValue;
+      }
+      bindArgs[offset++] = lowerBounds[i];
+      if (upperBounds != null) {
+        bindArgs[offset++] = upperBounds[i];
       }
     }
     return offset;

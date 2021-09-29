@@ -193,8 +193,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testInFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 2)));
-    verifyResults(query, "coll/doc1", "coll/doc2");
+    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 3)));
+    verifyResults(query, "coll/doc1", "coll/doc3");
   }
 
   @Test
