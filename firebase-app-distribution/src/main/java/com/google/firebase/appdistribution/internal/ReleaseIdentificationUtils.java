@@ -17,9 +17,9 @@ package com.google.firebase.appdistribution.internal;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.appdistribution.LogWrapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -46,15 +46,15 @@ public final class ReleaseIdentificationUtils {
       }
       return packageInfo.applicationInfo.metaData.getString("com.android.vending.internal.apk.id");
     } catch (PackageManager.NameNotFoundException e) {
-      Log.w(TAG, "Could not extract internal app sharing artifact ID");
+      LogWrapper.getInstance().w(TAG + "Could not extract internal app sharing artifact ID");
       return null;
     }
   }
 
   @Nullable
-  public static String calculateApkInternalCodeHash(@NonNull File file) {
-    Log.v(TAG, String.format("Calculating release id for %s", file.getPath()));
-    Log.v(TAG, String.format("File size: %d", file.length()));
+  public static String calculateApkHash(@NonNull File file) {
+    LogWrapper.getInstance().v(TAG + "Calculating release id for " + file.getPath());
+    LogWrapper.getInstance().v(TAG + "File size: " + file.length());
 
     long start = System.currentTimeMillis();
     long entries = 0;
@@ -64,8 +64,10 @@ public final class ReleaseIdentificationUtils {
       ArrayList<Byte> checksums = new ArrayList<>();
 
       // Since calculating the codeHash returned from the release backend is computationally
-      // expensive, using existing checksum data from the ZipFile we can quickly calculate
-      // an intermediate hash that then gets mapped to the backend's returned release codehash
+      // expensive, we has the existing checksum data from the ZipFile and compare it to
+      // (1) the apk hash returned by the backend, or (2) look up a mapping from the apk zip hash to
+      // the
+      // full codehash, and compare that to the codehash to the backend
       ZipFile zis = new ZipFile(file);
       try {
         Enumeration<? extends ZipEntry> zipEntries = zis.entries();
@@ -88,20 +90,23 @@ public final class ReleaseIdentificationUtils {
       zipFingerprint = sb.toString();
 
     } catch (IOException | NoSuchAlgorithmException e) {
-      Log.v(TAG, String.format("id calculation failed for %s", file.getPath()));
+      LogWrapper.getInstance().v(TAG + "id calculation failed for " + file.getPath());
       return null;
     } finally {
       long elapsed = System.currentTimeMillis() - start;
       if (elapsed > 2 * 1000) {
-        Log.v(
-            TAG,
-            String.format(
-                "Long id calculation time %d ms and %d entries for %s",
-                elapsed, entries, file.getPath()));
+        LogWrapper.getInstance()
+            .v(
+                TAG
+                    + String.format(
+                        "Long id calculation time %d ms and %d entries for %s",
+                        elapsed, entries, file.getPath()));
       }
 
-      Log.v(TAG, String.format("Finished calculating %d entries in %d ms", entries, elapsed));
-      Log.v(TAG, String.format("%s hashes to %s", file.getPath(), zipFingerprint));
+      LogWrapper.getInstance()
+          .v(TAG + String.format("Finished calculating %d entries in %d ms", entries, elapsed));
+      LogWrapper.getInstance()
+          .v(TAG + String.format("%s hashes to %s", file.getPath(), zipFingerprint));
     }
 
     return zipFingerprint;

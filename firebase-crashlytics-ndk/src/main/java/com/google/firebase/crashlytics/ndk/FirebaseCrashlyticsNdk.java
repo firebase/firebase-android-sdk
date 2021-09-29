@@ -28,19 +28,33 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   /** Relative sub-path to use for storing files. */
   private static final String FILES_PATH = ".com.google.firebase.crashlytics-ndk";
 
-  static FirebaseCrashlyticsNdk create(@NonNull Context context) {
+  private static FirebaseCrashlyticsNdk instance;
+
+  static FirebaseCrashlyticsNdk create(
+      @NonNull Context context, boolean installHandlerDuringPrepareSession) {
     final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
     final CrashpadController controller =
         new CrashpadController(
             context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
-    return new FirebaseCrashlyticsNdk(controller);
+
+    instance = new FirebaseCrashlyticsNdk(controller, installHandlerDuringPrepareSession);
+    return instance;
   }
 
   private final CrashpadController controller;
 
-  FirebaseCrashlyticsNdk(@NonNull CrashpadController controller) {
+  private interface SignalHandlerInstaller {
+    void installHandler();
+  }
+
+  private boolean installHandlerDuringPrepareSession;
+  private SignalHandlerInstaller signalHandlerInstaller;
+
+  FirebaseCrashlyticsNdk(
+      @NonNull CrashpadController controller, boolean installHandlerDuringPrepareSession) {
     this.controller = controller;
+    this.installHandlerDuringPrepareSession = installHandlerDuringPrepareSession;
   }
 
   @Override
@@ -48,16 +62,28 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     return controller.hasCrashDataForSession(sessionId);
   }
 
+  /**
+   * Prepares the session to be opened. If installSignalHandlerDuringPrepareSession was false at the
+   * constructor, the signal handler will not be fully installed until {@link
+   * FirebaseCrashlyticsNdk#installSignalHandler()} is called.
+   */
   @Override
-  public void openSession(
+  public synchronized void prepareNativeSession(
       @NonNull String sessionId,
       @NonNull String generator,
       long startedAtSeconds,
       @NonNull StaticSessionData sessionData) {
 
-    Logger.getLogger().d("Opening native session: " + sessionId);
-    if (!controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
-      Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
+    signalHandlerInstaller =
+        () -> {
+          Logger.getLogger().d("Initializing native session: " + sessionId);
+          if (!controller.initialize(sessionId, generator, startedAtSeconds, sessionData)) {
+            Logger.getLogger().w("Failed to initialize Crashlytics NDK for session " + sessionId);
+          }
+        };
+
+    if (installHandlerDuringPrepareSession) {
+      signalHandlerInstaller.installHandler();
     }
   }
 
@@ -76,5 +102,44 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
     // TODO: If this is called more than once with the same ID, it should return
     // equivalent objects.
     return new SessionFilesProvider(controller.getFilesForSession(sessionId));
+  }
+
+  /**
+   * Installs the native signal handler, if the session has already been prepared. Otherwise,
+   * calling this method will result in the native signal handler being installed as soon as the
+   * session is prepared. Used by Firebase Crashlytics for Unity.
+   */
+  public synchronized void installSignalHandler() {
+    // If the handler is already initialized, execute it immediately.
+    // Otherwise, set installHandlerDuringPrepareSession=true so it will be installed as soon as it
+    // is available.
+    if (signalHandlerInstaller != null) {
+      signalHandlerInstaller.installHandler();
+      return;
+    }
+    if (installHandlerDuringPrepareSession) {
+      // If installHandlerDuringPrepareSession is already true, we can no-op. The signal handler
+      // was likely already installed (during prep). This method probably should not have been
+      // called, so log a warning.
+      Logger.getLogger().w("Native signal handler already installed; skipping re-install.");
+    } else {
+      Logger.getLogger()
+          .d(
+              "Deferring signal handler installation until the FirebaseCrashlyticsNdk session has been prepared");
+      installHandlerDuringPrepareSession = true;
+    }
+  }
+
+  /**
+   * Gets the singleton {@link FirebaseCrashlyticsNdk} instance. Used by Firebase Unity.
+   *
+   * @throws NullPointerException if create() has not already been called.
+   */
+  @NonNull
+  public static FirebaseCrashlyticsNdk getInstance() {
+    if (instance == null) {
+      throw new NullPointerException("FirebaseCrashlyticsNdk component is not present.");
+    }
+    return instance;
   }
 }

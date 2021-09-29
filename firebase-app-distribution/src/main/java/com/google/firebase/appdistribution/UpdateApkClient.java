@@ -16,7 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkInternalCodeHash;
+import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkHash;
 
 import android.app.Activity;
 import android.content.Context;
@@ -237,7 +237,7 @@ class UpdateApkClient {
 
     File downloadedFile = new File(firebaseApp.getApplicationContext().getFilesDir(), fileName);
 
-    String internalCodeHash = calculateApkInternalCodeHash(downloadedFile);
+    String internalCodeHash = calculateApkHash(downloadedFile);
 
     if (internalCodeHash != null) {
       releaseIdentifierStorage.setCodeHashMap(internalCodeHash, newRelease);

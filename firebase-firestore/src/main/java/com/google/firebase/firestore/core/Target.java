@@ -114,7 +114,7 @@ public final class Target {
     return endAt;
   }
 
-  /** Returns the list of values that are used in ARRAY_CONTAINS and ARRAY_CONTAINS_ANY filter. */
+  /** Returns the list of values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. */
   public List<Value> getArrayValues(FieldIndex fieldIndex) {
     for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
       for (Filter filter : filters) {
@@ -172,7 +172,7 @@ public final class Target {
               filterInclusive = false;
               break;
             default:
-              // Remaining filters cannot be used as upper bounds.
+              // Remaining filters cannot be used as lower bounds.
           }
 
           if (max(segmentValue, filterValue) == filterValue) {

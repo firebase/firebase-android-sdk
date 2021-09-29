@@ -261,7 +261,7 @@ public final class ObjectValue implements Cloneable {
   @Override
   @NonNull
   public String toString() {
-    return "ObjectValue{" + "internalValue=" + buildProto() + '}';
+    return "ObjectValue{" + "internalValue=" + Values.canonicalId(buildProto()) + '}';
   }
 
   @NonNull

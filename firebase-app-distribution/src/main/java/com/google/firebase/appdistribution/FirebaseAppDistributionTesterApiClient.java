@@ -14,13 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
-import static android.content.ContentValues.TAG;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
@@ -50,6 +48,7 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String RELEASE_NOTES_JSON_KEY = "releaseNotes";
   private static final String BINARY_TYPE_JSON_KEY = "binaryType";
   private static final String CODE_HASH_KEY = "codeHash";
+  private static final String APK_HASH_KEY = "apkHash";
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
@@ -81,6 +80,7 @@ class FirebaseAppDistributionTesterApiClient {
       final String buildVersion = newReleaseJson.getString(BUILD_VERSION_JSON_KEY);
       String releaseNotes = tryGetValue(newReleaseJson, RELEASE_NOTES_JSON_KEY);
       String codeHash = tryGetValue(newReleaseJson, CODE_HASH_KEY);
+      String apkHash = tryGetValue(newReleaseJson, APK_HASH_KEY);
       String iasArtifactId = tryGetValue(newReleaseJson, IAS_ARTIFACT_ID_KEY);
       String downloadUrl = tryGetValue(newReleaseJson, DOWNLOAD_URL_KEY);
 
@@ -97,6 +97,7 @@ class FirebaseAppDistributionTesterApiClient {
               .setBinaryType(binaryType)
               .setIasArtifactId(iasArtifactId)
               .setCodeHash(codeHash)
+              .setApkHash(apkHash)
               .setDownloadUrl(downloadUrl)
               .build();
       inputStream.close();
@@ -111,7 +112,7 @@ class FirebaseAppDistributionTesterApiClient {
     } finally {
       connection.disconnect();
     }
-
+    LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
     return newRelease;
   }
 
@@ -216,13 +217,12 @@ class FirebaseAppDistributionTesterApiClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      LogWrapper.getInstance().e(TAG + "No such package: " + context.getPackageName(), e);
       return null;
     }
   }

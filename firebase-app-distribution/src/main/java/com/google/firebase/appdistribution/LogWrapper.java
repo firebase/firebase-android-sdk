@@ -15,13 +15,15 @@
 package com.google.firebase.appdistribution;
 
 import android.util.Log;
+import androidx.annotation.NonNull;
 
 /** Wrapper that handles Android logcat logging. */
-class LogWrapper {
+public class LogWrapper {
 
   private static final String LOG_TAG = "FirebaseAppDistribution";
   private static LogWrapper instance;
 
+  @NonNull
   public static synchronized LogWrapper getInstance() {
     if (instance == null) {
       instance = new LogWrapper();
@@ -30,27 +32,27 @@ class LogWrapper {
     return instance;
   }
 
-  void d(String msg) {
+  public void d(@NonNull String msg) {
     Log.d(LOG_TAG, msg);
   }
 
-  void v(String msg) {
+  public void v(@NonNull String msg) {
     Log.v(LOG_TAG, msg);
   }
 
-  void i(String msg) {
+  public void i(@NonNull String msg) {
     Log.i(LOG_TAG, msg);
   }
 
-  void w(String msg) {
+  public void w(@NonNull String msg) {
     Log.w(LOG_TAG, msg);
   }
 
-  void e(String msg) {
+  public void e(@NonNull String msg) {
     Log.e(LOG_TAG, msg);
   }
 
-  void e(String msg, Throwable tr) {
+  public void e(@NonNull String msg, @NonNull Throwable tr) {
     Log.e(LOG_TAG, msg, tr);
   }
 
