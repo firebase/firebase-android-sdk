@@ -390,12 +390,10 @@ final class SQLiteIndexManager implements IndexManager {
     for (int i = 0; i < values.size(); ++i) {
       if (directionalSegments.get(i).getKind().equals(FieldIndex.Segment.Kind.ASC)) {
         FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getAscending());
-
-        encoder.getAscending().writeInfinity();  // try descending
+        encoder.getAscending().writeInfinity();
       } else {
         FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getDescending());
-
-        encoder.getAscending().writeInfinity();
+        encoder.getDescending().writeInfinity();
       }
     }
     return encoder.getEncodedBytes();
@@ -434,7 +432,7 @@ final class SQLiteIndexManager implements IndexManager {
           encoder.getAscending().writeInfinity();
         } else {
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getDescending());
-          encoder.getAscending().writeInfinity();  // try desceinding
+          encoder.getDescending().writeInfinity();
         }
       }
     }
