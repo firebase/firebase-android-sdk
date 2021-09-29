@@ -42,7 +42,6 @@ public class FirestoreIndexValueWriter {
   public static final int INDEX_TYPE_ARRAY = 50;
   public static final int INDEX_TYPE_MAP = 55;
   public static final int INDEX_TYPE_REFERENCE_SEGMENT = 60;
-  public static final int INDEX_TYPE_MAXIMUM = 1000000000;
 
   // A terminator that indicates that a truncatable value was not truncated.
   // This must be smaller than all other type labels.
@@ -168,7 +167,6 @@ public class FirestoreIndexValueWriter {
       writeValueTypeLabel(encoder, INDEX_TYPE_REFERENCE_SEGMENT);
       writeUnlabeledIndexString(segment, encoder);
     }
-
     writeTruncationMarker(encoder);
   }
 

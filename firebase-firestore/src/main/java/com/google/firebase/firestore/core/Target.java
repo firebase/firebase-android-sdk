@@ -137,7 +137,7 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}.
+   * defined by {@code fieldIndex}.  Returns {@code null} if no lower bound exists.
    */
   @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
@@ -210,11 +210,7 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getLowerBound}, upper bounds do not always exist since the Firestore does not
-   * define a maximum field value. The index scan should not use an upper bound if {@code null} is
-   * returned.
+   * index defined by {@code fieldIndex}. Returns {@code null} if no upper bound exists.
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();

@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
-import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -179,8 +178,6 @@ final class SQLiteIndexManager implements IndexManager {
   private void addSingleEntry(
       DocumentKey documentKey, int indexId, @Nullable Object arrayIndex, Object directionalIndex) {
     // TODO(indexing): Handle different values for different users
-    System.out.println(
-        "Adding entry for key: " + documentKey + " data: " + toBytes((byte[]) directionalIndex));
     db.execute(
         "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?)",
@@ -188,14 +185,6 @@ final class SQLiteIndexManager implements IndexManager {
         arrayIndex,
         directionalIndex,
         documentKey.toString());
-  }
-
-  private String toBytes(byte[] directionalIndex) {
-    List<String> tokens = new ArrayList<>();
-    for (byte b : directionalIndex) {
-      tokens.add("" + b);
-    }
-    return "[" + TextUtils.join(", ", tokens) + "]";
   }
 
   @Override
@@ -224,11 +213,6 @@ final class SQLiteIndexManager implements IndexManager {
     Object[] upperBoundValues = encodeBound(fieldIndex, target, upperBound);
     String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
 
-    //    if (target.getFirstOrderBy().getDirection().equals(OrderBy.Direction.DESCENDING)) {
-    //
-    //       upperBoundOp = lowerBound.isInclusive() ? ">=" : ">";
-    //      lowerBoundOp= upperBound != null && upperBound.isInclusive() ? "<=" : "<";
-    //    }
     SQLitePersistence.Query query =
         generateQuery(
             target,
@@ -288,7 +272,6 @@ final class SQLiteIndexManager implements IndexManager {
 
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
-    // TODO(indexing): Verify that we can manually add a __name__ desc index
     String sql =
         repeatSequence(statement, statementCount, " UNION ")
             + " ORDER BY directional_value, document_name ";
@@ -296,7 +279,6 @@ final class SQLiteIndexManager implements IndexManager {
       sql += "LIMIT " + target.getLimit() + " ";
     }
 
-    System.out.println("Using query: " + sql);
     // Fill in the bind ("question marks") variables.
     Iterator<Value> arrayValueIterator = arrayValues.iterator();
     for (int offset = 0; offset < bindArgs.length; ) {
@@ -319,9 +301,7 @@ final class SQLiteIndexManager implements IndexManager {
 
     // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
 
-    //    hardAssert(
-    //        upperBounds == null || upperBounds.length == lowerBounds.length,
-    //        "Length of upper and lower bound should match");
+
 
     if (lowerBounds == null && upperBounds == null && arrayValue == null) {
       bindArgs[offset++] = indexId;
@@ -345,6 +325,8 @@ final class SQLiteIndexManager implements IndexManager {
         bindArgs[offset++] = lowerBound;
       }
     } else {
+        hardAssert(upperBounds == null || upperBounds.length == lowerBounds.length,
+              "Length of upper and lower bound should match");
       for (int i = 0; i < lowerBounds.length; ++i) {
         bindArgs[offset++] = indexId;
         if (arrayValue != null) {
@@ -409,7 +391,7 @@ final class SQLiteIndexManager implements IndexManager {
       if (directionalSegments.get(i).getKind().equals(FieldIndex.Segment.Kind.ASC)) {
         FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getAscending());
 
-        encoder.getAscending().writeInfinity();
+        encoder.getAscending().writeInfinity();  // try descending
       } else {
         FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getDescending());
 
@@ -448,11 +430,11 @@ final class SQLiteIndexManager implements IndexManager {
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
               value,
               encoder
-                  .getAscending()); // https://source.corp.google.com/piper///depot/google3/java/com/google/cloud/datastore/encoding/StorageFormats.java;l=277?q=%22writeMaxValue%22%20max%20-f:tests%20lang:java if (position.hasNext())
+                  .getAscending());
           encoder.getAscending().writeInfinity();
         } else {
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getDescending());
-          encoder.getAscending().writeInfinity();
+          encoder.getAscending().writeInfinity();  // try desceinding
         }
       }
     }
