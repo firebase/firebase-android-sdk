@@ -54,7 +54,7 @@ class SQLiteSchema {
   static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
 
   // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = VERSION + 2;
+  static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
 
   /**
    * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
