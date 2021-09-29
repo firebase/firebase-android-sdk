@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.index;
 
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.protobuf.ByteString;
 
 /**
@@ -21,6 +22,7 @@ import com.google.protobuf.ByteString;
  * encoding.
  */
 public class IndexByteEncoder {
+
   class AscendingIndexByteEncoder extends DirectionalIndexByteEncoder {
 
     @Override
@@ -91,12 +93,12 @@ public class IndexByteEncoder {
     orderedCode.seed(encodedBytes);
   }
 
-  public DirectionalIndexByteEncoder getAscending() {
-    return ascending;
-  }
-
-  public DirectionalIndexByteEncoder getDescending() {
-    return descending;
+  public DirectionalIndexByteEncoder forKind(FieldIndex.Segment.Kind kind) {
+    if (kind.equals(FieldIndex.Segment.Kind.DESC)) {
+      return descending;
+    } else {
+      return ascending;
+    }
   }
 
   public byte[] getEncodedBytes() {

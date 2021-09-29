@@ -25,6 +25,7 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
 import com.google.firebase.firestore.index.IndexByteEncoder;
 import com.google.firebase.firestore.model.Document;
@@ -388,13 +389,9 @@ final class SQLiteIndexManager implements IndexManager {
     IndexByteEncoder encoder = new IndexByteEncoder();
     List<FieldIndex.Segment> directionalSegments = fieldIndex.getDirectionalSegments();
     for (int i = 0; i < values.size(); ++i) {
-      if (directionalSegments.get(i).getKind().equals(FieldIndex.Segment.Kind.ASC)) {
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getAscending());
-        encoder.getAscending().writeInfinity();
-      } else {
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), encoder.getDescending());
-        encoder.getDescending().writeInfinity();
-      }
+      DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(directionalSegments.get(i).getKind());
+      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), directionalEncoder);
+      directionalEncoder.writeInfinity();
     }
     return encoder.getEncodedBytes();
   }
@@ -403,7 +400,7 @@ final class SQLiteIndexManager implements IndexManager {
   private @Nullable Object encodeAscending(@Nullable Value value) {
     if (value == null) return null;
     IndexByteEncoder encoder = new IndexByteEncoder();
-    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getAscending());
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.forKind(FieldIndex.Segment.Kind.ASC));
     return encoder.getEncodedBytes();
   }
 
@@ -424,15 +421,10 @@ final class SQLiteIndexManager implements IndexManager {
       for (IndexByteEncoder encoder : encoders) {
         if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
           encoders = expandIndexValues(encoders, segment, value);
-        } else if (segment.getKind().equals(FieldIndex.Segment.Kind.ASC)) {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
-              value,
-              encoder
-                  .getAscending());
-          encoder.getAscending().writeInfinity();
-        } else {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.getDescending());
-          encoder.getDescending().writeInfinity();
+        } else{
+          DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
+          directionalEncoder.writeInfinity();
         }
       }
     }
@@ -464,13 +456,11 @@ final class SQLiteIndexManager implements IndexManager {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-        if (segment.getKind().equals(FieldIndex.Segment.Kind.ASC)) {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
-              arrayElement, clonedEncoder.getAscending());
-        } else {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
-              arrayElement, clonedEncoder.getDescending());
-        }
+
+        DirectionalIndexByteEncoder directionalEncoder = clonedEncoder.forKind(segment.getKind());
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, directionalEncoder);
+        directionalEncoder.writeInfinity();
+
         results.add(clonedEncoder);
       }
     }
