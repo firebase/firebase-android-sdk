@@ -115,11 +115,13 @@ public class IndexBackfiller {
     persistence.execute(
         "INSERT OR IGNORE INTO index_entries ("
             + "index_id, "
-            + "index_value, "
+            + "array_value, "
+            + "directional_value, "
             + "uid, "
-            + "document_name) VALUES(?, ?, ?, ?)",
+            + "document_name) VALUES(?, ?, ?, ?, ?)",
         entry.getIndexId(),
-        entry.getIndexValue(),
+        entry.getArrayValue(),
+        entry.getDirectionalValue(),
         entry.getUid(),
         entry.getDocumentName());
   }
@@ -141,12 +143,18 @@ public class IndexBackfiller {
   @VisibleForTesting
   IndexEntry getIndexEntry(int indexId) {
     return persistence
-        .query("SELECT index_value, uid, document_name FROM index_entries WHERE index_id = ?")
+        .query(
+            "SELECT array_value, directional_value, uid, document_name FROM index_entries WHERE index_id = ?")
         .binding(indexId)
         .firstValue(
             row ->
                 row == null
                     ? null
-                    : new IndexEntry(indexId, row.getBlob(0), row.getString(1), row.getString(2)));
+                    : new IndexEntry(
+                        indexId,
+                        row.getBlob(0),
+                        row.getBlob(1),
+                        row.getString(2),
+                        row.getString(3)));
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
@@ -28,6 +29,7 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,7 +56,7 @@ public class TargetTest {
   public void equalsQueryBound() {
     Target target = query("c").filter(filter("foo", "==", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "bar");
@@ -67,7 +69,7 @@ public class TargetTest {
   public void lowerThanQueryBound() {
     Target target = query("c").filter(filter("foo", "<", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "");
@@ -80,7 +82,7 @@ public class TargetTest {
   public void lowerThanOrEqualsQueryBound() {
     Target target = query("c").filter(filter("foo", "<=", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "");
@@ -93,7 +95,7 @@ public class TargetTest {
   public void greaterThanQueryBound() {
     Target target = query("c").filter(filter("foo", ">", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, false, "bar");
@@ -106,7 +108,7 @@ public class TargetTest {
   public void greaterThanOrEqualsQueryBound() {
     Target target = query("c").filter(filter("foo", ">=", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "bar");
@@ -116,16 +118,38 @@ public class TargetTest {
   }
 
   @Test
-  public void containsQueryBound() {
+  public void arrayContainsQueryBound() {
     Target target = query("c").filter(filter("foo", "array-contains", "bar")).toTarget();
     FieldIndex index =
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
 
+    List<Value> arrayValues = target.getArrayValues(index);
+    assertThat(arrayValues).containsExactly(wrap("bar"));
+
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "bar");
+    verifyBound(lowerBound, true);
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, true, "bar");
+    assertNull(upperBound);
+  }
+
+  @Test
+  public void arrayContainsAnyQueryBound() {
+    Target target =
+        query("c")
+            .filter(filter("foo", "array-contains-any", Arrays.asList("bar", "baz")))
+            .toTarget();
+    FieldIndex index =
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+
+    List<Value> arrayValues = target.getArrayValues(index);
+    assertThat(arrayValues).containsExactly(wrap("bar"), wrap("baz"));
+
+    Bound lowerBound = target.getLowerBound(index);
+    verifyBound(lowerBound, true);
+
+    Bound upperBound = target.getUpperBound(index);
+    assertNull(upperBound);
   }
 
   @Test
@@ -240,7 +264,7 @@ public class TargetTest {
     Target target =
         query("c").orderBy(orderBy("foo")).endAt(bound(/* inclusive= */ true, "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, new Object[] {null});
@@ -321,7 +345,7 @@ public class TargetTest {
     Target target =
         query("c").filter(filter("a", "==", "a")).filter(filter("b", "==", "b")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("a"), FieldIndex.Segment.Kind.CONTAINS);
+        new FieldIndex("c").withAddedField(field("a"), FieldIndex.Segment.Kind.ORDERED);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "a");
