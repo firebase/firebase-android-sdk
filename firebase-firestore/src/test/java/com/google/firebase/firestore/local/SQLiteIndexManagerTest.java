@@ -63,7 +63,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void setUpSingleValueFilter() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("count"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("count"), FieldIndex.Segment.Kind.ASC));
     addDoc("c/d1", map("count", 1));
     addDoc("c/d2", map("count", 2));
     addDoc("c/d3", map("count", 3));
@@ -71,7 +71,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void setUpArrayValueFilter() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("values"), FieldIndex.Segment.Kind.CONTAINS));
+        new FieldIndex("coll").withAddedField(field("values"), FieldIndex.Segment.Kind.CONTAINS));
     addDoc("c/d1", map("values", Arrays.asList(1, 2, 3)));
     addDoc("c/d2", map("values", Arrays.asList(4, 5, 6)));
     addDoc("c/d3", map("values", Arrays.asList(7, 8, 9)));
@@ -85,7 +85,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void addsDocuments() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("exists"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("exists"), FieldIndex.Segment.Kind.ASC));
     addDoc("c/d1", map("exists", 1));
     addDoc("c/d2", map());
   }
@@ -93,17 +93,17 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testEqualityFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "==", 2));
+    Query query = query("coll").filter(filter("count", "==", 2));
     verifyResults(query, "c/d2");
   }
 
   @Test
   public void testNestedFieldEqualityFilter() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("a.b"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("a.b"), FieldIndex.Segment.Kind.ASC));
     addDoc("c/d1", map("a", map("b", 1)));
     addDoc("c/d2", map("a", map("b", 2)));
-    Query query = query("c").filter(filter("a.b", "==", 2));
+    Query query = query("coll").filter(filter("a.b", "==", 2));
     verifyResults(query, "c/d2");
   }
 
@@ -112,70 +112,70 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     // TODO(indexing): Optimize != filters. We currently return all documents and do not exclude
     // the documents with the provided value.
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "!=", 2));
+    Query query = query("coll").filter(filter("count", "!=", 2));
     verifyResults(query, "c/d1", "c/d2", "c/d3");
   }
 
   @Test
   public void testLessThanFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "<", 2));
+    Query query = query("coll").filter(filter("count", "<", 2));
     verifyResults(query, "c/d1");
   }
 
   @Test
   public void testLessThanOrEqualsFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "<=", 2));
+    Query query = query("coll").filter(filter("count", "<=", 2));
     verifyResults(query, "c/d1", "c/d2");
   }
 
   @Test
   public void testGreaterThanOrEqualsFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", ">=", 2));
+    Query query = query("coll").filter(filter("count", ">=", 2));
     verifyResults(query, "c/d2", "c/d3");
   }
 
   @Test
   public void testGreaterThanFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", ">", 2));
+    Query query = query("coll").filter(filter("count", ">", 2));
     verifyResults(query, "c/d3");
   }
 
   @Test
   public void testRangeFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", ">", 1)).filter(filter("count", "<", 3));
+    Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "<", 3));
     verifyResults(query, "c/d2");
   }
 
   @Test
   public void testStartAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "c/d2", "c/d3");
   }
 
   @Test
   public void testStartAfterFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "c/d3");
   }
 
   @Test
   public void testEndAtFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ true, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ true, 2));
     verifyResults(query, "c/d1", "c/d2");
   }
 
   @Test
   public void testEndBeforeFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ false, 2));
+    Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ false, 2));
     verifyResults(query, "c/d1");
   }
 
@@ -183,7 +183,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testRangeWithBoundFilter() {
     setUpSingleValueFilter();
     Query startAt =
-        query("c")
+        query("coll")
             .filter(filter("count", ">=", 1))
             .filter(filter("count", "<=", 3))
             .orderBy(orderBy("count"))
@@ -195,7 +195,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testInFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "in", Arrays.asList(1, 3)));
+    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 3)));
     verifyResults(query, "c/d1", "c/d3");
   }
 
@@ -204,21 +204,21 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     // TODO(indexing): Optimize not-in filters. We currently return all documents and do not exclude
     // the documents with the provided values.
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "not-in", Arrays.asList(1, 2)));
+    Query query = query("coll").filter(filter("count", "not-in", Arrays.asList(1, 2)));
     verifyResults(query, "c/d1", "c/d2", "c/d3");
   }
 
   @Test
   public void testArrayContainsFilter() {
     setUpArrayValueFilter();
-    Query query = query("c").filter(filter("values", "array-contains", 1));
+    Query query = query("coll").filter(filter("values", "array-contains", 1));
     verifyResults(query, "c/d1");
   }
 
   @Test
   public void testArrayContainsAnyFilter() {
     setUpArrayValueFilter();
-    Query query = query("c").filter(filter("values", "array-contains-any", Arrays.asList(1, 2, 4)));
+    Query query = query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1, 2, 4)));
     verifyResults(query, "c/d1", "c/d2");
   }
 
@@ -229,32 +229,32 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpArrayValueFilter();
     setUpSingleValueFilter();
     addDoc("coll/nonmatching", map("values", 1));
-    Query query = query("c").filter(filter("values", "array-contains-any", Arrays.asList(1)));
+    Query query = query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1)));
     verifyResults(query, "c/d1");
   }
 
   @Test
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("unknown", "==", true));
+    Query query = query("coll").filter(filter("unknown", "==", true));
     assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 
   @Test
   public void testNoMatchingDocs() {
     setUpSingleValueFilter();
-    Query query = query("c").filter(filter("count", "==", -1));
+    Query query = query("coll").filter(filter("count", "==", -1));
     verifyResults(query);
   }
 
   @Test
   public void testEqualityFilterWithNonMatchingType() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("value"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASC));
     addDoc("coll/boolean", map("value", true));
     addDoc("coll/string", map("value", "true"));
     addDoc("coll/number", map("value", 1));
-    Query query = query("c").filter(filter("value", "==", true));
+    Query query = query("coll").filter(filter("value", "==", true));
     verifyResults(query, "coll/boolean");
   }
 
@@ -272,25 +272,25 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testLimitFilter() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("value"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASC));
     addDoc("c/d1", map("value", 1));
     addDoc("c/d2", map("value", 1));
     addDoc("c/d3", map("value", 1));
-    Query query = query("c").filter(filter("value", "==", 1)).limitToFirst(2);
+    Query query = query("coll").filter(filter("value", "==", 1)).limitToFirst(2);
     verifyResults(query, "c/d1", "c/d2");
   }
 
   @Test
   public void testLimitAppliesOrdering() {
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ASC)
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS));
     addDoc("c/d1", map("value", Arrays.asList(1, "foo")));
     addDoc("c/d2", map("value", Arrays.asList(3, "foo")));
     addDoc("c/d3", map("value", Arrays.asList(2, "foo")));
     Query query =
-        query("c")
+        query("coll")
             .filter(filter("value", "array-contains", "foo"))
             .orderBy(orderBy("value"))
             .limitToFirst(2);
@@ -300,45 +300,45 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testAdvancedQueries() {
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("null"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("null"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("int"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("int"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("float"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("float"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("string"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("string"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("multi"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("multi"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("array"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("array"), FieldIndex.Segment.Kind.DESC));
+        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.DESC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("array"), FieldIndex.Segment.Kind.CONTAINS));
+        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.CONTAINS));
     indexManager.addFieldIndex(
-            new FieldIndex("c").withAddedField(field("map"), FieldIndex.Segment.Kind.ASC));
+            new FieldIndex("coll").withAddedField(field("map"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-            new FieldIndex("c").withAddedField(field("map.field"), FieldIndex.Segment.Kind.ASC));
+            new FieldIndex("coll").withAddedField(field("map.field"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c").withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASC));
+        new FieldIndex("coll").withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASC)
             .withAddedField(field("suffix"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.ASC)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.DESC)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ASC));
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.ASC)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.DESC));
     indexManager.addFieldIndex(
-        new FieldIndex("c")
+        new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.DESC)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.DESC));
 
@@ -373,10 +373,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         };
 
     for (int i = 0; i < data.size(); ++i) {
-      addDoc("c/d" + i, data.get(i));
+      addDoc("coll/doc" + i, data.get(i));
     }
 
-    Query q = query("c");
+    Query q = query("coll");
 
     verifyResults(q.orderBy(orderBy("int")), "c/d0", "c/d2");
     verifyResults(q.filter(filter("float", "==", Double.NaN)), "c/d6");
@@ -387,7 +387,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     verifyResults(q.filter(filter("string", ">", "a")), "c/d4", "c/d5");
     verifyResults(q.filter(filter("string", ">=", "a")), "c/d3", "c/d4", "c/d5");
     verifyResults(q.filter(filter("string", "<", "b")), "c/d3", "c/d4");
-    verifyResults(q.filter(filter("string", "<", "c")), "c/d3", "c/d4", "c/d5");
+    verifyResults(q.filter(filter("string", "<", "coll")), "c/d3", "c/d4", "c/d5");
     verifyResults(q.filter(filter("string", ">", "a")).filter(filter("string", "<", "b")), "c/d4");
     verifyResults(q.filter(filter("array", "array-contains", "foo")), "c/d0", "c/d1", "c/d2");
     verifyResults(

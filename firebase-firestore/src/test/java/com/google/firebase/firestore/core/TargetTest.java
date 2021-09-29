@@ -159,7 +159,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ASC);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    assertNull(upperBound);
 
     Bound upperBound = target.getUpperBound(index);
     assertNull(upperBound);
@@ -267,7 +267,7 @@ public class TargetTest {
         new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ASC);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, new Object[] {null});
+    assertNull(lowerBound);
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "bar");

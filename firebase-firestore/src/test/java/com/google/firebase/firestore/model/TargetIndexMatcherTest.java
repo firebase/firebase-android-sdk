@@ -69,9 +69,9 @@ public class TargetIndexMatcherTest {
             .filter(filter("b", "==", 2))
             .orderBy(orderBy("__name__", "desc"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.ASC);
+        q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
     validateServesTarget(
-        q, "b", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.ASC);
+        q, "b", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
   }
 
   @Test
@@ -229,20 +229,24 @@ public class TargetIndexMatcherTest {
   public void withEqualityAndDescendingOrder() {
     Query q = query("collId").filter(filter("a", "==", 1)).orderBy(orderBy("__name__", "desc"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.ASC);
+        q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
   }
 
   @Test
   public void withOrderBy() {
     Query q = query("collId").orderBy(orderBy("a"));
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASC);
+    validateDoesNotServeTarget(q, "a", FieldIndex.Segment.Kind.DESC);
 
     q = query("collId").orderBy(orderBy("a", "desc"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASC);
+    validateDoesNotServeTarget(q, "a", FieldIndex.Segment.Kind.ASC);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.DESC);
 
     q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("__name__"));
     validateServesTarget(
         q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.ASC);
+    validateDoesNotServeTarget(
+            q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
   }
 
   @Test
@@ -319,20 +323,17 @@ public class TargetIndexMatcherTest {
         "fff",
         FieldIndex.Segment.Kind.ASC,
         "bar",
-        FieldIndex.Segment.Kind.ASC,
+        FieldIndex.Segment.Kind.DESC,
         "__name__",
         FieldIndex.Segment.Kind.ASC);
-    // The field index can be used regardless of the order of segments since we only use the orderBy
-    // clause to filter out documents that do not contain field values for the specified fields. The
-    // ordering itself is done during View computation.
-    validateServesTarget(
+    validateDoesNotServeTarget(
         q,
         "fff",
         FieldIndex.Segment.Kind.ASC,
         "__name__",
         FieldIndex.Segment.Kind.ASC,
         "bar",
-        FieldIndex.Segment.Kind.ASC);
+        FieldIndex.Segment.Kind.DESC);
 
     q =
         query("collId")
@@ -401,7 +402,7 @@ public class TargetIndexMatcherTest {
         "ccc",
         FieldIndex.Segment.Kind.ASC,
         "fff",
-        FieldIndex.Segment.Kind.ASC);
+        FieldIndex.Segment.Kind.DESC);
   }
 
   @Test
