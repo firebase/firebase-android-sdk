@@ -327,4 +327,12 @@ public final class LocalSerializer {
         fieldIndex.withVersion(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
     return fieldIndex;
   }
+
+  public Mutation decodeMutation(Write mutation) {
+    return rpcSerializer.decodeMutation(mutation);
+  }
+
+  public Write encodeMutation(Mutation mutation) {
+    return rpcSerializer.encodeMutation(mutation);
+  }
 }
