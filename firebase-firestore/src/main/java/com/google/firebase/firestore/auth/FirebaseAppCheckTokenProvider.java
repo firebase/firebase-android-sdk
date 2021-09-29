@@ -33,10 +33,7 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
 
   private static final int MAXIMUM_TOKEN_WAIT_TIME_MS = 30000;
 
-  /**
-   * The Task for retrieving the AppCheck token. May be null if the "AppCheck" module is not
-   * available.
-   */
+  /** The Task for retrieving the AppCheck token. */
   private final Task<String> getTokenTask;
 
   /** Creates a new FirebaseAppCheckTokenProvider. */
