@@ -299,34 +299,13 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object arrayValue,
       @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
-
-    // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
-
-
-
     if (lowerBounds == null && upperBounds == null && arrayValue == null) {
       bindArgs[offset++] = indexId;
     } else if (lowerBounds == null && upperBounds == null) {
       bindArgs[offset++] = indexId;
       bindArgs[offset++] = arrayValue;
-    } else if (lowerBounds == null) {
-      for (Object upperBound : upperBounds) {
-        bindArgs[offset++] = indexId;
-        if (arrayValue != null) {
-          bindArgs[offset++] = arrayValue;
-        }
-        bindArgs[offset++] = upperBound;
-      }
-    } else if (upperBounds == null) {
-      for (Object lowerBound : lowerBounds) {
-        bindArgs[offset++] = indexId;
-        if (arrayValue != null) {
-          bindArgs[offset++] = arrayValue;
-        }
-        bindArgs[offset++] = lowerBound;
-      }
-    } else {
-        hardAssert(upperBounds == null || upperBounds.length == lowerBounds.length,
+    } else if (lowerBounds != null && upperBounds != null) {
+      hardAssert(upperBounds.length == lowerBounds.length,
               "Length of upper and lower bound should match");
       for (int i = 0; i < lowerBounds.length; ++i) {
         bindArgs[offset++] = indexId;
@@ -335,6 +314,22 @@ final class SQLiteIndexManager implements IndexManager {
         }
         bindArgs[offset++] = lowerBounds[i];
         bindArgs[offset++] = upperBounds[i];
+      }
+    } else if (lowerBounds == null) {
+      for (Object upperBound : upperBounds) {
+        bindArgs[offset++] = indexId;
+        if (arrayValue != null) {
+          bindArgs[offset++] = arrayValue;
+        }
+        bindArgs[offset++] = upperBound;
+      }
+    } else {
+      for (Object lowerBound : lowerBounds) {
+        bindArgs[offset++] = indexId;
+        if (arrayValue != null) {
+          bindArgs[offset++] = arrayValue;
+        }
+        bindArgs[offset++] = lowerBound;
       }
     }
     return offset;
