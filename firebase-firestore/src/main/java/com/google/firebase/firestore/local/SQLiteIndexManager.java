@@ -305,8 +305,8 @@ final class SQLiteIndexManager implements IndexManager {
       bindArgs[offset++] = indexId;
       bindArgs[offset++] = arrayValue;
     } else if (lowerBounds != null && upperBounds != null) {
-      hardAssert(upperBounds.length == lowerBounds.length,
-              "Length of upper and lower bound should match");
+      hardAssert(
+          upperBounds.length == lowerBounds.length, "Length of upper and lower bound should match");
       for (int i = 0; i < lowerBounds.length; ++i) {
         bindArgs[offset++] = indexId;
         if (arrayValue != null) {
@@ -384,7 +384,8 @@ final class SQLiteIndexManager implements IndexManager {
     IndexByteEncoder encoder = new IndexByteEncoder();
     List<FieldIndex.Segment> directionalSegments = fieldIndex.getDirectionalSegments();
     for (int i = 0; i < values.size(); ++i) {
-      DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(directionalSegments.get(i).getKind());
+      DirectionalIndexByteEncoder directionalEncoder =
+          encoder.forKind(directionalSegments.get(i).getKind());
       FirestoreIndexValueWriter.INSTANCE.writeIndexValue(values.get(i), directionalEncoder);
     }
     return encoder.getEncodedBytes();
@@ -394,7 +395,8 @@ final class SQLiteIndexManager implements IndexManager {
   private @Nullable Object encodeAscending(@Nullable Value value) {
     if (value == null) return null;
     IndexByteEncoder encoder = new IndexByteEncoder();
-    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder.forKind(FieldIndex.Segment.Kind.ASC));
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASC));
     return encoder.getEncodedBytes();
   }
 
@@ -415,7 +417,7 @@ final class SQLiteIndexManager implements IndexManager {
       for (IndexByteEncoder encoder : encoders) {
         if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
           encoders = expandIndexValues(encoders, segment, value);
-        } else{
+        } else {
           DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
         }
@@ -449,7 +451,8 @@ final class SQLiteIndexManager implements IndexManager {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder.forKind(segment.getKind()));
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+            arrayElement, clonedEncoder.forKind(segment.getKind()));
         results.add(clonedEncoder);
       }
     }

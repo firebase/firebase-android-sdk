@@ -246,7 +246,7 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.ASC);
     validateDoesNotServeTarget(
-            q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
+        q, "a", FieldIndex.Segment.Kind.ASC, "__name__", FieldIndex.Segment.Kind.DESC);
   }
 
   @Test

@@ -137,7 +137,7 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}.  Returns {@code null} if no lower bound exists.
+   * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
    */
   @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
