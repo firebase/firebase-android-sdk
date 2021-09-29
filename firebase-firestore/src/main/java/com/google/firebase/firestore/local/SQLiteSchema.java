@@ -361,6 +361,8 @@ class SQLiteSchema {
                   + "update_time_nanos INTEGER, "
                   + "PRIMARY KEY (index_id))");
 
+          // The index entries table only has a single primary index. `array_value` should be set
+          // for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
                   + "index_id INTEGER, "
