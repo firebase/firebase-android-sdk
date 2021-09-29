@@ -20,9 +20,9 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class SQLiteDocumentOverlaysTestCase extends DocumentOverlaysTestCase {
+public class MemoryDocumentOverlayTestCase extends DocumentOverlayTestCase {
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
   }
 }

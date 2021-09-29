@@ -17,22 +17,25 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-public class SQLiteDocumentOverlays implements DocumentOverlays {
+public class SQLiteDocumentOverlay implements DocumentOverlay {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private final String uid;
 
-  public SQLiteDocumentOverlays(SQLitePersistence db, LocalSerializer serializer) {
+  public SQLiteDocumentOverlay(SQLitePersistence db, LocalSerializer serializer, User user) {
     this.db = db;
     this.serializer = serializer;
+    this.uid = user.isAuthenticated() ? user.getUid() : "";
   }
 
   @Nullable
   @Override
-  public Mutation getOverlayMutation(String uid, DocumentKey key) {
+  public Mutation getOverlay(DocumentKey key) {
     String path = EncodedPath.encode(key.getPath());
     return db.query("SELECT overlay_mutation FROM document_overlays WHERE uid = ? AND path = ?")
         .binding(uid, path)
@@ -51,7 +54,7 @@ public class SQLiteDocumentOverlays implements DocumentOverlays {
   }
 
   @Override
-  public void saveOverlayMutation(String uid, DocumentKey key, Mutation mutation) {
+  public void saveOverlay(DocumentKey key, Mutation mutation) {
     db.execute(
         "INSERT OR REPLACE INTO document_overlays "
             + "(uid, path, overlay_mutation) VALUES (?, ?, ?)",
@@ -61,7 +64,7 @@ public class SQLiteDocumentOverlays implements DocumentOverlays {
   }
 
   @Override
-  public void removeOverlayMutation(String uid, DocumentKey key) {
+  public void removeOverlay(DocumentKey key) {
     db.execute(
         "DELETE FROM document_overlays WHERE uid = ? AND path = ?",
         uid,

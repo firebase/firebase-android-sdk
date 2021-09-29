@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import org.junit.After;
 import org.junit.Before;
@@ -30,20 +31,20 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * These are tests for any implementation of the DocumentOverlays interface.
+ * These are tests for any implementation of the DocumentOverlay interface.
  *
- * <p>To test a specific implementation of DocumentOverlays:
+ * <p>To test a specific implementation of DocumentOverlay:
  *
  * <ol>
- *   <li>Subclass DocumentOverlaysTestCase.
+ *   <li>Subclass DocumentOverlayTestCase.
  *   <li>Override {@link #getPersistence}, creating a new implementation of Persistence.
  * </ol>
  */
-public abstract class DocumentOverlaysTestCase {
+public abstract class DocumentOverlayTestCase {
   @Rule public TestName name = new TestName();
 
   private Persistence persistence;
-  private DocumentOverlays overlays;
+  private DocumentOverlay overlays;
   private static boolean overlayEnabled = false;
 
   @BeforeClass
@@ -60,7 +61,7 @@ public abstract class DocumentOverlaysTestCase {
   @Before
   public void setUp() {
     persistence = getPersistence();
-    overlays = persistence.getDocumentOverlays();
+    overlays = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
   }
 
   @After
@@ -72,48 +73,37 @@ public abstract class DocumentOverlaysTestCase {
 
   @Test
   public void testReturnsNullWhenOverlayIsNotFound() {
-    assertNull(overlays.getOverlayMutation("Alice", key("coll/doc1")));
+    assertNull(overlays.getOverlay(key("coll/doc1")));
   }
 
   @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlayMutation("Alice", key("coll/doc1"), m);
+    overlays.saveOverlay(key("coll/doc1"), m);
 
-    assertEquals(m, overlays.getOverlayMutation("Alice", key("coll/doc1")));
-  }
-
-  @Test
-  public void testCannotReadSavedOverlayByOtherUser() {
-    Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlayMutation("Bob", key("coll/doc1"), m);
-
-    assertNull(overlays.getOverlayMutation("Alice", key("coll/doc1")));
-
-    overlays.saveOverlayMutation("Alice", key("coll/doc1"), m);
-    assertEquals(m, overlays.getOverlayMutation("Alice", key("coll/doc1")));
+    assertEquals(m, overlays.getOverlay(key("coll/doc1")));
   }
 
   @Test
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
-    overlays.saveOverlayMutation("Bob", key("coll/doc1"), m1);
-    overlays.saveOverlayMutation("Bob", key("coll/doc1"), m2);
+    overlays.saveOverlay(key("coll/doc1"), m1);
+    overlays.saveOverlay(key("coll/doc1"), m2);
 
-    assertEquals(m2, overlays.getOverlayMutation("Bob", key("coll/doc1")));
+    assertEquals(m2, overlays.getOverlay(key("coll/doc1")));
   }
 
   @Test
   public void testDeleteRepeatedlyWorks() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlayMutation("Bob", key("coll/doc1"), m);
+    overlays.saveOverlay(key("coll/doc1"), m);
 
-    overlays.removeOverlayMutation("Bob", key("coll/doc1"));
-    assertNull(overlays.getOverlayMutation("Bob", key("coll/doc1")));
+    overlays.removeOverlay(key("coll/doc1"));
+    assertNull(overlays.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlayMutation("Bob", key("coll/doc1"));
-    assertNull(overlays.getOverlayMutation("Bob", key("coll/doc1")));
+    overlays.removeOverlay(key("coll/doc1"));
+    assertNull(overlays.getOverlay(key("coll/doc1")));
   }
 }
