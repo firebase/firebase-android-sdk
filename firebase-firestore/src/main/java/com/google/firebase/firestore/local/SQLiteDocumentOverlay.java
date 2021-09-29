@@ -45,7 +45,7 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
                 try {
                   return serializer.decodeMutation(row.getBlob(0));
                 } catch (InvalidProtocolBufferException e) {
-                  throw fail("Overlay mutations failed to parse: %s", e);
+                  throw fail("Overlay failed to parse: %s", e);
                 }
               }
 
