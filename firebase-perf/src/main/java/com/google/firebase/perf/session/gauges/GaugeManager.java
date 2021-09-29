@@ -201,6 +201,9 @@ public class GaugeManager {
     }
 
     // Flush any data that was collected for this session one last time.
+    if (gaugeManagerExecutor == null) {
+      gaugeManagerExecutor = Executors.newSingleThreadScheduledExecutor();
+    }
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture unusedFuture =
         gaugeManagerExecutor.schedule(

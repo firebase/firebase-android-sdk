@@ -84,7 +84,6 @@ public class CpuGaugeCollector {
 
   private CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
-//    cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
 
     int pid = android.os.Process.myPid();
     procFileName = "/proc/" + Integer.toString(pid) + "/stat";
