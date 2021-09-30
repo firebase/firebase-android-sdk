@@ -84,6 +84,7 @@ public class CpuGaugeCollector {
 
   private CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
+    cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
 
     int pid = android.os.Process.myPid();
     procFileName = "/proc/" + Integer.toString(pid) + "/stat";
@@ -168,9 +169,6 @@ public class CpuGaugeCollector {
       long cpuMetricCollectionRate, Timer referenceTime) {
     this.cpuMetricCollectionRateMs = cpuMetricCollectionRate;
     try {
-      if (cpuMetricCollectorExecutor == null) {
-        cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
-      }
       cpuMetricCollectorJob =
           cpuMetricCollectorExecutor.scheduleAtFixedRate(
               () -> {
@@ -189,9 +187,6 @@ public class CpuGaugeCollector {
 
   private synchronized void scheduleCpuMetricCollectionOnce(Timer referenceTime) {
     try {
-      if (cpuMetricCollectorExecutor == null) {
-        cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
-      }
       @SuppressWarnings("FutureReturnValueIgnored")
       ScheduledFuture unusedFuture =
           cpuMetricCollectorExecutor.schedule(

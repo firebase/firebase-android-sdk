@@ -57,7 +57,7 @@ public class MemoryGaugeCollector {
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
   private MemoryGaugeCollector() {
-    this(null, Runtime.getRuntime());
+    this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
   }
 
   @VisibleForTesting
@@ -129,9 +129,6 @@ public class MemoryGaugeCollector {
     this.memoryMetricCollectionRateMs = memoryMetricCollectionRate;
 
     try {
-      if (memoryMetricCollectorExecutor == null) {
-        memoryMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
-      }
       memoryMetricCollectorJob =
           memoryMetricCollectorExecutor.scheduleAtFixedRate(
               () -> {
@@ -150,9 +147,6 @@ public class MemoryGaugeCollector {
 
   private synchronized void scheduleMemoryMetricCollectionOnce(Timer referenceTime) {
     try {
-      if (memoryMetricCollectorExecutor == null) {
-        memoryMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
-      }
       @SuppressWarnings("FutureReturnValueIgnored")
       ScheduledFuture unusedFuture =
           memoryMetricCollectorExecutor.schedule(
