@@ -75,7 +75,7 @@ public class CpuGaugeCollector {
 
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings;
-  private ScheduledExecutorService cpuMetricCollectorExecutor;
+  private final ScheduledExecutorService cpuMetricCollectorExecutor;
   private final String procFileName;
   private final long clockTicksPerSecond;
 

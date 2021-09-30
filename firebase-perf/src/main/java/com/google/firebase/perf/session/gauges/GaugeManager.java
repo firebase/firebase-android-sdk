@@ -52,7 +52,7 @@ public class GaugeManager {
   private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long INVALID_GAUGE_COLLECTION_FREQUENCY = -1;
 
-  private Lazy<ScheduledExecutorService> gaugeManagerExecutor;
+  private final Lazy<ScheduledExecutorService> gaugeManagerExecutor;
   private final ConfigResolver configResolver;
   private final Lazy<CpuGaugeCollector> cpuGaugeCollector;
   private final Lazy<MemoryGaugeCollector> memoryGaugeCollector;

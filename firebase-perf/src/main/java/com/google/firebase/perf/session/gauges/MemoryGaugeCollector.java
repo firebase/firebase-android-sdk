@@ -48,7 +48,7 @@ public class MemoryGaugeCollector {
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
   private static final int UNSET_MEMORY_METRIC_COLLECTION_RATE = -1;
 
-  private ScheduledExecutorService memoryMetricCollectorExecutor;
+  private final ScheduledExecutorService memoryMetricCollectorExecutor;
   /* This is populated by MemoryGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<AndroidMemoryReading> memoryMetricReadings;
   private final Runtime runtime;
