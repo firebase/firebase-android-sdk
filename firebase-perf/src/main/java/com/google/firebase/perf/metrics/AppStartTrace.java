@@ -137,9 +137,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                   new ThreadPoolExecutor(
                       CORE_POOL_SIZE,
                       MAX_POOL_SIZE,
-                      /* keepAliveTime= */ 10,
+                      /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>()));
+                      new LinkedBlockingQueue<>(1)));
         }
       }
     }
