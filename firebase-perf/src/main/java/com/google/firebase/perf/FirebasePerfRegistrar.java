@@ -49,7 +49,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.requiredProvider(TransportFactory.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
         /**
@@ -69,8 +68,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                 new FirebasePerformanceModule(
                     container.get(FirebaseApp.class),
                     container.get(FirebaseInstallationsApi.class),
-                    container.getProvider(RemoteConfigComponent.class),
-                    container.getProvider(TransportFactory.class)))
+                    container.getProvider(RemoteConfigComponent.class)))
             .build();
 
     return component.getFirebasePerformance();
