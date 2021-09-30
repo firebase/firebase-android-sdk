@@ -145,12 +145,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   private final Deque<MutationBatch> writePipeline;
 
+  @Nullable private String appCheckToken;
+
   public RemoteStore(
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
-      ConnectivityMonitor connectivityMonitor) {
+      ConnectivityMonitor connectivityMonitor,
+      AppCheckCallback appCheckCallback) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -239,6 +242,14 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 restartNetwork();
               });
         });
+
+    appCheckCallback.addCallback( token -> {
+              workerQueue.enqueueAndForget(
+                      () -> {
+                        appCheckToken = token;
+                        enableNetwork(); // or restart if we want proactive token refresh
+                      }
+    })
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -506,7 +517,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   public boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
-    return networkEnabled;
+    return networkEnabled && appCheckToken != null;
   }
 
   /**
