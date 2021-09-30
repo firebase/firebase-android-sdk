@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
@@ -113,12 +114,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     testGaugeManager =
         new GaugeManager(
-            fakeScheduledExecutorService,
+            new Lazy<>(() -> fakeScheduledExecutorService),
             mockTransportManager,
             mockConfigResolver,
             fakeGaugeMetadataManager,
-            fakeCpuGaugeCollector,
-            fakeMemoryGaugeCollector);
+            new Lazy<>(() -> fakeCpuGaugeCollector),
+            new Lazy<>(() -> fakeMemoryGaugeCollector));
   }
 
   @Test
@@ -663,12 +664,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     testGaugeManager =
         new GaugeManager(
-            fakeScheduledExecutorService,
+            new Lazy<>(() -> fakeScheduledExecutorService),
             mockTransportManager,
             mockConfigResolver,
             /* gaugeMetadataManager= */ null,
-            fakeCpuGaugeCollector,
-            fakeMemoryGaugeCollector);
+            new Lazy<>(() -> fakeCpuGaugeCollector),
+            new Lazy<>(() -> fakeMemoryGaugeCollector));
 
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isFalse();
@@ -679,12 +680,12 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
     testGaugeManager =
         new GaugeManager(
-            fakeScheduledExecutorService,
+            new Lazy<>(() -> fakeScheduledExecutorService),
             mockTransportManager,
             mockConfigResolver,
             /* gaugeMetadataManager= */ null,
-            fakeCpuGaugeCollector,
-            fakeMemoryGaugeCollector);
+            new Lazy<>(() -> fakeCpuGaugeCollector),
+            new Lazy<>(() -> fakeMemoryGaugeCollector));
 
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isFalse();

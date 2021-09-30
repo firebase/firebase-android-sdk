@@ -18,7 +18,6 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -136,13 +135,16 @@ public class GaugeManager {
 
     try {
       gaugeManagerDataCollectionJob =
-          gaugeManagerExecutor.get().scheduleAtFixedRate(
-              () -> {
-                syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
-              },
-              /*initialDelay=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-              /*period=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-              TimeUnit.MILLISECONDS);
+          gaugeManagerExecutor
+              .get()
+              .scheduleAtFixedRate(
+                  () -> {
+                    syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
+                  },
+                  /*initialDelay=*/ collectionFrequency
+                      * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  /*period=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  TimeUnit.MILLISECONDS);
 
     } catch (RejectedExecutionException e) {
       logger.warn("Unable to start collecting Gauges: " + e.getMessage());
@@ -202,12 +204,14 @@ public class GaugeManager {
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture unusedFuture =
-        gaugeManagerExecutor.get().schedule(
-            () -> {
-              syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
-            },
-            TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
-            TimeUnit.MILLISECONDS);
+        gaugeManagerExecutor
+            .get()
+            .schedule(
+                () -> {
+                  syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
+                },
+                TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                TimeUnit.MILLISECONDS);
 
     this.sessionId = null;
     this.applicationProcessState = ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
@@ -230,7 +234,8 @@ public class GaugeManager {
 
     // Adding Memory metric readings.
     while (!memoryGaugeCollector.get().memoryMetricReadings.isEmpty()) {
-      gaugeMetricBuilder.addAndroidMemoryReadings(memoryGaugeCollector.get().memoryMetricReadings.poll());
+      gaugeMetricBuilder.addAndroidMemoryReadings(
+          memoryGaugeCollector.get().memoryMetricReadings.poll());
     }
 
     // Adding Session ID info.
