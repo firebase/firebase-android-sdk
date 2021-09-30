@@ -136,7 +136,6 @@ public class TargetIndexMatcher {
         if (consumedFilter) {
           currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
         }
-
         if (consumedOrderBy) {
           currentOrderBy = orderBys.hasNext() ? orderBys.next() : null;
         }
