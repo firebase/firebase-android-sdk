@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -139,7 +138,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final FirebaseApp firebaseApp;
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private final Provider<TransportFactory> transportFactoryProvider;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -161,7 +159,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       FirebaseApp firebaseApp,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      Provider<TransportFactory> transportFactoryProvider,
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       GaugeManager gaugeManager) {
@@ -169,7 +166,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.firebaseApp = firebaseApp;
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.transportFactoryProvider = transportFactoryProvider;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
@@ -177,9 +173,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
-
-    TransportManager.getInstance()
-        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
     Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.

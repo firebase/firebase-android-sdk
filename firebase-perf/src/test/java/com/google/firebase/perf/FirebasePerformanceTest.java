@@ -27,7 +27,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.inject.Provider;
@@ -462,8 +461,7 @@ public class FirebasePerformanceTest {
             /* metadataFireperfForceDeactivatedKey= */ null,
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ null,
-            firebaseRemoteConfigProvider,
-            () -> FirebaseApp.getInstance().get(TransportFactory.class));
+            firebaseRemoteConfigProvider);
 
     verify(spyRemoteConfigManager).setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
   }
@@ -519,8 +517,7 @@ public class FirebasePerformanceTest {
         metadataFireperfForceDeactivatedKey,
         metadataFireperfEnabledKey,
         sharedPreferencesEnabledDisabledKey,
-        () -> FirebaseApp.getInstance().get(RemoteConfigComponent.class),
-        () -> FirebaseApp.getInstance().get(TransportFactory.class));
+        () -> FirebaseApp.getInstance().get(RemoteConfigComponent.class));
   }
 
   /**
@@ -543,8 +540,7 @@ public class FirebasePerformanceTest {
       Boolean metadataFireperfForceDeactivatedKey,
       Boolean metadataFireperfEnabledKey,
       Boolean sharedPreferencesEnabledDisabledKey,
-      Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
-      Provider<TransportFactory> transportFactoryProvider) {
+      Provider<RemoteConfigComponent> firebaseRemoteConfigProvider) {
     DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
     deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
     if (sharedPreferencesEnabledDisabledKey != null) {
@@ -572,7 +568,6 @@ public class FirebasePerformanceTest {
         FirebaseApp.getInstance(),
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
-        transportFactoryProvider,
         spyRemoteConfigManager,
         spyConfigResolver,
         spyGaugeManager);

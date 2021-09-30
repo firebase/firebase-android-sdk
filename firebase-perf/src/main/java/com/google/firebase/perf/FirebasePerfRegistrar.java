@@ -15,7 +15,6 @@
 package com.google.firebase.perf;
 
 import androidx.annotation.Keep;
-import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
