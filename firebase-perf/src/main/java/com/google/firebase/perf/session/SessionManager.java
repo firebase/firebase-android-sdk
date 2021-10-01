@@ -53,6 +53,8 @@ public class SessionManager extends AppStateUpdateHandler {
 
   private SessionManager() {
     this(GaugeManager.getInstance(), PerfSession.create(), AppStateMonitor.getInstance());
+    // Solution 0
+    this(GaugeManager.getInstance(), null, AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting
@@ -106,21 +108,33 @@ public class SessionManager extends AppStateUpdateHandler {
    * @see PerfSession#isVerbose()
    */
   public void updatePerfSession(ApplicationProcessState currentAppState) {
-    synchronized (clients) {
-      perfSession = PerfSession.create();
+    // Solution 1
+    if (!appStateMonitor.isColdStart()) {
+      synchronized (clients) {
+        perfSession = PerfSession.create();
 
-      for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
-        SessionAwareObject callback = i.next().get();
-        if (callback != null) {
-          callback.updateSession(perfSession);
-        } else {
-          // The object pointing by WeakReference has already been garbage collected.
-          // Remove it from the Set.
-          i.remove();
+        for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
+          SessionAwareObject callback = i.next().get();
+          if (callback != null) {
+            callback.updateSession(perfSession);
+          } else {
+            // The object pointing by WeakReference has already been garbage collected.
+            // Remove it from the Set.
+            i.remove();
+          }
         }
       }
     }
 
+    logGaugeMetadataIfCollectionEnabled(currentAppState);
+    startOrStopCollectingGauges(currentAppState);
+
+    // Solution 2
+    logMetadataAndStartOrStopCollectingGauges(currentAppState);
+  }
+
+  // Solution 2
+  public void logMetadataAndStartOrStopCollectingGauges(ApplicationProcessState currentAppState) {
     logGaugeMetadataIfCollectionEnabled(currentAppState);
     startOrStopCollectingGauges(currentAppState);
   }

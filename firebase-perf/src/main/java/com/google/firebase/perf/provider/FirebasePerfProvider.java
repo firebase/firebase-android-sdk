@@ -76,7 +76,10 @@ public class FirebasePerfProvider extends ContentProvider {
     // possible.
     // There is code in SessionManager that prevents us from resetting the session twice in case
     // of app cold start.
+    // Solution 1
     SessionManager.getInstance().updatePerfSession(ApplicationProcessState.FOREGROUND);
+    // Solution 2
+    SessionManager.getInstance().logMetadataAndStartOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
   }
 
   /** Called before {@link Application#onCreate()}. */
