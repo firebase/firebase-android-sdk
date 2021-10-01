@@ -52,6 +52,7 @@ public class SessionManager extends AppStateUpdateHandler {
   }
 
   private SessionManager() {
+    // do no initialize perfSession to prevent b/201549215
     this(GaugeManager.getInstance(), null, AppStateMonitor.getInstance());
   }
 
