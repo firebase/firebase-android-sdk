@@ -19,6 +19,8 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 
 public interface CrashlyticsNativeComponent {
 
+  boolean hasCrashDataForCurrentSession();
+
   boolean hasCrashDataForSession(@NonNull String sessionId);
 
   /**

@@ -41,6 +41,12 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
   }
 
   @Override
+  public boolean hasCrashDataForCurrentSession() {
+    CrashlyticsNativeComponent component = availableNativeComponent.get();
+    return component != null && component.hasCrashDataForCurrentSession();
+  }
+
+  @Override
   public boolean hasCrashDataForSession(@NonNull String sessionId) {
     CrashlyticsNativeComponent component = availableNativeComponent.get();
     return component != null && component.hasCrashDataForSession(sessionId);
