@@ -156,7 +156,8 @@ class CrashlyticsController {
           }
         };
     crashHandler =
-        new CrashlyticsUncaughtExceptionHandler(crashListener, settingsProvider, defaultHandler);
+        new CrashlyticsUncaughtExceptionHandler(
+            crashListener, settingsProvider, defaultHandler, nativeComponent);
     Thread.setDefaultUncaughtExceptionHandler(crashHandler);
   }
 
