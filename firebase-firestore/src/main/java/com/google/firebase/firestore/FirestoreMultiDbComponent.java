@@ -51,7 +51,7 @@ class FirestoreMultiDbComponent
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
-      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
+      @NonNull Provider<InternalAppCheckTokenProvider> appCheckProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;

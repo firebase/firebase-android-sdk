@@ -130,7 +130,7 @@ public class FirebaseFirestore {
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
-      @Nullable Provider<InternalAppCheckTokenProvider> appCheckTokenProvider,
+      @NonNull Provider<InternalAppCheckTokenProvider> appCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -173,7 +173,7 @@ public class FirebaseFirestore {
       DatabaseId databaseId,
       String persistenceKey,
       CredentialsProvider credentialsProvider,
-      @Nullable AppCheckTokenProvider appCheckTokenProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,

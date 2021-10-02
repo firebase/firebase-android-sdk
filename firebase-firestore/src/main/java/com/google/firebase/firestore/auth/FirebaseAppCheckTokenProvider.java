@@ -98,9 +98,7 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
     return appCheckToken;
   }
 
-  /**
-   * Registers a listener that will be notified when AppCheck token changes.
-   */
+  /** Registers a listener that will be notified when AppCheck token changes. */
   @Override
   public synchronized void setChangeListener(@NonNull Listener<String> changeListener) {
     this.changeListener = changeListener;

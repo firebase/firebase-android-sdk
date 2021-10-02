@@ -17,7 +17,6 @@ package com.google.firebase.firestore.auth;
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Listener;
 
-/** An AppCheckTokenProvider has a method to fetch an AppCheck token. */
 public abstract class AppCheckTokenProvider {
   /**
    * Returns the latest AppCheck token. This can be null (if the task of retrieving the token has
@@ -25,8 +24,6 @@ public abstract class AppCheckTokenProvider {
    */
   public abstract String getCurrentAppCheckToken();
 
-  /**
-   * Registers a listener that will be notified when AppCheck token changes.
-   */
+  /** Registers a listener that will be notified when AppCheck token changes. */
   public abstract void setChangeListener(@NonNull Listener<String> changeListener);
 }
