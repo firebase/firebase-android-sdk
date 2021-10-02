@@ -90,11 +90,18 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
         });
   }
 
+  /**
+   * Returns the latest AppCheck token. This can be null (if the task of retrieving the token has
+   * not completed yet), and can be an empty string (if AppCheck is not available).
+   */
   @Nullable
   public synchronized String getCurrentAppCheckToken() {
     return appCheckToken;
   }
 
+  /**
+   * Registers a listener that will be notified when AppCheck token changes.
+   */
   @Override
   public synchronized void setChangeListener(@NonNull Listener<String> changeListener) {
     this.changeListener = changeListener;
