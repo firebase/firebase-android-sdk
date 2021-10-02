@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.auth;
+package com.google.firebase.firestore.testutil;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.util.Listener;
 
-/** An AppCheckTokenProvider has a method to fetch an AppCheck token. */
-public abstract class AppCheckTokenProvider {
-  /** Returns the current AppCheck Token. */
-  public abstract String getCurrentAppCheckToken();
+/** A Credentials Provider that always returns an empty token */
+public class EmptyAppCheckTokenProvider extends AppCheckTokenProvider {
+  @Override
+  public String getCurrentAppCheckToken() {
+    return "";
+  }
 
-  public abstract void setChangeListener(@NonNull Listener<String> changeListener);
+  @Override
+  public void setChangeListener(@NonNull Listener<String> changeListener) {}
 }

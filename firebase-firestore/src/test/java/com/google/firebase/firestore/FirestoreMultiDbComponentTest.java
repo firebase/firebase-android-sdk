@@ -61,8 +61,9 @@ public class FirestoreMultiDbComponentTest {
     Context context = InstrumentationRegistry.getInstrumentation().getContext();
     InternalAuthProvider authProvider = mock(InternalAuthProvider.class);
     Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferred<>(authProvider);
+    // TODO: don't use null.
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
     return new FirestoreMultiDbComponent(
-        context, firebaseApp, deferredAuthProvider, metadataProvider);
+        context, firebaseApp, deferredAuthProvider, null, metadataProvider);
   }
 }

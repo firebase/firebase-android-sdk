@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleReader;
@@ -63,6 +64,7 @@ public final class FirestoreClient {
 
   private final DatabaseInfo databaseInfo;
   private final CredentialsProvider credentialsProvider;
+  private final AppCheckTokenProvider appCheckTokenProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
   private final GrpcMetadataProvider metadataProvider;
@@ -83,10 +85,12 @@ public final class FirestoreClient {
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       final AsyncQueue asyncQueue,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.credentialsProvider = credentialsProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.bundleSerializer =
@@ -122,6 +126,15 @@ public final class FirestoreClient {
                   syncEngine.handleCredentialChange(user);
                 });
           }
+        });
+
+    appCheckTokenProvider.setChangeListener(
+        (token) -> {
+          asyncQueue.enqueueAndForget(
+              () -> {
+                hardAssert(remoteStore != null, "RemoteStore not yet initialized");
+                remoteStore.handleAppCheckTokenChange(token);
+              });
         });
   }
 
@@ -244,7 +257,13 @@ public final class FirestoreClient {
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
     Datastore datastore =
-        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
+        new Datastore(
+            databaseInfo,
+            asyncQueue,
+            credentialsProvider,
+            appCheckTokenProvider,
+            context,
+            metadataProvider);
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             context,

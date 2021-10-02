@@ -17,11 +17,13 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -46,6 +48,9 @@ public class FirestoreChannel {
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
 
+  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
+      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
+
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
 
@@ -59,6 +64,8 @@ public class FirestoreChannel {
 
   private final CredentialsProvider credentialsProvider;
 
+  private final AppCheckTokenProvider appCheckTokenProvider;
+
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
 
@@ -71,11 +78,13 @@ public class FirestoreChannel {
       AsyncQueue asyncQueue,
       Context context,
       CredentialsProvider credentialsProvider,
+      AppCheckTokenProvider appCheckTokenProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.credentialsProvider = credentialsProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
 
     FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
@@ -290,12 +299,24 @@ public class FirestoreChannel {
     return String.format("%s fire/%s grpc/", clientLanguage, BuildConfig.VERSION_NAME);
   }
 
+  private void maybeAddAppCheckToken(@NonNull Metadata metadata) {
+    String appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
+    if (appCheckToken != null && !appCheckToken.isEmpty()) {
+      metadata.put(X_FIREBASE_APPCHECK, appCheckToken);
+    }
+  }
+
   /** Returns the default headers for requests to the backend. */
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
+
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
+
+    // Add the AppCheck token if available.
+    maybeAddAppCheckToken(headers);
+
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }

@@ -128,6 +128,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
+  @Nullable private String appCheckToken;
 
   /**
    * A list of up to MAX_PENDING_WRITES writes that we have fetched from the LocalStore via
@@ -341,6 +342,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
+  /**
+   * Tells the RemoteStore that the AppCheck token has changed. This may be called when the token
+   * becomes available for the first time, or when the token changes to a new one.
+   */
+  public void handleAppCheckTokenChange(String token) {
+    appCheckToken = token;
+    enableNetwork(); // or restart if we want proactive token refresh
+  }
+
   // Watch Stream
 
   /**
@@ -506,7 +516,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   public boolean canUseNetwork() {
     // PORTING NOTE: This method exists mostly because web also has to take into account primary
     // vs. secondary state.
-    return networkEnabled;
+    // If the AppCheck token has not been retrieved yet `appCheckToken` will be null, and we should
+    // not interact with the server until we have the token.
+    return networkEnabled && appCheckToken != null;
   }
 
   /**

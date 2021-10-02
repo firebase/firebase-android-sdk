@@ -17,11 +17,7 @@ package com.google.firebase.firestore.remote;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
-import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import io.grpc.Metadata;
@@ -36,7 +32,6 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
   private final Provider<HeartBeatInfo> heartBeatInfoProvider;
   private final Provider<UserAgentPublisher> userAgentPublisherProvider;
   private final FirebaseOptions firebaseOptions;
-  private final AppCheckTokenProvider appCheckProvider;
 
   private static final String HEART_BEAT_TAG = "fire-fst";
 
@@ -49,24 +44,17 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
   private static final Metadata.Key<String> GMP_APP_ID_HEADER =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER);
 
-  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
-      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
-
   public FirebaseClientGrpcMetadataProvider(
       @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
       @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider,
-      @Nullable FirebaseOptions firebaseOptions,
-      @Nullable Deferred<InternalAppCheckTokenProvider> deferredAppCheckProvider) {
+      @Nullable FirebaseOptions firebaseOptions) {
     this.userAgentPublisherProvider = userAgentPublisherProvider;
     this.heartBeatInfoProvider = heartBeatInfoProvider;
     this.firebaseOptions = firebaseOptions;
-    this.appCheckProvider = new FirebaseAppCheckTokenProvider(deferredAppCheckProvider);
   }
 
   @Override
   public void updateMetadata(@NonNull Metadata metadata) {
-    maybeAddAppCheckToken(metadata);
-
     if (heartBeatInfoProvider.get() == null || userAgentPublisherProvider.get() == null) {
       return;
     }
@@ -79,13 +67,6 @@ public class FirebaseClientGrpcMetadataProvider implements GrpcMetadataProvider 
 
     metadata.put(USER_AGENT_HEADER, userAgentPublisherProvider.get().getUserAgent());
     maybeAddGmpAppId(metadata);
-  }
-
-  private void maybeAddAppCheckToken(@NonNull Metadata metadata) {
-    String appCheckToken = appCheckProvider.getCurrentAppCheckToken();
-    if (appCheckToken != null && !appCheckToken.isEmpty()) {
-      metadata.put(X_FIREBASE_APPCHECK, appCheckToken);
-    }
   }
 
   private void maybeAddGmpAppId(@NonNull Metadata metadata) {

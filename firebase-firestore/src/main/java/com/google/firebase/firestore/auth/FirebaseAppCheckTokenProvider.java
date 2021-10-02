@@ -14,76 +14,91 @@
 
 package com.google.firebase.firestore.auth;
 
+import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
-import com.google.firebase.inject.Deferred;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import com.google.firebase.inject.Provider;
 
 /** FirebaseAppCheckTokenProvider uses Firebase AppCheck to get an AppCheck token. */
 public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
 
   private static final String LOG_TAG = "FirebaseAppCheckTokenProvider";
 
-  private static final int MAXIMUM_TOKEN_WAIT_TIME_MS = 30000;
+  /**
+   * The latest token retrieved from AppCheck.
+   *
+   * <p>Its value is an empty string if AppCheck is not available. Its value is null if AppCheck is
+   * available, but the task of retrieving the token has not finished yet.
+   */
+  @Nullable
+  @GuardedBy("this")
+  String appCheckToken;
 
-  /** The Task for retrieving the AppCheck token. */
-  private final Task<String> getTokenTask;
+  /** The listener to be notified of credential changes (sign-in / sign-out, token changes). */
+  @Nullable
+  @GuardedBy("this")
+  private Listener<String> changeListener;
 
   /** Creates a new FirebaseAppCheckTokenProvider. */
   public FirebaseAppCheckTokenProvider(
-      Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider) {
-    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    getTokenTask = taskCompletionSource.getTask();
+      Provider<InternalAppCheckTokenProvider> appCheckTokenProvider) {
 
-    if (deferredAppCheckTokenProvider == null) {
-      taskCompletionSource.setResult(null);
+    InternalAppCheckTokenProvider internalAppCheckTokenProvider = appCheckTokenProvider.get();
+
+    // AppCheck is not available.
+    if (internalAppCheckTokenProvider == null) {
+      appCheckToken = "";
       return;
     }
 
-    deferredAppCheckTokenProvider.whenAvailable(
-        provider -> {
-          InternalAppCheckTokenProvider internalAppCheckTokenProvider = provider.get();
-          if (internalAppCheckTokenProvider == null) {
-            taskCompletionSource.setResult(null);
-            return;
+    // Get the first AppCheck token asynchronously.
+    internalAppCheckTokenProvider
+        .getToken(/* forceRefresh */ false)
+        .addOnCompleteListener(
+            task -> {
+              synchronized (this) {
+                if (task.isSuccessful()) {
+                  AppCheckTokenResult result = task.getResult();
+                  if (result.getError() != null) {
+                    Logger.warn(
+                        LOG_TAG,
+                        "Error getting App Check token; using placeholder token instead. Error: "
+                            + result.getError());
+                  }
+                  appCheckToken = result.getToken();
+                } else {
+                  Logger.warn(
+                      LOG_TAG, "Unexpected error getting App Check token: " + task.getException());
+                  appCheckToken = null;
+                }
+              }
+            });
+
+    // Get notified when AppCheck token changes to a new value in the future.
+    internalAppCheckTokenProvider.addAppCheckTokenListener(
+        result -> {
+          synchronized (this) {
+            appCheckToken = result.getToken();
+            if (changeListener != null) {
+              changeListener.onValue(appCheckToken);
+            }
           }
-          internalAppCheckTokenProvider
-              .getToken(/* forceRefresh= */ false)
-              .addOnCompleteListener(
-                  task -> {
-                    if (task.isSuccessful()) {
-                      AppCheckTokenResult result = task.getResult();
-                      if (result.getError() != null) {
-                        Logger.warn(
-                            LOG_TAG,
-                            "Error getting App Check token; using placeholder token instead. Error: "
-                                + result.getError());
-                      }
-                      taskCompletionSource.setResult(result.getToken());
-                    } else {
-                      Logger.warn(
-                          LOG_TAG,
-                          "Unexpected error getting App Check token: " + task.getException());
-                      taskCompletionSource.setResult(null);
-                    }
-                  });
         });
   }
 
   @Nullable
-  public String getCurrentAppCheckToken() {
-    try {
-      return Tasks.await(getTokenTask, MAXIMUM_TOKEN_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-    } catch (ExecutionException | InterruptedException | TimeoutException e) {
-      Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + e);
-      return null;
-    }
+  public synchronized String getCurrentAppCheckToken() {
+    return appCheckToken;
+  }
+
+  @Override
+  public synchronized void setChangeListener(@NonNull Listener<String> changeListener) {
+    this.changeListener = changeListener;
+    // Fire the initial event.
+    changeListener.onValue(getCurrentAppCheckToken());
   }
 }
