@@ -51,42 +51,42 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
     // AppCheck is not available.
     if (internalAppCheckTokenProvider == null) {
       appCheckToken = "";
+      // At this point it is guaranteed that changeListener is null, therefore we don't need to
+      // notify it.
       return;
     }
 
     // Get the first AppCheck token asynchronously.
     internalAppCheckTokenProvider
         .getToken(/* forceRefresh */ false)
-        .addOnCompleteListener(
-            task -> {
-              synchronized (this) {
-                if (task.isSuccessful()) {
-                  AppCheckTokenResult result = task.getResult();
-                  if (result.getError() != null) {
-                    Logger.warn(
-                        LOG_TAG,
-                        "Error getting App Check token; using placeholder token instead. Error: "
-                            + result.getError());
-                  }
-                  appCheckToken = result.getToken();
-                } else {
-                  Logger.warn(
-                      LOG_TAG, "Unexpected error getting App Check token: " + task.getException());
-                  appCheckToken = null;
-                }
-              }
-            });
+        .addOnSuccessListener(token -> onTokenChanged(token))
+        .addOnFailureListener(e -> onTokenError(e));
 
     // Get notified when AppCheck token changes to a new value in the future.
-    internalAppCheckTokenProvider.addAppCheckTokenListener(
-        result -> {
-          synchronized (this) {
-            appCheckToken = result.getToken();
-            if (changeListener != null) {
-              changeListener.onValue(appCheckToken);
-            }
-          }
-        });
+    internalAppCheckTokenProvider.addAppCheckTokenListener(result -> onTokenChanged(result));
+  }
+
+  /** Invoked when an exception occurs while retrieving the AppCheck token. */
+  private synchronized void onTokenError(@NonNull Exception exception) {
+    Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + exception);
+    appCheckToken = null;
+    if (changeListener != null) {
+      changeListener.onValue(null);
+    }
+  }
+
+  /** Invoked when the AppCheck token changes. */
+  private synchronized void onTokenChanged(@NonNull AppCheckTokenResult result) {
+    if (result.getError() != null) {
+      Logger.warn(
+          LOG_TAG,
+          "Error getting App Check token; using placeholder token instead. Error: "
+              + result.getError());
+    }
+    appCheckToken = result.getToken();
+    if (changeListener != null) {
+      changeListener.onValue(appCheckToken);
+    }
   }
 
   /**
