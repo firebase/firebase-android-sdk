@@ -26,5 +26,7 @@ public class EmptyAppCheckTokenProvider extends AppCheckTokenProvider {
   }
 
   @Override
-  public void setChangeListener(@NonNull Listener<String> changeListener) {}
+  public void setChangeListener(@NonNull Listener<String> changeListener) {
+    changeListener.onValue("");
+  }
 }

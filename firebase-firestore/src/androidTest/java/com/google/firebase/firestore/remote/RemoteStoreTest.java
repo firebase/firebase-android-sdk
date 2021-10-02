@@ -45,6 +45,7 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
+            null,
             ApplicationProvider.getApplicationContext(),
             null);
     Semaphore networkChangeSemaphore = new Semaphore(0);
@@ -80,6 +81,10 @@ public class RemoteStoreTest {
     LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
+    testQueue.enqueueAndForget(
+        () -> {
+          remoteStore.handleAppCheckTokenChange("");
+        });
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);
