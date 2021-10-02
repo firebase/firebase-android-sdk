@@ -348,7 +348,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    */
   public void handleAppCheckTokenChange(String token) {
     appCheckToken = token;
-    enableNetwork(); // or restart if we want proactive token refresh
+    enableNetwork();
   }
 
   // Watch Stream
