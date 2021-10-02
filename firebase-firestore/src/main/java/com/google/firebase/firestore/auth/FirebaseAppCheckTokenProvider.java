@@ -36,9 +36,9 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
    */
   @Nullable
   @GuardedBy("this")
-  String appCheckToken;
+  private String appCheckToken;
 
-  /** The listener to be notified of credential changes (sign-in / sign-out, token changes). */
+  /** The listener to be notified of AppCheck token changes. */
   @Nullable
   @GuardedBy("this")
   private Listener<String> changeListener;
@@ -46,7 +46,6 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
   /** Creates a new FirebaseAppCheckTokenProvider. */
   public FirebaseAppCheckTokenProvider(
       Provider<InternalAppCheckTokenProvider> appCheckTokenProvider) {
-
     InternalAppCheckTokenProvider internalAppCheckTokenProvider = appCheckTokenProvider.get();
 
     // AppCheck is not available.

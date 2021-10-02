@@ -50,9 +50,6 @@ public class FirebaseClientGrpcMetadataProviderTest {
   private static final Metadata.Key<String> GMP_APP_ID_HEADER =
       Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER);
 
-  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
-      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
-
   @Test
   public void noUpdateWhenBothNullProvider() {
     Metadata metadata = new Metadata();
