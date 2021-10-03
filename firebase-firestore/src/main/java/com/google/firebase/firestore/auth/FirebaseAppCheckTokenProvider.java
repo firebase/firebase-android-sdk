@@ -67,25 +67,29 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
   }
 
   /** Invoked when an exception occurs while retrieving the AppCheck token. */
-  private synchronized void onTokenError(@NonNull Exception exception) {
+  private void onTokenError(@NonNull Exception exception) {
     Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + exception);
-    appCheckToken = null;
-    if (changeListener != null) {
-      changeListener.onValue(null);
+    synchronized (this) {
+      appCheckToken = null;
+      if (changeListener != null) {
+        changeListener.onValue(null);
+      }
     }
   }
 
   /** Invoked when the AppCheck token changes. */
-  private synchronized void onTokenChanged(@NonNull AppCheckTokenResult result) {
+  private void onTokenChanged(@NonNull AppCheckTokenResult result) {
     if (result.getError() != null) {
       Logger.warn(
           LOG_TAG,
           "Error getting App Check token; using placeholder token instead. Error: "
               + result.getError());
     }
-    appCheckToken = result.getToken();
-    if (changeListener != null) {
-      changeListener.onValue(appCheckToken);
+    synchronized (this) {
+      appCheckToken = result.getToken();
+      if (changeListener != null) {
+        changeListener.onValue(appCheckToken);
+      }
     }
   }
 
@@ -102,7 +106,5 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
   @Override
   public synchronized void setChangeListener(@NonNull Listener<String> changeListener) {
     this.changeListener = changeListener;
-    // Fire the initial event.
-    changeListener.onValue(getCurrentAppCheckToken());
   }
 }

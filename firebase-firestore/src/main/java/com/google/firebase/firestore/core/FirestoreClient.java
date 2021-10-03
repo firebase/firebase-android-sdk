@@ -127,15 +127,6 @@ public final class FirestoreClient {
                 });
           }
         });
-
-    appCheckTokenProvider.setChangeListener(
-        (token) -> {
-          asyncQueue.enqueueAndForget(
-              () -> {
-                hardAssert(remoteStore != null, "RemoteStore not yet initialized");
-                remoteStore.handleAppCheckTokenChange(token);
-              });
-        });
   }
 
   public Task<Void> disableNetwork() {
@@ -271,6 +262,7 @@ public final class FirestoreClient {
             databaseInfo,
             datastore,
             user,
+            appCheckTokenProvider,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
             settings);
 

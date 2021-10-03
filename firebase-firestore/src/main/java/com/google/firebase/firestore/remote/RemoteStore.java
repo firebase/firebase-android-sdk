@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
@@ -151,11 +152,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
-      ConnectivityMonitor connectivityMonitor) {
+      ConnectivityMonitor connectivityMonitor,
+      AppCheckTokenProvider appCheckTokenProvider) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
     this.connectivityMonitor = connectivityMonitor;
+    this.appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
 
     listenTargets = new HashMap<>();
     writePipeline = new ArrayDeque<>();
@@ -238,6 +241,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 // reset.
                 Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
                 restartNetwork();
+              });
+        });
+
+    appCheckTokenProvider.setChangeListener(
+        token -> {
+          workerQueue.enqueueAndForget(
+              () -> {
+                appCheckToken = token;
+                enableNetwork();
               });
         });
   }
@@ -340,15 +352,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       Logger.debug(LOG_TAG, "Restarting streams for new credential.");
       restartNetwork();
     }
-  }
-
-  /**
-   * Tells the RemoteStore that the AppCheck token has changed. This may be called when the token
-   * becomes available for the first time, or when the token changes to a new one.
-   */
-  public void handleAppCheckTokenChange(String token) {
-    appCheckToken = token;
-    enableNetwork();
   }
 
   // Watch Stream

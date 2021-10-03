@@ -27,6 +27,7 @@ import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Consumer;
@@ -80,11 +81,13 @@ public class RemoteStoreTest {
     persistence.start();
     LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
-        new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
-    testQueue.enqueueAndForget(
-        () -> {
-          remoteStore.handleAppCheckTokenChange("");
-        });
+        new RemoteStore(
+            callback,
+            localStore,
+            datastore,
+            testQueue,
+            connectivityMonitor,
+            new EmptyAppCheckTokenProvider());
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);
