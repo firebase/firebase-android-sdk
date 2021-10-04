@@ -35,6 +35,7 @@ import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -83,6 +84,12 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
     appStartTime = FirebasePerfProvider.getAppStartTime().getMicros();
     appStartHRT = FirebasePerfProvider.getAppStartTime().getHighResTime();
+  }
+
+  @After
+  public void reset() {
+    SessionManager.getInstance()
+        .setPerfSession(com.google.firebase.perf.session.PerfSession.create());
   }
 
   /** Test activity sequentially goes through onCreate()->onStart()->onResume() state change. */
@@ -230,8 +237,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testFirebasePerfProviderOnAttachInfo_initializesGaugeCollection() {
-    com.google.firebase.perf.session.PerfSession originalPerfSession =
-        SessionManager.getInstance().perfSession();
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
@@ -246,7 +251,5 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
     Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
     verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
-
-    SessionManager.getInstance().setPerfSession(originalPerfSession);
   }
 }
