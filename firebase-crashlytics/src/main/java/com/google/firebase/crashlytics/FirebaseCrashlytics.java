@@ -197,7 +197,7 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Logs a message that's included in the next fatal, non-fatal or ANR report.
+   * Logs a message that's included in the next fatal, non-fatal, or ANR report.
    *
    * <p>Logs are visible in the session view on the Firebase Crashlytics console.
    *
@@ -212,7 +212,7 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Records a user ID (identifier) that's associated with subsequent fatal, non-fatal and ANR
+   * Records a user ID (identifier) that's associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>The user ID is visible in the session view on the Firebase Crashlytics console.
@@ -226,12 +226,12 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Sets a custom key and value that are associated with subsequent fatal, non-fatal and ANR
+   * Sets a custom key and value that are associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event is associated with that
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event is associated with that
    * event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -269,12 +269,12 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Sets a custom key and value that are associated with subsequent fatal, non-fatal and ANR
+   * Sets a custom key and value that are associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event is associated with that
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event is associated with that
    * event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -291,12 +291,12 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Sets a custom key and value that are associated with subsequent fatal, non-fatal and ANR
+   * Sets a custom key and value that are associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event is associated with that
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event is associated with that
    * event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -313,12 +313,12 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Records a custom key and value to be associated with subsequent fatal, non-fatal and ANR
+   * Records a custom key and value to be associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>Multiple calls to this method with the same key will update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event will be associated with
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event will be associated with
    * that event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -335,12 +335,12 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Sets a custom key and value that are associated with subsequent fatal, non-fatal and ANR
+   * Sets a custom key and value that are associated with subsequent fatal, non-fatal, and ANR
    * reports.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event is associated with that
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event is associated with that
    * event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -357,13 +357,13 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Sets multiple custom keys and values that are associated with subsequent fatal, non-fatal and
+   * Sets multiple custom keys and values that are associated with subsequent fatal, non-fatal, and
    * ANR reports. This method is intended as an alternative to {@code setCustomKey} in order to
    * reduce the computational load of writing out multiple key/value pairs at the same time.
    *
    * <p>Multiple calls to this method with the same key update the value for that key.
    *
-   * <p>The value of any key at the time of a fatal, non-fatal or ANR event is associated with that
+   * <p>The value of any key at the time of a fatal, non-fatal, or ANR event is associated with that
    * event.
    *
    * <p>Keys and associated values are visible in the session view on the Firebase Crashlytics
@@ -383,7 +383,7 @@ public class FirebaseCrashlytics {
   // region Unsent report management.
 
   /**
-   * Checks a device for any fatal crash, non-fatal error or ANR reports that haven't yet been sent
+   * Checks a device for any fatal crash, non-fatal error, or ANR reports that haven't yet been sent
    * to Crashlytics. If automatic data collection is enabled, then reports are uploaded
    * automatically and this always returns false. If automatic data collection is disabled, this
    * method can be used to check whether the user opts-in to send crash reports from their device.
