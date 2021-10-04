@@ -16,7 +16,9 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import java.util.Map;
 
 /**
  * Provides methods to read and write document overlays.
@@ -35,6 +37,12 @@ public interface DocumentOverlay {
   /** Saves the given mutation as overlay for the given document key. */
   void saveOverlay(DocumentKey key, Mutation mutation);
 
+  /** Saves the given document to mutation map to persistence. */
+  void saveOverlays(Map<DocumentKey, Mutation> overlays);
+
   /** Removes the overlay associated for the given document key. */
   void removeOverlay(DocumentKey key);
+
+  /** Returns all saved overlay under the given path. */
+  Map<DocumentKey, Mutation> getAllOverlays(ResourcePath path);
 }

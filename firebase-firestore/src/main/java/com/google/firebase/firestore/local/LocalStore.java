@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -37,9 +38,11 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.remote.RemoteEvent;
@@ -113,6 +116,9 @@ public final class LocalStore implements BundleCallback {
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
 
+  /** The overlays that can be used to short circuit applying all mutations from mutation queue. */
+  private DocumentOverlay documentOverlay;
+
   /** The last known state of all referenced documents according to the backend. */
   private final RemoteDocumentCache remoteDocuments;
 
@@ -148,9 +154,11 @@ public final class LocalStore implements BundleCallback {
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
+    documentOverlay = persistence.getDocumentOverlay(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
     indexManager = persistence.getIndexManager();
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue, indexManager);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlay, indexManager);
 
     this.queryEngine = queryEngine;
     queryEngine.setLocalDocumentsView(localDocuments);
@@ -181,12 +189,14 @@ public final class LocalStore implements BundleCallback {
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
     mutationQueue = persistence.getMutationQueue(user);
+    documentOverlay = persistence.getDocumentOverlay(user);
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments = new LocalDocumentsView(remoteDocuments, mutationQueue, indexManager);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlay, indexManager);
     queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
@@ -243,7 +253,10 @@ public final class LocalStore implements BundleCallback {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          batch.applyToLocalDocumentSet(documents);
+          Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
+          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+            documentOverlay.saveOverlays(overlays);
+          }
           return new LocalWriteResult(batch.getBatchId(), documents);
         });
   }
@@ -272,8 +285,26 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.acknowledgeBatch(batch, batchResult.getStreamToken());
           applyWriteToRemoteDocuments(batchResult);
           mutationQueue.performConsistencyCheck();
+
+          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+            recalculateOverlays(getDocumentsWithTransformResults(batchResult));
+          }
+
           return localDocuments.getDocuments(batch.getKeys());
         });
+  }
+
+  @NonNull
+  private Set<DocumentKey> getDocumentsWithTransformResults(MutationBatchResult batchResult) {
+    Set<DocumentKey> recalculateOverlayDocs = new HashSet<>();
+
+    for (int i = 0; i < batchResult.getMutationResults().size(); ++i) {
+      MutationResult mutationResult = batchResult.getMutationResults().get(i);
+      if (mutationResult.getTransformResults().size() > 0) {
+        recalculateOverlayDocs.add(batchResult.getBatch().getMutations().get(i).getKey());
+      }
+    }
+    return recalculateOverlayDocs;
   }
 
   /**
@@ -293,8 +324,39 @@ public final class LocalStore implements BundleCallback {
 
           mutationQueue.removeMutationBatch(toReject);
           mutationQueue.performConsistencyCheck();
+
+          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+            recalculateOverlays(toReject.getKeys());
+          }
+
           return localDocuments.getDocuments(toReject.getKeys());
         });
+  }
+
+  private void recalculateOverlays(Set<DocumentKey> documentKeys) {
+    Map<DocumentKey, MutableDocument> docs = remoteDocuments.getAll(documentKeys);
+    List<MutationBatch> batches =
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(documentKeys);
+
+    Map<DocumentKey, FieldMask> masks = new HashMap<>();
+    for (MutationBatch b : batches) {
+      for (DocumentKey key : b.getKeys()) {
+        FieldMask mask = b.applyToLocalView(docs.get(key), masks.get(key));
+        masks.put(key, mask);
+      }
+    }
+
+    Map<DocumentKey, Mutation> overlays = new HashMap<>();
+    for (Entry<DocumentKey, FieldMask> entry : masks.entrySet()) {
+      overlays.put(
+          entry.getKey(),
+          MutationBatch.getOverlayMutation(docs.get(entry.getKey()), entry.getValue()));
+    }
+    documentOverlay.saveOverlays(overlays);
+    documentKeys.removeAll(overlays.keySet());
+    for (DocumentKey key : documentKeys) {
+      documentOverlay.removeOverlay(key);
+    }
   }
 
   /**

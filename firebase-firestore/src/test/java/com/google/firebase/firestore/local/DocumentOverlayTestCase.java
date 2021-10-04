@@ -14,15 +14,20 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -85,6 +90,22 @@ public abstract class DocumentOverlayTestCase {
   }
 
   @Test
+  public void testCanReadSavedOverlays() {
+    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
+    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
+    Mutation m3 = deleteMutation("coll/doc3");
+    Map<DocumentKey, Mutation> m = new HashMap<>();
+    m.put(key("coll/doc1"), m1);
+    m.put(key("coll/doc2"), m2);
+    m.put(key("coll/doc3"), m3);
+    overlays.saveOverlays(m);
+
+    assertEquals(m1, overlays.getOverlay(key("coll/doc1")));
+    assertEquals(m2, overlays.getOverlay(key("coll/doc2")));
+    assertEquals(m3, overlays.getOverlay(key("coll/doc3")));
+  }
+
+  @Test
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
@@ -105,5 +126,26 @@ public abstract class DocumentOverlayTestCase {
     // Repeat
     overlays.removeOverlay(key("coll/doc1"));
     assertNull(overlays.getOverlay(key("coll/doc1")));
+  }
+
+  @Test
+  public void testGetAllOverlaysForCollection() {
+    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
+    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
+    Mutation m3 = deleteMutation("coll/doc3");
+    // m4 and m5 are not under "coll"
+    Mutation m4 = setMutation("coll/doc1/sub/sub_doc", map("foo", "bar"));
+    Mutation m5 = setMutation("col/doc1", map("foo", "bar"));
+    Map<DocumentKey, Mutation> m = new HashMap<>();
+    m.put(key("coll/doc1"), m1);
+    m.put(key("coll/doc2"), m2);
+    m.put(key("coll/doc3"), m3);
+    m.put(key("coll/doc1/sub/sub_doc"), m4);
+    m.put(key("col/doc1"), m5);
+    overlays.saveOverlays(m);
+
+    m.remove(key("coll/doc1/sub/sub_doc"));
+    m.remove(key("col/doc1"));
+    assertEquals(m, overlays.getAllOverlays(path("coll")));
   }
 }

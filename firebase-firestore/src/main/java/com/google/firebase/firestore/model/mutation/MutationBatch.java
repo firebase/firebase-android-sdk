@@ -16,14 +16,20 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firestore.v1.Value;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -97,9 +103,19 @@ public final class MutationBatch {
     }
   }
 
-  /** Computes the local view of a document given all the mutations in this batch. */
-  public void applyToLocalView(MutableDocument document) {
+  /**
+   * Computes the local view of a document given all the mutations in this batch. Returns an {@link
+   * FieldMask} representing all the fields that are mutated.
+   */
+  public FieldMask applyToLocalView(MutableDocument document) {
     FieldMask mutatedFields = FieldMask.fromSet(new HashSet<>());
+    return applyToLocalView(document, mutatedFields);
+  }
+
+  public FieldMask applyToLocalView(MutableDocument document, @Nullable FieldMask mutatedFields) {
+    if (mutatedFields == null) {
+      mutatedFields = FieldMask.fromSet(new HashSet<>());
+    }
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
@@ -117,23 +133,68 @@ public final class MutationBatch {
       }
     }
 
-    // TODO(Overlay): Calculate overlay mutation here.
+    return mutatedFields;
   }
 
-  /** Computes the local view for all provided documents given the mutations in this batch. */
-  public void applyToLocalDocumentSet(ImmutableSortedMap<DocumentKey, Document> documentMap) {
+  public static Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
+    if (mask == null) {
+      if (doc.isNoDocument()) {
+        return new DeleteMutation(doc.getKey(), Precondition.NONE);
+      } else {
+        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
+      }
+    } else {
+      ObjectValue docValue = doc.getData();
+      ObjectValue patchValue = new ObjectValue();
+      HashSet<FieldPath> maskSet = new HashSet<>();
+      for (FieldPath path : mask.getMask()) {
+        if (!maskSet.contains(path)) {
+          Value value = docValue.get(path);
+          // If we are deleting a nested field, we take the immediate parent as the mask used to
+          // construct resulting mutation.
+          // Justification: Nested fields can create parent fields implicitly. If only a leaf entry
+          // deleted in later mutations, the parent field should still remain, but we may have
+          // lost this information.
+          // Consider mutation (foo.bar 1), then mutation (foo.bar delete()).
+          // This leaves the final result (foo, {}). Despite the fact that `doc` has the correct
+          // result,
+          // `foo` is not in `mask`, and the resulting mutation would then miss `foo`.
+          if (value == null && path.length() > 1) {
+            path = path.popLast();
+          }
+          patchValue.set(path, docValue.get(path));
+          maskSet.add(path);
+        }
+      }
+      return new PatchMutation(
+          doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
+    }
+  }
+
+  /**
+   * Computes the local view for all provided documents given the mutations in this batch. Returns a
+   * {@code DocumentKey} to {@code Mutation} map which can short circuit all the mutation
+   * applications.
+   */
+  public Map<DocumentKey, Mutation> applyToLocalDocumentSet(
+      ImmutableSortedMap<DocumentKey, Document> documentMap) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
+    Map<DocumentKey, Mutation> overlays = new HashMap<>();
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
       // remove this cast.
       MutableDocument document = (MutableDocument) documentMap.get(key);
-      applyToLocalView(document);
+      FieldMask mutatiedFields = applyToLocalView(document);
+      Mutation overlay = getOverlayMutation(document, mutatiedFields);
+      overlays.put(key, overlay);
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);
       }
     }
+
+    return overlays;
   }
 
   @Override

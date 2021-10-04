@@ -58,6 +58,7 @@ class CountingQueryEngine implements QueryEngine {
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             wrapMutationQueue(localDocuments.getMutationQueue()),
+            localDocuments.getDocumentOverlay(),
             localDocuments.getIndexManager());
     queryEngine.setLocalDocumentsView(view);
   }

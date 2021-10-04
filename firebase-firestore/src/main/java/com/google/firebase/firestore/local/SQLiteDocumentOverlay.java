@@ -19,9 +19,12 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SQLiteDocumentOverlay implements DocumentOverlay {
   private final SQLitePersistence db;
@@ -66,10 +69,55 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
+  public void saveOverlays(Map<DocumentKey, Mutation> overlays) {
+    for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
+      saveOverlay(entry.getKey(), entry.getValue());
+    }
+  }
+
+  @Override
   public void removeOverlay(DocumentKey key) {
     db.execute(
         "DELETE FROM document_overlays WHERE uid = ? AND path = ?",
         uid,
         EncodedPath.encode(key.getPath()));
+  }
+
+  @Override
+  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath prefix) {
+    int immediateChildrenPathLength = prefix.length() + 1;
+
+    String prefixPath = EncodedPath.encode(prefix);
+    String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+
+    Map<DocumentKey, Mutation> result = new HashMap<>();
+
+    db.query(
+            "SELECT path, overlay_mutation FROM document_overlays WHERE uid = ? AND path >= ? AND path < ?")
+        .binding(uid, prefixPath, prefixSuccessorPath)
+        .forEach(
+            row -> {
+              try {
+                ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
+                // The query is actually returning any path that starts with the query path prefix
+                // which may include documents in subcollections. For example, a query on 'rooms'
+                // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
+                // discarding rows with document keys more than one segment longer than the query
+                // path.
+                if (path.length() != immediateChildrenPathLength) {
+                  return;
+                }
+
+                Write write = Write.parseFrom(row.getBlob(1));
+                Mutation mutation = serializer.decodeMutation(write);
+
+                result.put(DocumentKey.fromPath(path), mutation);
+
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Overlay failed to parse: %s", e);
+              }
+            });
+
+    return result;
   }
 }

@@ -22,13 +22,13 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class MemoryLocalStoreTest extends LocalStoreTestCase {
+public class OverlayEnabledMemoryLocalStoreTest extends LocalStoreTestCase {
   private static boolean enabled = false;
 
   @BeforeClass
   public static void beforeClass() {
     enabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = false;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
   }
 
   @AfterClass

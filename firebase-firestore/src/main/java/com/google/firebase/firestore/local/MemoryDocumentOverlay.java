@@ -15,13 +15,17 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class MemoryDocumentOverlay implements DocumentOverlay {
-  private Map<DocumentKey, Mutation> overlays = new HashMap<>();
+  private ImmutableSortedMap<DocumentKey, Mutation> overlays =
+      ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
 
   @Nullable
   @Override
@@ -31,11 +35,42 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
 
   @Override
   public void saveOverlay(DocumentKey key, Mutation mutation) {
-    overlays.put(key, mutation);
+    overlays = overlays.insert(key, mutation);
+  }
+
+  @Override
+  public void saveOverlays(Map<DocumentKey, Mutation> overlays) {
+    for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
+      this.overlays = this.overlays.insert(entry.getKey(), entry.getValue());
+    }
   }
 
   @Override
   public void removeOverlay(DocumentKey key) {
-    overlays.remove(key);
+    overlays = overlays.remove(key);
+  }
+
+  @Override
+  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath path) {
+    Map<DocumentKey, Mutation> result = new HashMap<>();
+
+    int immediateChildrenPathLength = path.length() + 1;
+    DocumentKey prefix = DocumentKey.fromPath(path.append(""));
+    Iterator<Map.Entry<DocumentKey, Mutation>> iterator = overlays.iteratorFrom(prefix);
+    while (iterator.hasNext()) {
+      Map.Entry<DocumentKey, Mutation> entry = iterator.next();
+
+      DocumentKey key = entry.getKey();
+      if (!path.isPrefixOf(key.getPath())) {
+        break;
+      }
+      // Documents from sub-collections
+      if (key.getPath().length() != immediateChildrenPathLength) {
+        continue;
+      }
+      result.put(entry.getKey(), entry.getValue());
+    }
+
+    return result;
   }
 }

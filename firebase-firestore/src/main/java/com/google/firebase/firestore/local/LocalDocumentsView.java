@@ -17,7 +17,9 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -32,6 +34,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
@@ -43,14 +46,17 @@ class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;
+  private final DocumentOverlay documentOverlay;
   private final IndexManager indexManager;
 
   LocalDocumentsView(
       RemoteDocumentCache remoteDocumentCache,
       MutationQueue mutationQueue,
+      DocumentOverlay documentOverlay,
       IndexManager indexManager) {
     this.remoteDocumentCache = remoteDocumentCache;
     this.mutationQueue = mutationQueue;
+    this.documentOverlay = documentOverlay;
     this.indexManager = indexManager;
   }
 
@@ -65,6 +71,11 @@ class LocalDocumentsView {
   }
 
   @VisibleForTesting
+  DocumentOverlay getDocumentOverlay() {
+    return documentOverlay;
+  }
+
+  @VisibleForTesting
   IndexManager getIndexManager() {
     return indexManager;
   }
@@ -76,6 +87,20 @@ class LocalDocumentsView {
    *     for it.
    */
   Document getDocument(DocumentKey key) {
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      Mutation overlay = documentOverlay.getOverlay(key);
+      Document fromOverlay = getDocument(key, overlay);
+
+      // TODO(Overlay): Remove below and just return `fromOverlay`.
+      /*
+      List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
+      Document fromMutationQueue = getDocument(key, batches);
+      hardAssert(
+          fromOverlay.equals(fromMutationQueue),
+          "Document from overlay does not match mutation queue");
+       */
+      return fromOverlay;
+    }
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
     return getDocument(key, batches);
   }
@@ -85,6 +110,14 @@ class LocalDocumentsView {
     MutableDocument document = remoteDocumentCache.get(key);
     for (MutationBatch batch : inBatches) {
       batch.applyToLocalView(document);
+    }
+    return document;
+  }
+
+  private Document getDocument(DocumentKey key, @Nullable Mutation overlay) {
+    MutableDocument document = remoteDocumentCache.get(key);
+    if (overlay != null) {
+      overlay.applyToLocalView(document, null, Timestamp.now());
     }
     return document;
   }
@@ -119,9 +152,19 @@ class LocalDocumentsView {
       Map<DocumentKey, MutableDocument> docs) {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
 
-    List<MutationBatch> batches =
-        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
-    applyLocalMutationsToDocuments(docs, batches);
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
+        Mutation overlay = documentOverlay.getOverlay(entry.getKey());
+        if (overlay != null) {
+          overlay.applyToLocalView(entry.getValue(), null, Timestamp.now());
+        }
+      }
+    } else {
+      List<MutationBatch> batches =
+          mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
+      applyLocalMutationsToDocuments(docs, batches);
+    }
+
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
       results = results.insert(entry.getKey(), entry.getValue());
     }
@@ -186,9 +229,63 @@ class LocalDocumentsView {
     return results;
   }
 
-  /** Queries the remote documents and overlays mutations. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, SnapshotVersion sinceReadTime) {
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      // TODO(Overlay): Remove the assert and just return `fromOverlay`.
+      ImmutableSortedMap<DocumentKey, Document> fromOverlay =
+          getDocumentsMatchingCollectionQueryFromDocumentOverlay(query, sinceReadTime);
+      /*
+      ImmutableSortedMap<DocumentKey, Document> fromMutationQueue =
+          getDocumentsMatchingCollectionQueryFromMutationQueue(query, sinceReadTime);
+      hardAssert(
+          fromOverlay.equals(fromMutationQueue),
+          "Documents from overlay do not match mutation queue version.");
+
+       */
+      return fromOverlay;
+    } else {
+      return getDocumentsMatchingCollectionQueryFromMutationQueue(query, sinceReadTime);
+    }
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document>
+      getDocumentsMatchingCollectionQueryFromDocumentOverlay(
+          Query query, SnapshotVersion sinceReadTime) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+    Map<DocumentKey, Mutation> overlays = documentOverlay.getAllOverlays(query.getPath());
+    Set<DocumentKey> missingDocuments = new HashSet<>();
+    for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
+      if (!remoteDocuments.containsKey(entry.getKey())) {
+        missingDocuments.add(entry.getKey());
+      }
+    }
+
+    for (Map.Entry<DocumentKey, MutableDocument> entry :
+        remoteDocumentCache.getAll(missingDocuments).entrySet()) {
+      remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+      Mutation overlay = overlays.get(docEntry.getKey());
+      if (overlay != null) {
+        overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
+      }
+      // Finally, insert the documents that still match the query
+      if (query.matches(docEntry.getValue())) {
+        results = results.insert(docEntry.getKey(), docEntry.getValue());
+      }
+    }
+
+    return results;
+  }
+
+  /** Queries the remote documents and overlays mutations. */
+  private ImmutableSortedMap<DocumentKey, Document>
+      getDocumentsMatchingCollectionQueryFromMutationQueue(
+          Query query, SnapshotVersion sinceReadTime) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
 

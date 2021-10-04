@@ -96,6 +96,7 @@ public class QueryEngineTest {
         new LocalDocumentsView(
             remoteDocumentCache,
             persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             new MemoryIndexManager()) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
