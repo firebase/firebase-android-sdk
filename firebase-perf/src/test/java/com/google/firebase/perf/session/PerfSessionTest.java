@@ -104,6 +104,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     // Case #1: developer has enabled Performance Monitoring during runtime.
     configResolver.setIsPerformanceCollectionEnabled(true);
 
+    assertThat(configResolver.isPerformanceMonitoringEnabled()).isTrue();
     assertThat(PerfSession.shouldCollectGaugesAndEvents()).isTrue();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
