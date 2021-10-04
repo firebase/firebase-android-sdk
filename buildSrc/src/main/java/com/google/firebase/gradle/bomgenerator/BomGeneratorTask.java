@@ -64,6 +64,7 @@ public class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-dynamic-links",
           "com.google.firebase:firebase-dynamic-links-ktx",
           "com.google.firebase:firebase-encoders",
+          "com.google.firebase:firebase-encoders-proto",
           "com.google.firebase:firebase-firestore",
           "com.google.firebase:firebase-firestore-ktx",
           "com.google.firebase:firebase-functions",
