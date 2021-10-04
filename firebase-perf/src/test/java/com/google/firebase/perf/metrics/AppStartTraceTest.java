@@ -27,7 +27,6 @@ import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
-import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -231,7 +230,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testFirebasePerfProviderOnAttachInfo_initializesGaugeCollection() {
-    PerfSession originalPerfSession = SessionManager.getInstance().perfSession();
+    com.google.firebase.perf.session.PerfSession originalPerfSession =
+        SessionManager.getInstance().perfSession();
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
