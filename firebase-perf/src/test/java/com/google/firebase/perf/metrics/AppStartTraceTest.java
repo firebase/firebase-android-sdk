@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.app.Activity;
@@ -26,6 +27,7 @@ import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -228,14 +230,23 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testFirebasePerfProviderOnAttachInfoUpdatesPerfSession() {
+  public void testFirebasePerfProviderOnAttachInfo_initializesGaugeCollection() {
+    PerfSession originalPerfSession = SessionManager.getInstance().perfSession();
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
+    when(mockPerfSession.sessionId()).thenReturn("sessionId");
+    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+
+    SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    Assert.assertNotNull(oldSessionId);
     Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
 
     FirebasePerfProvider provider = new FirebasePerfProvider();
     provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
 
-    Assert.assertNotEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
+    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
+    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
+
+    SessionManager.getInstance().setPerfSession(originalPerfSession);
   }
 }
