@@ -69,8 +69,8 @@ public class GaugeManager {
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
-        new Lazy<>(() -> CpuGaugeCollector.getInstance()),
-        new Lazy<>(() -> MemoryGaugeCollector.getInstance()));
+        new Lazy<>(() -> new CpuGaugeCollector()),
+        new Lazy<>(() -> new MemoryGaugeCollector()));
   }
 
   @VisibleForTesting
