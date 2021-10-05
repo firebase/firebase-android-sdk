@@ -127,6 +127,12 @@ public final class FirestoreClient {
                 });
           }
         });
+
+    appCheckTokenProvider.setChangeListener((String appCheckToken) -> {
+      asyncQueue.enqueueAndForget(() -> {
+        remoteStore.handleCredentialChange();
+      });
+    });
   }
 
   public Task<Void> disableNetwork() {
