@@ -142,6 +142,7 @@ public final class FirestoreClient {
   /** Terminates this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> terminate() {
     credentialsProvider.removeChangeListener();
+    appCheckTokenProvider.removeChangeListener();
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
           remoteStore.shutdown();
@@ -262,7 +263,7 @@ public final class FirestoreClient {
             databaseInfo,
             datastore,
             user,
-            appCheckTokenProvider,
+            // appCheckTokenProvider,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
             settings);
 

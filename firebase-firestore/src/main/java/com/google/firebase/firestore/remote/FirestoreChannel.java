@@ -17,7 +17,6 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.BuildConfig;
@@ -47,9 +46,6 @@ public class FirestoreChannel {
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
-
-  private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
-      Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
 
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
@@ -86,7 +82,8 @@ public class FirestoreChannel {
     this.credentialsProvider = credentialsProvider;
     this.appCheckTokenProvider = appCheckTokenProvider;
 
-    FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(credentialsProvider, appCheckTokenProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
 
     DatabaseId databaseId = databaseInfo.getDatabaseId();
@@ -289,6 +286,7 @@ public class FirestoreChannel {
 
   public void invalidateToken() {
     credentialsProvider.invalidateToken();
+    appCheckTokenProvider.invalidateToken();
   }
 
   public static void setClientLanguage(String languageToken) {
@@ -299,13 +297,6 @@ public class FirestoreChannel {
     return String.format("%s fire/%s grpc/", clientLanguage, BuildConfig.VERSION_NAME);
   }
 
-  private void maybeAddAppCheckToken(@NonNull Metadata metadata) {
-    String appCheckToken = appCheckTokenProvider.getCurrentAppCheckToken();
-    if (appCheckToken != null && !appCheckToken.isEmpty()) {
-      metadata.put(X_FIREBASE_APPCHECK, appCheckToken);
-    }
-  }
-
   /** Returns the default headers for requests to the backend. */
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
@@ -313,9 +304,6 @@ public class FirestoreChannel {
 
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-
-    // Add the AppCheck token if available.
-    maybeAddAppCheckToken(headers);
 
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);

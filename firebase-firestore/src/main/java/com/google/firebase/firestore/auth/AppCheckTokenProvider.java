@@ -15,15 +15,16 @@
 package com.google.firebase.firestore.auth;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.util.Listener;
 
 public abstract class AppCheckTokenProvider {
-  /**
-   * Returns the latest AppCheck token. This can be null (if the task of retrieving the token has
-   * not completed yet), and can be an empty string (if AppCheck is not available).
-   */
-  public abstract String getCurrentAppCheckToken();
+  public abstract Task<String> getToken();
+
+  public abstract void removeChangeListener();
 
   /** Registers a listener that will be notified when AppCheck token changes. */
   public abstract void setChangeListener(@NonNull Listener<String> changeListener);
+
+  public abstract void invalidateToken();
 }

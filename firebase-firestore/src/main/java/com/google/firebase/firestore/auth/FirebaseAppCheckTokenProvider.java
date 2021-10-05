@@ -14,11 +14,17 @@
 
 package com.google.firebase.firestore.auth;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.inject.Provider;
@@ -28,52 +34,35 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
 
   private static final String LOG_TAG = "FirebaseAppCheckTokenProvider";
 
-  /**
-   * The latest token retrieved from AppCheck.
-   *
-   * <p>Its value is an empty string if AppCheck is not available. Its value is null if AppCheck is
-   * available, but the task of retrieving the token has not finished yet.
-   */
-  @Nullable
-  @GuardedBy("this")
-  private String appCheckToken;
-
   /** The listener to be notified of AppCheck token changes. */
   @Nullable
   @GuardedBy("this")
   private Listener<String> changeListener;
 
+  /**
+   * The {@link Provider} that gives access to the {@link InternalAppCheckTokenProvider} instance.
+   */
+  @Nullable
+  @GuardedBy("this")
+  private InternalAppCheckTokenProvider internalAppCheckTokenProvider;
+
+  @GuardedBy("this")
+  private boolean forceRefresh;
+
+  /**
+   * The listener registered with FirebaseApp; used to start/stop receiving AppCheck token changes.
+   */
+  private final AppCheckTokenListener tokenListener = result -> onTokenChanged(result);
+
   /** Creates a new FirebaseAppCheckTokenProvider. */
+  @SuppressLint("ProviderAssignment") // TODO: Remove this @SuppressLint once b/181014061 is fixed.
   public FirebaseAppCheckTokenProvider(
       Provider<InternalAppCheckTokenProvider> appCheckTokenProvider) {
-    InternalAppCheckTokenProvider internalAppCheckTokenProvider = appCheckTokenProvider.get();
-
-    // AppCheck is not available.
-    if (internalAppCheckTokenProvider == null) {
-      appCheckToken = "";
-      // At this point it is guaranteed that changeListener is null, therefore we don't need to
-      // notify it.
-      return;
-    }
-
-    // Get the first AppCheck token asynchronously.
-    internalAppCheckTokenProvider
-        .getToken(/* forceRefresh */ false)
-        .addOnSuccessListener(token -> onTokenChanged(token))
-        .addOnFailureListener(e -> onTokenError(e));
+    internalAppCheckTokenProvider = appCheckTokenProvider.get();
 
     // Get notified when AppCheck token changes to a new value in the future.
-    internalAppCheckTokenProvider.addAppCheckTokenListener(result -> onTokenChanged(result));
-  }
-
-  /** Invoked when an exception occurs while retrieving the AppCheck token. */
-  private void onTokenError(@NonNull Exception exception) {
-    Logger.warn(LOG_TAG, "Unexpected error getting App Check token: " + exception);
-    synchronized (this) {
-      appCheckToken = null;
-      if (changeListener != null) {
-        changeListener.onValue(null);
-      }
+    if (internalAppCheckTokenProvider != null) {
+      internalAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
     }
   }
 
@@ -85,21 +74,51 @@ public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
           "Error getting App Check token; using placeholder token instead. Error: "
               + result.getError());
     }
-    synchronized (this) {
-      appCheckToken = result.getToken();
-      if (changeListener != null) {
-        changeListener.onValue(appCheckToken);
-      }
+    if (changeListener != null) {
+      changeListener.onValue(result.getToken());
     }
   }
 
   /**
-   * Returns the latest AppCheck token. This can be null (if the task of retrieving the token has
-   * not completed yet), and can be an empty string (if AppCheck is not available).
+   * Returns a task which will have the AppCheck token upon success, or an exception upon failure.
    */
-  @Nullable
-  public synchronized String getCurrentAppCheckToken() {
-    return appCheckToken;
+  @Override
+  public synchronized Task<String> getToken() {
+    if (internalAppCheckTokenProvider == null) {
+      return Tasks.forException(new FirebaseApiNotAvailableException("AppCheck is not available"));
+    }
+
+    Task<AppCheckTokenResult> res = internalAppCheckTokenProvider.getToken(forceRefresh);
+    forceRefresh = false;
+
+    return res.continueWithTask(
+        Executors.DIRECT_EXECUTOR,
+        task -> {
+          if (task.isSuccessful()) {
+            return Tasks.forResult(task.getResult().getToken());
+          } else {
+            return Tasks.forException(task.getException());
+          }
+        });
+  }
+
+  /**
+   * Informs FirebaseAppCheckTokenProvider that the current AppCheck token has been invalidated. As
+   * a result, the next call to `getToken` will use a `forceRefresh` flag.
+   */
+  @Override
+  public synchronized void invalidateToken() {
+    forceRefresh = true;
+  }
+
+  /** Remove the listener for AppCheck token changes. */
+  @Override
+  public synchronized void removeChangeListener() {
+    changeListener = null;
+
+    if (internalAppCheckTokenProvider != null) {
+      internalAppCheckTokenProvider.removeAppCheckTokenListener(tokenListener);
+    }
   }
 
   /** Registers a listener that will be notified when AppCheck token changes. */

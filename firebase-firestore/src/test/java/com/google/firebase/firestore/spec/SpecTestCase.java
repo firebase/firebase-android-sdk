@@ -77,7 +77,6 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.remote.WatchStream;
-import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -315,7 +314,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             databaseInfo,
             datastore,
             currentUser,
-            new EmptyAppCheckTokenProvider(),
+            // new EmptyAppCheckTokenProvider(),
             maxConcurrentLimboResolutions,
             new FirebaseFirestoreSettings.Builder().build());
 

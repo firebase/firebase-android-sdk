@@ -15,16 +15,24 @@
 package com.google.firebase.firestore.testutil;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.util.Listener;
 
 /** A Credentials Provider that always returns an empty token */
 public class EmptyAppCheckTokenProvider extends AppCheckTokenProvider {
   @Override
-  public String getCurrentAppCheckToken() {
-    return "";
+  public Task<String> getToken() {
+    return Tasks.forResult("");
   }
 
   @Override
+  public void removeChangeListener() {}
+
+  @Override
   public void setChangeListener(@NonNull Listener<String> changeListener) {}
+
+  @Override
+  public void invalidateToken() {}
 }

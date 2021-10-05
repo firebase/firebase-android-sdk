@@ -74,8 +74,8 @@ public class MemoryComponentProvider extends ComponentProvider {
         getLocalStore(),
         configuration.getDatastore(),
         configuration.getAsyncQueue(),
-        getConnectivityMonitor(),
-        configuration.getInitialAppCheckToken());
+        getConnectivityMonitor());
+    // configuration.getInitialAppCheckToken());
   }
 
   @Override
