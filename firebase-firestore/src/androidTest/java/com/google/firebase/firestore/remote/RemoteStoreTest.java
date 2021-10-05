@@ -81,7 +81,6 @@ public class RemoteStoreTest {
     LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
-    // new EmptyAppCheckTokenProvider());
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);
