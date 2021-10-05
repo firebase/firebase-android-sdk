@@ -39,8 +39,7 @@ public class PerfSession implements Parcelable {
    * Creates a PerfSession object and decides what metrics to collect.
    */
   public static PerfSession create() {
-    String sessionId = UUID.randomUUID().toString();
-    sessionId = sessionId.replaceAll("\\-", "");
+    String sessionId = UUID.randomUUID().toString().replace("-", "");
 
     PerfSession session = new PerfSession(sessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
