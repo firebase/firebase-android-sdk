@@ -86,20 +86,25 @@ class UpdateApkClient {
     downloadApk(newRelease, showDownloadNotificationManager)
         // Using onSuccess task to ensure that all install errors get cascaded to the Failure
         // listener down below
-        .onSuccessTask(
+        .addOnSuccessListener(
             downloadExecutor,
-            (file -> {
-              if (file == null) {
-                LogWrapper.getInstance().e(TAG + "Download file not found or invalid");
-                return Tasks.forException(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR, Status.DOWNLOAD_FAILURE));
-              }
-              return install(file.getPath());
-            }))
+            file ->
+                install(file.getPath())
+                    .addOnFailureListener(
+                        e -> {
+                          LogWrapper.getInstance().e(TAG + "Newest release failed to install.", e);
+                          postInstallationFailure(
+                              e, file.length(), showDownloadNotificationManager);
+                          setTaskCompletionErrorWithDefault(
+                              e,
+                              new FirebaseAppDistributionException(
+                                  Constants.ErrorMessages.NETWORK_ERROR,
+                                  FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+                        }))
         .addOnFailureListener(
             downloadExecutor,
             e -> {
+              LogWrapper.getInstance().e(TAG + "Newest release failed to download.", e);
               LogWrapper.getInstance()
                   .e(TAG + "Download or Installation failure for newest release.", e);
               setTaskCompletionErrorWithDefault(
