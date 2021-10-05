@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
-import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
@@ -34,11 +33,6 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
 
   private static final String LOG_TAG = "FirebaseAppCheckTokenProvider";
 
-  /** The listener to be notified of AppCheck token changes. */
-  @Nullable
-  @GuardedBy("this")
-  private Listener<String> changeListener;
-
   /**
    * The {@link Provider} that gives access to the {@link InternalAppCheckTokenProvider} instance.
    */
@@ -49,34 +43,11 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   @GuardedBy("this")
   private boolean forceRefresh;
 
-  /**
-   * The listener registered with FirebaseApp; used to start/stop receiving AppCheck token changes.
-   */
-  private final AppCheckTokenListener tokenListener = result -> onTokenChanged(result);
-
   /** Creates a new FirebaseAppCheckTokenProvider. */
   @SuppressLint("ProviderAssignment") // TODO: Remove this @SuppressLint once b/181014061 is fixed.
   public FirebaseAppCheckTokenProvider(
       Provider<InternalAppCheckTokenProvider> appCheckTokenProvider) {
     internalAppCheckTokenProvider = appCheckTokenProvider.get();
-
-    // Get notified when AppCheck token changes to a new value in the future.
-    if (internalAppCheckTokenProvider != null) {
-      internalAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
-    }
-  }
-
-  /** Invoked when the AppCheck token changes. */
-  private void onTokenChanged(@NonNull AppCheckTokenResult result) {
-    if (result.getError() != null) {
-      Logger.warn(
-          LOG_TAG,
-          "Error getting App Check token; using placeholder token instead. Error: "
-              + result.getError());
-    }
-    if (changeListener != null) {
-      changeListener.onValue(result.getToken());
-    }
   }
 
   /**
@@ -85,6 +56,7 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   @Override
   public synchronized Task<String> getToken() {
     if (internalAppCheckTokenProvider == null) {
+      Logger.debug(LOG_TAG, "Firebase AppCheck API not available.");
       return Tasks.forException(new FirebaseApiNotAvailableException("AppCheck is not available"));
     }
 
@@ -95,8 +67,10 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
         Executors.DIRECT_EXECUTOR,
         task -> {
           if (task.isSuccessful()) {
+            Logger.debug(LOG_TAG, "Successfully fetched AppCheck token.");
             return Tasks.forResult(task.getResult().getToken());
           } else {
+            Logger.warn(LOG_TAG, "Failed to get AppCheck token: %s.", task.getException());
             return Tasks.forException(task.getException());
           }
         });
@@ -111,19 +85,13 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
     forceRefresh = true;
   }
 
-  /** Remove the listener for AppCheck token changes. */
   @Override
   public synchronized void removeChangeListener() {
-    changeListener = null;
-
-    if (internalAppCheckTokenProvider != null) {
-      internalAppCheckTokenProvider.removeAppCheckTokenListener(tokenListener);
-    }
+    throw new RuntimeException("API Not Supported");
   }
 
-  /** Registers a listener that will be notified when AppCheck token changes. */
   @Override
   public synchronized void setChangeListener(@NonNull Listener<String> changeListener) {
-    this.changeListener = changeListener;
+    throw new RuntimeException("API Not Supported");
   }
 }

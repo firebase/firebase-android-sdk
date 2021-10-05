@@ -126,14 +126,6 @@ public final class FirestoreClient {
                 });
           }
         });
-
-    appCheckProvider.setChangeListener(
-        (String appCheckToken) -> {
-          asyncQueue.enqueueAndForget(
-              () -> {
-                remoteStore.handleCredentialChange();
-              });
-        });
   }
 
   public Task<Void> disableNetwork() {
@@ -149,7 +141,6 @@ public final class FirestoreClient {
   /** Terminates this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> terminate() {
     authProvider.removeChangeListener();
-    appCheckProvider.removeChangeListener();
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
           remoteStore.shutdown();
