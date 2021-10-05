@@ -50,7 +50,6 @@ public abstract class ComponentProvider {
     private final DatabaseInfo databaseInfo;
     private final Datastore datastore;
     private final User initialUser;
-    // private final AppCheckTokenProvider appCheckTokenProvider;
     private final int maxConcurrentLimboResolutions;
     private final FirebaseFirestoreSettings settings;
 
@@ -60,7 +59,6 @@ public abstract class ComponentProvider {
         DatabaseInfo databaseInfo,
         Datastore datastore,
         User initialUser,
-        // AppCheckTokenProvider appCheckTokenProvider,
         int maxConcurrentLimboResolutions,
         FirebaseFirestoreSettings settings) {
       this.context = context;
@@ -68,7 +66,6 @@ public abstract class ComponentProvider {
       this.databaseInfo = databaseInfo;
       this.datastore = datastore;
       this.initialUser = initialUser;
-      // this.appCheckTokenProvider = appCheckTokenProvider;
       this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
       this.settings = settings;
     }
@@ -92,8 +89,6 @@ public abstract class ComponentProvider {
     User getInitialUser() {
       return initialUser;
     }
-
-    // AppCheckTokenProvider getInitialAppCheckToken() { return appCheckTokenProvider; }
 
     int getMaxConcurrentLimboResolutions() {
       return maxConcurrentLimboResolutions;
