@@ -35,6 +35,11 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
             return testToken;
           }
 
+          @Override
+          public long getExpireTimeMillis() {
+            return 1337;
+          }
+
           @Nullable
           @Override
           public FirebaseException getError() {
@@ -50,6 +55,11 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
           @Override
           public String getToken() {
             return testToken;
+          }
+
+          @Override
+          public long getExpireTimeMillis() {
+            return Long.MIN_VALUE;
           }
 
           @Nullable

@@ -34,6 +34,12 @@ public abstract class AppCheckTokenResult {
   public abstract String getToken();
 
   /**
+   * Returns the time at which the token will expire in milliseconds since epoch. May be {@code
+   * Long.MIN_LONG} if application verification did not succeed.
+   */
+  public abstract long getExpireTimeMillis();
+
+  /**
    * Returns the {@link FirebaseException} if the {@link
    * com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider} failed to obtain a token.
    */
