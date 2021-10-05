@@ -37,7 +37,8 @@ public final class DefaultAppCheckTokenResult extends AppCheckTokenResult {
   public static DefaultAppCheckTokenResult constructFromAppCheckToken(
       @NonNull AppCheckToken token) {
     checkNotNull(token);
-    return new DefaultAppCheckTokenResult(token.getToken(), token.getExpireTimeMillis(), /* error= */ null);
+    return new DefaultAppCheckTokenResult(
+        token.getToken(), token.getExpireTimeMillis(), /* error= */ null);
   }
 
   @NonNull
@@ -45,7 +46,8 @@ public final class DefaultAppCheckTokenResult extends AppCheckTokenResult {
     return new DefaultAppCheckTokenResult(DUMMY_TOKEN, Long.MIN_VALUE, checkNotNull(error));
   }
 
-  private DefaultAppCheckTokenResult(@NonNull String tokenJwt, long expireTimeMillis, @Nullable FirebaseException error) {
+  private DefaultAppCheckTokenResult(
+      @NonNull String tokenJwt, long expireTimeMillis, @Nullable FirebaseException error) {
     checkNotEmpty(tokenJwt);
     this.token = tokenJwt;
     this.expireTimeMillis = expireTimeMillis;
