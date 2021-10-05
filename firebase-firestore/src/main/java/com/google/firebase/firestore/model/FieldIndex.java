@@ -14,10 +14,8 @@
 
 package com.google.firebase.firestore.model;
 
-import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -31,14 +29,14 @@ import java.util.List;
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public final class FieldIndex implements Iterable<FieldIndex.Segment> {
+public final class FieldIndex {
 
   /** An index component consisting of field path and index type. */
   @AutoValue
   public abstract static class Segment {
     /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
-      /** Ascending index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
+      /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
       ORDERED,
       /** Contains index. Can be used for ArrayContains and ArrayContainsAny */
       CONTAINS
@@ -104,10 +102,24 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     return version;
   }
 
-  @NonNull
-  @Override
-  public Iterator<Segment> iterator() {
-    return segments.iterator();
+  public Iterable<Segment> getDirectionalSegments() {
+    List<Segment> filteredSegments = new ArrayList<>();
+    for (Segment segment : segments) {
+      if (segment.getKind().equals(Segment.Kind.ORDERED)) {
+        filteredSegments.add(segment);
+      }
+    }
+    return filteredSegments;
+  }
+
+  public Iterable<Segment> getArraySegments() {
+    List<Segment> filteredSegments = new ArrayList<>();
+    for (Segment segment : segments) {
+      if (segment.getKind().equals(Segment.Kind.CONTAINS)) {
+        filteredSegments.add(segment);
+      }
+    }
+    return filteredSegments;
   }
 
   /** Returns a new field index with additional index segment. */

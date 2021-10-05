@@ -33,6 +33,7 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
+import com.google.testing.timing.FakeScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Before;
@@ -87,7 +88,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   /** Test activity sequentially goes through onCreate()->onStart()->onResume() state change. */
   @Test
   public void testLaunchActivity() {
-    AppStartTrace trace = new AppStartTrace(transportManager, clock);
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
     // first activity goes through onCreate()->onStart()->onResume() state change.
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -95,7 +97,9 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityStarted(activity1);
     currentTime = 3;
     trace.onActivityResumed(activity1);
+    fakeExecutorService.runAll();
     verifyFinalState(activity1, trace, 1, 2, 3);
+
     // same activity goes through onCreate()->onStart()->onResume() state change again.
     // should have no effect on AppStartTrace.
     currentTime = 4;
@@ -104,6 +108,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityStarted(activity1);
     currentTime = 6;
     trace.onActivityResumed(activity1);
+    fakeExecutorService.runAll();
     verifyFinalState(activity1, trace, 1, 2, 3);
 
     // a different activity goes through onCreate()->onStart()->onResume() state change.
@@ -114,6 +119,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityStarted(activity2);
     currentTime = 9;
     trace.onActivityResumed(activity2);
+    fakeExecutorService.runAll();
     verifyFinalState(activity1, trace, 1, 2, 3);
   }
 
@@ -158,7 +164,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
    */
   @Test
   public void testInterleavedActivity() {
-    AppStartTrace trace = new AppStartTrace(transportManager, clock);
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
     // first activity onCreate()
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -178,6 +185,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityResumed(activity2);
     Assert.assertEquals(activity1, trace.getLaunchActivity());
     Assert.assertEquals(activity2, trace.getAppStartActivity());
+    fakeExecutorService.runAll();
     verifyFinalState(activity2, trace, 1, 3, 4);
 
     // first activity continues.
@@ -185,12 +193,14 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityStarted(activity1);
     currentTime = 6;
     trace.onActivityResumed(activity1);
+    fakeExecutorService.runAll();
     verifyFinalState(activity2, trace, 1, 3, 4);
   }
 
   @Test
   public void testDelayedAppStart() {
-    AppStartTrace trace = new AppStartTrace(transportManager, clock);
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
     // Delays activity creation after 1 minute from app start time.
     currentTime = appStartTime + TimeUnit.MINUTES.toMicros(1) + 1;
     trace.onActivityCreated(activity1, bundle);
@@ -210,7 +220,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testStartFromBackground() {
-    AppStartTrace trace = new AppStartTrace(transportManager, clock);
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
     trace.setIsStartFromBackground();
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());

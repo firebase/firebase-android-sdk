@@ -18,14 +18,13 @@ import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -115,6 +114,27 @@ public final class Target {
     return endAt;
   }
 
+  /** Returns the list of values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. */
+  public List<Value> getArrayValues(FieldIndex fieldIndex) {
+    for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
+      for (Filter filter : filters) {
+        if (filter.getField().equals(segment.getFieldPath())) {
+          FieldFilter fieldFilter = (FieldFilter) filter;
+          switch (fieldFilter.getOperator()) {
+            case ARRAY_CONTAINS_ANY:
+              return fieldFilter.getValue().getArrayValue().getValuesList();
+            case ARRAY_CONTAINS:
+              return Collections.singletonList(fieldFilter.getValue());
+            default:
+              // Remaining filters cannot be used as array filters.
+          }
+        }
+      }
+    }
+
+    return Collections.emptyList();
+  }
+
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
    * defined by {@code fieldIndex}.
@@ -127,7 +147,7 @@ public final class Target {
     boolean inclusive = true;
 
     // Go through all filters to find a value for the current field segment
-    for (FieldIndex.Segment segment : fieldIndex) {
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Value segmentValue = Values.NULL_VALUE;
       boolean segmentInclusive = true;
 
@@ -142,19 +162,8 @@ public final class Target {
             case LESS_THAN_OR_EQUAL:
               filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
               break;
-            case NOT_EQUAL:
-              filterValue = Values.NULL_VALUE;
-              break;
-            case NOT_IN:
-              filterValue =
-                  Value.newBuilder()
-                      .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
-                      .build();
-              break;
             case EQUAL:
             case IN:
-            case ARRAY_CONTAINS_ANY:
-            case ARRAY_CONTAINS:
             case GREATER_THAN_OR_EQUAL:
               filterValue = fieldFilter.getValue();
               break;
@@ -162,6 +171,8 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            default:
+              // Remaining filters cannot be used as lower bounds.
           }
 
           if (max(segmentValue, filterValue) == filterValue) {
@@ -206,7 +217,7 @@ public final class Target {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
-    for (FieldIndex.Segment segment : fieldIndex) {
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       @Nullable Value segmentValue = null;
       boolean segmentInclusive = true;
 
@@ -218,10 +229,6 @@ public final class Target {
           boolean filterInclusive = true;
 
           switch (fieldFilter.getOperator()) {
-            case NOT_IN:
-            case NOT_EQUAL:
-              // These filters cannot be used as an upper bound. Skip.
-              break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
               filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
@@ -229,8 +236,6 @@ public final class Target {
               break;
             case EQUAL:
             case IN:
-            case ARRAY_CONTAINS_ANY:
-            case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
               filterValue = fieldFilter.getValue();
               break;
@@ -238,6 +243,8 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            default:
+              // Remaining filters cannot be used as upper bounds.
           }
 
           if (min(segmentValue, filterValue) == filterValue) {
@@ -283,6 +290,11 @@ public final class Target {
     return this.orderBys;
   }
 
+  /** Returns the first order by (which always exists). */
+  public OrderBy getFirstOrderBy() {
+    return this.orderBys.get(0);
+  }
+
   /** Returns a canonical string representing this target. */
   public String getCanonicalId() {
     if (memoizedCannonicalId != null) {
@@ -307,7 +319,7 @@ public final class Target {
     builder.append("|ob:");
     for (OrderBy orderBy : getOrderBy()) {
       builder.append(orderBy.getField().canonicalString());
-      builder.append(orderBy.getDirection().equals(Direction.ASCENDING) ? "asc" : "desc");
+      builder.append(orderBy.getDirection().canonicalString());
     }
 
     // Add limit.

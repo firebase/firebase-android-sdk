@@ -635,6 +635,20 @@ public class SQLiteSchemaTest {
     }
   }
 
+  @Test
+  public void createsOverlaysTable() {
+    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    try {
+      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+      schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+
+      assertTableExists("document_overlays");
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
+    }
+  }
+
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     SQLitePersistence persistence =
         new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);

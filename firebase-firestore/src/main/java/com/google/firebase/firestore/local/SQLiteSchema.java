@@ -51,8 +51,10 @@ class SQLiteSchema {
    */
   static final int VERSION = 12;
 
+  static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
+
   // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
+  static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
 
   /**
    * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
@@ -77,8 +79,14 @@ class SQLiteSchema {
   }
 
   void runMigrations(int fromVersion) {
-    runMigrations(
-        fromVersion, Persistence.INDEXING_SUPPORT_ENABLED ? INDEXING_SUPPORT_VERSION : VERSION);
+    int toVersion = VERSION;
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      toVersion = OVERLAY_SUPPORT_VERSION;
+    }
+    if (Persistence.INDEXING_SUPPORT_ENABLED) {
+      toVersion = INDEXING_SUPPORT_VERSION;
+    }
+    runMigrations(fromVersion, toVersion);
   }
 
   /**
@@ -174,6 +182,11 @@ class SQLiteSchema {
      *    maintained invariants from later versions, so migrations that update values cannot assume
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
+    if (fromVersion < OVERLAY_SUPPORT_VERSION && toVersion >= OVERLAY_SUPPORT_VERSION) {
+      Preconditions.checkState(
+          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
+      createOverlays();
+    }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
@@ -361,13 +374,16 @@ class SQLiteSchema {
                   + "update_time_nanos INTEGER, "
                   + "PRIMARY KEY (index_id))");
 
+          // The index entries table only has a single primary index. `array_value` should be set
+          // for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
                   + "index_id INTEGER, "
-                  + "index_value BLOB, " // field value pairs
+                  + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
+                  + "directional_value BLOB, " // index values for equality and inequalities
                   + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_name TEXT, "
-                  + "PRIMARY KEY (index_id, index_value, uid, document_name))");
+                  + "PRIMARY KEY (index_id, array_value, directional_value, uid, document_name))");
         });
   }
 
@@ -594,6 +610,19 @@ class SQLiteSchema {
                   + "read_time_seconds INTEGER, "
                   + "read_time_nanos INTEGER, "
                   + "bundled_query_proto BLOB)");
+        });
+  }
+
+  private void createOverlays() {
+    ifTablesDontExist(
+        new String[] {"document_overlays"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE document_overlays ("
+                  + "uid TEXT, "
+                  + "path TEXT, "
+                  + "overlay_mutation BLOB, "
+                  + "PRIMARY KEY (uid, path))");
         });
   }
 

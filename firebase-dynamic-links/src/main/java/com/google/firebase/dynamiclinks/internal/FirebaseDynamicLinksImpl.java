@@ -104,15 +104,20 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
   }
 
   @Override
-  public Task<PendingDynamicLinkData> getDynamicLink(@NonNull final Intent intent) {
+  public Task<PendingDynamicLinkData> getDynamicLink(@Nullable final Intent intent) {
+    String dynamicLinkDataString = intent != null ? intent.getDataString() : null;
     Task<PendingDynamicLinkData> result =
-        googleApi.doWrite(new GetDynamicLinkImpl(analytics, intent.getDataString()));
-    PendingDynamicLinkData pendingDynamicLinkData = getPendingDynamicLinkData(intent);
-    if (pendingDynamicLinkData != null) {
-      // DynamicLinkData included in the Intent, return it immediately and allow the Task to run in
-      // the background to do logging and mark the FDL as returned.
-      result = Tasks.forResult(pendingDynamicLinkData);
+        googleApi.doWrite(new GetDynamicLinkImpl(analytics, dynamicLinkDataString));
+
+    if (intent != null) {
+      PendingDynamicLinkData pendingDynamicLinkData = getPendingDynamicLinkData(intent);
+      if (pendingDynamicLinkData != null) {
+        // DynamicLinkData included in the Intent, return it immediately and allow the Task to run
+        // in the background to do logging and mark the FDL as returned.
+        result = Tasks.forResult(pendingDynamicLinkData);
+      }
     }
+
     return result;
   }
 

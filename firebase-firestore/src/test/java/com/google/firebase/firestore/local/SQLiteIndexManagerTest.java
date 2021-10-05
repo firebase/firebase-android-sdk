@@ -193,8 +193,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testInFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 2)));
-    verifyResults(query, "coll/doc1", "coll/doc2");
+    Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 3)));
+    verifyResults(query, "coll/doc1", "coll/doc3");
   }
 
   @Test
@@ -266,6 +266,34 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     addDoc("coll2/doc2", map("value", true));
     Query query = new Query(path(""), "coll1").filter(filter("value", "==", true));
     verifyResults(query, "coll1/doc1", "coll2/doc2/coll1/doc1");
+  }
+
+  @Test
+  public void testLimitFilter() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED));
+    addDoc("coll/doc1", map("value", 1));
+    addDoc("coll/doc2", map("value", 1));
+    addDoc("coll/doc3", map("value", 1));
+    Query query = query("coll").filter(filter("value", "==", 1)).limitToFirst(2);
+    verifyResults(query, "coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testLimitAppliesOrdering() {
+    indexManager.addFieldIndex(
+        new FieldIndex("coll")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS));
+    addDoc("coll/doc1", map("value", Arrays.asList(1, "foo")));
+    addDoc("coll/doc2", map("value", Arrays.asList(3, "foo")));
+    addDoc("coll/doc3", map("value", Arrays.asList(2, "foo")));
+    Query query =
+        query("coll")
+            .filter(filter("value", "array-contains", "foo"))
+            .orderBy(orderBy("value"))
+            .limitToFirst(2);
+    verifyResults(query, "coll/doc1", "coll/doc3");
   }
 
   @Test
