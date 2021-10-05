@@ -30,7 +30,7 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.inject.Provider;
 
 /** FirebaseAppCheckTokenProvider uses Firebase AppCheck to get an AppCheck token. */
-public final class FirebaseAppCheckTokenProvider extends AppCheckTokenProvider {
+public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<String> {
 
   private static final String LOG_TAG = "FirebaseAppCheckTokenProvider";
 

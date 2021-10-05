@@ -19,8 +19,8 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -87,8 +87,8 @@ public class Datastore {
   public Datastore(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
-      AppCheckTokenProvider appCheckTokenProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
@@ -98,8 +98,8 @@ public class Datastore {
         initializeChannel(
             databaseInfo,
             workerQueue,
-            credentialsProvider,
-            appCheckTokenProvider,
+            authProvider,
+            appCheckProvider,
             context,
             metadataProvider);
   }
@@ -107,15 +107,15 @@ public class Datastore {
   FirestoreChannel initializeChannel(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
-      AppCheckTokenProvider appCheckTokenProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return new FirestoreChannel(
         workerQueue,
         context,
-        credentialsProvider,
-        appCheckTokenProvider,
+        authProvider,
+        appCheckProvider,
         databaseInfo,
         metadataProvider);
   }

@@ -16,8 +16,8 @@ package com.google.firebase.firestore.remote;
 
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApiNotAvailableException;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import io.grpc.CallCredentials;
@@ -36,13 +36,13 @@ final class FirestoreCallCredentials extends CallCredentials {
   private static final Metadata.Key<String> X_FIREBASE_APPCHECK =
       Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER);
 
-  private final CredentialsProvider authProvider;
-  private final AppCheckTokenProvider appCheckTokenProvider;
+  private final CredentialsProvider<User> authProvider;
+  private final CredentialsProvider<String> appCheckProvider;
 
   FirestoreCallCredentials(
-      CredentialsProvider authProvider, AppCheckTokenProvider appCheckTokenProvider) {
+      CredentialsProvider<User> authProvider, CredentialsProvider<String> appCheckProvider) {
     this.authProvider = authProvider;
-    this.appCheckTokenProvider = appCheckTokenProvider;
+    this.appCheckProvider = appCheckProvider;
   }
 
   // Don't have @Override to avoid breaking build when method is removed from interface
@@ -90,7 +90,7 @@ final class FirestoreCallCredentials extends CallCredentials {
             executor,
             metadata -> {
               // If the auth task has succeeded, try to get the AppCheck token as well.
-              appCheckTokenProvider
+              appCheckProvider
                   .getToken()
                   .addOnSuccessListener(
                       executor,

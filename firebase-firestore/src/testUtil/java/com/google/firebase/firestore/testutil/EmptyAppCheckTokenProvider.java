@@ -17,11 +17,11 @@ package com.google.firebase.firestore.testutil;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
+import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.util.Listener;
 
 /** A Credentials Provider that always returns an empty token */
-public class EmptyAppCheckTokenProvider extends AppCheckTokenProvider {
+public class EmptyAppCheckTokenProvider extends CredentialsProvider<String> {
   @Override
   public Task<String> getToken() {
     return Tasks.forResult("");

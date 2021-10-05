@@ -18,8 +18,8 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -232,8 +232,8 @@ public class MockDatastore extends Datastore {
   FirestoreChannel initializeChannel(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
-      AppCheckTokenProvider appCheckTokenProvider,
+      CredentialsProvider<User> authCredentialsProvider,
+      CredentialsProvider<String> appCheckTokenProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return null;

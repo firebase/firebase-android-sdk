@@ -31,10 +31,10 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.auth.AppCheckTokenProvider;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -89,8 +89,8 @@ public class FirebaseFirestore {
   // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
-  private final CredentialsProvider credentialsProvider;
-  private final AppCheckTokenProvider appCheckTokenProvider;
+  private final CredentialsProvider<User> authProvider;
+  private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
@@ -142,10 +142,8 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
-
-    AppCheckTokenProvider appCheckProvider =
-        new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
+    CredentialsProvider<User> authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
+    CredentialsProvider<String> appCheckProvider = new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
@@ -172,8 +170,8 @@ public class FirebaseFirestore {
       Context context,
       DatabaseId databaseId,
       String persistenceKey,
-      CredentialsProvider credentialsProvider,
-      AppCheckTokenProvider appCheckTokenProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
@@ -182,8 +180,8 @@ public class FirebaseFirestore {
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
-    this.credentialsProvider = checkNotNull(credentialsProvider);
-    this.appCheckTokenProvider = appCheckTokenProvider;
+    this.authProvider = checkNotNull(authProvider);
+    this.appCheckProvider = checkNotNull(appCheckProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
@@ -257,8 +255,8 @@ public class FirebaseFirestore {
               context,
               databaseInfo,
               settings,
-              credentialsProvider,
-              appCheckTokenProvider,
+              authProvider,
+              appCheckProvider,
               asyncQueue,
               metadataProvider);
     }
