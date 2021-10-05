@@ -301,10 +301,8 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
-
     // This header is used to improve routing and project isolation by the backend.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
-
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }

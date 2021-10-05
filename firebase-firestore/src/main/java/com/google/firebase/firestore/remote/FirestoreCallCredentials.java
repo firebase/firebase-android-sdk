@@ -60,7 +60,7 @@ final class FirestoreCallCredentials extends CallCredentials {
               Metadata metadata = new Metadata();
               if (task.isSuccessful()) {
                 String token = task.getResult();
-                Logger.debug(LOG_TAG, "Successfully fetched token.");
+                Logger.debug(LOG_TAG, "Successfully fetched auth token.");
                 if (token != null) {
                   metadata.put(AUTHORIZATION_HEADER, "Bearer " + token);
                 }
@@ -96,6 +96,7 @@ final class FirestoreCallCredentials extends CallCredentials {
                       executor,
                       appCheckToken -> {
                         if (appCheckToken != null && !appCheckToken.isEmpty()) {
+                          Logger.debug(LOG_TAG, "Successfully fetched AppCheck token.");
                           metadata.put(X_FIREBASE_APPCHECK, appCheckToken);
                         }
                         metadataApplier.apply(metadata);

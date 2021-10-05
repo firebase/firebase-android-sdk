@@ -265,7 +265,6 @@ public final class FirestoreClient {
             databaseInfo,
             datastore,
             user,
-            // appCheckTokenProvider,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
             settings);
 
