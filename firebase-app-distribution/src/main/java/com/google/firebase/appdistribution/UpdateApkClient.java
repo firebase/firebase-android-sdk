@@ -84,25 +84,24 @@ class UpdateApkClient {
     }
 
     downloadApk(newRelease, showDownloadNotificationManager)
-        .addOnSuccessListener(
+        // Using onSuccess task to ensure that all install errors get cascaded to the Failure
+        // listener down below
+        .onSuccessTask(
             downloadExecutor,
-            file ->
-                install(file.getPath())
-                    .addOnFailureListener(
-                        e -> {
-                          LogWrapper.getInstance().e(TAG + "Newest release failed to install.", e);
-                          postInstallationFailure(
-                              e, file.length(), showDownloadNotificationManager);
-                          setTaskCompletionErrorWithDefault(
-                              e,
-                              new FirebaseAppDistributionException(
-                                  Constants.ErrorMessages.NETWORK_ERROR,
-                                  FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-                        }))
+            (file -> {
+              if (file == null) {
+                LogWrapper.getInstance().e(TAG + "Download file not found or invalid");
+                return Tasks.forException(
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.NETWORK_ERROR, Status.DOWNLOAD_FAILURE));
+              }
+              return install(file.getPath());
+            }))
         .addOnFailureListener(
             downloadExecutor,
             e -> {
-              LogWrapper.getInstance().e(TAG + "Newest release failed to download.", e);
+              LogWrapper.getInstance()
+                  .e(TAG + "Download or Installation failure for newest release.", e);
               setTaskCompletionErrorWithDefault(
                   e,
                   new FirebaseAppDistributionException(
@@ -308,7 +307,6 @@ class UpdateApkClient {
     CancellationTokenSource installCancellationTokenSource = new CancellationTokenSource();
     this.installTaskCompletionSource =
         new TaskCompletionSource<>(installCancellationTokenSource.getToken());
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(intent);
     LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
     return installTaskCompletionSource.getTask();
@@ -321,15 +319,10 @@ class UpdateApkClient {
       synchronized (updateTaskLock) {
         cachedUpdateTask.setResult();
       }
-    } else if (resultCode == Activity.RESULT_CANCELED) {
-      installTaskCompletionSource.setException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.UPDATE_CANCELED,
-              FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
     } else {
       installTaskCompletionSource.setException(
           new FirebaseAppDistributionException(
-              "Installation failed with result code: " + resultCode,
+              "Installation failed or cancelled",
               FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
     }
   }
