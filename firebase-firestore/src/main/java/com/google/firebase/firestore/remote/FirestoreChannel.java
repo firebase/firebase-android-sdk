@@ -82,7 +82,8 @@ public class FirestoreChannel {
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
 
-    FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(authProvider, appCheckProvider);
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
 
     DatabaseId databaseId = databaseInfo.getDatabaseId();

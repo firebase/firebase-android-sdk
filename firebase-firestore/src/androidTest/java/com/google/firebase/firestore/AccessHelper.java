@@ -27,14 +27,14 @@ public final class AccessHelper {
 
   /** Makes the FirebaseFirestore constructor accessible. */
   public static FirebaseFirestore newFirebaseFirestore(
-          Context context,
-          DatabaseId databaseId,
-          String persistenceKey,
-          CredentialsProvider<User> authProvider,
-          CredentialsProvider<String> appCheckProvider,
-          AsyncQueue asyncQueue,
-          FirebaseApp firebaseApp,
-          FirebaseFirestore.InstanceRegistry instanceRegistry) {
+      Context context,
+      DatabaseId databaseId,
+      String persistenceKey,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      AsyncQueue asyncQueue,
+      FirebaseApp firebaseApp,
+      FirebaseFirestore.InstanceRegistry instanceRegistry) {
     return new FirebaseFirestore(
         context,
         databaseId,

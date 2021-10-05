@@ -142,8 +142,10 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider<User> authProvider = new FirebaseAuthCredentialsProvider(deferredAuthProvider);
-    CredentialsProvider<String> appCheckProvider = new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
+    CredentialsProvider<User> authProvider =
+        new FirebaseAuthCredentialsProvider(deferredAuthProvider);
+    CredentialsProvider<String> appCheckProvider =
+        new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related

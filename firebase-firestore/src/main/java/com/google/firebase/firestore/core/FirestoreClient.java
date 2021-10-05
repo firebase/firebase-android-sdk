@@ -127,11 +127,13 @@ public final class FirestoreClient {
           }
         });
 
-    appCheckProvider.setChangeListener((String appCheckToken) -> {
-      asyncQueue.enqueueAndForget(() -> {
-        remoteStore.handleCredentialChange();
-      });
-    });
+    appCheckProvider.setChangeListener(
+        (String appCheckToken) -> {
+          asyncQueue.enqueueAndForget(
+              () -> {
+                remoteStore.handleCredentialChange();
+              });
+        });
   }
 
   public Task<Void> disableNetwork() {
@@ -255,12 +257,7 @@ public final class FirestoreClient {
 
     Datastore datastore =
         new Datastore(
-            databaseInfo,
-            asyncQueue,
-            authProvider,
-            appCheckProvider,
-            context,
-            metadataProvider);
+            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             context,
