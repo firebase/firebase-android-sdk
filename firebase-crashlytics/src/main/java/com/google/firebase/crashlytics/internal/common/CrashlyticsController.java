@@ -613,6 +613,8 @@ class CrashlyticsController {
       // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
       // sessionId to close.
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
+    } else {
+      Logger.getLogger().v("ANR feature disabled.");
     }
 
     if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {

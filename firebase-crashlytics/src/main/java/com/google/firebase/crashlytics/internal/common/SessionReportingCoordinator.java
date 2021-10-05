@@ -142,11 +142,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
     // ApplicationExitInfo did not occur during the session.
     if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+      Logger.getLogger().v("Latest ApplicationExitInfo did not occur during session: " + sessionId);
+      Logger.getLogger().v(applicationExitInfo.toString());
       return;
     }
 
     // Currently we only persist these if it is an ANR.
     if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+      Logger.getLogger().v("Latest ApplicationExitInfo not of type ANR. Session: " + sessionId);
+      Logger.getLogger().v(applicationExitInfo.toString());
       return;
     }
 
