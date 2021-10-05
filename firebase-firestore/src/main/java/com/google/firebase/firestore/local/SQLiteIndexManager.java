@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
-import android.database.sqlite.SQLiteStatement;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -153,40 +152,7 @@ final class SQLiteIndexManager implements IndexManager {
                         Index.parseFrom(row.getBlob(1)),
                         row.getInt(2),
                         row.getInt(3));
-
-                List<Value> arrayValues = new ArrayList<>();
-                for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
-                  Value value = document.getField(segment.getFieldPath());
-                  if (!isArray(value)) {
-                    return;
-                  }
-                  arrayValues.addAll(value.getArrayValue().getValuesList());
-                }
-
-                List<Value> directionalValues = new ArrayList<>();
-                for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-                  Value field = document.getField(segment.getFieldPath());
-                  if (field == null) {
-                    return;
-                  }
-                  directionalValues.add(field);
-                }
-
-                if (Logger.isDebugEnabled()) {
-                  Logger.debug(
-                      TAG,
-                      "Adding index values for document '%s' to index '%s'",
-                      documentKey,
-                      fieldIndex);
-                }
-
-                for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
-                  addSingleEntry(
-                      documentKey,
-                      indexId,
-                      encode(i < arrayValues.size() ? arrayValues.get(i) : null),
-                      encode(directionalValues));
-                }
+                addIndexEntry(document, Collections.singletonList(fieldIndex));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
               }
@@ -205,49 +171,41 @@ final class SQLiteIndexManager implements IndexManager {
     DocumentKey documentKey = document.getKey();
     int entriesWritten = 0;
     for (FieldIndex fieldIndex : fieldIndexes) {
-      List<Value> values = extractFieldValue(document, fieldIndex);
-      if (values == null) continue;
+      List<Value> arrayValues = new ArrayList<>();
+      for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
+        Value value = document.getField(segment.getFieldPath());
+        if (!isArray(value)) {
+          continue;
+        }
+        arrayValues.addAll(value.getArrayValue().getValuesList());
+      }
 
-      if (document.getVersion().compareTo(fieldIndex.getVersion()) > 0) {
-        fieldIndex.setVersion(document.getVersion());
+      List<Value> directionalValues = new ArrayList<>();
+      for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+        Value field = document.getField(segment.getFieldPath());
+        if (field == null) {
+          continue;
+        }
+        directionalValues.add(field);
       }
 
       if (Logger.isDebugEnabled()) {
         Logger.debug(
             TAG, "Adding index values for document '%s' to index '%s'", documentKey, fieldIndex);
       }
-      Object[] encodeValues = encodeDocumentValues(fieldIndex, values);
-      for (Object encoded : encodeValues) {
-        SQLiteStatement indexAdder =
-            db.prepare(
-                "INSERT OR IGNORE INTO index_entries ("
-                    + "index_id, "
-                    + "index_value, "
-                    + "document_name) VALUES(?, ?, ?)");
-        // TODO(indexing): Handle different values for different users
-        entriesWritten +=
-            db.execute(indexAdder, fieldIndex.getIndexId(), encoded, documentKey.toString());
+
+      for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
+        addSingleEntry(
+            documentKey,
+            fieldIndex.getIndexId(),
+            encode(i < arrayValues.size() ? arrayValues.get(i) : null),
+            encode(directionalValues));
       }
     }
     return entriesWritten;
   }
 
-  /**
-   * Returns the list of values for all fields indexed by the provided field index. Returns {@code
-   * null} if one or more of the fields are not set.
-   */
-  @Nullable
-  private List<Value> extractFieldValue(Document document, FieldIndex fieldIndex) {
-    List<Value> values = new ArrayList<>();
-    for (FieldIndex.Segment segment : fieldIndex) {
-      Value field = document.getField(segment.getFieldPath());
-      if (field == null) {
-        return null;
-      }
-      values.add(field);
-    }
-    return values;
-  }
+  /** Adds a single index entry into the index entries table. */
   private void addSingleEntry(
       DocumentKey documentKey, int indexId, @Nullable Object arrayIndex, Object directionalIndex) {
     // TODO(indexing): Handle different values for different users
