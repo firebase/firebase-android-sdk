@@ -885,6 +885,8 @@ class CrashlyticsController {
             applicationExitInfoList.get(0),
             relevantSessionLogManager,
             relevantUserMetadata);
+      } else {
+        Logger.getLogger().v("No ApplicationExitInfo available. Session: " + sessionId);
       }
     } else {
       Logger.getLogger()
