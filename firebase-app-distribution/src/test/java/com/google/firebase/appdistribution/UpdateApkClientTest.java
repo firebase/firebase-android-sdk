@@ -127,27 +127,6 @@ public class UpdateApkClientTest {
   }
 
   @Test
-  public void updateApk_whenInstallCancelled_setsError() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
-
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-    updateTask.addOnProgressListener(progressEvents::add);
-    // sleep to wait for installTaskCompletionSource to be set
-    Thread.sleep(1000);
-    updateApkClient.setInstallationResult(RESULT_CANCELED);
-
-    assertEquals(1, progressEvents.size());
-    assertEquals(UpdateStatus.INSTALL_CANCELED, progressEvents.get(0).getUpdateStatus());
-    assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals(Constants.ErrorMessages.UPDATE_CANCELED, e.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_CANCELED, e.getErrorCode());
-  }
-
-  @Test
   public void updateApk_whenInstallFailed_setsError() throws Exception {
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
 
@@ -164,7 +143,6 @@ public class UpdateApkClientTest {
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e =
         (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals("Installation failed with result code: " + RESULT_FAILED, e.getMessage());
     assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_FAILURE, e.getErrorCode());
   }
 

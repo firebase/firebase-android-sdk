@@ -27,5 +27,7 @@
   <string name="download_failed">Download failed</string>
   <string name="notifications_channel_name">App Distribution App Update Downloads</string>
   <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
-
+  <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
+  <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
+  <string name="unknown_sources_yes_button">Settings</string>
 </resources>
