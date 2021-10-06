@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -348,16 +349,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   @VisibleForTesting
   public static String convertInputStreamToString(@Nullable InputStream inputStream)
       throws IOException, NullPointerException {
-    StringBuilder stringBuilder = new StringBuilder();
-    try (Reader reader =
-        new BufferedReader(
-            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
-      int c = 0;
-      while ((c = reader.read()) != -1) {
-        stringBuilder.append((char) c);
-      }
-
-      return stringBuilder.toString();
+    StringWriter stringWriter = new StringWriter();
+    int nextChar = 0;
+    while ((nextChar = inputStream.read()) != -1) {
+      stringWriter.append((char) nextChar);
     }
+
+    return stringWriter.toString();
   }
 }
