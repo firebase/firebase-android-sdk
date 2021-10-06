@@ -38,7 +38,6 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
@@ -255,7 +254,7 @@ public final class LocalStore implements BundleCallback {
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
           Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.saveOverlays(overlays);
+            documentOverlay.saveOverlays(batch.getBatchId(), overlays);
           }
           return new LocalWriteResult(batch.getBatchId(), documents);
         });
@@ -287,7 +286,8 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            recalculateOverlays(getDocumentsWithTransformResults(batchResult));
+            documentOverlay.removeOverlays(batchResult.getBatch().getBatchId());
+            localDocuments.recalculateOverlays(getDocumentsWithTransformResults(batchResult));
           }
 
           return localDocuments.getDocuments(batch.getKeys());
@@ -326,37 +326,12 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            recalculateOverlays(toReject.getKeys());
+            documentOverlay.removeOverlays(batchId);
+            localDocuments.recalculateOverlays(toReject.getKeys());
           }
 
           return localDocuments.getDocuments(toReject.getKeys());
         });
-  }
-
-  private void recalculateOverlays(Set<DocumentKey> documentKeys) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocuments.getAll(documentKeys);
-    List<MutationBatch> batches =
-        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(documentKeys);
-
-    Map<DocumentKey, FieldMask> masks = new HashMap<>();
-    for (MutationBatch b : batches) {
-      for (DocumentKey key : b.getKeys()) {
-        FieldMask mask = b.applyToLocalView(docs.get(key), masks.get(key));
-        masks.put(key, mask);
-      }
-    }
-
-    Map<DocumentKey, Mutation> overlays = new HashMap<>();
-    for (Entry<DocumentKey, FieldMask> entry : masks.entrySet()) {
-      overlays.put(
-          entry.getKey(),
-          MutationBatch.getOverlayMutation(docs.get(entry.getKey()), entry.getValue()));
-    }
-    documentOverlay.saveOverlays(overlays);
-    documentKeys.removeAll(overlays.keySet());
-    for (DocumentKey key : documentKeys) {
-      documentOverlay.removeOverlay(key);
-    }
   }
 
   /**
@@ -451,8 +426,9 @@ public final class LocalStore implements BundleCallback {
             }
           }
 
-          Map<DocumentKey, MutableDocument> changedDocs =
+          PopulateResult result =
               populateDocumentChanges(documentUpdates, null, remoteEvent.getSnapshotVersion());
+          Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
 
           // HACK: The only reason we allow snapshot version NONE is so that we can synthesize
           // remote events when we get permission denied errors while trying to resolve the
@@ -467,8 +443,21 @@ public final class LocalStore implements BundleCallback {
             targetCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getLocalViewOfDocuments(changedDocs);
+          return localDocuments.getLocalViewOfDocuments(
+              changedDocs, result.conditionChangedDocuments);
         });
+  }
+
+  private class PopulateResult {
+    private Map<DocumentKey, MutableDocument> changedDocuments;
+    private Set<DocumentKey> conditionChangedDocuments;
+
+    private PopulateResult(
+        Map<DocumentKey, MutableDocument> changedDocuments,
+        Set<DocumentKey> conditionChangedDocuments) {
+      this.changedDocuments = changedDocuments;
+      this.conditionChangedDocuments = conditionChangedDocuments;
+    }
   }
 
   /**
@@ -484,11 +473,12 @@ public final class LocalStore implements BundleCallback {
    * @param globalVersion A SnapshotVersion representing the read time if all documents have the
    *     same read time.
    */
-  private Map<DocumentKey, MutableDocument> populateDocumentChanges(
+  private PopulateResult populateDocumentChanges(
       Map<DocumentKey, MutableDocument> documents,
       @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
       SnapshotVersion globalVersion) {
     Map<DocumentKey, MutableDocument> changedDocs = new HashMap<>();
+    Set<DocumentKey> conditionChanged = new HashSet<>();
 
     // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
     // documents in advance in a single call.
@@ -500,6 +490,10 @@ public final class LocalStore implements BundleCallback {
       MutableDocument existingDoc = existingDocs.get(key);
       SnapshotVersion readTime =
           documentVersions != null ? documentVersions.get(key) : globalVersion;
+      if ((doc.isFoundDocument() && !existingDoc.isFoundDocument())
+          || (!doc.isFoundDocument() && existingDoc.isFoundDocument())) {
+        conditionChanged.add(key);
+      }
 
       // Note: The order of the steps below is important, since we want to ensure that
       // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
@@ -527,7 +521,7 @@ public final class LocalStore implements BundleCallback {
             doc.getVersion());
       }
     }
-    return changedDocs;
+    return new PopulateResult(changedDocs, conditionChanged);
   }
 
   /**
@@ -722,9 +716,11 @@ public final class LocalStore implements BundleCallback {
           targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
           targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
 
-          Map<DocumentKey, MutableDocument> changedDocs =
+          PopulateResult result =
               populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
-          return localDocuments.getLocalViewOfDocuments(changedDocs);
+          Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
+          return localDocuments.getLocalViewOfDocuments(
+              changedDocs, result.conditionChangedDocuments);
         });
   }
 

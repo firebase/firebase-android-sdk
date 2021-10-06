@@ -84,7 +84,7 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(key("coll/doc1"), m);
+    overlays.saveOverlay(2, key("coll/doc1"), m);
 
     assertEquals(m, overlays.getOverlay(key("coll/doc1")));
   }
@@ -98,7 +98,7 @@ public abstract class DocumentOverlayTestCase {
     m.put(key("coll/doc1"), m1);
     m.put(key("coll/doc2"), m2);
     m.put(key("coll/doc3"), m3);
-    overlays.saveOverlays(m);
+    overlays.saveOverlays(3, m);
 
     assertEquals(m1, overlays.getOverlay(key("coll/doc1")));
     assertEquals(m2, overlays.getOverlay(key("coll/doc2")));
@@ -109,8 +109,8 @@ public abstract class DocumentOverlayTestCase {
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
-    overlays.saveOverlay(key("coll/doc1"), m1);
-    overlays.saveOverlay(key("coll/doc1"), m2);
+    overlays.saveOverlay(2, key("coll/doc1"), m1);
+    overlays.saveOverlay(2, key("coll/doc1"), m2);
 
     assertEquals(m2, overlays.getOverlay(key("coll/doc1")));
   }
@@ -118,13 +118,13 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testDeleteRepeatedlyWorks() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(key("coll/doc1"), m);
+    overlays.saveOverlay(2, key("coll/doc1"), m);
 
-    overlays.removeOverlay(key("coll/doc1"));
+    overlays.removeOverlays(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlay(key("coll/doc1"));
+    overlays.removeOverlays(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
   }
 
@@ -142,7 +142,7 @@ public abstract class DocumentOverlayTestCase {
     m.put(key("coll/doc3"), m3);
     m.put(key("coll/doc1/sub/sub_doc"), m4);
     m.put(key("col/doc1"), m5);
-    overlays.saveOverlays(m);
+    overlays.saveOverlays(3, m);
 
     m.remove(key("coll/doc1/sub/sub_doc"));
     m.remove(key("col/doc1"));

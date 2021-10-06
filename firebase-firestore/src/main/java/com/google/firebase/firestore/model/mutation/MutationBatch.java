@@ -113,9 +113,6 @@ public final class MutationBatch {
   }
 
   public FieldMask applyToLocalView(MutableDocument document, @Nullable FieldMask mutatedFields) {
-    if (mutatedFields == null) {
-      mutatedFields = FieldMask.fromSet(new HashSet<>());
-    }
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
@@ -137,6 +134,10 @@ public final class MutationBatch {
   }
 
   public static Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
+    if (!doc.hasLocalMutations() || (mask != null && mask.getMask().isEmpty())) {
+      return null;
+    }
+
     if (mask == null) {
       if (doc.isNoDocument()) {
         return new DeleteMutation(doc.getKey(), Precondition.NONE);
@@ -186,8 +187,8 @@ public final class MutationBatch {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
       // remove this cast.
       MutableDocument document = (MutableDocument) documentMap.get(key);
-      FieldMask mutatiedFields = applyToLocalView(document);
-      Mutation overlay = getOverlayMutation(document, mutatiedFields);
+      FieldMask mutatedFields = applyToLocalView(document);
+      Mutation overlay = getOverlayMutation(document, mutatedFields);
       overlays.put(key, overlay);
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);

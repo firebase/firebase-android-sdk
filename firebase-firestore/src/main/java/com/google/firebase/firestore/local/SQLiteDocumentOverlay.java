@@ -59,28 +59,31 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
-  public void saveOverlay(DocumentKey key, Mutation mutation) {
+  public void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+    if(mutation == null) {
+      return;
+    }
+
     db.execute(
         "INSERT OR REPLACE INTO document_overlays "
-            + "(uid, path, overlay_mutation) VALUES (?, ?, ?)",
+            + "(uid, path, largest_batch_id, overlay_mutation) VALUES (?, ?, ?, ?)",
         uid,
         EncodedPath.encode(key.getPath()),
+        largestBatchId,
         serializer.encodeMutation(mutation).toByteArray());
   }
 
   @Override
-  public void saveOverlays(Map<DocumentKey, Mutation> overlays) {
+  public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      saveOverlay(entry.getKey(), entry.getValue());
+      saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
     }
   }
 
   @Override
-  public void removeOverlay(DocumentKey key) {
+  public void removeOverlays(int batchId) {
     db.execute(
-        "DELETE FROM document_overlays WHERE uid = ? AND path = ?",
-        uid,
-        EncodedPath.encode(key.getPath()));
+        "DELETE FROM document_overlays WHERE uid = ? AND largest_batch_id = ?", uid, batchId);
   }
 
   @Override

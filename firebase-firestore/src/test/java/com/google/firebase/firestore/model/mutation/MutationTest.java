@@ -711,6 +711,13 @@ public class MutationTest {
   }
 
   @Test
+  public void testOverlayWithPatchOnInvalidDocument() {
+    verifyOverlayRoundTrips(
+        MutableDocument.newInvalidDocument(key("collection/key")),
+        patchMutation("collection/key", map("a", 1)));
+  }
+
+  @Test
   public void testOverlayWithOneSetMutation() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
     verifyOverlayRoundTrips(
@@ -1025,9 +1032,8 @@ public class MutationTest {
       mask = m.applyToLocalView(docForMutations, mask, now);
     }
 
-    Mutation overlay = null;
-    if (docForMutations.hasLocalMutations()) {
-      overlay = getOverlayMutation(docForMutations, mask);
+    Mutation overlay = getOverlayMutation(docForMutations, mask);
+    if (overlay != null) {
       overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
     }
 

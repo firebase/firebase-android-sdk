@@ -35,13 +35,13 @@ public interface DocumentOverlay {
   Mutation getOverlay(DocumentKey key);
 
   /** Saves the given mutation as overlay for the given document key. */
-  void saveOverlay(DocumentKey key, Mutation mutation);
+  // TODO(Overlay): Delete this from interface.
+  void saveOverlay(int largestBatchId, DocumentKey key, Mutation mutation);
 
   /** Saves the given document to mutation map to persistence. */
-  void saveOverlays(Map<DocumentKey, Mutation> overlays);
-
-  /** Removes the overlay associated for the given document key. */
-  void removeOverlay(DocumentKey key);
+  void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays);
+  /** Removes the overlay whose largest-batch-id equals to the given Id. */
+  void removeOverlays(int batchId);
 
   /** Returns all saved overlay under the given path. */
   Map<DocumentKey, Mutation> getAllOverlays(ResourcePath path);

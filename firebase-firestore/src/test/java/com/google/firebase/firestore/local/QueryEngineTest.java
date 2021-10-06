@@ -39,6 +39,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
 import java.util.concurrent.Callable;
@@ -76,6 +77,7 @@ public class QueryEngineTest {
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
   private MutationQueue mutationQueue;
+  private DocumentOverlay documentOverlay;
   private TargetCache targetCache;
   private QueryEngine queryEngine;
 
@@ -87,6 +89,7 @@ public class QueryEngineTest {
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
+    documentOverlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
     queryEngine = new DefaultQueryEngine();
 
@@ -140,8 +143,9 @@ public class QueryEngineTest {
     persistence.runTransaction(
         "addMutation",
         () -> {
-          mutationQueue.addMutationBatch(
+          MutationBatch batch = mutationQueue.addMutationBatch(
               Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
+          documentOverlay.saveOverlay(batch.getBatchId(), mutation.getKey(), mutation);
         });
   }
 
@@ -377,6 +381,7 @@ public class QueryEngineTest {
 
   @Test
   public void doesNotIncludeDocumentsDeletedByMutation() throws Exception {
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
     Query query = query("coll");
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);

@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -92,9 +93,9 @@ class LocalDocumentsView {
       Document fromOverlay = getDocument(key, overlay);
 
       // TODO(Overlay): Remove below and just return `fromOverlay`.
-      /*
       List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
       Document fromMutationQueue = getDocument(key, batches);
+      /*
       hardAssert(
           fromOverlay.equals(fromMutationQueue),
           "Document from overlay does not match mutation queue");
@@ -124,13 +125,18 @@ class LocalDocumentsView {
 
   // Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
   // the contents of the mutations.
-  private void applyLocalMutationsToDocuments(
+  private Map<DocumentKey, FieldMask> applyLocalMutationsToDocuments(
       Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
+    Map<DocumentKey, FieldMask> changedMasks = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> base : docs.entrySet()) {
+      FieldMask mask = null;
       for (MutationBatch batch : batches) {
-        batch.applyToLocalView(base.getValue());
+        mask = batch.applyToLocalView(base.getValue(), mask);
       }
+      changedMasks.put(base.getKey(), mask);
     }
+
+    return changedMasks;
   }
 
   /**
@@ -141,7 +147,7 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
     Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
-    return getLocalViewOfDocuments(docs);
+    return getLocalViewOfDocuments(docs, null);
   }
 
   /**
@@ -149,16 +155,32 @@ class LocalDocumentsView {
    * without retrieving documents from the local store.
    */
   ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
-      Map<DocumentKey, MutableDocument> docs) {
+      Map<DocumentKey, MutableDocument> docs,
+      @Nullable Set<DocumentKey> conditionChangedDocuments) {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
+    if (conditionChangedDocuments == null) {
+      conditionChangedDocuments = new HashSet<>();
+    }
 
     if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      Set<DocumentKey> toRecalculate = new HashSet<>();
       for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
         Mutation overlay = documentOverlay.getOverlay(entry.getKey());
+        if (conditionChangedDocuments.contains(entry.getKey())
+            && (overlay == null || overlay instanceof PatchMutation)) {
+          toRecalculate.add(entry.getKey());
+          continue;
+        }
         if (overlay != null) {
           overlay.applyToLocalView(entry.getValue(), null, Timestamp.now());
         }
       }
+      Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
+      for (DocumentKey key : toRecalculate) {
+        recalculateDocuments.put(key, docs.get(key));
+      }
+
+      recalculateOverlays(recalculateDocuments);
     } else {
       List<MutationBatch> batches =
           mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
@@ -169,6 +191,42 @@ class LocalDocumentsView {
       results = results.insert(entry.getKey(), entry.getValue());
     }
     return results;
+  }
+
+  void recalculateOverlays(Map<DocumentKey, MutableDocument> docs) {
+    List<MutationBatch> batches =
+        mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
+
+    Map<DocumentKey, FieldMask> masks = new HashMap<>();
+    Map<DocumentKey, Integer> largestBatchIds = new HashMap<>();
+    for (MutationBatch batch : batches) {
+      for (DocumentKey key : batch.getKeys()) {
+        FieldMask mask = batch.applyToLocalView(docs.get(key), masks.get(key));
+        masks.put(key, mask);
+        largestBatchIds.put(key, batch.getBatchId());
+      }
+    }
+
+    Map<Integer, Set<DocumentKey>> documentsByBatchId = new HashMap<>();
+    for (Map.Entry<DocumentKey, Integer> entry : largestBatchIds.entrySet()) {
+      if (!documentsByBatchId.containsKey(entry.getValue())) {
+        documentsByBatchId.put(entry.getValue(), new HashSet<>());
+      }
+      documentsByBatchId.get(entry.getValue()).add(entry.getKey());
+    }
+
+    for (Map.Entry<Integer, Set<DocumentKey>> entry : documentsByBatchId.entrySet()) {
+      Map<DocumentKey, Mutation> overlays = new HashMap<>();
+      for (DocumentKey key : entry.getValue()) {
+        overlays.put(key, MutationBatch.getOverlayMutation(docs.get(key), masks.get(key)));
+      }
+      documentOverlay.saveOverlays(entry.getKey(), overlays);
+    }
+  }
+
+  void recalculateOverlays(Set<DocumentKey> documentKeys) {
+    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(documentKeys);
+    recalculateOverlays(docs);
   }
 
   // TODO: The Querying implementation here should move 100% to the query engines.
