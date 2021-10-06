@@ -30,23 +30,23 @@ import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
 class UpdateTaskImpl extends UpdateTask {
-
-  @NonNull private final Task<Void> task;
-
   @Nullable
   @GuardedBy("lock")
   private ManagedListener listener = null;
 
   private final Object lock = new Object();
+  private final Object taskCompletionLock = new Object();
 
   @GuardedBy("lock")
   private UpdateProgress snapshot;
 
+  @GuardedBy("taskCompletionLock")
   private final TaskCompletionSource<Void> taskCompletionSource;
 
   UpdateTaskImpl() {
-    this.taskCompletionSource = new TaskCompletionSource<>();
-    this.task = taskCompletionSource.getTask();
+    synchronized (taskCompletionLock) {
+      this.taskCompletionSource = new TaskCompletionSource<>();
+    }
   }
 
   void updateProgress(@NonNull UpdateProgress updateProgress) {
@@ -55,6 +55,12 @@ class UpdateTaskImpl extends UpdateTask {
       if (this.listener != null) {
         this.listener.invoke(updateProgress);
       }
+    }
+  }
+
+  private Task<Void> getTask() {
+    synchronized (this.taskCompletionLock) {
+      return this.taskCompletionSource.getTask();
     }
   }
 
@@ -80,116 +86,116 @@ class UpdateTaskImpl extends UpdateTask {
 
   @Override
   public boolean isComplete() {
-    return this.task.isComplete();
+    return getTask().isComplete();
   }
 
   @Override
   public boolean isSuccessful() {
-    return this.task.isSuccessful();
+    return getTask().isSuccessful();
   }
 
   @Override
   public boolean isCanceled() {
-    return this.task.isCanceled();
+    return getTask().isCanceled();
   }
 
   @Nullable
   @Override
   public Void getResult() {
-    return this.task.getResult();
+    return getTask().getResult();
   }
 
   @Nullable
   @Override
   public <X extends Throwable> Void getResult(@NonNull Class<X> aClass) throws X {
-    return this.task.getResult(aClass);
+    return getTask().getResult(aClass);
   }
 
   @Nullable
   @Override
   public Exception getException() {
-    return this.task.getException();
+    return getTask().getException();
   }
 
   @NonNull
   @Override
   public Task<Void> addOnSuccessListener(
       @NonNull OnSuccessListener<? super Void> onSuccessListener) {
-    return this.task.addOnSuccessListener(onSuccessListener);
+    return getTask().addOnSuccessListener(onSuccessListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnSuccessListener(
       @NonNull Executor executor, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
-    return this.task.addOnSuccessListener(executor, onSuccessListener);
+    return getTask().addOnSuccessListener(executor, onSuccessListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnSuccessListener(
       @NonNull Activity activity, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
-    return this.task.addOnSuccessListener(activity, onSuccessListener);
+    return getTask().addOnSuccessListener(activity, onSuccessListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
-    return this.task.addOnFailureListener(onFailureListener);
+    return getTask().addOnFailureListener(onFailureListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
-    return this.task.addOnFailureListener(executor, onFailureListener);
+    return getTask().addOnFailureListener(executor, onFailureListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
-    return this.task.addOnFailureListener(activity, onFailureListener);
+    return getTask().addOnFailureListener(activity, onFailureListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener<Void> onCompleteListener) {
-    return this.task.addOnCompleteListener(onCompleteListener);
+    return getTask().addOnCompleteListener(onCompleteListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(
       @NonNull Executor executor, @NonNull OnCompleteListener<Void> onCompleteListener) {
-    return this.task.addOnCompleteListener(executor, onCompleteListener);
+    return getTask().addOnCompleteListener(executor, onCompleteListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(
       @NonNull Activity activity, @NonNull OnCompleteListener<Void> onCompleteListener) {
-    return this.task.addOnCompleteListener(activity, onCompleteListener);
+    return getTask().addOnCompleteListener(activity, onCompleteListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCanceledListener(@NonNull OnCanceledListener onCanceledListener) {
-    return this.task.addOnCanceledListener(onCanceledListener);
+    return getTask().addOnCanceledListener(onCanceledListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener onCanceledListener) {
-    return this.task.addOnCanceledListener(executor, onCanceledListener);
+    return getTask().addOnCanceledListener(executor, onCanceledListener);
   }
 
   @NonNull
   @Override
   public Task<Void> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
-    return this.task.addOnCanceledListener(activity, onCanceledListener);
+    return getTask().addOnCanceledListener(activity, onCanceledListener);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -199,7 +205,11 @@ class UpdateTaskImpl extends UpdateTask {
       this.listener = null;
     }
 
-    this.taskCompletionSource.setResult(null);
+    synchronized (taskCompletionLock) {
+      if (!this.taskCompletionSource.getTask().isComplete()) {
+        this.taskCompletionSource.setResult(null);
+      }
+    }
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -209,7 +219,11 @@ class UpdateTaskImpl extends UpdateTask {
       this.listener = null;
     }
 
-    this.taskCompletionSource.setException(exception);
+    synchronized (taskCompletionLock) {
+      if (!this.taskCompletionSource.getTask().isComplete()) {
+        this.taskCompletionSource.setException(exception);
+      }
+    }
   }
 
   /** Wraps a listener and its corresponding executor. */
