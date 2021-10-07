@@ -22,11 +22,13 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertNull;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -76,40 +78,6 @@ public class SQLiteIndexBackfillerTest {
     persistence.shutdown();
   }
 
-  @Test
-  public void testBackfillFetchesNewIndexes() {
-    addFieldIndex("coll1", "foo");
-    addFieldIndex("coll2", "foo");
-    backfiller.backfill(localStore);
-    assertEquals(2, backfiller.getFieldIndexQueue().size());
-    addFieldIndex("coll3", "foo");
-    addFieldIndex("coll4", "foo");
-    addFieldIndex("coll5", "foo");
-    backfiller.backfill(localStore);
-    assertEquals(5, backfiller.getFieldIndexQueue().size());
-    for (int i = 0; i < 5; i++) {
-      assertEquals("coll" + (i + 1), backfiller.getFieldIndexQueue().get(i).getCollectionGroup());
-    }
-  }
-
-  @Test
-  public void testBackfillMovesProcessedFieldIndexesToTheEndOfQueue() {
-    for (int i = 0; i < 5; i++) {
-      addFieldIndex("coll" + i, "foo");
-    }
-    backfiller.setMaxFieldIndexesToProcess(2);
-    backfiller.backfill(localStore);
-
-    // Processed field indexes should go to the back of the queue.
-    assertEquals(5, backfiller.getFieldIndexQueue().size());
-    assertEquals(1, backfiller.getFieldIndexQueue().get(3).getIndexId());
-    assertEquals(2, backfiller.getFieldIndexQueue().get(4).getIndexId());
-
-    backfiller.backfill(localStore);
-    assertEquals(3, backfiller.getFieldIndexQueue().get(3).getIndexId());
-    assertEquals(4, backfiller.getFieldIndexQueue().get(4).getIndexId());
-  }
-
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
   @Ignore
@@ -118,11 +86,11 @@ public class SQLiteIndexBackfillerTest {
     addFieldIndex("coll1", "foo");
     addDoc("coll1/docA", "foo", version(10, 20));
     backfiller.backfill(localStore);
-    assertEquals(version(10, 20), indexManager.getFieldIndexes(0).get(0).getVersion());
+    assertEquals(version(10, 20), indexManager.getFieldIndexes().get(0).getVersion());
 
     addDoc("coll1/docA", "foo", version(20, 30));
     backfiller.backfill(localStore);
-    assertEquals(version(2, 30), indexManager.getFieldIndexes(0).get(0).getVersion());
+    assertEquals(version(2, 30), indexManager.getFieldIndexes().get(0).getVersion());
   }
 
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
@@ -141,6 +109,52 @@ public class SQLiteIndexBackfillerTest {
 
     IndexBackfiller.Results results = backfiller.backfill(localStore);
     assertEquals(2, results.getEntriesAdded());
+  }
+
+  @Test
+  public void testBackfillUpdatesCollectionGroups() {
+    addCollectionGroup("coll1", new Timestamp(30, 0));
+    addCollectionGroup("coll2", new Timestamp(30, 30));
+    addCollectionGroup("coll3", new Timestamp(10, 0));
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "foo");
+    addFieldIndex("coll3", "foo");
+    addDoc("coll1/docA", "foo", version(10, 0));
+    addDoc("coll2/docA", "foo", version(10, 0));
+    addDoc("coll3/docA", "foo", version(10, 0));
+
+    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    assertEquals(3, results.getEntriesAdded());
+
+    // Check that index entries are written in order of the collection group update times by
+    // verifying the collection group update times have been updated in the correct order.
+    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    assertEquals(3, collectionGroups.size());
+    assertEquals("coll3", collectionGroups.get(0));
+    assertEquals("coll1", collectionGroups.get(1));
+    assertEquals("coll2", collectionGroups.get(2));
+  }
+
+  @Test
+  public void testBackfillPrioritizesNewCollectionGroups() {
+    // In this test case, `coll3` doesn't have an entry in the collection group table, so it should
+    // be processed ahead of the other collection groups.
+    addCollectionGroup("coll1", new Timestamp(1, 0));
+    addCollectionGroup("coll2", new Timestamp(2, 0));
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "foo");
+    addFieldIndex("coll3", "foo");
+
+    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    assertEquals(0, results.getEntriesAdded());
+
+    // Check that index entries are written in order of the collection group update times by
+    // verifying the collection group update times have been updated in the correct order.
+    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    assertEquals(3, collectionGroups.size());
+    assertEquals("coll3", collectionGroups.get(0));
+    assertEquals("coll1", collectionGroups.get(1));
+    assertEquals("coll2", collectionGroups.get(2));
   }
 
   @Test
@@ -165,12 +179,17 @@ public class SQLiteIndexBackfillerTest {
         });
   }
 
-  void addFieldIndex(String collectionId, String fieldName) {
+  void addFieldIndex(String collectionGroup, String fieldName) {
     indexManager.addFieldIndex(
-        new FieldIndex(collectionId)
+        new FieldIndex(collectionGroup)
             .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED));
   }
 
+  void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
+    indexManager.addCollectionGroupUpdateTime(collectionGroup, updateTime);
+  }
+
+  /** Creates a document and adds it to the RemoteDocumentCache. */
   private void addDoc(String path, String field, SnapshotVersion readTime) {
     MutableDocument doc = doc(path, 10, map(field, 2));
     persistence.getRemoteDocumentCache().add(doc, readTime);

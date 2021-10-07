@@ -191,6 +191,7 @@ class SQLiteSchema {
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createFieldIndex();
+      createCollectionGroupsTable();
     }
   }
 
@@ -384,6 +385,19 @@ class SQLiteSchema {
                   + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_name TEXT, "
                   + "PRIMARY KEY (index_id, array_value, directional_value, uid, document_name))");
+        });
+  }
+
+  private void createCollectionGroupsTable() {
+    ifTablesDontExist(
+        new String[] {"collection_group_update_times"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE collection_group_update_times ("
+                  + "collection_group TEXT, " // Name of the collection group.
+                  + "update_time_seconds INTEGER," // Time of last index backfill update
+                  + "update_time_nanos INTEGER,"
+                  + "PRIMARY KEY (collection_group))");
         });
   }
 

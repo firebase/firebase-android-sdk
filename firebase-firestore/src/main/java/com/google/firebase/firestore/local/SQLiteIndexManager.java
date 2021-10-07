@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -134,6 +135,31 @@ final class SQLiteIndexManager implements IndexManager {
         index.getVersion().getTimestamp().getNanoseconds());
   }
 
+  public List<String> getCollectionGroupsOrderByUpdateTime() {
+    List<String> orderedCollectionGroups = new ArrayList<>();
+    db.query(
+            "SELECT collection_group "
+                + "FROM collection_group_update_times "
+                + "ORDER BY update_time_seconds, update_time_nanos")
+        .forEach(
+            row -> {
+              orderedCollectionGroups.add(row.getString(0));
+            });
+    return orderedCollectionGroups;
+  }
+
+  public void addCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
+    hardAssert(collectionGroup.length() % 2 == 1, "Expected a collection path.");
+
+    db.execute(
+        "INSERT OR REPLACE INTO collection_group_update_times "
+            + "(collection_group, update_time_seconds, update_time_nanos) "
+            + "VALUES (?, ?, ?)",
+        collectionGroup,
+        updateTime.getSeconds(),
+        updateTime.getNanoseconds());
+  }
+
   @Override
   public void addIndexEntries(Document document) {
     DocumentKey documentKey = document.getKey();
@@ -189,12 +215,22 @@ final class SQLiteIndexManager implements IndexManager {
         directionalValues.add(field);
       }
 
+      if (arrayValues.isEmpty() && directionalValues.isEmpty()) {
+        continue;
+      }
+
+      // TODO(indexing): Compare with read time version, rather than document version
+      if (document.getVersion().compareTo(fieldIndex.getVersion()) > 0) {
+        fieldIndex.setVersion(document.getVersion());
+      }
+
       if (Logger.isDebugEnabled()) {
         Logger.debug(
             TAG, "Adding index values for document '%s' to index '%s'", documentKey, fieldIndex);
       }
 
       for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
+        ++entriesWritten;
         addSingleEntry(
             documentKey,
             fieldIndex.getIndexId(),
@@ -462,13 +498,11 @@ final class SQLiteIndexManager implements IndexManager {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
   }
 
-  // TODO(indexing): Add support for fetching last N updated entries.
-  public List<FieldIndex> getFieldIndexes(int sinceIndexId) {
+  public List<FieldIndex> getFieldIndexes() {
     List<FieldIndex> allIndexes = new ArrayList<>();
     db.query(
             "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
-                + "WHERE active = 1 AND index_id >= ?")
-        .binding(sinceIndexId)
+                + "WHERE active = 1")
         .forEach(
             row -> {
               try {

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.index.IndexEntry;
@@ -29,8 +30,10 @@ import com.google.firebase.firestore.util.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -39,23 +42,13 @@ public class IndexBackfiller {
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
-  /** The number of field indexes to process every time backfill() is called. */
-  private static final int MAX_FIELD_INDEXES_TO_PROCESS = 10;
-  /** The number of documents to query for a collection. */
-  private static final int DOCUMENTS_TO_QUERY_LIMIT = 100;
   /** The maximum number of entries to write each time backfill() is called. */
-  private static final int MAX_DOCUMENTS_TO_PROCESS = 1000;
+  private static final int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
 
   private final SQLitePersistence persistence;
   private final SQLiteIndexManager indexManager;
 
-  /** List of all FieldIndexes configured by the user */
-  private List<FieldIndex> fieldIndexQueue = new ArrayList<>();
-
-  /** The index id of the last field index loaded from the configuration table. */
-  private int lastFieldIndexId = 0;
-
-  private int maxFieldIndexesToProcess = MAX_FIELD_INDEXES_TO_PROCESS;
+  private int maxIndexEntriesToProcess = MAX_INDEX_ENTRIES_TO_PROCESS;
 
   public IndexBackfiller(SQLitePersistence sqLitePersistence) {
     this.persistence = sqLitePersistence;
@@ -133,42 +126,23 @@ public class IndexBackfiller {
   }
 
   public Results backfill(LocalStore localStore) {
-    // TODO(indexing): Handle field indexes that are removed by the user.
-    fetchNewFieldIndexes();
-
     int numIndexesWritten = writeIndexEntries(localStore);
+
+    // TODO(indexing): Handle field indexes that are removed by the user.
     int numIndexesRemoved = 0;
     return new Results(/* hasRun= */ true, numIndexesWritten, numIndexesRemoved);
-  }
-
-  private void fetchNewFieldIndexes() {
-    // TODO: Store fetched field indexes in memory in the SQLiteIndexManager and allow fetching
-    // new updates.
-    List<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(lastFieldIndexId + 1);
-
-    if (!fieldIndexes.isEmpty()) {
-      fieldIndexQueue.addAll(fieldIndexes);
-
-      // Since index configuration entries are sorted by index id, we can set the last fetched id to
-      // the id of the last field index in the array.
-      lastFieldIndexId = fieldIndexes.get(fieldIndexes.size() - 1).getIndexId();
-    }
   }
 
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
   private int writeIndexEntries(LocalStore localStore) {
     int numIndexesWritten = 0;
 
-    // TODO(indexing): Track the number of entries written and process more field indexes if
-    // we're under the maximum.
-    int lastArrayIndex = Math.min(maxFieldIndexesToProcess, fieldIndexQueue.size());
-    List<FieldIndex> fieldIndexesToProcess = fieldIndexQueue.subList(0, lastArrayIndex);
-
     // Create a map of each collection group to all the FieldIndexes on it.
     Map<String, List<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
 
-    for (FieldIndex fieldIndex : fieldIndexesToProcess) {
-
+    // TODO: Store fetched field indexes in memory in the SQLiteIndexManager and allow fetching
+    // new updates, instead of reading all of them from persistence again
+    for (FieldIndex fieldIndex : indexManager.getFieldIndexes()) {
       String collectionGroup = fieldIndex.getCollectionGroup();
 
       if (collectionToFieldIndexes.containsKey(collectionGroup)) {
@@ -179,12 +153,25 @@ public class IndexBackfiller {
       }
     }
 
-    for (String collectionGroup : collectionToFieldIndexes.keySet()) {
+    // Create list of collection groups ordered by update time (oldest first). Collection groups
+    // without an update time are processed first.
+    List<String> indexedCollectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    Set<String> newCollectionGroups = new HashSet<>(collectionToFieldIndexes.keySet());
+    newCollectionGroups.removeAll(indexedCollectionGroups);
+    List<String> orderedCollectionGroups = new ArrayList<>(newCollectionGroups);
+    orderedCollectionGroups.addAll(indexedCollectionGroups);
+
+    // Write index entries for all documents in each collection group until the cap is reached.
+    Set<FieldIndex> processedFieldIndexes = new HashSet<>();
+    for (String collectionGroup : orderedCollectionGroups) {
       Query query = new Query(ResourcePath.EMPTY, collectionGroup);
+      List<FieldIndex> matchingFieldIndexes = collectionToFieldIndexes.get(collectionGroup);
+      Preconditions.checkState(
+          matchingFieldIndexes != null, "Collection group should be mapped to field indexes.");
+      processedFieldIndexes.addAll(matchingFieldIndexes);
 
       // Use the lowest version of all field indexes as the base version.
-      SnapshotVersion lowestVersion =
-          getLowestSnapshotVersion(collectionToFieldIndexes.get(collectionGroup));
+      SnapshotVersion lowestVersion = getLowestSnapshotVersion(matchingFieldIndexes);
 
       // TODO(indexing): Make sure the docs matching the query are sorted by read time.
       // TODO(indexing): Use limit queries to allow incremental progress.
@@ -193,21 +180,18 @@ public class IndexBackfiller {
           localStore.getDocumentsMatchingQuery(query, lowestVersion);
       for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
         Document document = entry.getValue();
-        numIndexesWritten += indexManager.addIndexEntry(document, fieldIndexesToProcess);
+        numIndexesWritten += indexManager.addIndexEntry(document, matchingFieldIndexes);
       }
+
+      // Store when this collection group was last updated.
+      indexManager.addCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
     }
 
     // Update index configurations with the progress made.
     // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
     // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex fieldIndex : fieldIndexesToProcess) {
+    for (FieldIndex fieldIndex : processedFieldIndexes) {
       indexManager.updateFieldIndex(fieldIndex);
-    }
-
-    // Move the FieldIndexes to the back of the FieldIndexQueue if they've finished processing.
-    if (fieldIndexQueue.size() > maxFieldIndexesToProcess) {
-      fieldIndexQueue = fieldIndexQueue.subList(lastArrayIndex, fieldIndexQueue.size());
-      fieldIndexQueue.addAll(fieldIndexesToProcess);
     }
 
     return numIndexesWritten;
@@ -223,16 +207,6 @@ public class IndexBackfiller {
               : lowestVersion;
     }
     return lowestVersion;
-  }
-
-  @VisibleForTesting
-  void setMaxFieldIndexesToProcess(int newMax) {
-    maxFieldIndexesToProcess = newMax;
-  }
-
-  @VisibleForTesting
-  List<FieldIndex> getFieldIndexQueue() {
-    return fieldIndexQueue;
   }
 
   @VisibleForTesting
