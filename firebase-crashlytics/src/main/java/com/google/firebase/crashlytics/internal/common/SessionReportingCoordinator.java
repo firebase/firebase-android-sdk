@@ -360,10 +360,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
-  private ApplicationExitInfo findRelevantApplicationExitInfo(
+  private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
       String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
 
+    // The order of ApplicationExitInfos is latest first.
+    // Java For-each preserves the order.
     for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
       // ApplicationExitInfo did not occur during the session.
       if (applicationExitInfo.getTimestamp() < sessionStartTime) {
