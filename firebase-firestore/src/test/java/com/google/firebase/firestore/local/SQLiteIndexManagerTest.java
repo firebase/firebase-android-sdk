@@ -313,10 +313,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testCollectionGroupUpdateTimesAreOrderedByUpdateTime() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll3", new Timestamp(30, 0));
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll4", new Timestamp(30, 50));
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll1", new Timestamp(10, 0));
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll2", new Timestamp(20, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll3", new Timestamp(30, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll4", new Timestamp(30, 50));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(10, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll2", new Timestamp(20, 0));
     List<String> orderedCollectionGroups =
         sqLiteIndexManager.getCollectionGroupsOrderByUpdateTime();
     List<String> expected = Arrays.asList("coll1", "coll2", "coll3", "coll4");
@@ -326,14 +326,14 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testCollectionGroupUpdateTimesCanBeUpdated() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll1", new Timestamp(30, 0));
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll2", new Timestamp(30, 50));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(30, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll2", new Timestamp(30, 50));
     List<String> orderedCollectionGroups =
         sqLiteIndexManager.getCollectionGroupsOrderByUpdateTime();
     List<String> expected = Arrays.asList("coll1", "coll2");
     assertEquals(expected, orderedCollectionGroups);
 
-    sqLiteIndexManager.addCollectionGroupUpdateTime("coll1", new Timestamp(50, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(50, 0));
     orderedCollectionGroups = sqLiteIndexManager.getCollectionGroupsOrderByUpdateTime();
     expected = Arrays.asList("coll2", "coll1");
     assertEquals(expected, orderedCollectionGroups);

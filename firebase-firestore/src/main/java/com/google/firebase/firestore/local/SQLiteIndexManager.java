@@ -148,8 +148,10 @@ final class SQLiteIndexManager implements IndexManager {
     return orderedCollectionGroups;
   }
 
-  public void addCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
-    hardAssert(collectionGroup.length() % 2 == 1, "Expected a collection path.");
+  public void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
+    hardAssert(
+        ResourcePath.fromString(collectionGroup).length() % 2 == 1,
+        "Collection paths should have an odd number of segments");
 
     db.execute(
         "INSERT OR REPLACE INTO collection_group_update_times "

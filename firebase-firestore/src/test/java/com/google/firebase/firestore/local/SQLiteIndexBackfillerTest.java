@@ -80,23 +80,16 @@ public class SQLiteIndexBackfillerTest {
 
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
-  @Ignore
   public void testBackfillWritesToIndexConfigOnCompletion() {
-    // Check that index_config is updated to new version after each write.
-    addFieldIndex("coll1", "foo");
-    addDoc("coll1/docA", "foo", version(10, 20));
-    backfiller.backfill(localStore);
-    assertEquals(version(10, 20), indexManager.getFieldIndexes().get(0).getVersion());
-
-    addDoc("coll1/docA", "foo", version(20, 30));
-    backfiller.backfill(localStore);
-    assertEquals(version(2, 30), indexManager.getFieldIndexes().get(0).getVersion());
+    // Check that each field index is updated to the new version after each write.
   }
 
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
   @Ignore
-  public void testBackfillFetchesDocumentsWithSnapshotVersion() {}
+  public void testBackfillFetchesDocumentsWithSnapshotVersion() {
+    // Check that the backfiller fetches documents from the earliest common snapshot version
+  }
 
   @Test
   public void testBackfillWritesIndexEntries() {
@@ -158,6 +151,26 @@ public class SQLiteIndexBackfillerTest {
   }
 
   @Test
+  public void testBackfillWritesUntilCap() {
+    backfiller.setMaxIndexEntriesToProcess(3);
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "foo");
+    addDoc("coll1/docA", "foo", version(10, 0));
+    addDoc("coll1/docB", "foo", version(10, 0));
+    addDoc("coll2/docA", "foo", version(10, 0));
+    addDoc("coll2/docB", "foo", version(10, 0));
+
+    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    assertEquals(3, results.getEntriesAdded());
+
+    // Check that collection groups are updated even if the backfiller hits the write cap.
+    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    assertEquals(2, collectionGroups.size());
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
+  }
+
+  @Test
   public void testAddAndRemoveIndexEntry() {
     IndexEntry testEntry =
         new IndexEntry(
@@ -186,7 +199,7 @@ public class SQLiteIndexBackfillerTest {
   }
 
   void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
-    indexManager.addCollectionGroupUpdateTime(collectionGroup, updateTime);
+    indexManager.setCollectionGroupUpdateTime(collectionGroup, updateTime);
   }
 
   /** Creates a document and adds it to the RemoteDocumentCache. */

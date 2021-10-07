@@ -43,7 +43,7 @@ public class IndexBackfiller {
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
   /** The maximum number of entries to write each time backfill() is called. */
-  private static final int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
+  private static int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
 
   private final SQLitePersistence persistence;
   private final SQLiteIndexManager indexManager;
@@ -180,11 +180,16 @@ public class IndexBackfiller {
           localStore.getDocumentsMatchingQuery(query, lowestVersion);
       for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
         Document document = entry.getValue();
-        numIndexesWritten += indexManager.addIndexEntry(document, matchingFieldIndexes);
+        if (numIndexesWritten < maxIndexEntriesToProcess) {
+          numIndexesWritten += indexManager.addIndexEntry(document, matchingFieldIndexes);
+        } else {
+          indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
+          break;
+        }
       }
 
       // Store when this collection group was last updated.
-      indexManager.addCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
+      indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
     }
 
     // Update index configurations with the progress made.
@@ -207,6 +212,11 @@ public class IndexBackfiller {
               : lowestVersion;
     }
     return lowestVersion;
+  }
+
+  @VisibleForTesting
+  void setMaxIndexEntriesToProcess(int newMax) {
+    maxIndexEntriesToProcess = newMax;
   }
 
   @VisibleForTesting
