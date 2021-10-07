@@ -98,7 +98,7 @@ public class CrashlyticsControllerRobolectricTest {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
     List<ApplicationExitInfo> testApplicationExitInfo =
-        addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+        addAppExitInfoAndGetList(ApplicationExitInfo.REASON_ANR);
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(Collections.singletonList(sessionId));
@@ -163,7 +163,7 @@ public class CrashlyticsControllerRobolectricTest {
     return controller;
   }
 
-  private List<ApplicationExitInfo> addAppExitInfo(int reason) {
+  private List<ApplicationExitInfo> addAppExitInfoAndGetList(int reason) {
     ActivityManager activityManager =
         (ActivityManager)
             ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
