@@ -34,10 +34,10 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,6 +54,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public static SessionReportingCoordinator create(
       Context context,
@@ -340,16 +341,14 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .build();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   @VisibleForTesting
-  public static String convertInputStreamToString(@Nullable InputStream inputStream)
-      throws IOException, NullPointerException {
-    StringWriter stringWriter = new StringWriter();
-    int nextChar = 0;
-    while ((nextChar = inputStream.read()) != -1) {
-      stringWriter.append((char) nextChar);
+  public static String convertInputStreamToString(InputStream is) throws IOException {
+    ByteArrayOutputStream result = new ByteArrayOutputStream();
+    byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+    int length;
+    while ((length = is.read(buffer)) != -1) {
+      result.write(buffer, 0, length);
     }
-
-    return stringWriter.toString();
+    return result.toString();
   }
 }
