@@ -37,7 +37,9 @@ class GitClientTest {
         val executor = ShellExecutor(testGitDirectory.root)
         val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
         executor.execute("git init", handler)
-        executor.execute("git commit --allow-empty -m 'init'", handler)
+        executor.execute("git add .", handler)
+        executor.execute("git commit -m 'init'", handler)
+        executor.execute("git status", handler)
 
         executor.execute("git rev-parse --abbrev-ref HEAD") { branch.set(it[0]) }
         executor.execute("git rev-parse HEAD") { commit.set(it[0]) }
@@ -49,7 +51,6 @@ class GitClientTest {
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagReleaseVersion()
         executor.execute("git tag --points-at HEAD") {
-            println(it)
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains(branch.get()) })
         }
     }
