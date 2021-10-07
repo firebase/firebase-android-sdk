@@ -38,6 +38,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -345,13 +346,14 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @VisibleForTesting
-  public static String convertInputStreamToString(InputStream is) throws IOException {
-    ByteArrayOutputStream result = new ByteArrayOutputStream();
-    byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  public static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
     int length;
-    while ((length = is.read(buffer)) != -1) {
-      result.write(buffer, 0, length);
+    while ((length = inputStream.read(bytes)) != -1) {
+      byteArrayOutputStream.write(bytes, 0, length);
     }
-    return result.toString();
+    return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
   }
 }
