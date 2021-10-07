@@ -38,7 +38,7 @@ class GitClientTest {
         val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
         executor.execute("git init", handler)
         executor.execute("git add .", handler)
-        executor.execute("git commit -m 'init'", handler)
+        executor.execute("git commit -m init_commit", handler)
         executor.execute("git status", handler)
 
         executor.execute("git rev-parse --abbrev-ref HEAD") { branch.set(it[0]) }
