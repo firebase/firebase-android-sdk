@@ -609,7 +609,7 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+    if (true) {
       // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
       // sessionId to close.
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
