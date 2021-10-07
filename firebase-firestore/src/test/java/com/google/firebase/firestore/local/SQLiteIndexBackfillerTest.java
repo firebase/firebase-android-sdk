@@ -153,6 +153,7 @@ public class SQLiteIndexBackfillerTest {
   @Test
   public void testBackfillWritesUntilCap() {
     backfiller.setMaxIndexEntriesToProcess(3);
+    addCollectionGroup("coll1", new Timestamp(1, 0));
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
     addDoc("coll1/docA", "foo", version(10, 0));
@@ -163,11 +164,13 @@ public class SQLiteIndexBackfillerTest {
     IndexBackfiller.Results results = backfiller.backfill(localStore);
     assertEquals(3, results.getEntriesAdded());
 
-    // Check that collection groups are updated even if the backfiller hits the write cap.
+    // Check that collection groups are updated even if the backfiller hits the write cap. Since
+    // `coll1` was already in the table, `coll2` should be processed first, and thus appear first
+    // in the ordering.
     List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
     assertEquals(2, collectionGroups.size());
-    assertEquals("coll1", collectionGroups.get(0));
-    assertEquals("coll2", collectionGroups.get(1));
+    assertEquals("coll2", collectionGroups.get(0));
+    assertEquals("coll1", collectionGroups.get(1));
   }
 
   @Test
