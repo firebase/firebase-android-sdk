@@ -609,9 +609,7 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (true) {
-      // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
-      // sessionId to close.
+    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
     } else {
       Logger.getLogger().v("ANR feature disabled.");
