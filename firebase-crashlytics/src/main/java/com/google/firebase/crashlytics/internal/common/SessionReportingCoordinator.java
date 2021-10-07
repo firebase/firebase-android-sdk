@@ -139,30 +139,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       List<ApplicationExitInfo> applicationExitInfoList,
       LogFileManager logFileManagerForSession,
       UserMetadata userMetadataForSession) {
-    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
-    ApplicationExitInfo relevantApplicationExitInfo = null;
 
-    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
-      // ApplicationExitInfo did not occur during the session.
-      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
-        Logger.getLogger().v("No ApplicationExitInfo occurred during session: " + sessionId);
-        Logger.getLogger().v(applicationExitInfoList.toString());
-        return;
-      }
-
-      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
-      // all ApplicationExitInfos that fall within the session.
-      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
-        Logger.getLogger().v("ApplicationExitInfo not of type ANR. Session: " + sessionId);
-        Logger.getLogger().v(applicationExitInfoList.toString());
-        continue;
-      }
-
-      relevantApplicationExitInfo = applicationExitInfo;
-      break;
-    }
+    ApplicationExitInfo relevantApplicationExitInfo =
+        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList);
 
     if (relevantApplicationExitInfo == null) {
+      Logger.getLogger().v("No relevant ApplicationExitInfo occurred during session: " + sessionId);
       return;
     }
 
@@ -375,5 +357,28 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
       return stringBuilder.toString();
     }
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private ApplicationExitInfo findRelevantApplicationExitInfo(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+
+    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
+      // ApplicationExitInfo did not occur during the session.
+      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+        return null;
+      }
+
+      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
+      // all ApplicationExitInfos that fall within the session.
+      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+        continue;
+      }
+
+      return applicationExitInfo;
+    }
+
+    return null;
   }
 }
