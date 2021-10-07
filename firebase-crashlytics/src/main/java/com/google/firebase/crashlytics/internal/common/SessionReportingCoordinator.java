@@ -319,8 +319,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       ApplicationExitInfo applicationExitInfo) {
     String traceFile = null;
     try {
-      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
-    } catch (IOException | NullPointerException e) {
+      InputStream traceInputStream = applicationExitInfo.getTraceInputStream();
+      if (traceInputStream != null) {
+        traceFile = convertInputStreamToString(traceInputStream);
+      }
+    } catch (IOException e) {
       Logger.getLogger()
           .w(
               "Could not get input trace in application exit info: "
