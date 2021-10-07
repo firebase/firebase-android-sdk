@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 
 class TaskUtils {
@@ -34,5 +35,30 @@ class TaskUtils {
           new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
     }
     return task;
+  }
+
+  static void safeSetTaskException(TaskCompletionSource taskCompletionSource, Exception e) {
+    if (taskCompletionSource != null && !taskCompletionSource.getTask().isComplete()) {
+      taskCompletionSource.setException(e);
+    }
+  }
+
+  static void safeSetTaskException(UpdateTaskImpl task, Exception e) {
+    if (task != null && !task.isComplete()) {
+      task.setException(e);
+    }
+  }
+
+  static <TResult> void safeSetTaskResult(
+      TaskCompletionSource taskCompletionSource, TResult result) {
+    if (taskCompletionSource != null && !taskCompletionSource.getTask().isComplete()) {
+      taskCompletionSource.setResult(result);
+    }
+  }
+
+  static void safeSetTaskResult(UpdateTaskImpl task) {
+    if (task != null && !task.isComplete()) {
+      task.setResult();
+    }
   }
 }

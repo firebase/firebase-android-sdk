@@ -15,6 +15,8 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -28,6 +30,8 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +52,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
 
   private AppDistributionReleaseInternal cachedNewRelease;
+  private AlertDialog updateDialog;
   private final SignInStorage signInStorage;
 
   /** Constructor for FirebaseAppDistribution */
@@ -305,8 +310,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
     Context context = firebaseApp.getApplicationContext();
-    AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
-    alertDialog.setTitle(context.getString(R.string.update_dialog_title));
+    updateDialog = new AlertDialog.Builder(currentActivity).create();
+    updateDialog.setTitle(context.getString(R.string.update_dialog_title));
 
     StringBuilder message =
         new StringBuilder(
@@ -318,8 +323,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
     }
 
-    alertDialog.setMessage(message);
-    alertDialog.setButton(
+    updateDialog.setMessage(message);
+    updateDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
         (dialogInterface, i) -> {
@@ -333,7 +338,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           }
         });
 
-    alertDialog.setButton(
+    updateDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
@@ -347,12 +352,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
                     .build());
             setCachedUpdateIfNewReleaseCompletionError(
                 new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.UPDATE_CANCELED,
-                    FirebaseAppDistributionException.Status.INSTALLATION_CANCELED));
+                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
           }
         });
 
-    alertDialog.show();
+    updateDialog.show();
     synchronized (updateTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
@@ -364,9 +368,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private void setCachedUpdateIfNewReleaseCompletionError(FirebaseAppDistributionException e) {
     synchronized (updateTaskLock) {
-      if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
-        cachedUpdateIfNewReleaseTask.setException(e);
-      }
+      safeSetTaskException(cachedUpdateIfNewReleaseTask, e);
+      dismissUpdateDialog();
     }
   }
 
@@ -387,7 +390,14 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private void setCachedUpdateIfNewReleaseResult() {
     synchronized (updateTaskLock) {
-      cachedUpdateIfNewReleaseTask.setResult();
+      safeSetTaskResult(cachedUpdateIfNewReleaseTask);
+      dismissUpdateDialog();
+    }
+  }
+
+  private void dismissUpdateDialog() {
+    if (updateDialog != null) {
+      updateDialog.dismiss();
     }
   }
 }
