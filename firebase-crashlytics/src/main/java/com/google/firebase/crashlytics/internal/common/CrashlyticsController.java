@@ -867,9 +867,9 @@ class CrashlyticsController {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       ActivityManager activityManager =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      // Gets the latest app exit info.
+      // Gets all the available app exit infos.
       List<ApplicationExitInfo> applicationExitInfoList =
-          activityManager.getHistoricalProcessExitReasons(null, 0, 1);
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
 
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
