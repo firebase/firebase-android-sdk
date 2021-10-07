@@ -14,23 +14,17 @@
 
 package com.google.firebase.appdistribution;
 
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import static com.google.firebase.appdistribution.internal.ReleaseIdentificationUtils.calculateApkHash;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.io.BufferedOutputStream;
@@ -52,27 +46,25 @@ class UpdateApkClient {
 
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor downloadExecutor;
-  private TaskCompletionSource<Void> installTaskCompletionSource;
   private final FirebaseApp firebaseApp;
+  private final InstallApkClient installApkClient;
 
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
 
-  private ReleaseIdentifierStorage releaseIdentifierStorage;
+  private final ReleaseIdentifierStorage releaseIdentifierStorage;
 
-  @GuardedBy("activityLock")
-  private Activity currentActivity;
-
-  private final Object activityLock = new Object();
   private final Object updateTaskLock = new Object();
 
-  public UpdateApkClient(@NonNull FirebaseApp firebaseApp) {
-    this.downloadExecutor = Executors.newSingleThreadExecutor();
-    this.firebaseApp = firebaseApp;
+  public UpdateApkClient(
+      @NonNull FirebaseApp firebaseApp, @NonNull InstallApkClient installApkClient) {
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
     this.appDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
+    this.downloadExecutor = Executors.newSingleThreadExecutor();
+    this.firebaseApp = firebaseApp;
+    this.installApkClient = installApkClient;
   }
 
   public synchronized UpdateTaskImpl updateApk(
@@ -91,22 +83,32 @@ class UpdateApkClient {
         .addOnSuccessListener(
             downloadExecutor,
             file ->
-                install(file.getPath())
+                installApkClient
+                    .installApk(file.getPath())
                     .addOnFailureListener(
                         e -> {
                           LogWrapper.getInstance().e(TAG + "Newest release failed to install.", e);
-                          postInstallationFailure(
-                              e, file.length(), showDownloadNotificationManager);
+                          postUpdateProgress(
+                              file.length(),
+                              file.length(),
+                              UpdateStatus.INSTALL_FAILED,
+                              showDownloadNotificationManager);
                           setUpdateTaskCompletionErrorWithDefault(
                               e,
                               new FirebaseAppDistributionException(
-                                  Constants.ErrorMessages.NETWORK_ERROR,
+                                  Constants.ErrorMessages.APK_INSTALLATION_FAILED,
                                   FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+                        })
+                    .addOnSuccessListener(
+                        downloadExecutor,
+                        unused -> {
+                          synchronized (updateTaskLock) {
+                            safeSetTaskResult(cachedUpdateTask);
+                          }
                         }))
         .addOnFailureListener(
             downloadExecutor,
             e -> {
-              LogWrapper.getInstance().e(TAG + "Newest release failed to download.", e);
               LogWrapper.getInstance()
                   .e(TAG + "Download or Installation failure for newest release.", e);
               setUpdateTaskCompletionErrorWithDefault(
@@ -298,41 +300,6 @@ class UpdateApkClient {
     }
   }
 
-  private Task<Void> install(String path) {
-    Activity currentActivity = getCurrentActivity();
-    if (currentActivity == null) {
-      return Tasks.forException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.APP_BACKGROUNDED,
-              FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-    }
-    Intent intent = new Intent(currentActivity, InstallActivity.class);
-    intent.putExtra("INSTALL_PATH", path);
-    CancellationTokenSource installCancellationTokenSource = new CancellationTokenSource();
-    this.installTaskCompletionSource =
-        new TaskCompletionSource<>(installCancellationTokenSource.getToken());
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    currentActivity.startActivity(intent);
-    LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
-    return installTaskCompletionSource.getTask();
-  }
-
-  void setInstallationResult(int resultCode) {
-    if (resultCode == Activity.RESULT_OK) {
-      safeSetTaskResult(installTaskCompletionSource, null);
-
-      synchronized (updateTaskLock) {
-        safeSetTaskResult(cachedUpdateTask);
-      }
-    } else {
-      safeSetTaskException(
-          installTaskCompletionSource,
-          new FirebaseAppDistributionException(
-              "Installation failed or cancelled",
-              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-    }
-  }
-
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
     synchronized (updateTaskLock) {
       safeSetTaskException(cachedUpdateTask, e);
@@ -364,31 +331,6 @@ class UpdateApkClient {
     }
     if (showDownloadNotificationManager) {
       appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
-    }
-  }
-
-  private void postInstallationFailure(
-      Exception e, long fileLength, boolean showDownloadNotificationManager) {
-    if (e instanceof FirebaseAppDistributionException
-        && ((FirebaseAppDistributionException) e).getErrorCode() == Status.INSTALLATION_CANCELED) {
-      postUpdateProgress(
-          fileLength, fileLength, UpdateStatus.INSTALL_CANCELED, showDownloadNotificationManager);
-    } else {
-      postUpdateProgress(
-          fileLength, fileLength, UpdateStatus.INSTALL_FAILED, showDownloadNotificationManager);
-    }
-  }
-
-  @Nullable
-  Activity getCurrentActivity() {
-    synchronized (activityLock) {
-      return this.currentActivity;
-    }
-  }
-
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (activityLock) {
-      this.currentActivity = activity;
     }
   }
 }

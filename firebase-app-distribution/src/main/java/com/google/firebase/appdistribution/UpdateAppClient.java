@@ -30,6 +30,7 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 public class UpdateAppClient {
 
   private final UpdateApkClient updateApkClient;
+  private final InstallApkClient installApkClient;
   private static final String TAG = "UpdateAppClient";
 
   @GuardedBy("activityLock")
@@ -45,7 +46,8 @@ public class UpdateAppClient {
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
-    this.updateApkClient = new UpdateApkClient(firebaseApp);
+    this.installApkClient = new InstallApkClient();
+    this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);
   }
 
   @NonNull
@@ -116,7 +118,7 @@ public class UpdateAppClient {
   }
 
   void setInstallationResult(int resultCode) {
-    this.updateApkClient.setInstallationResult(resultCode);
+    this.installApkClient.setInstallationResult(resultCode);
   }
 
   @Nullable
@@ -129,7 +131,7 @@ public class UpdateAppClient {
   void setCurrentActivity(@Nullable Activity activity) {
     synchronized (activityLock) {
       this.currentActivity = activity;
-      this.updateApkClient.setCurrentActivity(activity);
+      this.installApkClient.setCurrentActivity(activity);
     }
   }
 
