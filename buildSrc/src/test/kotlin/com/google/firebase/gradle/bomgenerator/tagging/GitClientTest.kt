@@ -34,7 +34,7 @@ class GitClientTest {
     @Before
     fun setup() {
         testGitDirectory.newFile("hello.txt").writeText("hello git!")
-        val executor = ShellExecutor(testGitDirectory.root)
+        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
         executor.execute("git init", handler)
         executor.execute("git add .", handler)
@@ -47,7 +47,7 @@ class GitClientTest {
 
     @Test
     fun `tag M release version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root)
+        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagReleaseVersion()
         executor.execute("git tag --points-at HEAD") {
@@ -57,7 +57,7 @@ class GitClientTest {
 
     @Test
     fun `tag bom version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root)
+        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagBomVersion("1.2.3")
         executor.execute("git tag --points-at HEAD") {
@@ -67,7 +67,7 @@ class GitClientTest {
 
     @Test
     fun `tag product version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root)
+        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagProductVersion("firebase-database", "1.2.3")
         executor.execute("git tag --points-at HEAD") {
@@ -79,9 +79,9 @@ class GitClientTest {
     fun `tags are pushed to both private and public repositories`() {
         Assume.assumeTrue(System.getenv().containsKey("FIREBASE_CI"))
 
-        val mockExecutor = object : ShellExecutor(testGitDirectory.root) {
+        val mockExecutor = object : ShellExecutor(testGitDirectory.root, System.out::println) {
             override fun execute(command: String, consumer: Consumer<List<String>>) {
-                consumer.accept(listOf("Executed: $command"))
+                consumer.accept(listOf("Received command: $command"))
             }
         }
 

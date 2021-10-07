@@ -332,9 +332,8 @@ public class BomGeneratorTask extends DefaultTask {
 
     String mRelease = System.getenv("PULL_BASE_REF");
     String rcCommit = System.getenv("PULL_BASE_SHA");
-    GitClient git =
-        new GitClient(
-            mRelease, rcCommit, new ShellExecutor(Paths.get(".").toFile()), logger::lifecycle);
+    ShellExecutor executor = new ShellExecutor(Paths.get(".").toFile(), logger::lifecycle);
+    GitClient git = new GitClient(mRelease, rcCommit, executor, logger::lifecycle);
     git.tagReleaseVersion();
     git.tagBomVersion(bomVersion);
     firebaseDependencies.stream()

@@ -26,16 +26,20 @@ import org.gradle.api.GradleException;
 public class ShellExecutor {
   private final Runtime runtime;
   private final File cwd;
+  private final Consumer<String> logger;
 
-  public ShellExecutor(File cwd) {
+  public ShellExecutor(File cwd, Consumer<String> logger) {
     this.runtime = Runtime.getRuntime();
     this.cwd = cwd;
+    this.logger = logger;
   }
 
   public void execute(String command, Consumer<List<String>> consumer) {
     try {
+      logger.accept("[shell] Executing: '" + command + "' at: " + cwd.getAbsolutePath());
       Process p = runtime.exec(command, null, cwd);
-      p.waitFor();
+      int code = p.waitFor();
+      logger.accept("[shell] Command: '" + command + "' returned with code: " + code);
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       consumer.accept(CharStreams.readLines(reader));
     } catch (IOException e) {
