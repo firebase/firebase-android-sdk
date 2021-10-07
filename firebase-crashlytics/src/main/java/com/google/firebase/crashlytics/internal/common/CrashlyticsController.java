@@ -880,11 +880,8 @@ class CrashlyticsController {
             new LogFileManager(context, logFileDirectoryProvider, sessionId);
         final UserMetadata relevantUserMetadata = new UserMetadata();
         relevantUserMetadata.setCustomKeys(new MetaDataStore(getFilesDir()).readKeyData(sessionId));
-        reportingCoordinator.persistAppExitInfoEvent(
-            sessionId,
-            applicationExitInfoList.get(0),
-            relevantSessionLogManager,
-            relevantUserMetadata);
+        reportingCoordinator.persistRelevantAppExitInfoEvent(
+            sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {
         Logger.getLogger().v("No ApplicationExitInfo available. Session: " + sessionId);
       }

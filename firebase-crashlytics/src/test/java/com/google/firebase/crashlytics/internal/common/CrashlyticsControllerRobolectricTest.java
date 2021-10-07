@@ -40,6 +40,7 @@ import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import java.io.File;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -88,7 +89,7 @@ public class CrashlyticsControllerRobolectricTest {
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
     verify(mockSessionReportingCoordinator, never())
-        .persistAppExitInfoEvent(
+        .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
@@ -96,14 +97,15 @@ public class CrashlyticsControllerRobolectricTest {
   public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
-    ApplicationExitInfo testApplicationExitInfo = addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfo =
+        addAppExitInfo(ApplicationExitInfo.REASON_ANR);
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(Collections.singletonList(sessionId));
     mockSettingsData(true);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator)
-        .persistAppExitInfoEvent(
+        .persistRelevantAppExitInfoEvent(
             eq(sessionId),
             eq(testApplicationExitInfo),
             any(LogFileManager.class),
@@ -120,7 +122,7 @@ public class CrashlyticsControllerRobolectricTest {
     mockSettingsData(false);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator, never())
-        .persistAppExitInfoEvent(
+        .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
@@ -161,7 +163,7 @@ public class CrashlyticsControllerRobolectricTest {
     return controller;
   }
 
-  private ApplicationExitInfo addAppExitInfo(int reason) {
+  private List<ApplicationExitInfo> addAppExitInfo(int reason) {
     ActivityManager activityManager =
         (ActivityManager)
             ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
@@ -170,6 +172,6 @@ public class CrashlyticsControllerRobolectricTest {
     shadowOf(activityManager)
         .addApplicationExitInfo(
             runningAppProcessInfo.processName, runningAppProcessInfo.pid, reason, 1);
-    return activityManager.getHistoricalProcessExitReasons(null, 0, 0).get(0);
+    return activityManager.getHistoricalProcessExitReasons(null, 0, 0);
   }
 }

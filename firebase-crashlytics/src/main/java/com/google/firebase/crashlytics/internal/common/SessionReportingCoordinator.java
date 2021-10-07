@@ -134,28 +134,40 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
-  public void persistAppExitInfoEvent(
+  public void persistRelevantAppExitInfoEvent(
       String sessionId,
-      ApplicationExitInfo applicationExitInfo,
+      List<ApplicationExitInfo> applicationExitInfoList,
       LogFileManager logFileManagerForSession,
       UserMetadata userMetadataForSession) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
-    // ApplicationExitInfo did not occur during the session.
-    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
-      Logger.getLogger().v("Latest ApplicationExitInfo did not occur during session: " + sessionId);
-      Logger.getLogger().v(applicationExitInfo.toString());
-      return;
+    ApplicationExitInfo relevantApplicationExitInfo = null;
+
+    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
+      // ApplicationExitInfo did not occur during the session.
+      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+        Logger.getLogger().v("No ApplicationExitInfo occurred during session: " + sessionId);
+        Logger.getLogger().v(applicationExitInfoList.toString());
+        return;
+      }
+
+      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
+      // all ApplicationExitInfos that fall within the session.
+      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+        Logger.getLogger().v("ApplicationExitInfo not of type ANR. Session: " + sessionId);
+        Logger.getLogger().v(applicationExitInfoList.toString());
+        continue;
+      }
+
+      relevantApplicationExitInfo = applicationExitInfo;
+      break;
     }
 
-    // Currently we only persist these if it is an ANR.
-    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
-      Logger.getLogger().v("Latest ApplicationExitInfo not of type ANR. Session: " + sessionId);
-      Logger.getLogger().v(applicationExitInfo.toString());
+    if (relevantApplicationExitInfo == null) {
       return;
     }
 
     final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
     reportPersistence.persistEvent(
