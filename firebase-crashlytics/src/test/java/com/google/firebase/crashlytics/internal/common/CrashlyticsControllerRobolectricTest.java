@@ -97,8 +97,9 @@ public class CrashlyticsControllerRobolectricTest {
   public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
-    List<ApplicationExitInfo> testApplicationExitInfo =
-        addAppExitInfoAndGetList(ApplicationExitInfo.REASON_ANR);
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
+    List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(Collections.singletonList(sessionId));
@@ -163,7 +164,7 @@ public class CrashlyticsControllerRobolectricTest {
     return controller;
   }
 
-  private List<ApplicationExitInfo> addAppExitInfoAndGetList(int reason) {
+  private void addAppExitInfo(int reason) {
     ActivityManager activityManager =
         (ActivityManager)
             ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
@@ -172,6 +173,12 @@ public class CrashlyticsControllerRobolectricTest {
     shadowOf(activityManager)
         .addApplicationExitInfo(
             runningAppProcessInfo.processName, runningAppProcessInfo.pid, reason, 1);
+  }
+
+  private List<ApplicationExitInfo> getApplicationExitInfoList() {
+    ActivityManager activityManager =
+        (ActivityManager)
+            ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
     return activityManager.getHistoricalProcessExitReasons(null, 0, 0);
   }
 }
