@@ -56,8 +56,6 @@ class InstallApkClient {
           && promptInstallOnActivityResume
           && cachedInstallApkPath != null
           && !cachedInstallApkPath.isEmpty()) {
-        promptInstallOnActivityResume = false;
-        cachedInstallApkPath = "";
         startInstallActivity(cachedInstallApkPath, activity);
       } else {
         safeSetTaskException(
@@ -79,8 +77,6 @@ class InstallApkClient {
         cachedInstallApkPath = path;
       } else {
         // only start the install activity if current Activity is in the foreground
-        promptInstallOnActivityResume = false;
-        cachedInstallApkPath = "";
         startInstallActivity(path, currentActivity);
       }
 
@@ -93,6 +89,10 @@ class InstallApkClient {
   }
 
   private void startInstallActivity(String path, Activity currentActivity) {
+    synchronized (installTaskLock) {
+      promptInstallOnActivityResume = false;
+      cachedInstallApkPath = "";
+    }
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
