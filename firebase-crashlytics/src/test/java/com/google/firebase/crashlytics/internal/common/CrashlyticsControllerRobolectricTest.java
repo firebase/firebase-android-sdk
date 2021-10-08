@@ -97,6 +97,8 @@ public class CrashlyticsControllerRobolectricTest {
   public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
+    // Adds multiple AppExitInfos to confirm that Crashlytics loops through
+    // them rather than just looking at the first.
     addAppExitInfo(ApplicationExitInfo.REASON_ANR);
     addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
     List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
