@@ -233,7 +233,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   @Override
   public boolean isStarted() {
     workerQueue.verifyIsCurrentThread();
-    return state == State.Starting || state == State.Open || state == State.Backoff;
+    return state == State.Starting
+        || state == State.Open
+        || state == State.Healthy
+        || state == State.Backoff;
   }
 
   @Override
