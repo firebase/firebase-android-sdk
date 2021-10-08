@@ -49,6 +49,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -85,12 +90,16 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @SuppressWarnings("unused") // Used in Javadoc.
   public static final int MAX_TRACE_NAME_LENGTH = Constants.MAX_TRACE_ID_LENGTH;
 
+  private static final ExecutorService executorService = new ThreadPoolExecutor(
+          0,
+          1,
+          /* keepAliveTime= */ 10,
+          TimeUnit.SECONDS,
+          new LinkedBlockingQueue<>(1));
+
   private final Map<String, String> mCustomAttributes = new ConcurrentHashMap<>();
 
   private final ConfigResolver configResolver;
-  // Extracting the metadata from the application context is expensive and so we only extract it
-  // once during initialization and cache it.
-  private final ImmutableBundle mMetadataBundle;
 
   /** Valid HttpMethods for manual network APIs */
   @StringDef({
@@ -174,7 +183,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
-      this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
 
@@ -182,22 +190,28 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
     Context appContext = firebaseApp.getApplicationContext();
-    // TODO(b/110178816): Explore moving off of main thread.
-    mMetadataBundle = extractMetadata(appContext);
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
-    this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
+
+    executorService.execute(() -> syncInit(gaugeManager, appContext));
+  }
+
+  private void syncInit(GaugeManager gaugeManager, Context appContext) {
+    // TODO(b/110178816): Explore moving off of main thread.
+    // Extracting the metadata from the application context is expensive and so we only extract it
+    // once during initialization.
+    this.configResolver.setMetadataBundle(extractMetadata(appContext));
     gaugeManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
-          String.format(
-              "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
-              ConsoleUrlGenerator.generateDashboardUrl(
-                  firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
+              String.format(
+                      "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
+                      ConsoleUrlGenerator.generateDashboardUrl(
+                              firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
   }
 
