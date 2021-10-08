@@ -388,6 +388,8 @@ class SQLiteSchema {
         });
   }
 
+  // TODO(indexing): Consolidate this table with the `collection_parents` table and figure out
+  // GC strategy.
   private void createCollectionGroupsTable() {
     ifTablesDontExist(
         new String[] {"collection_group_update_times"},

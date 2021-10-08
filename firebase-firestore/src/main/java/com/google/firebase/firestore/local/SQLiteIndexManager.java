@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Bound;
@@ -35,15 +36,19 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Preconditions;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
@@ -62,6 +67,13 @@ final class SQLiteIndexManager implements IndexManager {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+
+  // A map of each collection group to all the FieldIndexes on it. Used for index backfilling.
+  Map<String, List<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
+
+  // List of collection groups ordered by oldest update time. A linked list is used to remove from
+  // the head of the array more efficiently.
+  List<String> orderedCollectionGroups = new LinkedList<>();
 
   SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
@@ -133,6 +145,68 @@ final class SQLiteIndexManager implements IndexManager {
         true,
         index.getVersion().getTimestamp().getSeconds(),
         index.getVersion().getTimestamp().getNanoseconds());
+  }
+
+  /**
+   * Loads all field indexes stored in persistence, groups them by collection, and creates an
+   * ordering based on update time.
+   */
+  public void loadFieldIndexes() {
+    collectionToFieldIndexes.clear();
+
+    // TODO(indexing): Allow fetching new updates, instead of reading all of them from persistence
+    // each time.
+    for (FieldIndex fieldIndex : getFieldIndexes()) {
+      String collectionGroup = fieldIndex.getCollectionGroup();
+
+      if (collectionToFieldIndexes.containsKey(collectionGroup)) {
+        collectionToFieldIndexes.get(collectionGroup).add(fieldIndex);
+      } else {
+        collectionToFieldIndexes.put(
+            collectionGroup, new ArrayList<>(Collections.singletonList(fieldIndex)));
+      }
+    }
+
+    updateCollectionGroupOrdering();
+  }
+
+  /**
+   * Update the Index Manager's list of collection groups ordered by update time.
+   *
+   * <p>New collection groups that haven't been indexed are prioritized ahead of collection groups
+   * that have been indexed already.
+   */
+  private void updateCollectionGroupOrdering() {
+    orderedCollectionGroups.clear();
+
+    // Check which collection groups have not been indexed by intersecting the collection groups in
+    // memory with the collection groups in persistence.
+    List<String> indexedCollectionGroups = getCollectionGroupsOrderByUpdateTime();
+    Set<String> newCollectionGroups = new HashSet<>(collectionToFieldIndexes.keySet());
+    newCollectionGroups.removeAll(indexedCollectionGroups);
+
+    // Add the new collection groups first, followed by the already indexed collection groups.
+    orderedCollectionGroups.addAll(newCollectionGroups);
+    orderedCollectionGroups.addAll(indexedCollectionGroups);
+  }
+
+  /**
+   * Returns a pair containing the next collection group to update, along with its corresponding
+   * field indexes.
+   *
+   * <p>The field indexes must first be loaded into memory by calling `loadFieldIndexes()`.
+   */
+  public @Nullable Pair<String, List<FieldIndex>> getNextCollectionGroupToUpdate() {
+    if (orderedCollectionGroups.isEmpty()) {
+      return null;
+    }
+
+    String nextCollectionGroup = orderedCollectionGroups.get(0);
+    orderedCollectionGroups.remove(0);
+    List<FieldIndex> matchingFieldIndexes = collectionToFieldIndexes.get(nextCollectionGroup);
+    Preconditions.checkNotNull(
+        matchingFieldIndexes, "Collection group should be mapped to field indexes.");
+    return new Pair<>(nextCollectionGroup, matchingFieldIndexes);
   }
 
   public List<String> getCollectionGroupsOrderByUpdateTime() {

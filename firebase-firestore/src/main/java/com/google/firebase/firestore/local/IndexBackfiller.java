@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -27,13 +28,8 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Preconditions;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -126,83 +122,81 @@ public class IndexBackfiller {
   }
 
   public Results backfill(LocalStore localStore) {
-    int numIndexesWritten = writeIndexEntries(localStore);
-
     // TODO(indexing): Handle field indexes that are removed by the user.
-    int numIndexesRemoved = 0;
-    return new Results(/* hasRun= */ true, numIndexesWritten, numIndexesRemoved);
+    return new Results(
+        /* hasRun= */ true,
+        /* numIndexesWritten= */ writeIndexEntries(localStore),
+        /* numIndexesRemoved= */ 0);
   }
 
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
   private int writeIndexEntries(LocalStore localStore) {
     int numIndexesWritten = 0;
+    indexManager.loadFieldIndexes();
 
-    // Create a map of each collection group to all the FieldIndexes on it.
-    Map<String, List<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
+    while (numIndexesWritten < maxIndexEntriesToProcess) {
+      Pair<String, List<FieldIndex>> collectionGroupPair =
+          indexManager.getNextCollectionGroupToUpdate();
+      if (collectionGroupPair == null) {
+        break;
+      }
+      String collectionGroup = collectionGroupPair.first;
+      List<FieldIndex> matchingFieldIndexes = collectionGroupPair.second;
+      int entriesRemainingUnderCap = maxIndexEntriesToProcess - numIndexesWritten;
+      numIndexesWritten +=
+          writeIndexEntriesForCollectionGroup(
+              collectionGroup, matchingFieldIndexes, entriesRemainingUnderCap, localStore);
+    }
 
-    // TODO: Store fetched field indexes in memory in the SQLiteIndexManager and allow fetching
-    // new updates, instead of reading all of them from persistence again
-    for (FieldIndex fieldIndex : indexManager.getFieldIndexes()) {
-      String collectionGroup = fieldIndex.getCollectionGroup();
+    return numIndexesWritten;
+  }
 
-      if (collectionToFieldIndexes.containsKey(collectionGroup)) {
-        collectionToFieldIndexes.get(collectionGroup).add(fieldIndex);
+  /**
+   * Writes the index entries for matching field indexes for a provided collection group.
+   *
+   * @return The number of index entries written for the collection group.
+   */
+  private int writeIndexEntriesForCollectionGroup(
+      String collectionGroup,
+      List<FieldIndex> fieldIndexes,
+      int numEntriesRemainingUnderCap,
+      LocalStore localStore) {
+    int numIndexesWritten = 0;
+    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
+    Preconditions.checkState(
+        fieldIndexes != null, "Collection group should be mapped to field indexes.");
+
+    // Use the earliest updateTime of all field indexes as the base updateTime.
+    SnapshotVersion earliestUpdateTime = getEarliestUpdateTime(fieldIndexes);
+
+    // TODO(indexing): Make sure the docs matching the query are sorted by read time.
+    // TODO(indexing): Use limit queries to allow incremental progress.
+    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
+    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
+        localStore.getDocumentsMatchingQuery(query, earliestUpdateTime);
+    for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
+      Document document = entry.getValue();
+      if (numIndexesWritten < numEntriesRemainingUnderCap) {
+        numIndexesWritten += indexManager.addIndexEntry(document, fieldIndexes);
       } else {
-        collectionToFieldIndexes.put(
-            collectionGroup, new ArrayList<>(Collections.singletonList(fieldIndex)));
+        break;
       }
     }
 
-    // Create list of collection groups ordered by update time (oldest first). Collection groups
-    // without an update time are processed first.
-    List<String> indexedCollectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
-    Set<String> newCollectionGroups = new HashSet<>(collectionToFieldIndexes.keySet());
-    newCollectionGroups.removeAll(indexedCollectionGroups);
-    List<String> orderedCollectionGroups = new ArrayList<>(newCollectionGroups);
-    orderedCollectionGroups.addAll(indexedCollectionGroups);
+    // Store when this collection group was last updated.
+    // TODO(indexing): Store progress with a counter rather than a timestamp.
+    indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
 
-    // Write index entries for all documents in each collection group until the cap is reached.
-    Set<FieldIndex> processedFieldIndexes = new HashSet<>();
-    for (String collectionGroup : orderedCollectionGroups) {
-      Query query = new Query(ResourcePath.EMPTY, collectionGroup);
-      List<FieldIndex> matchingFieldIndexes = collectionToFieldIndexes.get(collectionGroup);
-      Preconditions.checkState(
-          matchingFieldIndexes != null, "Collection group should be mapped to field indexes.");
-      processedFieldIndexes.addAll(matchingFieldIndexes);
-
-      // Use the lowest version of all field indexes as the base version.
-      SnapshotVersion lowestVersion = getLowestSnapshotVersion(matchingFieldIndexes);
-
-      // TODO(indexing): Make sure the docs matching the query are sorted by read time.
-      // TODO(indexing): Use limit queries to allow incremental progress.
-      // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
-      ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-          localStore.getDocumentsMatchingQuery(query, lowestVersion);
-      for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
-        Document document = entry.getValue();
-        if (numIndexesWritten < maxIndexEntriesToProcess) {
-          numIndexesWritten += indexManager.addIndexEntry(document, matchingFieldIndexes);
-        } else {
-          indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
-          break;
-        }
-      }
-
-      // Store when this collection group was last updated.
-      indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
-    }
-
-    // Update index configurations with the progress made.
     // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
     // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex fieldIndex : processedFieldIndexes) {
+    for (FieldIndex fieldIndex : fieldIndexes) {
       indexManager.updateFieldIndex(fieldIndex);
     }
 
     return numIndexesWritten;
   }
 
-  private SnapshotVersion getLowestSnapshotVersion(List<FieldIndex> fieldIndexes) {
+  private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
     Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
     SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
     for (FieldIndex fieldIndex : fieldIndexes) {
