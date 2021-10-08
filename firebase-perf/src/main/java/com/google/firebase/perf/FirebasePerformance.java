@@ -91,6 +91,9 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Map<String, String> mCustomAttributes = new ConcurrentHashMap<>();
 
   private final ConfigResolver configResolver;
+  // Extracting the metadata from the application context is expensive and so we only extract it
+  // once during initialization and cache it.
+  private final ImmutableBundle mMetadataBundle;
 
   /** Valid HttpMethods for manual network APIs */
   @StringDef({
@@ -135,7 +138,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // This is set to true if performance monitoring data collection has been force enabled, it is set
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
-  private final Object mPerformanceCollectionForceEnabledStateLock = new Object();
 
   private final FirebaseApp firebaseApp;
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
@@ -177,6 +179,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
       this.syncInitFuture = null;
+      this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
     androidx.tracing.Trace.beginSection("Fireperf() TransportManager.initialize");
@@ -184,37 +187,31 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
     androidx.tracing.Trace.endSection();
     Context appContext = firebaseApp.getApplicationContext();
+    // TODO(b/110178816): Explore moving off of main thread.
+    androidx.tracing.Trace.beginSection("Fireperf() extractMetadata(context)");
+    mMetadataBundle = extractMetadata(appContext);
+    androidx.tracing.Trace.endSection();
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
+    this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
 
-    androidx.tracing.Trace.beginSection("Fireperf() execute(syncInit)");
-    syncInitFuture = initExecutor.submit(() -> syncInit(gaugeManager, appContext));
-    androidx.tracing.Trace.endSection();
-    androidx.tracing.Trace.endSection();
-  }
-
-  private void syncInit(GaugeManager gaugeManager, Context appContext) {
-    // TODO(b/110178816): Explore moving off of main thread.
-    // Extracting the metadata from the application context is expensive and so we only extract it
-    // once during initialization.
-    this.configResolver.setMetadataBundle(extractMetadata(appContext));
-    gaugeManager.setApplicationContext(appContext);
-
-    synchronized (mPerformanceCollectionForceEnabledStateLock) {
-      if (mPerformanceCollectionForceEnabledState == null) {
-        mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-      }
-    }
-
+    mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+    androidx.tracing.Trace.beginSection("Fireperf() generateDashboardUrl(...)");
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
-              String.format(
-                      "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
-                      ConsoleUrlGenerator.generateDashboardUrl(
-                              firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
+        String.format(
+          "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
+          ConsoleUrlGenerator.generateDashboardUrl(
+            firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
+    androidx.tracing.Trace.endSection();
+
+    androidx.tracing.Trace.beginSection("Fireperf() execute(syncInit)");
+    syncInitFuture = initExecutor.submit(() -> gaugeManager.setApplicationContext(appContext));
+    androidx.tracing.Trace.endSection();
+    androidx.tracing.Trace.endSection();
   }
 
   /**
@@ -298,21 +295,19 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    synchronized (mPerformanceCollectionForceEnabledStateLock) {
-      if (configResolver.getIsPerformanceCollectionDeactivated()) {
-        logger.info("Firebase Performance is permanently disabled");
-        return;
-      }
+    if (configResolver.getIsPerformanceCollectionDeactivated()) {
+      logger.info("Firebase Performance is permanently disabled");
+      return;
+    }
 
-      // setIsPerformanceCollectionEnabled should be called before getIsPerformanceCollectionEnabled
-      // bcz we want the mPerformanceCollectionForceEnabledState to reflect the most updated value.
-      configResolver.setIsPerformanceCollectionEnabled(enable);
-      if (enable != null) {
-        mPerformanceCollectionForceEnabledState = enable;
-      } else {
-        // Get the data collection enablement value based on the manifest configuration.
-        mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-      }
+    // setIsPerformanceCollectionEnabled should be called before getIsPerformanceCollectionEnabled
+    // bcz we want the mPerformanceCollectionForceEnabledState to reflect the most updated value.
+    configResolver.setIsPerformanceCollectionEnabled(enable);
+    if (enable != null) {
+      mPerformanceCollectionForceEnabledState = enable;
+    } else {
+      // Get the data collection enablement value based on the manifest configuration.
+      mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     }
     if (Boolean.TRUE.equals(mPerformanceCollectionForceEnabledState)) {
       logger.info("Firebase Performance is Enabled");

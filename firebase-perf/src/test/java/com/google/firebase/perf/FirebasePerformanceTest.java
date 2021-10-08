@@ -41,6 +41,8 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -212,14 +214,13 @@ public class FirebasePerformanceTest {
   }
 
   @Test
-  public void testSharedPrefsDisabledThenCleared() throws Exception {
+  public void testSharedPrefsDisabledThenCleared() throws NameNotFoundException {
     FirebasePerformance performance =
         initializeFirebasePerformancePreferences(
             /* metadataFireperfForceDeactivatedKey= */ null,
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ false);
 
-//    performance.getInitFuture().get();
     assertThat(performance.getPerformanceCollectionForceEnabledState()).isFalse();
 
     performance.setPerformanceCollectionEnabled(null);
@@ -496,13 +497,14 @@ public class FirebasePerformanceTest {
 
   @Test
   public void testFirebasePerformanceInitializationInjectsContextIntoGaugeManager()
-      throws NameNotFoundException {
+      throws NameNotFoundException, ExecutionException, InterruptedException {
     FirebasePerformance unusedPerformance =
         initializeFirebasePerformancePreferences(
             /* metadataFireperfForceDeactivatedKey= */ null,
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ null);
 
+    unusedPerformance.getInitFuture().get();
     verify(spyGaugeManager).setApplicationContext(ArgumentMatchers.nullable(Context.class));
   }
 
