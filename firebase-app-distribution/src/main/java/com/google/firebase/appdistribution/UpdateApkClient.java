@@ -58,11 +58,18 @@ class UpdateApkClient {
 
   public UpdateApkClient(
       @NonNull FirebaseApp firebaseApp, @NonNull InstallApkClient installApkClient) {
+    this(Executors.newSingleThreadExecutor(), firebaseApp, installApkClient);
+  }
+
+  public UpdateApkClient(
+      @NonNull Executor downloadExecutor,
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull InstallApkClient installApkClient) {
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
     this.appDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
-    this.downloadExecutor = Executors.newSingleThreadExecutor();
+    this.downloadExecutor = downloadExecutor;
     this.firebaseApp = firebaseApp;
     this.installApkClient = installApkClient;
   }
