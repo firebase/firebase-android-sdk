@@ -355,6 +355,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
   }
 
+  /** Finds the first ANR ApplicationExitInfo within the session. */
   @RequiresApi(api = Build.VERSION_CODES.R)
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
       String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
