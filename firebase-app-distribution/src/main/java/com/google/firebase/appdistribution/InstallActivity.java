@@ -126,8 +126,7 @@ public class InstallActivity extends AppCompatActivity {
     String path = originalIntent.getStringExtra("INSTALL_PATH");
     Intent intent = new Intent(Intent.ACTION_VIEW);
     File apkFile = new File(path);
-    String APK_MIME_TYPE =
-        "application/vnd.a./gradlew :<firebase-project>:googleJavaFormat\nndroid.package-archive";
+    String APK_MIME_TYPE = "application/vnd.android.package-archive";
 
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
       Uri apkUri =

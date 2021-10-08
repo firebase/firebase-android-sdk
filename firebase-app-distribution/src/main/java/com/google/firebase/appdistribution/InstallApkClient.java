@@ -67,7 +67,7 @@ class InstallApkClient {
     }
   }
 
-  public Task<Void> installApk(String path) {
+  Task<Void> installApk(String path) {
     synchronized (installTaskLock) {
       Activity currentActivity = this.currentActivity;
       // This ensures that we save the state of the install if the app is backgrounded during
@@ -88,7 +88,7 @@ class InstallApkClient {
     }
   }
 
-  void startInstallActivity(String path, Activity currentActivity) {
+  private void startInstallActivity(String path, Activity currentActivity) {
     installInProgress = false;
     installProgressApkPath = "";
     Intent intent = new Intent(currentActivity, InstallActivity.class);
