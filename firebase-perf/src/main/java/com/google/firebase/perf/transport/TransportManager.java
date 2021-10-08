@@ -190,7 +190,7 @@ public class TransportManager implements AppStateCallback {
    *     blocked.
    * @see #isInitialized
    */
-  public void initialize(
+  public ExecutorService initialize(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
@@ -201,7 +201,10 @@ public class TransportManager implements AppStateCallback {
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
 
     // Run initialization in background thread
+    androidx.tracing.Trace.beginSection("TransportManager.execute(syncInit)");
     this.executorService.execute(this::syncInit);
+    androidx.tracing.Trace.endSection();
+    return executorService;
   }
 
   /** To avoid blocking user thread, initialization should be run from executorService thread. */

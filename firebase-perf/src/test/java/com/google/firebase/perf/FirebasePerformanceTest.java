@@ -212,13 +212,14 @@ public class FirebasePerformanceTest {
   }
 
   @Test
-  public void testSharedPrefsDisabledThenCleared() throws NameNotFoundException {
+  public void testSharedPrefsDisabledThenCleared() throws Exception {
     FirebasePerformance performance =
         initializeFirebasePerformancePreferences(
             /* metadataFireperfForceDeactivatedKey= */ null,
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ false);
 
+    performance.getInitFuture().get();
     assertThat(performance.getPerformanceCollectionForceEnabledState()).isFalse();
 
     performance.setPerformanceCollectionEnabled(null);

@@ -50,9 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -89,13 +87,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   /** Maximum allowed length of the name of the {@link Trace} */
   @SuppressWarnings("unused") // Used in Javadoc.
   public static final int MAX_TRACE_NAME_LENGTH = Constants.MAX_TRACE_ID_LENGTH;
-
-  private static final ExecutorService executorService = new ThreadPoolExecutor(
-          0,
-          1,
-          /* keepAliveTime= */ 10,
-          TimeUnit.SECONDS,
-          new LinkedBlockingQueue<>(1));
 
   private final Map<String, String> mCustomAttributes = new ConcurrentHashMap<>();
 
@@ -149,6 +140,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
+  private final Future syncInitFuture;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -174,7 +166,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       GaugeManager gaugeManager) {
-
+    androidx.tracing.Trace.beginSection("Fireperf()");
     this.firebaseApp = firebaseApp;
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -183,19 +175,23 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
+      this.syncInitFuture = null;
       return;
     }
-
-    TransportManager.getInstance()
+    androidx.tracing.Trace.beginSection("Fireperf() TransportManager.initialize");
+    ExecutorService initExecutor = TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
-
+    androidx.tracing.Trace.endSection();
     Context appContext = firebaseApp.getApplicationContext();
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
     this.configResolver.setApplicationContext(appContext);
 
-    executorService.execute(() -> syncInit(gaugeManager, appContext));
+    androidx.tracing.Trace.beginSection("Fireperf() execute(syncInit)");
+    syncInitFuture = initExecutor.submit(() -> syncInit(gaugeManager, appContext));
+    androidx.tracing.Trace.endSection();
+    androidx.tracing.Trace.endSection();
   }
 
   private void syncInit(GaugeManager gaugeManager, Context appContext) {
@@ -482,5 +478,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @VisibleForTesting
   Boolean getPerformanceCollectionForceEnabledState() {
     return mPerformanceCollectionForceEnabledState;
+  }
+
+  @VisibleForTesting
+  Future getInitFuture() {
+    return syncInitFuture;
   }
 }
