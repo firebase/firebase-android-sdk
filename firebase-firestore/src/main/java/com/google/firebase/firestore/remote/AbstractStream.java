@@ -317,7 +317,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       // "unauthenticated" error means the token was rejected. This should rarely
       // happen since both Auth and AppCheck ensure a sufficient TTL when we
       // request a token. If a user manually resets their system clock this can
-      // fail, however. In this case, we should get a kErrorUnauthenticated error
+      // fail, however. In this case, we should get a Code.UNAUTHENTICATED error
       // before we received the first message and we need to invalidate the token
       // to ensure that we fetch a new token.
       firestoreChannel.invalidateToken();
