@@ -135,6 +135,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // This is set to true if performance monitoring data collection has been force enabled, it is set
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
+  private final Object mPerformanceCollectionForceEnabledStateLock = new Object();
 
   private final FirebaseApp firebaseApp;
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
@@ -201,7 +202,12 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver.setMetadataBundle(extractMetadata(appContext));
     gaugeManager.setApplicationContext(appContext);
 
-    mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+    synchronized (mPerformanceCollectionForceEnabledStateLock) {
+      if (mPerformanceCollectionForceEnabledState == null) {
+        mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+      }
+    }
+
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
               String.format(
@@ -292,19 +298,21 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    if (configResolver.getIsPerformanceCollectionDeactivated()) {
-      logger.info("Firebase Performance is permanently disabled");
-      return;
-    }
+    synchronized (mPerformanceCollectionForceEnabledStateLock) {
+      if (configResolver.getIsPerformanceCollectionDeactivated()) {
+        logger.info("Firebase Performance is permanently disabled");
+        return;
+      }
 
-    // setIsPerformanceCollectionEnabled should be called before getIsPerformanceCollectionEnabled
-    // bcz we want the mPerformanceCollectionForceEnabledState to reflect the most updated value.
-    configResolver.setIsPerformanceCollectionEnabled(enable);
-    if (enable != null) {
-      mPerformanceCollectionForceEnabledState = enable;
-    } else {
-      // Get the data collection enablement value based on the manifest configuration.
-      mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+      // setIsPerformanceCollectionEnabled should be called before getIsPerformanceCollectionEnabled
+      // bcz we want the mPerformanceCollectionForceEnabledState to reflect the most updated value.
+      configResolver.setIsPerformanceCollectionEnabled(enable);
+      if (enable != null) {
+        mPerformanceCollectionForceEnabledState = enable;
+      } else {
+        // Get the data collection enablement value based on the manifest configuration.
+        mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+      }
     }
     if (Boolean.TRUE.equals(mPerformanceCollectionForceEnabledState)) {
       logger.info("Firebase Performance is Enabled");

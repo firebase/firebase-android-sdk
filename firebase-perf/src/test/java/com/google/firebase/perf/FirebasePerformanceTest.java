@@ -219,7 +219,7 @@ public class FirebasePerformanceTest {
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ false);
 
-    performance.getInitFuture().get();
+//    performance.getInitFuture().get();
     assertThat(performance.getPerformanceCollectionForceEnabledState()).isFalse();
 
     performance.setPerformanceCollectionEnabled(null);
