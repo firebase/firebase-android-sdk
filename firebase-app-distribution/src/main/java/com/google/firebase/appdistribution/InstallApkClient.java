@@ -34,10 +34,10 @@ class InstallApkClient {
   private TaskCompletionSource<Void> installTaskCompletionSource;
 
   @GuardedBy("installTaskLock")
-  private boolean installInProgress = false;
+  private boolean promptInstallOnActivityResume = false;
 
   @GuardedBy("installTaskLock")
-  private String installProgressApkPath = "";
+  private String cachedInstallApkPath = "";
 
   private final Object installTaskLock = new Object();
 
@@ -53,10 +53,12 @@ class InstallApkClient {
       // This ensures that if the app was backgrounded during download, installation would continue
       // after app resume
       if (activity != null
-          && installInProgress
-          && installProgressApkPath != null
-          && !installProgressApkPath.isEmpty()) {
-        startInstallActivity(installProgressApkPath, activity);
+          && promptInstallOnActivityResume
+          && cachedInstallApkPath != null
+          && !cachedInstallApkPath.isEmpty()) {
+        promptInstallOnActivityResume = false;
+        cachedInstallApkPath = "";
+        startInstallActivity(cachedInstallApkPath, activity);
       } else {
         safeSetTaskException(
             installTaskCompletionSource,
@@ -73,10 +75,12 @@ class InstallApkClient {
       // This ensures that we save the state of the install if the app is backgrounded during
       // APK download
       if (currentActivity == null) {
-        installInProgress = true;
-        installProgressApkPath = path;
+        promptInstallOnActivityResume = true;
+        cachedInstallApkPath = path;
       } else {
         // only start the install activity if current Activity is in the foreground
+        promptInstallOnActivityResume = false;
+        cachedInstallApkPath = "";
         startInstallActivity(path, currentActivity);
       }
 
@@ -89,8 +93,6 @@ class InstallApkClient {
   }
 
   private void startInstallActivity(String path, Activity currentActivity) {
-    installInProgress = false;
-    installProgressApkPath = "";
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
