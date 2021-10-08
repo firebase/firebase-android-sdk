@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -89,7 +90,8 @@ public class UpdateAppClient {
 
     if (currentActivity == null) {
       synchronized (updateAabLock) {
-        cachedAabUpdateTask.setException(
+        safeSetTaskException(
+            cachedAabUpdateTask,
             new FirebaseAppDistributionException(
                 Constants.ErrorMessages.APP_BACKGROUNDED,
                 FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
@@ -139,13 +141,12 @@ public class UpdateAppClient {
 
   void tryCancelAabUpdateTask() {
     synchronized (updateAabLock) {
-      if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
-        cachedAabUpdateTask.setException(
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.UPDATE_CANCELED,
-                FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
-                ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
-      }
+      safeSetTaskException(
+          cachedAabUpdateTask,
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.UPDATE_CANCELED,
+              FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
+              ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }
   }
 }

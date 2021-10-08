@@ -71,8 +71,6 @@ public class CpuGaugeCollector {
   // This utility isn't provided by TimeUnits.SECONDS.toMicros() - it only accepts longs.
   private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
-  @Nullable private static CpuGaugeCollector instance = null;
-
   /* This is populated by CpuGaugeCollector but it's drained by GaugeManager.*/
   public final ConcurrentLinkedQueue<CpuMetricReading> cpuMetricReadings;
   private final ScheduledExecutorService cpuMetricCollectorExecutor;
@@ -82,7 +80,7 @@ public class CpuGaugeCollector {
   @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
   private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
-  private CpuGaugeCollector() {
+  CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
     cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
 
@@ -101,14 +99,6 @@ public class CpuGaugeCollector {
     this.cpuMetricCollectorExecutor = cpuMetricCollectorExecutor;
     procFileName = fakeProcFileName;
     this.clockTicksPerSecond = clockTicksPerSecond;
-  }
-
-  /** Returns the singleton instance of this class. */
-  public static CpuGaugeCollector getInstance() {
-    if (instance == null) {
-      instance = new CpuGaugeCollector();
-    }
-    return instance;
   }
 
   /**
