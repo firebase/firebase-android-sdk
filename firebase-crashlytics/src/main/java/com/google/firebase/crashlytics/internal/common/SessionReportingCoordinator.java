@@ -34,13 +34,10 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +55,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public static SessionReportingCoordinator create(
       Context context,
@@ -322,8 +320,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       ApplicationExitInfo applicationExitInfo) {
     String traceFile = null;
     try {
-      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
-    } catch (IOException | NullPointerException e) {
+      InputStream traceInputStream = applicationExitInfo.getTraceInputStream();
+      if (traceInputStream != null) {
+        traceFile = convertInputStreamToString(traceInputStream);
+      }
+    } catch (IOException e) {
       Logger.getLogger()
           .w(
               "Could not get input trace in application exit info: "
@@ -344,20 +345,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .build();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   @VisibleForTesting
-  public static String convertInputStreamToString(@Nullable InputStream inputStream)
-      throws IOException, NullPointerException {
-    StringBuilder stringBuilder = new StringBuilder();
-    try (Reader reader =
-        new BufferedReader(
-            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
-      int c = 0;
-      while ((c = reader.read()) != -1) {
-        stringBuilder.append((char) c);
-      }
-
-      return stringBuilder.toString();
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  public static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
+    int length;
+    while ((length = inputStream.read(bytes)) != -1) {
+      byteArrayOutputStream.write(bytes, 0, length);
     }
+    return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
   }
 }
