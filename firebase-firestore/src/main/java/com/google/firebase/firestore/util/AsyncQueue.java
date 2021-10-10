@@ -54,14 +54,16 @@ public class AsyncQueue {
     ALL,
 
     /**
-     * The following 4 timers are used with the listen and write streams. The IDLE timer is used to
+     * The following 5 timers are used with the listen and write streams. The IDLE timer is used to
      * close the stream due to inactivity. The CONNECTION_BACKOFF timer is used to restart a stream
-     * once the appropriate backoff delay has elapsed.
+     * once the appropriate backoff delay has elapsed. The health check is used to mark a stream
+     * healthy if it has not received an error during its initial setup.
      */
     LISTEN_STREAM_IDLE,
     LISTEN_STREAM_CONNECTION_BACKOFF,
     WRITE_STREAM_IDLE,
     WRITE_STREAM_CONNECTION_BACKOFF,
+    HEALTH_CHECK_TIMEOUT,
 
     /**
      * A timer used in OnlineStateTracker to transition from OnlineState UNKNOWN to OFFLINE after a
