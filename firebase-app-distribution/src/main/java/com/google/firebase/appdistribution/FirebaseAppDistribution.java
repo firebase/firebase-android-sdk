@@ -314,6 +314,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       this.updateAppClient.setCurrentActivity(null);
       this.testerSignInClient.setCurrentActivity(null);
     }
+
+    if (activity instanceof InstallActivity) {
+      // Since install activity is destroyed but app is still active, installation has failed /
+      // cancelled.
+      updateAppClient.trySetInstallTaskError();
+    }
   }
 
   @VisibleForTesting
@@ -378,10 +384,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     synchronized (updateTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
-  }
-
-  void setInstallationResult(int resultCode) {
-    this.updateAppClient.setInstallationResult(resultCode);
   }
 
   private void setCachedUpdateIfNewReleaseCompletionError(FirebaseAppDistributionException e) {

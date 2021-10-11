@@ -17,10 +17,8 @@ package com.google.firebase.appdistribution;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.app.Activity;
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
@@ -87,17 +85,9 @@ public class InstallApkClientTests {
   }
 
   @Test
-  public void setInstallationResult_okResult_setTaskSuccess() {
+  public void trySetInstallTaskError_setsInstallError() {
     Task<Void> installTask = installApkClient.installApk("path");
-    installApkClient.setInstallationResult(Activity.RESULT_OK);
-
-    assertTrue(installTask.isSuccessful());
-  }
-
-  @Test
-  public void setInstallationResult_notOkResult_setTaskSuccess() {
-    Task<Void> installTask = installApkClient.installApk("path");
-    installApkClient.setInstallationResult(Activity.RESULT_CANCELED);
+    installApkClient.trySetInstallTaskError();
     Exception ex = installTask.getException();
 
     assert ex instanceof FirebaseAppDistributionException;
