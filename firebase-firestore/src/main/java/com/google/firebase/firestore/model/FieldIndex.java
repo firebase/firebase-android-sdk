@@ -134,11 +134,6 @@ public final class FieldIndex {
     return new FieldIndex(collectionGroup, indexId, segments, version);
   }
 
-  /** Set the version on the field index with the updated version */
-  public void setVersion(SnapshotVersion newVersion) {
-    this.version = newVersion;
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

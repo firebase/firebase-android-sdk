@@ -14,22 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.index.IndexEntry;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldIndex;
-import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Preconditions;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -131,81 +119,20 @@ public class IndexBackfiller {
 
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
   private int writeIndexEntries(LocalStore localStore) {
-    int numIndexesWritten = 0;
+    int totalEntriesWrittenCount = 0;
     indexManager.loadFieldIndexes();
 
-    while (numIndexesWritten < maxIndexEntriesToProcess) {
-      Pair<String, List<FieldIndex>> collectionGroupPair =
-          indexManager.getNextCollectionGroupToUpdate();
-      if (collectionGroupPair == null) {
+    while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
+      int entriesRemainingUnderCap = maxIndexEntriesToProcess - totalEntriesWrittenCount;
+      int entriesWrittenCount =
+          indexManager.writeEntriesForNextCollectionGroup(localStore, entriesRemainingUnderCap);
+      if (entriesWrittenCount == SQLiteIndexManager.NO_NEXT_COLLECTION_GROUP) {
         break;
       }
-      String collectionGroup = collectionGroupPair.first;
-      List<FieldIndex> matchingFieldIndexes = collectionGroupPair.second;
-      int entriesRemainingUnderCap = maxIndexEntriesToProcess - numIndexesWritten;
-      numIndexesWritten +=
-          writeIndexEntriesForCollectionGroup(
-              collectionGroup, matchingFieldIndexes, entriesRemainingUnderCap, localStore);
+      totalEntriesWrittenCount += entriesWrittenCount;
     }
 
-    return numIndexesWritten;
-  }
-
-  /**
-   * Writes the index entries for matching field indexes for a provided collection group.
-   *
-   * @return The number of index entries written for the collection group.
-   */
-  private int writeIndexEntriesForCollectionGroup(
-      String collectionGroup,
-      List<FieldIndex> fieldIndexes,
-      int numEntriesRemainingUnderCap,
-      LocalStore localStore) {
-    int numIndexesWritten = 0;
-    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
-    Preconditions.checkState(
-        fieldIndexes != null, "Collection group should be mapped to field indexes.");
-
-    // Use the earliest updateTime of all field indexes as the base updateTime.
-    SnapshotVersion earliestUpdateTime = getEarliestUpdateTime(fieldIndexes);
-
-    // TODO(indexing): Make sure the docs matching the query are sorted by read time.
-    // TODO(indexing): Use limit queries to allow incremental progress.
-    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
-    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-        localStore.getDocumentsMatchingQuery(query, earliestUpdateTime);
-    for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
-      Document document = entry.getValue();
-      if (numIndexesWritten < numEntriesRemainingUnderCap) {
-        numIndexesWritten += indexManager.addIndexEntry(document, fieldIndexes);
-      } else {
-        break;
-      }
-    }
-
-    // Store when this collection group was last updated.
-    // TODO(indexing): Store progress with a counter rather than a timestamp.
-    indexManager.setCollectionGroupUpdateTime(collectionGroup, Timestamp.now());
-
-    // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
-    // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      indexManager.updateFieldIndex(fieldIndex);
-    }
-
-    return numIndexesWritten;
-  }
-
-  private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
-    Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
-    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      lowestVersion =
-          fieldIndex.getVersion().compareTo(lowestVersion) < 0
-              ? fieldIndex.getVersion()
-              : lowestVersion;
-    }
-    return lowestVersion;
+    return totalEntriesWrittenCount;
   }
 
   @VisibleForTesting
