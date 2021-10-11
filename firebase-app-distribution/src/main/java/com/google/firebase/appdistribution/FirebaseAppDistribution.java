@@ -258,7 +258,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     // SignInResultActivity is only opened after successful redirection from signIn flow,
     // should not be treated as reentering the app
-    if (activity instanceof SignInResultActivity) {
+    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
       return;
     }
 
@@ -281,6 +281,11 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityStopped(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
+    if (this.currentActivity == activity) {
+      this.currentActivity = null;
+      this.updateAppClient.setCurrentActivity(null);
+      this.testerSignInClient.setCurrentActivity(null);
+    }
   }
 
   @Override
