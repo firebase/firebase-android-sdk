@@ -93,6 +93,7 @@ class UpdateApkClient {
                 installApkClient
                     .installApk(file.getPath())
                     .addOnFailureListener(
+                        downloadExecutor,
                         e -> {
                           LogWrapper.getInstance().e(TAG + "Newest release failed to install.", e);
                           postUpdateProgress(

@@ -137,7 +137,7 @@ public class UpdateApkClientTest {
     UpdateTask updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
-    updateTask.addOnProgressListener(progressEvents::add);
+    updateTask.addOnProgressListener(testExecutor, progressEvents::add);
 
     installTaskCompletionSource.setException(
         new FirebaseAppDistributionException(
