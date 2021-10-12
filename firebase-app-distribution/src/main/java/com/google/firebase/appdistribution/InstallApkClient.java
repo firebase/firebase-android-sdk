@@ -62,12 +62,6 @@ class InstallApkClient {
           && cachedInstallApkPath != null
           && !cachedInstallApkPath.isEmpty()) {
         startInstallActivity(cachedInstallApkPath, activity);
-      } else {
-        safeSetTaskException(
-            installTaskCompletionSource,
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.APK_INSTALLATION_FAILED,
-                FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
       }
     }
   }
