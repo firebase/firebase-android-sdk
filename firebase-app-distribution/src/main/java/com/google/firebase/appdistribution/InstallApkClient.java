@@ -59,15 +59,15 @@ class InstallApkClient {
     // after app resume
     synchronized (installTaskLock) {
       if (promptInstallOnActivityResume
-              && cachedInstallApkPath != null
-              && !cachedInstallApkPath.isEmpty()) {
+          && cachedInstallApkPath != null
+          && !cachedInstallApkPath.isEmpty()) {
         startInstallActivity(cachedInstallApkPath, activity);
       } else {
         safeSetTaskException(
-                installTaskCompletionSource,
-                new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.APK_INSTALLATION_FAILED,
-                        FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+            installTaskCompletionSource,
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+                FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
       }
     }
   }
