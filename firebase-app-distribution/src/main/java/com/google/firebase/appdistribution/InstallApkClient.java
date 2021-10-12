@@ -57,16 +57,18 @@ class InstallApkClient {
   void handleAppResume(Activity activity) {
     // This ensures that if the app was backgrounded during download, installation would continue
     // after app resume
-    if (promptInstallOnActivityResume
-        && cachedInstallApkPath != null
-        && !cachedInstallApkPath.isEmpty()) {
-      startInstallActivity(cachedInstallApkPath, activity);
-    } else {
-      safeSetTaskException(
-          installTaskCompletionSource,
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.APK_INSTALLATION_FAILED,
-              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+    synchronized (installTaskLock) {
+      if (promptInstallOnActivityResume
+              && cachedInstallApkPath != null
+              && !cachedInstallApkPath.isEmpty()) {
+        startInstallActivity(cachedInstallApkPath, activity);
+      } else {
+        safeSetTaskException(
+                installTaskCompletionSource,
+                new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+                        FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+      }
     }
   }
 
