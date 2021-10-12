@@ -26,8 +26,9 @@ import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.firestore.testutil.ImmediateDeferred;
 import com.google.firebase.firestore.util.Listener;
-import com.google.firebase.inject.Provider;
+import com.google.firebase.inject.Deferred;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Rule;
@@ -79,8 +80,9 @@ public class FirebaseAppCheckTokenProviderTest {
   @Mock AppCheckTokenResult mockAppCheckTokenResult;
   @Captor ArgumentCaptor<AppCheckTokenListener> idTokenListenerCaptor;
 
-  Provider<InternalAppCheckTokenProvider> getProvider(InternalAppCheckTokenProvider internal) {
-    return () -> internal;
+  Deferred<InternalAppCheckTokenProvider> getDeferredProvider(
+      InternalAppCheckTokenProvider internal) {
+    return new ImmediateDeferred<>(internal);
   }
 
   @Test
@@ -88,7 +90,7 @@ public class FirebaseAppCheckTokenProviderTest {
     TestListenersInternalAppCheckTokenProvider internalAppCheckTokenProvider =
         new TestListenersInternalAppCheckTokenProvider();
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(internalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(internalAppCheckTokenProvider));
     AtomicReference<String> receivedToken = new AtomicReference<String>();
     Listener<String> appCheckTokenListener = receivedToken::set;
     firebaseAppCheckTokenProvider.setChangeListener(appCheckTokenListener);
@@ -105,7 +107,7 @@ public class FirebaseAppCheckTokenProviderTest {
     TestListenersInternalAppCheckTokenProvider internalAppCheckTokenProvider =
         new TestListenersInternalAppCheckTokenProvider();
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(internalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(internalAppCheckTokenProvider));
     firebaseAppCheckTokenProvider.setChangeListener(mockAppCheckTokenListener);
     assertThat(internalAppCheckTokenProvider.listeners.size()).isEqualTo(1);
     firebaseAppCheckTokenProvider.removeChangeListener();
@@ -115,14 +117,14 @@ public class FirebaseAppCheckTokenProviderTest {
   @Test
   public void removeChangeListenerShouldNotThrowIfProviderIsNotAvailable() {
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(null));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(null));
     firebaseAppCheckTokenProvider.removeChangeListener();
   }
 
   @Test
   public void removeChangeListenerShouldUnregisterTheIdTokenListener() {
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
     verify(mockInternalAppCheckTokenProvider)
         .addAppCheckTokenListener(idTokenListenerCaptor.capture());
     firebaseAppCheckTokenProvider.removeChangeListener();
@@ -133,7 +135,7 @@ public class FirebaseAppCheckTokenProviderTest {
   @Test
   public void getTokenShouldReturnAFailedTaskIfProviderIsNotAvailable() {
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(null));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(null));
     Task<String> task = firebaseAppCheckTokenProvider.getToken();
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isFalse();
@@ -147,7 +149,7 @@ public class FirebaseAppCheckTokenProviderTest {
         .thenReturn(Tasks.forException(getTokenException));
 
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
 
     Task<String> task = firebaseAppCheckTokenProvider.getToken();
     assertThat(task.isComplete()).isTrue();
@@ -162,7 +164,7 @@ public class FirebaseAppCheckTokenProviderTest {
         .thenReturn(Tasks.forResult(mockAppCheckTokenResult));
 
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
     Task<String> task = firebaseAppCheckTokenProvider.getToken();
 
     assertThat(task.isComplete()).isTrue();
@@ -177,7 +179,7 @@ public class FirebaseAppCheckTokenProviderTest {
         .thenReturn(Tasks.forResult(mockAppCheckTokenResult));
 
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
     firebaseAppCheckTokenProvider.getToken();
     verify(mockInternalAppCheckTokenProvider).getToken(false);
   }
@@ -189,7 +191,7 @@ public class FirebaseAppCheckTokenProviderTest {
         .thenReturn(Tasks.forResult(mockAppCheckTokenResult));
 
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
     firebaseAppCheckTokenProvider.invalidateToken();
     firebaseAppCheckTokenProvider.getToken();
     verify(mockInternalAppCheckTokenProvider).getToken(true);
@@ -202,7 +204,7 @@ public class FirebaseAppCheckTokenProviderTest {
         .thenReturn(Tasks.forResult(mockAppCheckTokenResult));
 
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
-        new FirebaseAppCheckTokenProvider(getProvider(mockInternalAppCheckTokenProvider));
+        new FirebaseAppCheckTokenProvider(getDeferredProvider(mockInternalAppCheckTokenProvider));
 
     firebaseAppCheckTokenProvider.invalidateToken();
     firebaseAppCheckTokenProvider.getToken();

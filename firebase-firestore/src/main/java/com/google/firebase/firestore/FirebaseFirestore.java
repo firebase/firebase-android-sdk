@@ -53,7 +53,6 @@ import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -130,7 +129,7 @@ public class FirebaseFirestore {
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
-      @NonNull Provider<InternalAppCheckTokenProvider> appCheckTokenProvider,
+      @NonNull Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -145,7 +144,7 @@ public class FirebaseFirestore {
     CredentialsProvider<User> authProvider =
         new FirebaseAuthCredentialsProvider(deferredAuthProvider);
     CredentialsProvider<String> appCheckProvider =
-        new FirebaseAppCheckTokenProvider(appCheckTokenProvider);
+        new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related

@@ -27,6 +27,7 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 
 /** FirebaseAppCheckTokenProvider uses Firebase AppCheck to get an AppCheck token. */
@@ -57,13 +58,17 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   /** Creates a new FirebaseAppCheckTokenProvider. */
   @SuppressLint("ProviderAssignment") // TODO: Remove this @SuppressLint once b/181014061 is fixed.
   public FirebaseAppCheckTokenProvider(
-      Provider<InternalAppCheckTokenProvider> appCheckTokenProvider) {
-    internalAppCheckTokenProvider = appCheckTokenProvider.get();
-
-    // Get notified when AppCheck token changes to a new value in the future.
-    if (internalAppCheckTokenProvider != null) {
-      internalAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
-    }
+      Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider) {
+    deferredAppCheckTokenProvider.whenAvailable(
+        provider -> {
+          synchronized (this) {
+            internalAppCheckTokenProvider = provider.get();
+            // Get notified when AppCheck token changes to a new value in the future.
+            if (internalAppCheckTokenProvider != null) {
+              internalAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
+            }
+          }
+        });
   }
 
   /** Invoked when the AppCheck token changes. */

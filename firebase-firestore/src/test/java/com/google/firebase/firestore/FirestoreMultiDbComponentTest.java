@@ -31,7 +31,6 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.testutil.ImmediateDeferred;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -74,15 +73,14 @@ public class FirestoreMultiDbComponentTest {
     doReturn(Tasks.forResult(mockAppCheckTokenResult))
         .when(mockInternalAppCheckProvider)
         .getToken(anyBoolean());
-    Provider<InternalAppCheckTokenProvider> appCheckProvider =
-        new Provider<InternalAppCheckTokenProvider>() {
-          @Override
-          public InternalAppCheckTokenProvider get() {
-            return mockInternalAppCheckProvider;
-          }
-        };
+    Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider =
+        new ImmediateDeferred<>(mockInternalAppCheckProvider);
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
     return new FirestoreMultiDbComponent(
-        context, firebaseApp, deferredAuthProvider, appCheckProvider, metadataProvider);
+        context,
+        firebaseApp,
+        deferredAuthProvider,
+        deferredAppCheckTokenProvider,
+        metadataProvider);
   }
 }

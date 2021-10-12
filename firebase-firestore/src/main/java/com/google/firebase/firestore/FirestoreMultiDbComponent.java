@@ -26,7 +26,6 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,14 +43,14 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final Deferred<InternalAuthProvider> authProvider;
-  private final Provider<InternalAppCheckTokenProvider> appCheckProvider;
+  private final Deferred<InternalAppCheckTokenProvider> appCheckProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
-      @NonNull Provider<InternalAppCheckTokenProvider> appCheckProvider,
+      @NonNull Deferred<InternalAppCheckTokenProvider> appCheckProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;

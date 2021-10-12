@@ -49,7 +49,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
             .add(Dependency.optionalProvider(HeartBeatInfo.class))
             .add(Dependency.optionalProvider(UserAgentPublisher.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
-            .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
+            .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
             .add(Dependency.optional(FirebaseOptions.class))
             .factory(
                 c ->
@@ -57,7 +57,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(Context.class),
                         c.get(FirebaseApp.class),
                         c.getDeferred(InternalAuthProvider.class),
-                        c.getProvider(InternalAppCheckTokenProvider.class),
+                        c.getDeferred(InternalAppCheckTokenProvider.class),
                         new FirebaseClientGrpcMetadataProvider(
                             c.getProvider(UserAgentPublisher.class),
                             c.getProvider(HeartBeatInfo.class),
