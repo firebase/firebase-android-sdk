@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
@@ -45,7 +44,6 @@ public class InstallActivity extends AppCompatActivity {
           .e(
               TAG
                   + "Activity resumed when installation already in progress. Installation was either cancelled or failed");
-      getFirebaseAppDistributionInstance().setInstallationResult(Activity.RESULT_CANCELED);
       finish();
       return;
     }
@@ -57,7 +55,6 @@ public class InstallActivity extends AppCompatActivity {
             .e(
                 TAG
                     + "Unknown sources enablement is already in progress. It was either cancelled or failed");
-        getFirebaseAppDistributionInstance().setInstallationResult(Activity.RESULT_CANCELED);
         finish();
         return;
       }
@@ -97,7 +94,6 @@ public class InstallActivity extends AppCompatActivity {
         getString(R.string.update_no_button),
         (dialogInterface, i) -> {
           LogWrapper.getInstance().v(TAG + "Unknown sources dialog cancelled");
-          getFirebaseAppDistributionInstance().setInstallationResult(Activity.RESULT_CANCELED);
           dialogInterface.dismiss();
           finish();
         });

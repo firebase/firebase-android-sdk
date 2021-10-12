@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
-import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -46,14 +45,20 @@ class InstallApkClient {
       this.currentActivity = activity;
 
       if (installTaskCompletionSource == null
-          || installTaskCompletionSource.getTask().isComplete()) {
+          || installTaskCompletionSource.getTask().isComplete()
+          || activity == null) {
         return;
       }
+    }
 
-      // This ensures that if the app was backgrounded during download, installation would continue
-      // after app resume
-      if (activity != null
-          && promptInstallOnActivityResume
+    handleAppResume(activity);
+  }
+
+  void handleAppResume(Activity activity) {
+    // This ensures that if the app was backgrounded during download, installation would continue
+    // after app resume
+    synchronized (installTaskLock) {
+      if (promptInstallOnActivityResume
           && cachedInstallApkPath != null
           && !cachedInstallApkPath.isEmpty()) {
         startInstallActivity(cachedInstallApkPath, activity);
@@ -99,17 +104,13 @@ class InstallApkClient {
     LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
   }
 
-  void setInstallationResult(int resultCode) {
+  void trySetInstallTaskError() {
     synchronized (installTaskLock) {
-      if (resultCode == Activity.RESULT_OK) {
-        safeSetTaskResult(installTaskCompletionSource, null);
-      } else {
-        safeSetTaskException(
-            installTaskCompletionSource,
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.APK_INSTALLATION_FAILED,
-                FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-      }
+      safeSetTaskException(
+          installTaskCompletionSource,
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
     }
   }
 }

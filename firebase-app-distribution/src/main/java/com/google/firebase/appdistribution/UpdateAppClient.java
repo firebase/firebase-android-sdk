@@ -117,8 +117,8 @@ public class UpdateAppClient {
     }
   }
 
-  void setInstallationResult(int resultCode) {
-    this.installApkClient.setInstallationResult(resultCode);
+  void trySetInstallTaskError() {
+    this.installApkClient.trySetInstallTaskError();
   }
 
   @Nullable
