@@ -108,6 +108,7 @@ public class BomGeneratorTask extends DefaultTask {
           "firebase-auth-interop",
           "firebase-auth-license",
           "firebase-encoders-json",
+          "firebase-encoders-proto",
           "firebase-auth-module",
           "firebase-bom",
           "firebase-common-license",
