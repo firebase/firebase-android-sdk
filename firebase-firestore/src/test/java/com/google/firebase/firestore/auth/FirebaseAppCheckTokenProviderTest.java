@@ -80,9 +80,7 @@ public class FirebaseAppCheckTokenProviderTest {
   @Captor ArgumentCaptor<AppCheckTokenListener> idTokenListenerCaptor;
 
   Provider<InternalAppCheckTokenProvider> getProvider(InternalAppCheckTokenProvider internal) {
-    return () -> {
-      return internal;
-    };
+      return () -> internal;
   }
 
   @Test
@@ -92,10 +90,7 @@ public class FirebaseAppCheckTokenProviderTest {
     FirebaseAppCheckTokenProvider firebaseAppCheckTokenProvider =
         new FirebaseAppCheckTokenProvider(getProvider(internalAppCheckTokenProvider));
     AtomicReference<String> receivedToken = new AtomicReference<String>();
-    Listener<String> appCheckTokenListener =
-        (String token) -> {
-          receivedToken.set(token);
-        };
+    Listener<String> appCheckTokenListener = receivedToken::set;
     firebaseAppCheckTokenProvider.setChangeListener(appCheckTokenListener);
     when(mockAppCheckTokenResult.getToken()).thenReturn("TestToken");
     internalAppCheckTokenProvider.triggerTokenChange(mockAppCheckTokenResult);
