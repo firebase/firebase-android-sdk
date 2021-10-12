@@ -174,8 +174,7 @@ public class IndexBackfiller {
         localStore.getDocumentsMatchingQuery(query, earliestUpdateTime);
 
     entriesWrittenCount +=
-        indexManager.updateFieldIndexesForCollectionGroup(
-            matchingDocuments, fieldIndexes, entriesRemainingUnderCap);
+        indexManager.updateIndexEntries(matchingDocuments, fieldIndexes, entriesRemainingUnderCap);
     return entriesWrittenCount;
   }
 

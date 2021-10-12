@@ -131,7 +131,7 @@ final class SQLiteIndexManager implements IndexManager {
     setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
   }
 
-  public void updateFieldIndex(FieldIndex index) {
+  private void updateFieldIndex(FieldIndex index) {
     db.execute(
         "REPLACE INTO index_configuration ("
             + "index_id, "
@@ -222,17 +222,34 @@ final class SQLiteIndexManager implements IndexManager {
     return new Pair<>(nextCollectionGroup[0], matchingFieldIndexes);
   }
 
-  public int updateFieldIndexesForCollectionGroup(
+  /**
+   * Updates the index entries for the provided documents and corresponding field indexes until the
+   * cap is reached. Updates the field indexes in persistence with the latest read time that was
+   * processed.
+   */
+  public int updateIndexEntries(
       ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
       List<FieldIndex> fieldIndexes,
       int entriesRemainingUnderCap) {
     int entriesWrittenCount = 0;
-    Map<FieldIndex, FieldIndex> updatedFieldIndexes = new HashMap<>();
+    Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
 
     for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
       Document document = entry.getValue();
       if (entriesWrittenCount < entriesRemainingUnderCap) {
-        entriesWrittenCount += addIndexEntry(document, fieldIndexes, updatedFieldIndexes);
+        for (FieldIndex fieldIndex : fieldIndexes) {
+          entriesWrittenCount += writeEntries(document, fieldIndex);
+          if (entriesWrittenCount > 0) {
+            // TODO(indexing): This would be much simpler with a sequence counter since we would
+            // always update the index to the next sequence value.
+            FieldIndex updatedIndex =
+                getPostUpdateIndex(
+                    fieldIndex,
+                    updatedFieldIndexes.get(fieldIndex.getIndexId()),
+                    document.getVersion());
+            updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
+          }
+        }
       } else {
         break;
       }
@@ -240,11 +257,74 @@ final class SQLiteIndexManager implements IndexManager {
 
     // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
     // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex originalFieldIndex : updatedFieldIndexes.keySet()) {
-      updateFieldIndex(updatedFieldIndexes.get(originalFieldIndex));
+    for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
+      updateFieldIndex(updatedFieldIndex);
     }
 
     return entriesWrittenCount;
+  }
+
+  /**
+   * Returns the field index with the latest read time. Compares versions on the original field
+   * index, the document, and the stored field index in the mapping.
+   *
+   * <p>This method should only be called on field indexes that had index entries written.
+   */
+  private FieldIndex getPostUpdateIndex(
+      FieldIndex originalIndex, @Nullable FieldIndex updatedIndex, SnapshotVersion version) {
+    // TODO(indexing): Compare with read time version, rather than document version
+    // If the field index hasn't been updated, compare against the document's version.
+    if (updatedIndex == null) {
+      return originalIndex.withVersion(version);
+    } else if (version.compareTo(updatedIndex.getVersion()) > 0) {
+      return originalIndex.withVersion(version);
+    } else {
+      return updatedIndex;
+    }
+  }
+
+  private int writeEntries(Document document, FieldIndex fieldIndex) {
+    int entriesWritten = 0;
+
+    List<Value> arrayValues = new ArrayList<>();
+    for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
+      Value value = document.getField(segment.getFieldPath());
+      if (!isArray(value)) {
+        continue;
+      }
+      arrayValues.addAll(value.getArrayValue().getValuesList());
+    }
+
+    List<Value> directionalValues = new ArrayList<>();
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+      Value field = document.getField(segment.getFieldPath());
+      if (field == null) {
+        continue;
+      }
+      directionalValues.add(field);
+    }
+
+    if (arrayValues.isEmpty() && directionalValues.isEmpty()) {
+      return 0;
+    }
+
+    if (Logger.isDebugEnabled()) {
+      Logger.debug(
+          TAG,
+          "Adding index values for document '%s' to index '%s'",
+          document.getKey(),
+          fieldIndex);
+    }
+
+    for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
+      ++entriesWritten;
+      addSingleEntry(
+          document.getKey(),
+          fieldIndex.getIndexId(),
+          encode(i < arrayValues.size() ? arrayValues.get(i) : null),
+          encode(directionalValues));
+    }
+    return entriesWritten;
   }
 
   @VisibleForTesting
@@ -289,77 +369,14 @@ final class SQLiteIndexManager implements IndexManager {
    * @param document The provided document to index.
    * @param fieldIndexes A list of field indexes to apply.
    */
-  public void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
-    addIndexEntry(document, fieldIndexes, new HashMap<>());
-  }
-
-  /**
-   * Writes index entries for the field indexes that apply to the provided document. Updates the
-   * provided map with the latest version applicable to the field index.
-   *
-   * @param document The provided document to index.
-   * @param fieldIndexes A list of field indexes to apply.
-   * @param updatedFieldIndexes A mapping of old field indexes to field indexes with updated
-   *     versions
-   * @return The number of index entries written
-   */
-  public int addIndexEntry(
-      Document document,
-      Collection<FieldIndex> fieldIndexes,
-      Map<FieldIndex, FieldIndex> updatedFieldIndexes) {
-    DocumentKey documentKey = document.getKey();
-    int entriesWritten = 0;
+  private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
     for (FieldIndex fieldIndex : fieldIndexes) {
-      List<Value> arrayValues = new ArrayList<>();
-      for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
-        Value value = document.getField(segment.getFieldPath());
-        if (!isArray(value)) {
-          continue;
-        }
-        arrayValues.addAll(value.getArrayValue().getValuesList());
-      }
-
-      List<Value> directionalValues = new ArrayList<>();
-      for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-        Value field = document.getField(segment.getFieldPath());
-        if (field == null) {
-          continue;
-        }
-        directionalValues.add(field);
-      }
-
-      if (arrayValues.isEmpty() && directionalValues.isEmpty()) {
-        continue;
-      }
-
-      // TODO(indexing): Compare with read time version, rather than document version
-      // If the field index hasn't been updated, compare against the document's version.
-      if (!updatedFieldIndexes.containsKey(fieldIndex)
-          && document.getVersion().compareTo(fieldIndex.getVersion()) > 0) {
-        updatedFieldIndexes.put(fieldIndex, fieldIndex.withVersion(document.getVersion()));
-      } else {
-        // If the field index was updated, compare against the updated value.
-        SnapshotVersion updatedMax = updatedFieldIndexes.get(fieldIndex).getVersion();
-        if (document.getVersion().compareTo(updatedMax) > 0) {
-          updatedFieldIndexes.put(fieldIndex, fieldIndex.withVersion(document.getVersion()));
-        }
-      }
-
-      if (Logger.isDebugEnabled()) {
-        Logger.debug(
-            TAG, "Adding index values for document '%s' to index '%s'", documentKey, fieldIndex);
-      }
-
-      for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
-        ++entriesWritten;
-        addSingleEntry(
-            documentKey,
-            fieldIndex.getIndexId(),
-            encode(i < arrayValues.size() ? arrayValues.get(i) : null),
-            encode(directionalValues));
+      int entriesWritten = writeEntries(document, fieldIndex);
+      if (entriesWritten > 0) {
+        FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, null, document.getVersion());
+        updateFieldIndex(updatedIndex);
       }
     }
-    return entriesWritten;
   }
 
   /** Adds a single index entry into the index entries table. */
