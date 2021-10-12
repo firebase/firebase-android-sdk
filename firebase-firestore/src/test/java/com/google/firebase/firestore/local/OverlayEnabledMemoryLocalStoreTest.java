@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -45,4 +46,9 @@ public class OverlayEnabledMemoryLocalStoreTest extends LocalStoreTestCase {
   boolean garbageCollectorIsEager() {
     return true;
   }
+
+  @Test
+  @Override
+  // TODO(Overlay): Delete this when we resolve Idempotent Transformations issue.
+  public void testHoldsBackOnlyNonIdempotentTransforms() {}
 }

@@ -42,6 +42,8 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.junit.Before;
@@ -143,9 +145,12 @@ public class QueryEngineTest {
     persistence.runTransaction(
         "addMutation",
         () -> {
-          MutationBatch batch = mutationQueue.addMutationBatch(
-              Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
-          documentOverlay.saveOverlay(batch.getBatchId(), mutation.getKey(), mutation);
+          MutationBatch batch =
+              mutationQueue.addMutationBatch(
+                  Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
+          Map<DocumentKey, Mutation> overlayMap = new HashMap<>();
+          overlayMap.put(mutation.getKey(), mutation);
+          documentOverlay.saveOverlays(batch.getBatchId(), overlayMap);
         });
   }
 

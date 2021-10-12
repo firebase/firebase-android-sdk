@@ -41,8 +41,7 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
     return null;
   }
 
-  @Override
-  public void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+  private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
     if (mutation == null) {
       return;
     }
@@ -53,6 +52,8 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
       existingId = existing.first;
     }
     overlays = overlays.insert(key, new Pair<>(largestBatchId, mutation));
+
+    // {@code overlayByBatchId} maintenance.
     if (existingId >= 0) {
       overlayByBatchId.get(existingId).remove(key);
     }

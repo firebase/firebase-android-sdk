@@ -76,6 +76,12 @@ public abstract class DocumentOverlayTestCase {
 
   abstract Persistence getPersistence();
 
+  void saveOverlay(int largestBatch, DocumentKey key, Mutation overlay) {
+    Map<DocumentKey, Mutation> data = new HashMap<>();
+    data.put(key, overlay);
+    overlays.saveOverlays(largestBatch, data);
+  }
+
   @Test
   public void testReturnsNullWhenOverlayIsNotFound() {
     assertNull(overlays.getOverlay(key("coll/doc1")));
@@ -84,7 +90,7 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(2, key("coll/doc1"), m);
+    saveOverlay(2, key("coll/doc1"), m);
 
     assertEquals(m, overlays.getOverlay(key("coll/doc1")));
   }
@@ -109,8 +115,8 @@ public abstract class DocumentOverlayTestCase {
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
-    overlays.saveOverlay(2, key("coll/doc1"), m1);
-    overlays.saveOverlay(2, key("coll/doc1"), m2);
+    saveOverlay(2, key("coll/doc1"), m1);
+    saveOverlay(2, key("coll/doc1"), m2);
 
     assertEquals(m2, overlays.getOverlay(key("coll/doc1")));
   }
@@ -118,7 +124,7 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testDeleteRepeatedlyWorks() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(2, key("coll/doc1"), m);
+    saveOverlay(2, key("coll/doc1"), m);
 
     overlays.removeOverlays(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));

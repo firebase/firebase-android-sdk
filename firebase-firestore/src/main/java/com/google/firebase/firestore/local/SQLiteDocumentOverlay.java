@@ -58,9 +58,8 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
             });
   }
 
-  @Override
-  public void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
-    if(mutation == null) {
+  private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+    if (mutation == null) {
       return;
     }
 

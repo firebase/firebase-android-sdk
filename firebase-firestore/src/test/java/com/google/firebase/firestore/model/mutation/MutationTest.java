@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.model.mutation.MutationBatch.getOverlayMutation;
+import static com.google.firebase.firestore.model.mutation.Mutation.calculateOverlayMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -1032,7 +1032,7 @@ public class MutationTest {
       mask = m.applyToLocalView(docForMutations, mask, now);
     }
 
-    Mutation overlay = getOverlayMutation(docForMutations, mask);
+    Mutation overlay = calculateOverlayMutation(docForMutations, mask);
     if (overlay != null) {
       overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
     }

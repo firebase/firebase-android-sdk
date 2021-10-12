@@ -95,11 +95,10 @@ class LocalDocumentsView {
       // TODO(Overlay): Remove below and just return `fromOverlay`.
       List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
       Document fromMutationQueue = getDocument(key, batches);
-      /*
       hardAssert(
           fromOverlay.equals(fromMutationQueue),
           "Document from overlay does not match mutation queue");
-       */
+
       return fromOverlay;
     }
     List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
@@ -123,8 +122,13 @@ class LocalDocumentsView {
     return document;
   }
 
-  // Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
-  // the contents of the mutations.
+  /**
+   * Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
+   * the contents of the mutations.
+   *
+   * <p>Returns a {@code DocumentKey} to {@code FieldMask} map, representing the fields mutated for
+   * each document. This is useful to build overlays.
+   */
   private Map<DocumentKey, FieldMask> applyLocalMutationsToDocuments(
       Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
     Map<DocumentKey, FieldMask> changedMasks = new HashMap<>();
@@ -153,20 +157,27 @@ class LocalDocumentsView {
   /**
    * Similar to {@code #getDocuments}, but creates the local view from the given {@code baseDocs}
    * without retrieving documents from the local store.
+   *
+   * @param docs The documents to apply local mutations to get the local views.
+   * @param existenceStateChanged The set of document keys whose existence state is changed. This is
+   *     useful to determine if some documents overlay needs to be recalculated.
    */
   ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
-      Map<DocumentKey, MutableDocument> docs,
-      @Nullable Set<DocumentKey> conditionChangedDocuments) {
+      Map<DocumentKey, MutableDocument> docs, @Nullable Set<DocumentKey> existenceStateChanged) {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    if (conditionChangedDocuments == null) {
-      conditionChangedDocuments = new HashSet<>();
+    if (existenceStateChanged == null) {
+      existenceStateChanged = new HashSet<>();
     }
 
     if (Persistence.OVERLAY_SUPPORT_ENABLED) {
       Set<DocumentKey> toRecalculate = new HashSet<>();
       for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
         Mutation overlay = documentOverlay.getOverlay(entry.getKey());
-        if (conditionChangedDocuments.contains(entry.getKey())
+        // Recalculate an overlay if the document's existence state is changed due to a remote
+        // event,
+        // *and* the overlay is a PatchMutation. This is because document existence state change can
+        // change if some patch mutation's preconditions are met.
+        if (existenceStateChanged.contains(entry.getKey())
             && (overlay == null || overlay instanceof PatchMutation)) {
           toRecalculate.add(entry.getKey());
           continue;
@@ -175,11 +186,12 @@ class LocalDocumentsView {
           overlay.applyToLocalView(entry.getValue(), null, Timestamp.now());
         }
       }
+
+      // Prepare documents for recalculating overlays.
       Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
       for (DocumentKey key : toRecalculate) {
         recalculateDocuments.put(key, docs.get(key));
       }
-
       recalculateOverlays(recalculateDocuments);
     } else {
       List<MutationBatch> batches =
@@ -193,20 +205,26 @@ class LocalDocumentsView {
     return results;
   }
 
-  void recalculateOverlays(Map<DocumentKey, MutableDocument> docs) {
+  private void recalculateOverlays(Map<DocumentKey, MutableDocument> docs) {
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
 
     Map<DocumentKey, FieldMask> masks = new HashMap<>();
     Map<DocumentKey, Integer> largestBatchIds = new HashMap<>();
+    // Apply mutations from mutation queue to the documents, collecting batch id and field masks
+    // along
+    // the way.
     for (MutationBatch batch : batches) {
       for (DocumentKey key : batch.getKeys()) {
         FieldMask mask = batch.applyToLocalView(docs.get(key), masks.get(key));
         masks.put(key, mask);
+        // Note {@code batches} is ordered by batch id, so largestBatchIds always have correct
+        // values.
         largestBatchIds.put(key, batch.getBatchId());
       }
     }
 
+    // Build a reverse lookup map from batch id to the documents within that batch.
     Map<Integer, Set<DocumentKey>> documentsByBatchId = new HashMap<>();
     for (Map.Entry<DocumentKey, Integer> entry : largestBatchIds.entrySet()) {
       if (!documentsByBatchId.containsKey(entry.getValue())) {
@@ -215,15 +233,17 @@ class LocalDocumentsView {
       documentsByBatchId.get(entry.getValue()).add(entry.getKey());
     }
 
+    // For each batch, build its overlays and save them.
     for (Map.Entry<Integer, Set<DocumentKey>> entry : documentsByBatchId.entrySet()) {
       Map<DocumentKey, Mutation> overlays = new HashMap<>();
       for (DocumentKey key : entry.getValue()) {
-        overlays.put(key, MutationBatch.getOverlayMutation(docs.get(key), masks.get(key)));
+        overlays.put(key, Mutation.calculateOverlayMutation(docs.get(key), masks.get(key)));
       }
       documentOverlay.saveOverlays(entry.getKey(), overlays);
     }
   }
 
+  /** Recalculates overlays by reading the documents from remote document cache first. */
   void recalculateOverlays(Set<DocumentKey> documentKeys) {
     Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(documentKeys);
     recalculateOverlays(docs);
@@ -293,13 +313,14 @@ class LocalDocumentsView {
       // TODO(Overlay): Remove the assert and just return `fromOverlay`.
       ImmutableSortedMap<DocumentKey, Document> fromOverlay =
           getDocumentsMatchingCollectionQueryFromDocumentOverlay(query, sinceReadTime);
+      // TODO(Overlay): Delete below before merging. They pass, but there are tests looking at how
+      // many documents read from remote document, and this would double the count.
       /*
       ImmutableSortedMap<DocumentKey, Document> fromMutationQueue =
           getDocumentsMatchingCollectionQueryFromMutationQueue(query, sinceReadTime);
       hardAssert(
           fromOverlay.equals(fromMutationQueue),
           "Documents from overlay do not match mutation queue version.");
-
        */
       return fromOverlay;
     } else {
@@ -307,24 +328,28 @@ class LocalDocumentsView {
     }
   }
 
+  /** Queries the remote documents and overlays mutations, by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromDocumentOverlay(
           Query query, SnapshotVersion sinceReadTime) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
     Map<DocumentKey, Mutation> overlays = documentOverlay.getAllOverlays(query.getPath());
+
+    // Some overlay might match the query because of the overlay, we need to include them in the
+    // result.
     Set<DocumentKey> missingDocuments = new HashSet<>();
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       if (!remoteDocuments.containsKey(entry.getKey())) {
         missingDocuments.add(entry.getKey());
       }
     }
-
     for (Map.Entry<DocumentKey, MutableDocument> entry :
         remoteDocumentCache.getAll(missingDocuments).entrySet()) {
       remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
     }
 
+    // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
       Mutation overlay = overlays.get(docEntry.getKey());
@@ -340,7 +365,7 @@ class LocalDocumentsView {
     return results;
   }
 
-  /** Queries the remote documents and overlays mutations. */
+  /** Queries the remote documents and mutation queue, by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromMutationQueue(
           Query query, SnapshotVersion sinceReadTime) {
@@ -365,7 +390,6 @@ class LocalDocumentsView {
           document = MutableDocument.newInvalidDocument(key);
           remoteDocuments = remoteDocuments.insert(key, document);
         }
-        // TODO(Overlay): Here we should be reading overlay mutation and apply that instead.
         mutation.applyToLocalView(
             document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
         if (!document.isFoundDocument()) {

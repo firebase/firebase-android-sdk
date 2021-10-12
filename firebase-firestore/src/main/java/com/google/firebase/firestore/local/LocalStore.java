@@ -444,25 +444,26 @@ public final class LocalStore implements BundleCallback {
           }
 
           return localDocuments.getLocalViewOfDocuments(
-              changedDocs, result.conditionChangedDocuments);
+              changedDocs, result.existenceChangedDocuments);
         });
   }
 
   private class PopulateResult {
     private Map<DocumentKey, MutableDocument> changedDocuments;
-    private Set<DocumentKey> conditionChangedDocuments;
+    private Set<DocumentKey> existenceChangedDocuments;
 
     private PopulateResult(
         Map<DocumentKey, MutableDocument> changedDocuments,
-        Set<DocumentKey> conditionChangedDocuments) {
+        Set<DocumentKey> existenceChangedDocuments) {
       this.changedDocuments = changedDocuments;
-      this.conditionChangedDocuments = conditionChangedDocuments;
+      this.existenceChangedDocuments = existenceChangedDocuments;
     }
   }
 
   /**
    * Populates the remote document cache with documents from backend or a bundle. Returns the
-   * document changes resulting from applying those documents.
+   * document changes resulting from applying those documents, and also a set of documents whose
+   * existence state is changed as a result.
    *
    * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
    * resorts to `globalVersion`.
@@ -490,6 +491,7 @@ public final class LocalStore implements BundleCallback {
       MutableDocument existingDoc = existingDocs.get(key);
       SnapshotVersion readTime =
           documentVersions != null ? documentVersions.get(key) : globalVersion;
+      // Check if see if there is a existence state change for this document.
       if ((doc.isFoundDocument() && !existingDoc.isFoundDocument())
           || (!doc.isFoundDocument() && existingDoc.isFoundDocument())) {
         conditionChanged.add(key);
@@ -720,7 +722,7 @@ public final class LocalStore implements BundleCallback {
               populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
           return localDocuments.getLocalViewOfDocuments(
-              changedDocs, result.conditionChangedDocuments);
+              changedDocs, result.existenceChangedDocuments);
         });
   }
 
