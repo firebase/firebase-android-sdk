@@ -21,8 +21,6 @@ import java.util.function.Consumer;
 
 public class GitClient {
 
-  private static final String PUBLIC_REPO = "git@github.com:firebase/firebase-android-sdk";
-
   private final String mRelease;
   private final String rcCommit;
   private final ShellExecutor executor;
@@ -70,14 +68,6 @@ public class GitClient {
 
     logger.accept("Pushing tags to FirebasePrivate/firebase-android-sdk ...");
     String command = String.format("git push origin %s", tags);
-    executor.execute(command, handler);
-
-    logger.accept("Adding " + PUBLIC_REPO + " as a remote repository ...");
-    command = String.format("git remote add public %s", PUBLIC_REPO);
-    executor.execute(command, handler);
-
-    logger.accept("Pushing tags to firebase/firebase-android-sdk ...");
-    command = String.format("git push public %s", tags);
     executor.execute(command, handler);
   }
 

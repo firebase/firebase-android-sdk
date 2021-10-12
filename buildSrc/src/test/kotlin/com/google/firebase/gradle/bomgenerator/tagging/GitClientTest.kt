@@ -79,7 +79,7 @@ class GitClientTest {
     }
 
     @Test
-    fun `tags are pushed to both private and public repositories`() {
+    fun `tags are pushed to the remote repository`() {
         Assume.assumeTrue(System.getenv().containsKey("FIREBASE_CI"))
 
         val mockExecutor = object : ShellExecutor(testGitDirectory.root, System.out::println) {
@@ -95,6 +95,5 @@ class GitClientTest {
         git.pushCreatedTags()
 
         Assert.assertTrue(outputs.stream().anyMatch { it.contains("git push origin") })
-        Assert.assertTrue(outputs.stream().anyMatch { it.contains("git push public") })
     }
 }
