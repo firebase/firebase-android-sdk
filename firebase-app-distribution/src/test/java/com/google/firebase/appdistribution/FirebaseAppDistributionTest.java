@@ -405,6 +405,7 @@ public class FirebaseAppDistributionTest {
     verify(mockSignInStorage).setSignInStatus(false);
   }
 
+  @Test
   public void updateApp_appResume_tryResetAabUpdateTask() {
     firebaseAppDistribution.onActivityStarted(activity);
 
