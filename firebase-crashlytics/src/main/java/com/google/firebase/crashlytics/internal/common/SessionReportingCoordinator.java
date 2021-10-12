@@ -132,24 +132,22 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
-  public void persistAppExitInfoEvent(
+  public void persistRelevantAppExitInfoEvent(
       String sessionId,
-      ApplicationExitInfo applicationExitInfo,
+      List<ApplicationExitInfo> applicationExitInfoList,
       LogFileManager logFileManagerForSession,
       UserMetadata userMetadataForSession) {
-    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
-    // ApplicationExitInfo did not occur during the session.
-    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
-      return;
-    }
 
-    // Currently we only persist these if it is an ANR.
-    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+    ApplicationExitInfo relevantApplicationExitInfo =
+        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList);
+
+    if (relevantApplicationExitInfo == null) {
+      Logger.getLogger().v("No relevant ApplicationExitInfo occurred during session: " + sessionId);
       return;
     }
 
     final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
     reportPersistence.persistEvent(
@@ -355,5 +353,31 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       byteArrayOutputStream.write(bytes, 0, length);
     }
     return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
+  }
+
+  /** Finds the first ANR ApplicationExitInfo within the session. */
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+
+    // The order of ApplicationExitInfos is latest first.
+    // Java For-each preserves the order.
+    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
+      // ApplicationExitInfo did not occur during the session.
+      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+        return null;
+      }
+
+      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
+      // all ApplicationExitInfos that fall within the session.
+      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+        continue;
+      }
+
+      return applicationExitInfo;
+    }
+
+    return null;
   }
 }

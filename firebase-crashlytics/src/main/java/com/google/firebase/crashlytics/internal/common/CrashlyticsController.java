@@ -610,9 +610,9 @@ class CrashlyticsController {
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
     if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
-      // TODO: Consider writing applicationExitInfo for all sessions instead of just the most recent
-      // sessionId to close.
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
+    } else {
+      Logger.getLogger().v("ANR feature disabled.");
     }
 
     if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
@@ -867,9 +867,9 @@ class CrashlyticsController {
     if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       ActivityManager activityManager =
           (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-      // Gets the latest app exit info.
+      // Gets all the available app exit infos.
       List<ApplicationExitInfo> applicationExitInfoList =
-          activityManager.getHistoricalProcessExitReasons(null, 0, 1);
+          activityManager.getHistoricalProcessExitReasons(null, 0, 0);
 
       // Passes the latest applicationExitInfo to ReportCoordinator, which persists it if it
       // happened during the session.
@@ -878,11 +878,10 @@ class CrashlyticsController {
             new LogFileManager(context, logFileDirectoryProvider, sessionId);
         final UserMetadata relevantUserMetadata = new UserMetadata();
         relevantUserMetadata.setCustomKeys(new MetaDataStore(getFilesDir()).readKeyData(sessionId));
-        reportingCoordinator.persistAppExitInfoEvent(
-            sessionId,
-            applicationExitInfoList.get(0),
-            relevantSessionLogManager,
-            relevantUserMetadata);
+        reportingCoordinator.persistRelevantAppExitInfoEvent(
+            sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
+      } else {
+        Logger.getLogger().v("No ApplicationExitInfo available. Session: " + sessionId);
       }
     } else {
       Logger.getLogger()
