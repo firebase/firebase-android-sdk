@@ -46,11 +46,19 @@ import java.util.List;
  *         </tr>
  *         <tr>
  *             <td>where("a", "==", "a").where("b", "==", "b")</td>
- *             <td>a ORDERED</td>
+ *             <td>a ASCENDING</td>
  *        </tr>
  *        <tr>
  *             <td>where("a", "==", "a").where("b", "==", "b")</td>
  *             <td>b DESCENDING</td>
+ *        </tr>
+ *        <tr>
+ *            <td>where("a", ">=", "a").orderBy("a")</td>
+ *            <td>a ASCENDING</td>
+ *        </tr>
+ *       <tr>
+ *            <td>where("a", ">=", "a").orderBy("a", "descending")</td>
+ *            <td>a DESCENDING</td>
  *        </tr>
  *        <tr>
  *             <td>where("a", ">=", "a").orderBy("a").orderBy("b")</td>
@@ -110,25 +118,24 @@ public class TargetIndexMatcher {
       boolean consumedFilter = false;
 
       if (currentFilter != null && currentFilter.isInequality()) {
-        // An inequality filter requires a matching ordering constaint.
+        // An inequality filter requires a matching ordering constraint.
         if (matchesFilter(currentFilter, segment) && matchesOrderBy(currentOrderBy, segment)) {
           consumedOrderBy = true;
           consumedFilter = true;
         }
       } else {
-        if (matchesFilter(currentFilter, segment)) {
-          consumedFilter = true;
-        }
-        if (matchesOrderBy(currentOrderBy, segment)) {
-          consumedOrderBy = true;
-        }
+        consumedFilter = matchesFilter(currentFilter, segment);
+        consumedOrderBy = matchesOrderBy(currentOrderBy, segment);
       }
 
       if (!consumedFilter && !consumedOrderBy) {
         // The backend can use merge joins to serve queries with multiple equalities. This means
-        // that a query for "foo == 1 AND bar == 2" can skip "foo" and be served by "bar".
+        // that a query for "foo == 1 AND bar == 2" can skip "foo" and be served by "bar". We
+        // implement the same behavior by allowing a query if at least one equality clause is served
+        // by the index.
         if (currentFilter != null && currentFilter.getOperator().equals(Filter.Operator.EQUAL)) {
           currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
+          continue; // We process the next filter, but stay on the current index segment
         } else {
           return false;
         }
@@ -139,8 +146,8 @@ public class TargetIndexMatcher {
         if (consumedOrderBy) {
           currentOrderBy = orderBys.hasNext() ? orderBys.next() : null;
         }
-        ++i;
       }
+      ++i;
     }
 
     return true;

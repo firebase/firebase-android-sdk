@@ -69,7 +69,7 @@ public class TargetTest {
   public void lowerThanQueryBound() {
     Target target = query("c").filter(filter("foo", "<", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ASCENDING);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.DESCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "");
@@ -108,7 +108,7 @@ public class TargetTest {
   public void greaterThanOrEqualsQueryBound() {
     Target target = query("c").filter(filter("foo", ">=", "bar")).toTarget();
     FieldIndex index =
-        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.ASCENDING);
+        new FieldIndex("c").withAddedField(field("foo"), FieldIndex.Segment.Kind.DESCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
     verifyBound(lowerBound, true, "bar");
