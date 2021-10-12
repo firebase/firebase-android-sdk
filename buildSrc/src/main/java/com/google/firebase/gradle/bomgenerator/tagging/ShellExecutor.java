@@ -36,10 +36,10 @@ public class ShellExecutor {
 
   public void execute(String command, Consumer<List<String>> consumer) {
     try {
-      logger.accept("[shell] Executing: '" + command + "' at: " + cwd.getAbsolutePath());
+      logger.accept("[shell] Executing: \"" + command + "\" at: " + cwd.getAbsolutePath());
       Process p = runtime.exec(command, null, cwd);
       int code = p.waitFor();
-      logger.accept("[shell] Command: '" + command + "' returned with code: " + code);
+      logger.accept("[shell] Command: \"" + command + "\" returned with code: " + code);
       BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
       consumer.accept(CharStreams.readLines(reader));
     } catch (IOException e) {

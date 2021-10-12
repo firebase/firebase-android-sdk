@@ -38,8 +38,8 @@ class GitClientTest {
         val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
 
         executor.execute("git init", handler)
-        executor.execute("git config user.email 'GitClientTest@example.com", handler)
-        executor.execute("git config user.name 'GitClientTest", handler)
+        executor.execute("git config user.email 'GitClientTest@example.com'", handler)
+        executor.execute("git config user.name 'GitClientTest'", handler)
         executor.execute("git add .", handler)
         executor.execute("git commit -m 'init_commit'", handler)
         executor.execute("git status", handler)
