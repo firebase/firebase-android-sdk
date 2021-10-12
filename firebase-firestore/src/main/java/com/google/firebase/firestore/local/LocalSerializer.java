@@ -22,12 +22,15 @@ import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.DocumentTransform.FieldTransform;
 import com.google.firestore.v1.Write;
 import com.google.firestore.v1.Write.Builder;
@@ -286,5 +289,50 @@ public final class LocalSerializer {
             bundledQuery.getParent(), bundledQuery.getStructuredQuery());
 
     return new BundledQuery(target, limitType);
+  }
+
+  public Index encodeFieldIndex(FieldIndex fieldIndex) {
+    Index.Builder index = Index.newBuilder();
+    // The Mobile SDKs treat all indices as collection group indices, as we run all collection group
+    // queries against each collection separately.
+    index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
+
+    for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
+      FieldIndex.Segment segment = fieldIndex.getSegment(i);
+      Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
+      indexField.setFieldPath(segment.getFieldPath().canonicalString());
+      if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
+        indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
+      } else {
+        indexField.setOrder(Index.IndexField.Order.ASCENDING);
+      }
+      index.addFields(indexField);
+    }
+
+    return index.build();
+  }
+
+  public FieldIndex decodeFieldIndex(
+      String collectionGroup, int indexId, Index index, int updateSeconds, int updateNanos) {
+    FieldIndex fieldIndex = new FieldIndex(collectionGroup, indexId);
+    for (Index.IndexField field : index.getFieldsList()) {
+      fieldIndex =
+          fieldIndex.withAddedField(
+              FieldPath.fromServerFormat(field.getFieldPath()),
+              field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
+                  ? FieldIndex.Segment.Kind.CONTAINS
+                  : FieldIndex.Segment.Kind.ORDERED);
+    }
+    fieldIndex =
+        fieldIndex.withVersion(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
+    return fieldIndex;
+  }
+
+  public Mutation decodeMutation(Write mutation) {
+    return rpcSerializer.decodeMutation(mutation);
+  }
+
+  public Write encodeMutation(Mutation mutation) {
+    return rpcSerializer.encodeMutation(mutation);
   }
 }

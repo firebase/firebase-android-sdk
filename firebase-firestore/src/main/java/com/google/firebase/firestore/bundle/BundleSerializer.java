@@ -146,8 +146,8 @@ public class BundleSerializer {
 
     List<Filter> filters = decodeWhere(structuredQuery.optJSONObject("where"));
     List<OrderBy> orderBys = decodeOrderBy(structuredQuery.optJSONArray("orderBy"));
-    @Nullable Bound startAt = decodeBound(structuredQuery.optJSONObject("startAt"));
-    @Nullable Bound endAt = decodeBound(structuredQuery.optJSONObject("endAt"));
+    @Nullable Bound startAt = decodeStartAtBound(structuredQuery.optJSONObject("startAt"));
+    @Nullable Bound endAt = decodeEndAtBound(structuredQuery.optJSONObject("endAt"));
 
     verifyNoOffset(structuredQuery);
     int limit = decodeLimit(structuredQuery);
@@ -167,22 +167,33 @@ public class BundleSerializer {
     }
   }
 
-  private Bound decodeBound(@Nullable JSONObject bound) throws JSONException {
+  private Bound decodeStartAtBound(@Nullable JSONObject bound) throws JSONException {
     if (bound != null) {
-      List<Value> cursor = new ArrayList<>();
       boolean before = bound.optBoolean("before", false);
-
-      JSONArray values = bound.optJSONArray("values");
-      if (values != null) {
-        for (int i = 0; i < values.length(); ++i) {
-          cursor.add(decodeValue(values.getJSONObject(i)));
-        }
-      }
-
-      return new Bound(cursor, before);
+      List<Value> position = decodePosition(bound);
+      return new Bound(position, before);
     }
-
     return null;
+  }
+
+  private Bound decodeEndAtBound(@Nullable JSONObject bound) throws JSONException {
+    if (bound != null) {
+      boolean before = bound.optBoolean("before", false);
+      List<Value> position = decodePosition(bound);
+      return new Bound(position, !before);
+    }
+    return null;
+  }
+
+  private List<Value> decodePosition(JSONObject bound) throws JSONException {
+    List<Value> cursor = new ArrayList<>();
+    JSONArray values = bound.optJSONArray("values");
+    if (values != null) {
+      for (int i = 0; i < values.length(); ++i) {
+        cursor.add(decodeValue(values.getJSONObject(i)));
+      }
+    }
+    return cursor;
   }
 
   private List<OrderBy> decodeOrderBy(@Nullable JSONArray orderBys) throws JSONException {

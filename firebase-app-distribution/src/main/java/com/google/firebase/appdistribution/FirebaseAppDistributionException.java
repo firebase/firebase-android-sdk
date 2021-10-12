@@ -58,13 +58,8 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull private final Status status;
   @Nullable private final AppDistributionRelease release;
 
-  FirebaseAppDistributionException(
-      @NonNull Status status, @Nullable AppDistributionRelease release) {
-    this.status = status;
-    this.release = release;
-  }
-
-  FirebaseAppDistributionException(@NonNull Status status) {
+  public FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
+    super(message);
     this.status = status;
     this.release = null;
   }
@@ -74,6 +69,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     super(message);
     this.status = status;
     this.release = release;
+  }
+
+  public FirebaseAppDistributionException(
+      @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
+    super(message, cause);
+    this.status = status;
+    this.release = null;
   }
 
   public FirebaseAppDistributionException(
@@ -87,7 +89,7 @@ public class FirebaseAppDistributionException extends FirebaseException {
   }
 
   /** Get cached release when error was thrown */
-  @NonNull
+  @Nullable
   public AppDistributionRelease getRelease() {
     return release;
   }

@@ -1,0 +1,95 @@
+// Copyright 2021 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package firebase.transport;
+
+option java_multiple_files = true;
+
+// Top level metrics for all client analytics metrics.
+// These metrics should be sent as a part of every request that is uploaded to
+// FireLog server. In more detail, an additional LogRequest should be added to
+// the BatchedLogRequest, where the LogSource of the LogRequest should be
+// GDT_CLIENT_METRICS and the LogRequest should have a single LogEvent whose
+// payload is a ClientMetrics message.
+//
+// See go/firelog-client-analytics for more details.
+message ClientMetrics {
+  // The window of time over which the metrics are evaluated.
+  TimeWindow window = 1;
+
+  repeated LogSourceMetrics log_source_metrics = 2;
+
+  GlobalMetrics global_metrics = 3;
+
+  // The bundle ID on Apple platforms (e.g., iOS) or the package name on Android
+  string app_namespace = 4;
+}
+
+// Represents an arbitrary window of time.
+message TimeWindow {
+  // The time that the window first starts.
+  // start_ms is the number of milliseconds since the UNIX epoch
+  // (January 1, 1970 00:00:00 UTC)
+  int64 start_ms = 1;
+
+  // The time that the window ends.
+  // end_ms is the number of milliseconds since the UNIX epoch
+  // (January 1, 1970 00:00:00 UTC)
+  int64 end_ms = 2;
+}
+
+// Metrics per app, not per log source
+message GlobalMetrics {
+  StorageMetrics storage_metrics = 1;
+}
+
+message StorageMetrics {
+  // The number of bytes of storage the event cache was consuming on the client
+  // at the time the request was sent.
+  int64 current_cache_size_bytes = 1;
+
+  // The maximum number of bytes to which the event cache is allowed to grow.
+  int64 max_cache_size_bytes = 2;
+}
+
+// Metrics per log source.
+message LogSourceMetrics {
+  // A LogSource uniquely identifies a logging configuration. log_source should
+  // contains a string value of the LogSource from
+  // google3/wireless/android/play/playlog/proto/clientanalytics.proto
+  string log_source = 1;
+
+  repeated LogEventDropped log_event_dropped = 2;
+}
+
+message LogEventDropped {
+  // A count of how many log event have been dropped on the client.
+  int64 events_dropped_count = 1;
+
+  // The reason why log events have been dropped on the client.
+  enum Reason {
+    REASON_UNKNOWN = 0;
+    MESSAGE_TOO_OLD = 1;
+    CACHE_FULL = 2;
+    PAYLOAD_TOO_BIG = 3;
+    MAX_RETRIES_REACHED = 4;
+    INVALID_PAYLOD = 5;
+    SERVER_ERROR = 6;
+  }
+
+  Reason reason = 3;
+}

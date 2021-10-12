@@ -78,6 +78,7 @@ public class FirebaseTestServer extends TestServer {
         "--type=instrumentation",
         "--app=" + testedApkPath,
         "--test=" + testApk,
+        "--timeout=30m",
         "--use-orchestrator",
         "--no-auto-google-login",
         "--no-record-video",
@@ -88,6 +89,9 @@ public class FirebaseTestServer extends TestServer {
         extension.getDevices().stream()
             .flatMap(device -> ImmutableList.of("--device", device).stream())
             .collect(Collectors.toList()));
+
+    Optional.ofNullable(extension.getTimeout())
+        .ifPresent(timeout -> args.add("--timeout", timeout));
 
     Optional.ofNullable(System.getenv("FTL_RESULTS_BUCKET"))
         .map(Environment::expand)

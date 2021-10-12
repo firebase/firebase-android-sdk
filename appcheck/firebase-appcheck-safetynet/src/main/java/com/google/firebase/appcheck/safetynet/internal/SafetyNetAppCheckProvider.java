@@ -88,7 +88,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private Task<SafetyNetClient> initSafetyNetClient(
       GoogleApiAvailability googleApiAvailability, ExecutorService executor) {
     TaskCompletionSource<SafetyNetClient> taskCompletionSource = new TaskCompletionSource<>();
-    executor.submit(
+    executor.execute(
         () -> {
           int connectionResult = googleApiAvailability.isGooglePlayServicesAvailable(context);
           if (connectionResult == ConnectionResult.SUCCESS) {

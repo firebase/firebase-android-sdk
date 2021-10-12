@@ -51,8 +51,10 @@ class SQLiteSchema {
    */
   static final int VERSION = 12;
 
-  // Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
+  static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
+
+  // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
+  static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
 
   /**
    * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
@@ -77,7 +79,14 @@ class SQLiteSchema {
   }
 
   void runMigrations(int fromVersion) {
-    runMigrations(fromVersion, VERSION);
+    int toVersion = VERSION;
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      toVersion = OVERLAY_SUPPORT_VERSION;
+    }
+    if (Persistence.INDEXING_SUPPORT_ENABLED) {
+      toVersion = INDEXING_SUPPORT_VERSION;
+    }
+    runMigrations(fromVersion, toVersion);
   }
 
   /**
@@ -173,10 +182,15 @@ class SQLiteSchema {
      *    maintained invariants from later versions, so migrations that update values cannot assume
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
+    if (fromVersion < OVERLAY_SUPPORT_VERSION && toVersion >= OVERLAY_SUPPORT_VERSION) {
+      Preconditions.checkState(
+          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
+      createOverlays();
+    }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createLocalDocumentsCollectionIndex();
+      createFieldIndex();
     }
   }
 
@@ -336,24 +350,40 @@ class SQLiteSchema {
         });
   }
 
-  // TODO(indexing): Put the schema version in this method name.
-  private void createLocalDocumentsCollectionIndex() {
+  /**
+   * Creates the necessary tables to support document indexing.
+   *
+   * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
+   * table apply for all users. It is not possible to only enable indices for a subset of users.
+   *
+   * <p>The `index_entries` table holds the index values themselves. An index value is created for
+   * each field combination that matches a configured index. If there are pending mutations that
+   * affect an indexed field, an additional index entry is created per mutated field.
+   */
+  private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"collection_index"},
+        new String[] {"index_configuration", "index_entries"},
         () -> {
-          // A per-user, per-collection index for cached documents indexed by a single field's name
-          // and value.
           db.execSQL(
-              "CREATE TABLE collection_index ("
-                  + "uid TEXT, "
-                  + "collection_path TEXT, "
-                  + "field_path TEXT, "
-                  + "field_value_type INTEGER, " // determines type of field_value fields.
-                  + "field_value_1, " // first component
-                  + "field_value_2, " // second component; required for timestamps, GeoPoints
-                  + "document_id TEXT, "
-                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-                  + "field_value_2, document_id))");
+              "CREATE TABLE index_configuration ("
+                  + "index_id INTEGER, "
+                  + "collection_group TEXT, "
+                  + "index_proto BLOB, " // V1 Admin index proto
+                  + "active INTEGER, " // whether index is active
+                  + "update_time_seconds INTEGER, " // time of last document update added to index
+                  + "update_time_nanos INTEGER, "
+                  + "PRIMARY KEY (index_id))");
+
+          // The index entries table only has a single primary index. `array_value` should be set
+          // for all queries.
+          db.execSQL(
+              "CREATE TABLE index_entries ("
+                  + "index_id INTEGER, "
+                  + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
+                  + "directional_value BLOB, " // index values for equality and inequalities
+                  + "uid TEXT, " // user id or null if there are no pending mutations
+                  + "document_name TEXT, "
+                  + "PRIMARY KEY (index_id, array_value, directional_value, uid, document_name))");
         });
   }
 
@@ -580,6 +610,19 @@ class SQLiteSchema {
                   + "read_time_seconds INTEGER, "
                   + "read_time_nanos INTEGER, "
                   + "bundled_query_proto BLOB)");
+        });
+  }
+
+  private void createOverlays() {
+    ifTablesDontExist(
+        new String[] {"document_overlays"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE document_overlays ("
+                  + "uid TEXT, "
+                  + "path TEXT, "
+                  + "overlay_mutation BLOB, "
+                  + "PRIMARY KEY (uid, path))");
         });
   }
 

@@ -20,6 +20,7 @@ import android.app.Notification;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.RingtoneManager;
 import android.os.Build.VERSION_CODES;
@@ -37,9 +38,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
+@LooperMode(LooperMode.Mode.LEGACY)
 @RunWith(RobolectricTestRunner.class)
 public class CommonNotificationBuilderRoboTest {
+  public static final String FCM_FALLBACK_NOTIFICATION_CHANNEL =
+      "fcm_fallback_notification_channel";
+  private static final String FCM_FALLBACK_NOTIFICATION_CHANNEL_NO_RESOURCE = "Misc";
   private static final String PACKAGE_NAME = "test_package";
   private static final String KEY_PREFIX = "gcm.n.";
   private static final String KEY_TICKER = KEY_PREFIX + "ticker";
@@ -451,7 +457,7 @@ public class CommonNotificationBuilderRoboTest {
 
   @Test
   @Config(minSdk = VERSION_CODES.O, maxSdk = 28) // channel ID is O+
-  public void staticCreateNotificationInfo_respectsChannelId() {
+  public void staticCreateNotificationInfo_respectsChannelId() throws Exception {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
             appContext,
@@ -466,6 +472,29 @@ public class CommonNotificationBuilderRoboTest {
   }
 
   @Test
+  @Config(minSdk = VERSION_CODES.O, maxSdk = 28) // channel ID is O+
+  public void staticCreateNotificationInfo_resourceFileHasNoDefaultChannel() throws Exception {
+    setTargetSdkVersion(appContext, VERSION_CODES.O);
+
+    assertThat(
+            CommonNotificationBuilder.getOrCreateChannel(
+                appContext, "non_exsisting_channel", new Bundle()))
+        .isEqualTo(FCM_FALLBACK_NOTIFICATION_CHANNEL);
+  }
+
+  static void setTargetSdkVersion(Context context, int version) throws Exception {
+    PackageInfo packageInfo =
+        context
+            .getPackageManager()
+            .getPackageInfo(context.getPackageName(), PackageManager.GET_META_DATA);
+    ApplicationInfo appInfo = packageInfo.applicationInfo;
+
+    appInfo.targetSdkVersion = version;
+
+    shadowOf(context.getPackageManager()).installPackage(packageInfo);
+  }
+
+  @Test
   public void staticCreateNotificationInfo_handlesNoArgLocalizedTitle() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
@@ -474,12 +503,13 @@ public class CommonNotificationBuilderRoboTest {
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                    "gcm_no_args")),
+                    "fcm_no_args")),
             "channelId",
             appContext.getResources(),
             appContext.getPackageManager(),
             Bundle.EMPTY);
 
+    // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
     // "String with no arguments"
     assertThat(shadowOf(notificationInfo.notificationBuilder.build()).getContentTitle().toString())
         .isEqualTo("String with no arguments");
@@ -494,7 +524,7 @@ public class CommonNotificationBuilderRoboTest {
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                        "gcm_2_args",
+                        "fcm_2_args",
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_ARGS_SUFFIX,
                         "[\"one\", \"two\"]")),
             "channelId",
@@ -502,6 +532,7 @@ public class CommonNotificationBuilderRoboTest {
             appContext.getPackageManager(),
             Bundle.EMPTY);
 
+    // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
     // "First: %1$s and second %2$s"
     assertThat(shadowOf(notificationInfo.notificationBuilder.build()).getContentTitle().toString())
         .isEqualTo("First: one and second two");
@@ -516,12 +547,13 @@ public class CommonNotificationBuilderRoboTest {
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                    "gcm_no_args")),
+                    "fcm_no_args")),
             "channelId",
             appContext.getResources(),
             appContext.getPackageManager(),
             Bundle.EMPTY);
 
+    // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
     // "String with no arguments"
     assertThat(shadowOf(notificationInfo.notificationBuilder.build()).getContentText().toString())
         .isEqualTo("String with no arguments");
@@ -536,7 +568,7 @@ public class CommonNotificationBuilderRoboTest {
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                        "gcm_2_args",
+                        "fcm_2_args",
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_ARGS_SUFFIX,
                         "[\"one\", \"two\"]")),
             "channelId",
@@ -544,6 +576,7 @@ public class CommonNotificationBuilderRoboTest {
             appContext.getPackageManager(),
             Bundle.EMPTY);
 
+    // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
     // "First: %1$s and second %2$s"
     assertThat(shadowOf(notificationInfo.notificationBuilder.build()).getContentText().toString())
         .isEqualTo("First: one and second two");
@@ -561,7 +594,8 @@ public class CommonNotificationBuilderRoboTest {
             appContext.getPackageManager(),
             Bundle.EMPTY);
 
-    assertThat(notificationInfo.notificationBuilder.build().icon).isEqualTo(R.drawable.gcm_icon);
+    assertThat(notificationInfo.notificationBuilder.build().icon)
+        .isEqualTo(com.google.firebase.messaging.test.R.drawable.gcm_icon);
   }
 
   @Test
@@ -574,9 +608,12 @@ public class CommonNotificationBuilderRoboTest {
             "channelId",
             appContext.getResources(),
             appContext.getPackageManager(),
-            Bundles.of(CommonNotificationBuilder.METADATA_DEFAULT_ICON, R.drawable.gcm_icon));
+            Bundles.of(
+                CommonNotificationBuilder.METADATA_DEFAULT_ICON,
+                com.google.firebase.messaging.test.R.drawable.gcm_icon));
 
-    assertThat(notificationInfo.notificationBuilder.build().icon).isEqualTo(R.drawable.gcm_icon);
+    assertThat(notificationInfo.notificationBuilder.build().icon)
+        .isEqualTo(com.google.firebase.messaging.test.R.drawable.gcm_icon);
   }
 
   @Test
@@ -585,7 +622,7 @@ public class CommonNotificationBuilderRoboTest {
     packageInfo.packageName = PACKAGE_NAME;
     packageInfo.applicationInfo = new ApplicationInfo();
     packageInfo.applicationInfo.packageName = PACKAGE_NAME;
-    packageInfo.applicationInfo.icon = R.drawable.gcm_icon2;
+    packageInfo.applicationInfo.icon = com.google.firebase.messaging.test.R.drawable.gcm_icon2;
 
     shadowOf(appContext.getPackageManager()).installPackage(packageInfo);
 

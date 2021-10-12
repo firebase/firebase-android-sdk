@@ -35,7 +35,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
-import com.google.firebase.crashlytics.internal.ProviderProxyNativeComponent;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -61,6 +60,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private File testFilesDirectory;
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
+  private CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
 
   @Override
   protected void setUp() throws Exception {
@@ -116,7 +116,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   /** A convenience class for building CrashlyticsController instances for testing. */
   private class ControllerBuilder {
     private DataCollectionArbiter dataCollectionArbiter;
-    private CrashlyticsNativeComponent nativeComponent;
+    private CrashlyticsNativeComponent nativeComponent = null;
     private UnityVersionProvider unityVersionProvider;
     private AnalyticsEventLogger analyticsEventLogger;
     private SessionReportingCoordinator sessionReportingCoordinator;
@@ -125,7 +125,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
-      nativeComponent = new ProviderProxyNativeComponent(() -> null);
+      nativeComponent = mockNativeComponent;
 
       unityVersionProvider = mock(UnityVersionProvider.class);
       when(unityVersionProvider.getUnityVersion()).thenReturn(null);
@@ -413,7 +413,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
     when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(false);
-    when(arbiter.waitForDataCollectionPermission())
+    when(arbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(new TaskCompletionSource<Void>().getTask());
     when(arbiter.waitForAutomaticDataCollectionEnabled())
         .thenReturn(new TaskCompletionSource<Void>().getTask());
@@ -545,6 +545,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private void assertFirebaseAnalyticsCrashEvent(AnalyticsEventLogger mockFirebaseAnalyticsLogger) {
     final ArgumentCaptor<Bundle> captor = ArgumentCaptor.forClass(Bundle.class);
 
+    // The event gets sent back almost immediately, but on a separate thread.
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException e) {
+    }
     verify(mockFirebaseAnalyticsLogger, times(1))
         .logEvent(eq(CrashlyticsController.FIREBASE_APPLICATION_EXCEPTION), captor.capture());
     assertEquals(

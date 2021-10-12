@@ -41,10 +41,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
-import com.google.firebase.messaging.Constants.IntentActionKeys;
-import com.google.firebase.messaging.Constants.IntentKeys;
+import com.google.android.gms.cloudmessaging.CloudMessagingReceiver.IntentActionKeys;
+import com.google.android.gms.cloudmessaging.CloudMessagingReceiver.IntentKeys;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -65,6 +66,16 @@ public final class CommonNotificationBuilder {
       "fcm_fallback_notification_channel";
   public static final String FCM_FALLBACK_NOTIFICATION_CHANNEL_LABEL =
       "fcm_fallback_notification_channel_label";
+
+  // FM's fallback channel name when neither channel name is explicitly provided nor FM's string
+  // resource file exists (possibly stripped by Progurad). Note this name is set purposefully
+  // different from FM's default resource channel name "Miscellaneous" for debugability.
+  private static final String FCM_FALLBACK_NOTIFICATION_CHANNEL_NAME_NO_RESOURCE = "Misc";
+  private static final String ACTION_MESSAGING_EVENT = "com.google.firebase.MESSAGING_EVENT";
+
+  // Getting illegal resouce id from context will throw NotFoundException.
+  // See: https://developer.android.com/reference/android/content/res/Resources#ID_NULL
+  private static final int ILLEGAL_RESOURCE_ID = 0;
 
   /**
    * Request code used by display notification pending intents.
@@ -369,16 +380,16 @@ public final class CommonNotificationBuilder {
     // and google.n.).
     intent.putExtras(params.paramsWithReservedKeysRemoved());
 
-    PendingIntent contentIntent =
-        PendingIntent.getActivity(
-            context, generatePendingIntentRequestCode(), intent, PendingIntent.FLAG_ONE_SHOT);
-
-    // We need to check metric options against the messageData bundle because we stripped the metric
-    // options from the clientVisibleData version
     if (shouldUploadMetrics(params)) {
-      contentIntent = wrapContentIntent(context, params, contentIntent);
+      // store the analytics data in a sub-bundle
+      intent.putExtra(MessageNotificationKeys.ANALYTICS_DATA, params.paramsForAnalyticsIntent());
     }
-    return contentIntent;
+
+    return PendingIntent.getActivity(
+        context,
+        generatePendingIntentRequestCode(),
+        intent,
+        getPendingIntentFlags(PendingIntent.FLAG_ONE_SHOT));
   }
 
   private static Intent createTargetIntent(
@@ -422,7 +433,8 @@ public final class CommonNotificationBuilder {
   }
 
   @TargetApi(VERSION_CODES.O)
-  private static String getOrCreateChannel(
+  @VisibleForTesting
+  public static String getOrCreateChannel(
       Context context, String msgChannel, Bundle manifestMetadata) {
     if (Build.VERSION.SDK_INT < VERSION_CODES.O) {
       return null;
@@ -483,12 +495,24 @@ public final class CommonNotificationBuilder {
               .getIdentifier(
                   FCM_FALLBACK_NOTIFICATION_CHANNEL_LABEL, "string", context.getPackageName());
 
+      String defaultChannelName;
+      if (channelLabelResourceId == ILLEGAL_RESOURCE_ID) {
+        Log.e(
+            TAG,
+            "String resource \"fcm_fallback_notification_channel_label\" is not found. Using"
+                + " default string channel name.");
+
+        defaultChannelName = FCM_FALLBACK_NOTIFICATION_CHANNEL_NAME_NO_RESOURCE;
+      } else {
+        defaultChannelName = context.getString(channelLabelResourceId);
+      }
+
       notificationManager.createNotificationChannel(
           new NotificationChannel(
               // channel id
               FCM_FALLBACK_NOTIFICATION_CHANNEL,
               // user visible name of the channel
-              context.getString(channelLabelResourceId),
+              defaultChannelName,
               // shows everywhere, makes noise, but does not visually intrude.
               NotificationManager.IMPORTANCE_DEFAULT));
     }
@@ -505,16 +529,15 @@ public final class CommonNotificationBuilder {
     return requestCodeProvider.incrementAndGet();
   }
 
-  private static PendingIntent wrapContentIntent(
-      Context context, NotificationParams params, PendingIntent pi) {
-    // Need to send analytics, so wrap the activity intent in a PendingIntent that starts the
-    // FirebaseMessagingService. The service will launch the activity and send the analytics.
-    Intent openIntent =
-        new Intent(IntentActionKeys.NOTIFICATION_OPEN)
-            .putExtras(params.paramsForAnalyticsIntent())
-            .putExtra(IntentKeys.PENDING_INTENT, pi);
-
-    return createMessagingPendingIntent(context, openIntent);
+  /**
+   * Adds {@link PendingIntent#FLAG_IMMUTABLE} to a PendingIntent's flags since any PendingIntents
+   * used here don't need to be modified.
+   */
+  private static int getPendingIntentFlags(int baseFlags) {
+    // Only add on platform levels that support FLAG_IMMUTABLE.
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        ? baseFlags | PendingIntent.FLAG_IMMUTABLE
+        : baseFlags;
   }
 
   @Nullable
@@ -535,11 +558,11 @@ public final class CommonNotificationBuilder {
     return PendingIntent.getBroadcast(
         context,
         generatePendingIntentRequestCode(),
-        new Intent(IntentActionKeys.MESSAGING_EVENT)
+        new Intent(ACTION_MESSAGING_EVENT)
             .setComponent(
                 new ComponentName(context, "com.google.firebase.iid.FirebaseInstanceIdReceiver"))
             .putExtra(IntentKeys.WRAPPED_INTENT, intent),
-        PendingIntent.FLAG_ONE_SHOT);
+        getPendingIntentFlags(PendingIntent.FLAG_ONE_SHOT));
   }
 
   /** Check whether we should upload metrics data. */

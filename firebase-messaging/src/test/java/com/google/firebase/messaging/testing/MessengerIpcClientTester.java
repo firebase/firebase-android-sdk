@@ -34,9 +34,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.iid.FirebaseIidMessengerCompat;
-import com.google.firebase.iid.MessengerIpcClient;
-import com.google.firebase.iid.MessengerIpcClient.What;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -146,12 +143,6 @@ public final class MessengerIpcClientTester {
    */
   private final Map<Integer, Bundle> cannedResponses = new HashMap<>();
 
-  // This always uses MessengerCompat Robolectric messes with the regular Messenger class
-  public static MessengerIpcClientTester createWithFirebaseIidMessengerCompat() {
-    return new MessengerIpcClientTester(
-        handler -> new FirebaseIidMessengerCompat(handler).getBinder());
-  }
-
   public MessengerIpcClientTester(Function<Handler, IBinder> messengerCompatBinderFactory) {
     gmsCoreMessengerBinder = messengerCompatBinderFactory.apply(new Handler(this::handleMessage));
     setRegisterBinder(gmsCoreMessengerBinder);
@@ -217,20 +208,21 @@ public final class MessengerIpcClientTester {
     return sentRequests.poll(time, unit);
   }
 
-  /** Sets a canned or automatic response each time a message is sent with this {@code what}. */
-  public void setCannedResponse(@What int what, Bundle response) {
-    cannedResponses.put(what, response);
-  }
+  //  /** Sets a canned or automatic response each time a message is sent with this {@code what}. */
+  //  public void setCannedResponse(@What int what, Bundle response) {
+  //    cannedResponses.put(what, response);
+  //  }
 
-  /**
-   * Sets the given {@code what} as unsupported.
-   *
-   * <p>When a request is made with this {@code what} an unsupported error will be returned to the
-   * caller.
-   */
-  public void setUnsupported(@What int what) {
-    unsupportedWhats.add(what);
-  }
+  //  /**
+  //   * Sets the given {@code what} as unsupported.
+  //   *
+  //   * <p>When a request is made with this {@code what} an unsupported error will be returned to
+  // the
+  //   * caller.
+  //   */
+  //  public void setUnsupported(@What int what) {
+  //    unsupportedWhats.add(what);
+  //  }
 
   /**
    * Sets the binder that will be returned when binding to the register intent action on GmsCore.

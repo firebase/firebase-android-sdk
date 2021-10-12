@@ -14,10 +14,19 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import android.util.Log;
+
 public class CrashpadMain {
+  // The first argument will be the path of libcrashlytics-handler.so.
+  // This path differs based on the version of Android.
   public static void main(String[] args) {
     try {
-      System.loadLibrary("crashlytics-handler");
+      String path = args[1];
+
+      Log.d("FirebaseCrashlytics", "Path to shared objects is " + path);
+
+      // System.load allows specifying the path.
+      System.load(path + "libcrashlytics-handler.so");
     } catch (UnsatisfiedLinkError e) {
       throw new RuntimeException(e);
     }

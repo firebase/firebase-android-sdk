@@ -18,5 +18,16 @@
   <string name="singin_dialog_message">Get in-app alerts when new builds are ready to test.</string>
   <string name="singin_yes_button">Turn on</string>
   <string name="singin_no_button">Not now</string>
-
+  <string name="no_update_available">No new release available, try calling checkForUpdate.</string>
+  <string name="update_dialog_title">New Version Available</string>
+  <string name="update_yes_button">Update</string>
+  <string name="update_no_button">Cancel</string>
+  <string name="downloading_app_update">Downloading in-app update...</string>
+  <string name="download_completed">Download completed</string>
+  <string name="download_failed">Download failed</string>
+  <string name="notifications_channel_name">App Distribution App Update Downloads</string>
+  <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
+  <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
+  <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
+  <string name="unknown_sources_yes_button">Settings</string>
 </resources>

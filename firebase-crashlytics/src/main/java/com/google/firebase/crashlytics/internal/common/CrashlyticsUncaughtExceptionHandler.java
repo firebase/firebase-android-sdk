@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
   interface CrashListener {
+
     void onUncaughtException(
         SettingsDataProvider settingsDataProvider, Thread thread, Throwable ex);
   }
@@ -28,6 +30,7 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
   private final CrashListener crashListener;
   private final SettingsDataProvider settingsDataProvider;
   private final Thread.UncaughtExceptionHandler defaultHandler;
+  private final CrashlyticsNativeComponent nativeComponent;
 
   // use AtomicBoolean because value is accessible from other threads.
   private final AtomicBoolean isHandlingException;
@@ -35,23 +38,23 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
   public CrashlyticsUncaughtExceptionHandler(
       CrashListener crashListener,
       SettingsDataProvider settingsProvider,
-      Thread.UncaughtExceptionHandler defaultHandler) {
+      Thread.UncaughtExceptionHandler defaultHandler,
+      CrashlyticsNativeComponent nativeComponent) {
     this.crashListener = crashListener;
     this.settingsDataProvider = settingsProvider;
     this.defaultHandler = defaultHandler;
     this.isHandlingException = new AtomicBoolean(false);
+    this.nativeComponent = nativeComponent;
   }
 
   @Override
   public void uncaughtException(Thread thread, Throwable ex) {
     isHandlingException.set(true);
     try {
-      if (thread == null) {
-        Logger.getLogger().e("Could not handle uncaught exception; null thread");
-      } else if (ex == null) {
-        Logger.getLogger().e("Could not handle uncaught exception; null throwable");
-      } else {
+      if (shouldRecordUncaughtException(thread, ex)) {
         crashListener.onUncaughtException(settingsDataProvider, thread, ex);
+      } else {
+        Logger.getLogger().d("Uncaught exception will not be recorded by Crashlytics.");
       }
     } catch (Exception e) {
       Logger.getLogger().e("An error occurred in the uncaught exception handler", e);
@@ -64,5 +67,32 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
 
   boolean isHandlingException() {
     return isHandlingException.get();
+  }
+
+  /**
+   * Returns true if Crashlytics should record this exception. The decision to record is different
+   * than the decision to report the exception to Crashlytics servers, which is handled by the
+   * {@link DataCollectionArbiter}
+   *
+   * @return false if the thread or exception is null, or if a native crash already exists for this
+   *     session.
+   */
+  private boolean shouldRecordUncaughtException(Thread thread, Throwable ex) {
+    if (thread == null) {
+      Logger.getLogger().e("Crashlytics will not record uncaught exception; null thread");
+      return false;
+    }
+    if (ex == null) {
+      Logger.getLogger().e("Crashlytics will not record uncaught exception; null throwable");
+      return false;
+    }
+    // We should only report at most one fatal event for a session. If a native fatal already exists
+    // for this session, ignore the uncaught exception
+    if (nativeComponent.hasCrashDataForCurrentSession()) {
+      Logger.getLogger()
+          .d("Crashlytics will not record uncaught exception; native crash exists for session.");
+      return false;
+    }
+    return true;
   }
 }

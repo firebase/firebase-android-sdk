@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
+import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -33,9 +34,7 @@ import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
-import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -620,10 +619,10 @@ public class QueryTest {
     query = baseQuery.limitToFirst(1);
     assertFalse(query.matchesAllDocuments());
 
-    query = baseQuery.startAt(new Bound(Collections.emptyList(), true));
+    query = baseQuery.startAt(bound(true));
     assertFalse(query.matchesAllDocuments());
 
-    query = baseQuery.endAt(new Bound(Collections.emptyList(), true));
+    query = baseQuery.endAt(bound(true));
     assertFalse(query.matchesAllDocuments());
   }
 
@@ -676,18 +675,12 @@ public class QueryTest {
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
-            .startAt(
-                new Bound(
-                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
-                    true)),
+            .startAt(bound(/* inclusive= */ true, "foo", Arrays.asList(1, 2, 3))),
         "collection|f:|ob:aasc__name__asc|lb:b:foo,[1,2,3]");
     assertCanonicalId(
         baseQuery
             .orderBy(orderBy("a"))
-            .endAt(
-                new Bound(
-                    Arrays.asList(TestUtil.wrap("foo"), TestUtil.wrap(Arrays.asList(1, 2, 3))),
-                    false)),
+            .endAt(bound(/* inclusive= */ true, "foo", Arrays.asList(1, 2, 3))),
         "collection|f:|ob:aasc__name__asc|ub:a:foo,[1,2,3]");
     assertCanonicalId(baseQuery.limitToFirst(5), "collection|f:|ob:__name__asc|l:5");
     assertCanonicalId(baseQuery.limitToLast(5), "collection|f:|ob:__name__desc|l:5");

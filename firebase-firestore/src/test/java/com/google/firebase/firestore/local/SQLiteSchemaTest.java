@@ -620,6 +620,35 @@ public class SQLiteSchemaTest {
     cursor.close();
   }
 
+  @Test
+  public void createsIndexingTables() {
+    boolean indexingEnabled = Persistence.INDEXING_SUPPORT_ENABLED;
+    try {
+      Persistence.INDEXING_SUPPORT_ENABLED = true;
+
+      schema.runMigrations(0, SQLiteSchema.INDEXING_SUPPORT_VERSION);
+
+      assertTableExists("index_configuration");
+      assertTableExists("index_entries");
+    } finally {
+      Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
+    }
+  }
+
+  @Test
+  public void createsOverlaysTable() {
+    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    try {
+      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+      schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+
+      assertTableExists("document_overlays");
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
+    }
+  }
+
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     SQLitePersistence persistence =
         new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
@@ -650,6 +679,14 @@ public class SQLiteSchemaTest {
       assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
     }
     assertEquals("Results contain unexpected entries", docs.length, actualResults.size());
+  }
+
+  private void assertTableExists(String tableName) {
+    boolean exists =
+        !(new SQLitePersistence.Query(db, "SELECT 1=1 FROM sqlite_master WHERE tbl_name = ?")
+            .binding(tableName)
+            .isEmpty());
+    assertTrue(String.format("Expected table %s to exist", tableName), exists);
   }
 
   private void assertNoResultsForQuery(String query, String[] args) {

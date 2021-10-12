@@ -32,6 +32,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -43,6 +44,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class BundleTest {
+  private static Charset UTF8_CHARSET = Charset.forName("UTF-8");
   private static String[] BUNDLE_TEMPLATES =
       new String[] {
         "{\"metadata\":{\"id\":\"test-bundle\",\"createTime\":{\"seconds\":1001,\"nanos\":9999},"
@@ -71,7 +73,7 @@ public class BundleTest {
             + "{\"seconds\":1000,\"nanos\":9999},\"exists\":true}}",
         "{\"document\":{\"name\":\"projects/{projectId}/databases/(default)/documents/coll-1/b\","
             + "\"createTime\":{\"seconds\":1,\"nanos\":9},\"updateTime\":{\"seconds\":1,"
-            + "\"nanos\":9},\"fields\":{\"k\":{\"stringValue\":\"b\"},\"bar\":"
+            + "\"nanos\":9},\"fields\":{\"k\":{\"stringValue\":\"\uD83D\uDE0A\"},\"bar\":"
             + "{\"integerValue\":2}}}}"
       };
 
@@ -238,16 +240,20 @@ public class BundleTest {
     CollectionReference collectionQuery = db.collection("coll-1");
     QuerySnapshot collectionSnapshot = Tasks.await(collectionQuery.get(Source.CACHE));
     assertEquals(
-        asList(map("bar", 1L, "k", "a"), map("bar", 2L, "k", "b")),
+        asList(map("bar", 1L, "k", "a"), map("bar", 2L, "k", "\uD83D\uDE0A")),
         querySnapshotToValues(collectionSnapshot));
 
     Query limitQuery = Tasks.await(db.getNamedQuery("limit"));
     QuerySnapshot limitSnapshot = Tasks.await(limitQuery.get(Source.CACHE));
-    assertEquals(asList(map("bar", 2L, "k", "b")), querySnapshotToValues(limitSnapshot));
+    assertEquals(asList(map("bar", 2L, "k", "\uD83D\uDE0A")), querySnapshotToValues(limitSnapshot));
 
     Query limitToLastQuery = Tasks.await(db.getNamedQuery("limit-to-last"));
     QuerySnapshot limitToLastSnapshot = Tasks.await(limitToLastQuery.get(Source.CACHE));
     assertEquals(asList(map("bar", 1L, "k", "a")), querySnapshotToValues(limitToLastSnapshot));
+  }
+
+  private int getUTF8ByteCount(String s) {
+    return s.getBytes(UTF8_CHARSET).length;
   }
 
   /**
@@ -262,7 +268,7 @@ public class BundleTest {
     for (int i = 1; i < BUNDLE_TEMPLATES.length; ++i) {
       // Extract elements from BUNDLE_TEMPLATE and replace the project ID.
       String element = BUNDLE_TEMPLATES[i].replaceAll("\\{projectId\\}", projectId);
-      bundle.append(element.length());
+      bundle.append(getUTF8ByteCount(element));
       bundle.append(element);
     }
 
@@ -273,7 +279,8 @@ public class BundleTest {
         BUNDLE_TEMPLATES[0].replace(
             "{totalBytes}", Integer.toString(bundleString.getBytes("UTF-8").length));
 
-    return (metadata.length() + metadata + bundleString).getBytes("UTF-8");
+    String fullBundle = getUTF8ByteCount(metadata) + metadata + bundleString;
+    return fullBundle.getBytes("UTF-8");
   }
 
   /**

@@ -32,12 +32,13 @@ import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.local.GarbageCollectionScheduler;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
+import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
@@ -73,7 +74,9 @@ public final class FirestoreClient {
   private EventManager eventManager;
 
   // LRU-related
-  @Nullable private GarbageCollectionScheduler gcScheduler;
+  @Nullable private Scheduler gcScheduler;
+
+  @Nullable private Scheduler indexBackfillScheduler;
 
   public FirestoreClient(
       final Context context,
@@ -141,6 +144,10 @@ public final class FirestoreClient {
           persistence.shutdown();
           if (gcScheduler != null) {
             gcScheduler.stop();
+          }
+
+          if (indexBackfillScheduler != null) {
+            indexBackfillScheduler.stop();
           }
         });
   }
@@ -254,7 +261,7 @@ public final class FirestoreClient {
             : new MemoryComponentProvider();
     provider.initialize(configuration);
     persistence = provider.getPersistence();
-    gcScheduler = provider.getGargabeCollectionScheduler();
+    gcScheduler = provider.getGarbageCollectionScheduler();
     localStore = provider.getLocalStore();
     remoteStore = provider.getRemoteStore();
     syncEngine = provider.getSyncEngine();
@@ -262,6 +269,12 @@ public final class FirestoreClient {
 
     if (gcScheduler != null) {
       gcScheduler.start();
+    }
+
+    if (Persistence.INDEXING_SUPPORT_ENABLED && settings.isPersistenceEnabled()) {
+      indexBackfillScheduler = provider.getIndexBackfillScheduler();
+      hardAssert(indexBackfillScheduler != null, "Index backfill scheduler should not be null.");
+      indexBackfillScheduler.start();
     }
   }
 
@@ -299,6 +312,11 @@ public final class FirestoreClient {
           }
         });
     return completionSource.getTask();
+  }
+
+  public Task<Void> configureIndices(List<FieldIndex> fieldIndices) {
+    verifyNotTerminated();
+    return asyncQueue.enqueue(() -> localStore.configureIndices(fieldIndices));
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

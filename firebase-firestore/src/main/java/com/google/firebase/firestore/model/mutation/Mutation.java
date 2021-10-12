@@ -16,13 +16,13 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,10 +110,13 @@ public abstract class Mutation {
    * modified.
    *
    * @param document The document to mutate.
+   * @param previousMask The fields that have been updated before applying this mutation.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
+   * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
-  public abstract void applyToLocalView(MutableDocument document, Timestamp localWriteTime);
+  public abstract @Nullable FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
@@ -134,19 +137,6 @@ public abstract class Mutation {
     hardAssert(
         document.getKey().equals(getKey()),
         "Can only apply a mutation to a document with the same key");
-  }
-
-  /**
-   * Returns the version from the given document for use as the result of a mutation. Mutations are
-   * defined to return the version of the base document only if it is an existing document. Deleted
-   * and unknown documents have a post-mutation version of {@code SnapshotVersion.NONE}.
-   */
-  static SnapshotVersion getPostMutationVersion(MutableDocument document) {
-    if (document.isFoundDocument()) {
-      return document.getVersion();
-    } else {
-      return SnapshotVersion.NONE;
-    }
   }
 
   /**
@@ -183,7 +173,7 @@ public abstract class Mutation {
    * result of applying a transform) for use when applying a transform locally.
    *
    * @param localWriteTime The local time of the mutation (used to generate ServerTimestampValues).
-   * @param mutableDocument The current state of the document after applying all previous mutations.
+   * @param mutableDocument The document to apply transforms on.
    * @return A map of fields to transform results.
    */
   protected Map<FieldPath, Value> localTransformResults(

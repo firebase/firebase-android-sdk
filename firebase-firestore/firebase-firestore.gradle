@@ -18,8 +18,11 @@ plugins {
 }
 
 firebaseLibrary {
-    testLab.enabled = true
     publishSources = true
+    testLab {
+        enabled = true
+        timeout = '30m'
+    }
 }
 
 protobuf {
@@ -96,6 +99,26 @@ android.libraryVariants.all { variant ->
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
     }
 
+    def localProps = new Properties()
+
+    try {
+    file("local.properties").withInputStream { localProps.load(it) }
+    } catch (FileNotFoundException e) {
+    }
+
+    // TODO(Indexing): Delete below once indexing is shipped.
+    if (localProps['firestoreEnableIndexing']) {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
+    }
+
+    // TODO(Overlay): Delete below once overlay is shipped.
+    if (localProps['firestoreEnableOverlay']) {
+        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "false")
+    }
 }
 
 configurations.all {
@@ -138,6 +161,10 @@ dependencies {
     implementation('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
+
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
+    androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'androidx.test:core:1.2.0'

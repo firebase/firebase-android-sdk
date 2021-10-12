@@ -555,11 +555,17 @@ public final class RemoteSerializer {
     }
 
     if (target.getStartAt() != null) {
-      structuredQueryBuilder.setStartAt(encodeBound(target.getStartAt()));
+      Cursor.Builder cursor = Cursor.newBuilder();
+      cursor.addAllValues(target.getStartAt().getPosition());
+      cursor.setBefore(target.getStartAt().isInclusive());
+      structuredQueryBuilder.setStartAt(cursor);
     }
 
     if (target.getEndAt() != null) {
-      structuredQueryBuilder.setEndAt(encodeBound(target.getEndAt()));
+      Cursor.Builder cursor = Cursor.newBuilder();
+      cursor.addAllValues(target.getEndAt().getPosition());
+      cursor.setBefore(!target.getEndAt().isInclusive());
+      structuredQueryBuilder.setEndAt(cursor);
     }
 
     builder.setStructuredQuery(structuredQueryBuilder);
@@ -609,12 +615,12 @@ public final class RemoteSerializer {
 
     Bound startAt = null;
     if (query.hasStartAt()) {
-      startAt = decodeBound(query.getStartAt());
+      startAt = new Bound(query.getStartAt().getValuesList(), query.getStartAt().getBefore());
     }
 
     Bound endAt = null;
     if (query.hasEndAt()) {
-      endAt = decodeBound(query.getEndAt());
+      endAt = new Bound(query.getEndAt().getValuesList(), !query.getEndAt().getBefore());
     }
 
     return new com.google.firebase.firestore.core.Target(
@@ -815,19 +821,6 @@ public final class RemoteSerializer {
         throw fail("Unrecognized direction %d", proto.getDirection());
     }
     return OrderBy.getInstance(direction, fieldPath);
-  }
-
-  // Bounds
-
-  private Cursor encodeBound(Bound bound) {
-    Cursor.Builder builder = Cursor.newBuilder();
-    builder.addAllValues(bound.getPosition());
-    builder.setBefore(bound.isBefore());
-    return builder.build();
-  }
-
-  private Bound decodeBound(Cursor proto) {
-    return new Bound(proto.getValuesList(), proto.getBefore());
   }
 
   // Watch changes

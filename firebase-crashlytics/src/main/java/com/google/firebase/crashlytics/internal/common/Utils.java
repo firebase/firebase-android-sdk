@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static java.util.Objects.requireNonNull;
+
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
@@ -36,19 +38,33 @@ public final class Utils {
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =
-        new Continuation<T, Void>() {
-          @Override
-          public Void then(@NonNull Task<T> task) throws Exception {
-            if (task.isSuccessful()) {
-              result.trySetResult(task.getResult());
-            } else {
-              result.trySetException(task.getException());
-            }
-            return null;
+        task -> {
+          if (task.isSuccessful()) {
+            result.trySetResult(task.getResult());
+          } else {
+            result.trySetException(requireNonNull(task.getException()));
           }
+          return null;
         };
     t1.continueWith(continuation);
     t2.continueWith(continuation);
+    return result.getTask();
+  }
+
+  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
+    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
+    Continuation<T, Void> continuation =
+        task -> {
+          if (task.isSuccessful()) {
+            result.trySetResult(task.getResult());
+          } else {
+            result.trySetException(requireNonNull(task.getException()));
+          }
+          return null;
+        };
+    t1.continueWith(executor, continuation);
+    t2.continueWith(executor, continuation);
     return result.getTask();
   }
 

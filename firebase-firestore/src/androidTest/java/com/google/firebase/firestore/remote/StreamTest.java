@@ -306,4 +306,26 @@ public class StreamTest {
         .containsExactly("getToken", "invalidateToken", "getToken", "getToken")
         .inOrder();
   }
+
+  @Test
+  public void testTokenIsNotInvalidatedOnceStreamIsHealthy() throws Exception {
+    AsyncQueue testQueue = new AsyncQueue();
+    MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
+    Datastore datastore =
+        new Datastore(
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            mockCredentialsProvider,
+            ApplicationProvider.getApplicationContext(),
+            null);
+    StreamStatusCallback callback = new StreamStatusCallback();
+    WriteStream writeStream = datastore.createWriteStream(callback);
+    waitForWriteStreamOpen(testQueue, writeStream, callback);
+    testQueue.runDelayedTasksUntil(TimerId.HEALTH_CHECK_TIMEOUT);
+
+    // Simulate callback from GRPC with an unauthenticated error -- this should NOT invalidate the
+    // token.
+    testQueue.runSync(() -> writeStream.handleServerClose(Status.UNAUTHENTICATED));
+    assertThat(mockCredentialsProvider.observedStates()).containsExactly("getToken");
+  }
 }

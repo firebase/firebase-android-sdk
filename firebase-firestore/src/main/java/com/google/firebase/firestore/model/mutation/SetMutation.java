@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
@@ -86,19 +87,20 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public void applyToLocalView(MutableDocument document, Timestamp localWriteTime) {
+  public FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
-      return;
+      return previousMask;
     }
 
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
-    document
-        .convertToFoundDocument(getPostMutationVersion(document), localValue)
-        .setHasLocalMutations();
+    document.convertToFoundDocument(document.getVersion(), localValue).setHasLocalMutations();
+    // SetMutation overwrites all fields.
+    return null;
   }
 
   /** Returns the object value to use when setting the document. */

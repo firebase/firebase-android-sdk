@@ -28,10 +28,7 @@ public enum UpdateStatus {
   /** Download failed */
   DOWNLOAD_FAILED,
 
-  /** Update installed */
-  INSTALLED,
-
-  /** Installation cancelled */
+  /** Installation canceled */
   INSTALL_CANCELED,
 
   /** Installation failed */
@@ -39,4 +36,13 @@ public enum UpdateStatus {
 
   /** AAB flow (directed to Play) */
   REDIRECTED_TO_PLAY,
+
+  /** Currently on the latest release */
+  NEW_RELEASE_NOT_AVAILABLE,
+
+  /** Release check failed before download started */
+  NEW_RELEASE_CHECK_FAILED,
+
+  /** Customer canceled the update */
+  UPDATE_CANCELED,
 }

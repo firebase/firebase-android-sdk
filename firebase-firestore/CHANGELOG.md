@@ -1,10 +1,22 @@
-# Unreleased
-- [changed] Increases the aggressiveness of network retires when an app's
+# 23.0.4
+- [fixed] Fixed an issue where some fields were missed when copying in the
+  `FirebaseFirestoreSettings.Builder` copy constructor.
+
+# 23.0.3
+- [fixed] Fixed an issue when loading a data bundle with
+  multi-byte Unicode characters leads to failures.
+
+# 23.0.2
+- [changed] Increases the aggressiveness of network retries when an app's
   foreground status changes.
 
 # 23.0.1
 - [changed] The SDK now tries to immediately establish a connection to the
   backend when the app enters the foreground.
+  
+# 23.0.0
+ - [changed] Internal infrastructure improvements.
+ - [changed] Internal changes to support dynamic feature modules.
 
 # 22.1.1
 - [fixed] Fixed an issue that dropped the limit for queries loaded from

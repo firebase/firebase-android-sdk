@@ -192,7 +192,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     gaugeManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-    if (isPerformanceCollectionEnabled()) {
+    if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
           String.format(
               "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",

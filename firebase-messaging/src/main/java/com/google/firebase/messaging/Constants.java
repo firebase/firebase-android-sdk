@@ -16,8 +16,11 @@ package com.google.firebase.messaging;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
 import android.os.Bundle;
+import androidx.annotation.IntDef;
 import androidx.annotation.StringDef;
 import androidx.collection.ArrayMap;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * List of constants, separated from their logic to be shared more easily with Google Play services.
@@ -49,28 +52,6 @@ public final class Constants {
 
     // don't instantiate me.
     private MessageTypes() {}
-  }
-
-  /** Actions used by analytics broadcasts. */
-  public static final class IntentActionKeys {
-    public static final String NOTIFICATION_OPEN =
-        "com.google.firebase.messaging.NOTIFICATION_OPEN";
-    public static final String NOTIFICATION_DISMISS =
-        "com.google.firebase.messaging.NOTIFICATION_DISMISS";
-
-    public static final String MESSAGING_EVENT = "com.google.firebase.MESSAGING_EVENT";
-
-    // don't instantiate me.
-    private IntentActionKeys() {}
-  }
-
-  /** Keys used by the client library to pass Intents within Bundles. */
-  public static final class IntentKeys {
-    public static final String PENDING_INTENT = "pending_intent";
-    public static final String WRAPPED_INTENT = "wrapped_intent";
-
-    // don't instantiate me.
-    private IntentKeys() {}
   }
 
   /** Keys used by Google Play services in the bundle representing a Remote Message. */
@@ -236,6 +217,12 @@ public final class Constants {
     public static final String CHANNEL = NOTIFICATION_PREFIX + "android_channel_id";
 
     /**
+     * Activity Intent extra key that holds the analytics data (in the form of a bundle) attached to
+     * a notification open event.
+     */
+    public static final String ANALYTICS_DATA = NOTIFICATION_PREFIX + "analytics_data";
+
+    /**
      * For l10n of text parameters (e.g. title & body) a string resource can be specified instead of
      * a raw string. The name of that resource would be passed in the bundle under the key named:
      * <parameter> + suffix (e.g: _loc_key)
@@ -277,46 +264,30 @@ public final class Constants {
    * @hide
    */
   public static final class FirelogAnalytics {
-    public static final String PARAM_EVENT = "event";
-    public static final String PARAM_MESSAGE_TYPE = "messageType";
-
-    /**
-     * Message Delivery Event. Need to be capitalized snake cases for backend to parse successfully
-     */
-    @StringDef({EventType.MESSAGE_DELIVERED})
-    public @interface EventType {
-      String MESSAGE_DELIVERED = "MESSAGE_DELIVERED";
-    }
-
-    /** Message type. Need to be capitalized snake cases for backend to parse successfully. */
-    @StringDef({MessageType.DATA_MESSAGE, MessageType.DISPLAY_NOTIFICATION})
-    public @interface MessageType {
-      String DATA_MESSAGE = "DATA_MESSAGE";
-      String DISPLAY_NOTIFICATION = "DISPLAY_NOTIFICATION";
-    }
-
-    public static final String PARAM_SDK_PLATFORM = "sdkPlatform";
-    public static final String PARAM_PRIORITY = "priority";
-    public static final String PARAM_MESSAGE_ID = "messageId";
-    public static final String PARAM_ANALYTICS_LABEL = "analyticsLabel";
-    public static final String PARAM_COMPOSER_LABEL = "composerLabel";
-    public static final String PARAM_CAMPAIGN_ID = "campaignId";
-    public static final String PARAM_TOPIC = "topic";
-    public static final String PARAM_TTL = "ttl";
-    public static final String PARAM_COLLAPSE_KEY = "collapseKey";
-    public static final String PARAM_PACKAGE_NAME = "packageName";
-    public static final String PARAM_INSTANCE_ID = "instanceId";
-    public static final String PARAM_PROJECT_NUMBER = "projectNumber";
-
     // FCM log source name registered at Firelog. It uniquely identifies FCM's logging
     // configuration.
     public static final String FCM_LOG_SOURCE = "FCM_CLIENT_EVENT_LOGGING";
-    public static final String SDK_PLATFORM_ANDROID = "ANDROID";
+
+    /**
+     * These are the canonical priority constants used in proto logs. They differ from the {@link
+     * RemoteMessage} priority values.
+     */
+    @IntDef({MessagePriority.UNKNOWN, MessagePriority.NORMAL, MessagePriority.HIGH})
+    @Retention(RetentionPolicy.SOURCE)
+    @interface MessagePriority {
+      int UNKNOWN = 0;
+      int NORMAL = 5;
+      int HIGH = 10;
+    }
 
     // don't instantiate me.
     private FirelogAnalytics() {}
   }
 
+  /**
+   * These constants must be kept in sync with:
+   * com/google/android/gms/measurement/AppMeasurement.java
+   */
   public static final class ScionAnalytics {
 
     public static final String ORIGIN_FCM = "fcm";
