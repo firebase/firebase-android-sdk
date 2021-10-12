@@ -106,12 +106,12 @@ public class SQLiteIndexBackfillerTest {
 
   @Test
   public void testBackfillUpdatesCollectionGroups() {
-    addCollectionGroup("coll1", new Timestamp(30, 0));
-    addCollectionGroup("coll2", new Timestamp(30, 30));
-    addCollectionGroup("coll3", new Timestamp(10, 0));
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
     addFieldIndex("coll3", "foo");
+    addCollectionGroup("coll1", new Timestamp(30, 0));
+    addCollectionGroup("coll2", new Timestamp(30, 30));
+    addCollectionGroup("coll3", new Timestamp(10, 0));
     addDoc("coll1/docA", "foo", version(10, 0));
     addDoc("coll2/docA", "foo", version(10, 0));
     addDoc("coll3/docA", "foo", version(10, 0));
@@ -130,12 +130,12 @@ public class SQLiteIndexBackfillerTest {
 
   @Test
   public void testBackfillPrioritizesNewCollectionGroups() {
-    // In this test case, `coll3` doesn't have an entry in the collection group table, so it should
+    // In this test case, `coll3` is a new collection group that hasn't been indexed, so it should
     // be processed ahead of the other collection groups.
-    addCollectionGroup("coll1", new Timestamp(1, 0));
-    addCollectionGroup("coll2", new Timestamp(2, 0));
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
+    addCollectionGroup("coll1", new Timestamp(1, 0));
+    addCollectionGroup("coll2", new Timestamp(2, 0));
     addFieldIndex("coll3", "foo");
 
     IndexBackfiller.Results results = backfiller.backfill(localStore);
@@ -153,9 +153,9 @@ public class SQLiteIndexBackfillerTest {
   @Test
   public void testBackfillWritesUntilCap() {
     backfiller.setMaxIndexEntriesToProcess(3);
-    addCollectionGroup("coll1", new Timestamp(1, 0));
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
+    addCollectionGroup("coll1", new Timestamp(1, 0));
     addDoc("coll1/docA", "foo", version(10, 0));
     addDoc("coll1/docB", "foo", version(10, 0));
     addDoc("coll2/docA", "foo", version(10, 0));

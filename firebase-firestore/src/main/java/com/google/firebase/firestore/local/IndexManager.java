@@ -50,7 +50,7 @@ public interface IndexManager {
   void addIndexEntries(Document document);
 
   /**
-   * Adds a field path index.
+   * Adds a field path index. Writes the collection group to a separate table.
    *
    * <p>Values for this index are persisted asynchronously. The index will only be used for query
    * execution once values are persisted.

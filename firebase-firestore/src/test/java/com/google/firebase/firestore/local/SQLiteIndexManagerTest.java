@@ -368,6 +368,23 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     assertEquals(indexes.get(2).getCollectionGroup(), "coll3");
   }
 
+  @Test
+  public void testAddFieldIndexWritesToCollectionGroup() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
+            .withVersion(version(30, 0)));
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll2")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
+            .withVersion(SnapshotVersion.NONE));
+    List<String> collectionGroups = sqLiteIndexManager.getCollectionGroupsOrderByUpdateTime();
+    assertEquals(2, collectionGroups.size());
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
+  }
+
   private void addDoc(String key, Map<String, Object> data) {
     MutableDocument doc = doc(key, 1, data);
     indexManager.addIndexEntries(doc);

@@ -14,10 +14,21 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.index.IndexEntry;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Preconditions;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -121,18 +132,63 @@ public class IndexBackfiller {
   private int writeIndexEntries(LocalStore localStore) {
     int totalEntriesWrittenCount = 0;
     indexManager.loadFieldIndexes();
+    Timestamp startingTimestamp = Timestamp.now();
 
     while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
       int entriesRemainingUnderCap = maxIndexEntriesToProcess - totalEntriesWrittenCount;
-      int entriesWrittenCount =
-          indexManager.writeEntriesForNextCollectionGroup(localStore, entriesRemainingUnderCap);
-      if (entriesWrittenCount == SQLiteIndexManager.NO_NEXT_COLLECTION_GROUP) {
+      Pair<String, List<FieldIndex>> collectionGroupPair =
+          indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
+      if (collectionGroupPair == null) {
         break;
       }
-      totalEntriesWrittenCount += entriesWrittenCount;
+
+      String collectionGroup = collectionGroupPair.first;
+      List<FieldIndex> fieldIndexes = collectionGroupPair.second;
+      totalEntriesWrittenCount +=
+          writeEntriesForCollectionGroup(
+              localStore, collectionGroup, fieldIndexes, entriesRemainingUnderCap);
     }
 
     return totalEntriesWrittenCount;
+  }
+
+  /**
+   * Writes entries for the fetched field indexes. Requires field indexes to be loaded into memory
+   * first, via {@link SQLiteIndexManager#loadFieldIndexes()}.
+   */
+  private int writeEntriesForCollectionGroup(
+      LocalStore localStore,
+      String collectionGroup,
+      List<FieldIndex> fieldIndexes,
+      int entriesRemainingUnderCap) {
+    int entriesWrittenCount = 0;
+    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
+
+    // Use the earliest updateTime of all field indexes as the base updateTime.
+    SnapshotVersion earliestUpdateTime = getEarliestUpdateTime(fieldIndexes);
+
+    // TODO(indexing): Make sure the docs matching the query are sorted by read time.
+    // TODO(indexing): Use limit queries to allow incremental progress.
+    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
+    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
+        localStore.getDocumentsMatchingQuery(query, earliestUpdateTime);
+
+    entriesWrittenCount +=
+        indexManager.updateFieldIndexesForCollectionGroup(
+            matchingDocuments, fieldIndexes, entriesRemainingUnderCap);
+    return entriesWrittenCount;
+  }
+
+  private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
+    Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
+    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      lowestVersion =
+          fieldIndex.getVersion().compareTo(lowestVersion) < 0
+              ? fieldIndex.getVersion()
+              : lowestVersion;
+    }
+    return lowestVersion;
   }
 
   @VisibleForTesting
