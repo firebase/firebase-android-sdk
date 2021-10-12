@@ -53,75 +53,53 @@ final class FirestoreCallCredentials extends CallCredentials {
   @Override
   public void applyRequestMetadata(
       RequestInfo requestInfo, Executor executor, final MetadataApplier metadataApplier) {
-    Task<Metadata> authTask =
-        authProvider
-            .getToken()
-            .continueWithTask(
-                executor,
-                task -> {
-                  Metadata metadata = new Metadata();
-                  if (task.isSuccessful()) {
-                    String token = task.getResult();
-                    Logger.debug(LOG_TAG, "Successfully fetched auth token.");
-                    if (token != null) {
-                      metadata.put(AUTHORIZATION_HEADER, "Bearer " + token);
-                    }
-                    return Tasks.forResult(metadata);
-                  } else {
-                    Exception exception = task.getException();
-                    if (exception instanceof FirebaseApiNotAvailableException) {
-                      Logger.debug(
-                          LOG_TAG, "Firebase Auth API not available, not using authentication.");
-                      return Tasks.forResult(metadata);
-                    } else if (exception instanceof FirebaseNoSignedInUserException) {
-                      Logger.debug(LOG_TAG, "No user signed in, not using authentication.");
-                      return Tasks.forResult(metadata);
-                    } else {
-                      Logger.warn(LOG_TAG, "Failed to get auth token: %s.", exception);
-                      return Tasks.forException(exception);
-                    }
-                  }
-                });
-
-    Task<Metadata> appCheckTask =
-        appCheckProvider
-            .getToken()
-            .continueWithTask(
-                executor,
-                task -> {
-                  Metadata metadata = new Metadata();
-                  if (task.isSuccessful()) {
-                    String token = task.getResult();
-                    if (token != null && !token.isEmpty()) {
-                      Logger.debug(LOG_TAG, "Successfully fetched AppCheck token.");
-                      metadata.put(X_FIREBASE_APPCHECK, token);
-                    }
-                    return Tasks.forResult(metadata);
-                  } else {
-                    Exception exception = task.getException();
-                    if (exception instanceof FirebaseApiNotAvailableException) {
-                      Logger.debug(LOG_TAG, "Firebase AppCheck API not available.");
-                      return Tasks.forResult(metadata);
-                    } else {
-                      Logger.warn(LOG_TAG, "Failed to get AppCheck token: %s.", exception);
-                      return Tasks.forException(exception);
-                    }
-                  }
-                });
+    Task<String> authTask = authProvider.getToken();
+    Task<String> appCheckTask = appCheckProvider.getToken();
 
     Tasks.whenAll(authTask, appCheckTask)
-        .addOnSuccessListener(
+        .addOnCompleteListener(
             executor,
             unused -> {
-              Metadata authMetadata = authTask.getResult();
-              Metadata appCheckMetadata = appCheckTask.getResult();
-              authMetadata.merge(appCheckMetadata);
-              metadataApplier.apply(authMetadata);
-            })
-        .addOnFailureListener(
-            executor,
-            exception -> {
-              metadataApplier.fail(Status.UNAUTHENTICATED.withCause(exception));
+              Metadata metadata = new Metadata();
+
+              if (authTask.isSuccessful()) {
+                String token = authTask.getResult();
+                Logger.debug(LOG_TAG, "Successfully fetched auth token.");
+                if (token != null) {
+                  metadata.put(AUTHORIZATION_HEADER, "Bearer " + token);
+                }
+              } else {
+                Exception exception = authTask.getException();
+                if (exception instanceof FirebaseApiNotAvailableException) {
+                  Logger.debug(
+                      LOG_TAG, "Firebase Auth API not available, not using authentication.");
+                } else if (exception instanceof FirebaseNoSignedInUserException) {
+                  Logger.debug(LOG_TAG, "No user signed in, not using authentication.");
+                } else {
+                  Logger.warn(LOG_TAG, "Failed to get auth token: %s.", exception);
+                  metadataApplier.fail(Status.UNAUTHENTICATED.withCause(exception));
+                  return;
+                }
+              }
+
+              if (appCheckTask.isSuccessful()) {
+                String token = appCheckTask.getResult();
+                if (token != null && !token.isEmpty()) {
+                  Logger.debug(LOG_TAG, "Successfully fetched AppCheck token.");
+                  metadata.put(X_FIREBASE_APPCHECK, token);
+                }
+              } else {
+                Exception exception = appCheckTask.getException();
+                if (exception instanceof FirebaseApiNotAvailableException) {
+                  Logger.debug(LOG_TAG, "Firebase AppCheck API not available.");
+                } else {
+                  Logger.warn(LOG_TAG, "Failed to get AppCheck token: %s.", exception);
+                  metadataApplier.fail(Status.UNAUTHENTICATED.withCause(exception));
+                  return;
+                }
+              }
+
+              metadataApplier.apply(metadata);
             });
   }
 }

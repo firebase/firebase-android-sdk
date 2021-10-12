@@ -80,7 +80,7 @@ public class FirebaseAppCheckTokenProviderTest {
   @Captor ArgumentCaptor<AppCheckTokenListener> idTokenListenerCaptor;
 
   Provider<InternalAppCheckTokenProvider> getProvider(InternalAppCheckTokenProvider internal) {
-      return () -> internal;
+    return () -> internal;
   }
 
   @Test
