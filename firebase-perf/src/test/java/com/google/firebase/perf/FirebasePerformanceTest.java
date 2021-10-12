@@ -42,7 +42,6 @@ import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

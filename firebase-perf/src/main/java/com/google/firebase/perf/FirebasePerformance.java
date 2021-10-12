@@ -51,7 +51,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -183,8 +182,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    ExecutorService initExecutor = TransportManager.getInstance()
-        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
+    ExecutorService executor =
+        TransportManager.getInstance()
+            .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
+
     Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
@@ -197,13 +198,13 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
-        String.format(
-          "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
-          ConsoleUrlGenerator.generateDashboardUrl(
-            firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
+          String.format(
+              "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
+              ConsoleUrlGenerator.generateDashboardUrl(
+                  firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
 
-    syncInitFuture = initExecutor.submit(() -> gaugeManager.setApplicationContext(appContext));
+    syncInitFuture = executor.submit(() -> gaugeManager.setApplicationContext(appContext));
   }
 
   /**
