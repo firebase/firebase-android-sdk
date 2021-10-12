@@ -201,9 +201,7 @@ public class TransportManager implements AppStateCallback {
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
 
     // Run initialization in background thread
-    androidx.tracing.Trace.beginSection("TransportManager.execute(syncInit)");
     this.executorService.execute(this::syncInit);
-    androidx.tracing.Trace.endSection();
     return executorService;
   }
 

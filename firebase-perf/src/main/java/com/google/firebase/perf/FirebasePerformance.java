@@ -169,7 +169,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       GaugeManager gaugeManager) {
-    androidx.tracing.Trace.beginSection("Fireperf()");
+
     this.firebaseApp = firebaseApp;
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -182,15 +182,12 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
-    androidx.tracing.Trace.beginSection("Fireperf() TransportManager.initialize");
+
     ExecutorService initExecutor = TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
-    androidx.tracing.Trace.endSection();
     Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
-    androidx.tracing.Trace.beginSection("Fireperf() extractMetadata(context)");
     mMetadataBundle = extractMetadata(appContext);
-    androidx.tracing.Trace.endSection();
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
@@ -198,7 +195,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
-    androidx.tracing.Trace.beginSection("Fireperf() generateDashboardUrl(...)");
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
         String.format(
@@ -206,12 +202,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
           ConsoleUrlGenerator.generateDashboardUrl(
             firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
-    androidx.tracing.Trace.endSection();
 
-    androidx.tracing.Trace.beginSection("Fireperf() execute(syncInit)");
     syncInitFuture = initExecutor.submit(() -> gaugeManager.setApplicationContext(appContext));
-    androidx.tracing.Trace.endSection();
-    androidx.tracing.Trace.endSection();
   }
 
   /**
