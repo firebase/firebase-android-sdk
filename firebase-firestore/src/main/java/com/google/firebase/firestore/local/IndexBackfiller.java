@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -124,29 +123,25 @@ public class IndexBackfiller {
     // TODO(indexing): Handle field indexes that are removed by the user.
     return new Results(
         /* hasRun= */ true,
-        /* numIndexesWritten= */ writeIndexEntries(localStore),
+        /* numIndexesWritten= */ writeIndexEntries(localStore.getLocalDocumentsView()),
         /* numIndexesRemoved= */ 0);
   }
 
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
-  private int writeIndexEntries(LocalStore localStore) {
+  private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int totalEntriesWrittenCount = 0;
-    indexManager.loadFieldIndexes();
+    indexManager.initializeFieldIndexes();
     Timestamp startingTimestamp = Timestamp.now();
 
     while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
       int entriesRemainingUnderCap = maxIndexEntriesToProcess - totalEntriesWrittenCount;
-      Pair<String, List<FieldIndex>> collectionGroupPair =
-          indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
-      if (collectionGroupPair == null) {
+      String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
+      if (collectionGroup == null) {
         break;
       }
-
-      String collectionGroup = collectionGroupPair.first;
-      List<FieldIndex> fieldIndexes = collectionGroupPair.second;
       totalEntriesWrittenCount +=
           writeEntriesForCollectionGroup(
-              localStore, collectionGroup, fieldIndexes, entriesRemainingUnderCap);
+              localDocumentsView, collectionGroup, entriesRemainingUnderCap);
     }
 
     return totalEntriesWrittenCount;
@@ -154,28 +149,25 @@ public class IndexBackfiller {
 
   /**
    * Writes entries for the fetched field indexes. Requires field indexes to be loaded into memory
-   * first, via {@link SQLiteIndexManager#loadFieldIndexes()}.
+   * first, via {@link SQLiteIndexManager#initializeFieldIndexes()}.
    */
   private int writeEntriesForCollectionGroup(
-      LocalStore localStore,
-      String collectionGroup,
-      List<FieldIndex> fieldIndexes,
-      int entriesRemainingUnderCap) {
+      LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
     int entriesWrittenCount = 0;
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
     // Use the earliest updateTime of all field indexes as the base updateTime.
-    SnapshotVersion earliestUpdateTime = getEarliestUpdateTime(fieldIndexes);
+    SnapshotVersion earliestUpdateTime =
+        getEarliestUpdateTime(indexManager.getMatchingFieldIndexes(collectionGroup));
 
     // TODO(indexing): Make sure the docs matching the query are sorted by read time.
     // TODO(indexing): Use limit queries to allow incremental progress.
     // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
-        localStore.getDocumentsMatchingQuery(query, earliestUpdateTime);
+        localDocumentsView.getDocumentsMatchingQuery(query, earliestUpdateTime);
 
-    entriesWrittenCount +=
-        indexManager.updateIndexEntries(matchingDocuments, fieldIndexes, entriesRemainingUnderCap);
-    return entriesWrittenCount;
+    return indexManager.updateIndexEntries(
+        collectionGroup, matchingDocuments, entriesRemainingUnderCap);
   }
 
   private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {

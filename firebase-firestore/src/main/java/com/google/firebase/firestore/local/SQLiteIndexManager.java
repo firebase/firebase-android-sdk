@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -148,15 +147,14 @@ final class SQLiteIndexManager implements IndexManager {
         index.getVersion().getTimestamp().getNanoseconds());
   }
 
-  /**
-   * Loads all field indexes stored in persistence, groups them by collection, and creates an
-   * ordering based on update time.
-   */
-  public void loadFieldIndexes() {
+  /** Loads all field indexes stored in persistence and groups them by collection. */
+  // TODO(indexing): Verify that methods involving field indexes can only be called after calling
+  // this method.
+  public void initializeFieldIndexes() {
     collectionToFieldIndexes.clear();
 
     // TODO(indexing): Allow fetching new updates, instead of reading all of them from persistence
-    // each time.
+    // each time and clearing the map.
     for (FieldIndex fieldIndex : getFieldIndexes()) {
       String collectionGroup = fieldIndex.getCollectionGroup();
 
@@ -169,20 +167,6 @@ final class SQLiteIndexManager implements IndexManager {
     }
   }
 
-  @VisibleForTesting
-  List<String> getCollectionGroupsOrderByUpdateTime() {
-    List<String> orderedCollectionGroups = new ArrayList<>();
-    db.query(
-            "SELECT collection_group "
-                + "FROM collection_group_update_times "
-                + "ORDER BY update_time_seconds, update_time_nanos")
-        .forEach(
-            row -> {
-              orderedCollectionGroups.add(row.getString(0));
-            });
-    return orderedCollectionGroups;
-  }
-
   /**
    * Returns a pair containing the next collection group to update, along with its corresponding
    * field indexes.
@@ -190,8 +174,7 @@ final class SQLiteIndexManager implements IndexManager {
    * <p>The field indexes must first be loaded into memory by calling `loadFieldIndexes()`.
    */
   // TODO(indexing): Use a counter rather than the starting timestamp.
-  public @Nullable Pair<String, List<FieldIndex>> getNextCollectionGroupToUpdate(
-      Timestamp startingTimestamp) {
+  public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
     final String[] nextCollectionGroup = {null};
     db.query(
             "SELECT collection_group "
@@ -214,12 +197,12 @@ final class SQLiteIndexManager implements IndexManager {
     Preconditions.checkNotNull(
         matchingFieldIndexes, "Collection group should be mapped to field indexes.");
 
-    // Store that this collection group was updated.
+    // Store that this collection group will updated.
     // TODO(indexing): Store progress with a counter rather than a timestamp. If using a timestamp,
     // use the read time of the last document read in the loop.
     setCollectionGroupUpdateTime(nextCollectionGroup[0], Timestamp.now());
 
-    return new Pair<>(nextCollectionGroup[0], matchingFieldIndexes);
+    return nextCollectionGroup[0];
   }
 
   /**
@@ -228,11 +211,12 @@ final class SQLiteIndexManager implements IndexManager {
    * processed.
    */
   public int updateIndexEntries(
+      String collectionGroup,
       ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
-      List<FieldIndex> fieldIndexes,
       int entriesRemainingUnderCap) {
     int entriesWrittenCount = 0;
     Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
+    List<FieldIndex> fieldIndexes = getMatchingFieldIndexes(collectionGroup);
 
     for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
       Document document = entry.getValue();
@@ -262,6 +246,12 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     return entriesWrittenCount;
+  }
+
+  public List<FieldIndex> getMatchingFieldIndexes(String collectionGroup) {
+    List<FieldIndex> matching = collectionToFieldIndexes.get(collectionGroup);
+    Preconditions.checkNotNull(matching, "collectionGroup should exist in field index mapping");
+    return matching;
   }
 
   /**
@@ -325,17 +315,6 @@ final class SQLiteIndexManager implements IndexManager {
           encode(directionalValues));
     }
     return entriesWritten;
-  }
-
-  @VisibleForTesting
-  void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
-    db.execute(
-        "INSERT OR REPLACE INTO collection_group_update_times "
-            + "(collection_group, update_time_seconds, update_time_nanos) "
-            + "VALUES (?, ?, ?)",
-        collectionGroup,
-        updateTime.getSeconds(),
-        updateTime.getNanoseconds());
   }
 
   @Override
@@ -657,5 +636,30 @@ final class SQLiteIndexManager implements IndexManager {
             });
 
     return allIndexes;
+  }
+
+  @VisibleForTesting
+  List<String> getCollectionGroupsOrderByUpdateTime() {
+    List<String> orderedCollectionGroups = new ArrayList<>();
+    db.query(
+            "SELECT collection_group "
+                + "FROM collection_group_update_times "
+                + "ORDER BY update_time_seconds, update_time_nanos")
+        .forEach(
+            row -> {
+              orderedCollectionGroups.add(row.getString(0));
+            });
+    return orderedCollectionGroups;
+  }
+
+  @VisibleForTesting
+  void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
+    db.execute(
+        "INSERT OR REPLACE INTO collection_group_update_times "
+            + "(collection_group, update_time_seconds, update_time_nanos) "
+            + "VALUES (?, ?, ?)",
+        collectionGroup,
+        updateTime.getSeconds(),
+        updateTime.getNanoseconds());
   }
 }

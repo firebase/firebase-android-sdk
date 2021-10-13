@@ -807,9 +807,8 @@ public final class LocalStore implements BundleCallback {
     return persistence.runTransaction("Backfill Indexes", () -> indexBackfiller.backfill(this));
   }
 
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime) {
-    return localDocuments.getDocumentsMatchingQuery(query, sinceReadTime);
+  public LocalDocumentsView getLocalDocumentsView() {
+    return localDocuments;
   }
 
   /**
