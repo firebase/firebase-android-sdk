@@ -127,7 +127,7 @@ public class TargetIndexMatcher {
     }
 
     // Process all equalities first. Equalities can appear out of order.
-    List<FieldIndex.Segment> segments = (List<FieldIndex.Segment>) index.getDirectionalSegments();
+    List<FieldIndex.Segment> segments = index.getDirectionalSegments();
     int segmentIndex = 0;
 
     for (; segmentIndex < segments.size(); ++segmentIndex) {
