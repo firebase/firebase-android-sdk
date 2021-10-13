@@ -118,8 +118,6 @@ public class TargetIndexMatcher {
   public boolean servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
 
-    Iterator<OrderBy> orderBys = this.orderBys.iterator();
-
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
     if (arraySegment != null && getMatchingFilter(equalityFilters, arraySegment) == null) {
@@ -127,6 +125,7 @@ public class TargetIndexMatcher {
     }
 
     // Process all equalities first. Equalities can appear out of order.
+    Iterator<OrderBy> orderBys = this.orderBys.iterator();
     List<FieldIndex.Segment> segments = index.getDirectionalSegments();
     int segmentIndex = 0;
 
