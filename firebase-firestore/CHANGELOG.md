@@ -1,3 +1,6 @@
+# Unreleased
+- [feature] Added support for Firebase AppCheck.
+
 # 23.0.4
 - [fixed] Fixed an issue where some fields were missed when copying in the
   `FirebaseFirestoreSettings.Builder` copy constructor.
