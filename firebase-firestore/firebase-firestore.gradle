@@ -57,7 +57,7 @@ android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion project.minSdkVersion
+        minSdkVersion 19
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -125,7 +125,7 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:28.1-android'
+            force 'com.google.guava:guava:30.1-android'
         }
     }
     exclude group: "com.google.protobuf", module: "protobuf-java"
