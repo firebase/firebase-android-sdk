@@ -22,11 +22,8 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A light query planner for Firestore.
@@ -87,7 +84,8 @@ public class TargetIndexMatcher {
   // The collection ID (or collection group) of the query target.
   private final String collectionId;
 
-  private final List<Filter> filters;
+  private @Nullable FieldFilter inequalityFilter;
+  private final List<FieldFilter> equalityFilters;
   private final List<OrderBy> orderBys;
 
   public TargetIndexMatcher(Target target) {
@@ -95,21 +93,21 @@ public class TargetIndexMatcher {
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
-    filters = ensureSorted(target.getFilters());
     orderBys = target.getOrderBy();
-  }
+    inequalityFilter = null;
+    equalityFilters = new ArrayList<>();
 
-  /** Sort the filters so that all equalities appear before all inequalities. */
-  private List<Filter> ensureSorted(List<Filter> filters) {
-    List<Filter> sortedFilters = new ArrayList<>(filters);
-    Collections.sort(
-        sortedFilters,
-        (l, r) -> {
-          boolean leftInequality = ((FieldFilter) l).isInequality();
-          boolean rightInequality = ((FieldFilter) r).isInequality();
-          return Boolean.compare(leftInequality, rightInequality);
-        });
-    return sortedFilters;
+    for (Filter filter : target.getFilters()) {
+      FieldFilter fieldFilter = (FieldFilter) filter;
+      if (fieldFilter.isInequality()) {
+        hardAssert(
+            inequalityFilter == null || inequalityFilter.getField().equals(fieldFilter.getField()),
+            "Only a single inequality is supported");
+        inequalityFilter = fieldFilter;
+      } else {
+        equalityFilters.add(fieldFilter);
+      }
+    }
   }
 
   /**
@@ -120,77 +118,73 @@ public class TargetIndexMatcher {
   public boolean servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
 
-    Iterator<Filter> filters = this.filters.iterator();
     Iterator<OrderBy> orderBys = this.orderBys.iterator();
 
-    FieldFilter currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
-    OrderBy currentOrderBy = orderBys.hasNext() ? orderBys.next() : null;
+    // If there is an array element, find a matching filter.
+    FieldIndex.Segment arraySegment = index.getArraySegment();
+    if (arraySegment != null && getMatchingFilter(equalityFilters, arraySegment) == null) {
+      return false;
+    }
 
-    // Equality filters can be used in any order. A query for foo=a, bar=b can be served by
-    // `a ASC, b ASC` as well as `b ASC, a ASC`. If we encounter an equality that we cannot
-    // process immediately, we add it to this temporary list so that we can consumer it later.
-    Set<FieldPath> skippedEqualities = new HashSet<>();
+    // Process all equalities first. Equalities can appear out of order.
+    List<FieldIndex.Segment> segments = (List<FieldIndex.Segment>) index.getDirectionalSegments();
+    int segmentIndex = 0;
 
-    // Validate that every segment of the index has a corresponding clause in the provided target.
-    // While a target can have additional filters and orderBy constraints, it cannot have fewer.
-    for (int i = 0; i < index.segmentCount(); ) {
-      FieldIndex.Segment segment = index.getSegment(i);
-
-      boolean consumedOrderBy = false;
-      boolean consumedFilter = false;
-
-      if (currentFilter != null && currentFilter.isInequality()) {
-        // An inequality filter requires a matching ordering constraint.
-        if (matchesFilter(currentFilter, segment) && matchesOrderBy(currentOrderBy, segment)) {
-          consumedOrderBy = true;
-          consumedFilter = true;
-        }
+    for (; segmentIndex < segments.size(); ++segmentIndex) {
+      FieldFilter matchingFilter = getMatchingFilter(equalityFilters, segments.get(segmentIndex));
+      if (matchingFilter != null) {
+        equalityFilters.remove(matchingFilter);
       } else {
-        consumedFilter = matchesFilter(currentFilter, segment);
-        consumedOrderBy = matchesOrderBy(currentOrderBy, segment);
+        break; // Try inequalities and orderBys
       }
+    }
 
-      if (!consumedFilter && !consumedOrderBy) {
-        // The backend can use merge joins to serve queries with multiple equalities. This means
-        // that a query for "foo == 1 AND bar == 2" can skip "foo" and be served by "bar". We
-        // implement the same behavior by allowing a query if at least one equality clause is served
-        // by the index.
-        if (currentFilter != null && currentFilter.getOperator().equals(Filter.Operator.EQUAL)) {
-          skippedEqualities.add(currentFilter.getField());
-          currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
-          continue; // We process the next filter, but stay on the current index segment
-        } else if (skippedEqualities.contains(segment.getFieldPath())
-            && !segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS)) {
-          skippedEqualities.remove(segment.getFieldPath());
-        } else {
-          return false;
-        }
-      } else {
-        if (consumedFilter) {
-          currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
-        }
-        if (consumedOrderBy) {
-          currentOrderBy = orderBys.hasNext() ? orderBys.next() : null;
-        }
+    if (segmentIndex == segments.size()) {
+      return true;
+    }
+
+    // Process the optional inequality, which needs to have a matching orderBy.
+    if (inequalityFilter != null) {
+      FieldIndex.Segment segment = segments.get(segmentIndex);
+      if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
+        return false;
       }
-      ++i;
+      ++segmentIndex;
+    }
+
+    // Process all remaining orderBys. OrderBys need to appear in order.
+    for (; segmentIndex < segments.size(); ++segmentIndex) {
+      FieldIndex.Segment segment = segments.get(segmentIndex);
+      if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {
+        return false;
+      }
     }
 
     return true;
+  }
+
+  @Nullable
+  private FieldFilter getMatchingFilter(List<FieldFilter> filters, FieldIndex.Segment segment) {
+    for (FieldFilter filter : filters) {
+      if (matchesFilter(filter, segment)) {
+        return filter;
+      }
+    }
+    return null;
   }
 
   private boolean matchesFilter(@Nullable FieldFilter filter, FieldIndex.Segment segment) {
     if (filter == null || !filter.getField().equals(segment.getFieldPath())) {
       return false;
     }
-    boolean isArrayOoperator =
+    boolean isArrayOperator =
         filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS)
             || filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS_ANY);
-    return segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS) == isArrayOoperator;
+    return segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS) == isArrayOperator;
   }
 
-  private boolean matchesOrderBy(@Nullable OrderBy orderBy, FieldIndex.Segment segment) {
-    if (orderBy == null || !orderBy.getField().equals(segment.getFieldPath())) {
+  private boolean matchesOrderBy(OrderBy orderBy, FieldIndex.Segment segment) {
+    if (!orderBy.getField().equals(segment.getFieldPath())) {
       return false;
     }
     return (segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)

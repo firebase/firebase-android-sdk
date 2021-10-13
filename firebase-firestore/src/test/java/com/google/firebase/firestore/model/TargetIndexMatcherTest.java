@@ -170,11 +170,11 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
-  public void inQueryDoesNotUseMergeJoin() {
+  public void inQueryUsesMergeJoin() {
     Query q =
         query("collId").filter(filter("a", "in", Arrays.asList(1, 2))).filter(filter("b", "==", 5));
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
-    validateDoesNotServeTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
         q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
@@ -210,6 +210,24 @@ public class TargetIndexMatcherTest {
       validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
       validateServesTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
     }
+  }
+
+  @Test
+  public void testArrayContainsIsIndependent() {
+    Query query =
+        query("collId").filter(filter("value", "array-contains", "foo")).orderBy(orderBy("value"));
+    validateServesTarget(
+        query,
+        "value",
+        FieldIndex.Segment.Kind.CONTAINS,
+        "value",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        query,
+        "value",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "value",
+        FieldIndex.Segment.Kind.CONTAINS);
   }
 
   @Test
@@ -261,7 +279,7 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
-  public void withMultipleEqualitiesAndAnInequality() {
+  public void withMultipleEqualitiesAndInequality() {
     Query queriesMultipleFilters =
         query("collId")
             .filter(filter("equality1", "==", "a"))
@@ -295,7 +313,7 @@ public class TargetIndexMatcherTest {
     queriesMultipleFilters =
         query("collId")
             .filter(filter("equality1", "==", "a"))
-            .filter(filter("a3", ">=", "c"))
+            .filter(filter("inequality", ">=", "c"))
             .filter(filter("equality2", "==", "b"));
     validateServesTarget(
         queriesMultipleFilters,
@@ -468,7 +486,8 @@ public class TargetIndexMatcherTest {
     validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
         q, "b", FieldIndex.Segment.Kind.ASCENDING, "a", FieldIndex.Segment.Kind.ASCENDING);
-    validateServesTarget(
+    // If provided, equalities have to come first
+    validateDoesNotServeTarget(
         q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 

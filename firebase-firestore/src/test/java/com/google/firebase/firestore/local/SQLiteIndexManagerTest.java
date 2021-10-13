@@ -287,8 +287,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testLimitAppliesOrdering() {
     indexManager.addFieldIndex(
         new FieldIndex("coll")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS));
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/doc1", map("value", Arrays.asList(1, "foo")));
     addDoc("coll/doc2", map("value", Arrays.asList(3, "foo")));
     addDoc("coll/doc3", map("value", Arrays.asList(2, "foo")));
