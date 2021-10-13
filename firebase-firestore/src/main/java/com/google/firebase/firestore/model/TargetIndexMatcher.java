@@ -124,15 +124,16 @@ public class TargetIndexMatcher {
       return false;
     }
 
-    // Process all equalities first. Equalities can appear out of order.
     Iterator<OrderBy> orderBys = this.orderBys.iterator();
     List<FieldIndex.Segment> segments = index.getDirectionalSegments();
     int segmentIndex = 0;
 
+    // Process all equalities first. Equalities can appear out of order.
+    List<FieldFilter> filters = new ArrayList<>(equalityFilters);
     for (; segmentIndex < segments.size(); ++segmentIndex) {
-      FieldFilter matchingFilter = getMatchingFilter(equalityFilters, segments.get(segmentIndex));
+      FieldFilter matchingFilter = getMatchingFilter(filters, segments.get(segmentIndex));
       if (matchingFilter != null) {
-        equalityFilters.remove(matchingFilter);
+        filters.remove(matchingFilter);
       } else {
         break; // Try inequalities and orderBys
       }
