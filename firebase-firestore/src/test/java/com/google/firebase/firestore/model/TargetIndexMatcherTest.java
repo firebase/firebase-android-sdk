@@ -235,6 +235,95 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
+  public void withMultipleEqualities() {
+    Query queriesMultipleFilters =
+        query("collId").filter(filter("a1", "==", "a")).filter(filter("a2", "==", "b"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a3",
+        FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
+  public void withMultipleEqualitiesAndAnInequality() {
+    Query queriesMultipleFilters =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("equality2", "==", "b"))
+            .filter(filter("inequality", ">=", "c"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    queriesMultipleFilters =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("a3", ">=", "c"))
+            .filter(filter("equality2", "==", "b"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
   public void withOrderBy() {
     Query q = query("collId").orderBy(orderBy("a"));
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
@@ -376,8 +465,8 @@ public class TargetIndexMatcherTest {
             .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
             .filter(filter("b", "in", Arrays.asList(1, 2, 3)));
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
-    validateDoesNotServeTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
-    validateDoesNotServeTarget(
+    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
         q, "b", FieldIndex.Segment.Kind.ASCENDING, "a", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
         q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);

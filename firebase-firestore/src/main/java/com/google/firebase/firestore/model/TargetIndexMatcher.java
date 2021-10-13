@@ -21,8 +21,12 @@ import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A light query planner for Firestore.
@@ -91,8 +95,21 @@ public class TargetIndexMatcher {
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
-    filters = target.getFilters();
+    filters = ensureSorted(target.getFilters());
     orderBys = target.getOrderBy();
+  }
+
+  /** Sort the filters so that all equalities appear before all inequalities. */
+  private List<Filter> ensureSorted(List<Filter> filters) {
+    List<Filter> sortedFilters = new ArrayList<>(filters);
+    Collections.sort(
+        sortedFilters,
+        (l, r) -> {
+          boolean leftInequality = ((FieldFilter) l).isInequality();
+          boolean rightInequality = ((FieldFilter) r).isInequality();
+          return Boolean.compare(leftInequality, rightInequality);
+        });
+    return sortedFilters;
   }
 
   /**
@@ -108,6 +125,11 @@ public class TargetIndexMatcher {
 
     FieldFilter currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
     OrderBy currentOrderBy = orderBys.hasNext() ? orderBys.next() : null;
+
+    // Equality filters can be used in any order. A query for foo=a, bar=b can be served by
+    // `a ASC, b ASC` as well as `b ASC, a ASC`. If we encounter an equality that we cannot
+    // process immediately, we add it to this temporary list so that we can consumer it later.
+    Set<FieldPath> skippedEqualities = new HashSet<>();
 
     // Validate that every segment of the index has a corresponding clause in the provided target.
     // While a target can have additional filters and orderBy constraints, it cannot have fewer.
@@ -134,8 +156,12 @@ public class TargetIndexMatcher {
         // implement the same behavior by allowing a query if at least one equality clause is served
         // by the index.
         if (currentFilter != null && currentFilter.getOperator().equals(Filter.Operator.EQUAL)) {
+          skippedEqualities.add(currentFilter.getField());
           currentFilter = filters.hasNext() ? (FieldFilter) filters.next() : null;
           continue; // We process the next filter, but stay on the current index segment
+        } else if (skippedEqualities.contains(segment.getFieldPath())
+            && !segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS)) {
+          skippedEqualities.remove(segment.getFieldPath());
         } else {
           return false;
         }
