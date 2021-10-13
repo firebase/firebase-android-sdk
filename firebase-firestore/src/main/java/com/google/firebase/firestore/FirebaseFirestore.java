@@ -27,11 +27,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -85,7 +88,8 @@ public class FirebaseFirestore {
   // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
-  private final CredentialsProvider credentialsProvider;
+  private final CredentialsProvider<User> authProvider;
+  private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
@@ -124,7 +128,8 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @NonNull Deferred<InternalAuthProvider> authProvider,
+      @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
+      @NonNull Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -136,7 +141,10 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider provider = new FirebaseAuthCredentialsProvider(authProvider);
+    CredentialsProvider<User> authProvider =
+        new FirebaseAuthCredentialsProvider(deferredAuthProvider);
+    CredentialsProvider<String> appCheckProvider =
+        new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
@@ -149,7 +157,8 @@ public class FirebaseFirestore {
             context,
             databaseId,
             persistenceKey,
-            provider,
+            authProvider,
+            appCheckProvider,
             queue,
             app,
             instanceRegistry,
@@ -162,7 +171,8 @@ public class FirebaseFirestore {
       Context context,
       DatabaseId databaseId,
       String persistenceKey,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
@@ -171,7 +181,8 @@ public class FirebaseFirestore {
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
-    this.credentialsProvider = checkNotNull(credentialsProvider);
+    this.authProvider = checkNotNull(authProvider);
+    this.appCheckProvider = checkNotNull(appCheckProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
@@ -242,7 +253,13 @@ public class FirebaseFirestore {
 
       client =
           new FirestoreClient(
-              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
+              context,
+              databaseInfo,
+              settings,
+              authProvider,
+              appCheckProvider,
+              asyncQueue,
+              metadataProvider);
     }
   }
 

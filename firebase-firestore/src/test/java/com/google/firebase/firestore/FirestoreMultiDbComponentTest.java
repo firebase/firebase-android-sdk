@@ -15,13 +15,18 @@
 package com.google.firebase.firestore;
 
 import static org.junit.Assert.assertNotSame;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.test.platform.app.InstrumentationRegistry;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.testutil.ImmediateDeferred;
@@ -61,8 +66,21 @@ public class FirestoreMultiDbComponentTest {
     Context context = InstrumentationRegistry.getInstrumentation().getContext();
     InternalAuthProvider authProvider = mock(InternalAuthProvider.class);
     Deferred<InternalAuthProvider> deferredAuthProvider = new ImmediateDeferred<>(authProvider);
+    InternalAppCheckTokenProvider mockInternalAppCheckProvider =
+        mock(InternalAppCheckTokenProvider.class);
+    AppCheckTokenResult mockAppCheckTokenResult = mock(AppCheckTokenResult.class);
+    when(mockAppCheckTokenResult.getToken()).thenReturn("TestAppCheckToken");
+    doReturn(Tasks.forResult(mockAppCheckTokenResult))
+        .when(mockInternalAppCheckProvider)
+        .getToken(anyBoolean());
+    Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider =
+        new ImmediateDeferred<>(mockInternalAppCheckProvider);
     GrpcMetadataProvider metadataProvider = mock(GrpcMetadataProvider.class);
     return new FirestoreMultiDbComponent(
-        context, firebaseApp, deferredAuthProvider, metadataProvider);
+        context,
+        firebaseApp,
+        deferredAuthProvider,
+        deferredAppCheckTokenProvider,
+        metadataProvider);
   }
 }

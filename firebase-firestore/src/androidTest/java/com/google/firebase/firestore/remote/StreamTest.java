@@ -32,6 +32,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -113,6 +114,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     final WriteStream writeStream = datastore.createWriteStream(callback);
@@ -138,6 +140,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             mockGrpcProvider);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
@@ -160,6 +163,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     final WriteStream[] writeStreamWrapper = new WriteStream[1];
@@ -207,6 +211,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
@@ -287,6 +292,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             mockCredentialsProvider,
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     StreamStatusCallback callback = new StreamStatusCallback();
@@ -316,6 +322,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             mockCredentialsProvider,
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     StreamStatusCallback callback = new StreamStatusCallback();

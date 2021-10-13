@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -86,7 +87,8 @@ public class Datastore {
   public Datastore(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
@@ -94,17 +96,18 @@ public class Datastore {
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
     this.channel =
         initializeChannel(
-            databaseInfo, workerQueue, credentialsProvider, context, metadataProvider);
+            databaseInfo, workerQueue, authProvider, appCheckProvider, context, metadataProvider);
   }
 
   FirestoreChannel initializeChannel(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return new FirestoreChannel(
-        workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
+        workerQueue, context, authProvider, appCheckProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {
