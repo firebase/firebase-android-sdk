@@ -1,3 +1,7 @@
+Android changes are not released automatically. Ensure that changes are released 
+by opting into a release at 
+[go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
+
 # Unreleased
 - [feature] Added support for Firebase AppCheck.
 
