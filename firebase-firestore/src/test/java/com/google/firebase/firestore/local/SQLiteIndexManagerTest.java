@@ -110,12 +110,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testNotEqualityFilter() {
-    // TODO(indexing): Optimize != filters. We currently return all documents and do not exclude
-    // the documents with the provided value.
+  public void testNotEqualsFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "!=", 2));
-    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/doc1", "coll/doc3");
   }
 
   @Test
@@ -203,11 +201,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testNotInFilter() {
-    // TODO(indexing): Optimize not-in filters. We currently return all documents and do not exclude
-    // the documents with the provided values.
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "not-in", Arrays.asList(1, 2)));
-    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/doc3");
   }
 
   @Test
@@ -439,6 +435,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     verifyResults(q.filter(filter("multi", ">=", 0)), "coll/{multi:1}");
     verifyResults(q.filter(filter("multi", ">=", "")), "coll/{multi:string}");
     verifyResults(q.filter(filter("multi", ">=", Collections.emptyList())), "coll/{multi:[]}");
+    verifyResults(
+        q.filter(filter("multi", "!=", true)),
+        "coll/{multi:1}",
+        "coll/{multi:string}",
+        "coll/{multi:[]}");
+    verifyResults(
+        q.filter(filter("multi", "in", Arrays.asList(true, 1))),
+        "coll/{multi:true}",
+        "coll/{multi:1}");
+    verifyResults(
+        q.filter(filter("multi", "not-in", Arrays.asList(true, 1))),
+        "coll/{multi:string}",
+        "coll/{multi:[]}");
     verifyResults(
         q.orderBy(orderBy("array")).startAt(bound(true, Collections.singletonList(2))),
         "coll/{array:[2,foo]}",

@@ -105,6 +105,16 @@ public final class FieldIndex {
     return version;
   }
 
+  public boolean hasDirectionalSegment(FieldPath field) {
+    for (Segment segment : segments) {
+      if (!segment.getKind().equals(Segment.Kind.CONTAINS)
+          && segment.getFieldPath().equals(field)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public List<Segment> getDirectionalSegments() {
     List<Segment> filteredSegments = new ArrayList<>();
     for (Segment segment : segments) {

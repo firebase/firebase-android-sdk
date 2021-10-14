@@ -151,7 +151,7 @@ final class SQLiteIndexManager implements IndexManager {
 
                   for (Value arrayValue : value.getArrayValue().getValuesList()) {
                     addSingleEntry(
-                        documentKey, indexId, encodeArrayElement(arrayValue), directionalValue);
+                        documentKey, indexId, encodeSingleElement(arrayValue), directionalValue);
                   }
                 } else {
                   addSingleEntry(documentKey, indexId, /* arrayValue= */ null, directionalValue);
@@ -185,6 +185,7 @@ final class SQLiteIndexManager implements IndexManager {
     if (fieldIndex == null) return null;
 
     @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
+    @Nullable List<Value> notInValues = target.getNotInValues(fieldIndex);
     @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
@@ -212,7 +213,8 @@ final class SQLiteIndexManager implements IndexManager {
             lowerBoundValues,
             lowerBoundOp,
             upperBoundValues,
-            upperBoundOp);
+            upperBoundOp,
+            notInValues);
 
     Set<DocumentKey> result = new HashSet<>();
     query.forEach(
@@ -230,7 +232,8 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object[] lowerBounds,
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
-      String upperBoundOp) {
+      String upperBoundOp,
+      @Nullable List<Value> notInValues) {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
@@ -257,15 +260,24 @@ final class SQLiteIndexManager implements IndexManager {
 
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
-    String sql = repeatSequence(statement, statementCount, " UNION ");
-    sql += " ORDER BY directional_value, document_name ";
+    StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
+    sql.append(" ORDER BY directional_value, document_name ");
     if (target.getLimit() != -1) {
-      sql += "LIMIT " + target.getLimit() + " ";
+      sql.append("LIMIT ").append(target.getLimit()).append(" ");
+    }
+
+    if (notInValues != null) {
+      // Wrap the statement in a NOT-IN call.
+      sql = new StringBuilder("SELECT document_name, directional_value FROM (").append(sql);
+      sql.append(") WHERE directional_value NOT IN (");
+      sql.append(repeatSequence("?", notInValues.size(), ", "));
+      sql.append(")");
     }
 
     // Fill in the bind ("question marks") variables.
-    Object[] bindArgs = fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds);
-    return db.query(sql).binding(bindArgs);
+    Object[] bindArgs =
+        fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notInValues);
+    return db.query(sql.toString()).binding(bindArgs);
   }
 
   /** Returns the bind arguments for all {@code statementCount} statements. */
@@ -274,7 +286,8 @@ final class SQLiteIndexManager implements IndexManager {
       int indexId,
       @Nullable List<Value> arrayValues,
       @Nullable Object[] lowerBounds,
-      @Nullable Object[] upperBounds) {
+      @Nullable Object[] upperBounds,
+      @Nullable List<Value> notInValues) {
     int bindsPerStatement =
         1
             + (arrayValues != null ? 1 : 0)
@@ -282,18 +295,25 @@ final class SQLiteIndexManager implements IndexManager {
             + (upperBounds != null ? 1 : 0);
     int statementsPerArrayValue = statementCount / (arrayValues != null ? arrayValues.size() : 1);
 
-    Object[] bindArgs = new Object[statementCount * bindsPerStatement];
+    Object[] bindArgs =
+        new Object
+            [statementCount * bindsPerStatement + (notInValues != null ? notInValues.size() : 0)];
     int offset = 0;
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
       if (arrayValues != null) {
-        bindArgs[offset++] = encodeArrayElement(arrayValues.get(i / statementsPerArrayValue));
+        bindArgs[offset++] = encodeSingleElement(arrayValues.get(i / statementsPerArrayValue));
       }
       if (lowerBounds != null) {
         bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
       }
       if (upperBounds != null) {
         bindArgs[offset++] = upperBounds[i % statementsPerArrayValue];
+      }
+    }
+    if (notInValues != null) {
+      for (Value notInValue : notInValues) {
+        bindArgs[offset++] = encodeSingleElement(notInValue);
       }
     }
     return bindArgs;
@@ -361,7 +381,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   /** Encodes a single value to the ascending index format. */
-  private byte[] encodeArrayElement(Value value) {
+  private byte[] encodeSingleElement(Value value) {
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));

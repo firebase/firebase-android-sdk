@@ -138,6 +138,26 @@ public final class Target {
   }
 
   /**
+   * Returns the list of values that are used in != or NOT_IN filters. Returns {@code null} if there
+   * are no such filters.
+   */
+  public @Nullable List<Value> getNotInValues(FieldIndex fieldIndex) {
+    for (Filter filter : filters) {
+      if (fieldIndex.hasDirectionalSegment(filter.getField())) {
+        FieldFilter fieldFilter = (FieldFilter) filter;
+        switch (fieldFilter.getOperator()) {
+          case NOT_IN:
+            return fieldFilter.getValue().getArrayValue().getValuesList();
+          case NOT_EQUAL:
+            return Collections.singletonList(fieldFilter.getValue());
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
    * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
    */
