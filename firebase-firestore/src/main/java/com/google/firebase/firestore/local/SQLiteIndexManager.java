@@ -220,22 +220,22 @@ final class SQLiteIndexManager implements IndexManager {
 
     for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
       Document document = entry.getValue();
-      if (entriesWrittenCount < entriesRemainingUnderCap) {
-        for (FieldIndex fieldIndex : fieldIndexes) {
-          entriesWrittenCount += writeEntries(document, fieldIndex);
-          if (entriesWrittenCount > 0) {
-            // TODO(indexing): This would be much simpler with a sequence counter since we would
-            // always update the index to the next sequence value.
-            FieldIndex updatedIndex =
-                getPostUpdateIndex(
-                    fieldIndex,
-                    updatedFieldIndexes.get(fieldIndex.getIndexId()),
-                    document.getVersion());
-            updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
-          }
-        }
-      } else {
+      if (entriesWrittenCount >= entriesRemainingUnderCap) {
         break;
+      }
+      
+      for (FieldIndex fieldIndex : fieldIndexes) {
+        entriesWrittenCount += writeEntries(document, fieldIndex);
+        if (entriesWrittenCount > 0) {
+          // TODO(indexing): This would be much simpler with a sequence counter since we would
+          // always update the index to the next sequence value.
+          FieldIndex updatedIndex =
+              getPostUpdateIndex(
+                  fieldIndex,
+                  updatedFieldIndexes.get(fieldIndex.getIndexId()),
+                  document.getVersion());
+          updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
+        }
       }
     }
 
