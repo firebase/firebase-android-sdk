@@ -247,6 +247,13 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
+    if(updateDialog == null) {
+      LogWrapper.getInstance().d("Update Dialog is NULL ");
+    }
+    if(updateDialog != null) {
+      LogWrapper.getInstance().d("Update Dialog is NOT NULL ");
+    }
+
     // SignInResultActivity and InstallActivity are internal to the SDK and should not be treated as
     // reentering the app
     if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
@@ -266,6 +273,9 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
     this.testerSignInClient.setCurrentActivity(activity);
+    synchronized (updateTaskLock) {
+      updateIfNewReleaseAvailable();
+    }
   }
 
   @Override
@@ -279,6 +289,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
     this.testerSignInClient.setCurrentActivity(activity);
+
   }
 
   @Override
@@ -309,6 +320,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
+    if (updateDialog != null){
+      setCachedUpdateIfNewReleaseCompletionError(
+          new FirebaseAppDistributionException(
+              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    }
+
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
@@ -320,6 +337,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       // cancelled.
       updateAppClient.trySetInstallTaskError();
     }
+
   }
 
   @VisibleForTesting
