@@ -492,8 +492,7 @@ public final class LocalStore implements BundleCallback {
       SnapshotVersion readTime =
           documentVersions != null ? documentVersions.get(key) : globalVersion;
       // Check if see if there is a existence state change for this document.
-      if ((doc.isFoundDocument() && !existingDoc.isFoundDocument())
-          || (!doc.isFoundDocument() && existingDoc.isFoundDocument())) {
+      if (doc.isFoundDocument()  != existingDoc.isFoundDocument()) {
         conditionChanged.add(key);
       }
 

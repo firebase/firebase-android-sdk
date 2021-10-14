@@ -82,7 +82,7 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath path) {
+  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection) {
     Map<DocumentKey, Mutation> result = new HashMap<>();
 
     int immediateChildrenPathLength = path.length() + 1;

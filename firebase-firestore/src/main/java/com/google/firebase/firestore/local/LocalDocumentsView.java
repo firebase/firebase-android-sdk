@@ -313,7 +313,7 @@ class LocalDocumentsView {
       // TODO(Overlay): Remove the assert and just return `fromOverlay`.
       ImmutableSortedMap<DocumentKey, Document> fromOverlay =
           getDocumentsMatchingCollectionQueryFromDocumentOverlay(query, sinceReadTime);
-      // TODO(Overlay): Delete below before merging. They pass, but there are tests looking at how
+      // TODO(Overlay): Delete below before merging. The code passes, but there are tests looking at how
       // many documents read from remote document, and this would double the count.
       /*
       ImmutableSortedMap<DocumentKey, Document> fromMutationQueue =
@@ -336,7 +336,7 @@ class LocalDocumentsView {
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
     Map<DocumentKey, Mutation> overlays = documentOverlay.getAllOverlays(query.getPath());
 
-    // Some overlay might match the query because of the overlay, we need to include them in the
+    // A document might match the query because of the overlay, we need to include them in the
     // result.
     Set<DocumentKey> missingDocuments = new HashSet<>();
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
