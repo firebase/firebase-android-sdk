@@ -53,8 +53,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private AppDistributionReleaseInternal cachedNewRelease;
   private AlertDialog updateDialog;
-  private final SignInStorage signInStorage;
   private boolean updateDialogShown;
+  private final SignInStorage signInStorage;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
