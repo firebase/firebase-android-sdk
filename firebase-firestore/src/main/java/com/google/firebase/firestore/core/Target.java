@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +37,7 @@ import java.util.List;
 public final class Target {
   public static final long NO_LIMIT = -1;
 
-  private @Nullable String memoizedCannonicalId;
+  private @Nullable String memoizedCanonicalId;
 
   private final List<OrderBy> orderBys;
   private final List<Filter> filters;
@@ -142,14 +143,24 @@ public final class Target {
    * are no such filters.
    */
   public @Nullable List<Value> getNotInValues(FieldIndex fieldIndex) {
-    for (Filter filter : filters) {
-      if (fieldIndex.hasDirectionalSegment(filter.getField())) {
-        FieldFilter fieldFilter = (FieldFilter) filter;
-        switch (fieldFilter.getOperator()) {
-          case NOT_IN:
-            return fieldFilter.getValue().getArrayValue().getValuesList();
-          case NOT_EQUAL:
-            return Collections.singletonList(fieldFilter.getValue());
+    List<Value> values = new ArrayList<>();
+
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+      for (Filter filter : filters) {
+        if (filter.getField().equals(segment.getFieldPath())) {
+          FieldFilter fieldFilter = (FieldFilter) filter;
+          switch (fieldFilter.getOperator()) {
+            case EQUAL:
+            case IN:
+              // Encode equality prefix
+              values.add(fieldFilter.getValue());
+              break;
+            case NOT_IN:
+            case NOT_EQUAL:
+              // NotIn/NotEqual is always a suffix
+              values.add(fieldFilter.getValue());
+              return values;
+          }
         }
       }
     }
@@ -191,6 +202,18 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            case NOT_EQUAL:
+              filterValue = Values.MIN_VALUE;
+              break;
+            case NOT_IN:
+              {
+                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
+                  arrayValue.addValues(Values.MIN_VALUE);
+                }
+                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+                break;
+              }
             default:
               // Remaining filters cannot be used as lower bounds.
           }
@@ -264,6 +287,18 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            case NOT_EQUAL:
+              filterValue = Values.MAX_VALUE;
+              break;
+            case NOT_IN:
+              {
+                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
+                  arrayValue.addValues(Values.MAX_VALUE);
+                }
+                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+                break;
+              }
             default:
               // Remaining filters cannot be used as upper bounds.
           }
@@ -311,15 +346,10 @@ public final class Target {
     return this.orderBys;
   }
 
-  /** Returns the first order by (which always exists). */
-  public OrderBy getFirstOrderBy() {
-    return this.orderBys.get(0);
-  }
-
   /** Returns a canonical string representing this target. */
   public String getCanonicalId() {
-    if (memoizedCannonicalId != null) {
-      return memoizedCannonicalId;
+    if (memoizedCanonicalId != null) {
+      return memoizedCanonicalId;
     }
 
     StringBuilder builder = new StringBuilder();
@@ -361,8 +391,8 @@ public final class Target {
       builder.append(endAt.positionString());
     }
 
-    memoizedCannonicalId = builder.toString();
-    return memoizedCannonicalId;
+    memoizedCanonicalId = builder.toString();
+    return memoizedCanonicalId;
   }
 
   @Override

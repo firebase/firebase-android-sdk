@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.index;
 
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
@@ -119,6 +120,10 @@ public class FirestoreIndexValueWriter {
         encoder.writeDouble(geoPoint.getLongitude());
         break;
       case MAP_VALUE:
+        if (Values.isMaxValue(indexValue)) {
+          writeValueTypeLabel(encoder, Integer.MAX_VALUE);
+          break;
+        }
         writeIndexMap(indexValue.getMapValue(), encoder);
         writeTruncationMarker(encoder);
         break;

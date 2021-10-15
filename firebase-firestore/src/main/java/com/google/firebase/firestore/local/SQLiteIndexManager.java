@@ -200,21 +200,22 @@ final class SQLiteIndexManager implements IndexManager {
           upperBound);
     }
 
-    Object[] lowerBoundValues = encodeBound(fieldIndex, target, lowerBound);
+    Object[] lowerBoundEncoded = encodeBound(fieldIndex, target, lowerBound);
     String lowerBoundOp = lowerBound != null && lowerBound.isInclusive() ? ">=" : ">";
-    Object[] upperBoundValues = encodeBound(fieldIndex, target, upperBound);
+    Object[] upperBoundEncoded = encodeBound(fieldIndex, target, upperBound);
     String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
+    Object[] notInEncoded = encodeValues(fieldIndex, target, notInValues);
 
     SQLitePersistence.Query query =
         generateQuery(
             target,
             fieldIndex.getIndexId(),
             arrayValues,
-            lowerBoundValues,
+            lowerBoundEncoded,
             lowerBoundOp,
-            upperBoundValues,
+            upperBoundEncoded,
             upperBoundOp,
-            notInValues);
+            notInEncoded);
 
     Set<DocumentKey> result = new HashSet<>();
     query.forEach(
@@ -233,7 +234,7 @@ final class SQLiteIndexManager implements IndexManager {
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp,
-      @Nullable List<Value> notInValues) {
+      @Nullable Object[] notIn) {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
@@ -266,17 +267,17 @@ final class SQLiteIndexManager implements IndexManager {
       sql.append("LIMIT ").append(target.getLimit()).append(" ");
     }
 
-    if (notInValues != null) {
+    if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
       sql = new StringBuilder("SELECT document_name, directional_value FROM (").append(sql);
       sql.append(") WHERE directional_value NOT IN (");
-      sql.append(repeatSequence("?", notInValues.size(), ", "));
+      sql.append(repeatSequence("?", notIn.length, ", "));
       sql.append(")");
     }
 
     // Fill in the bind ("question marks") variables.
     Object[] bindArgs =
-        fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notInValues);
+        fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notIn);
     return db.query(sql.toString()).binding(bindArgs);
   }
 
@@ -287,7 +288,7 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable List<Value> arrayValues,
       @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds,
-      @Nullable List<Value> notInValues) {
+      @Nullable Object[] notInValues) {
     int bindsPerStatement =
         1
             + (arrayValues != null ? 1 : 0)
@@ -297,7 +298,7 @@ final class SQLiteIndexManager implements IndexManager {
 
     Object[] bindArgs =
         new Object
-            [statementCount * bindsPerStatement + (notInValues != null ? notInValues.size() : 0)];
+            [statementCount * bindsPerStatement + (notInValues != null ? notInValues.length : 0)];
     int offset = 0;
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
@@ -312,8 +313,8 @@ final class SQLiteIndexManager implements IndexManager {
       }
     }
     if (notInValues != null) {
-      for (Value notInValue : notInValues) {
-        bindArgs[offset++] = encodeSingleElement(notInValue);
+      for (Object notInValue : notInValues) {
+        bindArgs[offset++] = notInValue;
       }
     }
     return bindArgs;
@@ -392,14 +393,14 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given field values according to the specification in {@code target}. For IN
    * queries, a list of possible values is returned.
    */
-  private @Nullable Object[] encodeBound(
-      FieldIndex fieldIndex, Target target, @Nullable Bound bound) {
+  private @Nullable Object[] encodeValues(
+      FieldIndex fieldIndex, Target target, @Nullable List<Value> bound) {
     if (bound == null) return null;
 
     List<IndexByteEncoder> encoders = new ArrayList<>();
     encoders.add(new IndexByteEncoder());
 
-    Iterator<Value> position = bound.getPosition().iterator();
+    Iterator<Value> position = bound.iterator();
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Value value = position.next();
       for (IndexByteEncoder encoder : encoders) {
@@ -412,6 +413,16 @@ final class SQLiteIndexManager implements IndexManager {
       }
     }
     return getEncodedBytes(encoders);
+  }
+
+  /**
+   * Encodes the given bounds according to the specification in {@code target}. For IN queries, a
+   * list of possible values is returned.
+   */
+  private @Nullable Object[] encodeBound(
+      FieldIndex fieldIndex, Target target, @Nullable Bound bound) {
+    if (bound == null) return null;
+    return encodeValues(fieldIndex, target, bound.getPosition());
   }
 
   /** Returns the byte representation for all encoders. */

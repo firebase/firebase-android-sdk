@@ -328,6 +328,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASCENDING)
             .withAddedField(field("suffix"), FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(
         new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING));
@@ -343,6 +345,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.DESCENDING));
+    indexManager.addFieldIndex(
+        new FieldIndex("coll")
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING)
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
 
     List<Map<String, Object>> data =
         new ArrayList<Map<String, Object>>() {
@@ -371,6 +377,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             add(map("a", 0, "b", 1));
             add(map("a", 1, "b", 0));
             add(map("a", 1, "b", 1));
+            add(map("a", 2, "b", 0));
+            add(map("a", 2, "b", 1));
           }
         };
 
@@ -530,12 +538,33 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         "coll/{array:[3,foo],int:3}");
     verifyResults(q.orderBy(orderBy("a")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:0,b:0}");
     verifyResults(
-        q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:1,b:0}");
+        q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:2,b:0}");
     verifyResults(
         q.orderBy(orderBy("a")).orderBy(orderBy("b", "desc")).limitToFirst(1), "coll/{a:0,b:1}");
     verifyResults(
         q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b", "desc")).limitToFirst(1),
-        "coll/{a:1,b:1}");
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", ">", 0)).filter(filter("b", "==", 1)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(q.filter(filter("a", "==", 1)).filter(filter("b", "==", 1)), "coll/{a:1,b:1}");
+    verifyResults(
+        q.filter(filter("a", "!=", 0)).filter(filter("b", "==", 1)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("b", "==", 1)).filter(filter("a", "!=", 0)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", "not-in", Arrays.asList(0, 1))), "coll/{a:2,b:0}", "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", "not-in", Arrays.asList(0, 1))).filter(filter("b", "==", 1)),
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("b", "==", 1)).filter(filter("a", "not-in", Arrays.asList(0, 1))),
+        "coll/{a:2,b:1}");
     verifyResults(q.filter(filter("null", "==", null)), "coll/{null:null}");
     verifyResults(q.orderBy(orderBy("null")), "coll/{null:null}");
     verifyResults(
