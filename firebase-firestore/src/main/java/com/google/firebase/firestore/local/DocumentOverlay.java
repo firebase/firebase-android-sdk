@@ -27,7 +27,8 @@ import java.util.Map;
  * the remote version of the document.
  *
  * <p>Each overlay also has a largest-batch-id, which represent the last batch that leads to the
- * overlay. This is needed to remove the overlay, once all batches leading up to it have been acknowledged.
+ * overlay. This is needed to remove the overlay, once all batches leading up to it have been
+ * acknowledged.
  */
 public interface DocumentOverlay {
   /**
@@ -37,12 +38,15 @@ public interface DocumentOverlay {
   @Nullable
   Mutation getOverlay(DocumentKey key);
 
-  /** Saves the given document to mutation map to persistence as overlays. */
+  /**
+   * Saves the given document key to mutation map to persistence as overlays. All overlays will have
+   * their largest-batch-id set to the given batch id.
+   */
   void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays);
 
   /** Removes the overlay whose largest-batch-id equals to the given Id. */
-  void removeOverlays(int batchId);
+  void removeOverlaysForBatch(int batchId);
 
-  /** Returns all saved overlay under the given path. */
-  Map<DocumentKey, Mutation> getAllOverlays(ResourcePath path);
+  /** Returns all saved overlay under the given collection. */
+  Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection);
 }

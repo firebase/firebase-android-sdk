@@ -386,7 +386,6 @@ public class QueryEngineTest {
 
   @Test
   public void doesNotIncludeDocumentsDeletedByMutation() throws Exception {
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
     Query query = query("coll");
 
     addDocument(MATCHING_DOC_A, MATCHING_DOC_B);
@@ -403,5 +402,15 @@ public class QueryEngineTest {
                     LAST_LIMBO_FREE_SNAPSHOT,
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
+  }
+
+  @Test
+  public void doesNotIncludeDocumentsDeletedByMutation_OverlayEnabled() throws Exception {
+    boolean saved = Persistence.OVERLAY_SUPPORT_ENABLED;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+    this.doesNotIncludeDocumentsDeletedByMutation();
+
+    Persistence.OVERLAY_SUPPORT_ENABLED = saved;
   }
 }

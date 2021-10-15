@@ -16,19 +16,19 @@ package com.google.firebase.firestore.local;
 
 import android.util.Pair;
 import androidx.annotation.Nullable;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class MemoryDocumentOverlay implements DocumentOverlay {
-  private ImmutableSortedMap<DocumentKey, Pair<Integer, Mutation>> overlays =
-      ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+  // A map sorted by DocumentKey, whose value is a pair of the largest batch id for the overlay
+  // and the overlay itself.
+  private TreeMap<DocumentKey, Pair<Integer, Mutation>> overlays = new TreeMap<>();
   Map<Integer, Set<DocumentKey>> overlayByBatchId = new HashMap<>();
 
   @Nullable
@@ -41,42 +41,42 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
     return null;
   }
 
-  private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+  private void saveOverlay(int largestBatchId, @Nullable Mutation mutation) {
     if (mutation == null) {
       return;
     }
 
     int existingId = -1;
-    Pair<Integer, Mutation> existing = this.overlays.get(key);
+    Pair<Integer, Mutation> existing = this.overlays.get(mutation.getKey());
     if (existing != null) {
       existingId = existing.first;
     }
-    overlays = overlays.insert(key, new Pair<>(largestBatchId, mutation));
+    overlays.put(mutation.getKey(), new Pair<>(largestBatchId, mutation));
 
-    // {@code overlayByBatchId} maintenance.
+    // `overlayByBatchId` maintenance.
     if (existingId >= 0) {
-      overlayByBatchId.get(existingId).remove(key);
+      overlayByBatchId.get(existingId).remove(mutation.getKey());
     }
     if (overlayByBatchId.get(largestBatchId) == null) {
       overlayByBatchId.put(largestBatchId, new HashSet<>());
     }
-    overlayByBatchId.get(largestBatchId).add(key);
+    overlayByBatchId.get(largestBatchId).add(mutation.getKey());
   }
 
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
+      saveOverlay(largestBatchId, entry.getValue());
     }
   }
 
   @Override
-  public void removeOverlays(int batchId) {
+  public void removeOverlaysForBatch(int batchId) {
     if (overlayByBatchId.containsKey(batchId)) {
       Set<DocumentKey> keys = overlayByBatchId.get(batchId);
       overlayByBatchId.remove(batchId);
       for (DocumentKey key : keys) {
-        overlays = overlays.remove(key);
+        overlays.remove(key);
       }
     }
   }
@@ -87,10 +87,8 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
 
     int immediateChildrenPathLength = collection.length() + 1;
     DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
-    Iterator<Map.Entry<DocumentKey, Pair<Integer, Mutation>>> iterator =
-        overlays.iteratorFrom(prefix);
-    while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry = iterator.next();
+    Map<DocumentKey, Pair<Integer, Mutation>> view = overlays.tailMap(prefix);
+    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : view.entrySet()) {
 
       DocumentKey key = entry.getKey();
       if (!collection.isPrefixOf(key.getPath())) {

@@ -841,6 +841,19 @@ public class MutationTest {
     verifyOverlayRoundTrips(doc, patch1, patch2, patch3);
   }
 
+  @Test
+  public void testOverlayCreatedFromSetToEmptyWithMerge() {
+    MutableDocument doc = deletedDoc("collection/key", 1);
+    Mutation patch =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation merge = mergeMutation("collection/key", map(), Arrays.asList());
+    verifyOverlayRoundTrips(doc, patch, merge);
+
+    doc = doc("collection/key", 1, map("foo", "foo-value"));
+    verifyOverlayRoundTrips(doc, patch, merge);
+  }
+
   // Below tests run on automatically generated mutation list, they are deterministic, but hard to
   // debug when they fail. They will print the failure case, and the best way to debug is recreate
   // the case manually in a separate test.

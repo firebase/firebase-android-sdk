@@ -126,11 +126,11 @@ public abstract class DocumentOverlayTestCase {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
     saveOverlay(2, key("coll/doc1"), m);
 
-    overlays.removeOverlays(2);
+    overlays.removeOverlaysForBatch(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlays(2);
+    overlays.removeOverlaysForBatch(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
   }
 
@@ -141,17 +141,17 @@ public abstract class DocumentOverlayTestCase {
     Mutation m3 = deleteMutation("coll/doc3");
     // m4 and m5 are not under "coll"
     Mutation m4 = setMutation("coll/doc1/sub/sub_doc", map("foo", "bar"));
-    Mutation m5 = setMutation("col/doc1", map("foo", "bar"));
+    Mutation m5 = setMutation("other/doc1", map("foo", "bar"));
     Map<DocumentKey, Mutation> m = new HashMap<>();
     m.put(key("coll/doc1"), m1);
     m.put(key("coll/doc2"), m2);
     m.put(key("coll/doc3"), m3);
     m.put(key("coll/doc1/sub/sub_doc"), m4);
-    m.put(key("col/doc1"), m5);
+    m.put(key("other/doc1"), m5);
     overlays.saveOverlays(3, m);
 
     m.remove(key("coll/doc1/sub/sub_doc"));
-    m.remove(key("col/doc1"));
+    m.remove(key("other/doc1"));
     assertEquals(m, overlays.getAllOverlays(path("coll")));
   }
 }

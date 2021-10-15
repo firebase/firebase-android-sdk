@@ -286,8 +286,8 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.removeOverlays(batchResult.getBatch().getBatchId());
-            localDocuments.recalculateOverlays(getDocumentsWithTransformResults(batchResult));
+            documentOverlay.removeOverlaysForBatch(batchResult.getBatch().getBatchId());
+            localDocuments.recalculateOverlays(getKeysWithTransformResults(batchResult));
           }
 
           return localDocuments.getDocuments(batch.getKeys());
@@ -295,16 +295,16 @@ public final class LocalStore implements BundleCallback {
   }
 
   @NonNull
-  private Set<DocumentKey> getDocumentsWithTransformResults(MutationBatchResult batchResult) {
-    Set<DocumentKey> recalculateOverlayDocs = new HashSet<>();
+  private Set<DocumentKey> getKeysWithTransformResults(MutationBatchResult batchResult) {
+    Set<DocumentKey> result = new HashSet<>();
 
     for (int i = 0; i < batchResult.getMutationResults().size(); ++i) {
       MutationResult mutationResult = batchResult.getMutationResults().get(i);
       if (mutationResult.getTransformResults().size() > 0) {
-        recalculateOverlayDocs.add(batchResult.getBatch().getMutations().get(i).getKey());
+        result.add(batchResult.getBatch().getMutations().get(i).getKey());
       }
     }
-    return recalculateOverlayDocs;
+    return result;
   }
 
   /**
@@ -326,7 +326,7 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.removeOverlays(batchId);
+            documentOverlay.removeOverlaysForBatch(batchId);
             localDocuments.recalculateOverlays(toReject.getKeys());
           }
 
@@ -426,7 +426,7 @@ public final class LocalStore implements BundleCallback {
             }
           }
 
-          PopulateResult result =
+          DocumentChangeResult result =
               populateDocumentChanges(documentUpdates, null, remoteEvent.getSnapshotVersion());
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
 
@@ -443,27 +443,25 @@ public final class LocalStore implements BundleCallback {
             targetCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getLocalViewOfDocuments(
-              changedDocs, result.existenceChangedDocuments);
+          return localDocuments.getLocalViewOfDocuments(changedDocs, result.existenceChangedKeys);
         });
   }
 
-  private class PopulateResult {
-    private Map<DocumentKey, MutableDocument> changedDocuments;
-    private Set<DocumentKey> existenceChangedDocuments;
+  private static class DocumentChangeResult {
+    private final Map<DocumentKey, MutableDocument> changedDocuments;
+    private final Set<DocumentKey> existenceChangedKeys;
 
-    private PopulateResult(
-        Map<DocumentKey, MutableDocument> changedDocuments,
-        Set<DocumentKey> existenceChangedDocuments) {
+    private DocumentChangeResult(
+        Map<DocumentKey, MutableDocument> changedDocuments, Set<DocumentKey> existenceChangedKeys) {
       this.changedDocuments = changedDocuments;
-      this.existenceChangedDocuments = existenceChangedDocuments;
+      this.existenceChangedKeys = existenceChangedKeys;
     }
   }
 
   /**
    * Populates the remote document cache with documents from backend or a bundle. Returns the
    * document changes resulting from applying those documents, and also a set of documents whose
-   * existence state is changed as a result.
+   * existence state are changed as a result.
    *
    * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
    * resorts to `globalVersion`.
@@ -474,7 +472,7 @@ public final class LocalStore implements BundleCallback {
    * @param globalVersion A SnapshotVersion representing the read time if all documents have the
    *     same read time.
    */
-  private PopulateResult populateDocumentChanges(
+  private DocumentChangeResult populateDocumentChanges(
       Map<DocumentKey, MutableDocument> documents,
       @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
       SnapshotVersion globalVersion) {
@@ -492,7 +490,7 @@ public final class LocalStore implements BundleCallback {
       SnapshotVersion readTime =
           documentVersions != null ? documentVersions.get(key) : globalVersion;
       // Check if see if there is a existence state change for this document.
-      if (doc.isFoundDocument()  != existingDoc.isFoundDocument()) {
+      if (doc.isFoundDocument() != existingDoc.isFoundDocument()) {
         conditionChanged.add(key);
       }
 
@@ -522,7 +520,7 @@ public final class LocalStore implements BundleCallback {
             doc.getVersion());
       }
     }
-    return new PopulateResult(changedDocs, conditionChanged);
+    return new DocumentChangeResult(changedDocs, conditionChanged);
   }
 
   /**
@@ -717,11 +715,10 @@ public final class LocalStore implements BundleCallback {
           targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
           targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
 
-          PopulateResult result =
+          DocumentChangeResult result =
               populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
-          return localDocuments.getLocalViewOfDocuments(
-              changedDocs, result.existenceChangedDocuments);
+          return localDocuments.getLocalViewOfDocuments(changedDocs, result.existenceChangedKeys);
         });
   }
 

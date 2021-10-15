@@ -80,16 +80,16 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
-  public void removeOverlays(int batchId) {
+  public void removeOverlaysForBatch(int batchId) {
     db.execute(
         "DELETE FROM document_overlays WHERE uid = ? AND largest_batch_id = ?", uid, batchId);
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath prefix) {
-    int immediateChildrenPathLength = prefix.length() + 1;
+  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection) {
+    int immediateChildrenPathLength = collection.length() + 1;
 
-    String prefixPath = EncodedPath.encode(prefix);
+    String prefixPath = EncodedPath.encode(collection);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
 
     Map<DocumentKey, Mutation> result = new HashMap<>();
@@ -114,7 +114,6 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
                 Mutation mutation = serializer.decodeMutation(write);
 
                 result.put(DocumentKey.fromPath(path), mutation);
-
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }
