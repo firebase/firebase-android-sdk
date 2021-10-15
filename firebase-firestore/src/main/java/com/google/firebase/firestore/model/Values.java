@@ -531,7 +531,7 @@ public class Values {
     }
   }
 
-  /** Returns true if the Value represents the canonical {@see #MAX_VALUE} . */
+  /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
   public static boolean isMaxValue(Value value) {
     return equals(value, MAX_VALUE);
   }
