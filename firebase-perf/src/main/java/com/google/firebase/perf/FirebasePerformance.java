@@ -35,11 +35,14 @@ import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -204,7 +207,18 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
 
-    syncInitFuture = executor.submit(() -> gaugeManager.setApplicationContext(appContext));
+    // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
+    // which creates a new perfSession, before the following is executed in background thread
+    PerfSession appStartSession = SessionManager.getInstance().perfSession();
+    this.syncInitFuture =
+        executor.submit(
+            () -> {
+              gaugeManager.setApplicationContext(appContext);
+              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
+                gaugeManager.logGaugeMetadata(
+                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
+              }
+            });
   }
 
   /**

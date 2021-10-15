@@ -126,17 +126,6 @@ public class SessionManager extends AppStateUpdateHandler {
   }
 
   /**
-   * Initial start of gauge collection. This should be called in ContentProvider.attachInfo during
-   * cold-start, because we want to start gauge collection as early as possible. This assumes {@link
-   * PerfSession} was already initialized a moment ago by getInstance(). Unlike updatePerfSession,
-   * this does not reset the perfSession.
-   */
-  public void initializeGaugeCollection() {
-    logGaugeMetadataIfCollectionEnabled(ApplicationProcessState.FOREGROUND);
-    startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
-  }
-
-  /**
    * Registers an object to receive updates about changes in the globally active {@link
    * PerfSession}.
    *
@@ -166,7 +155,7 @@ public class SessionManager extends AppStateUpdateHandler {
     }
   }
 
-  private void startOrStopCollectingGauges(ApplicationProcessState appState) {
+  public void startOrStopCollectingGauges(ApplicationProcessState appState) {
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.startCollectingGauges(perfSession, appState);
     } else {

@@ -507,6 +507,19 @@ public class FirebasePerformanceTest {
     verify(spyGaugeManager).setApplicationContext(ArgumentMatchers.nullable(Context.class));
   }
 
+  @Test
+  public void testFirebasePerformanceInitializationTransportsGaugeMetadata()
+      throws NameNotFoundException, ExecutionException, InterruptedException {
+    FirebasePerformance unusedPerformance =
+        initializeFirebasePerformancePreferences(
+            /* metadataFireperfForceDeactivatedKey= */ null,
+            /* metadataFireperfEnabledKey= */ null,
+            /* sharedPreferencesEnabledDisabledKey= */ null);
+
+    unusedPerformance.getInitFuture().get();
+    verify(spyGaugeManager).logGaugeMetadata(ArgumentMatchers.any(), ArgumentMatchers.any());
+  }
+
   private static SharedPreferences getSharedPreferences() {
     return ApplicationProvider.getApplicationContext()
         .getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
