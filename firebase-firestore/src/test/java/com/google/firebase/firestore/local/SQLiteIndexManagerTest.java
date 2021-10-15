@@ -51,6 +51,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   /** Current state of indexing support. Used for restoring after test run. */
   private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
 
+  private static Persistence persistence;
+
   @BeforeClass
   public static void beforeClass() {
     Persistence.INDEXING_SUPPORT_ENABLED = true;
@@ -79,7 +81,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    if (persistence == null) {
+      persistence = PersistenceTestHelpers.createSQLitePersistence();
+    }
+    return persistence;
   }
 
   @Test
@@ -317,13 +322,13 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(30, 0));
     sqLiteIndexManager.setCollectionGroupUpdateTime("coll2", new Timestamp(30, 50));
     List<String> orderedCollectionGroups =
-        getCollectionGroupsOrderByUpdateTime(sqLiteIndexManager.getPersistence());
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
     List<String> expected = Arrays.asList("coll1", "coll2");
     assertEquals(expected, orderedCollectionGroups);
 
     sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(50, 0));
     orderedCollectionGroups =
-        getCollectionGroupsOrderByUpdateTime(sqLiteIndexManager.getPersistence());
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
     expected = Arrays.asList("coll2", "coll1");
     assertEquals(expected, orderedCollectionGroups);
   }
@@ -367,7 +372,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
             .withVersion(SnapshotVersion.NONE));
     List<String> collectionGroups =
-        getCollectionGroupsOrderByUpdateTime(sqLiteIndexManager.getPersistence());
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
     assertEquals(2, collectionGroups.size());
     assertEquals("coll1", collectionGroups.get(0));
     assertEquals("coll2", collectionGroups.get(1));

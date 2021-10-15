@@ -617,10 +617,4 @@ final class SQLiteIndexManager implements IndexManager {
         updateTime.getSeconds(),
         updateTime.getNanoseconds());
   }
-
-  // This method is only used for testing.
-  @VisibleForTesting
-  public SQLitePersistence getPersistence() {
-    return db;
-  }
 }

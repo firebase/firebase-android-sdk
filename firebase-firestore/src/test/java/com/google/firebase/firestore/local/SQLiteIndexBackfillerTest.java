@@ -70,8 +70,11 @@ public class SQLiteIndexBackfillerTest {
     indexManager = (SQLiteIndexManager) persistence.getIndexManager();
     backfiller = persistence.getIndexBackfiller();
     CountingQueryEngine queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
-    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
-    localDocumentsView = localStore.getLocalDocumentsView();
+    localDocumentsView =
+        new LocalDocumentsView(
+            persistence.getRemoteDocumentCache(),
+            persistence.getMutationQueue(User.UNAUTHENTICATED),
+            indexManager);
   }
 
   @After
