@@ -85,15 +85,15 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
   public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection) {
     Map<DocumentKey, Mutation> result = new HashMap<>();
 
-    int immediateChildrenPathLength = path.length() + 1;
-    DocumentKey prefix = DocumentKey.fromPath(path.append(""));
+    int immediateChildrenPathLength = collection.length() + 1;
+    DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
     Iterator<Map.Entry<DocumentKey, Pair<Integer, Mutation>>> iterator =
         overlays.iteratorFrom(prefix);
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry = iterator.next();
 
       DocumentKey key = entry.getKey();
-      if (!path.isPrefixOf(key.getPath())) {
+      if (!collection.isPrefixOf(key.getPath())) {
         break;
       }
       // Documents from sub-collections
