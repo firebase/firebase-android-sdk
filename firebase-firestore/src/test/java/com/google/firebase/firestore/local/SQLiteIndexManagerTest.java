@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +52,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   /** Current state of indexing support. Used for restoring after test run. */
   private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
 
-  private Persistence persistence;
+  private SQLitePersistence persistence;
 
   @BeforeClass
   public static void beforeClass() {
@@ -61,6 +62,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @BeforeClass
   public static void afterClass() {
     Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
+  }
+
+  @Before
+  public void before() {
+    persistence = PersistenceTestHelpers.createSQLitePersistence();
   }
 
   private void setUpSingleValueFilter() {
@@ -81,9 +87,6 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Override
   Persistence getPersistence() {
-    if (persistence == null) {
-      persistence = PersistenceTestHelpers.createSQLitePersistence();
-    }
     return persistence;
   }
 
