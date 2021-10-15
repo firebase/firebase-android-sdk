@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.local.SQLiteIndexManagerTest.getCollectionGroupsOrderByUpdateTime;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -33,7 +34,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -62,7 +62,7 @@ public class SQLiteIndexBackfillerTest {
   private SQLitePersistence persistence;
   private SQLiteIndexManager indexManager;
   private IndexBackfiller backfiller;
-  private LocalStore localStore;
+  private LocalDocumentsView localDocumentsView;
 
   @Before
   public void setUp() {
@@ -70,7 +70,8 @@ public class SQLiteIndexBackfillerTest {
     indexManager = (SQLiteIndexManager) persistence.getIndexManager();
     backfiller = persistence.getIndexBackfiller();
     CountingQueryEngine queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
-    localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
+    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
+    localDocumentsView = localStore.getLocalDocumentsView();
   }
 
   @After
@@ -81,14 +82,14 @@ public class SQLiteIndexBackfillerTest {
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
   public void testBackfillWritesToIndexConfigOnCompletion() {
-    // Check that each field index is updated to the new version after each write.
+    // TODO(indexing): Check that each field index is updated to the new version after each write.
   }
 
   // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
-  @Ignore
   public void testBackfillFetchesDocumentsWithSnapshotVersion() {
-    // Check that the backfiller fetches documents from the earliest common snapshot version
+    // TODO(indexing): Check that the backfiller fetches documents from the earliest common snapshot
+    // version.
   }
 
   @Test
@@ -100,7 +101,7 @@ public class SQLiteIndexBackfillerTest {
     addDoc("coll2/docA", "bar", version(10, 0));
     addDoc("coll2/docB", "car", version(10, 0));
 
-    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
     assertEquals(2, results.getEntriesAdded());
   }
 
@@ -116,12 +117,12 @@ public class SQLiteIndexBackfillerTest {
     addDoc("coll2/docA", "foo", version(10, 0));
     addDoc("coll3/docA", "foo", version(10, 0));
 
-    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
     assertEquals(3, results.getEntriesAdded());
 
     // Check that index entries are written in order of the collection group update times by
     // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
     assertEquals(3, collectionGroups.size());
     assertEquals("coll3", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
@@ -138,12 +139,12 @@ public class SQLiteIndexBackfillerTest {
     addCollectionGroup("coll2", new Timestamp(2, 0));
     addFieldIndex("coll3", "foo");
 
-    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
     assertEquals(0, results.getEntriesAdded());
 
     // Check that index entries are written in order of the collection group update times by
     // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
     assertEquals(3, collectionGroups.size());
     assertEquals("coll3", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
@@ -161,13 +162,13 @@ public class SQLiteIndexBackfillerTest {
     addDoc("coll2/docA", "foo", version(10, 0));
     addDoc("coll2/docB", "foo", version(10, 0));
 
-    IndexBackfiller.Results results = backfiller.backfill(localStore);
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
     assertEquals(3, results.getEntriesAdded());
 
     // Check that collection groups are updated even if the backfiller hits the write cap. Since
     // `coll1` was already in the table, `coll2` should be processed first, and thus appear first
     // in the ordering.
-    List<String> collectionGroups = indexManager.getCollectionGroupsOrderByUpdateTime();
+    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
     assertEquals(2, collectionGroups.size());
     assertEquals("coll2", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));

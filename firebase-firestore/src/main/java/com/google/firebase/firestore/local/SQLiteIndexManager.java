@@ -38,7 +38,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
-import com.google.firebase.firestore.util.Preconditions;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -68,9 +67,6 @@ final class SQLiteIndexManager implements IndexManager {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
-
-  // A map of each collection group to all the FieldIndexes on it. Used for index backfilling.
-  Map<String, List<FieldIndex>> collectionToFieldIndexes = new HashMap<>();
 
   SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
@@ -147,32 +143,7 @@ final class SQLiteIndexManager implements IndexManager {
         index.getVersion().getTimestamp().getNanoseconds());
   }
 
-  /** Loads all field indexes stored in persistence and groups them by collection. */
-  // TODO(indexing): Verify that methods involving field indexes can only be called after calling
-  // this method.
-  public void initializeFieldIndexes() {
-    collectionToFieldIndexes.clear();
-
-    // TODO(indexing): Allow fetching new updates, instead of reading all of them from persistence
-    // each time and clearing the map.
-    for (FieldIndex fieldIndex : getFieldIndexes()) {
-      String collectionGroup = fieldIndex.getCollectionGroup();
-
-      if (collectionToFieldIndexes.containsKey(collectionGroup)) {
-        collectionToFieldIndexes.get(collectionGroup).add(fieldIndex);
-      } else {
-        collectionToFieldIndexes.put(
-            collectionGroup, new ArrayList<>(Collections.singletonList(fieldIndex)));
-      }
-    }
-  }
-
-  /**
-   * Returns a pair containing the next collection group to update, along with its corresponding
-   * field indexes.
-   *
-   * <p>The field indexes must first be loaded into memory by calling `loadFieldIndexes()`.
-   */
+  /** Returns the next collection group to update. */
   // TODO(indexing): Use a counter rather than the starting timestamp.
   public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
     final String[] nextCollectionGroup = {null};
@@ -193,10 +164,6 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    List<FieldIndex> matchingFieldIndexes = collectionToFieldIndexes.get(nextCollectionGroup[0]);
-    Preconditions.checkNotNull(
-        matchingFieldIndexes, "Collection group should be mapped to field indexes.");
-
     // Store that this collection group will updated.
     // TODO(indexing): Store progress with a counter rather than a timestamp. If using a timestamp,
     // use the read time of the last document read in the loop.
@@ -216,14 +183,14 @@ final class SQLiteIndexManager implements IndexManager {
       int entriesRemainingUnderCap) {
     int entriesWrittenCount = 0;
     Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
-    List<FieldIndex> fieldIndexes = getMatchingFieldIndexes(collectionGroup);
+    List<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
 
     for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
       Document document = entry.getValue();
       if (entriesWrittenCount >= entriesRemainingUnderCap) {
         break;
       }
-      
+
       for (FieldIndex fieldIndex : fieldIndexes) {
         entriesWrittenCount += writeEntries(document, fieldIndex);
         if (entriesWrittenCount > 0) {
@@ -248,10 +215,35 @@ final class SQLiteIndexManager implements IndexManager {
     return entriesWrittenCount;
   }
 
-  public List<FieldIndex> getMatchingFieldIndexes(String collectionGroup) {
-    List<FieldIndex> matching = collectionToFieldIndexes.get(collectionGroup);
-    Preconditions.checkNotNull(matching, "collectionGroup should exist in field index mapping");
-    return matching;
+  /**
+   * Returns a list of field indexes that correspond to the specified collection group.
+   *
+   * @param collectionGroup The collection group to get matching field indexes for.
+   * @return A list of field indexes for the specified collection group.
+   */
+  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+    List<FieldIndex> matchingFieldIndexes = new ArrayList<>();
+    db.query(
+            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos "
+                + "FROM index_configuration "
+                + "WHERE active = 1 AND collection_group = ?")
+        .binding(collectionGroup)
+        .forEach(
+            row -> {
+              try {
+                matchingFieldIndexes.add(
+                    serializer.decodeFieldIndex(
+                        row.getString(1),
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(2)),
+                        row.getInt(3),
+                        row.getInt(4)));
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
+
+    return matchingFieldIndexes;
   }
 
   /**
@@ -615,43 +607,6 @@ final class SQLiteIndexManager implements IndexManager {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
   }
 
-  public List<FieldIndex> getFieldIndexes() {
-    List<FieldIndex> allIndexes = new ArrayList<>();
-    db.query(
-            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
-                + "WHERE active = 1")
-        .forEach(
-            row -> {
-              try {
-                allIndexes.add(
-                    serializer.decodeFieldIndex(
-                        row.getString(1),
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(2)),
-                        row.getInt(3),
-                        row.getInt(4)));
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Failed to decode index: " + e);
-              }
-            });
-
-    return allIndexes;
-  }
-
-  @VisibleForTesting
-  List<String> getCollectionGroupsOrderByUpdateTime() {
-    List<String> orderedCollectionGroups = new ArrayList<>();
-    db.query(
-            "SELECT collection_group "
-                + "FROM collection_group_update_times "
-                + "ORDER BY update_time_seconds, update_time_nanos")
-        .forEach(
-            row -> {
-              orderedCollectionGroups.add(row.getString(0));
-            });
-    return orderedCollectionGroups;
-  }
-
   @VisibleForTesting
   void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
     db.execute(
@@ -661,5 +616,11 @@ final class SQLiteIndexManager implements IndexManager {
         collectionGroup,
         updateTime.getSeconds(),
         updateTime.getNanoseconds());
+  }
+
+  // This method is only used for testing.
+  @VisibleForTesting
+  public SQLitePersistence getPersistence() {
+    return db;
   }
 }

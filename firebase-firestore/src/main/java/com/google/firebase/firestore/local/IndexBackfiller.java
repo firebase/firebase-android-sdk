@@ -119,18 +119,17 @@ public class IndexBackfiller {
     return new BackfillScheduler(asyncQueue, localStore);
   }
 
-  public Results backfill(LocalStore localStore) {
+  public Results backfill(LocalDocumentsView localDocumentsView) {
     // TODO(indexing): Handle field indexes that are removed by the user.
     return new Results(
         /* hasRun= */ true,
-        /* numIndexesWritten= */ writeIndexEntries(localStore.getLocalDocumentsView()),
+        /* numIndexesWritten= */ writeIndexEntries(localDocumentsView),
         /* numIndexesRemoved= */ 0);
   }
 
   /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int totalEntriesWrittenCount = 0;
-    indexManager.initializeFieldIndexes();
     Timestamp startingTimestamp = Timestamp.now();
 
     while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
@@ -147,10 +146,7 @@ public class IndexBackfiller {
     return totalEntriesWrittenCount;
   }
 
-  /**
-   * Writes entries for the fetched field indexes. Requires field indexes to be loaded into memory
-   * first, via {@link SQLiteIndexManager#initializeFieldIndexes()}.
-   */
+  /** Writes entries for the fetched field indexes. */
   private int writeEntriesForCollectionGroup(
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
     int entriesWrittenCount = 0;
@@ -158,7 +154,7 @@ public class IndexBackfiller {
 
     // Use the earliest updateTime of all field indexes as the base updateTime.
     SnapshotVersion earliestUpdateTime =
-        getEarliestUpdateTime(indexManager.getMatchingFieldIndexes(collectionGroup));
+        getEarliestUpdateTime(indexManager.getFieldIndexes(collectionGroup));
 
     // TODO(indexing): Make sure the docs matching the query are sorted by read time.
     // TODO(indexing): Use limit queries to allow incremental progress.
