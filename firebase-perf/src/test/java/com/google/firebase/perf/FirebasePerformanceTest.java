@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -517,7 +518,8 @@ public class FirebasePerformanceTest {
             /* sharedPreferencesEnabledDisabledKey= */ null);
 
     unusedPerformance.getInitFuture().get();
-    verify(spyGaugeManager).logGaugeMetadata(ArgumentMatchers.any(), ArgumentMatchers.any());
+    verify(spyGaugeManager, times(1))
+        .logGaugeMetadata(ArgumentMatchers.any(), ArgumentMatchers.any());
   }
 
   private static SharedPreferences getSharedPreferences() {
