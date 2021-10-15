@@ -51,7 +51,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   /** Current state of indexing support. Used for restoring after test run. */
   private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
 
-  private static Persistence persistence;
+  private Persistence persistence;
 
   @BeforeClass
   public static void beforeClass() {
