@@ -39,7 +39,7 @@ public final class ObjectValue implements Cloneable {
    * #partialValue}. Values can either be {@link Value} protos, {@code Map<String, Object>} values
    * (to represent additional nesting) or {@code null} (to represent field deletes).
    */
-  private Map<String, Object> overlayMap = new HashMap<>();
+  private final Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
     return new ObjectValue(
@@ -168,7 +168,7 @@ public final class ObjectValue implements Cloneable {
   /**
    * Adds {@code value} to the overlay map at {@code path}. Creates nested map entries if needed.
    */
-  private void setOverlay(FieldPath path, @Nullable Value value) {
+  private synchronized void setOverlay(FieldPath path, @Nullable Value value) {
     Map<String, Object> currentLevel = overlayMap;
 
     for (int i = 0; i < path.length() - 1; ++i) {
@@ -206,7 +206,7 @@ public final class ObjectValue implements Cloneable {
    *     overlayMap}.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
-  private @Nullable MapValue applyOverlay(
+  private synchronized @Nullable MapValue applyOverlay(
       FieldPath currentPath, Map<String, Object> currentOverlays) {
     boolean modified = false;
 
