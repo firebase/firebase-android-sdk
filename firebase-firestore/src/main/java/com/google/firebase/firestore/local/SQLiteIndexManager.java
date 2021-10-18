@@ -266,9 +266,8 @@ final class SQLiteIndexManager implements IndexManager {
     }
   }
 
+  /** Writes the index entries for the given document. Returns the number of entried written. */
   private int writeEntries(Document document, FieldIndex fieldIndex) {
-    int entriesWritten = 0;
-
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
       return 0;

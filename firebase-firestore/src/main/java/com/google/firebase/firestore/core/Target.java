@@ -115,8 +115,8 @@ public final class Target {
   }
 
   /**
-   * Returns the list of values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters.
-   * Returns {@code null} if there are no such filters.
+   * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. Returns
+   * {@code null} if there are no such filters.
    */
   public @Nullable List<Value> getArrayValues(FieldIndex fieldIndex) {
     @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
