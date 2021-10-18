@@ -14,43 +14,91 @@
 
 package com.google.firebase.firestore.index;
 
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.protobuf.ByteString;
 
 /**
  * Implements {@link DirectionalIndexByteEncoder} using {@link OrderedCodeWriter} for the actual
  * encoding.
  */
-public class IndexByteEncoder extends DirectionalIndexByteEncoder {
-  // Note: This code is copied from the backend.
+public class IndexByteEncoder {
+
+  class AscendingIndexByteEncoder extends DirectionalIndexByteEncoder {
+
+    @Override
+    public void writeBytes(ByteString val) {
+      orderedCode.writeBytesAscending(val);
+    }
+
+    @Override
+    public void writeString(String val) {
+      orderedCode.writeUtf8Ascending(val);
+    }
+
+    @Override
+    public void writeLong(long val) {
+      orderedCode.writeSignedLongAscending(val);
+    }
+
+    @Override
+    public void writeDouble(double val) {
+      orderedCode.writeDoubleAscending(val);
+    }
+
+    @Override
+    public void writeInfinity() {
+      orderedCode.writeInfinityAscending();
+    }
+  }
+
+  class DescendingIndexByteEncoder extends DirectionalIndexByteEncoder {
+
+    @Override
+    public void writeBytes(ByteString val) {
+      orderedCode.writeBytesDescending(val);
+    }
+
+    @Override
+    public void writeString(String val) {
+      orderedCode.writeUtf8Descending(val);
+    }
+
+    @Override
+    public void writeLong(long val) {
+      orderedCode.writeSignedLongDescending(val);
+    }
+
+    @Override
+    public void writeDouble(double val) {
+      orderedCode.writeDoubleDescending(val);
+    }
+
+    @Override
+    public void writeInfinity() {
+      orderedCode.writeInfinityDescending();
+    }
+  }
 
   private final OrderedCodeWriter orderedCode;
+  private final AscendingIndexByteEncoder ascending;
+  private final DescendingIndexByteEncoder descending;
 
   public IndexByteEncoder() {
     this.orderedCode = new OrderedCodeWriter();
+    this.ascending = new AscendingIndexByteEncoder();
+    this.descending = new DescendingIndexByteEncoder();
   }
 
   public void seed(byte[] encodedBytes) {
     orderedCode.seed(encodedBytes);
   }
 
-  @Override
-  public void writeBytes(ByteString val) {
-    orderedCode.writeBytesAscending(val);
-  }
-
-  @Override
-  public void writeString(String val) {
-    orderedCode.writeUtf8Ascending(val);
-  }
-
-  @Override
-  public void writeLong(long val) {
-    orderedCode.writeSignedLongAscending(val);
-  }
-
-  @Override
-  public void writeDouble(double val) {
-    orderedCode.writeDoubleAscending(val);
+  public DirectionalIndexByteEncoder forKind(FieldIndex.Segment.Kind kind) {
+    if (kind.equals(FieldIndex.Segment.Kind.DESCENDING)) {
+      return descending;
+    } else {
+      return ascending;
+    }
   }
 
   public byte[] getEncodedBytes() {
