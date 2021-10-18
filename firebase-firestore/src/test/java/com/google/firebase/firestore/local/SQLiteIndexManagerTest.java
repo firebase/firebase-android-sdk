@@ -52,8 +52,6 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   /** Current state of indexing support. Used for restoring after test run. */
   private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
 
-  private SQLitePersistence persistence;
-
   @BeforeClass
   public static void beforeClass() {
     Persistence.INDEXING_SUPPORT_ENABLED = true;
@@ -62,11 +60,6 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @BeforeClass
   public static void afterClass() {
     Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
-
-  @Before
-  public void before() {
-    persistence = PersistenceTestHelpers.createSQLitePersistence();
   }
 
   private void setUpSingleValueFilter() {
@@ -87,6 +80,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Override
   Persistence getPersistence() {
+    if (persistence == null) {
+      persistence = PersistenceTestHelpers.createSQLitePersistence();
+    }
     return persistence;
   }
 
