@@ -113,6 +113,22 @@ public class TargetIndexMatcher {
   /**
    * Returns whether the index can be used to serve the TargetIndexMatcher's target.
    *
+   * <p>An index is considered capable of serving the target when:
+   *
+   * <ul>
+   *   <li>The target uses all index segments for its filters and orderBy clauses. The target can
+   *       have additional filter and orderBy clauses, but not fewer.</b>
+   *   <li>If an ArrayContains/ArrayContainsAnyfilter is used, the index must also have a
+   *       corresponding {@link FieldIndex.Segment.Kind#CONTAINS} segment.
+   *   <li>All directional index segments can be mapped to the target as a series of equality
+   *       filters, a single inequality filter and a series of orderBy clauses.
+   *   <li>The segments that represent the equality filters may appear out of order.
+   *   <li>The optional segment for the inequality filter must appear after all equality segments.
+   *   <li>The segments that represent that orderBy clause of the target must appear in order after
+   *       all equality and inequality segments. Single orderBy clauses cannot be skipped, but a
+   *       continuous orderBy suffix may be omitted.
+   * </ul>
+   *
    * @throws AssertionError if the index is for a different collection
    */
   public boolean servedByIndex(FieldIndex index) {
@@ -120,7 +136,7 @@ public class TargetIndexMatcher {
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
-    if (arraySegment != null && getMatchingFilter(equalityFilters, arraySegment) == null) {
+    if (arraySegment != null && !hasMatchingEqualityFilter(arraySegment)) {
       return false;
     }
 
@@ -129,21 +145,28 @@ public class TargetIndexMatcher {
     int segmentIndex = 0;
 
     // Process all equalities first. Equalities can appear out of order.
-    List<FieldFilter> filters = new ArrayList<>(equalityFilters);
     for (; segmentIndex < segments.size(); ++segmentIndex) {
-      FieldFilter matchingFilter = getMatchingFilter(filters, segments.get(segmentIndex));
-      if (matchingFilter != null) {
-        filters.remove(matchingFilter);
-      } else {
-        break; // Try inequalities and orderBys
+      // We attempt to greedily match all segments to equality filters. If a a filter matches an
+      // index segments, we can mark the segment as used. Since it is not possible to use the same
+      // filed path in both an equality and inequality/oderBy cause, we do not have to consider the
+      // possibility that a matching equality segment should instead be used to map to an inequality
+      // filter or orderBy clause.
+      if (!hasMatchingEqualityFilter(segments.get(segmentIndex))) {
+        // If we cannot find a matching filter, we need to verify whether the remaining segments map
+        // to the target's inequality and its orderBy clauses.
+        break;
       }
     }
 
+    // If we already have processed all segments, all segments are used to serve the equality
+    // filters and
+    // we do not need to map any segments to the target's inequality and orderBy clauses.
     if (segmentIndex == segments.size()) {
       return true;
     }
 
-    // Process the optional inequality, which needs to have a matching orderBy.
+    // If there is an inequality filter, the next segment must match both the filter and its
+    // corresponding orderBy clause.
     if (inequalityFilter != null) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
@@ -152,7 +175,7 @@ public class TargetIndexMatcher {
       ++segmentIndex;
     }
 
-    // Process all remaining orderBys. OrderBys need to appear in order.
+    // All remaining segment need to represent the prefix of the target's orderBy
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {
@@ -163,14 +186,13 @@ public class TargetIndexMatcher {
     return true;
   }
 
-  @Nullable
-  private FieldFilter getMatchingFilter(List<FieldFilter> filters, FieldIndex.Segment segment) {
-    for (FieldFilter filter : filters) {
+  private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
+    for (FieldFilter filter : equalityFilters) {
       if (matchesFilter(filter, segment)) {
-        return filter;
+        return true;
       }
     }
-    return null;
+    return false;
   }
 
   private boolean matchesFilter(@Nullable FieldFilter filter, FieldIndex.Segment segment) {

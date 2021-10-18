@@ -146,11 +146,12 @@ public final class Target {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
-    // Go through all filters to find a value for the current field segment
+    // For each segment, retrieve a lower bound if there is a suitable filter or startAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Value segmentValue = null;
       boolean segmentInclusive = true;
 
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
@@ -218,11 +219,12 @@ public final class Target {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
+    // For each segment, retrieve an upper bound if there is a suitable filter or endAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       @Nullable Value segmentValue = null;
       boolean segmentInclusive = true;
 
-      // Go through all filters to find a value for the current field segment
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
