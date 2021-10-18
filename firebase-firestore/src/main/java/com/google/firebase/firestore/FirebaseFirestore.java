@@ -330,8 +330,10 @@ public class FirebaseFirestore {
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
               fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
+            } else if ("ASCENDING".equals(field.optString("order"))) {
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
             } else {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ORDERED);
+              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
             }
             parsedIndices.add(fieldIndex);
           }

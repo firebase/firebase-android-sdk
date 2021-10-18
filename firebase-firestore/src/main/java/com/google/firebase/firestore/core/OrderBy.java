@@ -24,24 +24,17 @@ import com.google.firestore.v1.Value;
 public class OrderBy {
   /** The direction of the ordering */
   public enum Direction {
-    ASCENDING(1, "asc"),
-    DESCENDING(-1, "desc");
+    ASCENDING(1),
+    DESCENDING(-1);
 
     private final int comparisonModifier;
-    private final String shorthand;
 
-    Direction(int comparisonModifier, String canonicalString) {
+    Direction(int comparisonModifier) {
       this.comparisonModifier = comparisonModifier;
-      this.shorthand = canonicalString;
     }
 
     int getComparisonModifier() {
       return comparisonModifier;
-    }
-
-    /** Returns "asc" for ascending or "desc" for descending. */
-    public String canonicalString() {
-      return shorthand;
     }
   }
 
