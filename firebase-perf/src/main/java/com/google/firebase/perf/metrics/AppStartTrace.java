@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -35,6 +36,9 @@ import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,7 +59,39 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
+  // Core pool size 0 allows threads to shut down if they're idle
+  private static final int CORE_POOL_SIZE = 0;
+  private static final int MAX_POOL_SIZE = 1; // Only need single thread
+
   private static volatile AppStartTrace instance;
+  private static ExecutorService executorService;
+
+  private boolean isRegisteredForLifecycleCallbacks = false;
+  private final TransportManager transportManager;
+  private final Clock clock;
+  private Context appContext;
+  /**
+   * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
+   */
+  private WeakReference<Activity> launchActivity;
+  /**
+   * The first time onResume() of any activity is called, the activity is saved as appStartActivity
+   */
+  private WeakReference<Activity> appStartActivity;
+
+  /**
+   * If the time difference between app starts and creation of any Activity is larger than
+   * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
+   */
+  private boolean isTooLateToInitUI = false;
+
+  private Timer appStartTime = null;
+  private Timer onCreateTime = null;
+  private Timer onStartTime = null;
+  private Timer onResumeTime = null;
+
+  private PerfSession startSession;
+  private boolean isStartedFromBackground = false;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -94,41 +130,29 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
-          instance = new AppStartTrace(transportManager, clock);
+          instance =
+              new AppStartTrace(
+                  transportManager,
+                  clock,
+                  new ThreadPoolExecutor(
+                      CORE_POOL_SIZE,
+                      MAX_POOL_SIZE,
+                      /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
+                      TimeUnit.SECONDS,
+                      new LinkedBlockingQueue<>(1)));
         }
       }
     }
     return instance;
   }
 
-  private boolean isRegisteredForLifecycleCallbacks = false;
-  private final TransportManager transportManager;
-  private final Clock clock;
-  private Context appContext;
-  /**
-   * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
-   */
-  private WeakReference<Activity> launchActivity;
-  /**
-   * The first time onResume() of any activity is called, the activity is saved as appStartActivity
-   */
-  private WeakReference<Activity> appStartActivity;
-
-  /**
-   * If the time difference between app starts and creation of any Activity is larger than
-   * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
-   */
-  private boolean isTooLateToInitUI = false;
-
-  private Timer onCreateTime = null;
-  private Timer onStartTime = null;
-  private Timer onResumeTime = null;
-
-  private boolean isStartedFromBackground = false;
-
-  AppStartTrace(@NonNull TransportManager transportManager, @NonNull Clock clock) {
+  AppStartTrace(
+      @NonNull TransportManager transportManager,
+      @NonNull Clock clock,
+      @NonNull ExecutorService executorService) {
     this.transportManager = transportManager;
     this.clock = clock;
+    this.executorService = executorService;
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
@@ -191,51 +215,57 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    final Timer startTime = FirebasePerfProvider.getAppStartTime();
+    this.appStartTime = FirebasePerfProvider.getAppStartTime();
+    this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
                 + activity.getClass().getName()
                 + ": "
-                + startTime.getDurationMicros(onResumeTime)
+                + this.appStartTime.getDurationMicros(onResumeTime)
                 + " microseconds");
 
-    TraceMetric.Builder metric =
-        TraceMetric.newBuilder()
-            .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
-            .setClientStartTimeUs(startTime.getMicros())
-            .setDurationUs(startTime.getDurationMicros(onResumeTime));
-    List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
-
-    TraceMetric.Builder temp =
-        TraceMetric.newBuilder()
-            .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
-            .setClientStartTimeUs(startTime.getMicros())
-            .setDurationUs(startTime.getDurationMicros(onCreateTime));
-    subtraces.add(temp.build());
-
-    temp = TraceMetric.newBuilder();
-    temp.setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
-        .setClientStartTimeUs(onCreateTime.getMicros())
-        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
-    subtraces.add(temp.build());
-
-    temp = TraceMetric.newBuilder();
-    temp.setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
-        .setClientStartTimeUs(onStartTime.getMicros())
-        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
-    subtraces.add(temp.build());
-
-    metric
-        .addAllSubtraces(subtraces)
-        .addPerfSessions(SessionManager.getInstance().perfSession().build());
-
-    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
+    // Log the app start trace in a non-main thread.
+    executorService.execute(this::logAppStartTrace);
 
     if (isRegisteredForLifecycleCallbacks) {
       // After AppStart trace is logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
     }
+  }
+
+  private void logAppStartTrace() {
+    TraceMetric.Builder metric =
+        TraceMetric.newBuilder()
+            .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
+            .setClientStartTimeUs(getappStartTime().getMicros())
+            .setDurationUs(getappStartTime().getDurationMicros(onResumeTime));
+    List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
+
+    TraceMetric.Builder traceMetricBuilder =
+        TraceMetric.newBuilder()
+            .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
+            .setClientStartTimeUs(getappStartTime().getMicros())
+            .setDurationUs(getappStartTime().getDurationMicros(onCreateTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    traceMetricBuilder = TraceMetric.newBuilder();
+    traceMetricBuilder
+        .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
+        .setClientStartTimeUs(onCreateTime.getMicros())
+        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    traceMetricBuilder = TraceMetric.newBuilder();
+    traceMetricBuilder
+        .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
+        .setClientStartTimeUs(onStartTime.getMicros())
+        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
+
+    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
   @Override
@@ -283,6 +313,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   @Nullable
   Activity getAppStartActivity() {
     return appStartActivity.get();
+  }
+
+  @VisibleForTesting
+  Timer getappStartTime() {
+    return appStartTime;
   }
 
   @VisibleForTesting

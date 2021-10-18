@@ -75,6 +75,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
         workerQueue,
         TimerId.WRITE_STREAM_CONNECTION_BACKOFF,
         TimerId.WRITE_STREAM_IDLE,
+        TimerId.HEALTH_CHECK_TIMEOUT,
         listener);
     this.serializer = serializer;
   }

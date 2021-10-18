@@ -18,15 +18,16 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionNotific
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -34,6 +35,9 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,7 +45,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowNotification;
 import org.robolectric.shadows.ShadowNotificationManager;
@@ -55,9 +58,6 @@ public class UpdateApkClientTest {
   private static final String TEST_URL = "https://test-url";
   private static final String TEST_CODE_HASH = "abcdefghijklmnopqrstuvwxyz";
   private static final long TEST_FILE_LENGTH = 1000;
-  private static final int RESULT_OK = -1;
-  private static final int RESULT_CANCELED = 0;
-  private static final int RESULT_FAILED = 1;
 
   private static final AppDistributionReleaseInternal TEST_RELEASE =
       AppDistributionReleaseInternal.builder()
@@ -72,8 +72,9 @@ public class UpdateApkClientTest {
   private UpdateApkClient updateApkClient;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
+  @Mock private InstallApkClient mockInstallApkClient;
 
-  static class TestActivity extends Activity {}
+  Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
   public void setup() {
@@ -91,12 +92,11 @@ public class UpdateApkClientTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    TestActivity activity = Robolectric.buildActivity(TestActivity.class).create().get();
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
-    this.updateApkClient = Mockito.spy(new UpdateApkClient(firebaseApp));
-    this.updateApkClient.setCurrentActivity(activity);
+    this.updateApkClient =
+        Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
   }
 
   @Test
@@ -117,55 +117,42 @@ public class UpdateApkClientTest {
   }
 
   @Test
-  public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
+  public void updateApk_whenInstallSuccessful_setsResult()
+      throws InterruptedException, ExecutionException, FirebaseAppDistributionException {
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
+    when(mockInstallApkClient.installApk(any())).thenReturn(Tasks.forResult(null));
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
-    // sleep to wait for installTaskCompletionSource to be set
-    Thread.sleep(1000);
-    updateApkClient.setInstallationResult(RESULT_OK);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    onCompleteListener.await();
     assertTrue(updateTask.isSuccessful());
   }
 
   @Test
-  public void updateApk_whenInstallCancelled_setsError() throws Exception {
+  public void updateApk_whenInstallFailed_setsError() {
     doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
-
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
+    TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
+    when(mockInstallApkClient.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    UpdateTask updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
-    updateTask.addOnProgressListener(progressEvents::add);
-    // sleep to wait for installTaskCompletionSource to be set
-    Thread.sleep(1000);
-    updateApkClient.setInstallationResult(RESULT_CANCELED);
+    updateTask.addOnProgressListener(testExecutor, progressEvents::add);
 
-    assertEquals(1, progressEvents.size());
-    assertEquals(UpdateStatus.INSTALL_CANCELED, progressEvents.get(0).getUpdateStatus());
-    assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals(Constants.ErrorMessages.UPDATE_CANCELED, e.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_CANCELED, e.getErrorCode());
-  }
+    installTaskCompletionSource.setException(
+        new FirebaseAppDistributionException(
+            Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
 
-  @Test
-  public void updateApk_whenInstallFailed_setsError() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
-
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-    updateTask.addOnProgressListener(progressEvents::add);
-    // sleep to wait for installTaskCompletionSource to be set
-    Thread.sleep(1000);
-    updateApkClient.setInstallationResult(RESULT_FAILED);
-
+    try {
+      onCompleteListener.await();
+    } catch (Exception ex) {
+      FirebaseAppDistributionException e = (FirebaseAppDistributionException) ex;
+      assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_FAILURE, e.getErrorCode());
+    }
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.INSTALL_FAILED, progressEvents.get(0).getUpdateStatus());
     assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals("Installation failed with result code: " + RESULT_FAILED, e.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_FAILURE, e.getErrorCode());
   }
 
   @Test

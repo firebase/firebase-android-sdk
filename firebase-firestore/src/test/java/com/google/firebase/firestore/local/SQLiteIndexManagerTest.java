@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -81,7 +82,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Override
   Persistence getPersistence() {
-    return PersistenceTestHelpers.createSQLitePersistence();
+    if (persistence == null) {
+      persistence = PersistenceTestHelpers.createSQLitePersistence();
+    }
+    return persistence;
   }
 
   @Test
@@ -592,10 +596,72 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
             .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
 
-    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes();
+    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.get(0);
     assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
+  }
+
+  @Test
+  public void testCollectionGroupUpdateTimesCanBeUpdated() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(30, 0));
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll2", new Timestamp(30, 50));
+    List<String> orderedCollectionGroups =
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+    List<String> expected = Arrays.asList("coll1", "coll2");
+    assertEquals(expected, orderedCollectionGroups);
+
+    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(50, 0));
+    orderedCollectionGroups =
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+    expected = Arrays.asList("coll2", "coll1");
+    assertEquals(expected, orderedCollectionGroups);
+  }
+
+  @Test
+  public void testGetFieldIndexes() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
+            .withVersion(version(30, 0)));
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll2")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
+            .withVersion(SnapshotVersion.NONE));
+
+    List<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
+    assertEquals(indexes.size(), 1);
+    assertEquals(indexes.get(0).getCollectionGroup(), "coll1");
+
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("newValue"), FieldIndex.Segment.Kind.CONTAINS)
+            .withVersion(version(20, 0)));
+
+    indexes = sqLiteIndexManager.getFieldIndexes("coll1");
+    assertEquals(indexes.size(), 2);
+    assertEquals(indexes.get(0).getCollectionGroup(), "coll1");
+    assertEquals(indexes.get(1).getCollectionGroup(), "coll1");
+  }
+
+  @Test
+  public void testAddFieldIndexWritesToCollectionGroup() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
+            .withVersion(version(30, 0)));
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll2")
+            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
+            .withVersion(SnapshotVersion.NONE));
+    List<String> collectionGroups =
+        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+    assertEquals(2, collectionGroups.size());
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
   }
 
   private void addDoc(String key, Map<String, Object> data) {
@@ -607,5 +673,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(query.toTarget());
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
+  }
+
+  public static List<String> getCollectionGroupsOrderByUpdateTime(SQLitePersistence persistence) {
+    List<String> orderedCollectionGroups = new ArrayList<>();
+    persistence
+        .query(
+            "SELECT collection_group "
+                + "FROM collection_group_update_times "
+                + "ORDER BY update_time_seconds, update_time_nanos")
+        .forEach(
+            row -> {
+              orderedCollectionGroups.add(row.getString(0));
+            });
+    return orderedCollectionGroups;
   }
 }

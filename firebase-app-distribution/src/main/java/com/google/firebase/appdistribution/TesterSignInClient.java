@@ -16,6 +16,8 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -50,6 +52,8 @@ class TesterSignInClient {
 
   @GuardedBy("activityLock")
   private Activity currentActivity;
+
+  private AlertDialog alertDialog;
 
   private final Object activityLock = new Object();
 
@@ -95,18 +99,8 @@ class TesterSignInClient {
     return signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete();
   }
 
-  void setCanceledAuthenticationError() {
-    setSignInTaskCompletionError(
-        new FirebaseAppDistributionException(
-            Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-  }
-
-  void setSuccessfulSignInResult() {
-    signInTaskCompletionSource.setResult(null);
-  }
-
   private AlertDialog getSignInAlertDialog(Activity currentActivity) {
-    AlertDialog alertDialog = new AlertDialog.Builder(currentActivity).create();
+    alertDialog = new AlertDialog.Builder(currentActivity).create();
     Context context = firebaseApp.getApplicationContext();
     alertDialog.setTitle(context.getString(R.string.signin_dialog_title));
     alertDialog.setMessage(context.getString(R.string.singin_dialog_message));
@@ -150,8 +144,24 @@ class TesterSignInClient {
   }
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    if (signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete()) {
-      signInTaskCompletionSource.setException(e);
+    safeSetTaskException(signInTaskCompletionSource, e);
+    dismissAlertDialog();
+  }
+
+  void setCanceledAuthenticationError() {
+    setSignInTaskCompletionError(
+        new FirebaseAppDistributionException(
+            Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+  }
+
+  void setSuccessfulSignInResult() {
+    safeSetTaskResult(signInTaskCompletionSource, null);
+    dismissAlertDialog();
+  }
+
+  private void dismissAlertDialog() {
+    if (alertDialog != null) {
+      alertDialog.dismiss();
     }
   }
 

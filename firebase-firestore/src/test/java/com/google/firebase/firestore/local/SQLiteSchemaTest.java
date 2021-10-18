@@ -630,6 +630,7 @@ public class SQLiteSchemaTest {
 
       assertTableExists("index_configuration");
       assertTableExists("index_entries");
+      assertTableExists("collection_group_update_times");
     } finally {
       Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
     }

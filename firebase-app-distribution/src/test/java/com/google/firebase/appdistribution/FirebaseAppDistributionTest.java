@@ -159,7 +159,7 @@ public class FirebaseAppDistributionTest {
       dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
     }
 
-    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.onActivityStarted(activity);
     verify(mockTesterSignInClient, times(1)).setCanceledAuthenticationError();
   }
 
@@ -407,7 +407,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateApp_appResume_tryResetAabUpdateTask() {
-    firebaseAppDistribution.onActivityResumed(activity);
+    firebaseAppDistribution.onActivityStarted(activity);
 
     verify(mockUpdateAppClient, times(1)).tryCancelAabUpdateTask();
   }

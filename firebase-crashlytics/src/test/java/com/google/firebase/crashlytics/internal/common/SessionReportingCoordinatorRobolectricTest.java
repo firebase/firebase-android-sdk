@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsRep
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -77,13 +78,37 @@ public class SessionReportingCoordinatorRobolectricTest {
     when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
 
     mockEventInteractions();
-    ApplicationExitInfo testApplicationExitInfo = addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
+    reportingCoordinator.persistRelevantAppExitInfoEvent(
+        sessionId, testApplicationExitInfoList, mockLogFileManager, mockUserMetadata);
 
-    verify(dataCapture).captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+    verify(dataCapture)
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(0)));
+    verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
+  }
+
+  @Test
+  public void testAppExitInfoEvent_persistIfAnrWithinSession_multipleAppExitInfo() {
+    // The timestamp of the applicationExitInfo is 0, and so in this case, we want the session
+    // timestamp to be less than or equal to 0.
+    final long sessionStartTimestamp = 0;
+    final String sessionId = "testSessionId";
+    when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
+
+    mockEventInteractions();
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
+
+    reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
+    reportingCoordinator.persistRelevantAppExitInfoEvent(
+        sessionId, testApplicationExitInfoList, mockLogFileManager, mockUserMetadata);
+
+    verify(dataCapture)
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(1)));
     verify(reportPersistence).persistEvent(any(), eq(sessionId), eq(true));
   }
 
@@ -95,14 +120,15 @@ public class SessionReportingCoordinatorRobolectricTest {
     final String sessionId = "testSessionId";
     when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
 
-    ApplicationExitInfo testApplicationExitInfo = addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
+    reportingCoordinator.persistRelevantAppExitInfoEvent(
+        sessionId, testApplicationExitInfoList, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
-        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(0)));
     verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
@@ -113,16 +139,15 @@ public class SessionReportingCoordinatorRobolectricTest {
     final long sessionStartTimestamp = 0;
     final String sessionId = "testSessionId";
     when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
-
-    ApplicationExitInfo testApplicationExitInfo =
-        addAppExitInfo(ApplicationExitInfo.REASON_DEPENDENCY_DIED);
+    addAppExitInfo(ApplicationExitInfo.REASON_DEPENDENCY_DIED);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
 
     reportingCoordinator.onBeginSession(sessionId, sessionStartTimestamp);
-    reportingCoordinator.persistAppExitInfoEvent(
-        sessionId, testApplicationExitInfo, mockLogFileManager, mockUserMetadata);
+    reportingCoordinator.persistRelevantAppExitInfoEvent(
+        sessionId, testApplicationExitInfoList, mockLogFileManager, mockUserMetadata);
 
     verify(dataCapture, never())
-        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfo));
+        .captureAnrEventData(convertApplicationExitInfo(testApplicationExitInfoList.get(0)));
     verify(reportPersistence, never()).persistEvent(any(), eq(sessionId), eq(true));
   }
 
@@ -144,7 +169,7 @@ public class SessionReportingCoordinatorRobolectricTest {
         .thenReturn(mockEvent);
   }
 
-  private ApplicationExitInfo addAppExitInfo(int reason) {
+  private void addAppExitInfo(int reason) {
     ActivityManager activityManager =
         (ActivityManager)
             ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
@@ -153,7 +178,16 @@ public class SessionReportingCoordinatorRobolectricTest {
     shadowOf(activityManager)
         .addApplicationExitInfo(
             runningAppProcessInfo.processName, runningAppProcessInfo.pid, reason, 1);
-    return activityManager.getHistoricalProcessExitReasons(null, 0, 0).get(0);
+    return;
+  }
+
+  private List<ApplicationExitInfo> getAppExitInfoList() {
+    ActivityManager activityManager =
+        (ActivityManager)
+            ApplicationProvider.getApplicationContext().getSystemService(Context.ACTIVITY_SERVICE);
+    ActivityManager.RunningAppProcessInfo runningAppProcessInfo =
+        activityManager.getRunningAppProcesses().get(0);
+    return activityManager.getHistoricalProcessExitReasons(null, 0, 0);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)

@@ -193,6 +193,10 @@ public class TestUtil {
     return new SnapshotVersion(new Timestamp(seconds, nanos));
   }
 
+  public static SnapshotVersion version(int seconds, int nanos) {
+    return new SnapshotVersion(new Timestamp(seconds, nanos));
+  }
+
   public static MutableDocument doc(String key, long version, Map<String, Object> data) {
     return doc(key(key), version, wrapObject(data));
   }

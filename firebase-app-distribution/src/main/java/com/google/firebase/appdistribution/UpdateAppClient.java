@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -29,6 +30,7 @@ import com.google.firebase.appdistribution.internal.AppDistributionReleaseIntern
 public class UpdateAppClient {
 
   private final UpdateApkClient updateApkClient;
+  private final InstallApkClient installApkClient;
   private static final String TAG = "UpdateAppClient";
 
   @GuardedBy("activityLock")
@@ -44,7 +46,8 @@ public class UpdateAppClient {
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
-    this.updateApkClient = new UpdateApkClient(firebaseApp);
+    this.installApkClient = new InstallApkClient();
+    this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);
   }
 
   @NonNull
@@ -89,7 +92,8 @@ public class UpdateAppClient {
 
     if (currentActivity == null) {
       synchronized (updateAabLock) {
-        cachedAabUpdateTask.setException(
+        safeSetTaskException(
+            cachedAabUpdateTask,
             new FirebaseAppDistributionException(
                 Constants.ErrorMessages.APP_BACKGROUNDED,
                 FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
@@ -113,8 +117,8 @@ public class UpdateAppClient {
     }
   }
 
-  void setInstallationResult(int resultCode) {
-    this.updateApkClient.setInstallationResult(resultCode);
+  void trySetInstallTaskError() {
+    this.installApkClient.trySetInstallTaskError();
   }
 
   @Nullable
@@ -127,7 +131,7 @@ public class UpdateAppClient {
   void setCurrentActivity(@Nullable Activity activity) {
     synchronized (activityLock) {
       this.currentActivity = activity;
-      this.updateApkClient.setCurrentActivity(activity);
+      this.installApkClient.setCurrentActivity(activity);
     }
   }
 
@@ -139,13 +143,12 @@ public class UpdateAppClient {
 
   void tryCancelAabUpdateTask() {
     synchronized (updateAabLock) {
-      if (cachedAabUpdateTask != null && !cachedAabUpdateTask.isComplete()) {
-        cachedAabUpdateTask.setException(
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.UPDATE_CANCELED,
-                FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
-                ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
-      }
+      safeSetTaskException(
+          cachedAabUpdateTask,
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.UPDATE_CANCELED,
+              FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
+              ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }
   }
 }

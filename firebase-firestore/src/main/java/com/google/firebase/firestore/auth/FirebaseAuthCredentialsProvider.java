@@ -41,7 +41,7 @@ import com.google.firebase.inject.Provider;
  * set/removeChangeListener() are called from the Firestore worker thread, but the getToken() Task
  * callbacks and user change notifications will be executed on arbitrary different threads.
  */
-public final class FirebaseAuthCredentialsProvider extends CredentialsProvider {
+public final class FirebaseAuthCredentialsProvider extends CredentialsProvider<User> {
 
   private static final String LOG_TAG = "FirebaseAuthCredentialsProvider";
 
