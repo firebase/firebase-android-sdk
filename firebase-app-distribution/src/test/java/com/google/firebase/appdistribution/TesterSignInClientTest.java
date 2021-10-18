@@ -196,7 +196,7 @@ public class TesterSignInClientTest {
       assertTrue(dialog.isShowing());
       dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
     }
-    testerSignInClient.onActivityResumed(mockSignInResultActivity);
+    testerSignInClient.onActivityStarted(mockSignInResultActivity);
 
     assertTrue(signInTask.isSuccessful());
     verify(mockSignInStorage).setSignInStatus(true);
@@ -205,7 +205,7 @@ public class TesterSignInClientTest {
   @Test
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
     Task signInTask = testerSignInClient.signInTester();
-    testerSignInClient.onActivityResumed(activity);
+    testerSignInClient.onActivityStarted(activity);
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();

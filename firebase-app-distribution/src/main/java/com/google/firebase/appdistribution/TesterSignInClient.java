@@ -68,11 +68,11 @@ class TesterSignInClient {
     this.lifecycleNotifier = lifecycleNotifier;
     this.executor = Executors.newSingleThreadExecutor();
 
-    lifecycleNotifier.addOnActivityStartedListener(executor, this::onActivityResumed);
+    lifecycleNotifier.addOnActivityStartedListener(executor, this::onActivityStarted);
   }
 
   @VisibleForTesting
-  void onActivityResumed(Activity activity) {
+  void onActivityStarted(Activity activity) {
     if (activity instanceof SignInResultActivity) {
       LogWrapper.getInstance().v("Sign in completed");
       this.setSuccessfulSignInResult();
