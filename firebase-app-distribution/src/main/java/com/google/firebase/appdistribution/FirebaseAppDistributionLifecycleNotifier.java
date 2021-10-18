@@ -100,7 +100,7 @@ public class FirebaseAppDistributionLifecycleNotifier
   }
 
   @Override
-  public void onActivityResumed(@NonNull Activity activity) { }
+  public void onActivityResumed(@NonNull Activity activity) {}
 
   @Override
   public void onActivityPaused(@NonNull Activity activity) {
