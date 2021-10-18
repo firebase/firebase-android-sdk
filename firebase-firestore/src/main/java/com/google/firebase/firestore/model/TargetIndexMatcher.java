@@ -159,14 +159,14 @@ public class TargetIndexMatcher {
     }
 
     // If we already have processed all segments, all segments are used to serve the equality
-    // filters and
-    // we do not need to map any segments to the target's inequality and orderBy clauses.
+    // filters and we do not need to map any segments to the target's inequality and orderBy
+    // clauses.
     if (segmentIndex == segments.size()) {
       return true;
     }
 
-    // If there is an inequality filter, the next segment must match both the filter and its
-    // corresponding orderBy clause.
+    // If there is an inequality filter, the next segment must match both the filter and the first
+    //  orderBy clause.
     if (inequalityFilter != null) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
