@@ -57,7 +57,7 @@ public final class FieldIndex {
   private final String collectionGroup;
   private final int indexId;
   private final List<Segment> segments;
-  private final SnapshotVersion version;
+  private SnapshotVersion version;
 
   public FieldIndex(String collectionGroup, int indexId) {
     this.collectionGroup = collectionGroup;
