@@ -51,12 +51,14 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
+    FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
+        new FirebaseAppDistributionLifecycleNotifier();
     FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
+        new FirebaseAppDistribution(firebaseApp, firebaseInstallations, lifecycleNotifier);
 
     if (firebaseApp.getApplicationContext() instanceof Application) {
       Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
-      firebaseApplication.registerActivityLifecycleCallbacks(appDistribution);
+      firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
       LogWrapper.getInstance()
           .e(

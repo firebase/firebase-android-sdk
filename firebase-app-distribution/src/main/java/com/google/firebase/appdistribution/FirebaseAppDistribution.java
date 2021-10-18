@@ -54,6 +54,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private AppDistributionReleaseInternal cachedNewRelease;
   private AlertDialog updateDialog;
   private final SignInStorage signInStorage;
+  private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -62,35 +63,42 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       @NonNull TesterSignInClient testerSignInClient,
       @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
       @NonNull UpdateAppClient updateAppClient,
-      @NonNull SignInStorage signInStorage) {
+      @NonNull SignInStorage signInStorage,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
     this.checkForNewReleaseClient = checkForNewReleaseClient;
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
+    this.lifecycleNotifier = lifecycleNotifier;
+  }
+
+  /** Constructor for FirebaseAppDistribution */
+  private FirebaseAppDistribution(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @NonNull SignInStorage signInStorage) {
+    this(
+        firebaseApp,
+        new TesterSignInClient(
+            firebaseApp, firebaseInstallationsApi, signInStorage, lifecycleNotifier),
+        new CheckForNewReleaseClient(
+            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
+        new UpdateAppClient(firebaseApp),
+        signInStorage,
+        lifecycleNotifier);
   }
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull SignInStorage signInStorage) {
-    this(
-        firebaseApp,
-        new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
-        new CheckForNewReleaseClient(
-            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateAppClient(firebaseApp),
-        signInStorage);
-  }
-
-  /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
         firebaseApp,
         firebaseInstallationsApi,
+        lifecycleNotifier,
         new SignInStorage(firebaseApp.getApplicationContext()));
   }
 
@@ -234,15 +242,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    LogWrapper.getInstance().v("Created activity: " + activity.getClass().getName());
-    // if SignInResultActivity is created, sign-in was successful
-    if (activity instanceof SignInResultActivity) {
-      LogWrapper.getInstance().v("Sign in completed");
-      this.testerSignInClient.setSuccessfulSignInResult();
-      this.signInStorage.setSignInStatus(true);
-    }
-  }
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {}
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
@@ -257,15 +257,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // cancel the task
     updateAppClient.tryCancelAabUpdateTask();
 
-    // Throw error if app reentered during sign in
-    if (this.testerSignInClient.isCurrentlySigningIn()) {
-      LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
-      testerSignInClient.setCanceledAuthenticationError();
-    }
-
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
-    this.testerSignInClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -278,7 +271,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
-    this.testerSignInClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -287,7 +279,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
   }
 
@@ -297,7 +288,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
   }
 
@@ -312,7 +302,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
 
     if (activity instanceof InstallActivity) {
@@ -355,8 +344,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
           synchronized (updateTaskLock) {
             // show download progress in notification manager
             updateApp(true)
-                .addOnProgressListener(
-                    progress -> postProgressToCachedUpdateIfNewReleaseTask(progress))
+                .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask)
                 .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
                 .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
           }

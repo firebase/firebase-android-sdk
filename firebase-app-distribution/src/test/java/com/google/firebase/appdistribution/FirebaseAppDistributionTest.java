@@ -93,6 +93,7 @@ public class FirebaseAppDistributionTest {
   @Mock private CheckForNewReleaseClient mockCheckForNewReleaseClient;
   @Mock private UpdateAppClient mockUpdateAppClient;
   @Mock private SignInStorage mockSignInStorage;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifeCycleNotifier;
   @Mock private Bundle mockBundle;
   @Mock private SignInResultActivity mockSignInResultActivity;
 
@@ -121,7 +122,8 @@ public class FirebaseAppDistributionTest {
                 mockTesterSignInClient,
                 mockCheckForNewReleaseClient,
                 mockUpdateAppClient,
-                mockSignInStorage));
+                mockSignInStorage,
+                mockLifeCycleNotifier));
 
     when(mockTesterSignInClient.signInTester()).thenReturn(Tasks.forResult(null));
 
@@ -146,35 +148,6 @@ public class FirebaseAppDistributionTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-  }
-
-  @Test
-  public void signInTester_whenReopenAppDuringSignIn_setsSignInException() {
-    when(mockTesterSignInClient.isCurrentlySigningIn()).thenReturn(true);
-
-    firebaseAppDistribution.signInTester();
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
-
-    firebaseAppDistribution.onActivityStarted(activity);
-    verify(mockTesterSignInClient, times(1)).setCanceledAuthenticationError();
-  }
-
-  @Test
-  public void signInTester_whenReturnFromSignIn_taskSucceeds() {
-    firebaseAppDistribution.onActivityResumed(activity);
-    firebaseAppDistribution.signInTester();
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
-
-    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
-    verify(mockTesterSignInClient, times(1)).setSuccessfulSignInResult();
   }
 
   @Test
@@ -390,17 +363,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_afterSuccessfulSignIn_setsSignInStatusTrue() {
-    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
-    firebaseAppDistribution.onActivityResumed(activity);
-    verify(mockSignInStorage).setSignInStatus(true);
-  }
-
-  @Test
   public void signInTester_afterSignOut_setsSignInStatusFalse() {
-    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
-    firebaseAppDistribution.onActivityResumed(activity);
-    verify(mockSignInStorage).setSignInStatus(true);
     firebaseAppDistribution.signOutTester();
     verify(mockSignInStorage).setSignInStatus(false);
   }

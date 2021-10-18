@@ -26,9 +26,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -39,9 +38,12 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class TesterSignInClient {
   private static final String TAG = "TesterSignIn:";
+  private final ExecutorService executor;
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
   private final String SIGNIN_REDIRECT_URL =
@@ -49,9 +51,7 @@ class TesterSignInClient {
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final SignInStorage signInStorage;
-
-  @GuardedBy("activityLock")
-  private Activity currentActivity;
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   private AlertDialog alertDialog;
 
@@ -60,10 +60,34 @@ class TesterSignInClient {
   TesterSignInClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull final SignInStorage signInStorage) {
+      @NonNull final SignInStorage signInStorage,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.signInStorage = signInStorage;
+    this.lifecycleNotifier = lifecycleNotifier;
+    this.executor = Executors.newSingleThreadExecutor();
+
+    lifecycleNotifier.addOnActivityStartedListener(executor, this::onActivityResumed);
+  }
+
+  @VisibleForTesting
+  void onActivityResumed(Activity activity) {
+    if (activity instanceof SignInResultActivity) {
+      LogWrapper.getInstance().v("Sign in completed");
+      this.setSuccessfulSignInResult();
+      this.signInStorage.setSignInStatus(true);
+    } else if (activity instanceof InstallActivity) {
+      // InstallActivity is internal to the SDK and should not be treated as
+      // reentering the app
+      return;
+    } else {
+      // Throw error if app reentered during sign in
+      if (this.isCurrentlySigningIn()) {
+        LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+        this.setCanceledAuthenticationError();
+      }
+    }
   }
 
   @NonNull
@@ -79,7 +103,7 @@ class TesterSignInClient {
       return signInTaskCompletionSource.getTask();
     }
 
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
     if (currentActivity == null) {
       LogWrapper.getInstance().e(TAG + "No foreground activity found.");
       return Tasks.forException(
@@ -217,18 +241,5 @@ class TesterSignInClient {
     List<ResolveInfo> resolveInfos =
         context.getPackageManager().queryIntentServices(customTabIntent, 0);
     return resolveInfos != null && !resolveInfos.isEmpty();
-  }
-
-  @Nullable
-  Activity getCurrentActivity() {
-    synchronized (activityLock) {
-      return this.currentActivity;
-    }
-  }
-
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (activityLock) {
-      this.currentActivity = activity;
-    }
   }
 }
