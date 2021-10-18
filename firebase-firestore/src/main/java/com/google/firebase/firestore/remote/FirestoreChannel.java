@@ -23,6 +23,7 @@ import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -57,7 +58,9 @@ public class FirestoreChannel {
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;
 
-  private final CredentialsProvider credentialsProvider;
+  private final CredentialsProvider<User> authProvider;
+
+  private final CredentialsProvider<String> appCheckProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
@@ -70,14 +73,17 @@ public class FirestoreChannel {
   FirestoreChannel(
       AsyncQueue asyncQueue,
       Context context,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
-    this.credentialsProvider = credentialsProvider;
+    this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
 
-    FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
 
     DatabaseId databaseId = databaseInfo.getDatabaseId();
@@ -279,7 +285,8 @@ public class FirestoreChannel {
   }
 
   public void invalidateToken() {
-    credentialsProvider.invalidateToken();
+    authProvider.invalidateToken();
+    appCheckProvider.invalidateToken();
   }
 
   public static void setClientLanguage(String languageToken) {

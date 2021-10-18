@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
@@ -50,10 +51,10 @@ public class GaugeManager {
   private static final long APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC = 20;
   private static final long INVALID_GAUGE_COLLECTION_FREQUENCY = -1;
 
-  private final ScheduledExecutorService gaugeManagerExecutor;
+  private final Lazy<ScheduledExecutorService> gaugeManagerExecutor;
   private final ConfigResolver configResolver;
-  private final CpuGaugeCollector cpuGaugeCollector;
-  private final MemoryGaugeCollector memoryGaugeCollector;
+  private final Lazy<CpuGaugeCollector> cpuGaugeCollector;
+  private final Lazy<MemoryGaugeCollector> memoryGaugeCollector;
   private final TransportManager transportManager;
 
   @Nullable private GaugeMetadataManager gaugeMetadataManager;
@@ -64,22 +65,22 @@ public class GaugeManager {
 
   private GaugeManager() {
     this(
-        Executors.newSingleThreadScheduledExecutor(),
+        new Lazy<>(() -> Executors.newSingleThreadScheduledExecutor()),
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
-        CpuGaugeCollector.getInstance(),
-        MemoryGaugeCollector.getInstance());
+        new Lazy<>(() -> new CpuGaugeCollector()),
+        new Lazy<>(() -> new MemoryGaugeCollector()));
   }
 
   @VisibleForTesting
   GaugeManager(
-      ScheduledExecutorService gaugeManagerExecutor,
+      Lazy<ScheduledExecutorService> gaugeManagerExecutor,
       TransportManager transportManager,
       ConfigResolver configResolver,
       GaugeMetadataManager gaugeMetadataManager,
-      CpuGaugeCollector cpuGaugeCollector,
-      MemoryGaugeCollector memoryGaugeCollector) {
+      Lazy<CpuGaugeCollector> cpuGaugeCollector,
+      Lazy<MemoryGaugeCollector> memoryGaugeCollector) {
 
     this.gaugeManagerExecutor = gaugeManagerExecutor;
     this.transportManager = transportManager;
@@ -134,13 +135,16 @@ public class GaugeManager {
 
     try {
       gaugeManagerDataCollectionJob =
-          gaugeManagerExecutor.scheduleAtFixedRate(
-              () -> {
-                syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
-              },
-              /*initialDelay=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-              /*period=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
-              TimeUnit.MILLISECONDS);
+          gaugeManagerExecutor
+              .get()
+              .scheduleAtFixedRate(
+                  () -> {
+                    syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
+                  },
+                  /*initialDelay=*/ collectionFrequency
+                      * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  /*period=*/ collectionFrequency * APPROX_NUMBER_OF_DATA_POINTS_PER_GAUGE_METRIC,
+                  TimeUnit.MILLISECONDS);
 
     } catch (RejectedExecutionException e) {
       logger.warn("Unable to start collecting Gauges: " + e.getMessage());
@@ -190,8 +194,8 @@ public class GaugeManager {
     final String sessionIdForScheduledTask = sessionId;
     final ApplicationProcessState applicationProcessStateForScheduledTask = applicationProcessState;
 
-    cpuGaugeCollector.stopCollecting();
-    memoryGaugeCollector.stopCollecting();
+    cpuGaugeCollector.get().stopCollecting();
+    memoryGaugeCollector.get().stopCollecting();
 
     if (gaugeManagerDataCollectionJob != null) {
       gaugeManagerDataCollectionJob.cancel(false);
@@ -200,12 +204,14 @@ public class GaugeManager {
     // Flush any data that was collected for this session one last time.
     @SuppressWarnings("FutureReturnValueIgnored")
     ScheduledFuture unusedFuture =
-        gaugeManagerExecutor.schedule(
-            () -> {
-              syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
-            },
-            TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
-            TimeUnit.MILLISECONDS);
+        gaugeManagerExecutor
+            .get()
+            .schedule(
+                () -> {
+                  syncFlush(sessionIdForScheduledTask, applicationProcessStateForScheduledTask);
+                },
+                TIME_TO_WAIT_BEFORE_FLUSHING_GAUGES_QUEUE_MS,
+                TimeUnit.MILLISECONDS);
 
     this.sessionId = null;
     this.applicationProcessState = ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
@@ -222,13 +228,14 @@ public class GaugeManager {
     GaugeMetric.Builder gaugeMetricBuilder = GaugeMetric.newBuilder();
 
     // Adding CPU metric readings.
-    while (!cpuGaugeCollector.cpuMetricReadings.isEmpty()) {
-      gaugeMetricBuilder.addCpuMetricReadings(cpuGaugeCollector.cpuMetricReadings.poll());
+    while (!cpuGaugeCollector.get().cpuMetricReadings.isEmpty()) {
+      gaugeMetricBuilder.addCpuMetricReadings(cpuGaugeCollector.get().cpuMetricReadings.poll());
     }
 
     // Adding Memory metric readings.
-    while (!memoryGaugeCollector.memoryMetricReadings.isEmpty()) {
-      gaugeMetricBuilder.addAndroidMemoryReadings(memoryGaugeCollector.memoryMetricReadings.poll());
+    while (!memoryGaugeCollector.get().memoryMetricReadings.isEmpty()) {
+      gaugeMetricBuilder.addAndroidMemoryReadings(
+          memoryGaugeCollector.get().memoryMetricReadings.poll());
     }
 
     // Adding Session ID info.
@@ -284,7 +291,7 @@ public class GaugeManager {
       return false;
     }
 
-    cpuGaugeCollector.startCollecting(cpuMetricCollectionFrequency, referenceTime);
+    cpuGaugeCollector.get().startCollecting(cpuMetricCollectionFrequency, referenceTime);
     return true;
   }
 
@@ -305,7 +312,7 @@ public class GaugeManager {
       return false;
     }
 
-    memoryGaugeCollector.startCollecting(memoryMetricCollectionFrequency, referenceTime);
+    memoryGaugeCollector.get().startCollecting(memoryMetricCollectionFrequency, referenceTime);
     return true;
   }
 
@@ -320,7 +327,7 @@ public class GaugeManager {
    *     enabled.
    */
   public void collectGaugeMetricOnce(Timer referenceTime) {
-    collectGaugeMetricOnce(cpuGaugeCollector, memoryGaugeCollector, referenceTime);
+    collectGaugeMetricOnce(cpuGaugeCollector.get(), memoryGaugeCollector.get(), referenceTime);
   }
 
   private static void collectGaugeMetricOnce(

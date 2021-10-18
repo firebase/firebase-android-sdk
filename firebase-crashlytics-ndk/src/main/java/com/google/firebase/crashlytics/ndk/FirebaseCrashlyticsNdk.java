@@ -49,12 +49,18 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
   }
 
   private boolean installHandlerDuringPrepareSession;
+  private String currentSessionId;
   private SignalHandlerInstaller signalHandlerInstaller;
 
   FirebaseCrashlyticsNdk(
       @NonNull CrashpadController controller, boolean installHandlerDuringPrepareSession) {
     this.controller = controller;
     this.installHandlerDuringPrepareSession = installHandlerDuringPrepareSession;
+  }
+
+  @Override
+  public boolean hasCrashDataForCurrentSession() {
+    return currentSessionId != null && hasCrashDataForSession(currentSessionId);
   }
 
   @Override
@@ -74,6 +80,7 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
       long startedAtSeconds,
       @NonNull StaticSessionData sessionData) {
 
+    currentSessionId = sessionId;
     signalHandlerInstaller =
         () -> {
           Logger.getLogger().d("Initializing native session: " + sessionId);

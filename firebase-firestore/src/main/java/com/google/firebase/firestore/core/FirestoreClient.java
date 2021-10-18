@@ -62,7 +62,8 @@ public final class FirestoreClient {
   private static final int MAX_CONCURRENT_LIMBO_RESOLUTIONS = 100;
 
   private final DatabaseInfo databaseInfo;
-  private final CredentialsProvider credentialsProvider;
+  private final CredentialsProvider<User> authProvider;
+  private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
   private final GrpcMetadataProvider metadataProvider;
@@ -82,11 +83,13 @@ public final class FirestoreClient {
       final Context context,
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       final AsyncQueue asyncQueue,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
-    this.credentialsProvider = credentialsProvider;
+    this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.bundleSerializer =
@@ -109,7 +112,7 @@ public final class FirestoreClient {
           }
         });
 
-    credentialsProvider.setChangeListener(
+    authProvider.setChangeListener(
         (User user) -> {
           if (initialized.compareAndSet(false, true)) {
             hardAssert(!firstUser.getTask().isComplete(), "Already fulfilled first user task");
@@ -122,6 +125,12 @@ public final class FirestoreClient {
                   syncEngine.handleCredentialChange(user);
                 });
           }
+        });
+
+    appCheckProvider.setChangeListener(
+        (String appCheckToken) -> {
+          // Register an empty credentials change listener to activate token
+          // refresh.
         });
   }
 
@@ -137,7 +146,8 @@ public final class FirestoreClient {
 
   /** Terminates this client, cancels all writes / listeners, and releases all resources. */
   public Task<Void> terminate() {
-    credentialsProvider.removeChangeListener();
+    authProvider.removeChangeListener();
+    appCheckProvider.removeChangeListener();
     return asyncQueue.enqueueAndInitiateShutdown(
         () -> {
           remoteStore.shutdown();
@@ -244,7 +254,8 @@ public final class FirestoreClient {
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
     Datastore datastore =
-        new Datastore(databaseInfo, asyncQueue, credentialsProvider, context, metadataProvider);
+        new Datastore(
+            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             context,
