@@ -125,7 +125,7 @@ public class UpdateAppClientTest {
     UpdateTask updateTask = updateAppClient.updateApp(newRelease, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    updateAppClient.onActivityResumed(activity);
+    updateAppClient.onActivityStarted(activity);
     Exception e = updateTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(

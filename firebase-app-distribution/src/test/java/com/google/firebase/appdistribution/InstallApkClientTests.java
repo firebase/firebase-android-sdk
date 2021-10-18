@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
@@ -25,6 +26,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActiv
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
@@ -34,13 +37,15 @@ public class InstallApkClientTests {
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private InstallApkClient installApkClient;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
   @Before
   public void setUp() {
+    MockitoAnnotations.initMocks(this);
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    installApkClient = new InstallApkClient();
-    installApkClient.setCurrentActivity(activity);
+    installApkClient = new InstallApkClient(mockLifecycleNotifier);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @Test
@@ -58,7 +63,7 @@ public class InstallApkClientTests {
 
   @Test
   public void installApk_currentActivityNull_InstallNotPrompted() {
-    installApkClient.setCurrentActivity(null);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
     String path = "path";
     Task<Void> installTask = installApkClient.installApk(path);
     Intent installIntent = shadowActivity.getNextStartedActivity();
@@ -70,11 +75,10 @@ public class InstallApkClientTests {
   @Test
   public void
       setCurrentActivity_appInForegroundAfterAnInstallAttempt_installIntentOnCurrentActivity() {
-    installApkClient.setCurrentActivity(null);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
     String path = "path123";
     Task<Void> installTask = installApkClient.installApk(path);
-    installApkClient.setCurrentActivity(activity);
-
+    installApkClient.onActivityStarted(activity);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertEquals(

@@ -20,9 +20,7 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.content.Context;
-import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -34,9 +32,8 @@ import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import org.jetbrains.annotations.Nullable;
 
-public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
+public class FirebaseAppDistribution {
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
@@ -220,7 +217,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
-      safeSetTaskException(updateTask,
+      safeSetTaskException(
+          updateTask,
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
       return updateTask;
@@ -239,27 +237,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.cachedNewRelease = null;
     this.signInStorage.setSignInStatus(false);
   }
-
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {}
-
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) { }
-
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) { }
-
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) { }
-
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) { }
-
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) { }
-
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) { }
 
   @VisibleForTesting
   void setCachedNewRelease(AppDistributionReleaseInternal newRelease) {

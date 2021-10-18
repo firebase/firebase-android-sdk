@@ -52,31 +52,21 @@ public class UpdateAppClient {
       @NonNull FirebaseApp firebaseApp,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.lifecycleNotifier = lifecycleNotifier;
-    this.installApkClient = new InstallApkClient();
+    this.installApkClient = new InstallApkClient(lifecycleNotifier);
     this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);
     this.executor = Executors.newSingleThreadExecutor();
 
-    lifecycleNotifier.addOnActivityResumedListener(executor, this::onActivityResumed);
-    lifecycleNotifier.addOnActivityDestroyedListener(executor, this::onActivityDestroyed);
+    lifecycleNotifier.addOnActivityStartedListener(executor, this::onActivityStarted);
   }
 
   @VisibleForTesting
-  void onActivityResumed(Activity activity) {
+  void onActivityStarted(Activity activity) {
     // SignInResultActivity and InstallActivity are internal to the SDK and should not be treated as
     // reentering the app
     if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
       return;
     }
     this.tryCancelAabUpdateTask();
-  }
-
-  @VisibleForTesting
-  void onActivityDestroyed(Activity activity) {
-    if (activity instanceof InstallActivity) {
-      // Since install activity is destroyed but app is still active, installation has failed /
-      // cancelled.
-      this.trySetInstallTaskError();
-    }
   }
 
   @NonNull
