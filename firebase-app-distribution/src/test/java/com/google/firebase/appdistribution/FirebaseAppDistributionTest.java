@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -372,5 +373,23 @@ public class FirebaseAppDistributionTest {
     // Update flow
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.DOWNLOADING, progressEvents.get(0).getUpdateStatus());
+  }
+
+  @Test
+  public void taskCancelledOnScreenRotation() throws Exception {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
+
+    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity dying
+    firebaseAppDistribution.onActivityDestroyed(activity);
+
+    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
+    assertEquals("Update canceled", e.getMessage());
+    assertEquals(INSTALLATION_CANCELED, e.getErrorCode());
   }
 }

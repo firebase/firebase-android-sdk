@@ -41,7 +41,7 @@ import org.junit.rules.TestName;
 public abstract class IndexManagerTestCase {
   @Rule public TestName name = new TestName();
 
-  private Persistence persistence;
+  protected Persistence persistence;
   protected IndexManager indexManager;
 
   @Before

@@ -32,6 +32,8 @@ import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class FirebaseAppDistribution {
 
@@ -39,6 +41,7 @@ public class FirebaseAppDistribution {
   private final TesterSignInClient testerSignInClient;
   private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
+  private Activity currentActivity;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   @GuardedBy("updateTaskLock")
@@ -49,8 +52,10 @@ public class FirebaseAppDistribution {
 
   private AppDistributionReleaseInternal cachedNewRelease;
   private AlertDialog updateDialog;
+  private boolean updateDialogShown;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+  private ExecutorService executor;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -67,6 +72,18 @@ public class FirebaseAppDistribution {
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
+    this.executor = Executors.newSingleThreadExecutor();
+
+    lifecycleNotifier.addOnActivityDestroyedListener(executor, this::onActivityDestroyed);
+  }
+
+  @VisibleForTesting
+  void onActivityDestroyed(Activity activity) {
+    if (updateDialogShown) {
+      setCachedUpdateIfNewReleaseCompletionError(
+          new FirebaseAppDistributionException(
+              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    }
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -217,8 +234,7 @@ public class FirebaseAppDistribution {
   private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
-      safeSetTaskException(
-          updateTask,
+      updateTask.setException(
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
       return updateTask;
@@ -307,6 +323,7 @@ public class FirebaseAppDistribution {
         });
 
     updateDialog.show();
+    updateDialogShown = true;
     synchronized (updateTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
@@ -344,6 +361,7 @@ public class FirebaseAppDistribution {
   private void dismissUpdateDialog() {
     if (updateDialog != null) {
       updateDialog.dismiss();
+      updateDialogShown = false;
     }
   }
 }
