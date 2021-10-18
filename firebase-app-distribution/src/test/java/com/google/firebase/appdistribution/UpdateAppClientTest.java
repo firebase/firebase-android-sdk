@@ -17,8 +17,8 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -26,6 +26,8 @@ import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +36,7 @@ import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -45,6 +48,8 @@ public class UpdateAppClientTest {
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final Executor testExecutor = Executors.newSingleThreadExecutor();
+
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -64,6 +69,7 @@ public class UpdateAppClientTest {
 
   private UpdateAppClient updateAppClient;
   private ShadowActivity shadowActivity;
+  private Activity activity;
 
   static class TestActivity extends Activity {}
 
@@ -83,12 +89,12 @@ public class UpdateAppClientTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    FirebaseAppDistributionTest.TestActivity activity =
+    activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
 
-    this.updateAppClient = new UpdateAppClient(firebaseApp);
-    this.updateAppClient.setCurrentActivity(activity);
+    this.updateAppClient = new UpdateAppClient(firebaseApp, mockLifecycleNotifier);
   }
 
   @Test
@@ -119,10 +125,15 @@ public class UpdateAppClientTest {
     UpdateTask updateTask = updateAppClient.updateApp(newRelease, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    updateAppClient.tryCancelAabUpdateTask();
-    FirebaseAppDistributionException exception =
-        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-    assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
+    updateAppClient.onActivityResumed(activity);
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(
+        Status.INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+    assertEquals(
+        ReleaseUtils.convertToAppDistributionRelease(newRelease),
+        ((FirebaseAppDistributionException) e).getRelease());
   }
 
   @Test

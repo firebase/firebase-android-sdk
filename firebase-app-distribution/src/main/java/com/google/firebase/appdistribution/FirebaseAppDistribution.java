@@ -42,7 +42,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private final TesterSignInClient testerSignInClient;
   private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
-  private Activity currentActivity;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   @GuardedBy("updateTaskLock")
@@ -85,7 +84,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
             firebaseApp, firebaseInstallationsApi, signInStorage, lifecycleNotifier),
         new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateAppClient(firebaseApp),
+        new UpdateAppClient(firebaseApp, lifecycleNotifier),
         signInStorage,
         lifecycleNotifier);
   }
@@ -221,7 +220,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
-      updateTask.setException(
+      safeSetTaskException(updateTask,
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
       return updateTask;
@@ -245,71 +244,22 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {}
 
   @Override
-  public void onActivityStarted(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
-    // SignInResultActivity and InstallActivity are internal to the SDK and should not be treated as
-    // reentering the app
-    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
-      return;
-    }
-
-    // If app resumes and aab update task is in progress, assume that installation didn't happen so
-    // cancel the task
-    updateAppClient.tryCancelAabUpdateTask();
-
-    this.currentActivity = activity;
-    this.updateAppClient.setCurrentActivity(activity);
-  }
+  public void onActivityStarted(@NonNull Activity activity) { }
 
   @Override
-  public void onActivityResumed(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Resumed activity: " + activity.getClass().getName());
-
-    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
-      return;
-    }
-
-    this.currentActivity = activity;
-    this.updateAppClient.setCurrentActivity(activity);
-  }
+  public void onActivityResumed(@NonNull Activity activity) { }
 
   @Override
-  public void onActivityPaused(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Paused activity: " + activity.getClass().getName());
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
-    }
-  }
+  public void onActivityPaused(@NonNull Activity activity) { }
 
   @Override
-  public void onActivityStopped(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
-    }
-  }
+  public void onActivityStopped(@NonNull Activity activity) { }
 
   @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-    LogWrapper.getInstance().d("Saved activity: " + activity.getClass().getName());
-  }
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) { }
 
   @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
-    }
-
-    if (activity instanceof InstallActivity) {
-      // Since install activity is destroyed but app is still active, installation has failed /
-      // cancelled.
-      updateAppClient.trySetInstallTaskError();
-    }
-  }
+  public void onActivityDestroyed(@NonNull Activity activity) { }
 
   @VisibleForTesting
   void setCachedNewRelease(AppDistributionReleaseInternal newRelease) {
@@ -322,6 +272,17 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   }
 
   private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
+
+    if (currentActivity == null) {
+      synchronized (updateTaskLock) {
+        setCachedUpdateIfNewReleaseCompletionError(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.APP_BACKGROUNDED, Status.AUTHENTICATION_CANCELED));
+        return cachedUpdateIfNewReleaseTask;
+      }
+    }
+
     Context context = firebaseApp.getApplicationContext();
     updateDialog = new AlertDialog.Builder(currentActivity).create();
     updateDialog.setTitle(context.getString(R.string.update_dialog_title));

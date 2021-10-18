@@ -23,8 +23,11 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** Client class for updateApp functionality in {@link FirebaseAppDistribution}. */
 public class UpdateAppClient {
@@ -32,9 +35,7 @@ public class UpdateAppClient {
   private final UpdateApkClient updateApkClient;
   private final InstallApkClient installApkClient;
   private static final String TAG = "UpdateAppClient";
-
-  @GuardedBy("activityLock")
-  private Activity currentActivity;
+  private final ExecutorService executor;
 
   private final Object activityLock = new Object();
   private final Object updateAabLock = new Object();
@@ -45,9 +46,37 @@ public class UpdateAppClient {
   @GuardedBy("updateAabLock")
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
-  public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+
+  public UpdateAppClient(
+      @NonNull FirebaseApp firebaseApp,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+    this.lifecycleNotifier = lifecycleNotifier;
     this.installApkClient = new InstallApkClient();
     this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);
+    this.executor = Executors.newSingleThreadExecutor();
+
+    lifecycleNotifier.addOnActivityResumedListener(executor, this::onActivityResumed);
+    lifecycleNotifier.addOnActivityDestroyedListener(executor, this::onActivityDestroyed);
+  }
+
+  @VisibleForTesting
+  void onActivityResumed(Activity activity) {
+    // SignInResultActivity and InstallActivity are internal to the SDK and should not be treated as
+    // reentering the app
+    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
+      return;
+    }
+    this.tryCancelAabUpdateTask();
+  }
+
+  @VisibleForTesting
+  void onActivityDestroyed(Activity activity) {
+    if (activity instanceof InstallActivity) {
+      // Since install activity is destroyed but app is still active, installation has failed /
+      // cancelled.
+      this.trySetInstallTaskError();
+    }
   }
 
   @NonNull
@@ -88,7 +117,7 @@ public class UpdateAppClient {
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
 
     if (currentActivity == null) {
       synchronized (updateAabLock) {
@@ -119,20 +148,6 @@ public class UpdateAppClient {
 
   void trySetInstallTaskError() {
     this.installApkClient.trySetInstallTaskError();
-  }
-
-  @Nullable
-  Activity getCurrentActivity() {
-    synchronized (activityLock) {
-      return this.currentActivity;
-    }
-  }
-
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (activityLock) {
-      this.currentActivity = activity;
-      this.installApkClient.setCurrentActivity(activity);
-    }
   }
 
   private UpdateTask getErrorUpdateTask(Exception e) {
