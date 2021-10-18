@@ -23,10 +23,14 @@ import java.lang.annotation.RetentionPolicy;
 /** Class to manage when an App Check token exchange can be retried after a server error. */
 public class RetryManager {
 
-  private static final long MAX_EXPONENTIAL_BACKOFF_MILLIS = 4 * 60 * 60 * 1000; // 4 hours
-  private static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000; // 24 hours
-  private static final long ONE_SECOND_MILLIS = 1000;
-  private static final long UNSET_RETRY_TIME = -1;
+  @VisibleForTesting static final int BAD_REQUEST_ERROR_CODE = 400;
+  @VisibleForTesting static final int FORBIDDEN_ERROR_CODE = 403;
+  @VisibleForTesting static final int NOT_FOUND_ERROR_CODE = 404;
+  @VisibleForTesting static final long MAX_EXP_BACKOFF_MILLIS = 4 * 60 * 60 * 1000; // 4 hours
+  @VisibleForTesting static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000; // 24 hours
+  @VisibleForTesting static final long ONE_SECOND_MILLIS = 1000;
+  @VisibleForTesting static final long UNSET_RETRY_TIME = -1;
+  private static final double MAX_JITTER_MULTIPLIER = 0.5;
 
   private final Clock clock;
 
@@ -66,18 +70,20 @@ public class RetryManager {
     currentRetryCount++;
     if (getBackoffStrategyByErrorCode(errorCode) == ONE_DAY) {
       nextRetryTimeMillis = clock.currentTimeMillis() + ONE_DAY_MILLIS;
-      return;
+    } else {
+      double jitterCoefficient = 1 + Math.random() * MAX_JITTER_MULTIPLIER;
+      long exponentialBackoffMillis =
+          (long) (Math.pow(2, currentRetryCount * jitterCoefficient) * ONE_SECOND_MILLIS);
+      nextRetryTimeMillis =
+          clock.currentTimeMillis() + Math.min(exponentialBackoffMillis, MAX_EXP_BACKOFF_MILLIS);
     }
-    long exponentialBackoffMillis =
-        (long) (Math.pow(2, currentRetryCount * (1 + Math.random() * 0.5)) * ONE_SECOND_MILLIS);
-    nextRetryTimeMillis =
-        clock.currentTimeMillis()
-            + Math.min(exponentialBackoffMillis, MAX_EXPONENTIAL_BACKOFF_MILLIS);
   }
 
   @BackoffStrategyType
   private static int getBackoffStrategyByErrorCode(int errorCode) {
-    if (errorCode == 400 || errorCode == 404) {
+    if (errorCode == BAD_REQUEST_ERROR_CODE
+        || errorCode == FORBIDDEN_ERROR_CODE
+        || errorCode == NOT_FOUND_ERROR_CODE) {
       return ONE_DAY;
     }
     return EXPONENTIAL;
