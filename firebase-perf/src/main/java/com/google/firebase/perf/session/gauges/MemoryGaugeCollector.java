@@ -14,7 +14,6 @@
 
 package com.google.firebase.perf.session.gauges;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -40,9 +39,6 @@ public class MemoryGaugeCollector {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
-  @SuppressLint("StaticFieldLeak")
-  private static final MemoryGaugeCollector instance = new MemoryGaugeCollector();
-
   public static final long INVALID_MEMORY_COLLECTION_FREQUENCY = -1;
   // This value indicates that we do not know the frequency at which to collect Memory Metrics. If
   // this value is set for the memoryMetricCollectionRateMs, we do not collect Memory Metrics.
@@ -56,7 +52,7 @@ public class MemoryGaugeCollector {
   @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
-  private MemoryGaugeCollector() {
+  MemoryGaugeCollector() {
     this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
   }
 
@@ -65,11 +61,6 @@ public class MemoryGaugeCollector {
     this.memoryMetricCollectorExecutor = memoryMetricCollectorExecutor;
     memoryMetricReadings = new ConcurrentLinkedQueue<>();
     this.runtime = runtime;
-  }
-
-  /** Returns the singleton instance of this class. */
-  public static MemoryGaugeCollector getInstance() {
-    return instance;
   }
 
   /**

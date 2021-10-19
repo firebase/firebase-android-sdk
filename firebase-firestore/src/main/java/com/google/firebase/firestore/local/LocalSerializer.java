@@ -297,13 +297,16 @@ public final class LocalSerializer {
     // queries against each collection separately.
     index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
 
-    for (FieldIndex.Segment segment : fieldIndex) {
+    for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
+      FieldIndex.Segment segment = fieldIndex.getSegment(i);
       Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
       indexField.setFieldPath(segment.getFieldPath().canonicalString());
       if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
         indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
-      } else {
+      } else if (segment.getKind() == FieldIndex.Segment.Kind.ASCENDING) {
         indexField.setOrder(Index.IndexField.Order.ASCENDING);
+      } else {
+        indexField.setOrder(Index.IndexField.Order.DESCENDING);
       }
       index.addFields(indexField);
     }
@@ -315,15 +318,25 @@ public final class LocalSerializer {
       String collectionGroup, int indexId, Index index, int updateSeconds, int updateNanos) {
     FieldIndex fieldIndex = new FieldIndex(collectionGroup, indexId);
     for (Index.IndexField field : index.getFieldsList()) {
-      fieldIndex =
-          fieldIndex.withAddedField(
-              FieldPath.fromServerFormat(field.getFieldPath()),
-              field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
-                  ? FieldIndex.Segment.Kind.CONTAINS
-                  : FieldIndex.Segment.Kind.ORDERED);
+      FieldPath fieldPath = FieldPath.fromServerFormat(field.getFieldPath());
+      FieldIndex.Segment.Kind kind =
+          field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
+              ? FieldIndex.Segment.Kind.CONTAINS
+              : (field.getOrder().equals(Index.IndexField.Order.ASCENDING)
+                  ? FieldIndex.Segment.Kind.ASCENDING
+                  : FieldIndex.Segment.Kind.DESCENDING);
+      fieldIndex = fieldIndex.withAddedField(fieldPath, kind);
     }
     fieldIndex =
         fieldIndex.withUpdateTime(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
     return fieldIndex;
+  }
+
+  public Mutation decodeMutation(Write mutation) {
+    return rpcSerializer.decodeMutation(mutation);
+  }
+
+  public Write encodeMutation(Mutation mutation) {
+    return rpcSerializer.encodeMutation(mutation);
   }
 }

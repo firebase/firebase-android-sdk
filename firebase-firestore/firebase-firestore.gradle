@@ -57,7 +57,7 @@ android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion project.minSdkVersion
+        minSdkVersion 19
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -106,10 +106,18 @@ android.libraryVariants.all { variant ->
     } catch (FileNotFoundException e) {
     }
 
+    // TODO(Indexing): Delete below once indexing is shipped.
     if (localProps['firestoreEnableIndexing']) {
         variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
     } else {
         variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
+    }
+
+    // TODO(Overlay): Delete below once overlay is shipped.
+    if (localProps['firestoreEnableOverlay']) {
+        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "true")
+    } else {
+        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "false")
     }
 }
 
@@ -117,7 +125,7 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:28.1-android'
+            force 'com.google.guava:guava:30.1-android'
         }
     }
     exclude group: "com.google.protobuf", module: "protobuf-java"
@@ -133,6 +141,7 @@ dependencies {
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
     implementation project(':firebase-components')
+    implementation project(':appcheck:firebase-appcheck-interop')
 
 
     //To provide @Generated annotations

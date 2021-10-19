@@ -14,32 +14,33 @@
 
 package com.google.firebase.firestore.model;
 
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
  * An index definition for field indices in Firestore.
  *
- * <p>Every index is associated with a collection. The definition contains a list of fields and the
- * indexes kind (which can be {@link Segment.Kind#ORDERED} or {@link Segment.Kind#CONTAINS} for
- * ArrayContains/ArrayContainsAny queries.
+ * <p>Every index is associated with a collection. The definition contains a list of fields and
+ * their indexkind (which can be {@link Segment.Kind#ASCENDING}, {@link Segment.Kind#DESCENDING} or
+ * {@link Segment.Kind#CONTAINS}) for ArrayContains/ArrayContainsAny queries.
  *
  * <p>Unlike the backend, the SDK does not differentiate between collection or collection
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public final class FieldIndex implements Iterable<FieldIndex.Segment> {
+public final class FieldIndex {
 
   /** An index component consisting of field path and index type. */
   @AutoValue
   public abstract static class Segment {
     /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
-      /** Ascending index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
-      ORDERED,
+      /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
+      ASCENDING,
+      /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
+      DESCENDING,
       /** Contains index. Can be used for ArrayContains and ArrayContainsAny */
       CONTAINS
     }
@@ -105,10 +106,24 @@ public final class FieldIndex implements Iterable<FieldIndex.Segment> {
     return updateTime;
   }
 
-  @NonNull
-  @Override
-  public Iterator<Segment> iterator() {
-    return segments.iterator();
+  public List<Segment> getDirectionalSegments() {
+    List<Segment> filteredSegments = new ArrayList<>();
+    for (Segment segment : segments) {
+      if (!segment.getKind().equals(Segment.Kind.CONTAINS)) {
+        filteredSegments.add(segment);
+      }
+    }
+    return filteredSegments;
+  }
+
+  public @Nullable Segment getArraySegment() {
+    for (Segment segment : segments) {
+      if (segment.getKind().equals(Segment.Kind.CONTAINS)) {
+        // Firestore queries can only have a single ArrayContains/ArrayContainsAny statements.
+        return segment;
+      }
+    }
+    return null;
   }
 
   /** Returns a new field index with additional index segment. */

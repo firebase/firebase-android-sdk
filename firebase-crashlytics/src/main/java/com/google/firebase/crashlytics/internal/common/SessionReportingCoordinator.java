@@ -34,13 +34,10 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +55,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private static final String EVENT_TYPE_LOGGED = "error";
   private static final int EVENT_THREAD_IMPORTANCE = 4;
   private static final int MAX_CHAINED_EXCEPTION_DEPTH = 8;
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   public static SessionReportingCoordinator create(
       Context context,
@@ -134,24 +132,22 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
-  public void persistAppExitInfoEvent(
+  public void persistRelevantAppExitInfoEvent(
       String sessionId,
-      ApplicationExitInfo applicationExitInfo,
+      List<ApplicationExitInfo> applicationExitInfoList,
       LogFileManager logFileManagerForSession,
       UserMetadata userMetadataForSession) {
-    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
-    // ApplicationExitInfo did not occur during the session.
-    if (applicationExitInfo.getTimestamp() < sessionStartTime) {
-      return;
-    }
 
-    // Currently we only persist these if it is an ANR.
-    if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+    ApplicationExitInfo relevantApplicationExitInfo =
+        findRelevantApplicationExitInfo(sessionId, applicationExitInfoList);
+
+    if (relevantApplicationExitInfo == null) {
+      Logger.getLogger().v("No relevant ApplicationExitInfo occurred during session: " + sessionId);
       return;
     }
 
     final CrashlyticsReport.Session.Event capturedEvent =
-        dataCapture.captureAnrEventData(convertApplicationExitInfo(applicationExitInfo));
+        dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
     reportPersistence.persistEvent(
@@ -322,8 +318,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       ApplicationExitInfo applicationExitInfo) {
     String traceFile = null;
     try {
-      traceFile = convertInputStreamToString(applicationExitInfo.getTraceInputStream());
-    } catch (IOException | NullPointerException e) {
+      InputStream traceInputStream = applicationExitInfo.getTraceInputStream();
+      if (traceInputStream != null) {
+        traceFile = convertInputStreamToString(traceInputStream);
+      }
+    } catch (IOException e) {
       Logger.getLogger()
           .w(
               "Could not get input trace in application exit info: "
@@ -344,20 +343,41 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         .build();
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   @VisibleForTesting
-  public static String convertInputStreamToString(@Nullable InputStream inputStream)
-      throws IOException, NullPointerException {
-    StringBuilder stringBuilder = new StringBuilder();
-    try (Reader reader =
-        new BufferedReader(
-            new InputStreamReader(inputStream, Charset.forName(StandardCharsets.UTF_8.name())))) {
-      int c = 0;
-      while ((c = reader.read()) != -1) {
-        stringBuilder.append((char) c);
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  public static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
+    int length;
+    while ((length = inputStream.read(bytes)) != -1) {
+      byteArrayOutputStream.write(bytes, 0, length);
+    }
+    return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
+  }
+
+  /** Finds the first ANR ApplicationExitInfo within the session. */
+  @RequiresApi(api = Build.VERSION_CODES.R)
+  private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
+      String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
+    long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+
+    // The order of ApplicationExitInfos is latest first.
+    // Java For-each preserves the order.
+    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
+      // ApplicationExitInfo did not occur during the session.
+      if (applicationExitInfo.getTimestamp() < sessionStartTime) {
+        return null;
       }
 
-      return stringBuilder.toString();
+      // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
+      // all ApplicationExitInfos that fall within the session.
+      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+        continue;
+      }
+
+      return applicationExitInfo;
     }
+
+    return null;
   }
 }

@@ -32,6 +32,7 @@ public final class MemoryPersistence extends Persistence {
   // LocalStore wrapping this Persistence instance and this will make the in-memory persistence
   // layer behave as if it were actually persisting values.
   private final Map<User, MemoryMutationQueue> mutationQueues;
+  private final Map<User, MemoryDocumentOverlay> overlays;
   private final MemoryIndexManager indexManager;
   private final MemoryTargetCache targetCache;
   private final MemoryBundleCache bundleCache;
@@ -61,6 +62,7 @@ public final class MemoryPersistence extends Persistence {
     targetCache = new MemoryTargetCache(this);
     bundleCache = new MemoryBundleCache();
     remoteDocumentCache = new MemoryRemoteDocumentCache(this);
+    overlays = new HashMap<>();
   }
 
   @Override
@@ -123,6 +125,16 @@ public final class MemoryPersistence extends Persistence {
   @Override
   BundleCache getBundleCache() {
     return bundleCache;
+  }
+
+  @Override
+  DocumentOverlay getDocumentOverlay(User user) {
+    MemoryDocumentOverlay overlay = overlays.get(user);
+    if (overlay == null) {
+      overlay = new MemoryDocumentOverlay();
+      overlays.put(user, overlay);
+    }
+    return overlay;
   }
 
   @Override

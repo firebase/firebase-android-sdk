@@ -41,13 +41,19 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
   }
 
   @Override
+  public boolean hasCrashDataForCurrentSession() {
+    CrashlyticsNativeComponent component = availableNativeComponent.get();
+    return component != null && component.hasCrashDataForCurrentSession();
+  }
+
+  @Override
   public boolean hasCrashDataForSession(@NonNull String sessionId) {
     CrashlyticsNativeComponent component = availableNativeComponent.get();
     return component != null && component.hasCrashDataForSession(sessionId);
   }
 
   @Override
-  public void openSession(
+  public void prepareNativeSession(
       @NonNull String sessionId,
       @NonNull String generator,
       long startedAtSeconds,
@@ -57,7 +63,9 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
 
     this.deferredNativeComponent.whenAvailable(
         nativeComponent -> {
-          nativeComponent.get().openSession(sessionId, generator, startedAtSeconds, sessionData);
+          nativeComponent
+              .get()
+              .prepareNativeSession(sessionId, generator, startedAtSeconds, sessionData);
         });
   }
 

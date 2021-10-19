@@ -63,9 +63,10 @@ public class CrashlyticsNativeComponentDeferredProxyTest {
             0, "model", 1, 1000, 2000, false, 0, "manufacturer", "modelClass");
     StaticSessionData sessionData = StaticSessionData.create(appData, osData, deviceData);
 
-    proxy.openSession(TEST_SESSION_ID, TEST_GENERATOR, TEST_START_TIME, sessionData);
+    proxy.prepareNativeSession(TEST_SESSION_ID, TEST_GENERATOR, TEST_START_TIME, sessionData);
     Mockito.verify(component, Mockito.times(1))
-        .openSession(eq(TEST_SESSION_ID), eq(TEST_GENERATOR), eq(TEST_START_TIME), eq(sessionData));
+        .prepareNativeSession(
+            eq(TEST_SESSION_ID), eq(TEST_GENERATOR), eq(TEST_START_TIME), eq(sessionData));
 
     proxy.finalizeSession(TEST_SESSION_ID);
     Mockito.verify(component, Mockito.times(1)).finalizeSession(eq(TEST_SESSION_ID));

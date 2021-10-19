@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -26,6 +27,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.spec.SpecTestCase;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
@@ -216,7 +218,13 @@ public class MockDatastore extends Datastore {
   private int watchStreamRequestCount;
 
   public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue, Context context) {
-    super(databaseInfo, workerQueue, new EmptyCredentialsProvider(), context, null);
+    super(
+        databaseInfo,
+        workerQueue,
+        new EmptyCredentialsProvider(),
+        new EmptyAppCheckTokenProvider(),
+        context,
+        null);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
 
@@ -224,7 +232,8 @@ public class MockDatastore extends Datastore {
   FirestoreChannel initializeChannel(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authCredentialsProvider,
+      CredentialsProvider<String> appCheckTokenProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     return null;

@@ -21,7 +21,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Listener;
 
 /** A Credentials Provider that always returns an empty token */
-public class EmptyCredentialsProvider extends CredentialsProvider {
+public class EmptyCredentialsProvider extends CredentialsProvider<User> {
 
   @Override
   public Task<String> getToken() {

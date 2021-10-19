@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.model;
+package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -33,21 +33,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import androidx.annotation.Nullable;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
-import com.google.firebase.firestore.model.mutation.FieldMask;
-import com.google.firebase.firestore.model.mutation.FieldTransform;
-import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationResult;
-import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -60,33 +66,33 @@ public class MutationTest {
   @Test
   public void testAppliesSetsToDocuments() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
-    MutableDocument setDoc = doc("collection/key", 0, data);
+    MutableDocument setDoc = doc("collection/key", 1, data);
 
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
-    set.applyToLocalView(setDoc, Timestamp.now());
-    assertEquals(doc("collection/key", 0, map("bar", "bar-value")).setHasLocalMutations(), setDoc);
+    set.applyToLocalView(setDoc, /* previousMask= */ null, Timestamp.now());
+    assertEquals(doc("collection/key", 1, map("bar", "bar-value")).setHasLocalMutations(), setDoc);
   }
 
   @Test
   public void testAppliesPatchToDocuments() {
     Map<String, Object> data = map("foo", map("bar", "bar-value"), "baz", "baz-value");
-    MutableDocument patchDoc = doc("collection/key", 0, data);
+    MutableDocument patchDoc = doc("collection/key", 1, data);
 
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, Timestamp.now());
+    patch.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
   public void testAppliesPatchWithMergeToDocuments() {
-    MutableDocument mergeDoc = deletedDoc("collection/key", 0);
+    MutableDocument mergeDoc = deletedDoc("collection/key", 2);
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    upsert.applyToLocalView(mergeDoc, Timestamp.now());
+    upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
+    assertEquals(doc("collection/key", 2, expectedData).setHasLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -95,7 +101,7 @@ public class MutationTest {
     Mutation upsert =
         mergeMutation(
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
-    upsert.applyToLocalView(mergeDoc, Timestamp.now());
+    upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
     assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
   }
@@ -103,45 +109,45 @@ public class MutationTest {
   @Test
   public void testDeletesValuesFromTheFieldMask() {
     Map<String, Object> data = map("foo", map("bar", "bar-value", "baz", "baz-value"));
-    MutableDocument patchDoc = doc("collection/key", 0, data);
+    MutableDocument patchDoc = doc("collection/key", 1, data);
 
     DocumentKey key = key("collection/key");
     FieldMask mask = fieldMask("foo.bar");
     Mutation patch = new PatchMutation(key, new ObjectValue(), mask, Precondition.NONE);
 
-    patch.applyToLocalView(patchDoc, Timestamp.now());
+    patch.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("baz", "baz-value"));
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
   public void testPatchesPrimitiveValue() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
-    MutableDocument patchDoc = doc("collection/key", 0, data);
+    MutableDocument patchDoc = doc("collection/key", 1, data);
 
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
-    patch.applyToLocalView(patchDoc, Timestamp.now());
+    patch.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
   public void testPatchingDeletedDocumentsDoesNothing() {
-    MutableDocument patchDoc = deletedDoc("collection/key", 0);
+    MutableDocument patchDoc = deletedDoc("collection/key", 1);
     Mutation patch = patchMutation("collection/key", map("foo", "bar"));
-    patch.applyToLocalView(patchDoc, Timestamp.now());
-    assertEquals(deletedDoc("collection/key", 0), patchDoc);
+    patch.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
+    assertEquals(deletedDoc("collection/key", 1), patchDoc);
   }
 
   @Test
   public void testAppliesLocalServerTimestampTransformsToDocuments() {
     Map<String, Object> data = map("foo", map("bar", "bar-value"), "baz", "baz-value");
-    MutableDocument transformedDoc = doc("collection/key", 0, data);
+    MutableDocument transformedDoc = doc("collection/key", 1, data);
 
     Timestamp timestamp = Timestamp.now();
     Mutation transform =
         patchMutation("collection/key", map("foo.bar", FieldValue.serverTimestamp()));
-    transform.applyToLocalView(transformedDoc, timestamp);
+    transform.applyToLocalView(transformedDoc, /* previousMask= */ null, timestamp);
 
     // Server timestamps aren't parsed, so we manually insert it.
     ObjectValue expectedData =
@@ -149,7 +155,7 @@ public class MutationTest {
     Value fieldValue = ServerTimestamps.valueOf(timestamp, wrap("bar-value"));
     expectedData.set(field("foo.bar"), fieldValue);
 
-    MutableDocument expectedDoc = doc("collection/key", 0, expectedData).setHasLocalMutations();
+    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -446,14 +452,14 @@ public class MutationTest {
       Map<String, Object> baseData,
       List<Map<String, Object>> transforms,
       Map<String, Object> expectedData) {
-    MutableDocument transformedDoc = doc("collection/key", 0, baseData);
+    MutableDocument transformedDoc = doc("collection/key", 1, baseData);
 
     for (Map<String, Object> transformData : transforms) {
       PatchMutation transform = patchMutation("collection/key", transformData);
-      transform.applyToLocalView(transformedDoc, Timestamp.now());
+      transform.applyToLocalView(transformedDoc, /* previousMask= */ null, Timestamp.now());
     }
 
-    MutableDocument expectedDoc = doc("collection/key", 0, expectedData).setHasLocalMutations();
+    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -467,7 +473,7 @@ public class MutationTest {
   @Test
   public void testAppliesServerAckedIncrementTransformToDocuments() {
     Map<String, Object> data = map("sum", 1);
-    MutableDocument transformedDoc = doc("collection/key", 0, data);
+    MutableDocument transformedDoc = doc("collection/key", 1, data);
 
     Mutation transform = setMutation("collection/key", map("sum", FieldValue.increment(2)));
     MutationResult mutationResult =
@@ -482,7 +488,7 @@ public class MutationTest {
   @Test
   public void testAppliesServerAckedServerTimestampTransformsToDocuments() {
     Map<String, Object> data = map("foo", map("bar", "bar-value"), "baz", "baz-value");
-    MutableDocument transformedDoc = doc("collection/key", 0, data);
+    MutableDocument transformedDoc = doc("collection/key", 1, data);
 
     Mutation transform =
         patchMutation("collection/key", map("foo.bar", FieldValue.serverTimestamp()));
@@ -503,7 +509,7 @@ public class MutationTest {
   public void testAppliesServerAckedArrayTransformsToDocuments() {
     Map<String, Object> data =
         map("array1", Arrays.asList(1, 2), "array2", Arrays.asList("a", "b"));
-    MutableDocument transformedDoc = doc("collection/key", 0, data);
+    MutableDocument transformedDoc = doc("collection/key", 1, data);
     Mutation transform =
         setMutation(
             "collection/key",
@@ -522,17 +528,17 @@ public class MutationTest {
   @Test
   public void testDeleteDeletes() {
     Map<String, Object> data = map("foo", "bar");
-    MutableDocument deletedDoc = doc("collection/key", 0, data);
+    MutableDocument deletedDoc = doc("collection/key", 1, data);
 
     Mutation delete = deleteMutation("collection/key");
-    delete.applyToLocalView(deletedDoc, Timestamp.now());
-    assertEquals(deletedDoc("collection/key", 0).setHasLocalMutations(), deletedDoc);
+    delete.applyToLocalView(deletedDoc, /* previousMask= */ null, Timestamp.now());
+    assertEquals(deletedDoc("collection/key", 1).setHasLocalMutations(), deletedDoc);
   }
 
   @Test
   public void testSetWithMutationResult() {
     Map<String, Object> data = map("foo", "bar");
-    MutableDocument setDoc = doc("collection/key", 0, data);
+    MutableDocument setDoc = doc("collection/key", 1, data);
 
     Mutation set = setMutation("collection/key", map("foo", "new-bar"));
     set.applyToRemoteDocument(setDoc, mutationResult(4));
@@ -544,7 +550,7 @@ public class MutationTest {
   @Test
   public void testPatchWithMutationResult() {
     Map<String, Object> data = map("foo", "bar");
-    MutableDocument patchDoc = doc("collection/key", 0, data);
+    MutableDocument patchDoc = doc("collection/key", 1, data);
 
     Mutation patch = patchMutation("collection/key", map("foo", "new-bar"));
     patch.applyToRemoteDocument(patchDoc, mutationResult(4));
@@ -607,7 +613,7 @@ public class MutationTest {
   @Test
   public void testNonTransformMutationBaseValue() {
     Map<String, Object> data = map("foo", "foo");
-    MutableDocument baseDoc = doc("collection/key", 0, data);
+    MutableDocument baseDoc = doc("collection/key", 1, data);
 
     Mutation set = setMutation("collection/key", map("foo", "bar"));
     assertNull(set.extractTransformBaseValue(baseDoc));
@@ -623,7 +629,7 @@ public class MutationTest {
   public void testServerTimestampBaseValue() {
     Map<String, Object> allValues = map("time", "foo");
     allValues.put("nested", new HashMap<>(allValues));
-    MutableDocument baseDoc = doc("collection/key", 0, allValues);
+    MutableDocument baseDoc = doc("collection/key", 1, allValues);
 
     Map<String, Object> allTransforms = map("time", FieldValue.serverTimestamp());
     allTransforms.put("nested", new HashMap<>(allTransforms));
@@ -638,7 +644,7 @@ public class MutationTest {
     Map<String, Object> allValues =
         map("ignore", "foo", "double", 42.0, "long", 42, "string", "foo", "map", map());
     allValues.put("nested", new HashMap<>(allValues));
-    MutableDocument baseDoc = doc("collection/key", 0, allValues);
+    MutableDocument baseDoc = doc("collection/key", 1, allValues);
 
     Map<String, Object> allTransforms =
         map(
@@ -677,14 +683,391 @@ public class MutationTest {
 
   @Test
   public void testIncrementTwice() {
-    MutableDocument patchDoc = doc("collection/key", 0, map("sum", "0"));
+    MutableDocument patchDoc = doc("collection/key", 1, map("sum", "0"));
 
     Map<String, Object> increment = map("sum", FieldValue.increment(1));
     Mutation mutation = patchMutation("collection/key", increment);
 
-    mutation.applyToLocalView(patchDoc, Timestamp.now());
-    mutation.applyToLocalView(patchDoc, Timestamp.now());
+    mutation.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
+    mutation.applyToLocalView(patchDoc, /* previousMask= */ null, Timestamp.now());
 
     assertEquals(wrap(2L), patchDoc.getField(field("sum")));
+  }
+
+  // Mutation Overlay tests
+
+  @Test
+  public void testOverlayWithNoMutation() {
+    Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
+    verifyOverlayRoundTrips(doc("collection/key", 1, data));
+  }
+
+  @Test
+  public void testOverlayWithMutationsFailByPreconditions() {
+    verifyOverlayRoundTrips(
+        deletedDoc("collection/key", 1),
+        patchMutation("collection/key", map("foo", "bar")),
+        patchMutation("collection/key", map("a", 1)));
+  }
+
+  @Test
+  public void testOverlayWithOneSetMutation() {
+    Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
+    verifyOverlayRoundTrips(
+        doc("collection/key", 1, data), setMutation("collection/key", map("bar", "bar-value")));
+  }
+
+  @Test
+  public void testOverlayWithOnePatchMutation() {
+    Map<String, Object> data = map("foo", map("bar", "bar-value"), "baz", "baz-value");
+    verifyOverlayRoundTrips(
+        doc("collection/key", 1, data),
+        patchMutation("collection/key", map("foo.bar", "new-bar-value")));
+  }
+
+  @Test
+  public void testOverlayWithPatchThenMerge() {
+    Mutation upsert =
+        mergeMutation(
+            "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
+    verifyOverlayRoundTrips(deletedDoc("collection/key", 1), upsert);
+  }
+
+  @Test
+  public void testOverlayWithDeleteThenPatch() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
+    Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
+
+    verifyOverlayRoundTrips(doc, delete, patch);
+  }
+
+  @Test
+  public void testOverlayWithDeleteThenMerge() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation delete = new DeleteMutation(key("collection/key"), Precondition.NONE);
+    Mutation patch =
+        mergeMutation(
+            "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
+
+    verifyOverlayRoundTrips(doc, delete, patch);
+  }
+
+  @Test
+  public void testOverlayWithPatchThenPatchToDeleteField() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation patch =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation patchToDeleteField =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
+
+    verifyOverlayRoundTrips(doc, patch, patchToDeleteField);
+  }
+
+  @Test
+  public void testOverlayWithPatchThenMergeWithArrayUnion() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation patch =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation merge =
+        mergeMutation(
+            "collection/key",
+            map("arrays", FieldValue.arrayUnion(1, 2, 3)),
+            Arrays.asList(field("arrays")));
+
+    verifyOverlayRoundTrips(doc, patch, merge);
+  }
+
+  @Test
+  public void testOverlayWithArrayUnionThenRemove() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation union =
+        mergeMutation(
+            "collection/key", map("arrays", FieldValue.arrayUnion(1, 2, 3)), Arrays.asList());
+    Mutation remove =
+        mergeMutation(
+            "collection/key",
+            map("foo", "xxx", "arrays", FieldValue.arrayRemove(2)),
+            Arrays.asList(field("foo")));
+
+    verifyOverlayRoundTrips(doc, union, remove);
+  }
+
+  @Test
+  public void testOverlayWithSetThenIncrement() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation set = setMutation("collection/key", map("foo", 2));
+    Mutation update = patchMutation("collection/key", map("foo", FieldValue.increment(2)));
+
+    verifyOverlayRoundTrips(doc, set, update);
+  }
+
+  @Test
+  public void testOverlayWithSetThenPatchOnDeletedDoc() {
+    MutableDocument doc = deletedDoc("collection/key", 1);
+    Mutation set = setMutation("collection/key", map("bar", "bar-value"));
+    Mutation patch =
+        patchMutation(
+            "collection/key",
+            map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp()));
+
+    verifyOverlayRoundTrips(doc, set, patch);
+  }
+
+  @Test
+  public void testOverlayWithFieldDeletionOfNestedField() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation patch1 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation patch2 =
+        patchMutation(
+            "collection/key",
+            map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp()));
+    Mutation patch3 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
+
+    verifyOverlayRoundTrips(doc, patch1, patch2, patch3);
+  }
+
+  // Below tests run on automatically generated mutation list, they are deterministic, but hard to
+  // debug when they fail. They will print the failure case, and the best way to debug is recreate
+  // the case manually in a separate test.
+
+  @Test
+  public void testOverlayWithMutationWithMultipleDeletes() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 1, map("foo", "foo-value", "bar.baz", 1)),
+            deletedDoc("collection/key", 1),
+            unknownDoc("collection/key", 1));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value", "bar.baz", FieldValue.serverTimestamp())));
+
+    int testCases = runPermutationTests(docs, Lists.newArrayList(mutations));
+
+    // There are 4! * 3 cases
+    assertEquals(72, testCases);
+  }
+
+  @Test
+  public void testOverlayByCombinationsAndPermutations() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 1, map("foo", "foo-value", "bar", 1)),
+            deletedDoc("collection/key", 1),
+            unknownDoc("collection/key", 1));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            setMutation("collection/key", map("bar.rab", "bar.rab-value")),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-incr", "bar", FieldValue.increment(1))),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-delete", "bar", FieldValue.delete())),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-st", "bar", FieldValue.serverTimestamp())),
+            mergeMutation(
+                "collection/key",
+                map("arrays", FieldValue.arrayUnion(1, 2, 3)),
+                Arrays.asList(field("arrays"))));
+
+    // Take all possible combinations of the subsets of the mutation list, run each combination for
+    // all possible permutation, for all 3 different type of documents.
+    int testCases = 0;
+    for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
+      Set<Set<Mutation>> combinations = Sets.combinations(Sets.newHashSet(mutations), subsetSize);
+      for (Set<Mutation> combination : combinations) {
+        testCases += runPermutationTests(docs, Lists.newArrayList(combination));
+      }
+    }
+
+    // There are (0! + 7*1! + 21*2! + 35*3! + 35*4! + 21*5! + 7*6! + 7!) * 3 = 41100 cases.
+    // assertEquals(41100, testCases);
+  }
+
+  @Test
+  public void testOverlayByCombinationsAndPermutations_ArrayTransforms() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 1, map("foo", "foo-value", "bar.baz", 1)),
+            deletedDoc("collection/key", 1),
+            unknownDoc("collection/key", 1));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            mergeMutation(
+                "collection/key",
+                map("foo", "xxx", "arrays", FieldValue.arrayRemove(2)),
+                Arrays.asList(field("foo"))),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-1", "arrays", FieldValue.arrayUnion(4, 5))),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-2", "arrays", FieldValue.arrayRemove(5, 6))),
+            mergeMutation(
+                "collection/key",
+                map("foo", "yyy", "arrays", FieldValue.arrayUnion(1, 2, 3, 999)),
+                Arrays.asList(field("foo"))));
+
+    int testCases = 0;
+    for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
+      Set<Set<Mutation>> combinations = Sets.combinations(Sets.newHashSet(mutations), subsetSize);
+      for (Set<Mutation> combination : combinations) {
+        testCases += runPermutationTests(docs, Lists.newArrayList(combination));
+      }
+    }
+
+    // There are (0! + 6*1! + 15*2! + 20*3! + 15*4! + 6*5! + 6!) * 3 = 5871 cases.
+    assertEquals(5871, testCases);
+  }
+
+  @Test
+  public void testOverlayByCombinationsAndPermutations_Increments() {
+    List<MutableDocument> docs =
+        Lists.newArrayList(
+            doc("collection/key", 1, map("foo", "foo-value", "bar", 1)),
+            deletedDoc("collection/key", 1),
+            unknownDoc("collection/key", 1));
+    List<Mutation> mutations =
+        Lists.newArrayList(
+            setMutation("collection/key", map("bar", "bar-value")),
+            mergeMutation(
+                "collection/key",
+                map("foo", "foo-merge", "bar", FieldValue.increment(2)),
+                Arrays.asList(field("foo"))),
+            new DeleteMutation(key("collection/key"), Precondition.NONE),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-1", "bar", FieldValue.increment(-1.4))),
+            patchMutation(
+                "collection/key",
+                map("foo", "foo-patched-value-2", "bar", FieldValue.increment(3.3))),
+            mergeMutation(
+                "collection/key",
+                map("foo", "yyy", "bar", FieldValue.increment(-41)),
+                Arrays.asList(field("foo"))));
+
+    int testCases = 0;
+    for (int subsetSize = 0; subsetSize <= mutations.size(); ++subsetSize) {
+      Set<Set<Mutation>> combinations = Sets.combinations(Sets.newHashSet(mutations), subsetSize);
+      for (Set<Mutation> combination : combinations) {
+        testCases += runPermutationTests(docs, Lists.newArrayList(combination));
+      }
+    }
+
+    // There are (0! + 6*1! + 15*2! + 20*3! + 15*4! + 6*5! + 6!) * 3 = 5871 cases.
+    assertEquals(5871, testCases);
+  }
+
+  /**
+   * For each document in {@code docs}, calculate the overlay mutations of each possible
+   * permutation, check whether this holds: document + overlay_mutation = document + mutation_list
+   * Returns how many cases it has run.
+   */
+  private int runPermutationTests(List<MutableDocument> docs, List<Mutation> mutations) {
+    int testCases = 0;
+    Collection<List<Mutation>> permutations =
+        Collections2.permutations(Lists.newArrayList(mutations));
+    for (MutableDocument doc : docs) {
+      for (List<Mutation> permutation : permutations) {
+        verifyOverlayRoundTrips(doc, permutation.toArray(new Mutation[] {}));
+        testCases += 1;
+      }
+    }
+    return testCases;
+  }
+
+  private String getDescription(
+      MutableDocument document, List<Mutation> mutations, @Nullable Mutation overlay) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("Overlay Mutation failed with:\n");
+    builder.append("document:\n");
+    builder.append(document + "\n");
+    builder.append("\n");
+
+    builder.append("mutations:\n");
+    for (Mutation mutation : mutations) {
+      builder.append(mutation.toString() + "\n");
+    }
+    builder.append("\n");
+
+    builder.append("overlay:\n");
+    builder.append(overlay == null ? "null" : overlay.toString());
+    builder.append("\n\n");
+
+    return builder.toString();
+  }
+
+  private void verifyOverlayRoundTrips(MutableDocument doc, Mutation... mutations) {
+    MutableDocument docForMutations = doc.clone();
+    MutableDocument docForOverlay = doc.clone();
+    Timestamp now = Timestamp.now();
+
+    FieldMask mask = null;
+    for (Mutation m : mutations) {
+      mask = m.applyToLocalView(docForMutations, mask, now);
+    }
+
+    Mutation overlay = null;
+    if (docForMutations.hasLocalMutations()) {
+      overlay = getOverlayMutation(docForMutations, mask);
+      overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
+    }
+
+    assertEquals(
+        getDescription(doc, Arrays.asList(mutations), overlay), docForOverlay, docForMutations);
+  }
+
+  // TODO(Overlay): This is production code, find a place for this.
+  private Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
+    if (mask == null) {
+      if (doc.isNoDocument()) {
+        return new DeleteMutation(doc.getKey(), Precondition.NONE);
+      } else {
+        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
+      }
+    } else {
+      ObjectValue docValue = doc.getData();
+      ObjectValue patchValue = new ObjectValue();
+      HashSet<FieldPath> maskSet = new HashSet<>();
+      for (FieldPath path : mask.getMask()) {
+        if (!maskSet.contains(path)) {
+          Value value = docValue.get(path);
+          // If we are deleting a nested field, we take the immediate parent as the mask used to
+          // construct resulting mutation.
+          // Justification: Nested fields can create parent fields implicitly. If only a leaf entry
+          // deleted in later mutations, the parent field should still remain, but we may have
+          // lost this information.
+          // Consider mutation (foo.bar 1), then mutation (foo.bar delete()).
+          // This leaves the final result (foo, {}). Despite the fact that `doc` has the correct
+          // result,
+          // `foo` is not in `mask`, and the resulting mutation would then miss `foo`.
+          if (value == null && path.length() > 1) {
+            path = path.popLast();
+          }
+          patchValue.set(path, docValue.get(path));
+          maskSet.add(path);
+        }
+      }
+      return new PatchMutation(
+          doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
+    }
   }
 }

@@ -630,8 +630,23 @@ public class SQLiteSchemaTest {
 
       assertTableExists("index_configuration");
       assertTableExists("index_entries");
+      assertTableExists("collection_group_update_times");
     } finally {
       Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
+    }
+  }
+
+  @Test
+  public void createsOverlaysTable() {
+    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    try {
+      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+      schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+
+      assertTableExists("document_overlays");
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
     }
   }
 

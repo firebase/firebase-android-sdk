@@ -16,8 +16,18 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.index.IndexEntry;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Preconditions;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -26,11 +36,17 @@ public class IndexBackfiller {
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
+  /** The maximum number of entries to write each time backfill() is called. */
+  private static int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
 
   private final SQLitePersistence persistence;
+  private final SQLiteIndexManager indexManager;
+
+  private int maxIndexEntriesToProcess = MAX_INDEX_ENTRIES_TO_PROCESS;
 
   public IndexBackfiller(SQLitePersistence sqLitePersistence) {
     this.persistence = sqLitePersistence;
+    this.indexManager = (SQLiteIndexManager) sqLitePersistence.getIndexManager();
   }
 
   public static class Results {
@@ -103,11 +119,68 @@ public class IndexBackfiller {
     return new BackfillScheduler(asyncQueue, localStore);
   }
 
-  // TODO(indexing): Figure out which index entries to backfill.
-  public Results backfill() {
-    int numIndexesWritten = 0;
-    int numIndexesRemoved = 0;
-    return new Results(/* hasRun= */ true, numIndexesWritten, numIndexesRemoved);
+  public Results backfill(LocalDocumentsView localDocumentsView) {
+    // TODO(indexing): Handle field indexes that are removed by the user.
+    return new Results(
+        /* hasRun= */ true,
+        /* numIndexesWritten= */ writeIndexEntries(localDocumentsView),
+        /* numIndexesRemoved= */ 0);
+  }
+
+  /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
+  private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
+    int totalEntriesWrittenCount = 0;
+    Timestamp startingTimestamp = Timestamp.now();
+
+    while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
+      int entriesRemainingUnderCap = maxIndexEntriesToProcess - totalEntriesWrittenCount;
+      String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
+      if (collectionGroup == null) {
+        break;
+      }
+      totalEntriesWrittenCount +=
+          writeEntriesForCollectionGroup(
+              localDocumentsView, collectionGroup, entriesRemainingUnderCap);
+    }
+
+    return totalEntriesWrittenCount;
+  }
+
+  /** Writes entries for the fetched field indexes. */
+  private int writeEntriesForCollectionGroup(
+      LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
+    int entriesWrittenCount = 0;
+    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
+
+    // Use the earliest updateTime of all field indexes as the base updateTime.
+    SnapshotVersion earliestUpdateTime =
+        getEarliestUpdateTime(indexManager.getFieldIndexes(collectionGroup));
+
+    // TODO(indexing): Make sure the docs matching the query are sorted by read time.
+    // TODO(indexing): Use limit queries to allow incremental progress.
+    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
+    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
+        localDocumentsView.getDocumentsMatchingQuery(query, earliestUpdateTime);
+
+    return indexManager.updateIndexEntries(
+        collectionGroup, matchingDocuments, entriesRemainingUnderCap);
+  }
+
+  private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
+    Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
+    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      lowestVersion =
+          fieldIndex.getVersion().compareTo(lowestVersion) < 0
+              ? fieldIndex.getVersion()
+              : lowestVersion;
+    }
+    return lowestVersion;
+  }
+
+  @VisibleForTesting
+  void setMaxIndexEntriesToProcess(int newMax) {
+    maxIndexEntriesToProcess = newMax;
   }
 
   @VisibleForTesting
@@ -115,11 +188,13 @@ public class IndexBackfiller {
     persistence.execute(
         "INSERT OR IGNORE INTO index_entries ("
             + "index_id, "
-            + "index_value, "
+            + "array_value, "
+            + "directional_value, "
             + "uid, "
-            + "document_name) VALUES(?, ?, ?, ?)",
+            + "document_name) VALUES(?, ?, ?, ?, ?)",
         entry.getIndexId(),
-        entry.getIndexValue(),
+        entry.getArrayValue(),
+        entry.getDirectionalValue(),
         entry.getUid(),
         entry.getDocumentName());
   }
@@ -141,12 +216,18 @@ public class IndexBackfiller {
   @VisibleForTesting
   IndexEntry getIndexEntry(int indexId) {
     return persistence
-        .query("SELECT index_value, uid, document_name FROM index_entries WHERE index_id = ?")
+        .query(
+            "SELECT array_value, directional_value, uid, document_name FROM index_entries WHERE index_id = ?")
         .binding(indexId)
         .firstValue(
             row ->
                 row == null
                     ? null
-                    : new IndexEntry(indexId, row.getBlob(0), row.getString(1), row.getString(2)));
+                    : new IndexEntry(
+                        indexId,
+                        row.getBlob(0),
+                        row.getBlob(1),
+                        row.getString(2),
+                        row.getString(3)));
   }
 }

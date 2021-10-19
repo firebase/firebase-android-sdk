@@ -119,6 +119,13 @@ public interface Stream<CallbackType extends StreamCallback> {
     Open,
 
     /**
+     * The stream is healthy and has been connected for more than 10 seconds. We therefore assume
+     * that the credentials we passed were valid. Both {@code isStarted()} and {@code isOpen()} will
+     * return true.
+     */
+    Healthy,
+
+    /**
      * The stream encountered an error. The next start attempt will back off. While in this state
      * {@code isStarted()} will return false.
      */

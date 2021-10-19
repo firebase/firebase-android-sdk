@@ -19,9 +19,15 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 
 public interface CrashlyticsNativeComponent {
 
+  boolean hasCrashDataForCurrentSession();
+
   boolean hasCrashDataForSession(@NonNull String sessionId);
 
-  void openSession(
+  /**
+   * Prepares the native session for opening. Whether or not Crashlytics is fully initialized to
+   * handle native symbols is implementation dependent.
+   */
+  void prepareNativeSession(
       @NonNull String sessionId,
       @NonNull String generator,
       long startedAtSeconds,

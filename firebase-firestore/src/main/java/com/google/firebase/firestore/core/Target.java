@@ -18,14 +18,13 @@ import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -116,21 +115,43 @@ public final class Target {
   }
 
   /**
-   * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getUpperBound}, lower bounds always exist as the SDK can use {@code null} as
-   * a starting point for missing boundary values.
+   * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. Returns
+   * {@code null} if there are no such filters.
    */
+  public @Nullable List<Value> getArrayValues(FieldIndex fieldIndex) {
+    @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
+    if (segment == null) return null;
+
+    for (Filter filter : filters) {
+      if (filter.getField().equals(segment.getFieldPath())) {
+        FieldFilter fieldFilter = (FieldFilter) filter;
+        switch (fieldFilter.getOperator()) {
+          case ARRAY_CONTAINS_ANY:
+            return fieldFilter.getValue().getArrayValue().getValuesList();
+          case ARRAY_CONTAINS:
+            return Collections.singletonList(fieldFilter.getValue());
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Returns a lower bound of field values that can be used as a starting point to scan the index
+   * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
+   */
+  @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
-    // Go through all filters to find a value for the current field segment
-    for (FieldIndex.Segment segment : fieldIndex) {
-      Value segmentValue = Values.NULL_VALUE;
+    // For each segment, retrieve a lower bound if there is a suitable filter or startAt.
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+      Value segmentValue = null;
       boolean segmentInclusive = true;
 
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
@@ -142,19 +163,8 @@ public final class Target {
             case LESS_THAN_OR_EQUAL:
               filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
               break;
-            case NOT_EQUAL:
-              filterValue = Values.NULL_VALUE;
-              break;
-            case NOT_IN:
-              filterValue =
-                  Value.newBuilder()
-                      .setArrayValue(ArrayValue.newBuilder().addValues(Values.NULL_VALUE))
-                      .build();
-              break;
             case EQUAL:
             case IN:
-            case ARRAY_CONTAINS_ANY:
-            case ARRAY_CONTAINS:
             case GREATER_THAN_OR_EQUAL:
               filterValue = fieldFilter.getValue();
               break;
@@ -162,6 +172,8 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            default:
+              // Remaining filters cannot be used as lower bounds.
           }
 
           if (max(segmentValue, filterValue) == filterValue) {
@@ -187,6 +199,11 @@ public final class Target {
         }
       }
 
+      if (segmentValue == null) {
+        // No lower bound exists
+        return null;
+      }
+
       values.add(segmentValue);
       inclusive &= segmentInclusive;
     }
@@ -196,21 +213,18 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getLowerBound}, upper bounds do not always exist since the Firestore does not
-   * define a maximum field value. The index scan should not use an upper bound if {@code null} is
-   * returned.
+   * index defined by {@code fieldIndex}. Returns {@code null} if no upper bound exists.
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
-    for (FieldIndex.Segment segment : fieldIndex) {
+    // For each segment, retrieve an upper bound if there is a suitable filter or endAt.
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       @Nullable Value segmentValue = null;
       boolean segmentInclusive = true;
 
-      // Go through all filters to find a value for the current field segment
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
@@ -218,10 +232,6 @@ public final class Target {
           boolean filterInclusive = true;
 
           switch (fieldFilter.getOperator()) {
-            case NOT_IN:
-            case NOT_EQUAL:
-              // These filters cannot be used as an upper bound. Skip.
-              break;
             case GREATER_THAN_OR_EQUAL:
             case GREATER_THAN:
               filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
@@ -229,8 +239,6 @@ public final class Target {
               break;
             case EQUAL:
             case IN:
-            case ARRAY_CONTAINS_ANY:
-            case ARRAY_CONTAINS:
             case LESS_THAN_OR_EQUAL:
               filterValue = fieldFilter.getValue();
               break;
@@ -238,6 +246,8 @@ public final class Target {
               filterValue = fieldFilter.getValue();
               filterInclusive = false;
               break;
+            default:
+              // Remaining filters cannot be used as upper bounds.
           }
 
           if (min(segmentValue, filterValue) == filterValue) {
@@ -283,6 +293,11 @@ public final class Target {
     return this.orderBys;
   }
 
+  /** Returns the first order by (which always exists). */
+  public OrderBy getFirstOrderBy() {
+    return this.orderBys.get(0);
+  }
+
   /** Returns a canonical string representing this target. */
   public String getCanonicalId() {
     if (memoizedCannonicalId != null) {
@@ -307,7 +322,7 @@ public final class Target {
     builder.append("|ob:");
     for (OrderBy orderBy : getOrderBy()) {
       builder.append(orderBy.getField().canonicalString());
-      builder.append(orderBy.getDirection().equals(Direction.ASCENDING) ? "asc" : "desc");
+      builder.append(orderBy.getDirection().equals(OrderBy.Direction.ASCENDING) ? "asc" : "desc");
     }
 
     // Add limit.
