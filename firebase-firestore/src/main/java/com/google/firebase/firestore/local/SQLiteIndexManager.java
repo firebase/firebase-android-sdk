@@ -119,8 +119,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getVersion().getTimestamp().getSeconds(),
-        index.getVersion().getTimestamp().getNanoseconds());
+        index.getUpdateTime().getTimestamp().getSeconds(),
+        index.getUpdateTime().getTimestamp().getNanoseconds());
 
     // TODO(indexing): Use a 0-counter rather than the timestamp.
     setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
@@ -139,8 +139,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getVersion().getTimestamp().getSeconds(),
-        index.getVersion().getTimestamp().getNanoseconds());
+        index.getUpdateTime().getTimestamp().getSeconds(),
+        index.getUpdateTime().getTimestamp().getNanoseconds());
   }
 
   /** Returns the next collection group to update. */
@@ -200,7 +200,7 @@ final class SQLiteIndexManager implements IndexManager {
               getPostUpdateIndex(
                   fieldIndex,
                   updatedFieldIndexes.get(fieldIndex.getIndexId()),
-                  document.getVersion());
+                  document.getReadTime());
           updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
         }
       }
@@ -253,15 +253,17 @@ final class SQLiteIndexManager implements IndexManager {
    * <p>This method should only be called on field indexes that had index entries written.
    */
   private FieldIndex getPostUpdateIndex(
-      FieldIndex originalIndex, @Nullable FieldIndex updatedIndex, SnapshotVersion version) {
-    // TODO(indexing): Compare with read time version, rather than document version
-    // If the field index hasn't been updated, compare against the document's version.
-    if (updatedIndex == null) {
-      return originalIndex.withVersion(version);
-    } else if (version.compareTo(updatedIndex.getVersion()) > 0) {
-      return originalIndex.withVersion(version);
+      FieldIndex originalIndex, @Nullable FieldIndex storedIndex, SnapshotVersion newReadTime) {
+    if (storedIndex == null) {
+      SnapshotVersion updatedReadTime =
+          originalIndex.getUpdateTime().compareTo(newReadTime) > 0
+              ? originalIndex.getUpdateTime()
+              : newReadTime;
+      return originalIndex.withUpdateTime(updatedReadTime);
+    } else if (newReadTime.compareTo(storedIndex.getUpdateTime()) > 0) {
+      return originalIndex.withUpdateTime(newReadTime);
     } else {
-      return updatedIndex;
+      return storedIndex;
     }
   }
 

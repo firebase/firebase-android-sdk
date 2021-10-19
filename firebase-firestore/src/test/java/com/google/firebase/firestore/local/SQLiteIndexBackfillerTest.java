@@ -81,17 +81,60 @@ public class SQLiteIndexBackfillerTest {
     persistence.shutdown();
   }
 
-  // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
+  // This test can flake due to a timestamp race condition with getNextCollectionGroup() that should
+  // be resolved if we use counters in the collection groups table.
   @Test
-  public void testBackfillWritesToIndexConfigOnCompletion() {
-    // TODO(indexing): Check that each field index is updated to the new version after each write.
+  public void testBackfillWritesLatestReadTimeToFieldIndexOnCompletion() {
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "bar");
+    addDoc("coll1/docA", "foo", version(10, 0));
+    addDoc("coll2/docA", "bar", version(20, 0));
+
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
+    assertEquals(2, results.getEntriesAdded());
+
+    FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
+    FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll2").get(0);
+    assertEquals(version(10, 0), fieldIndex1.getUpdateTime());
+    assertEquals(version(20, 0), fieldIndex2.getUpdateTime());
+
+    addDoc("coll1/docB", "foo", version(50, 10));
+    addDoc("coll1/docC", "foo", version(50, 0));
+    addDoc("coll2/docB", "bar", version(60, 0));
+    addDoc("coll2/docC", "bar", version(60, 10));
+
+    results = backfiller.backfill(localDocumentsView);
+    assertEquals(4, results.getEntriesAdded());
+
+    fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
+    fieldIndex2 = indexManager.getFieldIndexes("coll2").get(0);
+    assertEquals(version(50, 10), fieldIndex1.getUpdateTime());
+    assertEquals(version(60, 10), fieldIndex2.getUpdateTime());
   }
 
-  // TODO(indexing): Use RemoteDocumentCache read time rather than document's version.
   @Test
-  public void testBackfillFetchesDocumentsWithSnapshotVersion() {
-    // TODO(indexing): Check that the backfiller fetches documents from the earliest common snapshot
-    // version.
+  public void testBackfillFetchesDocumentsAfterEarliestReadTime() {
+    addFieldIndex("coll1", "foo", version(10, 0));
+    addFieldIndex("coll1", "boo", version(20, 0));
+    addFieldIndex("coll1", "moo", version(30, 0));
+
+    // Documents before earliest read time should not be fetched.
+    addDoc("coll1/docA", "foo", version(9, 0));
+    IndexBackfiller.Results results = backfiller.backfill(localDocumentsView);
+    assertEquals(0, results.getEntriesAdded());
+
+    // Documents that are after the earliest read time but before field index read time are fetched.
+    addDoc("coll1/docB", "boo", version(19, 0));
+    results = backfiller.backfill(localDocumentsView);
+    assertEquals(1, results.getEntriesAdded());
+
+    // Field indexes should still hold the latest read time.
+    FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
+    FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll1").get(1);
+    FieldIndex fieldIndex3 = indexManager.getFieldIndexes("coll1").get(2);
+    assertEquals(version(10, 0), fieldIndex1.getUpdateTime());
+    assertEquals(version(20, 0), fieldIndex2.getUpdateTime());
+    assertEquals(version(30, 0), fieldIndex3.getUpdateTime());
   }
 
   @Test
@@ -198,13 +241,20 @@ public class SQLiteIndexBackfillerTest {
         });
   }
 
-  void addFieldIndex(String collectionGroup, String fieldName) {
+  private void addFieldIndex(String collectionGroup, String fieldName) {
     indexManager.addFieldIndex(
         new FieldIndex(collectionGroup)
             .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED));
   }
 
-  void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
+  private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion readTime) {
+    indexManager.addFieldIndex(
+        new FieldIndex(collectionGroup)
+            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED)
+            .withUpdateTime(readTime));
+  }
+
+  private void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
     indexManager.setCollectionGroupUpdateTime(collectionGroup, updateTime);
   }
 

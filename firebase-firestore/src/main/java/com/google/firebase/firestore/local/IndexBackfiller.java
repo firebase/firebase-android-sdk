@@ -37,7 +37,7 @@ public class IndexBackfiller {
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
   /** The maximum number of entries to write each time backfill() is called. */
-  private static int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
+  private static final int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
 
   private final SQLitePersistence persistence;
   private final SQLiteIndexManager indexManager;
@@ -127,7 +127,7 @@ public class IndexBackfiller {
         /* numIndexesRemoved= */ 0);
   }
 
-  /** Writes index entries based on the FieldIndexQueue. Returns the number of entries written. */
+  /** Writes index entries until the cap is reached. Returns the number of entries written. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int totalEntriesWrittenCount = 0;
     Timestamp startingTimestamp = Timestamp.now();
@@ -149,7 +149,6 @@ public class IndexBackfiller {
   /** Writes entries for the fetched field indexes. */
   private int writeEntriesForCollectionGroup(
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
-    int entriesWrittenCount = 0;
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
     // Use the earliest updateTime of all field indexes as the base updateTime.
@@ -168,13 +167,14 @@ public class IndexBackfiller {
 
   private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
     Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
-    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
+    SnapshotVersion lowestVersion = fieldIndexes.get(0).getUpdateTime();
     for (FieldIndex fieldIndex : fieldIndexes) {
       lowestVersion =
-          fieldIndex.getVersion().compareTo(lowestVersion) < 0
-              ? fieldIndex.getVersion()
+          fieldIndex.getUpdateTime().compareTo(lowestVersion) < 0
+              ? fieldIndex.getUpdateTime()
               : lowestVersion;
     }
+
     return lowestVersion;
   }
 

@@ -306,12 +306,12 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
-            .withVersion(new SnapshotVersion(new Timestamp(10, 20))));
+            .withUpdateTime(new SnapshotVersion(new Timestamp(10, 20))));
 
     List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.get(0);
-    assertEquals(index.getVersion(), new SnapshotVersion(new Timestamp(10, 20)));
+    assertEquals(index.getUpdateTime(), new SnapshotVersion(new Timestamp(10, 20)));
   }
 
   @Test
@@ -337,11 +337,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
-            .withVersion(version(30, 0)));
+            .withUpdateTime(version(30, 0)));
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll2")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
-            .withVersion(SnapshotVersion.NONE));
+            .withUpdateTime(SnapshotVersion.NONE));
 
     List<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
@@ -350,7 +350,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("newValue"), FieldIndex.Segment.Kind.CONTAINS)
-            .withVersion(version(20, 0)));
+            .withUpdateTime(version(20, 0)));
 
     indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 2);
@@ -364,11 +364,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ORDERED)
-            .withVersion(version(30, 0)));
+            .withUpdateTime(version(30, 0)));
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll2")
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
-            .withVersion(SnapshotVersion.NONE));
+            .withUpdateTime(SnapshotVersion.NONE));
     List<String> collectionGroups =
         getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
     assertEquals(2, collectionGroups.size());

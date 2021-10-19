@@ -379,7 +379,7 @@ class SQLiteSchema {
           // for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
-                  + "index_id INTEGER, "
+                  + "index_id INTEGER, " // The index_id of the field index creating this entry
                   + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
                   + "directional_value BLOB, " // index values for equality and inequalities
                   + "uid TEXT, " // user id or null if there are no pending mutations

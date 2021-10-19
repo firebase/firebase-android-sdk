@@ -324,7 +324,7 @@ public final class LocalSerializer {
                   : FieldIndex.Segment.Kind.ORDERED);
     }
     fieldIndex =
-        fieldIndex.withVersion(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
+        fieldIndex.withUpdateTime(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
     return fieldIndex;
   }
 
