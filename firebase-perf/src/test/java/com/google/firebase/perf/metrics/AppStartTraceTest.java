@@ -261,6 +261,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
 
     Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
-    verify(mockPerfSession).isGaugeAndEventCollectionEnabled();
+    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
   }
 }

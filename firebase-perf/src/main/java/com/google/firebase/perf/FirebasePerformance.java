@@ -35,14 +35,11 @@ import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
-import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
-import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,8 +49,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -145,7 +140,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
-  private final Future syncInitFuture;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -159,7 +153,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @param transportFactoryProvider The {@link Provider} for the the {@link TransportFactory}.
    * @param remoteConfigManager The RemoteConfigManager instance.
    * @param configResolver The ConfigResolver instance.
-   * @param gaugeManager The GaugeManager instance.
+   * @param sessionManager The SessionManager instance.
    */
   @VisibleForTesting
   @Inject
@@ -170,7 +164,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       Provider<TransportFactory> transportFactoryProvider,
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
-      GaugeManager gaugeManager) {
+      SessionManager sessionManager) {
 
     this.firebaseApp = firebaseApp;
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
@@ -180,14 +174,12 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
-      this.syncInitFuture = null;
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
 
-    ExecutorService executor =
-        TransportManager.getInstance()
-            .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
+    TransportManager.getInstance()
+        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
     Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
@@ -197,6 +189,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver = configResolver;
     this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
+    sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
@@ -206,19 +199,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
-
-    // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
-    // which creates a new perfSession, before the following is executed in background thread
-    PerfSession appStartSession = SessionManager.getInstance().perfSession();
-    this.syncInitFuture =
-        executor.submit(
-            () -> {
-              gaugeManager.setApplicationContext(appContext);
-              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
-                gaugeManager.logGaugeMetadata(
-                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
-              }
-            });
   }
 
   /**
@@ -488,10 +468,5 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @VisibleForTesting
   Boolean getPerformanceCollectionForceEnabledState() {
     return mPerformanceCollectionForceEnabledState;
-  }
-
-  @VisibleForTesting
-  Future getInitFuture() {
-    return syncInitFuture;
   }
 }

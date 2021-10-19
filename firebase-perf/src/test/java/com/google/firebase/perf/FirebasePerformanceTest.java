@@ -15,12 +15,9 @@
 package com.google.firebase.perf;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -39,13 +36,11 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.session.SessionManager;
-import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,7 +64,7 @@ public class FirebasePerformanceTest {
   @Nullable private RemoteConfigManager spyRemoteConfigManager = null;
   @Nullable private ConfigResolver spyConfigResolver = null;
 
-  @Nullable private GaugeManager spyGaugeManager = null;
+  @Nullable private SessionManager spySessionManager = null;
 
   @Rule public MockitoRule initRule = MockitoJUnit.rule();
 
@@ -104,7 +99,7 @@ public class FirebasePerformanceTest {
     ConfigResolver.clearInstance();
     spyConfigResolver = spy(ConfigResolver.getInstance());
 
-    spyGaugeManager = spy(GaugeManager.getInstance());
+    spySessionManager = spy(SessionManager.getInstance());
     fakeDirectExecutorService = new FakeDirectExecutorService();
   }
 
@@ -498,32 +493,15 @@ public class FirebasePerformanceTest {
   }
 
   @Test
-  public void testFirebasePerformanceInitializationInjectsContextIntoGaugeManager()
-      throws NameNotFoundException, ExecutionException, InterruptedException {
+  public void testFirebasePerformanceInitializationInjectsContextIntoSessionManager()
+      throws NameNotFoundException {
     FirebasePerformance unusedPerformance =
         initializeFirebasePerformancePreferences(
             /* metadataFireperfForceDeactivatedKey= */ null,
             /* metadataFireperfEnabledKey= */ null,
             /* sharedPreferencesEnabledDisabledKey= */ null);
 
-    unusedPerformance.getInitFuture().get();
-    verify(spyGaugeManager).setApplicationContext(nullable(Context.class));
-  }
-
-  @Test
-  public void testFirebasePerformanceInitializationTransportsGaugeMetadata()
-      throws NameNotFoundException, ExecutionException, InterruptedException {
-    doReturn(true).when(spyGaugeManager).logGaugeMetadata(any(), any());
-    SessionManager.getInstance().perfSession().setGaugeAndEventCollectionEnabled(true);
-
-    FirebasePerformance unusedPerformance =
-        initializeFirebasePerformancePreferences(
-            /* metadataFireperfForceDeactivatedKey= */ null,
-            /* metadataFireperfEnabledKey= */ null,
-            /* sharedPreferencesEnabledDisabledKey= */ null);
-
-    unusedPerformance.getInitFuture().get();
-    verify(spyGaugeManager, times(1)).logGaugeMetadata(any(), any());
+    verify(spySessionManager).setApplicationContext(nullable(Context.class));
   }
 
   private static SharedPreferences getSharedPreferences() {
@@ -596,6 +574,6 @@ public class FirebasePerformanceTest {
         transportFactoryProvider,
         spyRemoteConfigManager,
         spyConfigResolver,
-        spyGaugeManager);
+        spySessionManager);
   }
 }

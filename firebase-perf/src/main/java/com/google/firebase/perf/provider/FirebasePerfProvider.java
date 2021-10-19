@@ -35,7 +35,6 @@ import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 
 /** Initializes app start time at app startup time. */
 @Keep
@@ -76,7 +75,7 @@ public class FirebasePerfProvider extends ContentProvider {
     // possible.
     // There is code in SessionManager that prevents us from resetting the session twice in case
     // of app cold start.
-    SessionManager.getInstance().startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
+    SessionManager.getInstance().initializeGaugeCollection();
   }
 
   /** Called before {@link Application#onCreate()}. */
