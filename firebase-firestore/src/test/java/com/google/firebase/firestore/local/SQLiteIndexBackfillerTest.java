@@ -250,7 +250,7 @@ public class SQLiteIndexBackfillerTest {
   private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion readTime) {
     indexManager.addFieldIndex(
         new FieldIndex(collectionGroup)
-            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ORDERED)
+            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)
             .withUpdateTime(readTime));
   }
 
