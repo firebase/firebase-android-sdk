@@ -38,7 +38,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link SessionManager}. */
@@ -69,13 +71,14 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   public void setApplicationContext_logGaugeMetadata_afterGaugeMetadataManagerIsInitialized()
       throws ExecutionException, InterruptedException {
     when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+    InOrder inOrder = Mockito.inOrder(mockGaugeManager);
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
     testSessionManager.setApplicationContext(mockApplicationContext);
 
     testSessionManager.getSyncInitFuture().get();
-    verify(mockGaugeManager, times(1)).initializeGaugeMetadataManager(any());
-    verify(mockGaugeManager, times(1)).logGaugeMetadata(any(), any());
+    inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
+    inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
   }
 
   @Test
