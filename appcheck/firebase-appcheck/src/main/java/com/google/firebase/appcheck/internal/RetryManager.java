@@ -61,7 +61,8 @@ public class RetryManager {
   }
 
   /** Returns the time at which the next App Check token exchange attempt will be allowed. */
-  public long getNextRetryTimeMillis() {
+  @VisibleForTesting
+  long getNextRetryTimeMillis() {
     return nextRetryTimeMillis;
   }
 
