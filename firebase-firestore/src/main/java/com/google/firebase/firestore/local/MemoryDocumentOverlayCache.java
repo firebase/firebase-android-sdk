@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class MemoryDocumentOverlay implements DocumentOverlay {
+public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   // A map sorted by DocumentKey, whose value is a pair of the largest batch id for the overlay
   // and the overlay itself.
   private TreeMap<DocumentKey, Pair<Integer, Mutation>> overlays = new TreeMap<>();
@@ -46,17 +46,15 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
       return;
     }
 
-    int existingId = -1;
+    // Remove the associate of this overlay to existing batch id.
     Pair<Integer, Mutation> existing = this.overlays.get(mutation.getKey());
     if (existing != null) {
-      existingId = existing.first;
+      overlayByBatchId.get(existing.first).remove(mutation.getKey());
     }
+
     overlays.put(mutation.getKey(), new Pair<>(largestBatchId, mutation));
 
-    // `overlayByBatchId` maintenance.
-    if (existingId >= 0) {
-      overlayByBatchId.get(existingId).remove(mutation.getKey());
-    }
+    // Create the associate of this overlay to the given largestBatchId.
     if (overlayByBatchId.get(largestBatchId) == null) {
       overlayByBatchId.put(largestBatchId, new HashSet<>());
     }
@@ -71,7 +69,7 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
-  public void removeOverlaysForBatch(int batchId) {
+  public void removeOverlaysForBatchId(int batchId) {
     if (overlayByBatchId.containsKey(batchId)) {
       Set<DocumentKey> keys = overlayByBatchId.get(batchId);
       overlayByBatchId.remove(batchId);
@@ -82,14 +80,14 @@ public class MemoryDocumentOverlay implements DocumentOverlay {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection) {
+  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection) {
     Map<DocumentKey, Mutation> result = new HashMap<>();
 
     int immediateChildrenPathLength = collection.length() + 1;
     DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
     Map<DocumentKey, Pair<Integer, Mutation>> view = overlays.tailMap(prefix);
-    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : view.entrySet()) {
 
+    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : view.entrySet()) {
       DocumentKey key = entry.getKey();
       if (!collection.isPrefixOf(key.getPath())) {
         break;

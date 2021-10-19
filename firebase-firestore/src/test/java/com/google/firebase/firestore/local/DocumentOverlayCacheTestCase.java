@@ -36,20 +36,20 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * These are tests for any implementation of the DocumentOverlay interface.
+ * These are tests for any implementation of the DocumentOverlayCache interface.
  *
- * <p>To test a specific implementation of DocumentOverlay:
+ * <p>To test a specific implementation of DocumentOverlayCache:
  *
  * <ol>
- *   <li>Subclass DocumentOverlayTestCase.
+ *   <li>Subclass DocumentOverlayCacheTestCase.
  *   <li>Override {@link #getPersistence}, creating a new implementation of Persistence.
  * </ol>
  */
-public abstract class DocumentOverlayTestCase {
+public abstract class DocumentOverlayCacheTestCase {
   @Rule public TestName name = new TestName();
 
   private Persistence persistence;
-  private DocumentOverlay overlays;
+  private DocumentOverlayCache overlays;
   private static boolean overlayEnabled = false;
 
   @BeforeClass
@@ -126,11 +126,11 @@ public abstract class DocumentOverlayTestCase {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
     saveOverlay(2, key("coll/doc1"), m);
 
-    overlays.removeOverlaysForBatch(2);
+    overlays.removeOverlaysForBatchId(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlaysForBatch(2);
+    overlays.removeOverlaysForBatchId(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
   }
 
@@ -152,6 +152,6 @@ public abstract class DocumentOverlayTestCase {
 
     m.remove(key("coll/doc1/sub/sub_doc"));
     m.remove(key("other/doc1"));
-    assertEquals(m, overlays.getAllOverlays(path("coll")));
+    assertEquals(m, overlays.getOverlays(path("coll")));
   }
 }

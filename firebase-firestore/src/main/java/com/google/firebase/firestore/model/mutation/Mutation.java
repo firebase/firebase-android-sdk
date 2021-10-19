@@ -83,8 +83,9 @@ public abstract class Mutation {
   }
 
   /**
-   * A utility method to calculate an overlay {@line Mutation} from the final state of the document,
-   * and a {@link FieldMask} representing the fields that are mutated by the local mutations.
+   * A utility method to calculate an {@link Mutation} representing the overlay from the final state
+   * of the document, and a {@link FieldMask} representing the fields that are mutated by the local
+   * mutations.
    */
   public static Mutation calculateOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
     if ((!doc.hasLocalMutations()) || (mask != null && mask.getMask().isEmpty())) {

@@ -26,12 +26,12 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SQLiteDocumentOverlay implements DocumentOverlay {
+public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
   private final String uid;
 
-  public SQLiteDocumentOverlay(SQLitePersistence db, LocalSerializer serializer, User user) {
+  public SQLiteDocumentOverlayCache(SQLitePersistence db, LocalSerializer serializer, User user) {
     this.db = db;
     this.serializer = serializer;
     this.uid = user.isAuthenticated() ? user.getUid() : "";
@@ -59,10 +59,6 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
   }
 
   private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
-    if (mutation == null) {
-      return;
-    }
-
     db.execute(
         "INSERT OR REPLACE INTO document_overlays "
             + "(uid, path, largest_batch_id, overlay_mutation) VALUES (?, ?, ?, ?)",
@@ -75,18 +71,20 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
+      if (entry.getValue() != null) {
+        saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
+      }
     }
   }
 
   @Override
-  public void removeOverlaysForBatch(int batchId) {
+  public void removeOverlaysForBatchId(int batchId) {
     db.execute(
         "DELETE FROM document_overlays WHERE uid = ? AND largest_batch_id = ?", uid, batchId);
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection) {
+  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection) {
     int immediateChildrenPathLength = collection.length() + 1;
 
     String prefixPath = EncodedPath.encode(collection);
@@ -106,6 +104,8 @@ public class SQLiteDocumentOverlay implements DocumentOverlay {
                 // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
                 // discarding rows with document keys more than one segment longer than the query
                 // path.
+                // TODO(Overlay): Introduce a segment count of the path or a terminator to avoid
+                //  over selecting.
                 if (path.length() != immediateChildrenPathLength) {
                   return;
                 }

@@ -116,7 +116,7 @@ public final class LocalStore implements BundleCallback {
   private MutationQueue mutationQueue;
 
   /** The overlays that can be used to short circuit applying all mutations from mutation queue. */
-  private DocumentOverlay documentOverlay;
+  private DocumentOverlayCache documentOverlayCache;
 
   /** The last known state of all referenced documents according to the backend. */
   private final RemoteDocumentCache remoteDocuments;
@@ -153,11 +153,11 @@ public final class LocalStore implements BundleCallback {
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
     mutationQueue = persistence.getMutationQueue(initialUser);
-    documentOverlay = persistence.getDocumentOverlay(initialUser);
+    documentOverlayCache = persistence.getDocumentOverlay(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
     indexManager = persistence.getIndexManager();
     localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlay, indexManager);
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
 
     this.queryEngine = queryEngine;
     queryEngine.setLocalDocumentsView(localDocuments);
@@ -188,14 +188,14 @@ public final class LocalStore implements BundleCallback {
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
     mutationQueue = persistence.getMutationQueue(user);
-    documentOverlay = persistence.getDocumentOverlay(user);
+    documentOverlayCache = persistence.getDocumentOverlay(user);
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlay, indexManager);
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
     queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
@@ -254,7 +254,7 @@ public final class LocalStore implements BundleCallback {
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
           Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.saveOverlays(batch.getBatchId(), overlays);
+            documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
           }
           return new LocalWriteResult(batch.getBatchId(), documents);
         });
@@ -286,7 +286,7 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.removeOverlaysForBatch(batchResult.getBatch().getBatchId());
+            documentOverlayCache.removeOverlaysForBatchId(batchResult.getBatch().getBatchId());
             localDocuments.recalculateOverlays(getKeysWithTransformResults(batchResult));
           }
 
@@ -300,7 +300,7 @@ public final class LocalStore implements BundleCallback {
 
     for (int i = 0; i < batchResult.getMutationResults().size(); ++i) {
       MutationResult mutationResult = batchResult.getMutationResults().get(i);
-      if (mutationResult.getTransformResults().size() > 0) {
+      if (!mutationResult.getTransformResults().isEmpty()) {
         result.add(batchResult.getBatch().getMutations().get(i).getKey());
       }
     }
@@ -326,7 +326,7 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.performConsistencyCheck();
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlay.removeOverlaysForBatch(batchId);
+            documentOverlayCache.removeOverlaysForBatchId(batchId);
             localDocuments.recalculateOverlays(toReject.getKeys());
           }
 

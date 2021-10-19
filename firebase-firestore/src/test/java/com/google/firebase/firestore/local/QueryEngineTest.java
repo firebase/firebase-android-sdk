@@ -79,7 +79,7 @@ public class QueryEngineTest {
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
   private MutationQueue mutationQueue;
-  private DocumentOverlay documentOverlay;
+  private DocumentOverlayCache documentOverlayCache;
   private TargetCache targetCache;
   private QueryEngine queryEngine;
 
@@ -91,7 +91,7 @@ public class QueryEngineTest {
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
-    documentOverlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
     queryEngine = new DefaultQueryEngine();
 
@@ -150,7 +150,7 @@ public class QueryEngineTest {
                   Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
           Map<DocumentKey, Mutation> overlayMap = new HashMap<>();
           overlayMap.put(mutation.getKey(), mutation);
-          documentOverlay.saveOverlays(batch.getBatchId(), overlayMap);
+          documentOverlayCache.saveOverlays(batch.getBatchId(), overlayMap);
         });
   }
 
@@ -409,8 +409,10 @@ public class QueryEngineTest {
     boolean saved = Persistence.OVERLAY_SUPPORT_ENABLED;
     Persistence.OVERLAY_SUPPORT_ENABLED = true;
 
-    this.doesNotIncludeDocumentsDeletedByMutation();
-
-    Persistence.OVERLAY_SUPPORT_ENABLED = saved;
+    try {
+      doesNotIncludeDocumentsDeletedByMutation();
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = saved;
+    }
   }
 }

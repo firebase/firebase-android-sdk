@@ -20,7 +20,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class MemoryDocumentOverlayTestCase extends DocumentOverlayTestCase {
+public class MemoryDocumentOverlayCacheTestCase extends DocumentOverlayCacheTestCase {
   @Override
   Persistence getPersistence() {
     return PersistenceTestHelpers.createEagerGCMemoryPersistence();

@@ -844,14 +844,11 @@ public class MutationTest {
   @Test
   public void testOverlayCreatedFromSetToEmptyWithMerge() {
     MutableDocument doc = deletedDoc("collection/key", 1);
-    Mutation patch =
-        patchMutation(
-            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
     Mutation merge = mergeMutation("collection/key", map(), Arrays.asList());
-    verifyOverlayRoundTrips(doc, patch, merge);
+    verifyOverlayRoundTrips(doc, merge);
 
     doc = doc("collection/key", 1, map("foo", "foo-value"));
-    verifyOverlayRoundTrips(doc, patch, merge);
+    verifyOverlayRoundTrips(doc, merge);
   }
 
   // Below tests run on automatically generated mutation list, they are deterministic, but hard to

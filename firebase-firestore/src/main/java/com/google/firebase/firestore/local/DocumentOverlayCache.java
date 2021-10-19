@@ -26,10 +26,10 @@ import java.util.Map;
  * <p>An overlay is a saved {@link Mutation}, that gives a local view of a document when applied to
  * the remote version of the document.
  *
- * <p>Each overlay stores the largest batch ID that is included in the overlay, which allows us
- * to remove the overlay, once all batches leading up to it have been acknowledged.
+ * <p>Each overlay stores the largest batch ID that is included in the overlay, which allows us to
+ * remove the overlay, once all batches leading up to it have been acknowledged.
  */
-public interface DocumentOverlay {
+public interface DocumentOverlayCache {
   /**
    * Gets the saved overlay mutation for the given document key. Returns null if there is no overlay
    * for that key.
@@ -39,13 +39,13 @@ public interface DocumentOverlay {
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
-   * their largest-batch-id set to the given batch id.
+   * their largest batch id set to {@code largestBatchId}.
    */
   void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays);
 
   /** Removes the overlay whose largest-batch-id equals to the given Id. */
-  void removeOverlaysForBatch(int batchId);
+  void removeOverlaysForBatchId(int batchId);
 
-  /** Returns all saved overlay under the given collection. */
-  Map<DocumentKey, Mutation> getAllOverlays(ResourcePath collection);
+  /** Returns all saved overlay for the given collection. */
+  Map<DocumentKey, Mutation> getOverlays(ResourcePath collection);
 }
