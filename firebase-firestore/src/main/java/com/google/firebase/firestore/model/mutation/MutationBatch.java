@@ -132,7 +132,7 @@ public final class MutationBatch {
 
   /**
    * Computes the local view for all provided documents given the mutations in this batch. Returns a
-   * {@code DocumentKey} to {@code Mutation} map which can short circuit all the mutation
+   * {@code DocumentKey} to {@code Mutation} map which can be used to replace all the mutation
    * applications.
    */
   public Map<DocumentKey, Mutation> applyToLocalDocumentSet(

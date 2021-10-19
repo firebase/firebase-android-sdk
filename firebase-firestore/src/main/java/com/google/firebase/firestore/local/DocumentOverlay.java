@@ -26,9 +26,8 @@ import java.util.Map;
  * <p>An overlay is a saved {@link Mutation}, that gives a local view of a document when applied to
  * the remote version of the document.
  *
- * <p>Each overlay also has a largest-batch-id, which represent the last batch that leads to the
- * overlay. This is needed to remove the overlay, once all batches leading up to it have been
- * acknowledged.
+ * <p>Each overlay stores the largest batch ID that is included in the overlay, which allows us
+ * to remove the overlay, once all batches leading up to it have been acknowledged.
  */
 public interface DocumentOverlay {
   /**

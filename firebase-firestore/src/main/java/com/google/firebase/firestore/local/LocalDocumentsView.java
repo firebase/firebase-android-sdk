@@ -170,7 +170,7 @@ class LocalDocumentsView {
       for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
         Mutation overlay = documentOverlay.getOverlay(entry.getKey());
         // Recalculate an overlay if the document's existence state is changed due to a remote
-        // event, *and* the overlay is a PatchMutation. This is because document existence state
+        // event *and* the overlay is a PatchMutation. This is because document existence state
         // can change if some patch mutation's preconditions are met.
         // NOTE: we recalculate when `overlay` is null as well, because there might be a patch
         // mutation
@@ -326,7 +326,7 @@ class LocalDocumentsView {
     }
   }
 
-  /** Queries the remote documents and overlays, by doing a full collection scan. */
+  /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromDocumentOverlay(
           Query query, SnapshotVersion sinceReadTime) {
@@ -334,7 +334,7 @@ class LocalDocumentsView {
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
     Map<DocumentKey, Mutation> overlays = documentOverlay.getAllOverlays(query.getPath());
 
-    // A document might match the query because of the overlay, we need to include them in the
+    // As documents might match the query because of their overlay we need to include all documents in the
     // result.
     Set<DocumentKey> missingDocuments = new HashSet<>();
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
