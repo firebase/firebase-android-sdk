@@ -78,16 +78,14 @@ public class SessionManager extends AppStateUpdateHandler {
   public void setApplicationContext(final Context appContext) {
     // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
     // which creates a new perfSession, before the following is executed in background thread
-    final PerfSession startUpSession = perfSession;
+    final PerfSession appStartSession = perfSession;
     ExecutorService executorService = Executors.newSingleThreadExecutor();
-    executorService.execute(() -> gaugeManager.initializeGaugeMetadataManager(appContext));
     syncInitFuture =
         executorService.submit(
             () -> {
-              if (startUpSession.isGaugeAndEventCollectionEnabled()) {
-                gaugeManager.logGaugeMetadata(
-                    startUpSession.sessionId(), ApplicationProcessState.FOREGROUND);
-              }
+              gaugeManager.initializeGaugeMetadataManager(appContext);
+              logGaugeMetadataIfCollectionEnabled(
+                  appStartSession, ApplicationProcessState.FOREGROUND);
             });
   }
 
@@ -148,7 +146,7 @@ public class SessionManager extends AppStateUpdateHandler {
       }
     }
 
-    logGaugeMetadataIfCollectionEnabled(currentAppState);
+    logGaugeMetadataIfCollectionEnabled(perfSession, currentAppState);
     startOrStopCollectingGauges(currentAppState);
   }
 
@@ -159,7 +157,7 @@ public class SessionManager extends AppStateUpdateHandler {
    * this does not reset the perfSession.
    */
   public void initializeGaugeCollection() {
-    logGaugeMetadataIfCollectionEnabled(ApplicationProcessState.FOREGROUND);
+    logGaugeMetadataIfCollectionEnabled(perfSession, ApplicationProcessState.FOREGROUND);
     startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
   }
 
@@ -187,7 +185,8 @@ public class SessionManager extends AppStateUpdateHandler {
     }
   }
 
-  private void logGaugeMetadataIfCollectionEnabled(ApplicationProcessState appState) {
+  private void logGaugeMetadataIfCollectionEnabled(
+      PerfSession perfSession, ApplicationProcessState appState) {
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.logGaugeMetadata(perfSession.sessionId(), appState);
     }
