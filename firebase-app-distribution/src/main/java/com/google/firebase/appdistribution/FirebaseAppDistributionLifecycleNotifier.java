@@ -28,6 +28,7 @@ import java.util.concurrent.Executor;
 public class FirebaseAppDistributionLifecycleNotifier
     implements Application.ActivityLifecycleCallbacks {
   private Activity currentActivity;
+  private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
 
   /** A queue of listeners that trigger when the activity is foregrounded */
@@ -44,6 +45,15 @@ public class FirebaseAppDistributionLifecycleNotifier
   @GuardedBy("lock")
   private final Queue<ManagedListener<OnActivityDestroyedListener>> onDestroyedListeners =
       new ArrayDeque<>();
+
+  private FirebaseAppDistributionLifecycleNotifier() {}
+
+  public static FirebaseAppDistributionLifecycleNotifier getInstance() {
+    if (instance == null) {
+      instance = new FirebaseAppDistributionLifecycleNotifier();
+    }
+    return instance;
+  }
 
   public interface OnActivityStartedListener {
     void onStarted(Activity activity);
@@ -133,7 +143,6 @@ public class FirebaseAppDistributionLifecycleNotifier
   }
 
   /** Wraps a listener and its corresponding executor. */
-  // TODO: move to a shared class? refactor?
   private static class ManagedListener<T> {
     Executor executor;
     T listener;

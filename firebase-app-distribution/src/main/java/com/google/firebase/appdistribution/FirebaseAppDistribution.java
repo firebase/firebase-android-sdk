@@ -41,7 +41,6 @@ public class FirebaseAppDistribution {
   private final TesterSignInClient testerSignInClient;
   private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
-  private Activity currentActivity;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   @GuardedBy("updateTaskLock")
@@ -55,7 +54,7 @@ public class FirebaseAppDistribution {
   private boolean updateDialogShown;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
-  private ExecutorService executor;
+  private final ExecutorService executor;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -65,7 +64,7 @@ public class FirebaseAppDistribution {
       @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
       @NonNull UpdateAppClient updateAppClient,
       @NonNull SignInStorage signInStorage,
-      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
     this.checkForNewReleaseClient = checkForNewReleaseClient;
@@ -90,28 +89,24 @@ public class FirebaseAppDistribution {
   private FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull SignInStorage signInStorage) {
     this(
         firebaseApp,
-        new TesterSignInClient(
-            firebaseApp, firebaseInstallationsApi, signInStorage, lifecycleNotifier),
+        new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
         new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateAppClient(firebaseApp, lifecycleNotifier),
+        new UpdateAppClient(firebaseApp),
         signInStorage,
-        lifecycleNotifier);
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
     this(
         firebaseApp,
         firebaseInstallationsApi,
-        lifecycleNotifier,
         new SignInStorage(firebaseApp.getApplicationContext()));
   }
 

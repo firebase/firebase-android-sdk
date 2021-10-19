@@ -48,11 +48,16 @@ public class UpdateAppClient {
 
   private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
-  public UpdateAppClient(
+  public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
+    this(firebaseApp, FirebaseAppDistributionLifecycleNotifier.getInstance());
+  }
+
+  @VisibleForTesting
+  UpdateAppClient(
       @NonNull FirebaseApp firebaseApp,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.lifecycleNotifier = lifecycleNotifier;
-    this.installApkClient = new InstallApkClient(lifecycleNotifier);
+    this.installApkClient = new InstallApkClient();
     this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);
     this.executor = Executors.newSingleThreadExecutor();
 

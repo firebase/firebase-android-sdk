@@ -95,8 +95,6 @@ public class FirebaseAppDistributionTest {
   @Mock private UpdateAppClient mockUpdateAppClient;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifeCycleNotifier;
-  @Mock private Bundle mockBundle;
-  @Mock private SignInResultActivity mockSignInResultActivity;
 
   static class TestActivity extends Activity {}
 

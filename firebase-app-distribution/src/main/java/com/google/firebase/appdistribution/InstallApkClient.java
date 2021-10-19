@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException
 import android.app.Activity;
 import android.content.Intent;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
@@ -42,7 +43,12 @@ class InstallApkClient {
   private final Object installTaskLock = new Object();
   private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
-  public InstallApkClient(FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+  public InstallApkClient() {
+    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
+  }
+
+  @VisibleForTesting
+  InstallApkClient(@NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.lifecycleNotifier = lifecycleNotifier;
     this.executor = Executors.newSingleThreadExecutor();
 

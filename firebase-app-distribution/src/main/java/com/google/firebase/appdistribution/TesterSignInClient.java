@@ -55,13 +55,23 @@ class TesterSignInClient {
 
   private AlertDialog alertDialog;
 
-  private final Object activityLock = new Object();
+  TesterSignInClient(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull final SignInStorage signInStorage) {
+    this(
+        firebaseApp,
+        firebaseInstallationsApi,
+        signInStorage,
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
+  }
 
+  @VisibleForTesting
   TesterSignInClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage,
-      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.signInStorage = signInStorage;

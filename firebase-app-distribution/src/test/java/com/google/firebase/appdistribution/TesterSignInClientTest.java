@@ -123,11 +123,11 @@ public class TesterSignInClientTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
 
     testerSignInClient =
         new TesterSignInClient(
             firebaseApp, mockFirebaseInstallations, mockSignInStorage, mockLifecycleNotifier);
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @Test
@@ -196,6 +196,8 @@ public class TesterSignInClientTest {
       assertTrue(dialog.isShowing());
       dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
     }
+
+    // Simulate re-entering app
     testerSignInClient.onActivityStarted(mockSignInResultActivity);
 
     assertTrue(signInTask.isSuccessful());
@@ -205,6 +207,8 @@ public class TesterSignInClientTest {
   @Test
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
     Task signInTask = testerSignInClient.signInTester();
+
+    // Simulate re-entering app
     testerSignInClient.onActivityStarted(activity);
 
     assertFalse(signInTask.isSuccessful());
