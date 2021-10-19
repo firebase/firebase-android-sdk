@@ -20,7 +20,9 @@ import com.google.firebase.appcheck.internal.util.Clock;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-/** Class to manage when an App Check token exchange can be retried after a server error. */
+/**
+ * Class to manage when the next App Check token exchange attempt is allowed after a server error.
+ */
 public class RetryManager {
 
   @VisibleForTesting static final int BAD_REQUEST_ERROR_CODE = 400;
@@ -53,19 +55,26 @@ public class RetryManager {
     this.clock = clock;
   }
 
+  /** Returns whether or not an App Check token exchange attempt is allowed. */
   public boolean canRetry() {
     return nextRetryTimeMillis <= clock.currentTimeMillis();
   }
 
+  /** Returns the time at which the next App Check token exchange attempt will be allowed. */
   public long getNextRetryTimeMillis() {
     return nextRetryTimeMillis;
   }
 
+  /** Clears the next retry time and retry count upon a successful App Check token exchange. */
   public void resetBackoffOnSuccess() {
     currentRetryCount = 0;
     nextRetryTimeMillis = UNSET_RETRY_TIME;
   }
 
+  /**
+   * Updates the time at which another App Check token exchange attempt will be allowed after a
+   * server error.
+   */
   public void updateBackoffOnFailure(int errorCode) {
     currentRetryCount++;
     if (getBackoffStrategyByErrorCode(errorCode) == ONE_DAY) {
