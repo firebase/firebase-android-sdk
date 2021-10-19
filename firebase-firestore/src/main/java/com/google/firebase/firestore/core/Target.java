@@ -114,43 +114,44 @@ public final class Target {
     return endAt;
   }
 
-  /** Returns the list of values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. */
-  public List<Value> getArrayValues(FieldIndex fieldIndex) {
-    for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          switch (fieldFilter.getOperator()) {
-            case ARRAY_CONTAINS_ANY:
-              return fieldFilter.getValue().getArrayValue().getValuesList();
-            case ARRAY_CONTAINS:
-              return Collections.singletonList(fieldFilter.getValue());
-            default:
-              // Remaining filters cannot be used as array filters.
-          }
+  /**
+   * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. Returns
+   * {@code null} if there are no such filters.
+   */
+  public @Nullable List<Value> getArrayValues(FieldIndex fieldIndex) {
+    @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
+    if (segment == null) return null;
+
+    for (Filter filter : filters) {
+      if (filter.getField().equals(segment.getFieldPath())) {
+        FieldFilter fieldFilter = (FieldFilter) filter;
+        switch (fieldFilter.getOperator()) {
+          case ARRAY_CONTAINS_ANY:
+            return fieldFilter.getValue().getArrayValue().getValuesList();
+          case ARRAY_CONTAINS:
+            return Collections.singletonList(fieldFilter.getValue());
         }
       }
     }
 
-    return Collections.emptyList();
+    return null;
   }
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getUpperBound}, lower bounds always exist as the SDK can use {@code null} as
-   * a starting point for missing boundary values.
+   * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
    */
+  @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
-    // Go through all filters to find a value for the current field segment
+    // For each segment, retrieve a lower bound if there is a suitable filter or startAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      Value segmentValue = Values.NULL_VALUE;
+      Value segmentValue = null;
       boolean segmentInclusive = true;
 
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
@@ -198,6 +199,11 @@ public final class Target {
         }
       }
 
+      if (segmentValue == null) {
+        // No lower bound exists
+        return null;
+      }
+
       values.add(segmentValue);
       inclusive &= segmentInclusive;
     }
@@ -207,21 +213,18 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}.
-   *
-   * <p>Unlike {@link #getLowerBound}, upper bounds do not always exist since the Firestore does not
-   * define a maximum field value. The index scan should not use an upper bound if {@code null} is
-   * returned.
+   * index defined by {@code fieldIndex}. Returns {@code null} if no upper bound exists.
    */
   public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
+    // For each segment, retrieve an upper bound if there is a suitable filter or endAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       @Nullable Value segmentValue = null;
       boolean segmentInclusive = true;
 
-      // Go through all filters to find a value for the current field segment
+      // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
         if (filter.getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
@@ -319,7 +322,7 @@ public final class Target {
     builder.append("|ob:");
     for (OrderBy orderBy : getOrderBy()) {
       builder.append(orderBy.getField().canonicalString());
-      builder.append(orderBy.getDirection().canonicalString());
+      builder.append(orderBy.getDirection().equals(OrderBy.Direction.ASCENDING) ? "asc" : "desc");
     }
 
     // Add limit.

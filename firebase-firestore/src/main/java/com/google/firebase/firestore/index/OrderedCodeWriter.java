@@ -239,6 +239,24 @@ public class OrderedCodeWriter {
     writeUnsignedLongDescending(v);
   }
 
+  /**
+   * Writes the "infinity" byte sequence that sorts after all other byte sequences written in
+   * ascending order.
+   */
+  public void writeInfinityAscending() {
+    writeEscapedByteAscending(ESCAPE2);
+    writeEscapedByteAscending(INFINITY);
+  }
+
+  /**
+   * Writes the "infinity" byte sequence that sorts before all other byte sequences written in
+   * descending order.
+   */
+  public void writeInfinityDescending() {
+    writeEscapedByteDescending(ESCAPE2);
+    writeEscapedByteDescending(INFINITY);
+  }
+
   /** Resets the buffer such that it is the same as when it was newly constructed. */
   public void reset() {
     position = 0;

@@ -53,6 +53,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private AppDistributionReleaseInternal cachedNewRelease;
   private AlertDialog updateDialog;
+  private boolean updateDialogShown;
   private final SignInStorage signInStorage;
 
   /** Constructor for FirebaseAppDistribution */
@@ -309,6 +310,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
+    if (updateDialogShown) {
+      setCachedUpdateIfNewReleaseCompletionError(
+          new FirebaseAppDistributionException(
+              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    }
+
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
@@ -381,6 +388,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
         });
 
     updateDialog.show();
+    updateDialogShown = true;
     synchronized (updateTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
@@ -418,6 +426,7 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   private void dismissUpdateDialog() {
     if (updateDialog != null) {
       updateDialog.dismiss();
+      updateDialogShown = false;
     }
   }
 }

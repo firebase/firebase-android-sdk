@@ -28,6 +28,7 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
 import com.google.firebase.firestore.index.IndexByteEncoder;
 import com.google.firebase.firestore.model.Document;
@@ -267,48 +268,33 @@ final class SQLiteIndexManager implements IndexManager {
     }
   }
 
+  /** Writes the index entries for the given document. Returns the number of entried written. */
   private int writeEntries(Document document, FieldIndex fieldIndex) {
-    int entriesWritten = 0;
-
-    List<Value> arrayValues = new ArrayList<>();
-    for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
-      Value value = document.getField(segment.getFieldPath());
-      if (!isArray(value)) {
-        continue;
-      }
-      arrayValues.addAll(value.getArrayValue().getValuesList());
-    }
-
-    List<Value> directionalValues = new ArrayList<>();
-    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      Value field = document.getField(segment.getFieldPath());
-      if (field == null) {
-        continue;
-      }
-      directionalValues.add(field);
-    }
-
-    if (arrayValues.isEmpty() && directionalValues.isEmpty()) {
+    @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
+    if (directionalValue == null) {
       return 0;
     }
 
-    if (Logger.isDebugEnabled()) {
-      Logger.debug(
-          TAG,
-          "Adding index values for document '%s' to index '%s'",
-          document.getKey(),
-          fieldIndex);
-    }
+    @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
+    if (arraySegment != null) {
+      Value value = document.getField(arraySegment.getFieldPath());
+      if (!isArray(value)) {
+        return 0;
+      }
 
-    for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
-      ++entriesWritten;
+      for (Value arrayValue : value.getArrayValue().getValuesList()) {
+        addSingleEntry(
+            document.getKey(),
+            fieldIndex.getIndexId(),
+            encodeArrayElement(arrayValue),
+            directionalValue);
+      }
+      return value.getArrayValue().getValuesCount();
+    } else {
       addSingleEntry(
-          document.getKey(),
-          fieldIndex.getIndexId(),
-          encode(i < arrayValues.size() ? arrayValues.get(i) : null),
-          encode(directionalValues));
+          document.getKey(), fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
+      return 1;
     }
-    return entriesWritten;
   }
 
   @Override
@@ -354,14 +340,18 @@ final class SQLiteIndexManager implements IndexManager {
 
   /** Adds a single index entry into the index entries table. */
   private void addSingleEntry(
-      DocumentKey documentKey, int indexId, @Nullable Object arrayIndex, Object directionalIndex) {
+      DocumentKey documentKey, int indexId, @Nullable Object arrayValue, Object directionalValue) {
+    if (Logger.isDebugEnabled()) {
+      Logger.debug(
+          TAG, "Adding index values for document '%s' to index '%s'", documentKey, indexId);
+    }
     // TODO(indexing): Handle different values for different users
     db.execute(
         "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?)",
         indexId,
-        arrayIndex,
-        directionalIndex,
+        arrayValue,
+        directionalValue,
         documentKey.toString());
   }
 
@@ -371,8 +361,8 @@ final class SQLiteIndexManager implements IndexManager {
     @Nullable FieldIndex fieldIndex = getMatchingIndex(target);
     if (fieldIndex == null) return null;
 
-    List<Value> arrayValues = target.getArrayValues(fieldIndex);
-    Bound lowerBound = target.getLowerBound(fieldIndex);
+    @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
+    @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
@@ -387,7 +377,7 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Object[] lowerBoundValues = encodeBound(fieldIndex, target, lowerBound);
-    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
+    String lowerBoundOp = lowerBound != null && lowerBound.isInclusive() ? ">=" : ">";
     Object[] upperBoundValues = encodeBound(fieldIndex, target, upperBound);
     String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
 
@@ -413,27 +403,31 @@ final class SQLiteIndexManager implements IndexManager {
   private SQLitePersistence.Query generateQuery(
       Target target,
       int indexId,
-      List<Value> arrayValues,
-      Object[] lowerBounds,
+      @Nullable List<Value> arrayValues,
+      @Nullable Object[] lowerBounds,
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp) {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
-    int statementCount = max(arrayValues.size(), 1) * lowerBounds.length;
-    int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
-    Object[] bindArgs = new Object[statementCount * bindsPerStatement];
+    int statementCount =
+        (arrayValues != null ? arrayValues.size() : 1)
+            * max(
+                lowerBounds != null ? lowerBounds.length : 1,
+                upperBounds != null ? upperBounds.length : 1);
 
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
     statement.append(
         "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
-    if (!arrayValues.isEmpty()) {
+    if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
-    statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    if (lowerBounds != null) {
+      statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    }
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
     }
@@ -441,45 +435,45 @@ final class SQLiteIndexManager implements IndexManager {
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
     String sql = repeatSequence(statement, statementCount, " UNION ");
+    sql += " ORDER BY directional_value, document_name ";
     if (target.getLimit() != -1) {
-      String direction = target.getFirstOrderBy().getDirection().canonicalString();
-      sql += "ORDER BY directional_value " + direction + ", document_name " + direction + " ";
       sql += "LIMIT " + target.getLimit() + " ";
     }
 
     // Fill in the bind ("question marks") variables.
-    Iterator<Value> arrayValueIterator = arrayValues.iterator();
-    for (int offset = 0; offset < bindArgs.length; ) {
-      Object arrayValue = encode(arrayValueIterator.hasNext() ? arrayValueIterator.next() : null);
-      offset = fillBounds(bindArgs, offset, indexId, arrayValue, lowerBounds, upperBounds);
-    }
-
+    Object[] bindArgs = fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds);
     return db.query(sql).binding(bindArgs);
   }
 
-  /** Fills bindArgs starting at offset and returns the new offset. */
-  private int fillBounds(
-      Object[] bindArgs,
-      int offset,
+  /** Returns the bind arguments for all {@code statementCount} statements. */
+  private Object[] fillBounds(
+      int statementCount,
       int indexId,
-      @Nullable Object arrayValue,
-      Object[] lowerBounds,
+      @Nullable List<Value> arrayValues,
+      @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
-    hardAssert(
-        upperBounds == null || upperBounds.length == lowerBounds.length,
-        "Length of upper and lower bound should match");
-    // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
-    for (int i = 0; i < lowerBounds.length; ++i) {
+    int bindsPerStatement =
+        1
+            + (arrayValues != null ? 1 : 0)
+            + (lowerBounds != null ? 1 : 0)
+            + (upperBounds != null ? 1 : 0);
+    int statementsPerArrayValue = statementCount / (arrayValues != null ? arrayValues.size() : 1);
+
+    Object[] bindArgs = new Object[statementCount * bindsPerStatement];
+    int offset = 0;
+    for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
-      if (arrayValue != null) {
-        bindArgs[offset++] = arrayValue;
+      if (arrayValues != null) {
+        bindArgs[offset++] = encodeArrayElement(arrayValues.get(i / statementsPerArrayValue));
       }
-      bindArgs[offset++] = lowerBounds[i];
+      if (lowerBounds != null) {
+        bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
+      }
       if (upperBounds != null) {
-        bindArgs[offset++] = upperBounds[i];
+        bindArgs[offset++] = upperBounds[i % statementsPerArrayValue];
       }
     }
-    return offset;
+    return bindArgs;
   }
 
   /**
@@ -526,18 +520,29 @@ final class SQLiteIndexManager implements IndexManager {
         activeIndices, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
   }
 
-  /** Encodes a list of values to the index format. */
-  private Object encode(List<Value> values) {
+  /**
+   * Returns the byte encoded form of the directional values in the field index. Returns {@code
+   * null} if the document does not have all fields specified in the index.
+   */
+  private @Nullable byte[] encodeDirectionalElements(FieldIndex fieldIndex, Document document) {
     IndexByteEncoder encoder = new IndexByteEncoder();
-    for (Value value : values) {
-      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+      Value field = document.getField(segment.getFieldPath());
+      if (field == null) {
+        return null;
+      }
+      DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
+      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(field, directionalEncoder);
     }
     return encoder.getEncodedBytes();
   }
 
-  /** Encodes a value to the index format. */
-  private @Nullable Object encode(@Nullable Value value) {
-    return value != null ? encode(Collections.singletonList(value)) : null;
+  /** Encodes a single value to the ascending index format. */
+  private byte[] encodeArrayElement(Value value) {
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    return encoder.getEncodedBytes();
   }
 
   /**
@@ -556,9 +561,10 @@ final class SQLiteIndexManager implements IndexManager {
       Value value = position.next();
       for (IndexByteEncoder encoder : encoders) {
         if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
-          encoders = expandIndexValues(encoders, value);
+          encoders = expandIndexValues(encoders, segment, value);
         } else {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+          DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
         }
       }
     }
@@ -581,14 +587,16 @@ final class SQLiteIndexManager implements IndexManager {
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */
-  private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
+  private List<IndexByteEncoder> expandIndexValues(
+      List<IndexByteEncoder> encoders, FieldIndex.Segment segment, Value value) {
     List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
     List<IndexByteEncoder> results = new ArrayList<>();
     for (Value arrayElement : value.getArrayValue().getValuesList()) {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder);
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+            arrayElement, clonedEncoder.forKind(segment.getKind()));
         results.add(clonedEncoder);
       }
     }
