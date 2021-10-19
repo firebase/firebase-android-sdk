@@ -71,9 +71,9 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /**
    * Finalizes gauge initialization during app start. This must be called before app start finishes
-   * (currently that is before onResume finishes), because perfSession can be changed by {@link
-   * #onUpdateAppState(ApplicationProcessState)} once {@link AppStateMonitor#isColdStart()} becomes
-   * false.
+   * (currently that is before onResume finishes), because {@link #perfSession} can be changed by
+   * {@link #onUpdateAppState(ApplicationProcessState)} once {@link AppStateMonitor#isColdStart()}
+   * becomes false.
    */
   public void setApplicationContext(final Context appContext) {
     // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
