@@ -46,7 +46,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
       return;
     }
 
-    // Remove the associate of this overlay to existing batch id.
+    // Remove the association of the overlay to its batch id.
     Pair<Integer, Mutation> existing = this.overlays.get(mutation.getKey());
     if (existing != null) {
       overlayByBatchId.get(existing.first).remove(mutation.getKey());

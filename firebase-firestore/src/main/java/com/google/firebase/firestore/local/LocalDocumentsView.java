@@ -213,16 +213,16 @@ class LocalDocumentsView {
       }
     }
 
-    Set<DocumentKey> saved = new HashSet<>();
+    Set<DocumentKey> processed = new HashSet<>();
     // Iterate in descending order of batch ids, skip documents that are already saved.
     for (Map.Entry<Integer, Set<DocumentKey>> entry :
         documentsByBatchId.descendingMap().entrySet()) {
       Map<DocumentKey, Mutation> overlays = new HashMap<>();
       for (DocumentKey key : entry.getValue()) {
-        if (!saved.contains(key)) {
+        if (!processed.contains(key)) {
           overlays.put(key, Mutation.calculateOverlayMutation(docs.get(key), masks.get(key)));
+          processed.add(key);
         }
-        saved.add(key);
       }
       documentOverlayCache.saveOverlays(entry.getKey(), overlays);
     }
@@ -323,8 +323,7 @@ class LocalDocumentsView {
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath());
 
     // As documents might match the query because of their overlay we need to include all documents
-    // in the
-    // result.
+    // in the result.
     Set<DocumentKey> missingDocuments = new HashSet<>();
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       if (!remoteDocuments.containsKey(entry.getKey())) {

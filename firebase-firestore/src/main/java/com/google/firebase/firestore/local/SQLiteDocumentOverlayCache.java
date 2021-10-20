@@ -46,7 +46,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
         .firstValue(
             row -> {
               if (row == null) return null;
-              
+
               try {
                 Write mutation = Write.parseFrom(row.getBlob(0));
                 return serializer.decodeMutation(mutation);
