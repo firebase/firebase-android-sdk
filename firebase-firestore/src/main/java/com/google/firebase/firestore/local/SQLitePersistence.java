@@ -193,8 +193,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  DocumentOverlay getDocumentOverlay(User user) {
-    return new SQLiteDocumentOverlay(this, this.serializer, user);
+  DocumentOverlayCache getDocumentOverlay(User user) {
+    return new SQLiteDocumentOverlayCache(this, this.serializer, user);
   }
 
   @Override

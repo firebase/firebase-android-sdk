@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import static com.google.firebase.firestore.model.mutation.Mutation.calculateOverlayMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -50,7 +51,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -711,6 +711,13 @@ public class MutationTest {
   }
 
   @Test
+  public void testOverlayWithPatchOnInvalidDocument() {
+    verifyOverlayRoundTrips(
+        MutableDocument.newInvalidDocument(key("collection/key")),
+        patchMutation("collection/key", map("a", 1)));
+  }
+
+  @Test
   public void testOverlayWithOneSetMutation() {
     Map<String, Object> data = map("foo", "foo-value", "baz", "baz-value");
     verifyOverlayRoundTrips(
@@ -832,6 +839,16 @@ public class MutationTest {
             "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.delete()));
 
     verifyOverlayRoundTrips(doc, patch1, patch2, patch3);
+  }
+
+  @Test
+  public void testOverlayCreatedFromSetToEmptyWithMerge() {
+    MutableDocument doc = deletedDoc("collection/key", 1);
+    Mutation merge = mergeMutation("collection/key", map(), Arrays.asList());
+    verifyOverlayRoundTrips(doc, merge);
+
+    doc = doc("collection/key", 1, map("foo", "foo-value"));
+    verifyOverlayRoundTrips(doc, merge);
   }
 
   // Below tests run on automatically generated mutation list, they are deterministic, but hard to
@@ -1025,49 +1042,12 @@ public class MutationTest {
       mask = m.applyToLocalView(docForMutations, mask, now);
     }
 
-    Mutation overlay = null;
-    if (docForMutations.hasLocalMutations()) {
-      overlay = getOverlayMutation(docForMutations, mask);
+    Mutation overlay = calculateOverlayMutation(docForMutations, mask);
+    if (overlay != null) {
       overlay.applyToLocalView(docForOverlay, /* previousMask= */ null, now);
     }
 
     assertEquals(
         getDescription(doc, Arrays.asList(mutations), overlay), docForOverlay, docForMutations);
-  }
-
-  // TODO(Overlay): This is production code, find a place for this.
-  private Mutation getOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
-    if (mask == null) {
-      if (doc.isNoDocument()) {
-        return new DeleteMutation(doc.getKey(), Precondition.NONE);
-      } else {
-        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
-      }
-    } else {
-      ObjectValue docValue = doc.getData();
-      ObjectValue patchValue = new ObjectValue();
-      HashSet<FieldPath> maskSet = new HashSet<>();
-      for (FieldPath path : mask.getMask()) {
-        if (!maskSet.contains(path)) {
-          Value value = docValue.get(path);
-          // If we are deleting a nested field, we take the immediate parent as the mask used to
-          // construct resulting mutation.
-          // Justification: Nested fields can create parent fields implicitly. If only a leaf entry
-          // deleted in later mutations, the parent field should still remain, but we may have
-          // lost this information.
-          // Consider mutation (foo.bar 1), then mutation (foo.bar delete()).
-          // This leaves the final result (foo, {}). Despite the fact that `doc` has the correct
-          // result,
-          // `foo` is not in `mask`, and the resulting mutation would then miss `foo`.
-          if (value == null && path.length() > 1) {
-            path = path.popLast();
-          }
-          patchValue.set(path, docValue.get(path));
-          maskSet.add(path);
-        }
-      }
-      return new PatchMutation(
-          doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
-    }
   }
 }

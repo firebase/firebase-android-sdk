@@ -14,15 +14,41 @@
 
 package com.google.firebase.firestore.local;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class SQLiteDocumentOverlayTestCase extends DocumentOverlayTestCase {
+public class OverlayEnabledSQLiteLocalStoreTest extends LocalStoreTestCase {
+  private static boolean enabled = false;
+
+  @BeforeClass
+  public static void beforeClass() {
+    enabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
+  }
+
+  @AfterClass
+  public static void afterClass() {
+    Persistence.OVERLAY_SUPPORT_ENABLED = enabled;
+  }
+
   @Override
   Persistence getPersistence() {
     return PersistenceTestHelpers.createSQLitePersistence();
   }
+
+  @Override
+  boolean garbageCollectorIsEager() {
+    return false;
+  }
+
+  @Test
+  @Override
+  // TODO(Overlay): Delete this when we resolve Idempotent Transformations issue.
+  public void testHoldsBackOnlyNonIdempotentTransforms() {}
 }

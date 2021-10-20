@@ -960,7 +960,9 @@ public abstract class LocalStoreTestCase {
     localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
-    assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
+    if (!Persistence.OVERLAY_SUPPORT_ENABLED) {
+      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
+    }
   }
 
   @Test
