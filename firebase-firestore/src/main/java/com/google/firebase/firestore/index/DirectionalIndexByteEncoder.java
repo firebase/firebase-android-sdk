@@ -27,4 +27,6 @@ public abstract class DirectionalIndexByteEncoder {
   public abstract void writeLong(long val);
 
   public abstract void writeDouble(double val);
+
+  public abstract void writeInfinity();
 }

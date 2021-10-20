@@ -18,7 +18,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.util.Listener;
 
 /** A CredentialsProvider has a method to fetch an authorization token. */
-public abstract class CredentialsProvider {
+public abstract class CredentialsProvider<T> {
   /**
    * Requests token for the current user. Use {@link #invalidateToken} to force-refresh the token.
    *
@@ -36,7 +36,7 @@ public abstract class CredentialsProvider {
    * Sets the listener to be notified of credential changes (sign-in / sign-out, token changes). It
    * is immediately called once with the initial user.
    */
-  public abstract void setChangeListener(Listener<User> changeListener);
+  public abstract void setChangeListener(Listener<T> changeListener);
 
   /** Removes the listener set with {@link #setChangeListener}. */
   public abstract void removeChangeListener();

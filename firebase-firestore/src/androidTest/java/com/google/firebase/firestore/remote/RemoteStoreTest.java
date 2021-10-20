@@ -45,6 +45,7 @@ public class RemoteStoreTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             null,
+            null,
             ApplicationProvider.getApplicationContext(),
             null);
     Semaphore networkChangeSemaphore = new Semaphore(0);

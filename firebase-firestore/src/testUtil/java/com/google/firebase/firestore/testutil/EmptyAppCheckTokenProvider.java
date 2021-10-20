@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,28 +14,25 @@
 
 package com.google.firebase.firestore.testutil;
 
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Listener;
 
 /** A Credentials Provider that always returns an empty token */
-public class EmptyCredentialsProvider extends CredentialsProvider<User> {
-
+public class EmptyAppCheckTokenProvider extends CredentialsProvider<String> {
   @Override
   public Task<String> getToken() {
-    return Tasks.forResult(null);
-  }
-
-  @Override
-  public void invalidateToken() {}
-
-  @Override
-  public void setChangeListener(Listener<User> changeListener) {
-    changeListener.onValue(User.UNAUTHENTICATED);
+    return Tasks.forResult("");
   }
 
   @Override
   public void removeChangeListener() {}
+
+  @Override
+  public void setChangeListener(@NonNull Listener<String> changeListener) {}
+
+  @Override
+  public void invalidateToken() {}
 }

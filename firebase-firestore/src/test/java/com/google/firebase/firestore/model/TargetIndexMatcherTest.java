@@ -60,8 +60,8 @@ public class TargetIndexMatcherTest {
   @Test
   public void canUseMergeJoin() {
     Query q = query("collId").filter(filter("a", "==", 1)).filter(filter("b", "==", 2));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
-    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
 
     q =
         query("collId")
@@ -69,35 +69,35 @@ public class TargetIndexMatcherTest {
             .filter(filter("b", "==", 2))
             .orderBy(orderBy("__name__", "desc"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "__name__", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
     validateServesTarget(
-        q, "b", FieldIndex.Segment.Kind.ORDERED, "__name__", FieldIndex.Segment.Kind.ORDERED);
+        q, "b", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
   }
 
   @Test
   public void canUsePartialIndex() {
     Query q = query("collId").orderBy(orderBy("a"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
 
     q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("b"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void cannotUseOverspecifiedIndex() {
     Query q = query("collId").orderBy(orderBy("a"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
     validateDoesNotServeTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void equalitiesWithDefaultOrder() {
     for (Query query : queriesWithEqualities) {
-      validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-      validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+      validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+      validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
       validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
     }
   }
@@ -109,8 +109,8 @@ public class TargetIndexMatcherTest {
 
     queriesWithEqualitiesAndDescendingOrder.forEach(
         query -> {
-          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
         });
   }
@@ -122,8 +122,8 @@ public class TargetIndexMatcherTest {
 
     queriesWithEqualitiesAndDescendingOrder.forEach(
         query -> {
-          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
         });
   }
@@ -131,8 +131,8 @@ public class TargetIndexMatcherTest {
   @Test
   public void inequalitiesWithDefaultOrder() {
     for (Query query : queriesWithInequalities) {
-      validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-      validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+      validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+      validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
       validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
     }
   }
@@ -144,8 +144,8 @@ public class TargetIndexMatcherTest {
 
     queriesWithInequalitiesAndDescendingOrder.forEach(
         query -> {
-          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
         });
   }
@@ -157,8 +157,8 @@ public class TargetIndexMatcherTest {
 
     queriesWithInequalitiesAndDescendingOrder.forEach(
         query -> {
-          validateServesTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ORDERED);
+          validateServesTarget(query, "a", FieldIndex.Segment.Kind.DESCENDING);
+          validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
         });
   }
@@ -166,17 +166,17 @@ public class TargetIndexMatcherTest {
   @Test
   public void inequalityUsesSingleFieldIndex() {
     Query q = query("collId").filter(filter("a", ">", 1)).filter(filter("a", "<", 10));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void inQueryUsesMergeJoin() {
     Query q =
         query("collId").filter(filter("a", "in", Arrays.asList(1, 2))).filter(filter("b", "==", 5));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
-    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -206,10 +206,28 @@ public class TargetIndexMatcherTest {
   @Test
   public void withArrayContains() {
     for (Query query : queriesWithArrayContains) {
-      validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
-      validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.ORDERED);
+      validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+      validateDoesNotServeTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
       validateServesTarget(query, "a", FieldIndex.Segment.Kind.CONTAINS);
     }
+  }
+
+  @Test
+  public void testArrayContainsIsIndependent() {
+    Query query =
+        query("collId").filter(filter("value", "array-contains", "foo")).orderBy(orderBy("value"));
+    validateServesTarget(
+        query,
+        "value",
+        FieldIndex.Segment.Kind.CONTAINS,
+        "value",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        query,
+        "value",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "value",
+        FieldIndex.Segment.Kind.CONTAINS);
   }
 
   @Test
@@ -224,50 +242,143 @@ public class TargetIndexMatcherTest {
         "a",
         FieldIndex.Segment.Kind.CONTAINS,
         "a",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void withEqualityAndDescendingOrder() {
     Query q = query("collId").filter(filter("a", "==", 1)).orderBy(orderBy("__name__", "desc"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "__name__", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
+  }
+
+  @Test
+  public void withMultipleEqualities() {
+    Query queriesMultipleFilters =
+        query("collId").filter(filter("a1", "==", "a")).filter(filter("a2", "==", "b"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "a1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "a3",
+        FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
+  public void withMultipleEqualitiesAndInequality() {
+    Query queriesMultipleFilters =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("equality2", "==", "b"))
+            .filter(filter("inequality", ">=", "c"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    queriesMultipleFilters =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("inequality", ">=", "c"))
+            .filter(filter("equality2", "==", "b"));
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(
+        queriesMultipleFilters,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        queriesMultipleFilters,
+        "equality1",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "inequality",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "equality2",
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void withOrderBy() {
     Query q = query("collId").orderBy(orderBy("a"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(q, "a", FieldIndex.Segment.Kind.DESCENDING);
 
     q = query("collId").orderBy(orderBy("a", "desc"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateDoesNotServeTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.DESCENDING);
 
     q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("__name__"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "__name__", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
   }
 
   @Test
   public void withNotEquals() {
     Query q = query("collId").filter(filter("a", "!=", 1));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
 
     q = query("collId").filter(filter("a", "!=", 1)).orderBy(orderBy("a")).orderBy(orderBy("b"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void withMultipleFilters() {
     Query queriesMultipleFilters =
         query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
-    validateServesTarget(queriesMultipleFilters, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(queriesMultipleFilters, "a", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
         queriesMultipleFilters,
         "a",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "b",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -275,13 +386,13 @@ public class TargetIndexMatcherTest {
     Query queriesMultipleFilters =
         query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
 
-    validateServesTarget(queriesMultipleFilters, "b", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(queriesMultipleFilters, "b", FieldIndex.Segment.Kind.ASCENDING);
     validateDoesNotServeTarget(
         queriesMultipleFilters,
         "c",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "a",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -294,9 +405,9 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         queriesMultipleFilters,
         "a1",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "a2",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -306,7 +417,7 @@ public class TargetIndexMatcherTest {
             .filter(filter("a", ">=", 1))
             .filter(filter("a", "==", 5))
             .filter(filter("a", "<=", 10));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -315,7 +426,7 @@ public class TargetIndexMatcherTest {
         query("collId")
             .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
             .filter(filter("a", ">=", 2));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -328,22 +439,19 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         q,
         "fff",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "bar",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.DESCENDING,
         "__name__",
-        FieldIndex.Segment.Kind.ORDERED);
-    // The field index can be used regardless of the order of segments since we only use the orderBy
-    // clause to filter out documents that do not contain field values for the specified fields. The
-    // ordering itself is done during View computation.
-    validateServesTarget(
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateDoesNotServeTarget(
         q,
         "fff",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "__name__",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "bar",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.DESCENDING);
 
     q =
         query("collId")
@@ -353,19 +461,19 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         q,
         "foo",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "bar",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "__name__",
-        FieldIndex.Segment.Kind.ORDERED);
-    validateServesTarget(
+        FieldIndex.Segment.Kind.DESCENDING);
+    validateDoesNotServeTarget(
         q,
         "foo",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "__name__",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.DESCENDING,
         "bar",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -374,12 +482,13 @@ public class TargetIndexMatcherTest {
         query("collId")
             .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
             .filter(filter("b", "in", Arrays.asList(1, 2, 3)));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
-    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
     validateServesTarget(
-        q, "b", FieldIndex.Segment.Kind.ORDERED, "a", FieldIndex.Segment.Kind.ORDERED);
-    validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "b", FieldIndex.Segment.Kind.ASCENDING, "a", FieldIndex.Segment.Kind.ASCENDING);
+    // If provided, equalities have to come first
+    validateDoesNotServeTarget(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -392,11 +501,11 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         q,
         "foo",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "bar",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "qux",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.ASCENDING);
 
     q =
         query("collId")
@@ -408,13 +517,13 @@ public class TargetIndexMatcherTest {
     validateServesTarget(
         q,
         "aaa",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "qqq",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "ccc",
-        FieldIndex.Segment.Kind.ORDERED,
+        FieldIndex.Segment.Kind.ASCENDING,
         "fff",
-        FieldIndex.Segment.Kind.ORDERED);
+        FieldIndex.Segment.Kind.DESCENDING);
   }
 
   @Test
@@ -424,7 +533,7 @@ public class TargetIndexMatcherTest {
             .filter(filter("a", "==", 1))
             .filter(filter("b", "not-in", Arrays.asList(1, 2, 3)));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -435,14 +544,14 @@ public class TargetIndexMatcherTest {
             .orderBy(orderBy("a"))
             .orderBy(orderBy("b"));
     validateServesTarget(
-        q, "a", FieldIndex.Segment.Kind.ORDERED, "b", FieldIndex.Segment.Kind.ORDERED);
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
   public void withInAndOrderBySameField() {
     Query q =
         query("collId").filter(filter("a", "in", Arrays.asList(1, 2, 3))).orderBy(orderBy("a"));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ORDERED);
+    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   private void validateServesTarget(

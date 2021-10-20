@@ -21,10 +21,14 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
 import com.google.firebase.firestore.index.IndexByteEncoder;
 import com.google.firebase.firestore.model.Document;
@@ -32,16 +36,20 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
@@ -114,6 +122,177 @@ final class SQLiteIndexManager implements IndexManager {
         true,
         index.getVersion().getTimestamp().getSeconds(),
         index.getVersion().getTimestamp().getNanoseconds());
+
+    // TODO(indexing): Use a 0-counter rather than the timestamp.
+    setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
+  }
+
+  private void updateFieldIndex(FieldIndex index) {
+    db.execute(
+        "REPLACE INTO index_configuration ("
+            + "index_id, "
+            + "collection_group, "
+            + "index_proto, "
+            + "active, "
+            + "update_time_seconds, "
+            + "update_time_nanos) VALUES(?, ?, ?, ?, ?, ?)",
+        index.getIndexId(),
+        index.getCollectionGroup(),
+        encodeFieldIndex(index),
+        true,
+        index.getVersion().getTimestamp().getSeconds(),
+        index.getVersion().getTimestamp().getNanoseconds());
+  }
+
+  /** Returns the next collection group to update. */
+  // TODO(indexing): Use a counter rather than the starting timestamp.
+  public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+    final String[] nextCollectionGroup = {null};
+    db.query(
+            "SELECT collection_group "
+                + "FROM collection_group_update_times "
+                + "WHERE update_time_seconds <= ? AND update_time_nanos <= ?"
+                + "ORDER BY update_time_seconds, update_time_nanos "
+                + "LIMIT 1")
+        .binding(startingTimestamp.getSeconds(), startingTimestamp.getNanoseconds())
+        .firstValue(
+            row -> {
+              nextCollectionGroup[0] = row.getString(0);
+              return null;
+            });
+
+    if (nextCollectionGroup[0] == null) {
+      return null;
+    }
+
+    // Store that this collection group will updated.
+    // TODO(indexing): Store progress with a counter rather than a timestamp. If using a timestamp,
+    // use the read time of the last document read in the loop.
+    setCollectionGroupUpdateTime(nextCollectionGroup[0], Timestamp.now());
+
+    return nextCollectionGroup[0];
+  }
+
+  /**
+   * Updates the index entries for the provided documents and corresponding field indexes until the
+   * cap is reached. Updates the field indexes in persistence with the latest read time that was
+   * processed.
+   */
+  public int updateIndexEntries(
+      String collectionGroup,
+      ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
+      int entriesRemainingUnderCap) {
+    int entriesWrittenCount = 0;
+    Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
+    List<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
+
+    for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
+      Document document = entry.getValue();
+      if (entriesWrittenCount >= entriesRemainingUnderCap) {
+        break;
+      }
+
+      for (FieldIndex fieldIndex : fieldIndexes) {
+        entriesWrittenCount += writeEntries(document, fieldIndex);
+        if (entriesWrittenCount > 0) {
+          // TODO(indexing): This would be much simpler with a sequence counter since we would
+          // always update the index to the next sequence value.
+          FieldIndex updatedIndex =
+              getPostUpdateIndex(
+                  fieldIndex,
+                  updatedFieldIndexes.get(fieldIndex.getIndexId()),
+                  document.getVersion());
+          updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
+        }
+      }
+    }
+
+    // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
+    // This will require plumbing out the RDC's readTime into the IndexBackfiller.
+    for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
+      updateFieldIndex(updatedFieldIndex);
+    }
+
+    return entriesWrittenCount;
+  }
+
+  /**
+   * Returns a list of field indexes that correspond to the specified collection group.
+   *
+   * @param collectionGroup The collection group to get matching field indexes for.
+   * @return A list of field indexes for the specified collection group.
+   */
+  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+    List<FieldIndex> matchingFieldIndexes = new ArrayList<>();
+    db.query(
+            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos "
+                + "FROM index_configuration "
+                + "WHERE active = 1 AND collection_group = ?")
+        .binding(collectionGroup)
+        .forEach(
+            row -> {
+              try {
+                matchingFieldIndexes.add(
+                    serializer.decodeFieldIndex(
+                        row.getString(1),
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(2)),
+                        row.getInt(3),
+                        row.getInt(4)));
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
+
+    return matchingFieldIndexes;
+  }
+
+  /**
+   * Returns the field index with the latest read time. Compares versions on the original field
+   * index, the document, and the stored field index in the mapping.
+   *
+   * <p>This method should only be called on field indexes that had index entries written.
+   */
+  private FieldIndex getPostUpdateIndex(
+      FieldIndex originalIndex, @Nullable FieldIndex updatedIndex, SnapshotVersion version) {
+    // TODO(indexing): Compare with read time version, rather than document version
+    // If the field index hasn't been updated, compare against the document's version.
+    if (updatedIndex == null) {
+      return originalIndex.withVersion(version);
+    } else if (version.compareTo(updatedIndex.getVersion()) > 0) {
+      return originalIndex.withVersion(version);
+    } else {
+      return updatedIndex;
+    }
+  }
+
+  /** Writes the index entries for the given document. Returns the number of entried written. */
+  private int writeEntries(Document document, FieldIndex fieldIndex) {
+    @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
+    if (directionalValue == null) {
+      return 0;
+    }
+
+    @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
+    if (arraySegment != null) {
+      Value value = document.getField(arraySegment.getFieldPath());
+      if (!isArray(value)) {
+        return 0;
+      }
+
+      for (Value arrayValue : value.getArrayValue().getValuesList()) {
+        addSingleEntry(
+            document.getKey(),
+            fieldIndex.getIndexId(),
+            encodeArrayElement(arrayValue),
+            directionalValue);
+      }
+      return value.getArrayValue().getValuesCount();
+    } else {
+      addSingleEntry(
+          document.getKey(), fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
+      return 1;
+    }
   }
 
   @Override
@@ -127,7 +306,6 @@ final class SQLiteIndexManager implements IndexManager {
         .forEach(
             row -> {
               try {
-                int indexId = row.getInt(0);
                 FieldIndex fieldIndex =
                     serializer.decodeFieldIndex(
                         collectionGroup,
@@ -135,55 +313,43 @@ final class SQLiteIndexManager implements IndexManager {
                         Index.parseFrom(row.getBlob(1)),
                         row.getInt(2),
                         row.getInt(3));
-
-                List<Value> arrayValues = new ArrayList<>();
-                for (FieldIndex.Segment segment : fieldIndex.getArraySegments()) {
-                  Value value = document.getField(segment.getFieldPath());
-                  if (!isArray(value)) {
-                    return;
-                  }
-                  arrayValues.addAll(value.getArrayValue().getValuesList());
-                }
-
-                List<Value> directionalValues = new ArrayList<>();
-                for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-                  Value field = document.getField(segment.getFieldPath());
-                  if (field == null) {
-                    return;
-                  }
-                  directionalValues.add(field);
-                }
-
-                if (Logger.isDebugEnabled()) {
-                  Logger.debug(
-                      TAG,
-                      "Adding index values for document '%s' to index '%s'",
-                      documentKey,
-                      fieldIndex);
-                }
-
-                for (int i = 0; i < max(arrayValues.size(), 1); ++i) {
-                  addSingleEntry(
-                      documentKey,
-                      indexId,
-                      encode(i < arrayValues.size() ? arrayValues.get(i) : null),
-                      encode(directionalValues));
-                }
+                addIndexEntry(document, Collections.singletonList(fieldIndex));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
               }
             });
   }
 
+  /**
+   * Writes index entries for the field indexes that apply to the provided document.
+   *
+   * @param document The provided document to index.
+   * @param fieldIndexes A list of field indexes to apply.
+   */
+  private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      int entriesWritten = writeEntries(document, fieldIndex);
+      if (entriesWritten > 0) {
+        FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, null, document.getVersion());
+        updateFieldIndex(updatedIndex);
+      }
+    }
+  }
+
+  /** Adds a single index entry into the index entries table. */
   private void addSingleEntry(
-      DocumentKey documentKey, int indexId, @Nullable Object arrayIndex, Object directionalIndex) {
+      DocumentKey documentKey, int indexId, @Nullable Object arrayValue, Object directionalValue) {
+    if (Logger.isDebugEnabled()) {
+      Logger.debug(
+          TAG, "Adding index values for document '%s' to index '%s'", documentKey, indexId);
+    }
     // TODO(indexing): Handle different values for different users
     db.execute(
         "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?)",
         indexId,
-        arrayIndex,
-        directionalIndex,
+        arrayValue,
+        directionalValue,
         documentKey.toString());
   }
 
@@ -193,8 +359,8 @@ final class SQLiteIndexManager implements IndexManager {
     @Nullable FieldIndex fieldIndex = getMatchingIndex(target);
     if (fieldIndex == null) return null;
 
-    List<Value> arrayValues = target.getArrayValues(fieldIndex);
-    Bound lowerBound = target.getLowerBound(fieldIndex);
+    @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
+    @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
     @Nullable Bound upperBound = target.getUpperBound(fieldIndex);
 
     if (Logger.isDebugEnabled()) {
@@ -209,7 +375,7 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     Object[] lowerBoundValues = encodeBound(fieldIndex, target, lowerBound);
-    String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
+    String lowerBoundOp = lowerBound != null && lowerBound.isInclusive() ? ">=" : ">";
     Object[] upperBoundValues = encodeBound(fieldIndex, target, upperBound);
     String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
 
@@ -235,27 +401,31 @@ final class SQLiteIndexManager implements IndexManager {
   private SQLitePersistence.Query generateQuery(
       Target target,
       int indexId,
-      List<Value> arrayValues,
-      Object[] lowerBounds,
+      @Nullable List<Value> arrayValues,
+      @Nullable Object[] lowerBounds,
       String lowerBoundOp,
       @Nullable Object[] upperBounds,
       String upperBoundOp) {
     // The number of total statements we union together. This is similar to a distributed normal
     // form, but adapted for array values. We create a single statement per value in an
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
-    int statementCount = max(arrayValues.size(), 1) * lowerBounds.length;
-    int bindsPerStatement = 2 + (arrayValues.isEmpty() ? 0 : 1) + (upperBounds != null ? 1 : 0);
-    Object[] bindArgs = new Object[statementCount * bindsPerStatement];
+    int statementCount =
+        (arrayValues != null ? arrayValues.size() : 1)
+            * max(
+                lowerBounds != null ? lowerBounds.length : 1,
+                upperBounds != null ? upperBounds.length : 1);
 
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
     statement.append(
         "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
-    if (!arrayValues.isEmpty()) {
+    if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
-    statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    if (lowerBounds != null) {
+      statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    }
     if (upperBounds != null) {
       statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
     }
@@ -263,45 +433,45 @@ final class SQLiteIndexManager implements IndexManager {
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
     String sql = repeatSequence(statement, statementCount, " UNION ");
+    sql += " ORDER BY directional_value, document_name ";
     if (target.getLimit() != -1) {
-      String direction = target.getFirstOrderBy().getDirection().canonicalString();
-      sql += "ORDER BY directional_value " + direction + ", document_name " + direction + " ";
       sql += "LIMIT " + target.getLimit() + " ";
     }
 
     // Fill in the bind ("question marks") variables.
-    Iterator<Value> arrayValueIterator = arrayValues.iterator();
-    for (int offset = 0; offset < bindArgs.length; ) {
-      Object arrayValue = encode(arrayValueIterator.hasNext() ? arrayValueIterator.next() : null);
-      offset = fillBounds(bindArgs, offset, indexId, arrayValue, lowerBounds, upperBounds);
-    }
-
+    Object[] bindArgs = fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds);
     return db.query(sql).binding(bindArgs);
   }
 
-  /** Fills bindArgs starting at offset and returns the new offset. */
-  private int fillBounds(
-      Object[] bindArgs,
-      int offset,
+  /** Returns the bind arguments for all {@code statementCount} statements. */
+  private Object[] fillBounds(
+      int statementCount,
       int indexId,
-      @Nullable Object arrayValue,
-      Object[] lowerBounds,
+      @Nullable List<Value> arrayValues,
+      @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds) {
-    hardAssert(
-        upperBounds == null || upperBounds.length == lowerBounds.length,
-        "Length of upper and lower bound should match");
-    // Add bind variables for each combination of arrayValue, lowerBound and upperBound.
-    for (int i = 0; i < lowerBounds.length; ++i) {
+    int bindsPerStatement =
+        1
+            + (arrayValues != null ? 1 : 0)
+            + (lowerBounds != null ? 1 : 0)
+            + (upperBounds != null ? 1 : 0);
+    int statementsPerArrayValue = statementCount / (arrayValues != null ? arrayValues.size() : 1);
+
+    Object[] bindArgs = new Object[statementCount * bindsPerStatement];
+    int offset = 0;
+    for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
-      if (arrayValue != null) {
-        bindArgs[offset++] = arrayValue;
+      if (arrayValues != null) {
+        bindArgs[offset++] = encodeArrayElement(arrayValues.get(i / statementsPerArrayValue));
       }
-      bindArgs[offset++] = lowerBounds[i];
+      if (lowerBounds != null) {
+        bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
+      }
       if (upperBounds != null) {
-        bindArgs[offset++] = upperBounds[i];
+        bindArgs[offset++] = upperBounds[i % statementsPerArrayValue];
       }
     }
-    return offset;
+    return bindArgs;
   }
 
   /**
@@ -348,18 +518,29 @@ final class SQLiteIndexManager implements IndexManager {
         activeIndices, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
   }
 
-  /** Encodes a list of values to the index format. */
-  private Object encode(List<Value> values) {
+  /**
+   * Returns the byte encoded form of the directional values in the field index. Returns {@code
+   * null} if the document does not have all fields specified in the index.
+   */
+  private @Nullable byte[] encodeDirectionalElements(FieldIndex fieldIndex, Document document) {
     IndexByteEncoder encoder = new IndexByteEncoder();
-    for (Value value : values) {
-      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+    for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
+      Value field = document.getField(segment.getFieldPath());
+      if (field == null) {
+        return null;
+      }
+      DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
+      FirestoreIndexValueWriter.INSTANCE.writeIndexValue(field, directionalEncoder);
     }
     return encoder.getEncodedBytes();
   }
 
-  /** Encodes a value to the index format. */
-  private @Nullable Object encode(@Nullable Value value) {
-    return value != null ? encode(Collections.singletonList(value)) : null;
+  /** Encodes a single value to the ascending index format. */
+  private byte[] encodeArrayElement(Value value) {
+    IndexByteEncoder encoder = new IndexByteEncoder();
+    FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+        value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
+    return encoder.getEncodedBytes();
   }
 
   /**
@@ -378,9 +559,10 @@ final class SQLiteIndexManager implements IndexManager {
       Value value = position.next();
       for (IndexByteEncoder encoder : encoders) {
         if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
-          encoders = expandIndexValues(encoders, value);
+          encoders = expandIndexValues(encoders, segment, value);
         } else {
-          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, encoder);
+          DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
+          FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
         }
       }
     }
@@ -403,14 +585,16 @@ final class SQLiteIndexManager implements IndexManager {
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */
-  private List<IndexByteEncoder> expandIndexValues(List<IndexByteEncoder> encoders, Value value) {
+  private List<IndexByteEncoder> expandIndexValues(
+      List<IndexByteEncoder> encoders, FieldIndex.Segment segment, Value value) {
     List<IndexByteEncoder> prefixes = new ArrayList<>(encoders);
     List<IndexByteEncoder> results = new ArrayList<>();
     for (Value arrayElement : value.getArrayValue().getValuesList()) {
       for (IndexByteEncoder prefix : prefixes) {
         IndexByteEncoder clonedEncoder = new IndexByteEncoder();
         clonedEncoder.seed(prefix.getEncodedBytes());
-        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(arrayElement, clonedEncoder);
+        FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
+            arrayElement, clonedEncoder.forKind(segment.getKind()));
         results.add(clonedEncoder);
       }
     }
@@ -431,27 +615,14 @@ final class SQLiteIndexManager implements IndexManager {
     return serializer.encodeFieldIndex(fieldIndex).toByteArray();
   }
 
-  // TODO(indexing): Add support for fetching last N updated entries.
-  public List<FieldIndex> getFieldIndexes() {
-    List<FieldIndex> allIndexes = new ArrayList<>();
-    db.query(
-            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos FROM index_configuration "
-                + "WHERE active = 1")
-        .forEach(
-            row -> {
-              try {
-                allIndexes.add(
-                    serializer.decodeFieldIndex(
-                        row.getString(1),
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(2)),
-                        row.getInt(3),
-                        row.getInt(4)));
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Failed to decode index: " + e);
-              }
-            });
-
-    return allIndexes;
+  @VisibleForTesting
+  void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
+    db.execute(
+        "INSERT OR REPLACE INTO collection_group_update_times "
+            + "(collection_group, update_time_seconds, update_time_nanos) "
+            + "VALUES (?, ?, ?)",
+        collectionGroup,
+        updateTime.getSeconds(),
+        updateTime.getNanoseconds());
   }
 }

@@ -860,7 +860,8 @@ public final class LocalStore implements BundleCallback {
   }
 
   public IndexBackfiller.Results backfillIndexes(IndexBackfiller indexBackfiller) {
-    return persistence.runTransaction("Backfill Indexes", () -> indexBackfiller.backfill());
+    return persistence.runTransaction(
+        "Backfill Indexes", () -> indexBackfiller.backfill(localDocuments));
   }
 
   /**
