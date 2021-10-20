@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@ package com.google.firebase.firestore.local;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class MemoryLocalStoreTest extends LocalStoreTestCase {
+public class OverlayEnabledMemoryLocalStoreTest extends LocalStoreTestCase {
   private static boolean enabled = false;
 
   @BeforeClass
   public static void beforeClass() {
     enabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = false;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
   }
 
   @AfterClass
@@ -45,4 +46,9 @@ public class MemoryLocalStoreTest extends LocalStoreTestCase {
   boolean garbageCollectorIsEager() {
     return true;
   }
+
+  @Test
+  @Override
+  // TODO(Overlay): Delete this when we resolve Idempotent Transformations issue.
+  public void testHoldsBackOnlyNonIdempotentTransforms() {}
 }

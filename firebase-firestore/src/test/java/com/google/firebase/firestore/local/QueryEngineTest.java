@@ -39,8 +39,11 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
 import org.junit.Before;
@@ -76,6 +79,7 @@ public class QueryEngineTest {
   private MemoryPersistence persistence;
   private MemoryRemoteDocumentCache remoteDocumentCache;
   private MutationQueue mutationQueue;
+  private DocumentOverlayCache documentOverlayCache;
   private TargetCache targetCache;
   private QueryEngine queryEngine;
 
@@ -87,6 +91,7 @@ public class QueryEngineTest {
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
+    documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
     queryEngine = new DefaultQueryEngine();
 
@@ -96,6 +101,7 @@ public class QueryEngineTest {
         new LocalDocumentsView(
             remoteDocumentCache,
             persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             new MemoryIndexManager()) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
@@ -139,8 +145,12 @@ public class QueryEngineTest {
     persistence.runTransaction(
         "addMutation",
         () -> {
-          mutationQueue.addMutationBatch(
-              Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
+          MutationBatch batch =
+              mutationQueue.addMutationBatch(
+                  Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
+          Map<DocumentKey, Mutation> overlayMap = new HashMap<>();
+          overlayMap.put(mutation.getKey(), mutation);
+          documentOverlayCache.saveOverlays(batch.getBatchId(), overlayMap);
         });
   }
 
@@ -392,5 +402,17 @@ public class QueryEngineTest {
                     LAST_LIMBO_FREE_SNAPSHOT,
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
+  }
+
+  @Test
+  public void doesNotIncludeDocumentsDeletedByMutation_OverlayEnabled() throws Exception {
+    boolean saved = Persistence.OVERLAY_SUPPORT_ENABLED;
+    Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+    try {
+      doesNotIncludeDocumentsDeletedByMutation();
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = saved;
+    }
   }
 }

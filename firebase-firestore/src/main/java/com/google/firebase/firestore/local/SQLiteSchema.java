@@ -637,8 +637,10 @@ class SQLiteSchema {
               "CREATE TABLE document_overlays ("
                   + "uid TEXT, "
                   + "path TEXT, "
+                  + "largest_batch_id INTEGER, "
                   + "overlay_mutation BLOB, "
                   + "PRIMARY KEY (uid, path))");
+          db.execSQL("CREATE INDEX batch_id_overlay ON document_overlays (uid, largest_batch_id)");
         });
   }
 

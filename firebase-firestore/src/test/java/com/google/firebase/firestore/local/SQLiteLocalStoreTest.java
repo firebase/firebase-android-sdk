@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -21,6 +23,18 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteLocalStoreTest extends LocalStoreTestCase {
+  private static boolean enabled = false;
+
+  @BeforeClass
+  public static void beforeClass() {
+    enabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    Persistence.OVERLAY_SUPPORT_ENABLED = false;
+  }
+
+  @AfterClass
+  public static void afterClass() {
+    Persistence.OVERLAY_SUPPORT_ENABLED = enabled;
+  }
 
   @Override
   Persistence getPersistence() {
