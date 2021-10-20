@@ -40,6 +40,13 @@ public class Values {
   public static final Value NAN_VALUE = Value.newBuilder().setDoubleValue(Double.NaN).build();
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
+  public static final Value MIN_VALUE = NULL_VALUE;
+  public static final Value MAX_VALUE =
+      Value.newBuilder()
+          .setMapValue(
+              MapValue.newBuilder()
+                  .putFields("__type__", Value.newBuilder().setStringValue("__max__").build()))
+          .build();
 
   /**
    * The order of types in Firestore. This order is based on the backend's ordering, but modified to
@@ -92,9 +99,11 @@ public class Values {
   }
 
   public static boolean equals(Value left, Value right) {
-    if (left == null && right == null) {
+    if (left == right) {
       return true;
-    } else if (left == null || right == null) {
+    }
+
+    if (left == null || right == null) {
       return false;
     }
 
@@ -494,7 +503,7 @@ public class Values {
   /**
    * Returns the largest value for the given value type (exclusive). Returns {@code null} for maps.
    */
-  public static @Nullable Value getUpperBound(Value.ValueTypeCase valueTypeCase) {
+  public static Value getUpperBound(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
         return getLowerBound(Value.ValueTypeCase.BOOLEAN_VALUE);
@@ -516,10 +525,14 @@ public class Values {
       case ARRAY_VALUE:
         return getLowerBound(Value.ValueTypeCase.MAP_VALUE);
       case MAP_VALUE:
-        // There is no type that sorts higher than a map.
-        return null;
+        return MAX_VALUE;
       default:
         throw new IllegalArgumentException("Unknown value type: " + valueTypeCase);
     }
+  }
+
+  /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
+  public static boolean isMaxValue(Value value) {
+    return equals(value, MAX_VALUE);
   }
 }
