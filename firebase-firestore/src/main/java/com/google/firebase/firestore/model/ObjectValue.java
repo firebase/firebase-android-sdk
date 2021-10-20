@@ -123,7 +123,7 @@ public final class ObjectValue implements Cloneable {
    * <p>This method applies any outstanding modifications and memoizes the result. Further
    * invocations are based on this memoized result.
    */
-  private Value buildProto() {
+  private synchronized Value buildProto() {
     MapValue mergedResult = applyOverlay(FieldPath.EMPTY_PATH, overlayMap);
     if (mergedResult != null) {
       partialValue = Value.newBuilder().setMapValue(mergedResult).build();
@@ -168,7 +168,7 @@ public final class ObjectValue implements Cloneable {
   /**
    * Adds {@code value} to the overlay map at {@code path}. Creates nested map entries if needed.
    */
-  private synchronized void setOverlay(FieldPath path, @Nullable Value value) {
+  private void setOverlay(FieldPath path, @Nullable Value value) {
     Map<String, Object> currentLevel = overlayMap;
 
     for (int i = 0; i < path.length() - 1; ++i) {
@@ -206,7 +206,7 @@ public final class ObjectValue implements Cloneable {
    *     overlayMap}.
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
-  private synchronized @Nullable MapValue applyOverlay(
+  private @Nullable MapValue applyOverlay(
       FieldPath currentPath, Map<String, Object> currentOverlays) {
     boolean modified = false;
 
