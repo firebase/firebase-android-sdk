@@ -328,7 +328,7 @@ public final class LocalSerializer {
       fieldIndex = fieldIndex.withAddedField(fieldPath, kind);
     }
     fieldIndex =
-        fieldIndex.withVersion(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
+        fieldIndex.withUpdateTime(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
     return fieldIndex;
   }
 

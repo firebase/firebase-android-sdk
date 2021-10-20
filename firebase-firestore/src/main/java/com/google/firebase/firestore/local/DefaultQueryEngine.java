@@ -21,7 +21,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
@@ -158,11 +157,6 @@ public class DefaultQueryEngine implements QueryEngine {
     }
     return documentAtLimitEdge.hasPendingWrites()
         || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
-  }
-
-  @Override
-  public void handleDocumentChange(MutableDocument oldDocument, MutableDocument newDocument) {
-    // No indexes to update.
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {

@@ -120,8 +120,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getVersion().getTimestamp().getSeconds(),
-        index.getVersion().getTimestamp().getNanoseconds());
+        index.getUpdateTime().getTimestamp().getSeconds(),
+        index.getUpdateTime().getTimestamp().getNanoseconds());
 
     // TODO(indexing): Use a 0-counter rather than the timestamp.
     setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
@@ -140,8 +140,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getCollectionGroup(),
         encodeFieldIndex(index),
         true,
-        index.getVersion().getTimestamp().getSeconds(),
-        index.getVersion().getTimestamp().getNanoseconds());
+        index.getUpdateTime().getTimestamp().getSeconds(),
+        index.getUpdateTime().getTimestamp().getNanoseconds());
   }
 
   /** Returns the next collection group to update. */
@@ -258,9 +258,9 @@ final class SQLiteIndexManager implements IndexManager {
     // TODO(indexing): Compare with read time version, rather than document version
     // If the field index hasn't been updated, compare against the document's version.
     if (updatedIndex == null) {
-      return originalIndex.withVersion(version);
-    } else if (version.compareTo(updatedIndex.getVersion()) > 0) {
-      return originalIndex.withVersion(version);
+      return originalIndex.withUpdateTime(version);
+    } else if (version.compareTo(updatedIndex.getUpdateTime()) > 0) {
+      return originalIndex.withUpdateTime(version);
     } else {
       return updatedIndex;
     }
@@ -296,8 +296,11 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void addIndexEntries(Document document) {
-    DocumentKey documentKey = document.getKey();
+  public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
+    hardAssert(oldDocument == null, "Support for updating documents is not yet available");
+    hardAssert(newDocument != null, "Support for removing documents is not yet available");
+
+    DocumentKey documentKey = newDocument.getKey();
     String collectionGroup = documentKey.getCollectionGroup();
     db.query(
             "SELECT index_id, index_proto, update_time_seconds, update_time_nanos "
@@ -313,7 +316,7 @@ final class SQLiteIndexManager implements IndexManager {
                         Index.parseFrom(row.getBlob(1)),
                         row.getInt(2),
                         row.getInt(3));
-                addIndexEntry(document, Collections.singletonList(fieldIndex));
+                addIndexEntry(newDocument, Collections.singletonList(fieldIndex));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Invalid index: " + e);
               }
@@ -355,10 +358,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
-    @Nullable FieldIndex fieldIndex = getMatchingIndex(target);
-    if (fieldIndex == null) return null;
-
+  public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
     @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
     @Nullable List<Value> notInValues = target.getNotInValues(fieldIndex);
     @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
@@ -495,11 +495,9 @@ final class SQLiteIndexManager implements IndexManager {
     return bindArgs;
   }
 
-  /**
-   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
-   * index is configured.
-   */
-  private @Nullable FieldIndex getMatchingIndex(Target target) {
+  @Nullable
+  @Override
+  public FieldIndex getFieldIndex(Target target) {
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
         target.getCollectionGroup() != null
