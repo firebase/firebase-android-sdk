@@ -64,9 +64,6 @@ public interface IndexManager {
   @Nullable
   FieldIndex getFieldIndex(Target target);
 
-  /**
-   * Returns the documents that match the given target based on the configured indices. Returns
-   * {@code null} if there is no active index to serve this target.
-   */
+  /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 }

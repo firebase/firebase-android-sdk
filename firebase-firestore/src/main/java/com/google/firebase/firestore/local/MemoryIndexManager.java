@@ -56,6 +56,7 @@ class MemoryIndexManager implements IndexManager {
   @Nullable
   @Override
   public FieldIndex getFieldIndex(Target target) {
+    // Field indices are not supported with memory persistence.
     return null;
   }
 

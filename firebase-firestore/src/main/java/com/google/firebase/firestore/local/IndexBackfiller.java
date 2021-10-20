@@ -168,11 +168,11 @@ public class IndexBackfiller {
 
   private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
     Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
-    SnapshotVersion lowestVersion = fieldIndexes.get(0).getVersion();
+    SnapshotVersion lowestVersion = fieldIndexes.get(0).getUpdateTime();
     for (FieldIndex fieldIndex : fieldIndexes) {
       lowestVersion =
-          fieldIndex.getVersion().compareTo(lowestVersion) < 0
-              ? fieldIndex.getVersion()
+          fieldIndex.getUpdateTime().compareTo(lowestVersion) < 0
+              ? fieldIndex.getUpdateTime()
               : lowestVersion;
     }
     return lowestVersion;
