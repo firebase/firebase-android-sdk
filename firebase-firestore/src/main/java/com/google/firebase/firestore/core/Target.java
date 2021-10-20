@@ -152,7 +152,8 @@ public final class Target {
           switch (fieldFilter.getOperator()) {
             case EQUAL:
             case IN:
-              // Encode equality prefix
+              // Encode equality prefix, which is encoded in the index value before the inequality
+              // (e.g. `a == 'a' && b != 'b' is encoded to 'value != ab').
               values.add(fieldFilter.getValue());
               break;
             case NOT_IN:
