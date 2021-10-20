@@ -84,8 +84,10 @@ public class SessionManager extends AppStateUpdateHandler {
         executorService.submit(
             () -> {
               gaugeManager.initializeGaugeMetadataManager(appContext);
-              logGaugeMetadataIfCollectionEnabled(
-                  appStartSession, ApplicationProcessState.FOREGROUND);
+              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
+                gaugeManager.logGaugeMetadata(
+                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
+              }
             });
   }
 
@@ -146,7 +148,7 @@ public class SessionManager extends AppStateUpdateHandler {
       }
     }
 
-    logGaugeMetadataIfCollectionEnabled(perfSession, currentAppState);
+    logGaugeMetadataIfCollectionEnabled(currentAppState);
     startOrStopCollectingGauges(currentAppState);
   }
 
@@ -157,7 +159,7 @@ public class SessionManager extends AppStateUpdateHandler {
    * this does not reset the perfSession.
    */
   public void initializeGaugeCollection() {
-    logGaugeMetadataIfCollectionEnabled(perfSession, ApplicationProcessState.FOREGROUND);
+    logGaugeMetadataIfCollectionEnabled(ApplicationProcessState.FOREGROUND);
     startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
   }
 
@@ -185,8 +187,7 @@ public class SessionManager extends AppStateUpdateHandler {
     }
   }
 
-  private void logGaugeMetadataIfCollectionEnabled(
-      PerfSession perfSession, ApplicationProcessState appState) {
+  private void logGaugeMetadataIfCollectionEnabled(ApplicationProcessState appState) {
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.logGaugeMetadata(perfSession.sessionId(), appState);
     }
