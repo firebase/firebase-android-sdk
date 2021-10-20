@@ -14,28 +14,15 @@
 
 package com.google.firebase.firestore.local;
 
-import androidx.annotation.Nullable;
-import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.mutation.Mutation;
-import java.util.HashMap;
-import java.util.Map;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
-public class MemoryDocumentOverlay implements DocumentOverlay {
-  private Map<DocumentKey, Mutation> overlays = new HashMap<>();
-
-  @Nullable
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
+public class SQLiteDocumentOverlayCacheTestCase extends DocumentOverlayCacheTestCase {
   @Override
-  public Mutation getOverlay(DocumentKey key) {
-    return overlays.get(key);
-  }
-
-  @Override
-  public void saveOverlay(DocumentKey key, Mutation mutation) {
-    overlays.put(key, mutation);
-  }
-
-  @Override
-  public void removeOverlay(DocumentKey key) {
-    overlays.remove(key);
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createSQLitePersistence();
   }
 }

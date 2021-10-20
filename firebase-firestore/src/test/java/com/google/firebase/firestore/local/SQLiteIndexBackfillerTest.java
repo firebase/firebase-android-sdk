@@ -73,6 +73,7 @@ public class SQLiteIndexBackfillerTest {
         new LocalDocumentsView(
             persistence.getRemoteDocumentCache(),
             persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             indexManager);
   }
 

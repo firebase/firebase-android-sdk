@@ -136,6 +136,7 @@ public final class FieldIndex {
     return new FieldIndex(collectionGroup, indexId, newSegments, updateTime);
   }
 
+  /** Returns a new field index with the updated version. */
   public FieldIndex withUpdateTime(SnapshotVersion updateTime) {
     return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
@@ -163,7 +164,7 @@ public final class FieldIndex {
   @Override
   public String toString() {
     return String.format(
-        "FieldIndex{collectionGroup='%s', segments=%s, readTime=%s}",
+        "FieldIndex{collectionGroup='%s', segments=%s, updateTime=%s}",
         collectionGroup, segments, updateTime);
   }
 }

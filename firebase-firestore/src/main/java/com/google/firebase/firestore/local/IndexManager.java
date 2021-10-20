@@ -46,8 +46,8 @@ public interface IndexManager {
    */
   List<ResourcePath> getCollectionParents(String collectionId);
 
-  /** Adds index entries for all indexed fields in the given document. */
-  void addIndexEntries(Document document);
+  /** Updates the index entries for the given document. */
+  void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument);
 
   /**
    * Adds a field path index.
@@ -58,9 +58,12 @@ public interface IndexManager {
   void addFieldIndex(FieldIndex index);
 
   /**
-   * Returns the documents that match the given target based on the configured indices. Returns
-   * {@code null} if there is no active index to serve this target.
+   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
+   * index is configured.
    */
   @Nullable
-  Set<DocumentKey> getDocumentsMatchingTarget(Target target);
+  FieldIndex getFieldIndex(Target target);
+
+  /** Returns the documents that match the given target based on the provided index. */
+  Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 }

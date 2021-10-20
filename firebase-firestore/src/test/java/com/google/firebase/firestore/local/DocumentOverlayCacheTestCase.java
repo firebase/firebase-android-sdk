@@ -14,15 +14,20 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -31,20 +36,20 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * These are tests for any implementation of the DocumentOverlay interface.
+ * These are tests for any implementation of the DocumentOverlayCache interface.
  *
- * <p>To test a specific implementation of DocumentOverlay:
+ * <p>To test a specific implementation of DocumentOverlayCache:
  *
  * <ol>
- *   <li>Subclass DocumentOverlayTestCase.
+ *   <li>Subclass DocumentOverlayCacheTestCase.
  *   <li>Override {@link #getPersistence}, creating a new implementation of Persistence.
  * </ol>
  */
-public abstract class DocumentOverlayTestCase {
+public abstract class DocumentOverlayCacheTestCase {
   @Rule public TestName name = new TestName();
 
   private Persistence persistence;
-  private DocumentOverlay overlays;
+  private DocumentOverlayCache overlays;
   private static boolean overlayEnabled = false;
 
   @BeforeClass
@@ -71,6 +76,12 @@ public abstract class DocumentOverlayTestCase {
 
   abstract Persistence getPersistence();
 
+  void saveOverlay(int largestBatch, DocumentKey key, Mutation overlay) {
+    Map<DocumentKey, Mutation> data = new HashMap<>();
+    data.put(key, overlay);
+    overlays.saveOverlays(largestBatch, data);
+  }
+
   @Test
   public void testReturnsNullWhenOverlayIsNotFound() {
     assertNull(overlays.getOverlay(key("coll/doc1")));
@@ -79,17 +90,33 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(key("coll/doc1"), m);
+    saveOverlay(2, key("coll/doc1"), m);
 
     assertEquals(m, overlays.getOverlay(key("coll/doc1")));
+  }
+
+  @Test
+  public void testCanReadSavedOverlays() {
+    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
+    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
+    Mutation m3 = deleteMutation("coll/doc3");
+    Map<DocumentKey, Mutation> m = new HashMap<>();
+    m.put(key("coll/doc1"), m1);
+    m.put(key("coll/doc2"), m2);
+    m.put(key("coll/doc3"), m3);
+    overlays.saveOverlays(3, m);
+
+    assertEquals(m1, overlays.getOverlay(key("coll/doc1")));
+    assertEquals(m2, overlays.getOverlay(key("coll/doc2")));
+    assertEquals(m3, overlays.getOverlay(key("coll/doc3")));
   }
 
   @Test
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
-    overlays.saveOverlay(key("coll/doc1"), m1);
-    overlays.saveOverlay(key("coll/doc1"), m2);
+    saveOverlay(2, key("coll/doc1"), m1);
+    saveOverlay(2, key("coll/doc1"), m2);
 
     assertEquals(m2, overlays.getOverlay(key("coll/doc1")));
   }
@@ -97,13 +124,34 @@ public abstract class DocumentOverlayTestCase {
   @Test
   public void testDeleteRepeatedlyWorks() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    overlays.saveOverlay(key("coll/doc1"), m);
+    saveOverlay(2, key("coll/doc1"), m);
 
-    overlays.removeOverlay(key("coll/doc1"));
+    overlays.removeOverlaysForBatchId(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlay(key("coll/doc1"));
+    overlays.removeOverlaysForBatchId(2);
     assertNull(overlays.getOverlay(key("coll/doc1")));
+  }
+
+  @Test
+  public void testGetAllOverlaysForCollection() {
+    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
+    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
+    Mutation m3 = deleteMutation("coll/doc3");
+    // m4 and m5 are not under "coll"
+    Mutation m4 = setMutation("coll/doc1/sub/sub_doc", map("foo", "bar"));
+    Mutation m5 = setMutation("other/doc1", map("foo", "bar"));
+    Map<DocumentKey, Mutation> m = new HashMap<>();
+    m.put(key("coll/doc1"), m1);
+    m.put(key("coll/doc2"), m2);
+    m.put(key("coll/doc3"), m3);
+    m.put(key("coll/doc1/sub/sub_doc"), m4);
+    m.put(key("other/doc1"), m5);
+    overlays.saveOverlays(3, m);
+
+    m.remove(key("coll/doc1/sub/sub_doc"));
+    m.remove(key("other/doc1"));
+    assertEquals(m, overlays.getOverlays(path("coll")));
   }
 }

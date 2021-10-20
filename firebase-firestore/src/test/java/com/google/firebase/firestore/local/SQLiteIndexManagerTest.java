@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -114,12 +115,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testNotEqualityFilter() {
-    // TODO(indexing): Optimize != filters. We currently return all documents and do not exclude
-    // the documents with the provided value.
+  public void testNotEqualsFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "!=", 2));
-    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/doc1", "coll/doc3");
   }
 
   @Test
@@ -207,11 +206,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testNotInFilter() {
-    // TODO(indexing): Optimize not-in filters. We currently return all documents and do not exclude
-    // the documents with the provided values.
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "not-in", Arrays.asList(1, 2)));
-    verifyResults(query, "coll/doc1", "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/doc3");
   }
 
   @Test
@@ -244,7 +241,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
-    assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
+    assertNull(indexManager.getFieldIndex(query.toTarget()));
   }
 
   @Test
@@ -336,6 +333,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASCENDING)
             .withAddedField(field("suffix"), FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(
         new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING));
@@ -351,6 +350,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         new FieldIndex("coll")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.DESCENDING));
+    indexManager.addFieldIndex(
+        new FieldIndex("coll")
+            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING)
+            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
 
     List<Map<String, Object>> data =
         new ArrayList<Map<String, Object>>() {
@@ -379,6 +382,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             add(map("a", 0, "b", 1));
             add(map("a", 1, "b", 0));
             add(map("a", 1, "b", 1));
+            add(map("a", 2, "b", 0));
+            add(map("a", 2, "b", 1));
           }
         };
 
@@ -443,6 +448,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     verifyResults(q.filter(filter("multi", ">=", 0)), "coll/{multi:1}");
     verifyResults(q.filter(filter("multi", ">=", "")), "coll/{multi:string}");
     verifyResults(q.filter(filter("multi", ">=", Collections.emptyList())), "coll/{multi:[]}");
+    verifyResults(
+        q.filter(filter("multi", "!=", true)),
+        "coll/{multi:1}",
+        "coll/{multi:string}",
+        "coll/{multi:[]}");
+    verifyResults(
+        q.filter(filter("multi", "in", Arrays.asList(true, 1))),
+        "coll/{multi:true}",
+        "coll/{multi:1}");
+    verifyResults(
+        q.filter(filter("multi", "not-in", Arrays.asList(true, 1))),
+        "coll/{multi:string}",
+        "coll/{multi:[]}");
     verifyResults(
         q.orderBy(orderBy("array")).startAt(bound(true, Collections.singletonList(2))),
         "coll/{array:[2,foo]}",
@@ -525,12 +543,33 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         "coll/{array:[3,foo],int:3}");
     verifyResults(q.orderBy(orderBy("a")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:0,b:0}");
     verifyResults(
-        q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:1,b:0}");
+        q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b")).limitToFirst(1), "coll/{a:2,b:0}");
     verifyResults(
         q.orderBy(orderBy("a")).orderBy(orderBy("b", "desc")).limitToFirst(1), "coll/{a:0,b:1}");
     verifyResults(
         q.orderBy(orderBy("a", "desc")).orderBy(orderBy("b", "desc")).limitToFirst(1),
-        "coll/{a:1,b:1}");
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", ">", 0)).filter(filter("b", "==", 1)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(q.filter(filter("a", "==", 1)).filter(filter("b", "==", 1)), "coll/{a:1,b:1}");
+    verifyResults(
+        q.filter(filter("a", "!=", 0)).filter(filter("b", "==", 1)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("b", "==", 1)).filter(filter("a", "!=", 0)),
+        "coll/{a:1,b:1}",
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", "not-in", Arrays.asList(0, 1))), "coll/{a:2,b:0}", "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("a", "not-in", Arrays.asList(0, 1))).filter(filter("b", "==", 1)),
+        "coll/{a:2,b:1}");
+    verifyResults(
+        q.filter(filter("b", "==", 1)).filter(filter("a", "not-in", Arrays.asList(0, 1))),
+        "coll/{a:2,b:1}");
     verifyResults(q.filter(filter("null", "==", null)), "coll/{null:null}");
     verifyResults(q.orderBy(orderBy("null")), "coll/{null:null}");
     verifyResults(
@@ -628,11 +667,13 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void addDoc(String key, Map<String, Object> data) {
     MutableDocument doc = doc(key, 1, data);
-    indexManager.addIndexEntries(doc);
+    indexManager.handleDocumentChange(null, doc);
   }
 
   private void verifyResults(Query query, String... documents) {
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(query.toTarget());
+    Target target = query.toTarget();
+    FieldIndex fieldIndex = indexManager.getFieldIndex(target);
+    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }

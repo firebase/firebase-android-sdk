@@ -26,6 +26,7 @@ import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +80,50 @@ public abstract class Mutation {
     this.key = key;
     this.precondition = precondition;
     this.fieldTransforms = fieldTransforms;
+  }
+
+  /**
+   * A utility method to calculate an {@link Mutation} representing the overlay from the final state
+   * of the document, and a {@link FieldMask} representing the fields that are mutated by the local
+   * mutations.
+   */
+  public static Mutation calculateOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
+    if ((!doc.hasLocalMutations()) || (mask != null && mask.getMask().isEmpty())) {
+      return null;
+    }
+
+    // mask == null when there are Set or Delete being applied to get to the current document.
+    if (mask == null) {
+      if (doc.isNoDocument()) {
+        return new DeleteMutation(doc.getKey(), Precondition.NONE);
+      } else {
+        return new SetMutation(doc.getKey(), doc.getData(), Precondition.NONE);
+      }
+    } else {
+      ObjectValue docValue = doc.getData();
+      ObjectValue patchValue = new ObjectValue();
+      HashSet<FieldPath> maskSet = new HashSet<>();
+      for (FieldPath path : mask.getMask()) {
+        if (!maskSet.contains(path)) {
+          Value value = docValue.get(path);
+          // If we are deleting a nested field, we take the immediate parent as the mask used to
+          // construct resulting mutation.
+          // Justification: Nested fields can create parent fields implicitly. If only a leaf entry
+          // is deleted in later mutations, the parent field should still remain, but we may have
+          // lost this information.
+          // Consider mutation (foo.bar 1), then mutation (foo.bar delete()).
+          // This leaves the final result (foo, {}). Despite the fact that `doc` has the correct
+          // result, `foo` is not in `mask`, and the resulting mutation would miss `foo`.
+          if (value == null && path.length() > 1) {
+            path = path.popLast();
+          }
+          patchValue.set(path, docValue.get(path));
+          maskSet.add(path);
+        }
+      }
+      return new PatchMutation(
+          doc.getKey(), patchValue, FieldMask.fromSet(maskSet), Precondition.NONE);
+    }
   }
 
   public DocumentKey getKey() {

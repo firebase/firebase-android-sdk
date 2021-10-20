@@ -97,8 +97,8 @@ public abstract class Persistence {
   /** Returns a BundleCache representing the persisted cache of loaded bundles. */
   abstract BundleCache getBundleCache();
 
-  /** Returns a DocumentOverlay representing the documents that are mutated locally. */
-  abstract DocumentOverlay getDocumentOverlay(User user);
+  /** Returns a DocumentOverlayCache representing the documents that are mutated locally. */
+  abstract DocumentOverlayCache getDocumentOverlay(User user);
 
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence
