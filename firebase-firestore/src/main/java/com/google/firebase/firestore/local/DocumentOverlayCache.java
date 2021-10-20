@@ -27,7 +27,7 @@ import java.util.Map;
  * the remote version of the document.
  *
  * <p>Each overlay stores the largest batch ID that is included in the overlay, which allows us to
- * remove the overlay, once all batches leading up to it have been acknowledged.
+ * remove the overlay once all batches leading up to it have been acknowledged.
  */
 public interface DocumentOverlayCache {
   /**

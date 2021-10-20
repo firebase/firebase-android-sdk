@@ -45,16 +45,14 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
         .binding(uid, path)
         .firstValue(
             row -> {
-              if (row != null) {
-                try {
-                  Write mutation = Write.parseFrom(row.getBlob(0));
-                  return serializer.decodeMutation(mutation);
-                } catch (InvalidProtocolBufferException e) {
-                  throw fail("Overlay failed to parse: %s", e);
-                }
+              if (row == null) return null;
+              
+              try {
+                Write mutation = Write.parseFrom(row.getBlob(0));
+                return serializer.decodeMutation(mutation);
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Overlay failed to parse: %s", e);
               }
-
-              return null;
             });
   }
 

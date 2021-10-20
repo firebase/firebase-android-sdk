@@ -121,7 +121,7 @@ class LocalDocumentsView {
    * Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
    * the contents of the mutations.
    *
-   * <p>Returns a {@code DocumentKey} to {@code FieldMask} map, representing the fields mutated for
+   * <p>Returns a {@link DocumentKey} to {@link FieldMask} map, representing the fields mutated for
    * each document. This is useful to build overlays.
    */
   private Map<DocumentKey, FieldMask> applyLocalMutationsToDocuments(
@@ -169,7 +169,7 @@ class LocalDocumentsView {
         // can change if some patch mutation's preconditions are met.
         // NOTE: we recalculate when `overlay` is null as well, because there might be a patch
         // mutation whose precondition does not match before the change (hence overlay==null),
-        // but now it is a match.
+        // but would now match.
         if (existenceStateChanged.contains(entry.getKey())
             && (overlay == null || overlay instanceof PatchMutation)) {
           recalculateDocuments.put(entry.getKey(), docs.get(entry.getKey()));
