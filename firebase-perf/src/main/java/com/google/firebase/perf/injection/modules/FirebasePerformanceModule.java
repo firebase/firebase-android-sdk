@@ -22,7 +22,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
-import com.google.firebase.perf.session.gauges.GaugeManager;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import dagger.Module;
 import dagger.Provides;
@@ -77,7 +77,7 @@ public class FirebasePerformanceModule {
   }
 
   @Provides
-  GaugeManager providesGaugeManager() {
-    return GaugeManager.getInstance();
+  SessionManager providesSessionManager() {
+    return SessionManager.getInstance();
   }
 }

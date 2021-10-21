@@ -15,6 +15,7 @@
 package com.google.firebase.perf.session;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
@@ -27,6 +28,9 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
@@ -40,6 +44,7 @@ public class SessionManager extends AppStateUpdateHandler {
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
+  private Future syncInitFuture;
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
@@ -62,6 +67,28 @@ public class SessionManager extends AppStateUpdateHandler {
     this.perfSession = perfSession;
     this.appStateMonitor = appStateMonitor;
     registerForAppState();
+  }
+
+  /**
+   * Finalizes gauge initialization during app start. This must be called before app start finishes
+   * (currently that is before onResume finishes), because {@link #perfSession} can be changed by
+   * {@link #onUpdateAppState(ApplicationProcessState)} once {@link AppStateMonitor#isColdStart()}
+   * becomes false.
+   */
+  public void setApplicationContext(final Context appContext) {
+    // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
+    // which creates a new perfSession, before the following is executed in background thread
+    final PerfSession appStartSession = perfSession;
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    syncInitFuture =
+        executorService.submit(
+            () -> {
+              gaugeManager.initializeGaugeMetadataManager(appContext);
+              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
+                gaugeManager.logGaugeMetadata(
+                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
+              }
+            });
   }
 
   @Override
@@ -177,5 +204,10 @@ public class SessionManager extends AppStateUpdateHandler {
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
     this.perfSession = perfSession;
+  }
+
+  @VisibleForTesting
+  public Future getSyncInitFuture() {
+    return this.syncInitFuture;
   }
 }
