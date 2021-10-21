@@ -62,7 +62,10 @@ public class IndexedQueryEngineTest {
     queryEngine = new IndexedQueryEngine(indexManager);
     queryEngine.setLocalDocumentsView(
         new LocalDocumentsView(
-            remoteDocuments, persistence.getMutationQueue(User.UNAUTHENTICATED), indexManager));
+            remoteDocuments,
+            persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getDocumentOverlay(User.UNAUTHENTICATED),
+            indexManager));
   }
 
   @Test

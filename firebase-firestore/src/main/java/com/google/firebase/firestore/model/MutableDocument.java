@@ -62,6 +62,7 @@ public final class MutableDocument implements Document, Cloneable {
   private final DocumentKey key;
   private DocumentType documentType;
   private SnapshotVersion version;
+  private SnapshotVersion readTime = SnapshotVersion.NONE;
   private ObjectValue value;
   private DocumentState documentState;
 
@@ -157,6 +158,11 @@ public final class MutableDocument implements Document, Cloneable {
     return this;
   }
 
+  public MutableDocument withReadTime(SnapshotVersion readTime) {
+    this.readTime = readTime;
+    return this;
+  }
+
   @Override
   public DocumentKey getKey() {
     return key;
@@ -165,6 +171,11 @@ public final class MutableDocument implements Document, Cloneable {
   @Override
   public SnapshotVersion getVersion() {
     return version;
+  }
+
+  @Override
+  public SnapshotVersion getReadTime() {
+    return readTime;
   }
 
   @Override
@@ -248,6 +259,8 @@ public final class MutableDocument implements Document, Cloneable {
         + key
         + ", version="
         + version
+        + ", readTime="
+        + readTime
         + ", type="
         + documentType
         + ", documentState="

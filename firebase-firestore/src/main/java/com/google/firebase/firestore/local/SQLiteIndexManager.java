@@ -197,11 +197,11 @@ final class SQLiteIndexManager implements IndexManager {
         if (entriesWrittenCount > 0) {
           // TODO(indexing): This would be much simpler with a sequence counter since we would
           // always update the index to the next sequence value.
-          FieldIndex updatedIndex =
-              getPostUpdateIndex(
-                  fieldIndex,
-                  updatedFieldIndexes.get(fieldIndex.getIndexId()),
-                  document.getVersion());
+          FieldIndex latestIndex =
+              updatedFieldIndexes.get(fieldIndex.getIndexId()) != null
+                  ? updatedFieldIndexes.get(fieldIndex.getIndexId())
+                  : fieldIndex;
+          FieldIndex updatedIndex = getPostUpdateIndex(latestIndex, document.getReadTime());
           updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
         }
       }
@@ -248,21 +248,15 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   /**
-   * Returns the field index with the latest read time. Compares versions on the original field
-   * index, the document, and the stored field index in the mapping.
+   * Returns a field index with the later read time.
    *
    * <p>This method should only be called on field indexes that had index entries written.
    */
-  private FieldIndex getPostUpdateIndex(
-      FieldIndex originalIndex, @Nullable FieldIndex updatedIndex, SnapshotVersion version) {
-    // TODO(indexing): Compare with read time version, rather than document version
-    // If the field index hasn't been updated, compare against the document's version.
-    if (updatedIndex == null) {
-      return originalIndex.withUpdateTime(version);
-    } else if (version.compareTo(updatedIndex.getUpdateTime()) > 0) {
-      return originalIndex.withUpdateTime(version);
+  private FieldIndex getPostUpdateIndex(FieldIndex baseIndex, SnapshotVersion newReadTime) {
+    if (baseIndex.getUpdateTime().compareTo(newReadTime) > 0) {
+      return baseIndex;
     } else {
-      return updatedIndex;
+      return baseIndex.withUpdateTime(newReadTime);
     }
   }
 
@@ -333,7 +327,7 @@ final class SQLiteIndexManager implements IndexManager {
     for (FieldIndex fieldIndex : fieldIndexes) {
       int entriesWritten = writeEntries(document, fieldIndex);
       if (entriesWritten > 0) {
-        FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, null, document.getVersion());
+        FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, document.getVersion());
         updateFieldIndex(updatedIndex);
       }
     }
