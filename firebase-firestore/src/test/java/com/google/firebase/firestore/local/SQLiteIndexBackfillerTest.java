@@ -34,6 +34,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -84,6 +85,7 @@ public class SQLiteIndexBackfillerTest {
 
   // TODO(indexing): Re-enable this test once we have counters implemented.
   @Test
+  @Ignore
   public void testBackfillWritesLatestReadTimeToFieldIndexOnCompletion() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "bar");
