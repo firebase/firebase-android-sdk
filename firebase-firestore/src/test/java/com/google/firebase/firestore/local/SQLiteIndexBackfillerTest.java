@@ -82,8 +82,7 @@ public class SQLiteIndexBackfillerTest {
     persistence.shutdown();
   }
 
-  // This test can flake due to a timestamp race condition with getNextCollectionGroup() that should
-  // be resolved if we use counters in the collection groups table.
+  // TODO(indexing): Re-enable this test once we have counters implemented.
   @Test
   public void testBackfillWritesLatestReadTimeToFieldIndexOnCompletion() {
     addFieldIndex("coll1", "foo");
