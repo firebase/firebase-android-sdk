@@ -17,6 +17,8 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 
 /** Carries static information about the app. */
@@ -30,7 +32,8 @@ public class AppData {
   public final String versionCode;
   public final String versionName;
 
-  public final UnityVersionProvider unityVersionProvider;
+  @Nullable public final String developmentPlatform;
+  @Nullable public final String developmentPlatformVersion;
 
   public static AppData create(
       Context context,
@@ -46,6 +49,11 @@ public class AppData {
     final String versionCode = Integer.toString(packageInfo.versionCode);
     final String versionName =
         packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
+    final boolean hasUnityVersion = unityVersionProvider.getUnityVersion() != null;
+    final String developmentPlatform =
+        hasUnityVersion ? CrashlyticsReport.DEVELOPMENT_PLATFORM_UNITY : null;
+    final String developmentPlatformVersion =
+        hasUnityVersion ? unityVersionProvider.getUnityVersion() : null;
 
     return new AppData(
         googleAppId,
@@ -54,7 +62,8 @@ public class AppData {
         packageName,
         versionCode,
         versionName,
-        unityVersionProvider);
+        developmentPlatform,
+        developmentPlatformVersion);
   }
 
   public AppData(
@@ -64,13 +73,15 @@ public class AppData {
       String packageName,
       String versionCode,
       String versionName,
-      UnityVersionProvider unityVersionProvider) {
+      @Nullable String developmentPlatform,
+      @Nullable String developmentPlatformVersion) {
     this.googleAppId = googleAppId;
     this.buildId = buildId;
     this.installerPackageName = installerPackageName;
     this.packageName = packageName;
     this.versionCode = versionCode;
     this.versionName = versionName;
-    this.unityVersionProvider = unityVersionProvider;
+    this.developmentPlatform = developmentPlatform;
+    this.developmentPlatformVersion = developmentPlatformVersion;
   }
 }

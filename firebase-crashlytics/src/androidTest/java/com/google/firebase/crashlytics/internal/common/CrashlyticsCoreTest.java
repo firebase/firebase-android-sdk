@@ -14,7 +14,10 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.text.TextUtils;
@@ -36,7 +39,6 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSo
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
@@ -332,9 +334,6 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     when(mockSettingsController.getSettings()).thenReturn(settings);
     when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settings.appData));
 
-    final UnityVersionProvider unityVersionProvider = mock(UnityVersionProvider.class);
-    when(unityVersionProvider.getUnityVersion()).thenReturn("1.0");
-
     AppData appData =
         new AppData(
             GOOGLE_APP_ID,
@@ -343,7 +342,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             "packageName",
             "versionCode",
             "versionName",
-            unityVersionProvider);
+            "Unity",
+            "1.0");
 
     crashlyticsCore.onPreExecute(appData, mockSettingsController);
 

@@ -269,9 +269,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private void setupAppData(String buildId) {
-    final UnityVersionProvider unityVersionProvider = mock(UnityVersionProvider.class);
-    when(unityVersionProvider.getUnityVersion()).thenReturn("1.0");
-
     appData =
         new AppData(
             GOOGLE_APP_ID,
@@ -280,7 +277,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
             "packageName",
             "versionCode",
             "versionName",
-            unityVersionProvider);
+            "Unity",
+            "1.0");
   }
 
   private void setupResource(Integer resId, String type, String name, String value) {

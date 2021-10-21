@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.Context;
-import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -121,8 +120,6 @@ public class CrashpadController {
   }
 
   public void writeSessionApp(String sessionId, StaticSessionData.AppData appData) {
-    final String unityVersion =
-        !TextUtils.isEmpty(appData.unityVersion()) ? appData.unityVersion() : "";
     final String json =
         SessionMetadataJsonSerializer.serializeSessionApp(
             appData.appIdentifier(),
@@ -130,7 +127,8 @@ public class CrashpadController {
             appData.versionName(),
             appData.installUuid(),
             appData.deliveryMechanism(),
-            unityVersion);
+            appData.developmentPlatform(),
+            appData.developmentPlatformVersion());
     writeSessionJsonFile(filesManager, sessionId, json, APP_METADATA_FILE);
   }
 

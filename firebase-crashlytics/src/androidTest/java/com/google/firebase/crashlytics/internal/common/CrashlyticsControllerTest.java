@@ -117,7 +117,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private class ControllerBuilder {
     private DataCollectionArbiter dataCollectionArbiter;
     private CrashlyticsNativeComponent nativeComponent = null;
-    private UnityVersionProvider unityVersionProvider;
     private AnalyticsEventLogger analyticsEventLogger;
     private SessionReportingCoordinator sessionReportingCoordinator;
     private LogFileManager.DirectoryProvider logFileDirectoryProvider = null;
@@ -126,9 +125,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
       nativeComponent = mockNativeComponent;
-
-      unityVersionProvider = mock(UnityVersionProvider.class);
-      when(unityVersionProvider.getUnityVersion()).thenReturn(null);
 
       analyticsEventLogger = mock(AnalyticsEventLogger.class);
 
@@ -174,7 +170,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "packageName",
               "versionCode",
               "versionName",
-              unityVersionProvider);
+              /*developmentPlatform=*/ null,
+              /*developmentPlatformVersion=*/ null);
 
       final CrashlyticsController controller =
           new CrashlyticsController(
