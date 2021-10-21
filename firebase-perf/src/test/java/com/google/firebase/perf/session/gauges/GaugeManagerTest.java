@@ -690,7 +690,7 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isFalse();
 
-    testGaugeManager.setApplicationContext(ApplicationProvider.getApplicationContext());
+    testGaugeManager.initializeGaugeMetadataManager(ApplicationProvider.getApplicationContext());
     assertThat(testGaugeManager.logGaugeMetadata("sessionId", ApplicationProcessState.FOREGROUND))
         .isTrue();
 

@@ -90,8 +90,8 @@ public class GaugeManager {
     this.memoryGaugeCollector = memoryGaugeCollector;
   }
 
-  /** Sets the application context once it is available. */
-  public void setApplicationContext(Context appContext) {
+  /** Initializes GaugeMetadataManager which requires application context. */
+  public void initializeGaugeMetadataManager(Context appContext) {
     this.gaugeMetadataManager = new GaugeMetadataManager(appContext);
   }
 

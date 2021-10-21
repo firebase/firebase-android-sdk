@@ -15,6 +15,7 @@
 package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -25,17 +26,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import android.content.Context;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
+import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link SessionManager}. */
@@ -45,6 +50,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   @Mock private GaugeManager mockGaugeManager;
   @Mock private PerfSession mockPerfSession;
   @Mock private AppStateMonitor mockAppStateMonitor;
+  @Mock private Context mockApplicationContext;
 
   @Before
   public void setUp() {
@@ -59,6 +65,20 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     assertThat(SessionManager.getInstance()).isNotNull();
     assertThat(SessionManager.getInstance()).isEqualTo(SessionManager.getInstance());
     assertThat(SessionManager.getInstance().perfSession().sessionId()).isNotNull();
+  }
+
+  @Test
+  public void setApplicationContext_logGaugeMetadata_afterGaugeMetadataManagerIsInitialized()
+      throws ExecutionException, InterruptedException {
+    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+    InOrder inOrder = Mockito.inOrder(mockGaugeManager);
+    SessionManager testSessionManager =
+        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
+    testSessionManager.setApplicationContext(mockApplicationContext);
+
+    testSessionManager.getSyncInitFuture().get();
+    inOrder.verify(mockGaugeManager).initializeGaugeMetadataManager(any());
+    inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
   }
 
   @Test
