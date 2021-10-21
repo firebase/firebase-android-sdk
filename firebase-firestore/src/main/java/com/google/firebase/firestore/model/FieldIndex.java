@@ -102,6 +102,9 @@ public final class FieldIndex {
     return segments.size();
   }
 
+  /**
+   * Returns the latest read time version that has been indexed by Firestore for this field index.
+   */
   public SnapshotVersion getUpdateTime() {
     return updateTime;
   }

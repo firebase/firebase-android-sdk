@@ -36,6 +36,12 @@ public interface Document {
   SnapshotVersion getVersion();
 
   /**
+   * Returns the timestamp at which this document was read from the remote server. Returns
+   * `SnapshotVersion.NONE` for documents created by the user.
+   */
+  SnapshotVersion getReadTime();
+
+  /**
    * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
    * created by a mutation or read from the backend).
    */

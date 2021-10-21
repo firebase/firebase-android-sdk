@@ -40,6 +40,7 @@ public class DocumentTest {
 
     assertEquals(key("messages/first"), document.getKey());
     assertEquals(version(1), document.getVersion());
+    assertEquals(SnapshotVersion.NONE, document.getReadTime());
     assertEquals(wrapObject("a", 1), document.getData());
     assertFalse(document.hasLocalMutations());
   }
