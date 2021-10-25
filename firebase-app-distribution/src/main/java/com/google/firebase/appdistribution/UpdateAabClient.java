@@ -95,6 +95,7 @@ class UpdateAabClient {
       }
     }
 
+    // The 403 redirect is obtained here to open the play store directly and avoid opening chrome
     updateExecutor.execute(
         () -> {
           HttpsURLConnection connection;
@@ -138,7 +139,6 @@ class UpdateAabClient {
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
           }
         });
-    // The 403 redirect is obtained here to open the play store directly and avoid opening chrome
   }
 
   void setCurrentActivity(@Nullable Activity activity) {
