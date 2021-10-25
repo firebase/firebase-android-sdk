@@ -56,7 +56,8 @@ public class CrashlyticsNativeComponentDeferredProxyTest {
     Mockito.verify(component, Mockito.times(1)).hasCrashDataForSession(eq(TEST_SESSION_ID));
 
     StaticSessionData.AppData appData =
-        StaticSessionData.AppData.create("appId", "123", "1.2.3", "install_id", 0, "unityVersion");
+        StaticSessionData.AppData.create(
+            "appId", "123", "1.2.3", "install_id", 0, "unity", "unityVersion");
     StaticSessionData.OsData osData = StaticSessionData.OsData.create("release", "codeName", false);
     StaticSessionData.DeviceData deviceData =
         StaticSessionData.DeviceData.create(

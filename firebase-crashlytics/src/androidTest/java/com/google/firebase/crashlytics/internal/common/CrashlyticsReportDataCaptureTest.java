@@ -46,6 +46,8 @@ import org.mockito.MockitoAnnotations;
 @RunWith(AndroidJUnit4.class)
 public class CrashlyticsReportDataCaptureTest {
 
+  private Context context = getContext();
+  private IdManager idManager;
   private CrashlyticsReportDataCapture dataCapture;
   private long timestamp;
   private String eventType;
@@ -64,27 +66,33 @@ public class CrashlyticsReportDataCaptureTest {
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
-    final Context context = getContext();
-    final IdManager idManager =
+    context = getContext();
+    idManager =
         new IdManager(
             context,
             context.getPackageName(),
             installationsApiMock,
             DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
-    final AppData appData =
-        AppData.create(context, idManager, "googleAppId", "buildId", unityVersionProvider);
-    dataCapture =
-        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     timestamp = System.currentTimeMillis();
     eventType = "crash";
     eventThreadImportance = 4;
     maxChainedExceptions = 8;
+    initDataCapture();
+  }
+
+  private void initDataCapture() throws Exception {
+    AppData appData =
+        AppData.create(context, idManager, "googleAppId", "buildId", unityVersionProvider);
+    dataCapture =
+        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
   }
 
   @Test
-  public void testCaptureReport_containsUnityVersionInDeveloperPlatformFieldsWhenAvailable() {
+  public void testCaptureReport_containsUnityVersionInDeveloperPlatformFieldsWhenAvailable()
+      throws Exception {
     final String expectedUnityVersion = "1.0.0";
     when(unityVersionProvider.getUnityVersion()).thenReturn(expectedUnityVersion);
+    initDataCapture();
 
     final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
 
@@ -94,8 +102,10 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureReport_containsNoDeveloperPlatformFieldsWhenUnityIsMissing() {
+  public void testCaptureReport_containsNoDeveloperPlatformFieldsWhenUnityIsMissing()
+      throws Exception {
     when(unityVersionProvider.getUnityVersion()).thenReturn(null);
+    initDataCapture();
 
     final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
 
