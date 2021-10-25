@@ -138,8 +138,7 @@ class UpdateAabClient {
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
           }
         });
-    // To open the play store and avoid opening chrome the request is made here to get the 403
-    // redirect
+    // The 403 redirect is obtained here to open the play store directly and avoid opening chrome
   }
 
   void setCurrentActivity(@Nullable Activity activity) {
