@@ -55,7 +55,7 @@ class UpdateAabClient {
     this.updateExecutor = updateExecutor;
   }
 
-  public synchronized UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
+  public UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
     synchronized (updateAabLock) {
       if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
         return cachedUpdateTask;
@@ -138,6 +138,8 @@ class UpdateAabClient {
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
           }
         });
+    // To open the play store and avoid opening chrome the request is made here to get the 403
+    // redirect
   }
 
   void setCurrentActivity(@Nullable Activity activity) {
