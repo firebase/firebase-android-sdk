@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
 import android.app.Activity;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
@@ -31,17 +30,7 @@ public class UpdateAppClient {
   private final UpdateAabClient updateAabClient;
   private static final String TAG = "UpdateAppClient";
 
-  @GuardedBy("activityLock")
-  private Activity currentActivity;
-
   private final Object activityLock = new Object();
-  private final Object updateAabLock = new Object();
-
-  @GuardedBy("updateAabLock")
-  private UpdateTaskImpl cachedAabUpdateTask;
-
-  @GuardedBy("updateAabLock")
-  private AppDistributionReleaseInternal aabReleaseInProgress;
 
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.installApkClient = new InstallApkClient();

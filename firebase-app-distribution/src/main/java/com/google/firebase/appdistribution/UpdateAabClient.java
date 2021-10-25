@@ -84,8 +84,8 @@ class UpdateAabClient {
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
-    if (currentActivity == null) {
-      synchronized (updateAabLock) {
+    synchronized (updateAabLock) {
+      if (currentActivity == null) {
         safeSetTaskException(
             cachedUpdateTask,
             new FirebaseAppDistributionException(
@@ -121,9 +121,9 @@ class UpdateAabClient {
             updateIntent.setData(Uri.parse(redirect));
             updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             LogWrapper.getInstance().v(TAG + "Redirecting to play");
-            currentActivity.startActivity(updateIntent);
 
             synchronized (updateAabLock) {
+              currentActivity.startActivity(updateIntent);
               cachedUpdateTask.updateProgress(
                   UpdateProgress.builder()
                       .setApkBytesDownloaded(-1)
