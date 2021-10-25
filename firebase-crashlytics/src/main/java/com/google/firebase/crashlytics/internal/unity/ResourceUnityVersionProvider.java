@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.unity;
 
 import android.content.Context;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 
@@ -24,7 +25,7 @@ public class ResourceUnityVersionProvider implements UnityVersionProvider {
       "com.google.firebase.crashlytics.unity_version";
 
   private static boolean isUnityVersionSet = false;
-  private static String unityVersion = null;
+  @Nullable private static String unityVersion = null;
 
   private final Context context;
 
@@ -33,6 +34,7 @@ public class ResourceUnityVersionProvider implements UnityVersionProvider {
    *     value was not present. This method can be invoked directly; access via the instance method
    *     from UnityVersionProvider is provided to support mocking while testing.
    */
+  @Nullable
   public static synchronized String resolveUnityEditorVersion(Context context) {
     if (isUnityVersionSet) {
       return unityVersion;
@@ -51,6 +53,7 @@ public class ResourceUnityVersionProvider implements UnityVersionProvider {
   }
 
   @Override
+  @Nullable
   public String getUnityVersion() {
     return resolveUnityEditorVersion(this.context);
   }

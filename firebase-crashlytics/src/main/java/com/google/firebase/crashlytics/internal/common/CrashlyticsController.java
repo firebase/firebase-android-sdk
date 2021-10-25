@@ -80,7 +80,6 @@ class CrashlyticsController {
   private final LogFileManager.DirectoryProvider logFileDirectoryProvider;
   private final LogFileManager logFileManager;
   private final CrashlyticsNativeComponent nativeComponent;
-  private final String unityVersion;
   private final AnalyticsEventLogger analyticsEventLogger;
   private final SessionReportingCoordinator reportingCoordinator;
 
@@ -127,7 +126,6 @@ class CrashlyticsController {
     this.logFileManager = logFileManager;
     this.logFileDirectoryProvider = logFileDirectoryProvider;
     this.nativeComponent = nativeComponent;
-    this.unityVersion = appData.unityVersionProvider.getUnityVersion();
     this.analyticsEventLogger = analyticsEventLogger;
 
     this.reportingCoordinator = sessionReportingCoordinator;
@@ -574,7 +572,7 @@ class CrashlyticsController {
     final String generator =
         String.format(Locale.US, GENERATOR_FORMAT, CrashlyticsCore.getVersion());
 
-    StaticSessionData.AppData appData = createAppData(idManager, this.appData, unityVersion);
+    StaticSessionData.AppData appData = createAppData(idManager, this.appData);
     StaticSessionData.OsData osData = createOsData(getContext());
     StaticSessionData.DeviceData deviceData = createDeviceData(getContext());
 
@@ -707,15 +705,15 @@ class CrashlyticsController {
     }
   }
 
-  private static StaticSessionData.AppData createAppData(
-      IdManager idManager, AppData appData, String unityVersion) {
+  private static StaticSessionData.AppData createAppData(IdManager idManager, AppData appData) {
     return StaticSessionData.AppData.create(
         idManager.getAppIdentifier(),
         appData.versionCode,
         appData.versionName,
         idManager.getCrashlyticsInstallId(),
         DeliveryMechanism.determineFrom(appData.installerPackageName).getId(),
-        unityVersion);
+        appData.developmentPlatform,
+        appData.developmentPlatformVersion);
   }
 
   private static StaticSessionData.OsData createOsData(Context context) {

@@ -37,7 +37,6 @@ import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
@@ -269,9 +268,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private void setupAppData(String buildId) {
-    final UnityVersionProvider unityVersionProvider = mock(UnityVersionProvider.class);
-    when(unityVersionProvider.getUnityVersion()).thenReturn("1.0");
-
     appData =
         new AppData(
             GOOGLE_APP_ID,
@@ -280,7 +276,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
             "packageName",
             "versionCode",
             "versionName",
-            unityVersionProvider);
+            "Unity",
+            "1.0");
   }
 
   private void setupResource(Integer resId, String type, String name, String value) {

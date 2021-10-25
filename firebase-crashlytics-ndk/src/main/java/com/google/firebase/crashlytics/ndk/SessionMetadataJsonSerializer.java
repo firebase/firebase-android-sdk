@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
@@ -35,14 +36,16 @@ class SessionMetadataJsonSerializer {
       String versionName,
       String installUuid,
       int deliveryMechanism,
-      String unityVersion) {
+      @Nullable String developmentPlatform,
+      @Nullable String developmentPlatformVersion) {
     final Map<String, Object> data = new HashMap<>();
     data.put("app_identifier", appIdentifier);
     data.put("version_code", versionCode);
     data.put("version_name", versionName);
     data.put("install_uuid", installUuid);
     data.put("delivery_mechanism", deliveryMechanism);
-    data.put("unity_version", unityVersion);
+    data.put("development_platform", emptyIfNull(developmentPlatform));
+    data.put("development_platform_version", emptyIfNull(developmentPlatformVersion));
     return new JSONObject(data).toString();
   }
 
@@ -75,5 +78,9 @@ class SessionMetadataJsonSerializer {
     data.put("build_manufacturer", manufacturer);
     data.put("build_product", modelClass);
     return new JSONObject(data).toString();
+  }
+
+  private static String emptyIfNull(@Nullable String str) {
+    return str == null ? "" : str;
   }
 }

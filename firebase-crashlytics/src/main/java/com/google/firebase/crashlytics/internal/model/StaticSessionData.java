@@ -45,7 +45,10 @@ public abstract class StaticSessionData {
     public abstract int deliveryMechanism();
 
     @Nullable
-    public abstract String unityVersion();
+    public abstract String developmentPlatform();
+
+    @Nullable
+    public abstract String developmentPlatformVersion();
 
     public static AppData create(
         String appIdentifier,
@@ -53,9 +56,16 @@ public abstract class StaticSessionData {
         String versionName,
         String installUuid,
         int deliveryMechanism,
-        @Nullable String unityVersion) {
+        @Nullable String developmentPlatform,
+        @Nullable String developmentPlatformVersion) {
       return new AutoValue_StaticSessionData_AppData(
-          appIdentifier, versionCode, versionName, installUuid, deliveryMechanism, unityVersion);
+          appIdentifier,
+          versionCode,
+          versionName,
+          installUuid,
+          deliveryMechanism,
+          developmentPlatform,
+          developmentPlatformVersion);
     }
   }
 
