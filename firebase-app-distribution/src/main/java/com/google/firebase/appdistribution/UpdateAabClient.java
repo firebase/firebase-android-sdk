@@ -95,7 +95,7 @@ class UpdateAabClient {
       }
     }
 
-    // The 403 redirect is obtained here to open the play store directly and avoid opening chrome
+    // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
     updateExecutor.execute(
         () -> {
           HttpsURLConnection connection;
@@ -103,7 +103,7 @@ class UpdateAabClient {
           try {
             connection = openHttpsUrlConnection(downloadUrl);
 
-            // To get url straight to play without redirect we do this connection
+            // To get url to play without redirect we do this connection
             connection.setInstanceFollowRedirects(false);
             redirect = connection.getHeaderField("Location");
             connection.disconnect();

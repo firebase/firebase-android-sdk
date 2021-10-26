@@ -38,6 +38,12 @@ public class UpdateAppClient {
     this.updateAabClient = new UpdateAabClient();
   }
 
+  public UpdateAppClient(UpdateApkClient updateApkClient, UpdateAabClient updateAabClient) {
+    this.installApkClient = new InstallApkClient();
+    this.updateApkClient = updateApkClient;
+    this.updateAabClient = updateAabClient;
+  }
+
   @NonNull
   synchronized UpdateTask updateApp(
       @Nullable AppDistributionReleaseInternal newRelease,

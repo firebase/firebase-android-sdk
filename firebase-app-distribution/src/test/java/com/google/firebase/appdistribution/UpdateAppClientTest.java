@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 
 import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
@@ -28,6 +29,8 @@ import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -57,6 +60,9 @@ public class UpdateAppClientTest {
           .setDownloadUrl(TEST_URL);
 
   private UpdateAppClient updateAppClient;
+  private UpdateApkClient updateApkClient;
+  private UpdateAabClient updateAabClient;
+  @Mock private InstallApkClient mockInstallApkClient;
 
   static class TestActivity extends Activity {}
 
@@ -79,7 +85,12 @@ public class UpdateAppClientTest {
     FirebaseAppDistributionTest.TestActivity activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
 
-    this.updateAppClient = new UpdateAppClient(firebaseApp);
+    this.updateApkClient =
+        Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
+
+    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor));
+
+    this.updateAppClient = new UpdateAppClient(updateApkClient, updateAabClient);
     this.updateAppClient.setCurrentActivity(activity);
   }
 
@@ -108,5 +119,23 @@ public class UpdateAppClientTest {
         (FirebaseAppDistributionException) updateTask.getException();
     assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
     assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
+  }
+
+  @Test
+  public void updateApp_withAabReleaseAvailable_returnsSameAabTask() {
+    AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
+    doReturn(updateTaskToReturn).when(updateAabClient).updateAab(release);
+    UpdateTask updateTask = updateAppClient.updateApp(release, false);
+    assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  @Test
+  public void updateApp_withApkReleaseAvailable_returnsSameApkTask() {
+    AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
+    doReturn(updateTaskToReturn).when(updateApkClient).updateApk(release, false);
+    UpdateTask updateTask = updateAppClient.updateApp(release, false);
+    assertEquals(updateTask, updateTaskToReturn);
   }
 }
