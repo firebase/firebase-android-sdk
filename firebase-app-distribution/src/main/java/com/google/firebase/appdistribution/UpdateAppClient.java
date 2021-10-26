@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
 
@@ -38,7 +39,8 @@ public class UpdateAppClient {
     this.updateAabClient = new UpdateAabClient();
   }
 
-  public UpdateAppClient(UpdateApkClient updateApkClient, UpdateAabClient updateAabClient) {
+  @VisibleForTesting
+  UpdateAppClient(UpdateApkClient updateApkClient, UpdateAabClient updateAabClient) {
     this.installApkClient = new InstallApkClient();
     this.updateApkClient = updateApkClient;
     this.updateAabClient = updateAabClient;
