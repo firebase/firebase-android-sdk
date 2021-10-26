@@ -240,7 +240,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // if SignInResultActivity is created, sign-in was successful
     if (activity instanceof SignInResultActivity) {
       LogWrapper.getInstance().v("Sign in completed");
-      this.testerSignInClient.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
     }
   }
@@ -258,15 +257,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     // cancel the task
     updateAppClient.tryCancelAabUpdateTask();
 
-    // Throw error if app reentered during sign in
-    if (this.testerSignInClient.isCurrentlySigningIn()) {
-      LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
-      testerSignInClient.setCanceledAuthenticationError();
-    }
-
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
-    this.testerSignInClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -279,7 +271,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     this.currentActivity = activity;
     this.updateAppClient.setCurrentActivity(activity);
-    this.testerSignInClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -288,7 +279,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
   }
 
@@ -298,7 +288,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
   }
 
@@ -319,7 +308,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     if (this.currentActivity == activity) {
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
-      this.testerSignInClient.setCurrentActivity(null);
     }
 
     if (activity instanceof InstallActivity) {
