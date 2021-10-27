@@ -33,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.google.android.gms.tasks.Task;
@@ -65,6 +66,7 @@ public class CustomModelDownloadServiceTest {
   private static final String PROJECT_ID = "md-androidtest";
   private static final String MODEL_NAME = "ModelDownloaderTest";
   private static final String API_KEY = "my_firebase_project_api_key";
+  private static final String PACKAGE_FINGERPRINT_HASH = "my_firebase_project_fingerprint_hash";
   private static final String MODEL_HASH = "ModelHash_392043";
 
   private static final String TEST_ENDPOINT = "http://localhost:8979";
@@ -167,7 +169,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
@@ -179,7 +187,60 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+  }
+
+  @Test
+  public void downloadService_fingerPrintHashNull_NoCertHeader() {
+    String downloadPath =
+        String.format(CustomModelDownloadService.DOWNLOAD_MODEL_REGEX, "", PROJECT_ID, MODEL_NAME);
+    stubFor(
+        get(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(
+                CustomModelDownloadService.CONTENT_TYPE,
+                equalTo(CustomModelDownloadService.APPLICATION_JSON))
+            .willReturn(
+                aResponse()
+                    .withStatus(HttpURLConnection.HTTP_OK)
+                    .withHeader(CustomModelDownloadService.ETAG_HEADER, MODEL_HASH)
+                    .withBody(RESPONSE_BODY)));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            null,
+            TEST_ENDPOINT,
+            mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
+
+    Assert.assertEquals(
+        modelTask.getResult(),
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
+
+    WireMock.verify(
+        getRequestedFor(urlEqualTo(downloadPath))
+            .withHeader(
+                CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withoutHeader(CustomModelDownloadService.X_ANDROID_CERT_HEADER));
   }
 
   @Test
@@ -202,7 +263,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -214,7 +281,14 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
   }
 
   @Test
@@ -237,7 +311,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -247,7 +327,14 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
   }
 
   @Test
@@ -273,7 +360,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -285,7 +378,14 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
     verify(mockEventLogger, never()).logModelInfoRetrieverFailure(any(), any(), anyInt());
   }
 
@@ -312,7 +412,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -325,7 +431,15 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+
     verify(mockEventLogger, times(1))
         .logModelInfoRetrieverFailure(
             any(),
@@ -356,7 +470,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -369,7 +489,15 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+
     verify(mockEventLogger, times(1))
         .logModelInfoRetrieverFailure(
             any(),
@@ -400,7 +528,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -412,7 +546,15 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+
     verify(mockEventLogger, times(1))
         .logModelInfoRetrieverFailure(
             any(),
@@ -443,7 +585,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -456,7 +604,15 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+
     verify(mockEventLogger, times(1))
         .logModelInfoRetrieverFailure(
             any(), eq(ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS), eq(429));
@@ -479,13 +635,18 @@ public class CustomModelDownloadServiceTest {
                 aResponse()
                     .withStatus(HttpURLConnection.HTTP_UNAUTHORIZED) // not authorized
                     .withBody(
-                        "{\"error\": "
-                            + "{\"message\":\"Request is missing required authentication credential.\", "
-                            + "\"status\":\"UNAUTHORIZED\",\"code\":401}}")));
+                        "{\"error\": {\"message\":\"Request is missing required authentication"
+                            + " credential.\", \"status\":\"UNAUTHORIZED\",\"code\":401}}")));
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -503,7 +664,15 @@ public class CustomModelDownloadServiceTest {
         getRequestedFor(urlEqualTo(downloadPath))
             .withHeader(
                 CustomModelDownloadService.INSTALLATIONS_AUTH_TOKEN_HEADER,
-                equalTo(INSTALLATION_TOKEN)));
+                equalTo(INSTALLATION_TOKEN))
+            .withHeader(CustomModelDownloadService.API_KEY_HEADER, equalTo(API_KEY))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_PACKAGE_HEADER,
+                equalTo(ApplicationProvider.getApplicationContext().getPackageName()))
+            .withHeader(
+                CustomModelDownloadService.X_ANDROID_CERT_HEADER,
+                equalTo(PACKAGE_FINGERPRINT_HASH)));
+
     verify(mockEventLogger, times(1))
         .logModelInfoRetrieverFailure(
             any(),
@@ -518,7 +687,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -537,9 +712,11 @@ public class CustomModelDownloadServiceTest {
   public void downloadService_malFormedUrl() {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
+            ApplicationProvider.getApplicationContext(),
             installationsApiMock,
             directExecutor,
             API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
             "https7://localhost:8989/barUrl",
             mockEventLogger);
 
@@ -563,7 +740,13 @@ public class CustomModelDownloadServiceTest {
 
     CustomModelDownloadService service =
         new CustomModelDownloadService(
-            installationsApiMock, directExecutor, API_KEY, TEST_ENDPOINT, mockEventLogger);
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
