@@ -44,8 +44,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A SQLite-backed instance of Persistence.
@@ -54,6 +56,10 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+  enum DataMigration {
+    BuildOverlays
+  }
+
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -77,7 +83,7 @@ public final class SQLitePersistence extends Persistence {
     }
   }
 
-  private final SQLiteOpenHelper opener;
+  private final OpenHelper opener;
   private final LocalSerializer serializer;
   private final SQLiteTargetCache targetCache;
   private final SQLiteBundleCache bundleCache;
@@ -85,6 +91,7 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
   private final IndexBackfiller indexBackfiller;
+  private Set<DataMigration> dataMigrations = new HashSet<>();
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
@@ -117,7 +124,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   public SQLitePersistence(
-      LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
+      LocalSerializer serializer, LruGarbageCollector.Params params, OpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
@@ -146,6 +153,7 @@ public final class SQLitePersistence extends Persistence {
               + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
+    dataMigrations = opener.dataMigrations;
     targetCache.start();
     referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
@@ -195,6 +203,11 @@ public final class SQLitePersistence extends Persistence {
   @Override
   DocumentOverlayCache getDocumentOverlay(User user) {
     return new SQLiteDocumentOverlayCache(this, this.serializer, user);
+  }
+
+  @Override
+  DataMigrationManager getDataMigrationManager() {
+    return new SQLiteDataMigrationManager(this, this.dataMigrations);
   }
 
   @Override
@@ -293,13 +306,21 @@ public final class SQLitePersistence extends Persistence {
    * this happens naturally during onConfigure. On pre-Jelly Bean devices all other methods ensure
    * that the configuration is applied before any action is taken.
    */
-  private static class OpenHelper extends SQLiteOpenHelper {
+  @VisibleForTesting
+  static class OpenHelper extends SQLiteOpenHelper {
 
     private final LocalSerializer serializer;
     private boolean configured;
+    private Set<DataMigration> dataMigrations = new HashSet<>();
 
-    OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
-      super(context, databaseName, null, SQLiteSchema.VERSION);
+    private OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
+      this(context, serializer, databaseName, SQLiteSchema.VERSION);
+    }
+
+    @VisibleForTesting
+    OpenHelper(
+        Context context, LocalSerializer serializer, String databaseName, int schemaVersion) {
+      super(context, databaseName, null, schemaVersion);
       this.serializer = serializer;
     }
 
@@ -326,13 +347,13 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(0);
+      dataMigrations = new SQLiteSchema(db, serializer).runMigrations(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(oldVersion);
+      dataMigrations = new SQLiteSchema(db, serializer).runMigrations(oldVersion);
     }
 
     @Override

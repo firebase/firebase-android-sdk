@@ -100,6 +100,8 @@ public abstract class Persistence {
   /** Returns a DocumentOverlayCache representing the documents that are mutated locally. */
   abstract DocumentOverlayCache getDocumentOverlay(User user);
 
+  abstract DataMigrationManager getDataMigrationManager();
+
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence
    * must be performed within a transaction. Writes will be committed atomically once the

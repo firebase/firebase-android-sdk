@@ -138,6 +138,11 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
+  DataMigrationManager getDataMigrationManager() {
+    return new MemoryDataMigrationManager();
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     referenceDelegate.onTransactionStarted();
     try {

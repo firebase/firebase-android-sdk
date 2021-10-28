@@ -31,7 +31,9 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Migrates schemas from version 0 (empty) to whatever the current version is.
@@ -74,11 +76,11 @@ class SQLiteSchema {
     this.serializer = serializer;
   }
 
-  void runMigrations() {
-    runMigrations(0, VERSION);
+  Set<SQLitePersistence.DataMigration> runMigrations() {
+    return runMigrations(0, VERSION);
   }
 
-  void runMigrations(int fromVersion) {
+  Set<SQLitePersistence.DataMigration> runMigrations(int fromVersion) {
     int toVersion = VERSION;
     if (Persistence.OVERLAY_SUPPORT_ENABLED) {
       toVersion = OVERLAY_SUPPORT_VERSION;
@@ -86,7 +88,7 @@ class SQLiteSchema {
     if (Persistence.INDEXING_SUPPORT_ENABLED) {
       toVersion = INDEXING_SUPPORT_VERSION;
     }
-    runMigrations(fromVersion, toVersion);
+    return runMigrations(fromVersion, toVersion);
   }
 
   /**
@@ -96,7 +98,8 @@ class SQLiteSchema {
    * @param toVersion The version the database is migrating to. Usually VERSION, but can be
    *     otherwise for testing.
    */
-  void runMigrations(int fromVersion, int toVersion) {
+  Set<SQLitePersistence.DataMigration> runMigrations(int fromVersion, int toVersion) {
+    Set<SQLitePersistence.DataMigration> dataMigrations = new HashSet<>();
     /*
      * New migrations should be added at the end of the series of `if` statements and should follow
      * the pattern. Make sure to increment `VERSION` and to read the comment below about
@@ -186,6 +189,7 @@ class SQLiteSchema {
       Preconditions.checkState(
           Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
+      dataMigrations.add(SQLitePersistence.DataMigration.BuildOverlays);
     }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
@@ -193,6 +197,8 @@ class SQLiteSchema {
       createFieldIndex();
       createCollectionGroupsTable();
     }
+
+    return dataMigrations;
   }
 
   /**

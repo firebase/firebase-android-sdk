@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -32,8 +33,9 @@ import static org.junit.Assert.assertTrue;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import androidx.test.core.app.ApplicationProvider;
+
+import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -70,7 +72,7 @@ public class SQLiteSchemaTest {
 
   private SQLiteDatabase db;
   private SQLiteSchema schema;
-  private SQLiteOpenHelper opener;
+  private SQLitePersistence.OpenHelper opener;
 
   private DatabaseId databaseId;
   private LocalSerializer serializer;
@@ -80,7 +82,8 @@ public class SQLiteSchemaTest {
     databaseId = DatabaseId.forProject("foo");
     serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     opener =
-        new SQLiteOpenHelper(ApplicationProvider.getApplicationContext(), "foo", null, 1) {
+        new SQLitePersistence.OpenHelper(
+            ApplicationProvider.getApplicationContext(), serializer, "foo", 1) {
           @Override
           public void onCreate(SQLiteDatabase db) {}
 
@@ -638,6 +641,21 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsOverlaysTable() {
+    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    try {
+      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+
+      Set<SQLitePersistence.DataMigration> migrations = schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+
+      assertSetEquals(Lists.newArrayList(SQLitePersistence.DataMigration.BuildOverlays), migrations);
+      assertTableExists("document_overlays");
+    } finally {
+      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
+    }
+  }
+
+  @Test
+  public void buildsOverlays() {
     boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
     try {
       Persistence.OVERLAY_SUPPORT_ENABLED = true;
