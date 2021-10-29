@@ -26,8 +26,10 @@ import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLI
 import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT_LOG_TYPE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -72,7 +74,8 @@ public class NetworkClientTest {
   private static final String SDK_NAME = "fire-app-check";
 
   @Mock HttpURLConnection mockHttpUrlConnection;
-  @Mock OutputStream outputStream;
+  @Mock OutputStream mockOutputStream;
+  @Mock RetryManager mockRetryManager;
 
   private FirebaseApp firebaseApp;
   private NetworkClient networkClient;
@@ -88,6 +91,7 @@ public class NetworkClientTest {
     networkClient = spy(new NetworkClient(firebaseApp));
 
     doReturn(mockHttpUrlConnection).when(networkClient).createHttpUrlConnection(any(URL.class));
+    when(mockRetryManager.canRetry()).thenReturn(true);
   }
 
   @Test
@@ -104,21 +108,23 @@ public class NetworkClientTest {
       throws Exception {
     JSONObject responseBodyJson = createAttestationResponse();
 
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(outputStream);
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
     when(mockHttpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
 
     AppCheckTokenResponse tokenResponse =
         networkClient.exchangeAttestationForAppCheckToken(
-            JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET);
+            JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
     assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
     URL expectedUrl = new URL(SAFETY_NET_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(outputStream)
+    verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -126,7 +132,7 @@ public class NetworkClientTest {
   public void exchangeSafetyNetToken_errorResponse_throwsException() throws Exception {
     JSONObject responseBodyJson = createHttpErrorResponse();
 
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(outputStream);
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
     when(mockHttpUrlConnection.getErrorStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(ERROR_CODE);
@@ -136,13 +142,15 @@ public class NetworkClientTest {
             FirebaseException.class,
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
-                    JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET));
+                    JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager));
 
     assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
     URL expectedUrl = new URL(SAFETY_NET_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(outputStream)
+    verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -150,21 +158,23 @@ public class NetworkClientTest {
   public void exchangeDebugToken_successResponse_returnsAppCheckTokenResponse() throws Exception {
     JSONObject responseBodyJson = createAttestationResponse();
 
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(outputStream);
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
     when(mockHttpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
 
     AppCheckTokenResponse tokenResponse =
         networkClient.exchangeAttestationForAppCheckToken(
-            JSON_REQUEST.getBytes(), NetworkClient.DEBUG);
+            JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager);
     assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
     URL expectedUrl = new URL(DEBUG_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(outputStream)
+    verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -172,7 +182,7 @@ public class NetworkClientTest {
   public void exchangeDebugToken_errorResponse_throwsException() throws Exception {
     JSONObject responseBodyJson = createHttpErrorResponse();
 
-    when(mockHttpUrlConnection.getOutputStream()).thenReturn(outputStream);
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
     when(mockHttpUrlConnection.getErrorStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(ERROR_CODE);
@@ -182,13 +192,15 @@ public class NetworkClientTest {
             FirebaseException.class,
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
-                    JSON_REQUEST.getBytes(), NetworkClient.DEBUG));
+                    JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager));
 
     assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
     URL expectedUrl = new URL(DEBUG_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
-    verify(outputStream)
+    verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -198,7 +210,26 @@ public class NetworkClientTest {
         IllegalArgumentException.class,
         () ->
             networkClient.exchangeAttestationForAppCheckToken(
-                JSON_REQUEST.getBytes(), NetworkClient.UNKNOWN));
+                JSON_REQUEST.getBytes(), NetworkClient.UNKNOWN, mockRetryManager));
+
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
+  }
+
+  @Test
+  public void exchangeAttestation_cannotRetry_throwsException() {
+    when(mockRetryManager.canRetry()).thenReturn(false);
+
+    FirebaseException exception =
+        assertThrows(
+            FirebaseException.class,
+            () ->
+                networkClient.exchangeAttestationForAppCheckToken(
+                    JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager));
+
+    assertThat(exception.getMessage()).contains("Too many attempts");
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
   }
 
   private void verifyRequestHeaders() {

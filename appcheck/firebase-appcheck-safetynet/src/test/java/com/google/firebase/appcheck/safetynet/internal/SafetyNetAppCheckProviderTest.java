@@ -36,6 +36,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
+import com.google.firebase.appcheck.internal.RetryManager;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
@@ -63,6 +64,8 @@ public class SafetyNetAppCheckProviderTest {
   @Mock private GoogleApiAvailability mockGoogleApiAvailability;
   @Mock private SafetyNetClient mockSafetyNetClient;
   @Mock private NetworkClient mockNetworkClient;
+  @Mock private RetryManager mockRetryManager;
+  @Mock private SafetyNetApi.AttestationResponse mockSafetyNetAttestationResponse;
   @Mock private AppCheckTokenResponse mockAppCheckTokenResponse;
 
   @Before
@@ -110,7 +113,11 @@ public class SafetyNetAppCheckProviderTest {
   public void testGetToken_nonNullSafetyNetClient_expectCallsSafetyNetForAttestation() {
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
     assertThat(provider.getSafetyNetClientTask().getResult()).isEqualTo(mockSafetyNetClient);
 
     Task<SafetyNetApi.AttestationResponse> safetyNetTask =
@@ -128,7 +135,11 @@ public class SafetyNetAppCheckProviderTest {
   public void testExchangeSafetyNetJwsForToken_nullAttestationResponse_expectThrows() {
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
     assertThrows(
         NullPointerException.class,
         () -> {
@@ -139,39 +150,58 @@ public class SafetyNetAppCheckProviderTest {
 
   @Test
   public void testExchangeSafetyNetJwsForToken_emptySafetyNetJwsResult_expectThrows() {
+    when(mockSafetyNetAttestationResponse.getJwsResult()).thenReturn("");
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
     assertThrows(
         IllegalArgumentException.class,
         () -> {
-          provider.exchangeSafetyNetJwsResultForToken(/* safetyNetJwsResult= */ "");
+          provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
         });
   }
 
   @Test
   public void testExchangeSafetyNetJwsForToken_validFields_expectReturnsTask() {
+    when(mockSafetyNetAttestationResponse.getJwsResult()).thenReturn(SAFETY_NET_TOKEN);
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
-    Task<AppCheckToken> task = provider.exchangeSafetyNetJwsResultForToken(SAFETY_NET_TOKEN);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task =
+        provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
     assertThat(task).isNotNull();
   }
 
   @Test
   public void exchangeSafetyNetJwsForToken_onSuccess_setsTaskResult() throws Exception {
-    when(mockNetworkClient.exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.SAFETY_NET)))
+    when(mockSafetyNetAttestationResponse.getJwsResult()).thenReturn(SAFETY_NET_TOKEN);
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager)))
         .thenReturn(mockAppCheckTokenResponse);
     when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
-    Task<AppCheckToken> task = provider.exchangeSafetyNetJwsResultForToken(SAFETY_NET_TOKEN);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task =
+        provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
 
     verify(mockNetworkClient)
-        .exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.SAFETY_NET));
+        .exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager));
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
@@ -180,16 +210,24 @@ public class SafetyNetAppCheckProviderTest {
 
   @Test
   public void exchangeSafetyNetJwsForToken_onFailure_setsTaskException() throws Exception {
-    when(mockNetworkClient.exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.SAFETY_NET)))
+    when(mockSafetyNetAttestationResponse.getJwsResult()).thenReturn(SAFETY_NET_TOKEN);
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager)))
         .thenThrow(new IOException());
 
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp, mockSafetyNetClient, mockNetworkClient, backgroundExecutor);
-    Task<AppCheckToken> task = provider.exchangeSafetyNetJwsResultForToken(SAFETY_NET_TOKEN);
+            firebaseApp,
+            mockSafetyNetClient,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
+    Task<AppCheckToken> task =
+        provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
 
     verify(mockNetworkClient)
-        .exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.SAFETY_NET));
+        .exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager));
 
     assertThat(task.isSuccessful()).isFalse();
     Exception exception = task.getException();

@@ -35,6 +35,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
+import com.google.firebase.appcheck.internal.RetryManager;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -51,6 +52,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private final Task<SafetyNetClient> safetyNetClientTask;
   private final NetworkClient networkClient;
   private final ExecutorService backgroundExecutor;
+  private final RetryManager retryManager;
   private final String apiKey;
 
   /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
@@ -70,6 +72,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     this.backgroundExecutor = backgroundExecutor;
     this.safetyNetClientTask = initSafetyNetClient(googleApiAvailability, this.backgroundExecutor);
     this.networkClient = new NetworkClient(firebaseApp);
+    this.retryManager = new RetryManager();
   }
 
   @VisibleForTesting
@@ -77,12 +80,14 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull SafetyNetClient safetyNetClient,
       @NonNull NetworkClient networkClient,
-      @NonNull ExecutorService backgroundExecutor) {
+      @NonNull ExecutorService backgroundExecutor,
+      @NonNull RetryManager retryManager) {
     this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.safetyNetClientTask = Tasks.forResult(safetyNetClient);
     this.networkClient = networkClient;
     this.backgroundExecutor = backgroundExecutor;
+    this.retryManager = retryManager;
   }
 
   private Task<SafetyNetClient> initSafetyNetClient(
@@ -159,16 +164,12 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   }
 
   @NonNull
-  public Task<AppCheckToken> exchangeSafetyNetAttestationResponseForToken(
+  Task<AppCheckToken> exchangeSafetyNetAttestationResponseForToken(
       @NonNull SafetyNetApi.AttestationResponse attestationResponse) {
     checkNotNull(attestationResponse);
-    return exchangeSafetyNetJwsResultForToken(attestationResponse.getJwsResult());
-  }
-
-  @NonNull
-  public Task<AppCheckToken> exchangeSafetyNetJwsResultForToken(
-      @NonNull String safetyNetJwsResult) {
+    String safetyNetJwsResult = attestationResponse.getJwsResult();
     checkNotEmpty(safetyNetJwsResult);
+
     ExchangeSafetyNetTokenRequest request = new ExchangeSafetyNetTokenRequest(safetyNetJwsResult);
 
     Task<AppCheckTokenResponse> networkTask =
@@ -176,7 +177,9 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
             backgroundExecutor,
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
-                    request.toJsonString().getBytes(UTF_8), NetworkClient.SAFETY_NET));
+                    request.toJsonString().getBytes(UTF_8),
+                    NetworkClient.SAFETY_NET,
+                    retryManager));
     return networkTask.continueWithTask(
         new Continuation<AppCheckTokenResponse, Task<AppCheckToken>>() {
           @Override

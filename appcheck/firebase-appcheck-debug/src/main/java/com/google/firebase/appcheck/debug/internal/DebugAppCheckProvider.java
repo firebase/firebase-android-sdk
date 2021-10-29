@@ -30,6 +30,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
+import com.google.firebase.appcheck.internal.RetryManager;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,12 +42,14 @@ public class DebugAppCheckProvider implements AppCheckProvider {
 
   private final NetworkClient networkClient;
   private final ExecutorService backgroundExecutor;
+  private final RetryManager retryManager;
   private final Task<String> debugSecretTask;
 
   public DebugAppCheckProvider(@NonNull FirebaseApp firebaseApp, @Nullable String debugSecret) {
     checkNotNull(firebaseApp);
     this.networkClient = new NetworkClient(firebaseApp);
     this.backgroundExecutor = Executors.newCachedThreadPool();
+    this.retryManager = new RetryManager();
     this.debugSecretTask =
         debugSecret == null
             ? determineDebugSecret(firebaseApp, this.backgroundExecutor)
@@ -57,9 +60,11 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   DebugAppCheckProvider(
       @NonNull String debugSecret,
       @NonNull NetworkClient networkClient,
-      @NonNull ExecutorService backgroundExecutor) {
+      @NonNull ExecutorService backgroundExecutor,
+      @NonNull RetryManager retryManager) {
     this.networkClient = networkClient;
     this.backgroundExecutor = backgroundExecutor;
+    this.retryManager = retryManager;
     this.debugSecretTask = Tasks.forResult(debugSecret);
   }
 
@@ -100,7 +105,9 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                     backgroundExecutor,
                     () ->
                         networkClient.exchangeAttestationForAppCheckToken(
-                            request.toJsonString().getBytes(UTF_8), NetworkClient.DEBUG));
+                            request.toJsonString().getBytes(UTF_8),
+                            NetworkClient.DEBUG,
+                            retryManager));
               }
             })
         .continueWithTask(
