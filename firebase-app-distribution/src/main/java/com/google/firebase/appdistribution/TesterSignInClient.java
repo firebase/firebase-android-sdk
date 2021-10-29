@@ -39,12 +39,9 @@ import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 class TesterSignInClient {
   private static final String TAG = "TesterSignIn:";
-  private final ExecutorService executor;
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
   private final String SIGNIN_REDIRECT_URL =
@@ -77,9 +74,13 @@ class TesterSignInClient {
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.executor = Executors.newSingleThreadExecutor();
 
-    lifecycleNotifier.addOnActivityStartedListener(executor, this::onActivityStarted);
+    lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
+  }
+
+  private void onActivityDestroyed(Activity activity) {
+    this.dismissAlertDialog();
   }
 
   @VisibleForTesting
@@ -124,7 +125,7 @@ class TesterSignInClient {
     }
     signInTaskCompletionSource = new TaskCompletionSource<>();
 
-    AlertDialog alertDialog = getSignInAlertDialog(currentActivity);
+    alertDialog = getSignInAlertDialog(currentActivity);
     alertDialog.show();
 
     return signInTaskCompletionSource.getTask();
@@ -195,7 +196,7 @@ class TesterSignInClient {
   }
 
   private void dismissAlertDialog() {
-    if (alertDialog != null) {
+    if (alertDialog != null && alertDialog.isShowing()) {
       alertDialog.dismiss();
     }
   }
