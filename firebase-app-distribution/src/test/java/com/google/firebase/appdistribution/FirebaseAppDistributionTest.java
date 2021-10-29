@@ -150,35 +150,6 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_whenReopenAppDuringSignIn_setsSignInException() {
-    when(mockTesterSignInClient.isCurrentlySigningIn()).thenReturn(true);
-
-    firebaseAppDistribution.signInTester();
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
-
-    firebaseAppDistribution.onActivityStarted(activity);
-    verify(mockTesterSignInClient, times(1)).setCanceledAuthenticationError();
-  }
-
-  @Test
-  public void signInTester_whenReturnFromSignIn_taskSucceeds() {
-    firebaseAppDistribution.onActivityResumed(activity);
-    firebaseAppDistribution.signInTester();
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
-
-    firebaseAppDistribution.onActivityCreated(mockSignInResultActivity, mockBundle);
-    verify(mockTesterSignInClient, times(1)).setSuccessfulSignInResult();
-  }
-
-  @Test
   public void checkForNewRelease_whenCheckForNewReleaseFails_throwsError() throws Exception {
     firebaseAppDistribution.setCachedNewRelease(null);
     when(mockCheckForNewReleaseClient.checkForNewRelease())
