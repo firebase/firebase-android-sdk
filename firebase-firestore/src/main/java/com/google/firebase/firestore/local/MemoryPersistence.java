@@ -61,7 +61,7 @@ public final class MemoryPersistence extends Persistence {
     indexManager = new MemoryIndexManager();
     targetCache = new MemoryTargetCache(this);
     bundleCache = new MemoryBundleCache();
-    remoteDocumentCache = new MemoryRemoteDocumentCache(this);
+    remoteDocumentCache = new MemoryRemoteDocumentCache();
     overlays = new HashMap<>();
   }
 
@@ -97,7 +97,7 @@ public final class MemoryPersistence extends Persistence {
   MutationQueue getMutationQueue(User user) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
-      queue = new MemoryMutationQueue(this);
+      queue = new MemoryMutationQueue(this, indexManager);
       mutationQueues.put(user, queue);
     }
     return queue;
@@ -118,7 +118,9 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  IndexManager getIndexManager() {
+  MemoryIndexManager getIndexManager(User user) {
+    // We do not currently support indices for memory persistence, so we can return the same shared
+    // instance of the memory index manager.
     return indexManager;
   }
 

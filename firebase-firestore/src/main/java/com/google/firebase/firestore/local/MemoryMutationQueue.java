@@ -69,14 +69,16 @@ final class MemoryMutationQueue implements MutationQueue {
   private ByteString lastStreamToken;
 
   private final MemoryPersistence persistence;
+  private final MemoryIndexManager indexManager;
 
-  MemoryMutationQueue(MemoryPersistence persistence) {
+  MemoryMutationQueue(MemoryPersistence persistence, MemoryIndexManager indexManager) {
     this.persistence = persistence;
     queue = new ArrayList<>();
 
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
     lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
+    this.indexManager = indexManager;
   }
 
   // MutationQueue implementation
@@ -149,9 +151,7 @@ final class MemoryMutationQueue implements MutationQueue {
       batchesByDocumentKey =
           batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
 
-      persistence
-          .getIndexManager()
-          .addToCollectionParentIndex(mutation.getKey().getPath().popLast());
+      indexManager.addToCollectionParentIndex(mutation.getKey().getPath().popLast());
     }
 
     return batch;

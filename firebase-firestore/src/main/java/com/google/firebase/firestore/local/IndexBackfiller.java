@@ -19,7 +19,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -39,14 +38,23 @@ public class IndexBackfiller {
   /** The maximum number of entries to write each time backfill() is called. */
   private static final int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
 
-  private final SQLitePersistence persistence;
-  private final SQLiteIndexManager indexManager;
-
+  private final Scheduler scheduler;
+  private final Persistence persistence;
+  private LocalDocumentsView localDocumentsView;
+  private IndexManager indexManager;
   private int maxIndexEntriesToProcess = MAX_INDEX_ENTRIES_TO_PROCESS;
 
-  public IndexBackfiller(SQLitePersistence sqLitePersistence) {
-    this.persistence = sqLitePersistence;
-    this.indexManager = (SQLiteIndexManager) sqLitePersistence.getIndexManager();
+  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
+    this.persistence = persistence;
+    this.scheduler = new Scheduler(asyncQueue);
+  }
+
+  public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
+    this.localDocumentsView = localDocumentsView;
+  }
+
+  public void setIndexManager(IndexManager indexManager) {
+    this.indexManager = indexManager;
   }
 
   public static class Results {
@@ -78,15 +86,13 @@ public class IndexBackfiller {
     }
   }
 
-  public class BackfillScheduler implements Scheduler {
-    private final AsyncQueue asyncQueue;
-    private final LocalStore localStore;
+  public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
     private boolean hasRun = false;
     @Nullable private AsyncQueue.DelayedTask backfillTask;
+    private final AsyncQueue asyncQueue;
 
-    public BackfillScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
+    public Scheduler(AsyncQueue asyncQueue) {
       this.asyncQueue = asyncQueue;
-      this.localStore = localStore;
     }
 
     @Override
@@ -108,23 +114,28 @@ public class IndexBackfiller {
               AsyncQueue.TimerId.INDEX_BACKFILL,
               delay,
               () -> {
-                localStore.backfillIndexes(IndexBackfiller.this);
+                backfill();
                 hasRun = true;
                 scheduleBackfill();
               });
     }
   }
 
-  public BackfillScheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
-    return new BackfillScheduler(asyncQueue, localStore);
+  public Scheduler getScheduler() {
+    return scheduler;
   }
 
-  public Results backfill(LocalDocumentsView localDocumentsView) {
-    // TODO(indexing): Handle field indexes that are removed by the user.
-    return new Results(
-        /* hasRun= */ true,
-        /* numIndexesWritten= */ writeIndexEntries(localDocumentsView),
-        /* numIndexesRemoved= */ 0);
+  public Results backfill() {
+    return persistence.runTransaction(
+        "Backfill Indexes",
+        () -> {
+          // TODO(indexing): Handle field indexes that are removed by the user.
+          int entriesAdded = writeIndexEntries(localDocumentsView);
+          return new Results(
+              /* hasRun= */ true,
+              /* numIndexesWritten= */ entriesAdded,
+              /* numIndexesRemoved= */ 0);
+        });
   }
 
   /** Writes index entries until the cap is reached. Returns the number of entries written. */
@@ -181,53 +192,5 @@ public class IndexBackfiller {
   @VisibleForTesting
   void setMaxIndexEntriesToProcess(int newMax) {
     maxIndexEntriesToProcess = newMax;
-  }
-
-  @VisibleForTesting
-  void addIndexEntry(IndexEntry entry) {
-    persistence.execute(
-        "INSERT OR IGNORE INTO index_entries ("
-            + "index_id, "
-            + "array_value, "
-            + "directional_value, "
-            + "uid, "
-            + "document_name) VALUES(?, ?, ?, ?, ?)",
-        entry.getIndexId(),
-        entry.getArrayValue(),
-        entry.getDirectionalValue(),
-        entry.getUid(),
-        entry.getDocumentName());
-  }
-
-  @VisibleForTesting
-  void removeIndexEntry(int indexId, String uid, String documentName) {
-    persistence.execute(
-        "DELETE FROM index_entries "
-            + "WHERE index_id = ? "
-            + "AND uid = ?"
-            + "AND document_name = ?",
-        indexId,
-        uid,
-        documentName);
-    ;
-  }
-
-  @Nullable
-  @VisibleForTesting
-  IndexEntry getIndexEntry(int indexId) {
-    return persistence
-        .query(
-            "SELECT array_value, directional_value, uid, document_name FROM index_entries WHERE index_id = ?")
-        .binding(indexId)
-        .firstValue(
-            row ->
-                row == null
-                    ? null
-                    : new IndexEntry(
-                        indexId,
-                        row.getBlob(0),
-                        row.getBlob(1),
-                        row.getString(2),
-                        row.getString(3)));
   }
 }

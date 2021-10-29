@@ -32,6 +32,7 @@ import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.bundle.BundleSerializer;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryResult;
@@ -73,11 +74,10 @@ public final class FirestoreClient {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private IndexBackfiller indexBackfiller;
 
   // LRU-related
   @Nullable private Scheduler gcScheduler;
-
-  @Nullable private Scheduler indexBackfillScheduler;
 
   public FirestoreClient(
       final Context context,
@@ -156,8 +156,8 @@ public final class FirestoreClient {
             gcScheduler.stop();
           }
 
-          if (indexBackfillScheduler != null) {
-            indexBackfillScheduler.stop();
+          if (Persistence.INDEXING_SUPPORT_ENABLED) {
+            indexBackfiller.getScheduler().stop();
           }
         });
   }
@@ -277,15 +277,14 @@ public final class FirestoreClient {
     remoteStore = provider.getRemoteStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
+    indexBackfiller = provider.getIndexBackfiller();
 
     if (gcScheduler != null) {
       gcScheduler.start();
     }
 
     if (Persistence.INDEXING_SUPPORT_ENABLED && settings.isPersistenceEnabled()) {
-      indexBackfillScheduler = provider.getIndexBackfillScheduler();
-      hardAssert(indexBackfillScheduler != null, "Index backfill scheduler should not be null.");
-      indexBackfillScheduler.start();
+      indexBackfiller.getScheduler().start();
     }
   }
 

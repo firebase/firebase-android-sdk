@@ -39,10 +39,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private IndexManager indexManager;
 
   SQLiteRemoteDocumentCache(SQLitePersistence persistence, LocalSerializer serializer) {
     this.db = persistence;
     this.serializer = serializer;
+  }
+
+  @Override
+  public void setIndexManager(IndexManager indexManager) {
+    this.indexManager = indexManager;
   }
 
   @Override
@@ -64,7 +70,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         timestamp.getNanoseconds(),
         message.toByteArray());
 
-    db.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override

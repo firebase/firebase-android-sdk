@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.Scheduler;
@@ -39,8 +40,8 @@ public abstract class ComponentProvider {
   private RemoteStore remoteStore;
   private EventManager eventManager;
   private ConnectivityMonitor connectivityMonitor;
+  private IndexBackfiller indexBackfiller;
   @Nullable private Scheduler garbageCollectionScheduler;
-  @Nullable private Scheduler indexBackfillScheduler;
 
   /** Configuration options for the component provider. */
   public static class Configuration {
@@ -108,9 +109,8 @@ public abstract class ComponentProvider {
     return garbageCollectionScheduler;
   }
 
-  @Nullable
-  public Scheduler getIndexBackfillScheduler() {
-    return indexBackfillScheduler;
+  public IndexBackfiller getIndexBackfiller() {
+    return indexBackfiller;
   }
 
   public LocalStore getLocalStore() {
@@ -136,6 +136,7 @@ public abstract class ComponentProvider {
   public void initialize(Configuration configuration) {
     persistence = createPersistence(configuration);
     persistence.start();
+    indexBackfiller = createIndexBackfiller(configuration);
     localStore = createLocalStore(configuration);
     connectivityMonitor = createConnectivityMonitor(configuration);
     remoteStore = createRemoteStore(configuration);
@@ -144,12 +145,11 @@ public abstract class ComponentProvider {
     localStore.start();
     remoteStore.start();
     garbageCollectionScheduler = createGarbageCollectionScheduler(configuration);
-    indexBackfillScheduler = createIndexBackfillScheduler(configuration);
   }
 
   protected abstract Scheduler createGarbageCollectionScheduler(Configuration configuration);
 
-  protected abstract Scheduler createIndexBackfillScheduler(Configuration configuration);
+  protected abstract IndexBackfiller createIndexBackfiller(Configuration configuration);
 
   protected abstract EventManager createEventManager(Configuration configuration);
 

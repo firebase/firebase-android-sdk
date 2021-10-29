@@ -54,6 +54,11 @@ public class DefaultQueryEngine implements QueryEngine {
   }
 
   @Override
+  public void setIndexManager(IndexManager indexManager) {
+    // DefaultQueryEngine does not use indices.
+  }
+
+  @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,

@@ -22,6 +22,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.local.DefaultQueryEngine;
+import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
@@ -78,7 +79,9 @@ public class RemoteStoreTest {
     DefaultQueryEngine queryEngine = new DefaultQueryEngine();
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
-    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    LocalStore localStore =
+        new LocalStore(persistence, indexBackfiller, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 

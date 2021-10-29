@@ -33,17 +33,21 @@ public class IndexedQueryEngine implements QueryEngine {
 
   private static final String LOG_TAG = "IndexedQueryEngine";
 
-  private final IndexManager indexManager;
+  private IndexManager indexManager;
   private LocalDocumentsView localDocuments;
 
-  public IndexedQueryEngine(IndexManager indexManager) {
+  public IndexedQueryEngine() {
     hardAssert(Persistence.INDEXING_SUPPORT_ENABLED, "Indexing support not enbabled");
-    this.indexManager = indexManager;
   }
 
   @Override
   public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
     this.localDocuments = localDocuments;
+  }
+
+  @Override
+  public void setIndexManager(IndexManager indexManager) {
+    this.indexManager = indexManager;
   }
 
   @Override

@@ -29,6 +29,10 @@ import java.util.Map;
  * instances (indicating that the document is known to not exist).
  */
 interface RemoteDocumentCache {
+
+  /** Sets the index manager to use for managing the collectionGroup index. */
+  void setIndexManager(IndexManager indexManager);
+
   /**
    * Adds or replaces an entry in the cache.
    *
