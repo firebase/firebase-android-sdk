@@ -32,6 +32,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
+import com.google.firebase.appcheck.internal.RetryManager;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import org.junit.After;
@@ -64,6 +65,7 @@ public class DebugAppCheckProviderTest {
 
   @Mock FirebaseApp mockFirebaseApp;
   @Mock NetworkClient mockNetworkClient;
+  @Mock RetryManager mockRetryManager;
   @Mock AppCheckTokenResponse mockAppCheckTokenResponse;
 
   private StorageHelper storageHelper;
@@ -136,16 +138,19 @@ public class DebugAppCheckProviderTest {
 
   @Test
   public void exchangeDebugToken_onSuccess_setsTaskResult() throws Exception {
-    when(mockNetworkClient.exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG)))
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
         .thenReturn(mockAppCheckTokenResponse);
     when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, backgroundExecutor);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, backgroundExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
-    verify(mockNetworkClient).exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG));
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG), eq(mockRetryManager));
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
@@ -154,14 +159,17 @@ public class DebugAppCheckProviderTest {
 
   @Test
   public void exchangeDebugToken_onFailure_setsTaskException() throws Exception {
-    when(mockNetworkClient.exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG)))
+    when(mockNetworkClient.exchangeAttestationForAppCheckToken(
+            any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
         .thenThrow(new IOException());
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, backgroundExecutor);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, backgroundExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
-    verify(mockNetworkClient).exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG));
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(any(), eq(NetworkClient.DEBUG), eq(mockRetryManager));
 
     assertThat(task.isSuccessful()).isFalse();
     Exception exception = task.getException();
