@@ -27,6 +27,9 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -35,14 +38,14 @@ public class IndexBackfiller {
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
-  /** The maximum number of entries to write each time backfill() is called. */
-  private static final int MAX_INDEX_ENTRIES_TO_PROCESS = 1000;
+  /** The maximum number of documents to process each time backfill() is called. */
+  private static final int MAX_DOCUMENTS_TO_PROCESS = 50;
 
   private final Scheduler scheduler;
   private final Persistence persistence;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
-  private int maxIndexEntriesToProcess = MAX_INDEX_ENTRIES_TO_PROCESS;
+  private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
 
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
@@ -60,29 +63,23 @@ public class IndexBackfiller {
   public static class Results {
     private final boolean hasRun;
 
-    private final int entriesAdded;
-    private final int entriesRemoved;
+    private final int documentsProcessed;
 
     static IndexBackfiller.Results DidNotRun() {
-      return new IndexBackfiller.Results(/* hasRun= */ false, 0, 0);
+      return new IndexBackfiller.Results(/* hasRun= */ false, 0);
     }
 
-    Results(boolean hasRun, int entriesAdded, int entriesRemoved) {
+    Results(boolean hasRun, int documentsProcessed) {
       this.hasRun = hasRun;
-      this.entriesAdded = entriesAdded;
-      this.entriesRemoved = entriesRemoved;
+      this.documentsProcessed = documentsProcessed;
     }
 
     public boolean hasRun() {
       return hasRun;
     }
 
-    public int getEntriesAdded() {
-      return entriesAdded;
-    }
-
-    public int getEntriesRemoved() {
-      return entriesRemoved;
+    public int getDocumentsProcessed() {
+      return documentsProcessed;
     }
   }
 
@@ -130,31 +127,29 @@ public class IndexBackfiller {
         "Backfill Indexes",
         () -> {
           // TODO(indexing): Handle field indexes that are removed by the user.
-          int entriesAdded = writeIndexEntries(localDocumentsView);
+          int documentsProcessed = writeIndexEntries(localDocumentsView);
           return new Results(
-              /* hasRun= */ true,
-              /* numIndexesWritten= */ entriesAdded,
-              /* numIndexesRemoved= */ 0);
+              /* hasRun= */ true, documentsProcessed );
         });
   }
 
   /** Writes index entries until the cap is reached. Returns the number of entries written. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
-    int totalEntriesWrittenCount = 0;
+    int documentsProcessed = 0;
     Timestamp startingTimestamp = Timestamp.now();
 
-    while (totalEntriesWrittenCount < maxIndexEntriesToProcess) {
-      int entriesRemainingUnderCap = maxIndexEntriesToProcess - totalEntriesWrittenCount;
+    while (documentsProcessed < maxDocumentsToProcess) {
+      int entriesRemainingUnderCap = maxDocumentsToProcess - documentsProcessed;
       String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
       if (collectionGroup == null) {
         break;
       }
-      totalEntriesWrittenCount +=
+      documentsProcessed +=
           writeEntriesForCollectionGroup(
               localDocumentsView, collectionGroup, entriesRemainingUnderCap);
     }
 
-    return totalEntriesWrittenCount;
+    return documentsProcessed;
   }
 
   /** Writes entries for the fetched field indexes. */
@@ -166,14 +161,28 @@ public class IndexBackfiller {
     SnapshotVersion earliestUpdateTime =
         getEarliestUpdateTime(indexManager.getFieldIndexes(collectionGroup));
 
-    // TODO(indexing): Make sure the docs matching the query are sorted by read time.
-    // TODO(indexing): Use limit queries to allow incremental progress.
+    // TODO(indexing): Use limit queries to only fetch the required number of entries.
     // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
-    ImmutableSortedMap<DocumentKey, Document> matchingDocuments =
+    ImmutableSortedMap<DocumentKey, Document> documents =
         localDocumentsView.getDocumentsMatchingQuery(query, earliestUpdateTime);
 
-    return indexManager.updateIndexEntries(
-        collectionGroup, matchingDocuments, entriesRemainingUnderCap);
+    Queue<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
+    indexManager.updateIndexEntries(oldestDocuments);
+    return oldestDocuments.size();
+  }
+
+  /** Returns up to {@code count} documents sorted by read time. */
+  private Queue<Document> getOldestDocuments(
+      ImmutableSortedMap<DocumentKey, Document> documents, int count) {
+    Queue<Document> oldestDocuments =
+        new PriorityQueue<>(count + 1, (l, r) -> r.getReadTime().compareTo(l.getReadTime()));
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      oldestDocuments.add(entry.getValue());
+      if (oldestDocuments.size() > count) {
+        oldestDocuments.poll();
+      }
+    }
+    return oldestDocuments;
   }
 
   private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
@@ -190,7 +199,7 @@ public class IndexBackfiller {
   }
 
   @VisibleForTesting
-  void setMaxIndexEntriesToProcess(int newMax) {
-    maxIndexEntriesToProcess = newMax;
+  void setMaxDocumentsToProcess(int newMax) {
+    maxDocumentsToProcess = newMax;
   }
 }
