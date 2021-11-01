@@ -128,8 +128,7 @@ public class IndexBackfiller {
         () -> {
           // TODO(indexing): Handle field indexes that are removed by the user.
           int documentsProcessed = writeIndexEntries(localDocumentsView);
-          return new Results(
-              /* hasRun= */ true, documentsProcessed );
+          return new Results(/* hasRun= */ true, documentsProcessed);
         });
   }
 
