@@ -50,26 +50,30 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
   }
 
   private void buildOverlays() {
-    Set<String> userIds = getAllUserIds();
-    for (String uid : userIds) {
-      User user = new User(uid);
-      RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
-      MutationQueue mutationQueue = db.getMutationQueue(user);
+    db.runTransaction(
+        "build overlays",
+        () -> {
+          Set<String> userIds = getAllUserIds();
+          for (String uid : userIds) {
+            User user = new User(uid);
+            RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
+            MutationQueue mutationQueue = db.getMutationQueue(user);
 
-      // Get all document keys that have local mutations
-      Set<DocumentKey> allDocumentKeys = new HashSet<>();
-      List<MutationBatch> batches = mutationQueue.getAllMutationBatches();
-      for (MutationBatch batch : batches) {
-        allDocumentKeys.addAll(batch.getKeys());
-      }
+            // Get all document keys that have local mutations
+            Set<DocumentKey> allDocumentKeys = new HashSet<>();
+            List<MutationBatch> batches = mutationQueue.getAllMutationBatches();
+            for (MutationBatch batch : batches) {
+              allDocumentKeys.addAll(batch.getKeys());
+            }
 
-      // Recalculate overlays
-      DocumentOverlayCache documentOverlayCache = db.getDocumentOverlay(user);
-      LocalDocumentsView localView =
-          new LocalDocumentsView(
-              remoteDocumentCache, mutationQueue, documentOverlayCache, db.getIndexManager());
-      localView.recalculateOverlays(allDocumentKeys);
-    }
+            // Recalculate overlays
+            DocumentOverlayCache documentOverlayCache = db.getDocumentOverlay(user);
+            LocalDocumentsView localView =
+                new LocalDocumentsView(
+                    remoteDocumentCache, mutationQueue, documentOverlayCache, db.getIndexManager());
+            localView.recalculateOverlays(allDocumentKeys);
+          }
+        });
   }
 
   private Set<String> getAllUserIds() {

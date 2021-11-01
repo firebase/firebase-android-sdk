@@ -25,19 +25,13 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationBatch;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -50,34 +44,24 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteOverlayDataMigrationManagerTest {
-  private CountingQueryEngine queryEngine;
+  private static boolean overlayEnabled;
+
   private Persistence persistence;
   private LocalStore localStore;
 
-  private List<MutationBatch> batches;
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> lastChanges;
-  private @Nullable QueryResult lastQueryResult;
-  private int lastTargetId;
-  private static boolean enabled;
-
   @BeforeClass
   public static void beforeClass() {
-    enabled = Persistence.OVERLAY_SUPPORT_ENABLED;
+    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
     Persistence.OVERLAY_SUPPORT_ENABLED = true;
   }
 
   @AfterClass
   public static void afterClass() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = enabled;
+    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
   }
 
   @Before
   public void setUp() {
-    batches = new ArrayList<>();
-    lastChanges = null;
-    lastQueryResult = null;
-    lastTargetId = 0;
-
     persistence =
         PersistenceTestHelpers.createSQLitePersistenceForVersion(
             "test-data-migration", SQLiteSchema.OVERLAY_SUPPORT_VERSION - 1);
@@ -102,10 +86,6 @@ public class SQLiteOverlayDataMigrationManagerTest {
 
   private void writeMutations(List<Mutation> mutations) {
     LocalWriteResult result = localStore.writeLocally(mutations);
-    batches.add(
-        new MutationBatch(
-            result.getBatchId(), Timestamp.now(), Collections.emptyList(), mutations));
-    lastChanges = result.getChanges();
   }
 
   /** Asserts that the given local store contains the given document. */
