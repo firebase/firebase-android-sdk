@@ -69,9 +69,9 @@ final class MemoryMutationQueue implements MutationQueue {
   private ByteString lastStreamToken;
 
   private final MemoryPersistence persistence;
-  private final MemoryIndexManager indexManager;
+  private final IndexManager indexManager;
 
-  MemoryMutationQueue(MemoryPersistence persistence, MemoryIndexManager indexManager) {
+  MemoryMutationQueue(MemoryPersistence persistence, IndexManager indexManager) {
     this.persistence = persistence;
     queue = new ArrayList<>();
 

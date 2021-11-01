@@ -58,13 +58,15 @@ public class IndexedQueryEngineTest {
   public void setUp() {
     SQLitePersistence persistence = PersistenceTestHelpers.createSQLitePersistence();
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+
     remoteDocuments = persistence.getRemoteDocumentCache();
     remoteDocuments.setIndexManager(indexManager);
     queryEngine = new IndexedQueryEngine();
     queryEngine.setLocalDocumentsView(
         new LocalDocumentsView(
             remoteDocuments,
-            persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             indexManager));
     queryEngine.setIndexManager(indexManager);

@@ -61,7 +61,10 @@ abstract class RemoteDocumentCacheTestCase {
   public void setUp() {
     persistence = getPersistence();
     remoteDocumentCache = persistence.getRemoteDocumentCache();
-    remoteDocumentCache.setIndexManager(persistence.getIndexManager(User.UNAUTHENTICATED));
+
+    IndexManager indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+    remoteDocumentCache.setIndexManager(indexManager);
   }
 
   @After

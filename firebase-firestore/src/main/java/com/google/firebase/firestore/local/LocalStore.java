@@ -159,10 +159,10 @@ public final class LocalStore implements BundleCallback {
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
-    mutationQueue = persistence.getMutationQueue(initialUser);
+    indexManager = persistence.getIndexManager(initialUser);
+    mutationQueue = persistence.getMutationQueue(initialUser, indexManager);
     documentOverlayCache = persistence.getDocumentOverlay(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    indexManager = persistence.getIndexManager(initialUser);
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
     this.queryEngine = queryEngine;
@@ -181,15 +181,16 @@ public final class LocalStore implements BundleCallback {
   }
 
   public void start() {
+    startIndexManager();
     startMutationQueue();
   }
 
+  private void startIndexManager() {
+    persistence.runTransaction("Start IndexManager", () -> indexManager.start());
+  }
+
   private void startMutationQueue() {
-    persistence.runTransaction(
-        "Start MutationQueue",
-        () -> {
-          mutationQueue.start();
-        });
+    persistence.runTransaction("Start MutationQueue", () -> mutationQueue.start());
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
@@ -198,9 +199,11 @@ public final class LocalStore implements BundleCallback {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
-    mutationQueue = persistence.getMutationQueue(user);
     indexManager = persistence.getIndexManager(user);
+    mutationQueue = persistence.getMutationQueue(user, indexManager);
     documentOverlayCache = persistence.getDocumentOverlay(user);
+
+    startIndexManager();
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();

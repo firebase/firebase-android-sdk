@@ -38,6 +38,9 @@ class MemoryIndexManager implements IndexManager {
   public MemoryIndexManager() {}
 
   @Override
+  public void start() {}
+
+  @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
     collectionParentsIndex.add(collectionPath);
   }

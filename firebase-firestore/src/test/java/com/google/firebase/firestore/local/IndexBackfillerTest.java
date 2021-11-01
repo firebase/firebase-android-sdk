@@ -73,6 +73,8 @@ public class IndexBackfillerTest {
   public void setUp() {
     persistence = PersistenceTestHelpers.createSQLitePersistence();
     indexManager = (SQLiteIndexManager) persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+
     RemoteDocumentCache remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
     backfiller = new IndexBackfiller(persistence, new AsyncQueue());
@@ -81,7 +83,7 @@ public class IndexBackfillerTest {
     LocalDocumentsView localDocumentsView =
         new LocalDocumentsView(
             remoteDocumentCache,
-            persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             indexManager);
     backfiller.setLocalDocumentsView(localDocumentsView);

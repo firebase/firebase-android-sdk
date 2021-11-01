@@ -165,8 +165,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, user);
+  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
+    return new SQLiteMutationQueue(this, serializer, user, indexManager);
   }
 
   @Override

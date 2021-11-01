@@ -32,6 +32,10 @@ import java.util.Set;
  * Collection Group queries.
  */
 public interface IndexManager {
+
+  /** Initializes the IndexManager. */
+  void start();
+
   /**
    * Creates an index entry mapping the collectionId (last segment of the path) to the parent path
    * (either the containing document location or the empty path for root-level collections). Index
