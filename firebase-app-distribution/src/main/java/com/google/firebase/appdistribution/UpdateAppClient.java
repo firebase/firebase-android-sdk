@@ -73,14 +73,9 @@ public class UpdateAppClient {
     }
   }
 
-  void trySetInstallTaskError() {
-    this.installApkClient.trySetInstallTaskError();
-  }
-
   void setCurrentActivity(@Nullable Activity activity) {
     synchronized (activityLock) {
       this.updateAabClient.setCurrentActivity(activity);
-      this.installApkClient.setCurrentActivity(activity);
     }
   }
 
