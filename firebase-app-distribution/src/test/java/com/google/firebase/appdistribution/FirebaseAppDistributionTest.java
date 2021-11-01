@@ -378,13 +378,6 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateApp_appResume_tryResetAabUpdateTask() {
-    firebaseAppDistribution.onActivityStarted(activity);
-
-    verify(mockUpdateAppClient, times(1)).tryCancelAabUpdateTask();
-  }
-
-  @Test
   public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() throws Exception {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();

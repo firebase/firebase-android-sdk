@@ -22,8 +22,9 @@ import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.Executor;
@@ -35,12 +36,10 @@ class UpdateAabClient {
   private static final String TAG = "UpdateAabClient:";
 
   private final Executor updateExecutor;
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   @GuardedBy("updateAabLock")
   private UpdateTaskImpl cachedUpdateTask;
-
-  @GuardedBy("updateAabLock")
-  private Activity currentActivity;
 
   @GuardedBy("updateAabLock")
   private AppDistributionReleaseInternal aabReleaseInProgress;
@@ -48,11 +47,27 @@ class UpdateAabClient {
   private final Object updateAabLock = new Object();
 
   public UpdateAabClient() {
-    this(Executors.newSingleThreadExecutor());
+    this(
+        Executors.newSingleThreadExecutor(),
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  public UpdateAabClient(@NonNull Executor updateExecutor) {
+  public UpdateAabClient(
+      @NonNull Executor updateExecutor,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.updateExecutor = updateExecutor;
+    this.lifecycleNotifier = lifecycleNotifier;
+    lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+  }
+
+  @VisibleForTesting
+  void onActivityStarted(Activity activity) {
+    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
+      return;
+    }
+    // If app resumes and aab update task is in progress, assume that installation didn't happen so
+    // cancel the task
+    this.tryCancelAabUpdateTask();
   }
 
   public UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
@@ -85,7 +100,7 @@ class UpdateAabClient {
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
     synchronized (updateAabLock) {
-      if (currentActivity == null) {
+      if (lifecycleNotifier.getCurrentActivity() == null) {
         safeSetTaskException(
             cachedUpdateTask,
             new FirebaseAppDistributionException(
@@ -124,7 +139,7 @@ class UpdateAabClient {
             LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
             synchronized (updateAabLock) {
-              currentActivity.startActivity(updateIntent);
+              lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
               cachedUpdateTask.updateProgress(
                   UpdateProgress.builder()
                       .setApkBytesDownloaded(-1)
@@ -139,12 +154,6 @@ class UpdateAabClient {
                     FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
           }
         });
-  }
-
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (updateAabLock) {
-      this.currentActivity = activity;
-    }
   }
 
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {

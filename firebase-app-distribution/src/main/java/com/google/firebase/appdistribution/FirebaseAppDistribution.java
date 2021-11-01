@@ -247,30 +247,15 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
-    // SignInResultActivity and InstallActivity are internal to the SDK and should not be treated as
-    // reentering the app
-    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
-      return;
-    }
-
-    // If app resumes and aab update task is in progress, assume that installation didn't happen so
-    // cancel the task
-    updateAppClient.tryCancelAabUpdateTask();
 
     this.currentActivity = activity;
-    this.updateAppClient.setCurrentActivity(activity);
   }
 
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
     LogWrapper.getInstance().d("Resumed activity: " + activity.getClass().getName());
 
-    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
-      return;
-    }
-
     this.currentActivity = activity;
-    this.updateAppClient.setCurrentActivity(activity);
   }
 
   @Override
@@ -278,7 +263,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     LogWrapper.getInstance().d("Paused activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
     }
   }
 
@@ -287,7 +271,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
     if (this.currentActivity == activity) {
       this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
     }
   }
 
@@ -307,7 +290,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
     if (this.currentActivity == activity) {
       this.currentActivity = null;
-      this.updateAppClient.setCurrentActivity(null);
     }
   }
 

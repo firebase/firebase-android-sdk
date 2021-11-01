@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 
-import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -73,19 +72,9 @@ public class UpdateAppClient {
     }
   }
 
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (activityLock) {
-      this.updateAabClient.setCurrentActivity(activity);
-    }
-  }
-
   private UpdateTask getErrorUpdateTask(Exception e) {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.setException(e);
     return updateTask;
-  }
-
-  void tryCancelAabUpdateTask() {
-    this.updateAabClient.tryCancelAabUpdateTask();
   }
 }
