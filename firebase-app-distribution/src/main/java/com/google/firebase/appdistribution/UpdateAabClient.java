@@ -36,7 +36,7 @@ class UpdateAabClient {
   private static final String TAG = "UpdateAabClient:";
 
   private final Executor updateExecutor;
-  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+  private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   @GuardedBy("updateAabLock")
   private UpdateTaskImpl cachedUpdateTask;
@@ -46,13 +46,13 @@ class UpdateAabClient {
 
   private final Object updateAabLock = new Object();
 
-  public UpdateAabClient() {
+  UpdateAabClient() {
     this(
         Executors.newSingleThreadExecutor(),
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  public UpdateAabClient(
+  UpdateAabClient(
       @NonNull Executor updateExecutor,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.updateExecutor = updateExecutor;

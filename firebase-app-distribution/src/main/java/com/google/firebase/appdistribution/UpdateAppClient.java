@@ -30,8 +30,6 @@ public class UpdateAppClient {
   private final UpdateAabClient updateAabClient;
   private static final String TAG = "UpdateAppClient";
 
-  private final Object activityLock = new Object();
-
   public UpdateAppClient(@NonNull FirebaseApp firebaseApp) {
     this.installApkClient = new InstallApkClient();
     this.updateApkClient = new UpdateApkClient(firebaseApp, installApkClient);

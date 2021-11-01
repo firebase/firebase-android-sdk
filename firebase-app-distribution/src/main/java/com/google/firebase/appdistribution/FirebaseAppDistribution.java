@@ -20,9 +20,7 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.content.Context;
-import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -33,16 +31,16 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import org.jetbrains.annotations.Nullable;
 
-public class FirebaseAppDistribution implements Application.ActivityLifecycleCallbacks {
+public class FirebaseAppDistribution {
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
   private final CheckForNewReleaseClient checkForNewReleaseClient;
   private final UpdateAppClient updateAppClient;
-  private Activity currentActivity;
+  private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   @GuardedBy("updateTaskLock")
@@ -63,26 +61,31 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       @NonNull TesterSignInClient testerSignInClient,
       @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
       @NonNull UpdateAppClient updateAppClient,
-      @NonNull SignInStorage signInStorage) {
+      @NonNull SignInStorage signInStorage,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
     this.checkForNewReleaseClient = checkForNewReleaseClient;
     this.updateAppClient = updateAppClient;
     this.signInStorage = signInStorage;
+    this.lifecycleNotifier = lifecycleNotifier;
+    lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
   /** Constructor for FirebaseAppDistribution */
   public FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull SignInStorage signInStorage) {
+      @NonNull SignInStorage signInStorage,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
         firebaseApp,
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
         new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
         new UpdateAppClient(firebaseApp),
-        signInStorage);
+        signInStorage,
+        lifecycleNotifier);
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -92,7 +95,8 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this(
         firebaseApp,
         firebaseInstallationsApi,
-        new SignInStorage(firebaseApp.getApplicationContext()));
+        new SignInStorage(firebaseApp.getApplicationContext()),
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   /** @return a FirebaseAppDistribution instance */
@@ -234,62 +238,12 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
     this.signInStorage.setSignInStatus(false);
   }
 
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    LogWrapper.getInstance().v("Created activity: " + activity.getClass().getName());
-    // if SignInResultActivity is created, sign-in was successful
-    if (activity instanceof SignInResultActivity) {
-      LogWrapper.getInstance().v("Sign in completed");
-      this.signInStorage.setSignInStatus(true);
-    }
-  }
-
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Started activity: " + activity.getClass().getName());
-
-    this.currentActivity = activity;
-  }
-
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Resumed activity: " + activity.getClass().getName());
-
-    this.currentActivity = activity;
-  }
-
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Paused activity: " + activity.getClass().getName());
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
-    }
-  }
-
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Stopped activity: " + activity.getClass().getName());
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
-    }
-  }
-
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-    LogWrapper.getInstance().d("Saved activity: " + activity.getClass().getName());
-  }
-
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {
-    LogWrapper.getInstance().d("Destroyed activity: " + activity.getClass().getName());
+  @VisibleForTesting
+  void onActivityDestroyed(@NonNull Activity activity) {
     if (updateDialogShown) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
-    }
-
-    if (this.currentActivity == activity) {
-      this.currentActivity = null;
     }
   }
 
@@ -305,6 +259,16 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
 
   private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
     Context context = firebaseApp.getApplicationContext();
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
+    if (currentActivity == null) {
+      LogWrapper.getInstance().e("No foreground activity found.");
+      UpdateTaskImpl updateTask = new UpdateTaskImpl();
+      updateTask.setException(
+          new FirebaseAppDistributionException(
+              ErrorMessages.APP_BACKGROUNDED,
+              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+      return updateTask;
+    }
     updateDialog = new AlertDialog.Builder(currentActivity).create();
     updateDialog.setTitle(context.getString(R.string.update_dialog_title));
 
