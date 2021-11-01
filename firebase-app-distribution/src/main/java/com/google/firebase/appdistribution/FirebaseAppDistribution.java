@@ -309,12 +309,6 @@ public class FirebaseAppDistribution implements Application.ActivityLifecycleCal
       this.currentActivity = null;
       this.updateAppClient.setCurrentActivity(null);
     }
-
-    if (activity instanceof InstallActivity) {
-      // Since install activity is destroyed but app is still active, installation has failed /
-      // cancelled.
-      updateAppClient.trySetInstallTaskError();
-    }
   }
 
   @VisibleForTesting
