@@ -26,6 +26,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
-public class updateAabClientTest {
+public class UpdateAabClientTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
@@ -65,6 +66,8 @@ public class updateAabClientTest {
   private UpdateAabClient updateAabClient;
   private ShadowActivity shadowActivity;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  private FirebaseAppDistributionTest.TestActivity activity;
 
   static class TestActivity extends Activity {}
 
@@ -84,13 +87,12 @@ public class updateAabClientTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    FirebaseAppDistributionTest.TestActivity activity =
+    activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor));
-
-    this.updateAabClient.setCurrentActivity(activity);
+    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor, mockLifecycleNotifier));
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @After
@@ -138,7 +140,7 @@ public class updateAabClientTest {
     UpdateTask updateTask = updateAabClient.updateAab(newRelease);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    updateAabClient.tryCancelAabUpdateTask();
+    updateAabClient.onActivityStarted(activity);
     FirebaseAppDistributionException exception =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
     assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
