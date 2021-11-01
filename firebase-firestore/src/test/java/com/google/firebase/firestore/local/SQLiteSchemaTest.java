@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
-
 import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -645,9 +644,11 @@ public class SQLiteSchemaTest {
     try {
       Persistence.OVERLAY_SUPPORT_ENABLED = true;
 
-      Set<SQLitePersistence.DataMigration> migrations = schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+      Set<SQLitePersistence.DataMigration> migrations =
+          schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
 
-      assertSetEquals(Lists.newArrayList(SQLitePersistence.DataMigration.BuildOverlays), migrations);
+      assertSetEquals(
+          Lists.newArrayList(SQLitePersistence.DataMigration.BuildOverlays), migrations);
       assertTableExists("document_overlays");
     } finally {
       Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
