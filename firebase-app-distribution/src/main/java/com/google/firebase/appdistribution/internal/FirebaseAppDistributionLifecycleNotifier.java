@@ -20,10 +20,8 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.TaskExecutors;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.concurrent.Executor;
 
 public class FirebaseAppDistributionLifecycleNotifier
     implements Application.ActivityLifecycleCallbacks {
@@ -36,18 +34,19 @@ public class FirebaseAppDistributionLifecycleNotifier
 
   /** A queue of listeners that trigger when the activity is foregrounded */
   @GuardedBy("lock")
-  private final Queue<ManagedListener<OnActivityStartedListener>> onActivityStartedListeners =
-      new ArrayDeque<>();
+  private final Queue<OnActivityCreatedListener> onActivityCreatedListeners = new ArrayDeque<>();
+
+  /** A queue of listeners that trigger when the activity is foregrounded */
+  @GuardedBy("lock")
+  private final Queue<OnActivityStartedListener> onActivityStartedListeners = new ArrayDeque<>();
 
   /** A queue of listeners that trigger when the activity is backgrounded */
   @GuardedBy("lock")
-  private final Queue<ManagedListener<OnActivityPausedListener>> onActivityPausedListeners =
-      new ArrayDeque<>();
+  private final Queue<OnActivityPausedListener> onActivityPausedListeners = new ArrayDeque<>();
 
   /** A queue of listeners that trigger when the activity is destroyed */
   @GuardedBy("lock")
-  private final Queue<ManagedListener<OnActivityDestroyedListener>> onDestroyedListeners =
-      new ArrayDeque<>();
+  private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
   private FirebaseAppDistributionLifecycleNotifier() {}
 
@@ -56,6 +55,10 @@ public class FirebaseAppDistributionLifecycleNotifier
       instance = new FirebaseAppDistributionLifecycleNotifier();
     }
     return instance;
+  }
+
+  public interface OnActivityCreatedListener {
+    void onCreated(Activity activity);
   }
 
   public interface OnActivityStartedListener {
@@ -76,52 +79,40 @@ public class FirebaseAppDistributionLifecycleNotifier
     }
   }
 
-  public void addOnActivityStartedListener(@NonNull OnActivityStartedListener listener) {
-    addOnActivityStartedListener(null, listener);
-  }
-
-  public void addOnActivityStartedListener(
-      @Nullable Executor executor, @NonNull OnActivityStartedListener listener) {
-    ManagedListener<OnActivityStartedListener> managedListener =
-        new ManagedListener(executor, listener);
+  public void addOnActivityCreatedListener(@NonNull OnActivityCreatedListener listener) {
     synchronized (lock) {
-      this.onActivityStartedListeners.add(managedListener);
+      this.onActivityCreatedListeners.add(listener);
     }
   }
 
-  public void addOnActivityPausedListener(
-      @Nullable Executor executor, @NonNull OnActivityPausedListener listener) {
-    ManagedListener managedListener = new ManagedListener(executor, listener);
+  public void addOnActivityStartedListener(@NonNull OnActivityStartedListener listener) {
     synchronized (lock) {
-      this.onActivityPausedListeners.add(managedListener);
+      this.onActivityStartedListeners.add(listener);
     }
   }
 
   public void addOnActivityDestroyedListener(@NonNull OnActivityDestroyedListener listener) {
-    ManagedListener managedListener = new ManagedListener(null, listener);
     synchronized (lock) {
-      this.onDestroyedListeners.add(managedListener);
-    }
-  }
-
-  public void addOnActivityDestroyedListener(
-      @Nullable Executor executor, @NonNull OnActivityDestroyedListener listener) {
-    ManagedListener managedListener = new ManagedListener(executor, listener);
-    synchronized (lock) {
-      this.onDestroyedListeners.add(managedListener);
+      this.onDestroyedListeners.add(listener);
     }
   }
 
   @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {}
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
+    synchronized (lock) {
+      currentActivity = activity;
+      for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
+        listener.onCreated(activity);
+      }
+    }
+  }
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
     synchronized (lock) {
       currentActivity = activity;
-      for (ManagedListener<OnActivityStartedListener> managedListener :
-          onActivityStartedListeners) {
-        managedListener.executor.execute(() -> managedListener.listener.onStarted(activity));
+      for (OnActivityStartedListener listener : onActivityStartedListeners) {
+        listener.onStarted(activity);
       }
     }
   }
@@ -135,8 +126,8 @@ public class FirebaseAppDistributionLifecycleNotifier
       if (this.currentActivity == activity) {
         this.currentActivity = null;
       }
-      for (ManagedListener<OnActivityPausedListener> listener : onActivityPausedListeners) {
-        listener.executor.execute(() -> listener.listener.onPaused(activity));
+      for (OnActivityPausedListener listener : onActivityPausedListeners) {
+        listener.onPaused(activity);
       }
     }
   }
@@ -154,20 +145,9 @@ public class FirebaseAppDistributionLifecycleNotifier
         this.currentActivity = null;
       }
 
-      for (ManagedListener<OnActivityDestroyedListener> listener : onDestroyedListeners) {
-        listener.executor.execute(() -> listener.listener.onDestroyed(activity));
+      for (OnActivityDestroyedListener listener : onDestroyedListeners) {
+        listener.onDestroyed(activity);
       }
-    }
-  }
-
-  /** Wraps a listener and its corresponding executor. */
-  private static class ManagedListener<T> {
-    Executor executor;
-    T listener;
-
-    ManagedListener(@Nullable Executor executor, T listener) {
-      this.executor = executor != null ? executor : TaskExecutors.MAIN_THREAD;
-      this.listener = listener;
     }
   }
 }

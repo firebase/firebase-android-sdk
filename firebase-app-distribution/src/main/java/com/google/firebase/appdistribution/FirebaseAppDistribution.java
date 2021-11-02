@@ -240,6 +240,10 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
+    if (activity instanceof SignInResultActivity) {
+      // SignInResult is internal to the SDK and is destroyed after creation
+      return;
+    }
     if (updateDialogShown) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
