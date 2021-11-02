@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.unity;
 
+import androidx.annotation.Nullable;
+
 public interface UnityVersionProvider {
 
   /**
@@ -22,5 +24,6 @@ public interface UnityVersionProvider {
    * @return {@link String} Crashlytics Unity package version if available, or <code>null</code> if
    *     the Crashlytics Unity package is not installed.
    */
+  @Nullable
   String getUnityVersion();
 }

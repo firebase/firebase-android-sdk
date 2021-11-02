@@ -36,7 +36,6 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import java.io.File;
 import java.util.Collections;
@@ -145,7 +144,8 @@ public class CrashlyticsControllerRobolectricTest {
             "packageName",
             "versionCode",
             "versionName",
-            mock(UnityVersionProvider.class));
+            /*developmentPlatform=*/ null,
+            /*developmentPlatformVersion=*/ null);
 
     final CrashlyticsController controller =
         new CrashlyticsController(

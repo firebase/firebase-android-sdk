@@ -361,6 +361,7 @@ class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
 
+    // TODO(indexing): We should plumb sinceReadTime through to the mutation queue
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
 
     remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
