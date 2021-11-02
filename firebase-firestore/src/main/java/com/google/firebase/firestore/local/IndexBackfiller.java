@@ -132,20 +132,19 @@ public class IndexBackfiller {
         });
   }
 
-  /** Writes index entries until the cap is reached. Returns the number of entries written. */
+  /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int documentsProcessed = 0;
     Timestamp startingTimestamp = Timestamp.now();
 
     while (documentsProcessed < maxDocumentsToProcess) {
-      int entriesRemainingUnderCap = maxDocumentsToProcess - documentsProcessed;
+      int documentsRemaining = maxDocumentsToProcess - documentsProcessed;
       String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
       if (collectionGroup == null) {
         break;
       }
       documentsProcessed +=
-          writeEntriesForCollectionGroup(
-              localDocumentsView, collectionGroup, entriesRemainingUnderCap);
+          writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
     }
 
     return documentsProcessed;
