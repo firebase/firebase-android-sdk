@@ -249,6 +249,25 @@ public class CheckForNewReleaseClientTest {
   }
 
   @Test
+  public void getNewReleaseFromClient_whenNewReleaseIsLowerVersionCode_returnsNull()
+      throws Exception {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
+        .thenReturn(
+            getTestInstalledRelease()
+                .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE - 1))
+                .build());
+
+    doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
+
+    AppDistributionReleaseInternal release =
+        checkForNewReleaseClient.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertNull(release);
+  }
+
+  @Test
   public void handleNewReleaseFromClient_whenNewAabIsAvailable_returnsRelease() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
