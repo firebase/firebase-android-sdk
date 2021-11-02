@@ -81,7 +81,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
     // Field indices are not supported with memory persistence.
     return Collections.emptyList();
   }

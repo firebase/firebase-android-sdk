@@ -39,7 +39,9 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.Values;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -597,9 +599,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
             .withUpdateTime(new SnapshotVersion(new Timestamp(10, 20))));
 
-    List<FieldIndex> indexes = ((SQLiteIndexManager) indexManager).getFieldIndexes("coll1");
+    Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
-    FieldIndex index = indexes.get(0);
+    FieldIndex index = indexes.iterator().next();
     assertEquals(index.getUpdateTime(), new SnapshotVersion(new Timestamp(10, 20)));
   }
 
@@ -632,10 +634,10 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
             .withUpdateTime(SnapshotVersion.NONE));
 
-    List<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
+    Collection<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
-    assertEquals(indexes.get(0).getCollectionGroup(), "coll1");
-
+    Iterator<FieldIndex> it = indexes.iterator();
+    assertEquals(it.next().getCollectionGroup(), "coll1");
     sqLiteIndexManager.addFieldIndex(
         new FieldIndex("coll1")
             .withAddedField(field("newValue"), FieldIndex.Segment.Kind.CONTAINS)
@@ -643,8 +645,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 2);
-    assertEquals(indexes.get(0).getCollectionGroup(), "coll1");
-    assertEquals(indexes.get(1).getCollectionGroup(), "coll1");
+    it = indexes.iterator();
+    assertEquals(it.next().getCollectionGroup(), "coll1");
+    assertEquals(it.next().getCollectionGroup(), "coll1");
   }
 
   @Test

@@ -33,6 +33,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.junit.After;
@@ -106,8 +107,8 @@ public class IndexBackfillerTest {
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(2, results.getDocumentsProcessed());
 
-    FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
-    FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll2").get(0);
+    FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
+    FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
     assertEquals(version(10, 0), fieldIndex1.getUpdateTime());
     assertEquals(version(20, 0), fieldIndex2.getUpdateTime());
 
@@ -119,8 +120,8 @@ public class IndexBackfillerTest {
     results = backfiller.backfill();
     assertEquals(4, results.getDocumentsProcessed());
 
-    fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
-    fieldIndex2 = indexManager.getFieldIndexes("coll2").get(0);
+    fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
+    fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
     assertEquals(version(50, 10), fieldIndex1.getUpdateTime());
     assertEquals(version(60, 10), fieldIndex2.getUpdateTime());
   }
@@ -144,12 +145,10 @@ public class IndexBackfillerTest {
     assertEquals(1, results.getDocumentsProcessed());
 
     // Field indexes should still hold the latest read time.
-    FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").get(0);
-    FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll1").get(1);
-    FieldIndex fieldIndex3 = indexManager.getFieldIndexes("coll1").get(2);
-    assertEquals(version(10, 0), fieldIndex1.getUpdateTime());
-    assertEquals(version(20, 0), fieldIndex2.getUpdateTime());
-    assertEquals(version(30, 0), fieldIndex3.getUpdateTime());
+    Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
+    assertEquals(version(10, 0), it.next().getUpdateTime());
+    assertEquals(version(20, 0), it.next().getUpdateTime());
+    assertEquals(version(30, 0), it.next().getUpdateTime());
   }
 
   @Test

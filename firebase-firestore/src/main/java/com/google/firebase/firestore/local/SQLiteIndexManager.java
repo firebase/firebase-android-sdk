@@ -69,7 +69,7 @@ final class SQLiteIndexManager implements IndexManager {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
   private final User user;
-  private final Map<String, List<FieldIndex>> memoizedIndexes;
+  private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes;
 
   private boolean started = false;
   private int memoizedMaxId = -1;
@@ -222,8 +222,7 @@ final class SQLiteIndexManager implements IndexManager {
     Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
 
     for (Document document : documents) {
-      List<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
-
+      Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
         boolean modified = writeEntries(document, fieldIndex);
         if (modified) {
@@ -247,27 +246,20 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
     hardAssert(started, "IndexManager not started");
-    return memoizedIndexes.get(collectionGroup);
+    Map<Integer, FieldIndex> indexes = memoizedIndexes.get(collectionGroup);
+    return indexes == null ? Collections.emptyList() : indexes.values();
   }
 
   /** Stores the index in the memoized indexes table. */
   private void memoizeIndex(FieldIndex fieldIndex) {
-    List<FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
+    Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
     if (existingIndexes == null) {
-      existingIndexes = new ArrayList<>();
+      existingIndexes = new HashMap<>();
       memoizedIndexes.put(fieldIndex.getCollectionGroup(), existingIndexes);
     }
-
-    for (FieldIndex existingIndex : existingIndexes) {
-      if (existingIndex.getIndexId() == fieldIndex.getIndexId()) {
-        existingIndexes.remove(existingIndex);
-        break;
-      }
-    }
-    existingIndexes.add(fieldIndex);
-
+    existingIndexes.put(fieldIndex.getIndexId(), fieldIndex);
     memoizedMaxId = Math.max(memoizedMaxId, fieldIndex.getIndexId());
   }
 
@@ -319,12 +311,8 @@ final class SQLiteIndexManager implements IndexManager {
     hardAssert(newDocument != null, "Support for removing documents is not yet available");
 
     DocumentKey documentKey = newDocument.getKey();
-    String collectionGroup = documentKey.getCollectionGroup();
-
-    List<FieldIndex> fieldIndices = memoizedIndexes.get(collectionGroup);
-    if (fieldIndices != null) {
-      addIndexEntry(newDocument, fieldIndices);
-    }
+    Collection<FieldIndex> fieldIndices = getFieldIndexes(documentKey.getCollectionGroup());
+    addIndexEntry(newDocument, fieldIndices);
   }
 
   /**
@@ -518,8 +506,8 @@ final class SQLiteIndexManager implements IndexManager {
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
 
-    List<FieldIndex> collectionIndexes = memoizedIndexes.get(collectionGroup);
-    if (collectionIndexes == null) {
+    Collection<FieldIndex> collectionIndexes = getFieldIndexes(collectionGroup);
+    if (collectionIndexes.isEmpty()) {
       return null;
     }
 
