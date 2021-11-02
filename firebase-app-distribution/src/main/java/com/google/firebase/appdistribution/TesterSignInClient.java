@@ -83,6 +83,8 @@ class TesterSignInClient {
 
   @VisibleForTesting
   void onActivityCreated(Activity activity) {
+    // We call finish() in the onCreate method of the SignInResultActivity, so we must set the result
+    // of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
       LogWrapper.getInstance().v("Sign in completed");
       this.setSuccessfulSignInResult();
