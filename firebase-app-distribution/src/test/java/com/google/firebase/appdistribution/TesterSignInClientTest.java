@@ -199,7 +199,7 @@ public class TesterSignInClientTest {
     }
 
     // Simulate re-entering app
-    testerSignInClient.onActivityStarted(mockSignInResultActivity);
+    testerSignInClient.onActivityCreated(mockSignInResultActivity);
 
     assertTrue(signInTask.isSuccessful());
     verify(mockSignInStorage).setSignInStatus(true);
