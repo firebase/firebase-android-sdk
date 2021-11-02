@@ -44,6 +44,7 @@ class TesterSignInClient {
   private static final String TAG = "TesterSignIn:";
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
+
   private final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
   private final FirebaseApp firebaseApp;
@@ -75,22 +76,24 @@ class TesterSignInClient {
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
 
+    lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
-  private void onActivityDestroyed(Activity activity) {
-    this.dismissAlertDialog();
-  }
-
   @VisibleForTesting
-  void onActivityStarted(Activity activity) {
+  void onActivityCreated(Activity activity) {
     if (activity instanceof SignInResultActivity) {
       LogWrapper.getInstance().v("Sign in completed");
       this.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
-    } else if (activity instanceof InstallActivity) {
-      // InstallActivity is internal to the SDK and should not be treated as
+    }
+  }
+
+  @VisibleForTesting
+  void onActivityStarted(Activity activity) {
+    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
+      // SignInResult and InstallActivity are internal to the SDK and should not be treated as
       // reentering the app
       return;
     } else {
@@ -102,8 +105,13 @@ class TesterSignInClient {
     }
   }
 
+  private void onActivityDestroyed(Activity activity) {
+    this.dismissAlertDialog();
+  }
+
   @NonNull
   public synchronized Task<Void> signInTester() {
+
     if (signInStorage.getSignInStatus()) {
       LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
       return Tasks.forResult(null);
@@ -114,7 +122,6 @@ class TesterSignInClient {
           .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
       return signInTaskCompletionSource.getTask();
     }
-
     Activity currentActivity = lifecycleNotifier.getCurrentActivity();
     if (currentActivity == null) {
       LogWrapper.getInstance().e(TAG + "No foreground activity found.");
