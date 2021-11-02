@@ -44,10 +44,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 /**
  * A SQLite-backed instance of Persistence.
@@ -91,7 +89,6 @@ public final class SQLitePersistence extends Persistence {
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
   private final IndexBackfiller indexBackfiller;
-  private Set<DataMigration> dataMigrations = new HashSet<>();
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
@@ -153,7 +150,6 @@ public final class SQLitePersistence extends Persistence {
               + " is, call setPersistenceEnabled(true)) in one of them.",
           e);
     }
-    dataMigrations = opener.dataMigrations;
     targetCache.start();
     referenceDelegate.start(targetCache.getHighestListenSequenceNumber());
   }
@@ -207,7 +203,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   DataMigrationManager getDataMigrationManager() {
-    return new SQLiteDataMigrationManager(this, this.dataMigrations);
+    return new SQLiteDataMigrationManager(this);
   }
 
   @Override
@@ -311,7 +307,6 @@ public final class SQLitePersistence extends Persistence {
 
     private final LocalSerializer serializer;
     private boolean configured;
-    private Set<DataMigration> dataMigrations = new HashSet<>();
 
     private OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
       this(context, serializer, databaseName, SQLiteSchema.VERSION);
@@ -347,13 +342,15 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      dataMigrations = new SQLiteSchema(db, serializer).runMigrations(0);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      dataMigrations = new SQLiteSchema(db, serializer).runMigrations(oldVersion);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(oldVersion);
     }
 
     @Override

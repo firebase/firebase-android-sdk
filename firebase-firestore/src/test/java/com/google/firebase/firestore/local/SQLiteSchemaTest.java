@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
-import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -34,7 +33,6 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.common.collect.Lists;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -102,11 +100,11 @@ public class SQLiteSchemaTest {
 
   @Test
   public void canRerunMigrations() {
-    schema.runMigrations();
+    schema.runSchemaUpgrades();
     // Run the whole thing again
-    schema.runMigrations();
+    schema.runSchemaUpgrades();
     // Run just a piece. Adds a column, make sure it doesn't throw
-    schema.runMigrations(4, 6);
+    schema.runSchemaUpgrades(4, 6);
   }
 
   private Map<String, Set<String>> getCurrentSchema() {
@@ -147,7 +145,7 @@ public class SQLiteSchemaTest {
     // SDK relying on that table or column.
     Map<String, Set<String>> tables = new HashMap<>();
     for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
-      schema.runMigrations(toVersion - 1, toVersion);
+      schema.runSchemaUpgrades(toVersion - 1, toVersion);
       Map<String, Set<String>> newTables = getCurrentSchema();
       assertNoRemovals(tables, newTables, toVersion);
       tables = newTables;
@@ -158,14 +156,14 @@ public class SQLiteSchemaTest {
   public void canRecoverFromDowngrades() {
     for (int downgradeVersion = 0; downgradeVersion < SQLiteSchema.VERSION; downgradeVersion++) {
       // Upgrade schema to current, then upgrade from `downgradeVersion` to current
-      schema.runMigrations();
-      schema.runMigrations(downgradeVersion, SQLiteSchema.VERSION);
+      schema.runSchemaUpgrades();
+      schema.runSchemaUpgrades(downgradeVersion, SQLiteSchema.VERSION);
     }
   }
 
   @Test
   public void createsMutationsTable() {
-    schema.runMigrations();
+    schema.runSchemaUpgrades();
 
     assertNoResultsForQuery("SELECT uid, batch_id FROM mutations", NO_ARGS);
 
@@ -182,7 +180,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void deletesAllTargets() {
-    schema.runMigrations(0, 2);
+    schema.runSchemaUpgrades(0, 2);
 
     db.execSQL("INSERT INTO targets (canonical_id, target_id) VALUES ('foo1', 1)");
     db.execSQL("INSERT INTO targets (canonical_id, target_id) VALUES ('foo2', 2)");
@@ -191,7 +189,7 @@ public class SQLiteSchemaTest {
     db.execSQL("INSERT INTO target_documents (target_id, path) VALUES (1, 'foo/bar')");
     db.execSQL("INSERT INTO target_documents (target_id, path) VALUES (2, 'foo/baz')");
 
-    schema.runMigrations(2, 3);
+    schema.runSchemaUpgrades(2, 3);
 
     assertNoResultsForQuery("SELECT * FROM targets", NO_ARGS);
     assertNoResultsForQuery("SELECT * FROM target_globals", NO_ARGS);
@@ -200,14 +198,14 @@ public class SQLiteSchemaTest {
 
   @Test
   public void countsTargets() {
-    schema.runMigrations(0, 3);
+    schema.runSchemaUpgrades(0, 3);
     long expected = 50;
     for (int i = 0; i < expected; i++) {
       db.execSQL(
           "INSERT INTO targets (canonical_id, target_id) VALUES (?, ?)",
           new String[] {"foo" + i, "" + i});
     }
-    schema.runMigrations(3, 5);
+    schema.runSchemaUpgrades(3, 5);
     Cursor c = db.rawQuery("SELECT target_count FROM target_globals LIMIT 1", NO_ARGS);
     assertTrue(c.moveToFirst());
     long targetCount = c.getInt(0);
@@ -230,7 +228,7 @@ public class SQLiteSchemaTest {
     // This test creates a database with schema version 5 that has two users, both of which have
     // acknowledged mutations that haven't yet been removed from IndexedDb ("heldWriteAcks").
     // Schema version 6 removes heldWriteAcks, and as such these mutations are deleted.
-    schema.runMigrations(0, 5);
+    schema.runSchemaUpgrades(0, 5);
 
     // User 'userA' has two acknowledged mutations and one that is pending.
     // User 'userB' has one acknowledged mutation and one that is pending.
@@ -251,7 +249,7 @@ public class SQLiteSchemaTest {
         "INSERT INTO mutation_queues (uid, last_acknowledged_batch_id) VALUES (?, ?)",
         new Object[] {"userC", -1});
 
-    schema.runMigrations(5, 6);
+    schema.runSchemaUpgrades(5, 6);
 
     // Verify that all but the two pending mutations have been cleared by the migration.
     new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM mutations")
@@ -289,7 +287,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void addsSentinelRows() {
-    schema.runMigrations(0, 6);
+    schema.runSchemaUpgrades(0, 6);
 
     long oldSequenceNumber = 1;
     // Set the highest sequence number to this value so that untagged documents
@@ -311,7 +309,7 @@ public class SQLiteSchemaTest {
       }
     }
 
-    schema.runMigrations(6, 7);
+    schema.runSchemaUpgrades(6, 7);
 
     // Verify.
     new SQLitePersistence.Query(
@@ -340,7 +338,7 @@ public class SQLiteSchemaTest {
     // PORTING NOTE: This test only exists on Android since other clients do not need to split
     // large data sets during schema migration.
 
-    schema.runMigrations(0, 6);
+    schema.runSchemaUpgrades(0, 6);
 
     // Set up some documents (we only need the keys). Note this count is higher than the batch size
     // during migration, which is 100.
@@ -357,7 +355,7 @@ public class SQLiteSchemaTest {
               assertEquals(0, row.getLong(0));
             });
 
-    schema.runMigrations(6, 7);
+    schema.runSchemaUpgrades(6, 7);
 
     new SQLitePersistence.Query(db, "SELECT COUNT(*) FROM target_documents")
         .first(
@@ -380,7 +378,7 @@ public class SQLiteSchemaTest {
             "cg2", asList("", "cg1/x"),
             "cg3", asList("blah/x/blah/x", "cg2/x"));
 
-    schema.runMigrations(0, 7);
+    schema.runSchemaUpgrades(0, 7);
     // Write mutations.
     int batchId = 1;
     for (String writePath : writePaths) {
@@ -394,7 +392,7 @@ public class SQLiteSchemaTest {
     }
 
     // Migrate to v8 and verify index entries.
-    schema.runMigrations(7, 8);
+    schema.runSchemaUpgrades(7, 8);
     Map<String, List<String>> actualParents = new HashMap<>();
     new SQLitePersistence.Query(db, "SELECT collection_id, parent FROM collection_parents")
         .forEach(
@@ -420,13 +418,13 @@ public class SQLiteSchemaTest {
   @Test
   public void existingDocumentsRemainReadableAfterIndexFreeMigration() {
     // Initialize the schema to the state prior to the index-free migration.
-    schema.runMigrations(0, 8);
+    schema.runSchemaUpgrades(0, 8);
     db.execSQL(
         "INSERT INTO remote_documents (path, contents) VALUES (?, ?)",
         new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
 
     // Run the index-free migration.
-    schema.runMigrations(8, 10);
+    schema.runSchemaUpgrades(8, 10);
     db.execSQL(
         "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
@@ -453,7 +451,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void dropsLastLimboFreeSnapshotIfPreviouslyDowngraded() {
-    schema.runMigrations(0, 9);
+    schema.runSchemaUpgrades(0, 9);
 
     db.execSQL(
         "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
@@ -465,8 +463,8 @@ public class SQLiteSchemaTest {
         "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
         new Object[] {3, "baz", createDummyQueryTargetWithLimboFreeVersion(3).toByteArray()});
 
-    schema.runMigrations(0, 8);
-    schema.runMigrations(8, 10);
+    schema.runSchemaUpgrades(0, 8);
+    schema.runSchemaUpgrades(8, 10);
 
     int rowCount =
         new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
@@ -489,13 +487,13 @@ public class SQLiteSchemaTest {
 
   @Test
   public void dropsLastLimboFreeSnapshotIfValuesCannotBeReliedUpon() {
-    schema.runMigrations(0, 9);
+    schema.runSchemaUpgrades(0, 9);
 
     db.execSQL(
         "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
         new Object[] {1, "foo", createDummyQueryTargetWithLimboFreeVersion(1).toByteArray()});
 
-    schema.runMigrations(9, 10);
+    schema.runSchemaUpgrades(9, 10);
 
     new SQLitePersistence.Query(db, "SELECT target_proto FROM targets WHERE target_id = 1")
         .first(
@@ -513,7 +511,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void keepsLastLimboFreeSnapshotIfNotDowngraded() {
-    schema.runMigrations(0, 9);
+    schema.runSchemaUpgrades(0, 9);
 
     db.execSQL(
         "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
@@ -521,7 +519,7 @@ public class SQLiteSchemaTest {
 
     // Make sure that we don't drop the lastLimboFreeSnapshotVersion if we are already on schema
     // version 9.
-    schema.runMigrations(9, 9);
+    schema.runSchemaUpgrades(9, 9);
 
     new SQLitePersistence.Query(db, "SELECT target_proto FROM targets")
         .forEach(
@@ -539,7 +537,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void rewritesCanonicalIds() {
-    schema.runMigrations(0, 10);
+    schema.runSchemaUpgrades(0, 10);
 
     Query filteredQuery = query("colletion").filter(filter("foo", "==", "bar"));
     TargetData initialTargetData =
@@ -555,7 +553,7 @@ public class SQLiteSchemaTest {
           2, "invalid_canonical_id", serializer.encodeTargetData(initialTargetData).toByteArray()
         });
 
-    schema.runMigrations(10, 11);
+    schema.runSchemaUpgrades(10, 11);
     new SQLitePersistence.Query(db, "SELECT canonical_id, target_proto, canonical_id FROM targets")
         .forEach(
             cursor -> {
@@ -575,7 +573,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsBundlesTable() {
-    schema.runMigrations();
+    schema.runSchemaUpgrades();
 
     assertNoResultsForQuery("SELECT * FROM bundles", NO_ARGS);
 
@@ -599,7 +597,7 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsNamedQueriesTable() {
-    schema.runMigrations();
+    schema.runSchemaUpgrades();
 
     assertNoResultsForQuery("SELECT * FROM named_queries", NO_ARGS);
 
@@ -628,7 +626,7 @@ public class SQLiteSchemaTest {
     try {
       Persistence.INDEXING_SUPPORT_ENABLED = true;
 
-      schema.runMigrations(0, SQLiteSchema.INDEXING_SUPPORT_VERSION);
+      schema.runSchemaUpgrades(0, SQLiteSchema.INDEXING_SUPPORT_VERSION);
 
       assertTableExists("index_configuration");
       assertTableExists("index_entries");
@@ -639,31 +637,21 @@ public class SQLiteSchemaTest {
   }
 
   @Test
-  public void createsOverlaysTable() {
+  public void createsOverlaysAndMigrationTable() {
     boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
     try {
       Persistence.OVERLAY_SUPPORT_ENABLED = true;
 
-      Set<SQLitePersistence.DataMigration> migrations =
-          schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
-
-      assertSetEquals(
-          Lists.newArrayList(SQLitePersistence.DataMigration.BuildOverlays), migrations);
+      schema.runSchemaUpgrades(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
       assertTableExists("document_overlays");
-    } finally {
-      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-    }
-  }
+      assertTableExists("data_migrations");
 
-  @Test
-  public void buildsOverlays() {
-    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    try {
-      Persistence.OVERLAY_SUPPORT_ENABLED = true;
-
-      schema.runMigrations(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
-
-      assertTableExists("document_overlays");
+      Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
+      assertTrue(cursor.moveToFirst());
+      String migrationName = cursor.getString(0);
+      assertEquals(
+          SQLitePersistence.DataMigration.BuildOverlays,
+          SQLitePersistence.DataMigration.valueOf(migrationName));
     } finally {
       Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
     }

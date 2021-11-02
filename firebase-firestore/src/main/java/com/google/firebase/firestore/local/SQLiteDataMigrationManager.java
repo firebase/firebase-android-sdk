@@ -14,6 +14,9 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -24,23 +27,19 @@ import java.util.Set;
 /** Manages SQLite data migration required by SDK version upgrades. */
 public class SQLiteDataMigrationManager implements DataMigrationManager {
   private final SQLitePersistence db;
-  private final Set<SQLitePersistence.DataMigration> migrations;
 
   /**
    * Creates a new data migration manager.
    *
    * @param persistence The underlying SQLite Persistence to use for data migrations.
-   * @param migrations The set of migrates needed to run.
    */
-  public SQLiteDataMigrationManager(
-      SQLitePersistence persistence, Set<SQLitePersistence.DataMigration> migrations) {
+  public SQLiteDataMigrationManager(SQLitePersistence persistence) {
     this.db = persistence;
-    this.migrations = migrations;
   }
 
   @Override
   public void run() {
-    for (SQLitePersistence.DataMigration migration : migrations) {
+    for (SQLitePersistence.DataMigration migration : getPendingMigrations()) {
       switch (migration) {
         case BuildOverlays:
           buildOverlays();
@@ -71,8 +70,10 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
             LocalDocumentsView localView =
                 new LocalDocumentsView(
                     remoteDocumentCache, mutationQueue, documentOverlayCache, db.getIndexManager());
-            localView.recalculateOverlays(allDocumentKeys);
+            localView.recalculateAndSaveOverlays(allDocumentKeys);
           }
+
+          removePendingMigrations(SQLitePersistence.DataMigration.BuildOverlays);
         });
   }
 
@@ -80,5 +81,30 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
     Set<String> uids = new HashSet<>();
     db.query("SELECT DISTINCT uid FROM mutation_queues").forEach(row -> uids.add(row.getString(0)));
     return uids;
+  }
+
+  @VisibleForTesting
+  Set<SQLitePersistence.DataMigration> getPendingMigrations() {
+    Set<SQLitePersistence.DataMigration> result = new HashSet<>();
+    boolean tableNotExist =
+        db.query("SELECT 1=1 FROM sqlite_master WHERE tbl_name = 'data_migrations'").isEmpty();
+    if (tableNotExist) {
+      return result;
+    }
+
+    db.query("SELECT migration_name FROM data_migrations")
+        .forEach(
+            row -> {
+              try {
+                result.add(SQLitePersistence.DataMigration.valueOf(row.getString(0)));
+              } catch (IllegalArgumentException e) {
+                throw fail("SQLitePersistence.DataMigration failed to parse: %s", e);
+              }
+            });
+    return result;
+  }
+
+  private void removePendingMigrations(SQLitePersistence.DataMigration migration) {
+    db.execute("DELETE FROM data_migrations WHERE migration_name = ?", migration.name());
   }
 }

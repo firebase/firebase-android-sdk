@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.auth.User;
@@ -109,6 +110,10 @@ public class SQLiteOverlayDataMigrationManagerTest {
         setMutation("foo/bar", map("foo", "bar")),
         persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+
+    SQLiteDataMigrationManager migrationManager =
+        (SQLiteDataMigrationManager) persistence.getDataMigrationManager();
+    assertTrue(migrationManager.getPendingMigrations().isEmpty());
   }
 
   @Test
@@ -126,6 +131,10 @@ public class SQLiteOverlayDataMigrationManagerTest {
         deleteMutation("foo/bar"),
         persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
     assertContains(deletedDoc("foo/bar", 2).setHasLocalMutations());
+
+    SQLiteDataMigrationManager migrationManager =
+        (SQLiteDataMigrationManager) persistence.getDataMigrationManager();
+    assertTrue(migrationManager.getPendingMigrations().isEmpty());
   }
 
   @Test
@@ -154,6 +163,10 @@ public class SQLiteOverlayDataMigrationManagerTest {
 
     assertContains(doc("foo/bar", 2, map("it", 2)).setHasLocalMutations());
     assertContains(doc("foo/newBar", 0, map("it", asList(1))).setHasLocalMutations());
+
+    SQLiteDataMigrationManager migrationManager =
+        (SQLiteDataMigrationManager) persistence.getDataMigrationManager();
+    assertTrue(migrationManager.getPendingMigrations().isEmpty());
   }
 
   @Test
@@ -178,5 +191,9 @@ public class SQLiteOverlayDataMigrationManagerTest {
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-another_user")),
         persistence.getDocumentOverlay(new User("another_user")).getOverlay(key("foo/bar")));
+
+    SQLiteDataMigrationManager migrationManager =
+        (SQLiteDataMigrationManager) persistence.getDataMigrationManager();
+    assertTrue(migrationManager.getPendingMigrations().isEmpty());
   }
 }
