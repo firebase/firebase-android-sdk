@@ -23,7 +23,7 @@ import static java.lang.Math.max;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -68,14 +68,51 @@ final class SQLiteIndexManager implements IndexManager {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private final User user;
+  private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes;
 
-  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer) {
+  private boolean started = false;
+  private int memoizedMaxId = -1;
+
+  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer, User user) {
     this.db = persistence;
     this.serializer = serializer;
+    this.user = user;
+    this.memoizedIndexes = new HashMap<>();
+  }
+
+  @Override
+  public void start() {
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
+      started = true;
+      return;
+    }
+
+    db.query(
+            "SELECT index_id, collection_group, index_proto, update_time_seconds, "
+                + "update_time_nanos FROM index_configuration")
+        .forEach(
+            row -> {
+              try {
+                FieldIndex fieldIndex =
+                    serializer.decodeFieldIndex(
+                        row.getString(1),
+                        row.getInt(0),
+                        Index.parseFrom(row.getBlob(2)),
+                        row.getInt(3),
+                        row.getInt(4));
+                memoizeIndex(fieldIndex);
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
+
+    started = true;
   }
 
   @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
+    hardAssert(started, "IndexManager not started");
     hardAssert(collectionPath.length() % 2 == 1, "Expected a collection path.");
 
     if (collectionParentsCache.add(collectionPath)) {
@@ -92,6 +129,8 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public List<ResourcePath> getCollectionParents(String collectionId) {
+    hardAssert(started, "IndexManager not started");
+
     ArrayList<ResourcePath> parentPaths = new ArrayList<>();
     db.query("SELECT parent FROM collection_parents WHERE collection_id = ?")
         .binding(collectionId)
@@ -104,27 +143,28 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void addFieldIndex(FieldIndex index) {
-    int currentMax =
-        db.query("SELECT MAX(index_id) FROM index_configuration")
-            .firstValue(input -> input.isNull(0) ? 0 : input.getInt(0));
+    hardAssert(started, "IndexManager not started");
+
+    int nextIndexId = memoizedMaxId + 1;
+    index = index.withIndexId(nextIndexId);
 
     db.execute(
         "INSERT INTO index_configuration ("
             + "index_id, "
             + "collection_group, "
             + "index_proto, "
-            + "active, "
             + "update_time_seconds, "
-            + "update_time_nanos) VALUES(?, ?, ?, ?, ?, ?)",
-        currentMax + 1,
+            + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
+        nextIndexId,
         index.getCollectionGroup(),
         encodeFieldIndex(index),
-        true,
         index.getUpdateTime().getTimestamp().getSeconds(),
         index.getUpdateTime().getTimestamp().getNanoseconds());
 
     // TODO(indexing): Use a 0-counter rather than the timestamp.
     setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
+
+    memoizeIndex(index);
   }
 
   private void updateFieldIndex(FieldIndex index) {
@@ -133,20 +173,22 @@ final class SQLiteIndexManager implements IndexManager {
             + "index_id, "
             + "collection_group, "
             + "index_proto, "
-            + "active, "
             + "update_time_seconds, "
-            + "update_time_nanos) VALUES(?, ?, ?, ?, ?, ?)",
+            + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
         index.getIndexId(),
         index.getCollectionGroup(),
         encodeFieldIndex(index),
-        true,
         index.getUpdateTime().getTimestamp().getSeconds(),
         index.getUpdateTime().getTimestamp().getNanoseconds());
+
+    memoizeIndex(index);
   }
 
-  /** Returns the next collection group to update. */
   // TODO(indexing): Use a counter rather than the starting timestamp.
+  @Override
   public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+    hardAssert(started, "IndexManager not started");
+
     final String[] nextCollectionGroup = {null};
     db.query(
             "SELECT collection_group "
@@ -173,28 +215,17 @@ final class SQLiteIndexManager implements IndexManager {
     return nextCollectionGroup[0];
   }
 
-  /**
-   * Updates the index entries for the provided documents and corresponding field indexes until the
-   * cap is reached. Updates the field indexes in persistence with the latest read time that was
-   * processed.
-   */
-  public int updateIndexEntries(
-      String collectionGroup,
-      ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
-      int entriesRemainingUnderCap) {
-    int entriesWrittenCount = 0;
+  @Override
+  public void updateIndexEntries(Collection<Document> documents) {
+    hardAssert(started, "IndexManager not started");
+
     Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
-    List<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
 
-    for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
-      Document document = entry.getValue();
-      if (entriesWrittenCount >= entriesRemainingUnderCap) {
-        break;
-      }
-
+    for (Document document : documents) {
+      Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
-        entriesWrittenCount += writeEntries(document, fieldIndex);
-        if (entriesWrittenCount > 0) {
+        boolean modified = writeEntries(document, fieldIndex);
+        if (modified) {
           // TODO(indexing): This would be much simpler with a sequence counter since we would
           // always update the index to the next sequence value.
           FieldIndex latestIndex =
@@ -212,39 +243,24 @@ final class SQLiteIndexManager implements IndexManager {
     for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
       updateFieldIndex(updatedFieldIndex);
     }
-
-    return entriesWrittenCount;
   }
 
-  /**
-   * Returns a list of field indexes that correspond to the specified collection group.
-   *
-   * @param collectionGroup The collection group to get matching field indexes for.
-   * @return A list of field indexes for the specified collection group.
-   */
-  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
-    List<FieldIndex> matchingFieldIndexes = new ArrayList<>();
-    db.query(
-            "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos "
-                + "FROM index_configuration "
-                + "WHERE active = 1 AND collection_group = ?")
-        .binding(collectionGroup)
-        .forEach(
-            row -> {
-              try {
-                matchingFieldIndexes.add(
-                    serializer.decodeFieldIndex(
-                        row.getString(1),
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(2)),
-                        row.getInt(3),
-                        row.getInt(4)));
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Failed to decode index: " + e);
-              }
-            });
+  @Override
+  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
+    hardAssert(started, "IndexManager not started");
+    Map<Integer, FieldIndex> indexes = memoizedIndexes.get(collectionGroup);
+    return indexes == null ? Collections.emptyList() : indexes.values();
+  }
 
-    return matchingFieldIndexes;
+  /** Stores the index in the memoized indexes table. */
+  private void memoizeIndex(FieldIndex fieldIndex) {
+    Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
+    if (existingIndexes == null) {
+      existingIndexes = new HashMap<>();
+      memoizedIndexes.put(fieldIndex.getCollectionGroup(), existingIndexes);
+    }
+    existingIndexes.put(fieldIndex.getIndexId(), fieldIndex);
+    memoizedMaxId = Math.max(memoizedMaxId, fieldIndex.getIndexId());
   }
 
   /**
@@ -260,61 +276,43 @@ final class SQLiteIndexManager implements IndexManager {
     }
   }
 
-  /** Writes the index entries for the given document. Returns the number of entried written. */
-  private int writeEntries(Document document, FieldIndex fieldIndex) {
+  /**
+   * If applicable, writes index entries for the given document. Returns whether any index entry was
+   * written.
+   */
+  private boolean writeEntries(Document document, FieldIndex fieldIndex) {
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
-      return 0;
+      return false;
     }
 
     @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
     if (arraySegment != null) {
       Value value = document.getField(arraySegment.getFieldPath());
       if (!isArray(value)) {
-        return 0;
+        return false;
       }
 
       for (Value arrayValue : value.getArrayValue().getValuesList()) {
         addSingleEntry(
-            document.getKey(),
-            fieldIndex.getIndexId(),
-            encodeSingleElement(arrayValue),
-            directionalValue);
+            document, fieldIndex.getIndexId(), encodeSingleElement(arrayValue), directionalValue);
       }
-      return value.getArrayValue().getValuesCount();
+      return true;
     } else {
-      addSingleEntry(
-          document.getKey(), fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
-      return 1;
+      addSingleEntry(document, fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
+      return true;
     }
   }
 
   @Override
   public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
+    hardAssert(started, "IndexManager not started");
     hardAssert(oldDocument == null, "Support for updating documents is not yet available");
     hardAssert(newDocument != null, "Support for removing documents is not yet available");
 
     DocumentKey documentKey = newDocument.getKey();
-    String collectionGroup = documentKey.getCollectionGroup();
-    db.query(
-            "SELECT index_id, index_proto, update_time_seconds, update_time_nanos "
-                + "FROM index_configuration WHERE collection_group = ? AND active = 1")
-        .binding(collectionGroup)
-        .forEach(
-            row -> {
-              try {
-                FieldIndex fieldIndex =
-                    serializer.decodeFieldIndex(
-                        collectionGroup,
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(1)),
-                        row.getInt(2),
-                        row.getInt(3));
-                addIndexEntry(newDocument, Collections.singletonList(fieldIndex));
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Invalid index: " + e);
-              }
-            });
+    Collection<FieldIndex> fieldIndices = getFieldIndexes(documentKey.getCollectionGroup());
+    addIndexEntry(newDocument, fieldIndices);
   }
 
   /**
@@ -324,35 +322,42 @@ final class SQLiteIndexManager implements IndexManager {
    * @param fieldIndexes A list of field indexes to apply.
    */
   private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
+    List<FieldIndex> updatedIndexes = new ArrayList<>();
+
     for (FieldIndex fieldIndex : fieldIndexes) {
-      int entriesWritten = writeEntries(document, fieldIndex);
-      if (entriesWritten > 0) {
-        FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, document.getVersion());
-        updateFieldIndex(updatedIndex);
+      boolean modified = writeEntries(document, fieldIndex);
+      if (modified) {
+        updatedIndexes.add(getPostUpdateIndex(fieldIndex, document.getVersion()));
       }
+    }
+
+    for (FieldIndex updatedIndex : updatedIndexes) {
+      updateFieldIndex(updatedIndex);
     }
   }
 
   /** Adds a single index entry into the index entries table. */
   private void addSingleEntry(
-      DocumentKey documentKey, int indexId, @Nullable Object arrayValue, Object directionalValue) {
+      Document document, int indexId, @Nullable Object arrayValue, Object directionalValue) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(
-          TAG, "Adding index values for document '%s' to index '%s'", documentKey, indexId);
+          TAG, "Adding index values for document '%s' to index '%s'", document.getKey(), indexId);
     }
-    // TODO(indexing): Handle different values for different users
+
     db.execute(
-        "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
-            + "VALUES(?, ?, ?, ?)",
+        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
+            + "VALUES(?, ?, ?, ?, ?)",
         indexId,
+        document.hasLocalMutations() ? user.getUid() : null,
         arrayValue,
         directionalValue,
-        documentKey.toString());
+        document.getKey().toString());
   }
 
   @Override
-  @Nullable
   public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
+    hardAssert(started, "IndexManager not started");
+
     @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
     @Nullable List<Value> notInValues = target.getNotInValues(fieldIndex);
     @Nullable Bound lowerBound = target.getLowerBound(fieldIndex);
@@ -416,8 +421,8 @@ final class SQLiteIndexManager implements IndexManager {
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
-    statement.append(
-        "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
+    statement.append("SELECT document_name, directional_value FROM index_entries ");
+    statement.append("WHERE index_id = ?  AND (uid IS NULL or uid = ?) ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
@@ -459,7 +464,7 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object[] upperBounds,
       @Nullable Object[] notInValues) {
     int bindsPerStatement =
-        1
+        2
             + (arrayValues != null ? 1 : 0)
             + (lowerBounds != null ? 1 : 0)
             + (upperBounds != null ? 1 : 0);
@@ -471,6 +476,7 @@ final class SQLiteIndexManager implements IndexManager {
     int offset = 0;
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
+      bindArgs[offset++] = user.getUid();
       if (arrayValues != null) {
         bindArgs[offset++] = encodeSingleElement(arrayValues.get(i / statementsPerArrayValue));
       }
@@ -492,43 +498,34 @@ final class SQLiteIndexManager implements IndexManager {
   @Nullable
   @Override
   public FieldIndex getFieldIndex(Target target) {
+    hardAssert(started, "IndexManager not started");
+
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
         target.getCollectionGroup() != null
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
 
-    List<FieldIndex> activeIndices = new ArrayList<>();
+    Collection<FieldIndex> collectionIndexes = getFieldIndexes(collectionGroup);
+    if (collectionIndexes.isEmpty()) {
+      return null;
+    }
 
-    db.query(
-            "SELECT index_id, index_proto, update_time_seconds, update_time_nanos FROM index_configuration WHERE collection_group = ? AND active = 1")
-        .binding(collectionGroup)
-        .forEach(
-            row -> {
-              try {
-                FieldIndex fieldIndex =
-                    serializer.decodeFieldIndex(
-                        collectionGroup,
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(1)),
-                        row.getInt(2),
-                        row.getInt(3));
-                boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-                if (matches) {
-                  activeIndices.add(fieldIndex);
-                }
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Failed to decode index: " + e);
-              }
-            });
+    List<FieldIndex> matchingIndexes = new ArrayList<>();
+    for (FieldIndex fieldIndex : collectionIndexes) {
+      boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
+      if (matches) {
+        matchingIndexes.add(fieldIndex);
+      }
+    }
 
-    if (activeIndices.isEmpty()) {
+    if (matchingIndexes.isEmpty()) {
       return null;
     }
 
     // Return the index with the most number of segments
     return Collections.max(
-        activeIndices, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
+        matchingIndexes, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
   }
 
   /**

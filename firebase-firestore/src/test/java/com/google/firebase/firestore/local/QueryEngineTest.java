@@ -90,19 +90,24 @@ public class QueryEngineTest {
     expectFullCollectionScan = null;
 
     persistence = MemoryPersistence.createEagerGcMemoryPersistence();
-    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
+
+    IndexManager indexManager = new MemoryIndexManager();
+    indexManager.start();
+    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager);
+
     documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
     queryEngine = new DefaultQueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
+    remoteDocumentCache.setIndexManager(indexManager);
 
     LocalDocumentsView localDocuments =
         new LocalDocumentsView(
             remoteDocumentCache,
-            persistence.getMutationQueue(User.UNAUTHENTICATED),
+            persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
-            new MemoryIndexManager()) {
+            indexManager) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
               Query query, SnapshotVersion sinceReadTime) {

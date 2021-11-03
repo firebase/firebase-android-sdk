@@ -110,7 +110,10 @@ public final class LocalStore implements BundleCallback {
   private final Persistence persistence;
 
   /** Manages the list of active field and collection indices. */
-  private final IndexManager indexManager;
+  private IndexManager indexManager;
+
+  /** Manages field index backfill. */
+  private final IndexBackfiller indexBackfiller;
 
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
@@ -145,25 +148,33 @@ public final class LocalStore implements BundleCallback {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
+  public LocalStore(
+      Persistence persistence,
+      IndexBackfiller indexBackfiller,
+      QueryEngine queryEngine,
+      User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
-    mutationQueue = persistence.getMutationQueue(initialUser);
+    indexManager = persistence.getIndexManager(initialUser);
+    mutationQueue = persistence.getMutationQueue(initialUser, indexManager);
     documentOverlayCache = persistence.getDocumentOverlay(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    indexManager = persistence.getIndexManager();
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
-
     this.queryEngine = queryEngine;
+    this.indexBackfiller = indexBackfiller;
     queryEngine.setLocalDocumentsView(localDocuments);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
+
+    remoteDocuments.setIndexManager(indexManager);
+    indexBackfiller.setIndexManager(indexManager);
+    indexBackfiller.setLocalDocumentsView(localDocuments);
 
     queryDataByTarget = new SparseArray<>();
     targetIdByTarget = new HashMap<>();
@@ -171,15 +182,16 @@ public final class LocalStore implements BundleCallback {
 
   public void start() {
     persistence.getOverlayMigrationManager().run();
+    startIndexManager();
     startMutationQueue();
   }
 
+  private void startIndexManager() {
+    persistence.runTransaction("Start IndexManager", () -> indexManager.start());
+  }
+
   private void startMutationQueue() {
-    persistence.runTransaction(
-        "Start MutationQueue",
-        () -> {
-          mutationQueue.start();
-        });
+    persistence.runTransaction("Start MutationQueue", () -> mutationQueue.start());
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
@@ -188,8 +200,11 @@ public final class LocalStore implements BundleCallback {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
-    mutationQueue = persistence.getMutationQueue(user);
+    indexManager = persistence.getIndexManager(user);
+    mutationQueue = persistence.getMutationQueue(user, indexManager);
     documentOverlayCache = persistence.getDocumentOverlay(user);
+
+    startIndexManager();
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
@@ -198,6 +213,12 @@ public final class LocalStore implements BundleCallback {
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
     queryEngine.setLocalDocumentsView(localDocuments);
+    queryEngine.setIndexManager(indexManager);
+
+    // TODO(indexing): Add spec tests that test these components change after a user change
+    remoteDocuments.setIndexManager(indexManager);
+    indexBackfiller.setIndexManager(indexManager);
+    indexBackfiller.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
@@ -858,11 +879,6 @@ public final class LocalStore implements BundleCallback {
   public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {
     return persistence.runTransaction(
         "Collect garbage", () -> garbageCollector.collect(queryDataByTarget));
-  }
-
-  public IndexBackfiller.Results backfillIndexes(IndexBackfiller indexBackfiller) {
-    return persistence.runTransaction(
-        "Backfill Indexes", () -> indexBackfiller.backfill(localDocuments));
   }
 
   /**

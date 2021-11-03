@@ -367,6 +367,8 @@ class SQLiteSchema {
     ifTablesDontExist(
         new String[] {"index_configuration", "index_entries"},
         () -> {
+          // TODO(indexing): Do we need to store a different update time per user? We need to ensure
+          // that we index mutations entries for all users.
           db.execSQL(
               "CREATE TABLE index_configuration ("
                   + "index_id INTEGER, "

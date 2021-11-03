@@ -85,7 +85,7 @@ public abstract class Persistence {
    * implementation to the extent possible (e.g. in the case of uid switching from
    * sally=>jack=>sally, sally's mutation queue will be preserved).
    */
-  abstract MutationQueue getMutationQueue(User user);
+  abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);
 
   /** Creates a TargetCache representing the persisted cache of queries. */
   abstract TargetCache getTargetCache();
@@ -94,7 +94,7 @@ public abstract class Persistence {
   abstract RemoteDocumentCache getRemoteDocumentCache();
 
   /** Creates an IndexManager that manages our persisted query indexes. */
-  abstract IndexManager getIndexManager();
+  abstract IndexManager getIndexManager(User user);
 
   /** Returns a BundleCache representing the persisted cache of loaded bundles. */
   abstract BundleCache getBundleCache();

@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
@@ -31,12 +30,6 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
     LruDelegate lruDelegate = ((SQLitePersistence) getPersistence()).getReferenceDelegate();
     LruGarbageCollector gc = lruDelegate.getGarbageCollector();
     return gc.newScheduler(configuration.getAsyncQueue(), getLocalStore());
-  }
-
-  @Override
-  protected Scheduler createIndexBackfillScheduler(Configuration configuration) {
-    IndexBackfiller indexBackfiller = ((SQLitePersistence) getPersistence()).getIndexBackfiller();
-    return indexBackfiller.newScheduler(configuration.getAsyncQueue(), getLocalStore());
   }
 
   @Override

@@ -89,11 +89,15 @@ public abstract class LruGarbageCollectorTestCase {
     persistence.getReferenceDelegate().setInMemoryPins(new ReferenceSet());
     targetCache = persistence.getTargetCache();
     documentCache = persistence.getRemoteDocumentCache();
+    documentCache.setIndexManager(new MemoryIndexManager());
     User user = new User("user");
-    mutationQueue = persistence.getMutationQueue(user);
+    IndexManager indexManager = persistence.getIndexManager(user);
+    mutationQueue = persistence.getMutationQueue(user, indexManager);
     initialSequenceNumber = targetCache.getHighestListenSequenceNumber();
     garbageCollector = ((LruDelegate) persistence.getReferenceDelegate()).getGarbageCollector();
     lruParams = params;
+
+    indexManager.start();
   }
 
   private TargetData nextTargetData() {

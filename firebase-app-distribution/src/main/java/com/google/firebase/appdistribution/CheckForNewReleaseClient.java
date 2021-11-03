@@ -127,12 +127,17 @@ class CheckForNewReleaseClient {
           firebaseAppDistributionTesterApiClient.fetchNewRelease(
               fid, appId, apiKey, authToken, firebaseApp.getApplicationContext());
 
+      if (!canInstall(retrievedNewRelease)) {
+        LogWrapper.getInstance().v(TAG + "New release has lower version code than current release");
+        return null;
+      }
+
       if (isNewerBuildVersion(retrievedNewRelease)
           || !isSameAsInstalledRelease(retrievedNewRelease)) {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
-        LogWrapper.getInstance().v(TAG + "New Release is older or is currently installed");
+        LogWrapper.getInstance().v(TAG + "New release is older or is currently installed");
         return null;
       }
     } catch (NumberFormatException e) {
@@ -142,6 +147,12 @@ class CheckForNewReleaseClient {
           FirebaseAppDistributionException.Status.NETWORK_FAILURE,
           e);
     }
+  }
+
+  private boolean canInstall(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
+    return Long.parseLong(newRelease.getBuildVersion())
+        >= getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal newRelease)

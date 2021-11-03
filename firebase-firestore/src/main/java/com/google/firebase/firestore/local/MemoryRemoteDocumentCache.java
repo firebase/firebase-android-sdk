@@ -34,22 +34,27 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
   private ImmutableSortedMap<DocumentKey, Pair<MutableDocument, SnapshotVersion>> docs;
+  /** Manages the collection group index. */
+  private IndexManager indexManager;
 
-  private final MemoryPersistence persistence;
-
-  MemoryRemoteDocumentCache(MemoryPersistence persistence) {
+  MemoryRemoteDocumentCache() {
     docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    this.persistence = persistence;
+  }
+
+  @Override
+  public void setIndexManager(IndexManager indexManager) {
+    this.indexManager = indexManager;
   }
 
   @Override
   public void add(MutableDocument document, SnapshotVersion readTime) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
     docs = docs.insert(document.getKey(), new Pair<>(document.clone(), readTime));
 
-    persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
   }
 
   @Override
