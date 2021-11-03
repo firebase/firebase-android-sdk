@@ -92,7 +92,7 @@ public abstract class Persistence {
   abstract RemoteDocumentCache getRemoteDocumentCache();
 
   /** Creates an IndexManager that manages our persisted query indexes. */
-  abstract IndexManager getIndexManager();
+  abstract IndexManager getIndexManager(User user);
 
   /** Returns a BundleCache representing the persisted cache of loaded bundles. */
   abstract BundleCache getBundleCache();

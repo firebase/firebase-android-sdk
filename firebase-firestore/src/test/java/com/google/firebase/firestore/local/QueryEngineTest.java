@@ -97,12 +97,15 @@ public class QueryEngineTest {
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
 
+    MemoryIndexManager indexManager = new MemoryIndexManager();
+    remoteDocumentCache.setIndexManager(indexManager);
+
     LocalDocumentsView localDocuments =
         new LocalDocumentsView(
             remoteDocumentCache,
             persistence.getMutationQueue(User.UNAUTHENTICATED),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
-            new MemoryIndexManager()) {
+            indexManager) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
               Query query, SnapshotVersion sinceReadTime) {

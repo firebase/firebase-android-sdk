@@ -28,6 +28,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -60,6 +61,7 @@ abstract class RemoteDocumentCacheTestCase {
   public void setUp() {
     persistence = getPersistence();
     remoteDocumentCache = persistence.getRemoteDocumentCache();
+    remoteDocumentCache.setIndexManager(persistence.getIndexManager(User.UNAUTHENTICATED));
   }
 
   @After

@@ -16,6 +16,8 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -32,6 +34,8 @@ import java.util.Set;
 class MemoryIndexManager implements IndexManager {
   private final MemoryCollectionParentIndex collectionParentsIndex =
       new MemoryCollectionParentIndex();
+
+  public MemoryIndexManager() {}
 
   @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
@@ -65,6 +69,27 @@ class MemoryIndexManager implements IndexManager {
   public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
     // Field indices are not supported with memory persistence.
     return Collections.emptySet();
+  }
+
+  @Override
+  public String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+    // Field indices are not supported with memory persistence.
+    return null;
+  }
+
+  @Override
+  public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+    // Field indices are not supported with memory persistence.
+    return Collections.emptyList();
+  }
+
+  @Override
+  public int updateIndexEntries(
+      String collectionGroup,
+      ImmutableSortedMap<DocumentKey, Document> documents,
+      int maxEntryCount) {
+    // Field indices are not supported with memory persistence.
+    return 0;
   }
 
   /**

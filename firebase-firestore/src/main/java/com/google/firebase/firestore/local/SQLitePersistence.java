@@ -81,10 +81,8 @@ public final class SQLitePersistence extends Persistence {
   private final LocalSerializer serializer;
   private final SQLiteTargetCache targetCache;
   private final SQLiteBundleCache bundleCache;
-  private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
-  private final IndexBackfiller indexBackfiller;
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
@@ -121,11 +119,9 @@ public final class SQLitePersistence extends Persistence {
     this.opener = openHelper;
     this.serializer = serializer;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
-    this.indexManager = new SQLiteIndexManager(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
-    this.indexBackfiller = new IndexBackfiller(this);
   }
 
   @Override
@@ -168,10 +164,6 @@ public final class SQLitePersistence extends Persistence {
     return referenceDelegate;
   }
 
-  public IndexBackfiller getIndexBackfiller() {
-    return indexBackfiller;
-  }
-
   @Override
   MutationQueue getMutationQueue(User user) {
     return new SQLiteMutationQueue(this, serializer, user);
@@ -183,8 +175,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  IndexManager getIndexManager() {
-    return indexManager;
+  IndexManager getIndexManager(User user) {
+    return new SQLiteIndexManager(this, serializer, user);
   }
 
   @Override

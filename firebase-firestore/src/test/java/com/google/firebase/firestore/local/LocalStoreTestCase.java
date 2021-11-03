@@ -72,6 +72,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
+import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -116,7 +117,9 @@ public abstract class LocalStoreTestCase {
 
     localStorePersistence = getPersistence();
     queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
-    localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue());
+    localStore =
+        new LocalStore(localStorePersistence, indexBackfiller, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
   }
 
