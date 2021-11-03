@@ -18,12 +18,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.internal.AppDistributionReleaseInternal;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
@@ -61,8 +63,9 @@ public class UpdateAppClientTest {
 
   private UpdateAppClient updateAppClient;
   private UpdateApkClient updateApkClient;
-  private UpdateAabClient updateAabClient;
+  @Mock private UpdateAabClient updateAabClient;
   @Mock private InstallApkClient mockInstallApkClient;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
   static class TestActivity extends Activity {}
 
@@ -84,14 +87,14 @@ public class UpdateAppClientTest {
 
     FirebaseAppDistributionTest.TestActivity activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
 
     this.updateApkClient =
         Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
 
-    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor));
+    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor, mockLifecycleNotifier));
 
     this.updateAppClient = new UpdateAppClient(updateApkClient, updateAabClient);
-    this.updateAppClient.setCurrentActivity(activity);
   }
 
   @Test

@@ -15,7 +15,9 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
@@ -37,7 +39,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
@@ -77,6 +81,8 @@ public class TesterSignInClientTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private SignInStorage mockSignInStorage;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  @Mock private SignInResultActivity mockSignInResultActivity;
 
   @Before
   public void setUp() {
@@ -118,10 +124,11 @@ public class TesterSignInClientTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
 
     testerSignInClient =
-        new TesterSignInClient(firebaseApp, mockFirebaseInstallations, mockSignInStorage);
-    testerSignInClient.setCurrentActivity(activity);
+        new TesterSignInClient(
+            firebaseApp, mockFirebaseInstallations, mockSignInStorage, mockLifecycleNotifier);
   }
 
   @Test
@@ -180,5 +187,35 @@ public class TesterSignInClientTest {
     testerSignInClient.signInTester();
 
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
+  }
+
+  @Test
+  public void signInTester_whenReturnFromSignIn_taskSucceeds() {
+    Task signInTask = testerSignInClient.signInTester();
+    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
+      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+      assertTrue(dialog.isShowing());
+      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+    }
+
+    // Simulate re-entering app
+    testerSignInClient.onActivityCreated(mockSignInResultActivity);
+
+    assertTrue(signInTask.isSuccessful());
+    verify(mockSignInStorage).setSignInStatus(true);
+  }
+
+  @Test
+  public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
+    Task signInTask = testerSignInClient.signInTester();
+
+    // Simulate re-entering app
+    testerSignInClient.onActivityStarted(activity);
+
+    assertFalse(signInTask.isSuccessful());
+    Exception e = signInTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 }

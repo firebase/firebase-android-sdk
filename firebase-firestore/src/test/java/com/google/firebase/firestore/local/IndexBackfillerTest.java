@@ -75,8 +75,6 @@ public class IndexBackfillerTest {
     indexManager = (SQLiteIndexManager) persistence.getIndexManager(User.UNAUTHENTICATED);
     RemoteDocumentCache remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
-    backfiller = new IndexBackfiller(persistence, new AsyncQueue());
-    backfiller.setIndexManager(indexManager);
 
     LocalDocumentsView localDocumentsView =
         new LocalDocumentsView(
@@ -84,6 +82,8 @@ public class IndexBackfillerTest {
             persistence.getMutationQueue(User.UNAUTHENTICATED),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             indexManager);
+    backfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    backfiller.setIndexManager(indexManager);
     backfiller.setLocalDocumentsView(localDocumentsView);
   }
 

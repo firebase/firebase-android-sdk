@@ -22,12 +22,11 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 
 class InstallApkClient {
   private static final String TAG = "ApkInstallClient:";
-
-  @GuardedBy("installTaskLock")
-  private Activity currentActivity;
+  private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("installTaskLock")
   private TaskCompletionSource<Void> installTaskCompletionSource;
@@ -40,10 +39,18 @@ class InstallApkClient {
 
   private final Object installTaskLock = new Object();
 
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (installTaskLock) {
-      this.currentActivity = activity;
+  InstallApkClient(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+    this.lifeCycleNotifier = lifeCycleNotifier;
+    lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
+  }
 
+  InstallApkClient() {
+    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
+  }
+
+  void onActivityStarted(@Nullable Activity activity) {
+    synchronized (installTaskLock) {
       if (installTaskCompletionSource == null
           || installTaskCompletionSource.getTask().isComplete()
           || activity == null) {
@@ -52,6 +59,14 @@ class InstallApkClient {
     }
 
     handleAppResume(activity);
+  }
+
+  void onActivityDestroyed(@Nullable Activity activity) {
+    if (activity instanceof InstallActivity) {
+      // Since install activity is destroyed but app is still active, installation has failed /
+      // cancelled.
+      this.trySetInstallTaskError();
+    }
   }
 
   void handleAppResume(Activity activity) {
@@ -68,7 +83,7 @@ class InstallApkClient {
 
   Task<Void> installApk(String path) {
     synchronized (installTaskLock) {
-      Activity currentActivity = this.currentActivity;
+      Activity currentActivity = lifeCycleNotifier.getCurrentActivity();
       // This ensures that we save the state of the install if the app is backgrounded during
       // APK download
       if (currentActivity == null) {
