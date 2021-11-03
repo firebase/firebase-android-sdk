@@ -70,7 +70,7 @@ final class MemoryMutationQueue implements MutationQueue {
   private ByteString lastStreamToken;
 
   private final MemoryPersistence persistence;
-  private final IndexManager indexManager;
+  private final MemoryIndexManager indexManager;
 
   MemoryMutationQueue(MemoryPersistence persistence, User user) {
     this.persistence = persistence;
