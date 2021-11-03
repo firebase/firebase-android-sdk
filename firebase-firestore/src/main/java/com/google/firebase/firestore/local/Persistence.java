@@ -83,7 +83,7 @@ public abstract class Persistence {
    * implementation to the extent possible (e.g. in the case of uid switching from
    * sally=>jack=>sally, sally's mutation queue will be preserved).
    */
-  abstract MutationQueue getMutationQueue(User user);
+  abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);
 
   /** Creates a TargetCache representing the persisted cache of queries. */
   abstract TargetCache getTargetCache();

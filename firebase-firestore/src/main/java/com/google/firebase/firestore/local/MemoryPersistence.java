@@ -94,7 +94,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  MutationQueue getMutationQueue(User user) {
+  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
       queue = new MemoryMutationQueue(this, user);

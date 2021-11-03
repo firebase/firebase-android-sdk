@@ -32,6 +32,10 @@ import java.util.Set;
  * Collection Group queries.
  */
 public interface IndexManager {
+
+  /** Initializes the IndexManager. */
+  void start();
+
   /**
    * Creates an index entry mapping the collectionId (last segment of the path) to the parent path
    * (either the containing document location or the empty path for root-level collections). Index
@@ -63,9 +67,9 @@ public interface IndexManager {
    * Returns a list of field indexes that correspond to the specified collection group.
    *
    * @param collectionGroup The collection group to get matching field indexes for.
-   * @return A list of field indexes for the specified collection group.
+   * @return A collection of field indexes for the specified collection group.
    */
-  List<FieldIndex> getFieldIndexes(String collectionGroup);
+  Collection<FieldIndex> getFieldIndexes(String collectionGroup);
 
   /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no

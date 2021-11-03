@@ -49,6 +49,7 @@ public abstract class IndexManagerTestCase {
   public void setUp() {
     persistence = getPersistence();
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
   }
 
   @After
