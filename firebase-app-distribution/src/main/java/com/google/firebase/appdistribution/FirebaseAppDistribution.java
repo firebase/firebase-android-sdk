@@ -193,6 +193,17 @@ public class FirebaseAppDistribution {
                   setCachedNewRelease(appDistributionReleaseInternal);
                   return Tasks.forResult(
                       ReleaseUtils.convertToAppDistributionRelease(appDistributionReleaseInternal));
+                })
+            .addOnFailureListener(
+                e -> {
+                  if (e instanceof FirebaseAppDistributionException
+                      && ((FirebaseAppDistributionException) e).getErrorCode()
+                          == AUTHENTICATION_FAILURE) {
+                    // If CheckForNewRelease returns authentication error, the FID is no longer
+                    // valid or does not have access to the latest release. So sign out the tester
+                    // to force FID re-registration
+                    signOutTester();
+                  }
                 });
 
     return cachedCheckForNewReleaseTask;
@@ -294,8 +305,7 @@ public class FirebaseAppDistribution {
           synchronized (updateTaskLock) {
             // show download progress in notification manager
             updateApp(true)
-                .addOnProgressListener(
-                    progress -> postProgressToCachedUpdateIfNewReleaseTask(progress))
+                .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask)
                 .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
                 .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
           }
