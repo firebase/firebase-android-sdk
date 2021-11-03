@@ -66,6 +66,7 @@ public class IndexedQueryEngine implements QueryEngine {
   private ImmutableSortedMap<DocumentKey, Document> performCollectionQuery(Query query) {
     hardAssert(!query.isDocumentQuery(), "matchesCollectionQuery() called with document query.");
     hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
+    hardAssert(indexManager != null, "setIndexManager() not called");
 
     // Queries that match all documents don't benefit from index-based lookups.
     if (query.matchesAllDocuments()) {

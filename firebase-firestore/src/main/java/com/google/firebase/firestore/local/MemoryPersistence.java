@@ -97,7 +97,7 @@ public final class MemoryPersistence extends Persistence {
   MutationQueue getMutationQueue(User user) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
-      queue = new MemoryMutationQueue(this, indexManager);
+      queue = new MemoryMutationQueue(this, user);
       mutationQueues.put(user, queue);
     }
     return queue;

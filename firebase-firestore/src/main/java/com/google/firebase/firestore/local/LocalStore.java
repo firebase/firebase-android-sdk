@@ -211,6 +211,7 @@ public final class LocalStore implements BundleCallback {
     queryEngine.setLocalDocumentsView(localDocuments);
     queryEngine.setIndexManager(indexManager);
 
+    // TODO(indexing): Add spec tests that test these components change after a user change
     remoteDocuments.setIndexManager(indexManager);
     indexBackfiller.setIndexManager(indexManager);
     indexBackfiller.setLocalDocumentsView(localDocuments);
