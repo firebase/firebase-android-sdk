@@ -23,14 +23,14 @@ import androidx.annotation.Nullable;
 public class DevelopmentPlatformProvider {
   public static final String UNITY_PLATFORM = "Unity";
 
-  private static final String UNITY_EDITOR = "com.google.firebase.crashlytics.unity_version";
+  private static final String UNITY_VERSION_FIELD = "com.google.firebase.crashlytics.unity_version";
 
   @Nullable private final String developmentPlatform;
   @Nullable private final String developmentPlatformVersion;
 
   public DevelopmentPlatformProvider(Context context) {
-    // Unity Editor
-    int unityEditorId = getResourcesIdentifier(context, UNITY_EDITOR, "string");
+    // Unity
+    int unityEditorId = getResourcesIdentifier(context, UNITY_VERSION_FIELD, "string");
     if (unityEditorId != 0) {
       developmentPlatform = UNITY_PLATFORM;
       developmentPlatformVersion = context.getResources().getString(unityEditorId);
