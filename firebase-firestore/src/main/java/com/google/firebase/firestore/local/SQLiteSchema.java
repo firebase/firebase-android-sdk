@@ -187,7 +187,7 @@ class SQLiteSchema {
           Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
       createDataMigrationTable();
-      addPendingDataMigration(SQLitePersistence.DataMigration.BuildOverlays);
+      addPendingDataMigration(SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS);
     }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
@@ -657,9 +657,8 @@ class SQLiteSchema {
         });
   }
 
-  private void addPendingDataMigration(SQLitePersistence.DataMigration migration) {
-    db.execSQL(
-        "INSERT INTO data_migrations (migration_name) VALUES (?)", new String[] {migration.name()});
+  private void addPendingDataMigration(String migration) {
+    db.execSQL("INSERT INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
   }
 
   private boolean tableExists(String table) {

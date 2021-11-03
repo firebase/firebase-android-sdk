@@ -112,7 +112,7 @@ public class SQLiteOverlayMigrationManagerTest {
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
-        (SQLiteOverlayMigrationManager) persistence.getDataMigrationManager();
+        (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
     assertFalse(migrationManager.hasPendingOverlayMigration());
   }
 
@@ -133,7 +133,7 @@ public class SQLiteOverlayMigrationManagerTest {
     assertContains(deletedDoc("foo/bar", 2).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
-        (SQLiteOverlayMigrationManager) persistence.getDataMigrationManager();
+        (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
     assertFalse(migrationManager.hasPendingOverlayMigration());
   }
 
@@ -165,7 +165,7 @@ public class SQLiteOverlayMigrationManagerTest {
     assertContains(doc("foo/newBar", 0, map("it", asList(1))).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
-        (SQLiteOverlayMigrationManager) persistence.getDataMigrationManager();
+        (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
     assertFalse(migrationManager.hasPendingOverlayMigration());
   }
 
@@ -193,7 +193,7 @@ public class SQLiteOverlayMigrationManagerTest {
         persistence.getDocumentOverlay(new User("another_user")).getOverlay(key("foo/bar")));
 
     SQLiteOverlayMigrationManager migrationManager =
-        (SQLiteOverlayMigrationManager) persistence.getDataMigrationManager();
+        (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
     assertFalse(migrationManager.hasPendingOverlayMigration());
   }
 }

@@ -54,9 +54,8 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
-  enum DataMigration {
-    BuildOverlays
-  }
+  /** Constant string to indicate a data migration is required to support overlays. */
+  public static String DATA_MIGRATION_BUILD_OVERLAYS = "BUILD_OVERLAYS";
 
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
@@ -202,7 +201,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  OverlayMigrationManager getDataMigrationManager() {
+  OverlayMigrationManager getOverlayMigrationManager() {
     return new SQLiteOverlayMigrationManager(this);
   }
 

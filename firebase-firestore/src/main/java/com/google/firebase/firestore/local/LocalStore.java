@@ -170,7 +170,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   public void start() {
-    persistence.getDataMigrationManager().run();
+    persistence.getOverlayMigrationManager().run();
     startMutationQueue();
   }
 

@@ -101,7 +101,7 @@ public abstract class Persistence {
   abstract DocumentOverlayCache getDocumentOverlay(User user);
 
   /** Returns a OverlayMigrationManager that runs any pending data migration required by SDK. */
-  abstract OverlayMigrationManager getDataMigrationManager();
+  abstract OverlayMigrationManager getOverlayMigrationManager();
 
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence

@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Manages SQLite data migration required by SDK version upgrades. */
+/** Manages overlay migrations required to have overlay support . */
 public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
   private final SQLitePersistence db;
 
@@ -50,9 +50,9 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
         "build overlays",
         () -> {
           Set<String> userIds = getAllUserIds();
+          RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
           for (String uid : userIds) {
             User user = new User(uid);
-            RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
             MutationQueue mutationQueue = db.getMutationQueue(user);
 
             // Get all document keys that have local mutations
@@ -70,7 +70,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
             localView.recalculateAndSaveOverlays(allDocumentKeys);
           }
 
-          removePendingOverlayMigrations(SQLitePersistence.DataMigration.BuildOverlays);
+          removePendingOverlayMigrations();
         });
   }
 
@@ -87,8 +87,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
         .forEach(
             row -> {
               try {
-                if (SQLitePersistence.DataMigration.valueOf(row.getString(0))
-                    == SQLitePersistence.DataMigration.BuildOverlays) {
+                if (SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS.equals(row.getString(0))) {
                   result[0] = true;
                   return;
                 }
@@ -99,9 +98,9 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
     return result[0];
   }
 
-  private void removePendingOverlayMigrations(SQLitePersistence.DataMigration migration) {
+  private void removePendingOverlayMigrations() {
     db.execute(
         "DELETE FROM data_migrations WHERE migration_name = ?",
-        SQLitePersistence.DataMigration.BuildOverlays);
+        SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS);
   }
 }

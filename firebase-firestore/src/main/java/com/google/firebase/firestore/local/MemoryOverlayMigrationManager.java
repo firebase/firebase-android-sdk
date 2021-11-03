@@ -16,5 +16,6 @@ package com.google.firebase.firestore.local;
 
 public class MemoryOverlayMigrationManager implements OverlayMigrationManager {
   @Override
+  // No-op since with memory persistence we always start afresh, nothing needs to be migrated.
   public void run() {}
 }
