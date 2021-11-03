@@ -23,7 +23,6 @@ import static java.lang.Math.max;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -177,23 +176,15 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public int updateIndexEntries(
-      String collectionGroup,
-      ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
-      int entriesRemainingUnderCap) {
-    int entriesWrittenCount = 0;
+  public void updateIndexEntries(Collection<Document> documents) {
     Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
-    List<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
 
-    for (Map.Entry<DocumentKey, Document> entry : matchingDocuments) {
-      Document document = entry.getValue();
-      if (entriesWrittenCount >= entriesRemainingUnderCap) {
-        break;
-      }
+    for (Document document : documents) {
+      List<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
 
       for (FieldIndex fieldIndex : fieldIndexes) {
-        entriesWrittenCount += writeEntries(document, fieldIndex);
-        if (entriesWrittenCount > 0) {
+        boolean modified = writeEntries(document, fieldIndex);
+        if (modified) {
           // TODO(indexing): This would be much simpler with a sequence counter since we would
           // always update the index to the next sequence value.
           FieldIndex latestIndex =
@@ -211,12 +202,11 @@ final class SQLiteIndexManager implements IndexManager {
     for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
       updateFieldIndex(updatedFieldIndex);
     }
-
-    return entriesWrittenCount;
   }
 
   @Override
   public List<FieldIndex> getFieldIndexes(String collectionGroup) {
+    // TODO(indexing): Memoize the field index configuration
     List<FieldIndex> matchingFieldIndexes = new ArrayList<>();
     db.query(
             "SELECT index_id, collection_group, index_proto, update_time_seconds, update_time_nanos "
@@ -254,28 +244,31 @@ final class SQLiteIndexManager implements IndexManager {
     }
   }
 
-  /** Writes the index entries for the given document. Returns the number of entried written. */
-  private int writeEntries(Document document, FieldIndex fieldIndex) {
+  /**
+   * If applicable, writes index entries for the given document. Returns whether any index entry was
+   * written.
+   */
+  private boolean writeEntries(Document document, FieldIndex fieldIndex) {
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
-      return 0;
+      return false;
     }
 
     @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
     if (arraySegment != null) {
       Value value = document.getField(arraySegment.getFieldPath());
       if (!isArray(value)) {
-        return 0;
+        return false;
       }
 
       for (Value arrayValue : value.getArrayValue().getValuesList()) {
         addSingleEntry(
             document, fieldIndex.getIndexId(), encodeSingleElement(arrayValue), directionalValue);
       }
-      return value.getArrayValue().getValuesCount();
+      return true;
     } else {
       addSingleEntry(document, fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
-      return 1;
+      return true;
     }
   }
 
@@ -315,8 +308,8 @@ final class SQLiteIndexManager implements IndexManager {
    */
   private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
     for (FieldIndex fieldIndex : fieldIndexes) {
-      int entriesWritten = writeEntries(document, fieldIndex);
-      if (entriesWritten > 0) {
+      boolean modified = writeEntries(document, fieldIndex);
+      if (modified) {
         FieldIndex updatedIndex = getPostUpdateIndex(fieldIndex, document.getVersion());
         updateFieldIndex(updatedIndex);
       }
