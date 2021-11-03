@@ -18,8 +18,7 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 
 /** Carries static information about the app. */
 public class AppData {
@@ -40,7 +39,7 @@ public class AppData {
       IdManager idManager,
       String googleAppId,
       String buildId,
-      UnityVersionProvider unityVersionProvider)
+      DevelopmentPlatformProvider developmentPlatformProvider)
       throws PackageManager.NameNotFoundException {
     final String packageName = context.getPackageName();
     final String installerPackageName = idManager.getInstallerPackageName();
@@ -49,11 +48,6 @@ public class AppData {
     final String versionCode = Integer.toString(packageInfo.versionCode);
     final String versionName =
         packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
-    final boolean hasUnityVersion = unityVersionProvider.getUnityVersion() != null;
-    final String developmentPlatform =
-        hasUnityVersion ? CrashlyticsReport.DEVELOPMENT_PLATFORM_UNITY : null;
-    final String developmentPlatformVersion =
-        hasUnityVersion ? unityVersionProvider.getUnityVersion() : null;
 
     return new AppData(
         googleAppId,
@@ -62,8 +56,8 @@ public class AppData {
         packageName,
         versionCode,
         versionName,
-        developmentPlatform,
-        developmentPlatformVersion);
+        developmentPlatformProvider.getDevelopmentPlatform(),
+        developmentPlatformProvider.getDevelopmentPlatformVersion());
   }
 
   public AppData(

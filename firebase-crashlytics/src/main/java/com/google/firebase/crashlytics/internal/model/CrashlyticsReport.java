@@ -63,8 +63,6 @@ public abstract class CrashlyticsReport {
     NATIVE
   }
 
-  public static final String DEVELOPMENT_PLATFORM_UNITY = "Unity";
-
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   @NonNull
