@@ -16,12 +16,12 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -86,12 +86,5 @@ public interface IndexManager {
    * cap is reached. Updates the field indexes in persistence with the latest read time that was
    * processed.
    */
-  // TODO(indexing): Consider dropping collectionGroup argument as it can be inferred from the
-  // documents.
-  // TODO(indexing): Consider simplifying this method by counting documents written instead of
-  // index entries written.
-  int updateIndexEntries(
-      String collectionGroup,
-      ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
-      int maxEntryCount);
+  void updateIndexEntries(Collection<Document> documents);
 }

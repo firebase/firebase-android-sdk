@@ -17,13 +17,13 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,12 +84,8 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public int updateIndexEntries(
-      String collectionGroup,
-      ImmutableSortedMap<DocumentKey, Document> documents,
-      int maxEntryCount) {
+  public void updateIndexEntries(Collection<Document> documents) {
     // Field indices are not supported with memory persistence.
-    return 0;
   }
 
   /**
