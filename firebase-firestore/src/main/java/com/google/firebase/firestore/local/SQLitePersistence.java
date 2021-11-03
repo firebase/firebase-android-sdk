@@ -202,8 +202,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  DataMigrationManager getDataMigrationManager() {
-    return new SQLiteDataMigrationManager(this);
+  OverlayMigrationManager getDataMigrationManager() {
+    return new SQLiteOverlayMigrationManager(this);
   }
 
   @Override

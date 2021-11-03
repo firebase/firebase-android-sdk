@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 /** Manages SQLite data migration required by SDK version upgrades. */
-public class SQLiteDataMigrationManager implements DataMigrationManager {
+public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
   private final SQLitePersistence db;
 
   /**
@@ -33,19 +33,16 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
    *
    * @param persistence The underlying SQLite Persistence to use for data migrations.
    */
-  public SQLiteDataMigrationManager(SQLitePersistence persistence) {
+  public SQLiteOverlayMigrationManager(SQLitePersistence persistence) {
     this.db = persistence;
   }
 
   @Override
   public void run() {
-    for (SQLitePersistence.DataMigration migration : getPendingMigrations()) {
-      switch (migration) {
-        case BuildOverlays:
-          buildOverlays();
-          break;
-      }
+    if (Persistence.OVERLAY_SUPPORT_ENABLED == false || !hasPendingOverlayMigration()) {
+      return;
     }
+    buildOverlays();
   }
 
   private void buildOverlays() {
@@ -65,7 +62,7 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
               allDocumentKeys.addAll(batch.getKeys());
             }
 
-            // Recalculate overlays
+            // Recalculate and save overlays
             DocumentOverlayCache documentOverlayCache = db.getDocumentOverlay(user);
             LocalDocumentsView localView =
                 new LocalDocumentsView(
@@ -73,7 +70,7 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
             localView.recalculateAndSaveOverlays(allDocumentKeys);
           }
 
-          removePendingMigrations(SQLitePersistence.DataMigration.BuildOverlays);
+          removePendingOverlayMigrations(SQLitePersistence.DataMigration.BuildOverlays);
         });
   }
 
@@ -84,27 +81,27 @@ public class SQLiteDataMigrationManager implements DataMigrationManager {
   }
 
   @VisibleForTesting
-  Set<SQLitePersistence.DataMigration> getPendingMigrations() {
-    Set<SQLitePersistence.DataMigration> result = new HashSet<>();
-    boolean tableNotExist =
-        db.query("SELECT 1=1 FROM sqlite_master WHERE tbl_name = 'data_migrations'").isEmpty();
-    if (tableNotExist) {
-      return result;
-    }
-
+  boolean hasPendingOverlayMigration() {
+    final Boolean[] result = {false};
     db.query("SELECT migration_name FROM data_migrations")
         .forEach(
             row -> {
               try {
-                result.add(SQLitePersistence.DataMigration.valueOf(row.getString(0)));
+                if (SQLitePersistence.DataMigration.valueOf(row.getString(0))
+                    == SQLitePersistence.DataMigration.BuildOverlays) {
+                  result[0] = true;
+                  return;
+                }
               } catch (IllegalArgumentException e) {
                 throw fail("SQLitePersistence.DataMigration failed to parse: %s", e);
               }
             });
-    return result;
+    return result[0];
   }
 
-  private void removePendingMigrations(SQLitePersistence.DataMigration migration) {
-    db.execute("DELETE FROM data_migrations WHERE migration_name = ?", migration.name());
+  private void removePendingOverlayMigrations(SQLitePersistence.DataMigration migration) {
+    db.execute(
+        "DELETE FROM data_migrations WHERE migration_name = ?",
+        SQLitePersistence.DataMigration.BuildOverlays);
   }
 }

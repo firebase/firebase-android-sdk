@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
-/** Manages data migration required by SDK upgrades. */
-public interface DataMigrationManager {
-  void run();
+public class MemoryOverlayMigrationManager implements OverlayMigrationManager {
+  @Override
+  public void run() {}
 }

@@ -100,8 +100,8 @@ public abstract class Persistence {
   /** Returns a DocumentOverlayCache representing the documents that are mutated locally. */
   abstract DocumentOverlayCache getDocumentOverlay(User user);
 
-  /** Returns a DataMigrationManager that runs any pending data migration required by SDK. */
-  abstract DataMigrationManager getDataMigrationManager();
+  /** Returns a OverlayMigrationManager that runs any pending data migration required by SDK. */
+  abstract OverlayMigrationManager getDataMigrationManager();
 
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence

@@ -138,8 +138,8 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  DataMigrationManager getDataMigrationManager() {
-    return new MemoryDataMigrationManager();
+  OverlayMigrationManager getDataMigrationManager() {
+    return new MemoryOverlayMigrationManager();
   }
 
   @Override
