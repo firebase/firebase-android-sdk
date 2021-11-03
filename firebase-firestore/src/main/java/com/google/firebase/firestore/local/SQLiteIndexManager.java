@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -68,10 +69,12 @@ final class SQLiteIndexManager implements IndexManager {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private final User user;
 
-  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer) {
+  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer, User user) {
     this.db = persistence;
     this.serializer = serializer;
+    this.user = user;
   }
 
   @Override
@@ -144,8 +147,8 @@ final class SQLiteIndexManager implements IndexManager {
         index.getUpdateTime().getTimestamp().getNanoseconds());
   }
 
-  /** Returns the next collection group to update. */
   // TODO(indexing): Use a counter rather than the starting timestamp.
+  @Override
   public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
     final String[] nextCollectionGroup = {null};
     db.query(
@@ -173,11 +176,7 @@ final class SQLiteIndexManager implements IndexManager {
     return nextCollectionGroup[0];
   }
 
-  /**
-   * Updates the index entries for the provided documents and corresponding field indexes until the
-   * cap is reached. Updates the field indexes in persistence with the latest read time that was
-   * processed.
-   */
+  @Override
   public int updateIndexEntries(
       String collectionGroup,
       ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
@@ -216,12 +215,7 @@ final class SQLiteIndexManager implements IndexManager {
     return entriesWrittenCount;
   }
 
-  /**
-   * Returns a list of field indexes that correspond to the specified collection group.
-   *
-   * @param collectionGroup The collection group to get matching field indexes for.
-   * @return A list of field indexes for the specified collection group.
-   */
+  @Override
   public List<FieldIndex> getFieldIndexes(String collectionGroup) {
     List<FieldIndex> matchingFieldIndexes = new ArrayList<>();
     db.query(
@@ -276,15 +270,11 @@ final class SQLiteIndexManager implements IndexManager {
 
       for (Value arrayValue : value.getArrayValue().getValuesList()) {
         addSingleEntry(
-            document.getKey(),
-            fieldIndex.getIndexId(),
-            encodeSingleElement(arrayValue),
-            directionalValue);
+            document, fieldIndex.getIndexId(), encodeSingleElement(arrayValue), directionalValue);
       }
       return value.getArrayValue().getValuesCount();
     } else {
-      addSingleEntry(
-          document.getKey(), fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
+      addSingleEntry(document, fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
       return 1;
     }
   }
@@ -335,23 +325,23 @@ final class SQLiteIndexManager implements IndexManager {
 
   /** Adds a single index entry into the index entries table. */
   private void addSingleEntry(
-      DocumentKey documentKey, int indexId, @Nullable Object arrayValue, Object directionalValue) {
+      Document document, int indexId, @Nullable Object arrayValue, Object directionalValue) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(
-          TAG, "Adding index values for document '%s' to index '%s'", documentKey, indexId);
+          TAG, "Adding index values for document '%s' to index '%s'", document.getKey(), indexId);
     }
-    // TODO(indexing): Handle different values for different users
+
     db.execute(
-        "INSERT INTO index_entries (index_id, array_value, directional_value, document_name) "
-            + "VALUES(?, ?, ?, ?)",
+        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
+            + "VALUES(?, ?, ?, ?, ?)",
         indexId,
+        document.hasLocalMutations() ? user.getUid() : null,
         arrayValue,
         directionalValue,
-        documentKey.toString());
+        document.getKey().toString());
   }
 
   @Override
-  @Nullable
   public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
     @Nullable List<Value> arrayValues = target.getArrayValues(fieldIndex);
     @Nullable List<Value> notInValues = target.getNotInValues(fieldIndex);
@@ -416,8 +406,8 @@ final class SQLiteIndexManager implements IndexManager {
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
-    statement.append(
-        "SELECT document_name, directional_value FROM index_entries WHERE index_id = ? ");
+    statement.append("SELECT document_name, directional_value FROM index_entries ");
+    statement.append("WHERE index_id = ?  AND (uid IS NULL or uid = ?) ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
@@ -459,7 +449,7 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object[] upperBounds,
       @Nullable Object[] notInValues) {
     int bindsPerStatement =
-        1
+        2
             + (arrayValues != null ? 1 : 0)
             + (lowerBounds != null ? 1 : 0)
             + (upperBounds != null ? 1 : 0);
@@ -471,6 +461,7 @@ final class SQLiteIndexManager implements IndexManager {
     int offset = 0;
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
+      bindArgs[offset++] = user.getUid();
       if (arrayValues != null) {
         bindArgs[offset++] = encodeSingleElement(arrayValues.get(i / statementsPerArrayValue));
       }

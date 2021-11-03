@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static org.junit.Assert.assertEquals;
 
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +48,7 @@ public abstract class IndexManagerTestCase {
   @Before
   public void setUp() {
     persistence = getPersistence();
-    indexManager = persistence.getIndexManager();
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
   }
 
   @After

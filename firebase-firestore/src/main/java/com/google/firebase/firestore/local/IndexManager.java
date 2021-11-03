@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -58,6 +60,14 @@ public interface IndexManager {
   void addFieldIndex(FieldIndex index);
 
   /**
+   * Returns a list of field indexes that correspond to the specified collection group.
+   *
+   * @param collectionGroup The collection group to get matching field indexes for.
+   * @return A list of field indexes for the specified collection group.
+   */
+  List<FieldIndex> getFieldIndexes(String collectionGroup);
+
+  /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no
    * index is configured.
    */
@@ -66,4 +76,22 @@ public interface IndexManager {
 
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
+
+  /** Returns the next collection group to update. */
+  @Nullable
+  String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
+
+  /**
+   * Updates the index entries for the provided documents and corresponding field indexes until the
+   * cap is reached. Updates the field indexes in persistence with the latest read time that was
+   * processed.
+   */
+  // TODO(indexing): Consider dropping collectionGroup argument as it can be inferred from the
+  // documents.
+  // TODO(indexing): Consider simplifying this method by counting documents written instead of
+  // index entries written.
+  int updateIndexEntries(
+      String collectionGroup,
+      ImmutableSortedMap<DocumentKey, Document> matchingDocuments,
+      int maxEntryCount);
 }
