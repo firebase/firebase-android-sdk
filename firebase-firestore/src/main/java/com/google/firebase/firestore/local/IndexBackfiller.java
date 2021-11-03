@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -93,11 +95,13 @@ public class IndexBackfiller {
 
     @Override
     public void start() {
+      hardAssert(Persistence.INDEXING_SUPPORT_ENABLED, "Indexing support not enabled");
       scheduleBackfill();
     }
 
     @Override
     public void stop() {
+      hardAssert(Persistence.INDEXING_SUPPORT_ENABLED, "Indexing support not enabled");
       if (backfillTask != null) {
         backfillTask.cancel();
       }
@@ -122,6 +126,8 @@ public class IndexBackfiller {
   }
 
   public Results backfill() {
+    hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
+    hardAssert(indexManager != null, "setIndexManager() not called");
     return persistence.runTransaction(
         "Backfill Indexes",
         () -> {

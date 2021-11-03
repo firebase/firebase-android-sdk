@@ -21,6 +21,7 @@ import static java.util.Collections.emptyList;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -71,14 +72,14 @@ final class MemoryMutationQueue implements MutationQueue {
   private final MemoryPersistence persistence;
   private final IndexManager indexManager;
 
-  MemoryMutationQueue(MemoryPersistence persistence, IndexManager indexManager) {
+  MemoryMutationQueue(MemoryPersistence persistence, User user) {
     this.persistence = persistence;
     queue = new ArrayList<>();
 
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
     lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
-    this.indexManager = indexManager;
+    indexManager = persistence.getIndexManager(user);
   }
 
   // MutationQueue implementation

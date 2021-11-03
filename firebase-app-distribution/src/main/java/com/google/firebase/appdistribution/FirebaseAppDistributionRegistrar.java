@@ -18,6 +18,7 @@ import android.app.Application;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -53,10 +54,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
     FirebaseAppDistribution appDistribution =
         new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
+    FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
+        FirebaseAppDistributionLifecycleNotifier.getInstance();
 
     if (firebaseApp.getApplicationContext() instanceof Application) {
       Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
-      firebaseApplication.registerActivityLifecycleCallbacks(appDistribution);
+      firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
       LogWrapper.getInstance()
           .e(

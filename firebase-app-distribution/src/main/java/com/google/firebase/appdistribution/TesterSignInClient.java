@@ -26,9 +26,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -37,6 +36,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
@@ -44,30 +44,77 @@ class TesterSignInClient {
   private static final String TAG = "TesterSignIn:";
 
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
+
   private final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final SignInStorage signInStorage;
-
-  @GuardedBy("activityLock")
-  private Activity currentActivity;
+  private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   private AlertDialog alertDialog;
-
-  private final Object activityLock = new Object();
 
   TesterSignInClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage) {
+    this(
+        firebaseApp,
+        firebaseInstallationsApi,
+        signInStorage,
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
+  }
+
+  @VisibleForTesting
+  TesterSignInClient(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull final SignInStorage signInStorage,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.signInStorage = signInStorage;
+    this.lifecycleNotifier = lifecycleNotifier;
+
+    lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
+    lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
+  }
+
+  @VisibleForTesting
+  void onActivityCreated(Activity activity) {
+    // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
+    // result
+    // of the signIn Task in the onActivityCreated callback
+    if (activity instanceof SignInResultActivity) {
+      LogWrapper.getInstance().v("Sign in completed");
+      this.setSuccessfulSignInResult();
+      this.signInStorage.setSignInStatus(true);
+    }
+  }
+
+  @VisibleForTesting
+  void onActivityStarted(Activity activity) {
+    if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
+      // SignInResult and InstallActivity are internal to the SDK and should not be treated as
+      // reentering the app
+      return;
+    } else {
+      // Throw error if app reentered during sign in
+      if (this.isCurrentlySigningIn()) {
+        LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+        this.setCanceledAuthenticationError();
+      }
+    }
+  }
+
+  private void onActivityDestroyed(Activity activity) {
+    this.dismissAlertDialog();
   }
 
   @NonNull
   public synchronized Task<Void> signInTester() {
+
     if (signInStorage.getSignInStatus()) {
       LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
       return Tasks.forResult(null);
@@ -78,8 +125,7 @@ class TesterSignInClient {
           .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
       return signInTaskCompletionSource.getTask();
     }
-
-    Activity currentActivity = getCurrentActivity();
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
     if (currentActivity == null) {
       LogWrapper.getInstance().e(TAG + "No foreground activity found.");
       return Tasks.forException(
@@ -89,13 +135,13 @@ class TesterSignInClient {
     }
     signInTaskCompletionSource = new TaskCompletionSource<>();
 
-    AlertDialog alertDialog = getSignInAlertDialog(currentActivity);
+    alertDialog = getSignInAlertDialog(currentActivity);
     alertDialog.show();
 
     return signInTaskCompletionSource.getTask();
   }
 
-  boolean isCurrentlySigningIn() {
+  private boolean isCurrentlySigningIn() {
     return signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete();
   }
 
@@ -148,38 +194,35 @@ class TesterSignInClient {
     dismissAlertDialog();
   }
 
-  void setCanceledAuthenticationError() {
+  private void setCanceledAuthenticationError() {
     setSignInTaskCompletionError(
         new FirebaseAppDistributionException(
             Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
   }
 
-  void setSuccessfulSignInResult() {
+  private void setSuccessfulSignInResult() {
     safeSetTaskResult(signInTaskCompletionSource, null);
     dismissAlertDialog();
   }
 
   private void dismissAlertDialog() {
-    if (alertDialog != null) {
+    if (alertDialog != null && alertDialog.isShowing()) {
       alertDialog.dismiss();
     }
   }
 
   private OnSuccessListener<String> getFidGenerationOnSuccessListener(Activity currentActivity) {
-    return new OnSuccessListener<String>() {
-      @Override
-      public void onSuccess(String fid) {
-        Context context = firebaseApp.getApplicationContext();
-        Uri uri =
-            Uri.parse(
-                String.format(
-                    SIGNIN_REDIRECT_URL,
-                    firebaseApp.getOptions().getApplicationId(),
-                    fid,
-                    getApplicationName(context),
-                    context.getPackageName()));
-        openSignInFlowInBrowser(currentActivity, uri);
-      }
+    return fid -> {
+      Context context = firebaseApp.getApplicationContext();
+      Uri uri =
+          Uri.parse(
+              String.format(
+                  SIGNIN_REDIRECT_URL,
+                  firebaseApp.getOptions().getApplicationId(),
+                  fid,
+                  getApplicationName(context),
+                  context.getPackageName()));
+      openSignInFlowInBrowser(currentActivity, uri);
     };
   }
 
@@ -217,18 +260,5 @@ class TesterSignInClient {
     List<ResolveInfo> resolveInfos =
         context.getPackageManager().queryIntentServices(customTabIntent, 0);
     return resolveInfos != null && !resolveInfos.isEmpty();
-  }
-
-  @Nullable
-  Activity getCurrentActivity() {
-    synchronized (activityLock) {
-      return this.currentActivity;
-    }
-  }
-
-  void setCurrentActivity(@Nullable Activity activity) {
-    synchronized (activityLock) {
-      this.currentActivity = activity;
-    }
   }
 }

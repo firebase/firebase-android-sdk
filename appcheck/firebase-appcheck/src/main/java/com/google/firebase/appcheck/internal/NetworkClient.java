@@ -91,8 +91,13 @@ public class NetworkClient {
    */
   @NonNull
   public AppCheckTokenResponse exchangeAttestationForAppCheckToken(
-      @NonNull byte[] requestBytes, @AttestationTokenType int tokenType)
+      @NonNull byte[] requestBytes,
+      @AttestationTokenType int tokenType,
+      @NonNull RetryManager retryManager)
       throws FirebaseException, IOException, JSONException {
+    if (!retryManager.canRetry()) {
+      throw new FirebaseException("Too many attempts.");
+    }
     URL url = new URL(String.format(getUrlTemplate(tokenType), projectId, appId, apiKey));
     HttpURLConnection urlConnection = createHttpUrlConnection(url);
 
@@ -131,6 +136,7 @@ public class NetworkClient {
       }
       String responseBody = response.toString();
       if (!isResponseSuccess(responseCode)) {
+        retryManager.updateBackoffOnFailure(responseCode);
         // TODO: Create a mapping from HTTP error codes to public App Check error codes.
         HttpErrorResponse httpErrorResponse = HttpErrorResponse.fromJsonString(responseBody);
         throw new FirebaseException(
@@ -139,6 +145,7 @@ public class NetworkClient {
                 + " body: "
                 + httpErrorResponse.getErrorMessage());
       }
+      retryManager.resetBackoffOnSuccess();
       return AppCheckTokenResponse.fromJsonString(responseBody);
     } finally {
       urlConnection.disconnect();
