@@ -141,6 +141,11 @@ public final class FieldIndex {
     return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
 
+  /** Returns a new field index with the provided index id. */
+  public FieldIndex withIndexId(int indexId) {
+    return new FieldIndex(collectionGroup, indexId, segments, updateTime);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

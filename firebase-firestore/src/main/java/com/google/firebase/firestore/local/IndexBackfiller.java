@@ -27,8 +27,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firebase.firestore.util.Preconditions;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -189,16 +188,16 @@ public class IndexBackfiller {
     return oldestDocuments;
   }
 
-  private SnapshotVersion getEarliestUpdateTime(List<FieldIndex> fieldIndexes) {
-    Preconditions.checkState(!fieldIndexes.isEmpty(), "List of field indexes cannot be empty");
-    SnapshotVersion lowestVersion = fieldIndexes.get(0).getUpdateTime();
+  private SnapshotVersion getEarliestUpdateTime(Collection<FieldIndex> fieldIndexes) {
+    SnapshotVersion lowestVersion = null;
     for (FieldIndex fieldIndex : fieldIndexes) {
       lowestVersion =
-          fieldIndex.getUpdateTime().compareTo(lowestVersion) < 0
+          lowestVersion == null
               ? fieldIndex.getUpdateTime()
-              : lowestVersion;
+              : fieldIndex.getUpdateTime().compareTo(lowestVersion) < 0
+                  ? fieldIndex.getUpdateTime()
+                  : lowestVersion;
     }
-
     return lowestVersion;
   }
 

@@ -89,12 +89,16 @@ final class SQLiteMutationQueue implements MutationQueue {
    * @param persistence The SQLite database in which to create the queue.
    * @param user The user for which to create a mutation queue.
    */
-  SQLiteMutationQueue(SQLitePersistence persistence, LocalSerializer serializer, User user) {
+  SQLiteMutationQueue(
+      SQLitePersistence persistence,
+      LocalSerializer serializer,
+      User user,
+      IndexManager indexManager) {
     this.db = persistence;
     this.serializer = serializer;
     this.uid = user.isAuthenticated() ? user.getUid() : "";
     this.lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
-    this.indexManager = db.getIndexManager(user);
+    this.indexManager = indexManager;
   }
 
   // MutationQueue implementation
