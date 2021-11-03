@@ -48,6 +48,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public void add(MutableDocument document, SnapshotVersion readTime) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
