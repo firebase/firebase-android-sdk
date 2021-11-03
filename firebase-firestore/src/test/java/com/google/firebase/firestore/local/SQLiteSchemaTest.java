@@ -649,7 +649,7 @@ public class SQLiteSchemaTest {
       Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
       assertTrue(cursor.moveToFirst());
       String migrationName = cursor.getString(0);
-      assertEquals(SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
+      assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
     } finally {
       Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
     }

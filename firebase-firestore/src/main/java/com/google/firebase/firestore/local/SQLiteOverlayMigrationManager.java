@@ -87,7 +87,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
         .forEach(
             row -> {
               try {
-                if (SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS.equals(row.getString(0))) {
+                if (Persistence.DATA_MIGRATION_BUILD_OVERLAYS.equals(row.getString(0))) {
                   result[0] = true;
                   return;
                 }
@@ -101,6 +101,6 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
   private void removePendingOverlayMigrations() {
     db.execute(
         "DELETE FROM data_migrations WHERE migration_name = ?",
-        SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS);
+        Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
   }
 }

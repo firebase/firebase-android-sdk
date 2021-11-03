@@ -187,7 +187,7 @@ class SQLiteSchema {
           Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
       createDataMigrationTable();
-      addPendingDataMigration(SQLitePersistence.DATA_MIGRATION_BUILD_OVERLAYS);
+      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
     }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
