@@ -24,7 +24,9 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
-import org.junit.*
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 
 const val APP_ID = "APP_ID"
@@ -63,7 +65,7 @@ abstract class BaseTestCase {
 }
 
 @RunWith(AndroidJUnit4ClassRunner::class)
-class FirebaseAppDistributionTests: BaseTestCase() {
+class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun appDistribution_default_callsDefaultGetInstance() {
         Truth.assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
@@ -74,7 +76,6 @@ class FirebaseAppDistributionTests: BaseTestCase() {
         val app = Firebase.app(EXISTING_APP)
         Truth.assertThat(Firebase.appDistribution(app)).isSameInstanceAs(FirebaseAppDistribution.getInstance(app))
     }
-
 }
 
 internal const val LIBRARY_NAME: String = "fire-app-distribution-ktx"
