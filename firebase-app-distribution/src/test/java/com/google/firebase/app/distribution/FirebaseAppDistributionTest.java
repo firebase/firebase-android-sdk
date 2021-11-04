@@ -55,7 +55,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowPackageManager;
 
@@ -87,8 +86,6 @@ public class FirebaseAppDistributionTest {
 
   private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
-  private ShadowActivity shadowActivity;
-  private ShadowPackageManager shadowPackageManager;
 
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
@@ -129,7 +126,7 @@ public class FirebaseAppDistributionTest {
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
-    shadowPackageManager =
+    ShadowPackageManager shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
 
     ApplicationInfo applicationInfo =
@@ -147,12 +144,11 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
-    shadowActivity = shadowOf(activity);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @Test
-  public void checkForNewRelease_whenCheckForNewReleaseFails_throwsError() throws Exception {
+  public void checkForNewRelease_whenCheckForNewReleaseFails_throwsError() {
     firebaseAppDistribution.setCachedNewRelease(null);
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
@@ -170,7 +166,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForNewRelease_callsSignInTester() throws Exception {
+  public void checkForNewRelease_callsSignInTester() {
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
@@ -180,7 +176,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForNewRelease_whenCheckForNewReleaseSucceeds_returnsRelease() throws Exception {
+  public void checkForNewRelease_whenCheckForNewReleaseSucceeds_returnsRelease() {
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
             Tasks.forResult(
@@ -195,7 +191,17 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateApp_whenNotSignedIn_throwsError() throws Exception {
+  public void checkForNewRelease_authenticationFailure_signOutTester() {
+    when(mockCheckForNewReleaseClient.checkForNewRelease())
+        .thenReturn(
+            Tasks.forException(
+                new FirebaseAppDistributionException("Test", AUTHENTICATION_FAILURE)));
+    firebaseAppDistribution.checkForNewRelease();
+    verify(mockSignInStorage, times(1)).setSignInStatus(false);
+  }
+
+  @Test
+  public void updateApp_whenNotSignedIn_throwsError() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
 
     UpdateTask task = firebaseAppDistribution.updateApp();
@@ -207,7 +213,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() throws Exception {
+  public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() {
     // mockSignInStorage returns false then true to simulate logging in during first signIn check in
     // updateIfNewReleaseAvailable
     when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
@@ -233,7 +239,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() throws Exception {
+  public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease =
         TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build();
@@ -253,7 +259,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() throws Exception {
+  public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(null));
     firebaseAppDistribution.setCachedNewRelease(null);
@@ -269,7 +275,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() throws Exception {
+  public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(null));
     firebaseAppDistribution.setCachedNewRelease(null);
@@ -327,7 +333,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() throws Exception {
+  public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() {
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
             Tasks.forException(
@@ -363,7 +369,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() throws Exception {
+  public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
@@ -393,7 +399,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void taskCancelledOnScreenRotation() throws Exception {
+  public void taskCancelledOnScreenRotation() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));

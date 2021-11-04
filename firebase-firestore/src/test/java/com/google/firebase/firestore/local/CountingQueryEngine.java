@@ -64,6 +64,11 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
+  public void setIndexManager(IndexManager indexManager) {
+    // Not implemented.
+  }
+
+  @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
@@ -111,6 +116,11 @@ class CountingQueryEngine implements QueryEngine {
 
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
     return new RemoteDocumentCache() {
+      @Override
+      public void setIndexManager(IndexManager indexManager) {
+        // Not implemented.
+      }
+
       @Override
       public void add(MutableDocument document, SnapshotVersion readTime) {
         subject.add(document, readTime);

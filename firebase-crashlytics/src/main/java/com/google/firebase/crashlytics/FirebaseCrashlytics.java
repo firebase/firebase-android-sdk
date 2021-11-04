@@ -26,6 +26,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
@@ -35,8 +36,6 @@ import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
-import com.google.firebase.crashlytics.internal.unity.ResourceUnityVersionProvider;
-import com.google.firebase.crashlytics.internal.unity.UnityVersionProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
@@ -100,12 +99,14 @@ public class FirebaseCrashlytics {
 
     Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
 
-    final UnityVersionProvider unityVersionProvider = new ResourceUnityVersionProvider(context);
+    final DevelopmentPlatformProvider developmentPlatformProvider =
+        new DevelopmentPlatformProvider(context);
 
     AppData appData;
     try {
       appData =
-          AppData.create(context, idManager, googleAppId, mappingFileId, unityVersionProvider);
+          AppData.create(
+              context, idManager, googleAppId, mappingFileId, developmentPlatformProvider);
     } catch (PackageManager.NameNotFoundException e) {
       Logger.getLogger().e("Error retrieving app package info.", e);
       return null;

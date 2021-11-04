@@ -30,6 +30,9 @@ public interface QueryEngine {
   /** Sets the document view to query against. */
   void setLocalDocumentsView(LocalDocumentsView localDocuments);
 
+  /** Sets the index manager for query execution. */
+  void setIndexManager(IndexManager indexManager);
+
   /** Returns all local documents matching the specified query. */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,

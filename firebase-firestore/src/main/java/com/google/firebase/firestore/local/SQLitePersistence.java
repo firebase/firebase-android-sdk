@@ -54,6 +54,7 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -77,14 +78,12 @@ public final class SQLitePersistence extends Persistence {
     }
   }
 
-  private final SQLiteOpenHelper opener;
+  private final OpenHelper opener;
   private final LocalSerializer serializer;
   private final SQLiteTargetCache targetCache;
   private final SQLiteBundleCache bundleCache;
-  private final SQLiteIndexManager indexManager;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
-  private final IndexBackfiller indexBackfiller;
   private final SQLiteTransactionListener transactionListener =
       new SQLiteTransactionListener() {
         @Override
@@ -117,15 +116,13 @@ public final class SQLitePersistence extends Persistence {
   }
 
   public SQLitePersistence(
-      LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
+      LocalSerializer serializer, LruGarbageCollector.Params params, OpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
-    this.indexManager = new SQLiteIndexManager(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
-    this.indexBackfiller = new IndexBackfiller(this);
   }
 
   @Override
@@ -168,13 +165,9 @@ public final class SQLitePersistence extends Persistence {
     return referenceDelegate;
   }
 
-  public IndexBackfiller getIndexBackfiller() {
-    return indexBackfiller;
-  }
-
   @Override
-  MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, user);
+  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
+    return new SQLiteMutationQueue(this, serializer, user, indexManager);
   }
 
   @Override
@@ -183,8 +176,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  IndexManager getIndexManager() {
-    return indexManager;
+  IndexManager getIndexManager(User user) {
+    return new SQLiteIndexManager(this, serializer, user);
   }
 
   @Override
@@ -195,6 +188,11 @@ public final class SQLitePersistence extends Persistence {
   @Override
   DocumentOverlayCache getDocumentOverlay(User user) {
     return new SQLiteDocumentOverlayCache(this, this.serializer, user);
+  }
+
+  @Override
+  OverlayMigrationManager getOverlayMigrationManager() {
+    return new SQLiteOverlayMigrationManager(this);
   }
 
   @Override
@@ -293,13 +291,20 @@ public final class SQLitePersistence extends Persistence {
    * this happens naturally during onConfigure. On pre-Jelly Bean devices all other methods ensure
    * that the configuration is applied before any action is taken.
    */
-  private static class OpenHelper extends SQLiteOpenHelper {
+  @VisibleForTesting
+  static class OpenHelper extends SQLiteOpenHelper {
 
     private final LocalSerializer serializer;
     private boolean configured;
 
-    OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
-      super(context, databaseName, null, SQLiteSchema.VERSION);
+    private OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
+      this(context, serializer, databaseName, SQLiteSchema.VERSION);
+    }
+
+    @VisibleForTesting
+    OpenHelper(
+        Context context, LocalSerializer serializer, String databaseName, int schemaVersion) {
+      super(context, databaseName, null, schemaVersion);
       this.serializer = serializer;
     }
 
@@ -326,13 +331,15 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(0);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      new SQLiteSchema(db, serializer).runMigrations(oldVersion);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(oldVersion);
     }
 
     @Override
