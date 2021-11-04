@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.local.SQLitePersistence.databaseName;
+
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -49,6 +51,11 @@ public final class PersistenceTestHelpers {
     return openSQLitePersistence(nextSQLiteDatabaseName(), LruGarbageCollector.Params.Default());
   }
 
+  public static SQLitePersistence createSQLitePersistenceForVersion(
+      String databaseName, int version) {
+    return openSQLitePersistence(version, databaseName, LruGarbageCollector.Params.Default());
+  }
+
   public static SQLitePersistence createSQLitePersistence(LruGarbageCollector.Params params) {
     // Robolectric's test runner will clear out the application database directory in between test
     // cases, but sometimes (particularly the spec tests) we create multiple databases per test
@@ -79,6 +86,21 @@ public final class PersistenceTestHelpers {
     Context context = ApplicationProvider.getApplicationContext();
     SQLitePersistence persistence =
         new SQLitePersistence(context, name, databaseId, serializer, params);
+    persistence.start();
+    return persistence;
+  }
+
+  private static SQLitePersistence openSQLitePersistence(
+      int version, String name, LruGarbageCollector.Params params) {
+    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+    Context context = ApplicationProvider.getApplicationContext();
+    SQLitePersistence persistence =
+        new SQLitePersistence(
+            serializer,
+            params,
+            new SQLitePersistence.OpenHelper(
+                context, serializer, databaseName(name, databaseId), version));
     persistence.start();
     return persistence;
   }

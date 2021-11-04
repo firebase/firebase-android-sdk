@@ -1185,6 +1185,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         acknowledgedDocs.clear();
         rejectedDocs.clear();
       }
+    } catch (Exception e) {
+      throw Assert.fail("Spec test failed with %s", e);
     } finally {
       // Ensure that Persistence is torn down even if the test is failing due to a thrown exception
       // so that any open databases are closed. This is important when the LocalStore is backed by

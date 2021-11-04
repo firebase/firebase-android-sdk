@@ -178,7 +178,7 @@ class LocalDocumentsView {
         }
       }
 
-      recalculateOverlays(recalculateDocuments);
+      recalculateAndSaveOverlays(recalculateDocuments);
     } else {
       List<MutationBatch> batches =
           mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
@@ -191,7 +191,7 @@ class LocalDocumentsView {
     return results;
   }
 
-  private void recalculateOverlays(Map<DocumentKey, MutableDocument> docs) {
+  private void recalculateAndSaveOverlays(Map<DocumentKey, MutableDocument> docs) {
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
 
@@ -228,10 +228,13 @@ class LocalDocumentsView {
     }
   }
 
-  /** Recalculates overlays by reading the documents from remote document cache first. */
-  void recalculateOverlays(Set<DocumentKey> documentKeys) {
+  /**
+   * Recalculates overlays by reading the documents from remote document cache first, and save them
+   * after they are calculated.
+   */
+  void recalculateAndSaveOverlays(Set<DocumentKey> documentKeys) {
     Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(documentKeys);
-    recalculateOverlays(docs);
+    recalculateAndSaveOverlays(docs);
   }
 
   // TODO: The Querying implementation here should move 100% to the query engines.
