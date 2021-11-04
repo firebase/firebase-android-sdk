@@ -53,7 +53,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
           RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
           for (String uid : userIds) {
             User user = new User(uid);
-            MutationQueue mutationQueue = db.getMutationQueue(user);
+            MutationQueue mutationQueue = db.getMutationQueue(user, db.getIndexManager(user));
 
             // Get all document keys that have local mutations
             Set<DocumentKey> allDocumentKeys = new HashSet<>();
@@ -66,7 +66,10 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
             DocumentOverlayCache documentOverlayCache = db.getDocumentOverlay(user);
             LocalDocumentsView localView =
                 new LocalDocumentsView(
-                    remoteDocumentCache, mutationQueue, documentOverlayCache, db.getIndexManager());
+                    remoteDocumentCache,
+                    mutationQueue,
+                    documentOverlayCache,
+                    db.getIndexManager(user));
             localView.recalculateAndSaveOverlays(allDocumentKeys);
           }
 

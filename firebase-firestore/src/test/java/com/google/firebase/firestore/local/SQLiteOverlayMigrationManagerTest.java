@@ -31,6 +31,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.Collections;
 import java.util.List;
 import org.junit.After;
@@ -66,7 +67,10 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence =
         PersistenceTestHelpers.createSQLitePersistenceForVersion(
             "test-data-migration", SQLiteSchema.OVERLAY_SUPPORT_VERSION - 1);
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
   }
 
@@ -103,7 +107,10 @@ public class SQLiteOverlayMigrationManagerTest {
     // Switch to new persistence and run migrations
     this.persistence.shutdown();
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
@@ -124,7 +131,10 @@ public class SQLiteOverlayMigrationManagerTest {
     // Switch to new persistence and run migrations
     this.persistence.shutdown();
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
@@ -150,7 +160,10 @@ public class SQLiteOverlayMigrationManagerTest {
     // Switch to new persistence and run migrations
     this.persistence.shutdown();
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     DocumentOverlayCache overlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
@@ -175,14 +188,20 @@ public class SQLiteOverlayMigrationManagerTest {
     writeMutation(setMutation("foo/bar", map("foo", "set-by-unauthenticated")));
 
     // Switch to a different user
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), new User("another_user"));
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), new User("another_user"));
     localStore.start();
     writeMutation(setMutation("foo/bar", map("foo", "set-by-another_user")));
 
     // Switch to new persistence and run migrations
     this.persistence.shutdown();
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
-    localStore = new LocalStore(persistence, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+    indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(
+            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
