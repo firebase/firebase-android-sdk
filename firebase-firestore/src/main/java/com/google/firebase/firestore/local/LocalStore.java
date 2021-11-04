@@ -181,6 +181,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   public void start() {
+    persistence.getOverlayMigrationManager().run();
     startIndexManager();
     startMutationQueue();
   }
@@ -308,7 +309,7 @@ public final class LocalStore implements BundleCallback {
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
             documentOverlayCache.removeOverlaysForBatchId(batchResult.getBatch().getBatchId());
-            localDocuments.recalculateOverlays(getKeysWithTransformResults(batchResult));
+            localDocuments.recalculateAndSaveOverlays(getKeysWithTransformResults(batchResult));
           }
 
           return localDocuments.getDocuments(batch.getKeys());
@@ -348,7 +349,7 @@ public final class LocalStore implements BundleCallback {
 
           if (Persistence.OVERLAY_SUPPORT_ENABLED) {
             documentOverlayCache.removeOverlaysForBatchId(batchId);
-            localDocuments.recalculateOverlays(toReject.getKeys());
+            localDocuments.recalculateAndSaveOverlays(toReject.getKeys());
           }
 
           return localDocuments.getDocuments(toReject.getKeys());

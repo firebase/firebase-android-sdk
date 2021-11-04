@@ -140,6 +140,11 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
+  OverlayMigrationManager getOverlayMigrationManager() {
+    return new MemoryOverlayMigrationManager();
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     referenceDelegate.onTransactionStarted();
     try {

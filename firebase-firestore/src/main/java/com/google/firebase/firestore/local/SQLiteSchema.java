@@ -74,11 +74,11 @@ class SQLiteSchema {
     this.serializer = serializer;
   }
 
-  void runMigrations() {
-    runMigrations(0, VERSION);
+  void runSchemaUpgrades() {
+    runSchemaUpgrades(0, VERSION);
   }
 
-  void runMigrations(int fromVersion) {
+  void runSchemaUpgrades(int fromVersion) {
     int toVersion = VERSION;
     if (Persistence.OVERLAY_SUPPORT_ENABLED) {
       toVersion = OVERLAY_SUPPORT_VERSION;
@@ -86,17 +86,17 @@ class SQLiteSchema {
     if (Persistence.INDEXING_SUPPORT_ENABLED) {
       toVersion = INDEXING_SUPPORT_VERSION;
     }
-    runMigrations(fromVersion, toVersion);
+    runSchemaUpgrades(fromVersion, toVersion);
   }
 
   /**
-   * Runs the migration methods defined in this class, starting at the given version.
+   * Runs the upgrade methods defined in this class, starting at the given version.
    *
    * @param fromVersion The version the database is starting at. When first created it will be zero.
    * @param toVersion The version the database is migrating to. Usually VERSION, but can be
    *     otherwise for testing.
    */
-  void runMigrations(int fromVersion, int toVersion) {
+  void runSchemaUpgrades(int fromVersion, int toVersion) {
     /*
      * New migrations should be added at the end of the series of `if` statements and should follow
      * the pattern. Make sure to increment `VERSION` and to read the comment below about
@@ -186,6 +186,8 @@ class SQLiteSchema {
       Preconditions.checkState(
           Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
+      createDataMigrationTable();
+      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
     }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
@@ -644,6 +646,21 @@ class SQLiteSchema {
                   + "PRIMARY KEY (uid, path))");
           db.execSQL("CREATE INDEX batch_id_overlay ON document_overlays (uid, largest_batch_id)");
         });
+  }
+
+  private void createDataMigrationTable() {
+    ifTablesDontExist(
+        new String[] {"data_migrations"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE data_migrations ("
+                  + "migration_name TEXT, "
+                  + "PRIMARY KEY (migration_name))");
+        });
+  }
+
+  private void addPendingDataMigration(String migration) {
+    db.execSQL("INSERT INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
   }
 
   private boolean tableExists(String table) {
