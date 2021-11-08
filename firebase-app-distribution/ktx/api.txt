@@ -4,7 +4,7 @@ package com.google.firebase.app.distribution.ktx {
   public final class FirebaseAppDistributionKt {
     ctor public FirebaseAppDistributionKt();
     method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution getAppDistribution(@NonNull com.google.firebase.ktx.Firebase);
-    method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution appDistribution(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);thod @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution appDistribution(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
   }
 
 }
