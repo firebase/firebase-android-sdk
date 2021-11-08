@@ -638,21 +638,14 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsOverlaysAndMigrationTable() {
-    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    try {
-      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+    schema.runSchemaUpgrades(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
+    assertTableExists("document_overlays");
+    assertTableExists("data_migrations");
 
-      schema.runSchemaUpgrades(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
-      assertTableExists("document_overlays");
-      assertTableExists("data_migrations");
-
-      Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
-      assertTrue(cursor.moveToFirst());
-      String migrationName = cursor.getString(0);
-      assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
-    } finally {
-      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-    }
+    Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
+    assertTrue(cursor.moveToFirst());
+    String migrationName = cursor.getString(0);
+    assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
   }
 
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {

@@ -52,7 +52,7 @@ public abstract class Persistence {
 
   /** Temporary setting for enabling document overlays. */
   // TODO(Overlay): Remove this.
-  public static boolean OVERLAY_SUPPORT_ENABLED = BuildConfig.ENABLE_OVERLAY;
+  public static boolean OVERLAY_SUPPORT_ENABLED = true;
   /** Constant string to indicate a data migration is required to support overlays. */
   public static String DATA_MIGRATION_BUILD_OVERLAYS = "BUILD_OVERLAYS";
 

@@ -35,9 +35,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.Collections;
 import java.util.List;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -50,17 +48,6 @@ public class SQLiteOverlayMigrationManagerTest {
 
   private Persistence persistence;
   private LocalStore localStore;
-
-  @BeforeClass
-  public static void beforeClass() {
-    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-  }
-
-  @AfterClass
-  public static void afterClass() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-  }
 
   @Before
   public void setUp() {
