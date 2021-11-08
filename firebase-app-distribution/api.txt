@@ -10,5 +10,6 @@ package com.google.firebase.app.distribution {
     method public java.lang.Boolean istesterSignedIn()
     method public java.lang.Void signOutTester();
   }
+
 }
 
