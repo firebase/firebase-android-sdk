@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.local.SQLiteIndexManagerTest.getCollectionGroupsOrderByUpdateTime;
+import static com.google.firebase.firestore.local.SQLiteIndexManagerTest.getCollectionGroupsOrderBySequenceNumber;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
@@ -25,7 +25,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -40,7 +39,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -95,9 +93,7 @@ public class IndexBackfillerTest {
     persistence.shutdown();
   }
 
-  // TODO(indexing): Re-enable this test once we have counters implemented.
   @Test
-  @Ignore
   public void testBackfillWritesLatestReadTimeToFieldIndexOnCompletion() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "bar");
@@ -127,8 +123,6 @@ public class IndexBackfillerTest {
   }
 
   @Test
-  @Ignore("Flaky")
-  // TODO(indexing): This test is flaky. Fix.
   public void testBackfillFetchesDocumentsAfterEarliestReadTime() {
     addFieldIndex("coll1", "foo", version(10, 0));
     addFieldIndex("coll1", "boo", version(20, 0));
@@ -196,9 +190,9 @@ public class IndexBackfillerTest {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
     addFieldIndex("coll3", "foo");
-    addCollectionGroup("coll1", new Timestamp(30, 0));
-    addCollectionGroup("coll2", new Timestamp(30, 30));
-    addCollectionGroup("coll3", new Timestamp(10, 0));
+    addCollectionGroup("coll1", 2);
+    addCollectionGroup("coll2", 3);
+    addCollectionGroup("coll3", 1);
     addDoc("coll1/docA", "foo", version(10, 0));
     addDoc("coll2/docA", "foo", version(10, 0));
     addDoc("coll3/docA", "foo", version(10, 0));
@@ -208,7 +202,7 @@ public class IndexBackfillerTest {
 
     // Check that index entries are written in order of the collection group update times by
     // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
+    List<String> collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
     assertEquals(3, collectionGroups.size());
     assertEquals("coll3", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
@@ -216,15 +210,13 @@ public class IndexBackfillerTest {
   }
 
   @Test
-  @Ignore("Flaky")
-  // TODO(indexing): This test is flaky. Fix.
   public void testBackfillPrioritizesNewCollectionGroups() {
     // In this test case, `coll3` is a new collection group that hasn't been indexed, so it should
     // be processed ahead of the other collection groups.
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
-    addCollectionGroup("coll1", new Timestamp(1, 0));
-    addCollectionGroup("coll2", new Timestamp(2, 0));
+    addCollectionGroup("coll1", 1);
+    addCollectionGroup("coll2", 2);
     addFieldIndex("coll3", "foo");
 
     IndexBackfiller.Results results = backfiller.backfill();
@@ -232,7 +224,7 @@ public class IndexBackfillerTest {
 
     // Check that index entries are written in order of the collection group update times by
     // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
+    List<String> collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
     assertEquals(3, collectionGroups.size());
     assertEquals("coll3", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
@@ -244,7 +236,7 @@ public class IndexBackfillerTest {
     backfiller.setMaxDocumentsToProcess(3);
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
-    addCollectionGroup("coll1", new Timestamp(1, 0));
+    addCollectionGroup("coll1", 1);
     addDoc("coll1/docA", "foo", version(10, 0));
     addDoc("coll1/docB", "foo", version(10, 0));
     addDoc("coll2/docA", "foo", version(10, 0));
@@ -256,7 +248,7 @@ public class IndexBackfillerTest {
     // Check that collection groups are updated even if the backfiller hits the write cap. Since
     // `coll1` was already in the table, `coll2` should be processed first, and thus appear first
     // in the ordering.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
+    List<String> collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
     assertEquals(2, collectionGroups.size());
     assertEquals("coll2", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
@@ -276,8 +268,8 @@ public class IndexBackfillerTest {
             .withUpdateTime(readTime));
   }
 
-  private void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
-    indexManager.setCollectionGroupUpdateTime(collectionGroup, updateTime);
+  private void addCollectionGroup(String collectionGroup, int sequenceNumber) {
+    indexManager.setCollectionGroup(collectionGroup, sequenceNumber);
   }
 
   /** Creates a document and adds it to the RemoteDocumentCache. */

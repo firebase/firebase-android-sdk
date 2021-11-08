@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -81,9 +80,15 @@ public interface IndexManager {
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
-  /** Returns the next collection group to update. */
+  /**
+   * Returns the next collection group to update. Returns null after reaching the provided max
+   * sequence number.
+   */
   @Nullable
-  String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
+  String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber);
+
+  /** Returns the highest sequence number in the collection groups table. */
+  int getMaxCollectionGroupSequenceNumber();
 
   /**
    * Updates the index entries for the provided documents and corresponding field indexes until the

@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -75,9 +74,15 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+  public String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber) {
     // Field indices are not supported with memory persistence.
     return null;
+  }
+
+  @Override
+  public int getMaxCollectionGroupSequenceNumber() {
+    // Field indices are not supported with memory persistence.
+    return -1;
   }
 
   @Override

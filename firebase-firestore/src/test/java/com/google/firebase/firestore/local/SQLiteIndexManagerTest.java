@@ -606,18 +606,18 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testCollectionGroupUpdateTimesCanBeUpdated() {
+  public void testCollectionGroupSequenceNumbersCanBeUpdated() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(30, 0));
-    sqLiteIndexManager.setCollectionGroupUpdateTime("coll2", new Timestamp(30, 50));
+    sqLiteIndexManager.setCollectionGroup("coll1", 1);
+    sqLiteIndexManager.setCollectionGroup("coll2", 2);
     List<String> orderedCollectionGroups =
-        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+        getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
     List<String> expected = Arrays.asList("coll1", "coll2");
     assertEquals(expected, orderedCollectionGroups);
 
-    sqLiteIndexManager.setCollectionGroupUpdateTime("coll1", new Timestamp(50, 0));
+    sqLiteIndexManager.setCollectionGroup("coll1", 3);
     orderedCollectionGroups =
-        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+        getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
     expected = Arrays.asList("coll2", "coll1");
     assertEquals(expected, orderedCollectionGroups);
   }
@@ -662,10 +662,20 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
             .withUpdateTime(SnapshotVersion.NONE));
     List<String> collectionGroups =
-        getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
+        getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
     assertEquals(2, collectionGroups.size());
     assertEquals("coll1", collectionGroups.get(0));
     assertEquals("coll2", collectionGroups.get(1));
+  }
+
+  @Test
+  public void getMaxCollectionSequenceNumberOnEmptyTable() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    List<String> collectionGroups =
+        getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
+    assertEquals(0, collectionGroups.size());
+    int value = sqLiteIndexManager.getMaxCollectionGroupSequenceNumber();
+    assertEquals(0, value);
   }
 
   private void addDoc(String key, Map<String, Object> data) {
@@ -681,13 +691,14 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }
 
-  public static List<String> getCollectionGroupsOrderByUpdateTime(SQLitePersistence persistence) {
+  public static List<String> getCollectionGroupsOrderBySequenceNumber(
+      SQLitePersistence persistence) {
     List<String> orderedCollectionGroups = new ArrayList<>();
     persistence
         .query(
             "SELECT collection_group "
                 + "FROM collection_group_update_times "
-                + "ORDER BY update_time_seconds, update_time_nanos")
+                + "ORDER BY sequence_number")
         .forEach(
             row -> {
               orderedCollectionGroups.add(row.getString(0));

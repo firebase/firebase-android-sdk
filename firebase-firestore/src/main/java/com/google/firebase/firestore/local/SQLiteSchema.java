@@ -401,8 +401,7 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE collection_group_update_times ("
                   + "collection_group TEXT, " // Name of the collection group.
-                  + "update_time_seconds INTEGER," // Time of last index backfill update
-                  + "update_time_nanos INTEGER,"
+                  + "sequence_number INTEGER, " // Used to establish ordering when indexing.
                   + "PRIMARY KEY (collection_group))");
         });
   }

@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -140,11 +139,14 @@ public class IndexBackfiller {
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int documentsProcessed = 0;
-    Timestamp startingTimestamp = Timestamp.now();
+    int currentMaxSequenceNumber = indexManager.getMaxCollectionGroupSequenceNumber();
 
+    // TODO(indexing): Handle pausing and resuming from the correct document if backfilling hits the
+    // max doc limit while processing docs for a certain read time.
     while (documentsProcessed < maxDocumentsToProcess) {
       int documentsRemaining = maxDocumentsToProcess - documentsProcessed;
-      String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
+      String collectionGroup =
+          indexManager.getNextCollectionGroupToUpdate(currentMaxSequenceNumber);
       if (collectionGroup == null) {
         break;
       }
@@ -157,7 +159,7 @@ public class IndexBackfiller {
 
   /** Writes entries for the fetched field indexes. */
   private int writeEntriesForCollectionGroup(
-      LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
+      LocalDocumentsView localDocumentsView, String collectionGroup, int documentsRemaining) {
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
     // Use the earliest updateTime of all field indexes as the base updateTime.
@@ -169,7 +171,7 @@ public class IndexBackfiller {
     ImmutableSortedMap<DocumentKey, Document> documents =
         localDocumentsView.getDocumentsMatchingQuery(query, earliestUpdateTime);
 
-    Queue<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
+    Queue<Document> oldestDocuments = getOldestDocuments(documents, documentsRemaining);
     indexManager.updateIndexEntries(oldestDocuments);
     return oldestDocuments.size();
   }

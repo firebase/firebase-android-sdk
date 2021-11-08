@@ -22,7 +22,6 @@ import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -55,6 +54,7 @@ import java.util.Set;
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
   private static final String TAG = SQLiteIndexManager.class.getSimpleName();
+  private static final int NEW_COLLECTION_GROUP_SEQUENCE_NUMBER = 0;
 
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
@@ -161,8 +161,7 @@ final class SQLiteIndexManager implements IndexManager {
         index.getUpdateTime().getTimestamp().getSeconds(),
         index.getUpdateTime().getTimestamp().getNanoseconds());
 
-    // TODO(indexing): Use a 0-counter rather than the timestamp.
-    setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
+    setCollectionGroup(index.getCollectionGroup(), NEW_COLLECTION_GROUP_SEQUENCE_NUMBER);
 
     memoizeIndex(index);
   }
@@ -184,19 +183,18 @@ final class SQLiteIndexManager implements IndexManager {
     memoizeIndex(index);
   }
 
-  // TODO(indexing): Use a counter rather than the starting timestamp.
   @Override
-  public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+  public @Nullable String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber) {
     hardAssert(started, "IndexManager not started");
 
     final String[] nextCollectionGroup = {null};
     db.query(
             "SELECT collection_group "
                 + "FROM collection_group_update_times "
-                + "WHERE update_time_seconds <= ? AND update_time_nanos <= ?"
-                + "ORDER BY update_time_seconds, update_time_nanos "
+                + "WHERE sequence_number <= ?"
+                + "ORDER BY sequence_number "
                 + "LIMIT 1")
-        .binding(startingTimestamp.getSeconds(), startingTimestamp.getNanoseconds())
+        .binding(currentMaxSequenceNumber)
         .firstValue(
             row -> {
               nextCollectionGroup[0] = row.getString(0);
@@ -208,9 +206,7 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     // Store that this collection group will updated.
-    // TODO(indexing): Store progress with a counter rather than a timestamp. If using a timestamp,
-    // use the read time of the last document read in the loop.
-    setCollectionGroupUpdateTime(nextCollectionGroup[0], Timestamp.now());
+    setCollectionGroup(nextCollectionGroup[0], getMaxCollectionGroupSequenceNumber() + 1);
 
     return nextCollectionGroup[0];
   }
@@ -238,8 +234,6 @@ final class SQLiteIndexManager implements IndexManager {
       }
     }
 
-    // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
-    // This will require plumbing out the RDC's readTime into the IndexBackfiller.
     for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
       updateFieldIndex(updatedFieldIndex);
     }
@@ -636,13 +630,20 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @VisibleForTesting
-  void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
+  void setCollectionGroup(String collectionGroup, int sequenceNumber) {
     db.execute(
         "INSERT OR REPLACE INTO collection_group_update_times "
-            + "(collection_group, update_time_seconds, update_time_nanos) "
-            + "VALUES (?, ?, ?)",
+            + "(collection_group, sequence_number) "
+            + "VALUES (?, ?)",
         collectionGroup,
-        updateTime.getSeconds(),
-        updateTime.getNanoseconds());
+        sequenceNumber);
+  }
+
+  @Override
+  public int getMaxCollectionGroupSequenceNumber() {
+    final int[] finalValue = {0};
+    db.query("SELECT MAX(sequence_number) FROM collection_group_update_times")
+        .first(value -> finalValue[0] = value.getInt(0));
+    return finalValue[0];
   }
 }
