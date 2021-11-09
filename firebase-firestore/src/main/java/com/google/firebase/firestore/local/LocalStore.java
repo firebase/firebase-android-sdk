@@ -49,6 +49,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -778,13 +779,43 @@ public final class LocalStore implements BundleCallback {
         "Get named query", () -> bundleCache.getNamedQuery(queryName));
   }
 
-  public void configureIndices(List<FieldIndex> fieldIndices) {
+  @VisibleForTesting
+  Collection<FieldIndex> getFieldIndexes() {
+    return persistence.runTransaction("Get indexes", () -> indexManager.getFieldIndexes());
+  }
+
+  public void configureFieldIndexes(List<FieldIndex> newFieldIndexes) {
     persistence.runTransaction(
-        "Configure indices",
+        "Configure indexes",
         () -> {
-          // TODO(indexing): Disable no longer active indices
-          for (FieldIndex fieldIndex : fieldIndices) {
-            indexManager.addFieldIndex(fieldIndex);
+          Collection<FieldIndex> existingIndexes = indexManager.getFieldIndexes();
+
+          // Delete indices that are no longer used.
+          for (FieldIndex existingIndex : existingIndexes) {
+            boolean remainsActive = false;
+            for (FieldIndex newFieldIndex : newFieldIndexes) {
+              if (existingIndex.matchesConstraints(newFieldIndex)) {
+                remainsActive = true;
+                break;
+              }
+            }
+            if (!remainsActive) {
+              indexManager.deleteFieldIndex(existingIndex);
+            }
+          }
+
+          // Add new indices
+          for (FieldIndex newFieldIndex : newFieldIndexes) {
+            boolean exists = false;
+            for (FieldIndex existingIndex : existingIndexes) {
+              if (existingIndex.matchesConstraints(newFieldIndex)) {
+                exists = true;
+                break;
+              }
+            }
+            if (!exists) {
+              indexManager.addFieldIndex(newFieldIndex);
+            }
           }
         });
   }

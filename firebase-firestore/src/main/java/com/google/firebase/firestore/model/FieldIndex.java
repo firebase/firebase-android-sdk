@@ -146,6 +146,15 @@ public final class FieldIndex {
     return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
 
+  /**
+   * Returns whether the provided index specifies the same collection group and field segments as
+   * the current instance.
+   */
+  public boolean matchesConstraints(FieldIndex fieldIndex) {
+    return collectionGroup.equals(fieldIndex.collectionGroup)
+        && segments.equals(fieldIndex.segments);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -153,6 +162,7 @@ public final class FieldIndex {
 
     FieldIndex fieldIndex = (FieldIndex) o;
 
+    if (indexId != fieldIndex.indexId) return false;
     if (!segments.equals(fieldIndex.segments)) return false;
     if (!updateTime.equals(fieldIndex.updateTime)) return false;
     return collectionGroup.equals(fieldIndex.collectionGroup);
@@ -161,6 +171,7 @@ public final class FieldIndex {
   @Override
   public int hashCode() {
     int result = collectionGroup.hashCode();
+    result = 31 * result + indexId;
     result = 31 * result + segments.hashCode();
     result = 31 * result + updateTime.hashCode();
     return result;
@@ -169,7 +180,7 @@ public final class FieldIndex {
   @Override
   public String toString() {
     return String.format(
-        "FieldIndex{collectionGroup='%s', segments=%s, updateTime=%s}",
-        collectionGroup, segments, updateTime);
+        "FieldIndex{indexId=%s, collectionGroup='%s', segments=%s, updateTime=%s}",
+        indexId, collectionGroup, segments, updateTime);
   }
 }

@@ -60,6 +60,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -74,6 +75,7 @@ import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -175,6 +177,14 @@ public abstract class LocalStoreTestCase {
     MutationBatch batch = batches.get(0);
     batches.remove(0);
     lastChanges = localStore.rejectBatch(batch.getBatchId());
+  }
+
+  protected Collection<FieldIndex> getFieldIndexes() {
+    return localStore.getFieldIndexes();
+  }
+
+  protected void configureFieldIndexes(List<FieldIndex> fieldIndexes) {
+    localStore.configureFieldIndexes(fieldIndexes);
   }
 
   private int allocateQuery(Query query) {
