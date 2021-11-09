@@ -51,9 +51,9 @@ public class SQLiteOverlayMigrationManagerTest {
 
   @Before
   public void setUp() {
+    // Setup persistence to version 12, which is before Overlay.
     persistence =
-        PersistenceTestHelpers.createSQLitePersistenceForVersion(
-            "test-data-migration", SQLiteSchema.OVERLAY_SUPPORT_VERSION - 1);
+        PersistenceTestHelpers.createSQLitePersistenceForVersion("test-data-migration", 12);
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
         new LocalStore(
