@@ -73,7 +73,7 @@ class SQLiteSchema {
   }
 
   void runSchemaUpgrades() {
-    runSchemaUpgrades(0, VERSION);
+    runSchemaUpgrades(0);
   }
 
   void runSchemaUpgrades(int fromVersion) {
@@ -657,7 +657,9 @@ class SQLiteSchema {
   }
 
   private void addPendingDataMigration(String migration) {
-    db.execSQL("INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
+    db.execSQL(
+        "INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)",
+        new String[] {migration});
   }
 
   private boolean tableExists(String table) {

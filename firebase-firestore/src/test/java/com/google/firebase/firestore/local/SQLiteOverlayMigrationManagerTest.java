@@ -44,8 +44,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteOverlayMigrationManagerTest {
-  private static boolean overlayEnabled;
-
   private Persistence persistence;
   private LocalStore localStore;
 
