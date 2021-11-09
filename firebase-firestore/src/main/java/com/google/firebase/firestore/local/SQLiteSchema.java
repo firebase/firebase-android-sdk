@@ -657,7 +657,7 @@ class SQLiteSchema {
   }
 
   private void addPendingDataMigration(String migration) {
-    db.execSQL("INSERT INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
+    db.execSQL("INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
   }
 
   private boolean tableExists(String table) {
