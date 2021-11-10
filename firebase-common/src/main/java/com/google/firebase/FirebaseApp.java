@@ -47,6 +47,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.nio.charset.Charset;
@@ -114,7 +115,6 @@ public class FirebaseApp {
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
   private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
-
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
@@ -200,6 +200,7 @@ public class FirebaseApp {
     synchronized (LOCK) {
       FirebaseApp firebaseApp = INSTANCES.get(normalize(name));
       if (firebaseApp != null) {
+        firebaseApp.get(HeartBeatController.class).registerHeartBeat();
         return firebaseApp;
       }
 
@@ -301,6 +302,7 @@ public class FirebaseApp {
     }
 
     firebaseApp.initializeAllApis();
+    firebaseApp.get(HeartBeatController.class).registerHeartBeat();
     return firebaseApp;
   }
 
@@ -433,6 +435,11 @@ public class FirebaseApp {
                     applicationContext,
                     getPersistenceKey(),
                     componentRuntime.get(Publisher.class)));
+    this.addBackgroundStateChangeListener(background -> {
+      if(!background) {
+        this.get(HeartBeatController.class).registerHeartBeat();
+      }
+    });
   }
 
   private void checkNotDeleted() {

@@ -14,7 +14,8 @@
 
 package com.google.firebase.heartbeatinfo;
 
-import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
+import org.json.JSONException;
 
 /**
  * Class provides information about heartbeats.
@@ -27,24 +28,8 @@ import androidx.annotation.NonNull;
  * <p>This also exposes functions to store and retrieve haartBeat Information in the form of
  * HeartBeatResult.
  */
-public interface HeartBeatInfo {
-  enum HeartBeat {
-    NONE(0),
-    SDK(1),
-    GLOBAL(2),
-    COMBINED(3);
+public interface HeartBeatController {
+  Task<Void> registerHeartBeat();
 
-    private final int code;
-
-    HeartBeat(int code) {
-      this.code = code;
-    }
-
-    public int getCode() {
-      return this.code;
-    }
-  }
-
-  @NonNull
-  HeartBeat getHeartBeatCode(@NonNull String heartBeatTag);
+  Task<String> getHeartBeatsHeader() throws JSONException;
 }

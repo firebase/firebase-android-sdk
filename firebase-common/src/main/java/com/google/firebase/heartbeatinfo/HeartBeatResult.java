@@ -15,7 +15,7 @@
 package com.google.firebase.heartbeatinfo;
 
 import com.google.auto.value.AutoValue;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import java.util.List;
 
 /**
  * Stores the information about when the sdk was used and what kind of heartbeat needs to be sent
@@ -23,14 +23,11 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
  */
 @AutoValue
 public abstract class HeartBeatResult {
-  public abstract String getSdkName();
+  public abstract String getUserAgent();
 
-  public abstract long getMillis();
+  public abstract List<String> getUsedDates();
 
-  public abstract HeartBeat getHeartBeat();
-
-  public static HeartBeatResult create(
-      String sdkName, long millis, HeartBeatInfo.HeartBeat heartBeat) {
-    return new AutoValue_HeartBeatResult(sdkName, millis, heartBeat);
+  public static HeartBeatResult create(String userAgent, List<String> dateList) {
+    return new AutoValue_HeartBeatResult(userAgent, dateList);
   }
 }
