@@ -32,6 +32,7 @@ import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.internal.util.Clock;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
@@ -225,11 +226,10 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   }
 
   @Nullable
-  String getHeartbeatCode() {
+  HeartBeat getHeartbeatCode() {
     return heartBeatInfoProvider.get() != null
-        ? Integer.toString(
-            heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG).getCode())
-        : null;
+        ? heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG)
+        : HeartBeat.NONE;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */

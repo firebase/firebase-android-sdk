@@ -23,7 +23,6 @@ import static com.google.firebase.appcheck.internal.HttpErrorResponse.MESSAGE_KE
 import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_CERT;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_PACKAGE;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT;
-import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT_LOG_TYPE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -234,11 +233,8 @@ public class NetworkClientTest {
 
   private void verifyRequestHeaders() {
     String userAgent = ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getUserAgent();
-    String heartBeatCode =
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance()).getHeartbeatCode();
 
     verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT_LOG_TYPE, heartBeatCode);
     verify(mockHttpUrlConnection)
         .setRequestProperty(
             X_ANDROID_PACKAGE, ApplicationProvider.getApplicationContext().getPackageName());

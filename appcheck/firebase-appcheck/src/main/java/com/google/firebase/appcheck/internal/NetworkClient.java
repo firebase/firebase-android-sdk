@@ -27,6 +27,7 @@ import com.google.android.gms.common.util.Hex;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -108,9 +109,13 @@ public class NetworkClient {
       if (firebaseAppCheck.getUserAgent() != null) {
         urlConnection.setRequestProperty(X_FIREBASE_CLIENT, firebaseAppCheck.getUserAgent());
       }
-      if (firebaseAppCheck.getHeartbeatCode() != null) {
+
+      // getHeartbeatCode should not be called multiple times, as subsequent calls will return
+      // HeartBeat.NONE until the heartbeat is reset.
+      HeartBeat heartBeat = firebaseAppCheck.getHeartbeatCode();
+      if (heartBeat != HeartBeat.NONE) {
         urlConnection.setRequestProperty(
-            X_FIREBASE_CLIENT_LOG_TYPE, firebaseAppCheck.getHeartbeatCode());
+            X_FIREBASE_CLIENT_LOG_TYPE, Integer.toString(heartBeat.getCode()));
       }
 
       // Headers for Android API key restrictions.
