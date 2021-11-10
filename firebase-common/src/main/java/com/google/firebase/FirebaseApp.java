@@ -435,11 +435,12 @@ public class FirebaseApp {
                     applicationContext,
                     getPersistenceKey(),
                     componentRuntime.get(Publisher.class)));
-    this.addBackgroundStateChangeListener(background -> {
-      if(!background) {
-        this.get(HeartBeatController.class).registerHeartBeat();
-      }
-    });
+    this.addBackgroundStateChangeListener(
+        background -> {
+          if (!background) {
+            this.get(HeartBeatController.class).registerHeartBeat();
+          }
+        });
   }
 
   private void checkNotDeleted() {
