@@ -225,7 +225,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         : null;
   }
 
-  @Nullable
+  @NonNull
   HeartBeat getHeartbeatCode() {
     return heartBeatInfoProvider.get() != null
         ? heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG)
