@@ -34,7 +34,7 @@ import java.util.List;
  */
 public final class FieldIndex {
 
-  /** Compares indexes by collection group and segments. Ignores the index ID. */
+  /** Compares indexes by collection group and segments. Ignores update time and index ID. */
   public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
       (left, right) -> {
         int cmp = left.collectionGroup.compareTo(right.collectionGroup);
@@ -42,12 +42,10 @@ public final class FieldIndex {
 
         Iterator<Segment> leftIt = left.segments.iterator();
         Iterator<Segment> rightIt = right.segments.iterator();
-
         while (leftIt.hasNext() && rightIt.hasNext()) {
           cmp = leftIt.next().compareTo(rightIt.next());
           if (cmp != 0) return cmp;
         }
-
         return Boolean.compare(leftIt.hasNext(), rightIt.hasNext());
       };
 
