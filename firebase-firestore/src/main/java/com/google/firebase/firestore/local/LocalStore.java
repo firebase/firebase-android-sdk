@@ -791,12 +791,12 @@ public final class LocalStore implements BundleCallback {
         "Configure indexes",
         () -> {
           List<FieldIndex> existingIndexes = new ArrayList<>(indexManager.getFieldIndexes());
-          Collections.sort(existingIndexes, FieldIndex.SEMANTIC_EQUALITY_OPERATOR);
+          Collections.sort(existingIndexes, FieldIndex.SEMANTIC_COMPARATOR);
           Iterator<FieldIndex> existingIt = existingIndexes.iterator();
           @Nullable FieldIndex existingValue = advanceIterator(existingIt);
 
           List<FieldIndex> updatedIndexes = new ArrayList<>(newFieldIndexes);
-          Collections.sort(updatedIndexes, FieldIndex.SEMANTIC_EQUALITY_OPERATOR);
+          Collections.sort(updatedIndexes, FieldIndex.SEMANTIC_COMPARATOR);
           Iterator<FieldIndex> updatedIt = updatedIndexes.iterator();
           @Nullable FieldIndex updatedValue = advanceIterator(updatedIt);
 
@@ -805,7 +805,7 @@ public final class LocalStore implements BundleCallback {
             boolean updated = false;
 
             if (existingValue != null && updatedValue != null) {
-              int cmp = FieldIndex.SEMANTIC_EQUALITY_OPERATOR.compare(existingValue, updatedValue);
+              int cmp = FieldIndex.SEMANTIC_COMPARATOR.compare(existingValue, updatedValue);
               if (cmp < 0) {
                 deleted = true;
               } else if (cmp > 0) {

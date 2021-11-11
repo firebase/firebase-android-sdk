@@ -35,26 +35,20 @@ import java.util.List;
 public final class FieldIndex {
 
   /** Compares indexes by collection group and segments. Ignores the index ID. */
-  public static final Comparator<FieldIndex> SEMANTIC_EQUALITY_OPERATOR =
+  public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
       (left, right) -> {
         int cmp = left.collectionGroup.compareTo(right.collectionGroup);
         if (cmp != 0) return cmp;
 
-        Iterator<Segment> segmentsIt = left.segments.iterator();
-        Iterator<Segment> otherSegmentsIt = right.segments.iterator();
+        Iterator<Segment> leftIt = left.segments.iterator();
+        Iterator<Segment> rightIt = right.segments.iterator();
 
-        while (segmentsIt.hasNext() && otherSegmentsIt.hasNext()) {
-          cmp = segmentsIt.next().compareTo(otherSegmentsIt.next());
+        while (leftIt.hasNext() && rightIt.hasNext()) {
+          cmp = leftIt.next().compareTo(rightIt.next());
           if (cmp != 0) return cmp;
         }
 
-        if (otherSegmentsIt.hasNext()) {
-          return -1;
-        } else if (segmentsIt.hasNext()) {
-          return 1;
-        } else {
-          return 0;
-        }
+        return Boolean.compare(leftIt.hasNext(), rightIt.hasNext());
       };
 
   /** An index component consisting of field path and index type. */
