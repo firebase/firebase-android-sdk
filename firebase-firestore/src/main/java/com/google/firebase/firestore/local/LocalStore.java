@@ -50,6 +50,7 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -57,8 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -791,13 +790,14 @@ public final class LocalStore implements BundleCallback {
     persistence.runTransaction(
         "Configure indexes",
         () -> {
-          SortedSet<FieldIndex> existingIndexes = new TreeSet<>(indexManager.getFieldIndexes());
-          SortedSet<FieldIndex> updatedIndexes = new TreeSet<>(newFieldIndexes);
-
+          List<FieldIndex> existingIndexes = new ArrayList<>(indexManager.getFieldIndexes());
+          Collections.sort(existingIndexes, FieldIndex.SEMANTIC_EQUALITY_OPERATOR);
           Iterator<FieldIndex> existingIt = existingIndexes.iterator();
-          Iterator<FieldIndex> updatedIt = updatedIndexes.iterator();
-
           @Nullable FieldIndex existingValue = advanceIterator(existingIt);
+
+          List<FieldIndex> updatedIndexes = new ArrayList<>(newFieldIndexes);
+          Collections.sort(updatedIndexes, FieldIndex.SEMANTIC_EQUALITY_OPERATOR);
+          Iterator<FieldIndex> updatedIt = updatedIndexes.iterator();
           @Nullable FieldIndex updatedValue = advanceIterator(updatedIt);
 
           while (existingValue != null || updatedValue != null) {
@@ -805,7 +805,7 @@ public final class LocalStore implements BundleCallback {
             boolean updated = false;
 
             if (existingValue != null && updatedValue != null) {
-              int cmp = existingValue.compareTo(updatedValue);
+              int cmp = FieldIndex.SEMANTIC_EQUALITY_OPERATOR.compare(existingValue, updatedValue);
               if (cmp < 0) {
                 deleted = true;
               } else if (cmp > 0) {

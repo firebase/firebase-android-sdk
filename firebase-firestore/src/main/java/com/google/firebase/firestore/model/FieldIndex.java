@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -31,7 +32,30 @@ import java.util.List;
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public final class FieldIndex implements Comparable<FieldIndex> {
+public final class FieldIndex {
+
+  /** Compares indexes by collection group and segments. Ignores the index ID. */
+  public static final Comparator<FieldIndex> SEMANTIC_EQUALITY_OPERATOR =
+      (left, right) -> {
+        int cmp = left.collectionGroup.compareTo(right.collectionGroup);
+        if (cmp != 0) return cmp;
+
+        Iterator<Segment> segmentsIt = left.segments.iterator();
+        Iterator<Segment> otherSegmentsIt = right.segments.iterator();
+
+        while (segmentsIt.hasNext() && otherSegmentsIt.hasNext()) {
+          cmp = segmentsIt.next().compareTo(otherSegmentsIt.next());
+          if (cmp != 0) return cmp;
+        }
+
+        if (otherSegmentsIt.hasNext()) {
+          return -1;
+        } else if (segmentsIt.hasNext()) {
+          return 1;
+        } else {
+          return 0;
+        }
+      };
 
   /** An index component consisting of field path and index type. */
   @AutoValue
@@ -152,29 +176,6 @@ public final class FieldIndex implements Comparable<FieldIndex> {
   /** Returns a new field index with the provided index id. */
   public FieldIndex withIndexId(int indexId) {
     return new FieldIndex(collectionGroup, indexId, segments, updateTime);
-  }
-
-  /** Compares indexes by collection group and segments. */
-  @Override
-  public int compareTo(FieldIndex other) {
-    int cmp = collectionGroup.compareTo(other.collectionGroup);
-    if (cmp != 0) return cmp;
-
-    Iterator<Segment> segmentsIt = segments.iterator();
-    Iterator<Segment> otherSegmentsIt = other.segments.iterator();
-
-    while (segmentsIt.hasNext() && otherSegmentsIt.hasNext()) {
-      cmp = segmentsIt.next().compareTo(otherSegmentsIt.next());
-      if (cmp != 0) return cmp;
-    }
-
-    if (otherSegmentsIt.hasNext()) {
-      return -1;
-    } else if (segmentsIt.hasNext()) {
-      return 1;
-    } else {
-      return 0;
-    }
   }
 
   @Override
