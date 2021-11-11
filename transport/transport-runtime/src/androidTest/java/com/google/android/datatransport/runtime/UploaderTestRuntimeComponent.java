@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime;
 
 import android.content.Context;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.Uploader;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.SpyEventStoreModule;
@@ -43,6 +44,8 @@ abstract class UploaderTestRuntimeComponent extends TransportRuntimeComponent {
   abstract SQLiteEventStore getEventStore();
 
   abstract WorkScheduler getWorkScheduler();
+
+  abstract Uploader getUploader();
 
   @Override
   public void close() throws IOException {
