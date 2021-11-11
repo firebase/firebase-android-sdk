@@ -30,6 +30,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -246,5 +247,11 @@ public class Util {
       }
     }
     return sb;
+  }
+
+  /** Returns the next element from the iterator or `null` if none available. */
+  @Nullable
+  public static  <T> T advanceIterator(Iterator<T> it) {
+    return it.hasNext() ? it.next() : null;
   }
 }

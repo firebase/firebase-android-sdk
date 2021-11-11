@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.advanceIterator;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
@@ -829,11 +830,6 @@ public final class LocalStore implements BundleCallback {
             }
           }
         });
-  }
-
-  @Nullable
-  private FieldIndex advanceIterator(Iterator<FieldIndex> it) {
-    return it.hasNext() ? it.next() : null;
   }
 
   /** Mutable state for the transaction in allocateQuery. */
