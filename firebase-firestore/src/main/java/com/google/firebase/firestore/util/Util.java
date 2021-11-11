@@ -251,7 +251,7 @@ public class Util {
 
   /** Returns the next element from the iterator or `null` if none available. */
   @Nullable
-  public static  <T> T advanceIterator(Iterator<T> it) {
+  public static <T> T advanceIterator(Iterator<T> it) {
     return it.hasNext() ? it.next() : null;
   }
 }
