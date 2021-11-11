@@ -52,10 +52,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -788,36 +791,49 @@ public final class LocalStore implements BundleCallback {
     persistence.runTransaction(
         "Configure indexes",
         () -> {
-          Collection<FieldIndex> existingIndexes = indexManager.getFieldIndexes();
+          SortedSet<FieldIndex> existingIndexes = new TreeSet<>(indexManager.getFieldIndexes());
+          SortedSet<FieldIndex> updatedIndexes = new TreeSet<>(newFieldIndexes);
 
-          // Delete indices that are no longer used.
-          for (FieldIndex existingIndex : existingIndexes) {
-            boolean remainsActive = false;
-            for (FieldIndex newFieldIndex : newFieldIndexes) {
-              if (existingIndex.matchesConstraints(newFieldIndex)) {
-                remainsActive = true;
-                break;
-              }
-            }
-            if (!remainsActive) {
-              indexManager.deleteFieldIndex(existingIndex);
-            }
-          }
+          Iterator<FieldIndex> existingIt = existingIndexes.iterator();
+          Iterator<FieldIndex> updatedIt = updatedIndexes.iterator();
 
-          // Add new indices
-          for (FieldIndex newFieldIndex : newFieldIndexes) {
-            boolean exists = false;
-            for (FieldIndex existingIndex : existingIndexes) {
-              if (existingIndex.matchesConstraints(newFieldIndex)) {
-                exists = true;
-                break;
+          @Nullable FieldIndex existingValue = advanceIterator(existingIt);
+          @Nullable FieldIndex updatedValue = advanceIterator(updatedIt);
+
+          while (existingValue != null || updatedValue != null) {
+            boolean deleted = false;
+            boolean updated = false;
+
+            if (existingValue != null && updatedValue != null) {
+              int cmp = existingValue.compareTo(updatedValue);
+              if (cmp < 0) {
+                deleted = true;
+              } else if (cmp > 0) {
+                updated = true;
               }
+            } else if (existingValue != null) {
+              deleted = true;
+            } else {
+              updated = true;
             }
-            if (!exists) {
-              indexManager.addFieldIndex(newFieldIndex);
+
+            if (deleted) {
+              indexManager.deleteFieldIndex(existingValue);
+              existingValue = advanceIterator(existingIt);
+            } else if (updated) {
+              indexManager.addFieldIndex(updatedValue);
+              updatedValue = advanceIterator(updatedIt);
+            } else {
+              existingValue = advanceIterator(existingIt);
+              updatedValue = advanceIterator(updatedIt);
             }
           }
         });
+  }
+
+  @Nullable
+  private FieldIndex advanceIterator(Iterator<FieldIndex> it) {
+    return it.hasNext() ? it.next() : null;
   }
 
   /** Mutable state for the transaction in allocateQuery. */

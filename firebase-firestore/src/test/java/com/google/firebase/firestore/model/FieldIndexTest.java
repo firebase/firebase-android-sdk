@@ -17,9 +17,7 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -96,58 +94,58 @@ public class FieldIndexTest {
   }
 
   @Test
-  public void matchesConstraintsIncludesCollectionGroup() {
+  public void compareToIncludesCollectionGroup() {
     FieldIndex indexOriginal = new FieldIndex("collA");
     FieldIndex indexSame = new FieldIndex("collA");
     FieldIndex indexDifferent = new FieldIndex("collB");
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertFalse(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(-1, indexOriginal.compareTo(indexDifferent));
   }
 
   @Test
-  public void matchesConstraintsIgnoresIndexId() {
+  public void compareToIgnoresIndexId() {
     FieldIndex indexOriginal = new FieldIndex("collA").withIndexId(1);
     FieldIndex indexSame = new FieldIndex("collA").withIndexId(1);
     FieldIndex indexDifferent = new FieldIndex("collA").withIndexId(2);
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertTrue(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(0, indexOriginal.compareTo(indexDifferent));
   }
 
   @Test
-  public void matchesConstraintsIgnoreUpdateTime() {
+  public void compareToIgnoreUpdateTime() {
     FieldIndex indexOriginal = new FieldIndex("collA").withUpdateTime(version(1));
     FieldIndex indexSame = new FieldIndex("collA").withUpdateTime(version(1));
     FieldIndex indexDifferent = new FieldIndex("collA").withUpdateTime(version(2));
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertTrue(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(0, indexOriginal.compareTo(indexDifferent));
   }
 
   @Test
-  public void matchesConstraintsIncludesFieldName() {
+  public void compareToIncludesFieldName() {
     FieldIndex indexOriginal =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexSame =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexDifferent =
         new FieldIndex("collA").withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertFalse(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(-1, indexOriginal.compareTo(indexDifferent));
   }
 
   @Test
-  public void matchesConstraintsIncludesSegmentKind() {
+  public void compareToIncludesSegmentKind() {
     FieldIndex indexOriginal =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexSame =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexDifferent =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING);
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertFalse(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(-1, indexOriginal.compareTo(indexDifferent));
   }
 
   @Test
-  public void matchesConstraintsIncludesFieldLength() {
+  public void compareToIncludesSegmentLength() {
     FieldIndex indexOriginal =
         new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexSame =
@@ -156,7 +154,7 @@ public class FieldIndexTest {
         new FieldIndex("collA")
             .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
             .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
-    assertTrue(indexOriginal.matchesConstraints(indexSame));
-    assertFalse(indexOriginal.matchesConstraints(indexDifferent));
+    assertEquals(0, indexOriginal.compareTo(indexSame));
+    assertEquals(-1, indexOriginal.compareTo(indexDifferent));
   }
 }

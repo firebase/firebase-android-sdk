@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -30,11 +31,11 @@ import java.util.List;
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public final class FieldIndex {
+public final class FieldIndex implements Comparable<FieldIndex> {
 
   /** An index component consisting of field path and index type. */
   @AutoValue
-  public abstract static class Segment {
+  public abstract static class Segment implements Comparable<Segment> {
     /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
       /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
@@ -54,6 +55,13 @@ public final class FieldIndex {
     @Override
     public String toString() {
       return String.format("Segment{fieldPath=%s, kind=%s}", getFieldPath(), getKind());
+    }
+
+    @Override
+    public int compareTo(Segment other) {
+      int cmp = getFieldPath().compareTo(other.getFieldPath());
+      if (cmp != 0) return cmp;
+      return getKind().compareTo(other.getKind());
     }
   }
 
@@ -146,13 +154,27 @@ public final class FieldIndex {
     return new FieldIndex(collectionGroup, indexId, segments, updateTime);
   }
 
-  /**
-   * Returns whether the provided index specifies the same collection group and field segments as
-   * the current instance.
-   */
-  public boolean matchesConstraints(FieldIndex fieldIndex) {
-    return collectionGroup.equals(fieldIndex.collectionGroup)
-        && segments.equals(fieldIndex.segments);
+  /** Compares indexes by collection group and segments. */
+  @Override
+  public int compareTo(FieldIndex other) {
+    int cmp = collectionGroup.compareTo(other.collectionGroup);
+    if (cmp != 0) return cmp;
+
+    Iterator<Segment> segmentsIt = segments.iterator();
+    Iterator<Segment> otherSegmentsIt = other.segments.iterator();
+
+    while (segmentsIt.hasNext() && otherSegmentsIt.hasNext()) {
+      cmp = segmentsIt.next().compareTo(otherSegmentsIt.next());
+      if (cmp != 0) return cmp;
+    }
+
+    if (otherSegmentsIt.hasNext()) {
+      return -1;
+    } else if (segmentsIt.hasNext()) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 
   @Override
