@@ -20,8 +20,13 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.SparseIntArray;
+import android.view.View;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.FrameMetricsAggregator;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -55,6 +60,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
+  private final WeakHashMap<Fragment, Trace> fragmentToScreenTraceMap = new WeakHashMap<>();
+  private final WeakHashMap<Fragment, FrameMetrics> fragementStartMetricsMap = new WeakHashMap<>();
   private final Map<String, Long> metricToCountMap = new HashMap<>();
   private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
   private Set<AppColdStartCallback> appColdStartSubscribers = new HashSet<>();
@@ -77,6 +84,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean isColdStart = true;
   private boolean hasFrameMetricsAggregator = false;
 
+  class FrameMetrics {
+    int totalFrames = 0;
+    int slowFrames = 0;
+    int frozenFrames = 0;
+
+    FrameMetrics(int totalFrames, int slowFrames, int frozenFrames) {
+      this.totalFrames = totalFrames;
+      this.slowFrames = slowFrames;
+      this.frozenFrames = frozenFrames;
+    }
+  }
+
   public static AppStateMonitor getInstance() {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
@@ -96,6 +115,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (hasFrameMetricsAggregator) {
       frameMetricsAggregator = new FrameMetricsAggregator();
     }
+  }
+
+  public FrameMetricsAggregator getFrameMetricsAggregator() {
+    return frameMetricsAggregator;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
@@ -140,7 +163,129 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    System.out.println("*** onActivityCreated " + activity.getClass().getSimpleName());
+    AppCompatActivity appCompatActivityactivity = (AppCompatActivity) activity;
+    appCompatActivityactivity
+        .getSupportFragmentManager()
+        .registerFragmentLifecycleCallbacks(
+            new FragmentManager.FragmentLifecycleCallbacks() {
+              @Override
+              public void onFragmentViewCreated(
+                  @NonNull FragmentManager fm,
+                  @NonNull Fragment fragment,
+                  @NonNull View v,
+                  @Nullable Bundle savedInstanceState) {
+                System.out.println("*** View created " + fragment.getClass().getSimpleName());
+                if (isScreenTraceSupported(activity)
+                    && configResolver.isPerformanceMonitoringEnabled()) {
+                  frameMetricsAggregator.add(activity);
+                  // Start the Trace
+                  String name =
+                      Constants.SCREEN_TRACE_PREFIX
+                          + activity.getClass().getSimpleName()
+                          + fragment.getClass().getSimpleName();
+                  Trace screenTrace =
+                      new Trace(name, transportManager, clock, AppStateMonitor.getInstance());
+                  screenTrace.start();
+                  fragmentToScreenTraceMap.put(fragment, screenTrace);
+                  FrameMetrics frameMetrics =
+                      calculateFrameMetircs(
+                          AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
+                  System.out.printf(
+                      "*** start time frameMetrics %s %d %d %d\n",
+                      fragment.getClass().getSimpleName(),
+                      frameMetrics.totalFrames,
+                      frameMetrics.slowFrames,
+                      frameMetrics.frozenFrames);
+                  fragementStartMetricsMap.put(fragment, frameMetrics);
+                }
+              }
+
+              @Override
+              public void onFragmentViewDestroyed(
+                  @NonNull FragmentManager fm, @NonNull Fragment fragment) {
+                System.out.println("*** View destroyed " + fragment.getClass().getSimpleName());
+                if (isScreenTraceSupported(activity)) {
+                  sendFragmentTrace(fragment);
+                }
+              }
+            },
+            true);
+  }
+
+  public FrameMetrics calculateFrameMetircs(SparseIntArray[] arr) {
+    int totalFrames = 0;
+    int slowFrames = 0;
+    int frozenFrames = 0;
+
+    if (arr != null) {
+      SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
+      if (frameTimes != null) {
+        for (int i = 0; i < frameTimes.size(); i++) {
+          int frameTime = frameTimes.keyAt(i);
+          int numFrames = frameTimes.valueAt(i);
+          totalFrames += numFrames;
+          if (frameTime > Constants.FROZEN_FRAME_TIME) {
+            // Frozen frames mean the app appear frozen.  The recommended thresholds is 700ms
+            frozenFrames += numFrames;
+          }
+          if (frameTime > Constants.SLOW_FRAME_TIME) {
+            // Slow frames are anything above 16ms (i.e. 60 frames/second)
+            slowFrames += numFrames;
+          }
+        }
+      }
+    }
+    // Only incrementMetric if corresponding metric is non-zero.
+    return new FrameMetrics(totalFrames, slowFrames, frozenFrames);
+  }
+
+  private void sendFragmentTrace(Fragment fragment) {
+    Trace screenTrace = fragmentToScreenTraceMap.get(fragment);
+    if (screenTrace == null) {
+      return;
+    }
+
+    FrameMetrics frameMetrics = calculateFrameMetircs(frameMetricsAggregator.getMetrics());
+    System.out.printf(
+        "*** end time frameMetrics %s %d %d %d\n",
+        fragment.getClass().getSimpleName(),
+        frameMetrics.totalFrames,
+        frameMetrics.slowFrames,
+        frameMetrics.frozenFrames);
+    int totalFrames = frameMetrics.totalFrames - fragementStartMetricsMap.get(fragment).totalFrames;
+    int slowFrames = frameMetrics.slowFrames - fragementStartMetricsMap.get(fragment).slowFrames;
+    int frozenFrames =
+        frameMetrics.frozenFrames - fragementStartMetricsMap.get(fragment).frozenFrames;
+
+    if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
+      // All metrics are zero, no need to send screen trace.
+      // return;
+    }
+    // Only incrementMetric if corresponding metric is non-zero.
+    if (totalFrames > 0) {
+      screenTrace.putMetric(Constants.CounterNames.FRAMES_TOTAL.toString(), totalFrames);
+    }
+    if (slowFrames > 0) {
+      screenTrace.putMetric(Constants.CounterNames.FRAMES_SLOW.toString(), slowFrames);
+    }
+    if (frozenFrames > 0) {
+      screenTrace.putMetric(Constants.CounterNames.FRAMES_FROZEN.toString(), frozenFrames);
+    }
+    logger.debug(
+        "*** sendScreenTrace name:"
+            + fragment.getClass().getSimpleName()
+            + " _fr_tot:"
+            + totalFrames
+            + " _fr_slo:"
+            + slowFrames
+            + " _fr_fzn:"
+            + frozenFrames);
+
+    // Stop and record trace
+    screenTrace.stop();
+  }
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
@@ -365,7 +510,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     if (Utils.isDebugLoggingEnabled(activity.getApplicationContext())) {
       logger.debug(
-          "sendScreenTrace name:"
+          "*** sendScreenTrace name:"
               + getScreenTraceName(activity)
               + " _fr_tot:"
               + totalFrames
