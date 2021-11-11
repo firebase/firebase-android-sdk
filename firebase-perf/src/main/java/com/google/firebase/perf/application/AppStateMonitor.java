@@ -181,10 +181,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                     && configResolver.isPerformanceMonitoringEnabled()) {
                   frameMetricsAggregator.add(activity);
                   // Start the Trace
-                  String name =
-                      Constants.SCREEN_TRACE_PREFIX
-                          + activity.getClass().getSimpleName()
-                          + fragment.getClass().getSimpleName();
+                  String name = "";
+                  Fragment curFragment = fragment;
+                  while (curFragment != null) {
+                    name = "-" + curFragment.getClass().getSimpleName() + name;
+                    curFragment = curFragment.getParentFragment();
+                  }
+                  name = Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName() + name;
                   Trace screenTrace =
                       new Trace(name, transportManager, clock, AppStateMonitor.getInstance());
                   screenTrace.start();
