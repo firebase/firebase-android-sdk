@@ -195,6 +195,10 @@ public class PerfTestActivity extends Activity {
         .setOnClickListener(logAllFirebaseRcKeysForFireperfNamespace);
   }
 
+  public void openFragmentActivity(View view) {
+    startActivity(new Intent(this, FragmentActivity.class));
+  }
+
   private void readUrlsFromFile() {
     try {
       InputStream inputStream = getResources().openRawResource(R.raw.urls);

@@ -11,6 +11,14 @@
     android:orientation="vertical">
 
     <Button
+        android:id="@+id/activityFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="openFragmentActivity"
+        android:text="Fragment Activity"
+        android:textAllCaps="false" />
+
+    <Button
       android:id="@+id/init"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
