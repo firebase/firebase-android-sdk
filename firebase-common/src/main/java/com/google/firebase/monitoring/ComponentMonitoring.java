@@ -60,8 +60,8 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
           Component<Object> cmp = (Component<Object>) component;
           component = cmp.withFactory(wrap(named.name, cmp.getFactory()));
         }
-        result.add(component);
       }
+      result.add(component);
     }
     return result;
   }
@@ -72,8 +72,9 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
       if (component.getName() != null) {
         @SuppressWarnings("unchecked")
         Component<Object> cmp = (Component<Object>) component;
-        result.add(cmp.withFactory(wrap(cmp.getName(), cmp.getFactory())));
+        component = cmp.withFactory(wrap(cmp.getName(), cmp.getFactory()));
       }
+      result.add(component);
     }
     return result;
   }
