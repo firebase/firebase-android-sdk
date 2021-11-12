@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.Util.advanceIterator;
+import static com.google.firebase.firestore.util.Util.diffCollections;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
@@ -51,10 +51,8 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -791,44 +789,12 @@ public final class LocalStore implements BundleCallback {
     persistence.runTransaction(
         "Configure indexes",
         () -> {
-          List<FieldIndex> existingIndexes = new ArrayList<>(indexManager.getFieldIndexes());
-          Collections.sort(existingIndexes, FieldIndex.SEMANTIC_COMPARATOR);
-          Iterator<FieldIndex> existingIt = existingIndexes.iterator();
-          @Nullable FieldIndex existingValue = advanceIterator(existingIt);
-
-          List<FieldIndex> updatedIndexes = new ArrayList<>(newFieldIndexes);
-          Collections.sort(updatedIndexes, FieldIndex.SEMANTIC_COMPARATOR);
-          Iterator<FieldIndex> updatedIt = updatedIndexes.iterator();
-          @Nullable FieldIndex updatedValue = advanceIterator(updatedIt);
-
-          while (existingValue != null || updatedValue != null) {
-            boolean deleted = false;
-            boolean updated = false;
-
-            if (existingValue != null && updatedValue != null) {
-              int cmp = FieldIndex.SEMANTIC_COMPARATOR.compare(existingValue, updatedValue);
-              if (cmp < 0) {
-                deleted = true;
-              } else if (cmp > 0) {
-                updated = true;
-              }
-            } else if (existingValue != null) {
-              deleted = true;
-            } else {
-              updated = true;
-            }
-
-            if (deleted) {
-              indexManager.deleteFieldIndex(existingValue);
-              existingValue = advanceIterator(existingIt);
-            } else if (updated) {
-              indexManager.addFieldIndex(updatedValue);
-              updatedValue = advanceIterator(updatedIt);
-            } else {
-              existingValue = advanceIterator(existingIt);
-              updatedValue = advanceIterator(updatedIt);
-            }
-          }
+          diffCollections(
+              indexManager.getFieldIndexes(),
+              newFieldIndexes,
+              FieldIndex.SEMANTIC_COMPARATOR,
+              indexManager::addFieldIndex,
+              indexManager::deleteFieldIndex);
         });
   }
 
