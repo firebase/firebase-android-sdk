@@ -343,7 +343,7 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return client.configureIndices(parsedIndices);
+    return client.configureFieldIndexes(parsedIndices);
   }
 
   /**

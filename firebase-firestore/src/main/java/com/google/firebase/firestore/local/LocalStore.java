@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.diffCollections;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
@@ -49,6 +50,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -778,14 +780,21 @@ public final class LocalStore implements BundleCallback {
         "Get named query", () -> bundleCache.getNamedQuery(queryName));
   }
 
-  public void configureIndices(List<FieldIndex> fieldIndices) {
+  @VisibleForTesting
+  Collection<FieldIndex> getFieldIndexes() {
+    return persistence.runTransaction("Get indexes", () -> indexManager.getFieldIndexes());
+  }
+
+  public void configureFieldIndexes(List<FieldIndex> newFieldIndexes) {
     persistence.runTransaction(
-        "Configure indices",
+        "Configure indexes",
         () -> {
-          // TODO(indexing): Disable no longer active indices
-          for (FieldIndex fieldIndex : fieldIndices) {
-            indexManager.addFieldIndex(fieldIndex);
-          }
+          diffCollections(
+              indexManager.getFieldIndexes(),
+              newFieldIndexes,
+              FieldIndex.SEMANTIC_COMPARATOR,
+              indexManager::addFieldIndex,
+              indexManager::deleteFieldIndex);
         });
   }
 
