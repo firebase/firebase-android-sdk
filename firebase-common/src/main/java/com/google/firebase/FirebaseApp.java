@@ -51,6 +51,9 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
+import com.google.firebase.monitoring.ComponentMonitoring;
+import com.google.firebase.monitoring.DelegatingTracer;
+import com.google.firebase.monitoring.Tracer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,10 +103,6 @@ public class FirebaseApp {
   /** A map of (name, FirebaseApp) instances. */
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
-
-  private static final String FIREBASE_ANDROID = "fire-android";
-  private static final String FIREBASE_COMMON = "fire-core";
-  private static final String KOTLIN = "kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -415,10 +414,13 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
+    long startTime = System.nanoTime();
+
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
 
+    DelegatingTracer tracer = new DelegatingTracer();
     componentRuntime =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
@@ -426,7 +428,10 @@ public class FirebaseApp {
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
+            .setProcessor(new ComponentMonitoring(tracer))
             .build();
+
+    tracer.setTracer(componentRuntime.get(Tracer.class));
 
     dataCollectionConfigStorage =
         new Lazy<>(

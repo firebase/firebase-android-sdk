@@ -206,6 +206,12 @@ public class Trace extends AppStateUpdateHandler
   /** Starts this trace. */
   @Keep
   public void start() {
+    start(clock.getTime());
+  }
+
+  /** Starts this trace. */
+  @Keep
+  public void start(Timer timer) {
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
       logger.debug("Trace feature is disabled.");
       return;
@@ -223,7 +229,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    startTime = clock.getTime();
+    startTime = timer;
 
     registerForAppState();
 
@@ -241,6 +247,12 @@ public class Trace extends AppStateUpdateHandler
   /** Stops this trace. */
   @Keep
   public void stop() {
+    stop(clock.getTime());
+  }
+
+  /** Stops this trace. */
+  @Keep
+  public void stop(Timer timer) {
     if (!hasStarted()) {
       logger.error("Trace '%s' has not been started so unable to stop!", name);
       return;
@@ -253,7 +265,7 @@ public class Trace extends AppStateUpdateHandler
     SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
 
     unregisterForAppState();
-    endTime = clock.getTime();
+    endTime = timer;
     if (parent == null) {
       setEndTimeOfLastStage(endTime);
       if (!name.isEmpty()) {

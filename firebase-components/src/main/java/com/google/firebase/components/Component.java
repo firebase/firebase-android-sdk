@@ -15,6 +15,8 @@
 package com.google.firebase.components;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -76,6 +78,7 @@ public final class Component<T> {
     int SET = 1;
   }
 
+  private final String name;
   private final Set<Class<? super T>> providedInterfaces;
   private final Set<Dependency> dependencies;
   private final @Instantiation int instantiation;
@@ -84,18 +87,25 @@ public final class Component<T> {
   private final Set<Class<?>> publishedEvents;
 
   private Component(
+      @Nullable String name,
       Set<Class<? super T>> providedInterfaces,
       Set<Dependency> dependencies,
       @Instantiation int instantiation,
       @ComponentType int type,
       ComponentFactory<T> factory,
       Set<Class<?>> publishedEvents) {
+    this.name = name;
     this.providedInterfaces = Collections.unmodifiableSet(providedInterfaces);
     this.dependencies = Collections.unmodifiableSet(dependencies);
     this.instantiation = instantiation;
     this.type = type;
     this.factory = factory;
     this.publishedEvents = Collections.unmodifiableSet(publishedEvents);
+  }
+
+  @Nullable
+  public String getName() {
+    return name;
   }
 
   /**
@@ -151,6 +161,11 @@ public final class Component<T> {
   /** Returns whether a component is a Value Component or a Set Component. */
   public boolean isValue() {
     return type == ComponentType.VALUE;
+  }
+
+  public Component<T> withFactory(ComponentFactory<T> factory) {
+    return new Component<>(
+        name, providedInterfaces, dependencies, instantiation, type, factory, publishedEvents);
   }
 
   @Override
@@ -219,6 +234,7 @@ public final class Component<T> {
 
   /** FirebaseComponent builder. */
   public static class Builder<T> {
+    private String name = null;
     private final Set<Class<? super T>> providedInterfaces = new HashSet<>();
     private final Set<Dependency> dependencies = new HashSet<>();
     private @Instantiation int instantiation = Instantiation.LAZY;
@@ -234,6 +250,11 @@ public final class Component<T> {
         Preconditions.checkNotNull(iface, "Null interface");
       }
       Collections.addAll(providedInterfaces, additionalInterfaces);
+    }
+
+    public Builder<T> name(@NonNull String name) {
+      this.name = name;
+      return this;
     }
 
     /** Add a {@link Dependency} to the {@link Component} being built. */
@@ -288,6 +309,7 @@ public final class Component<T> {
     public Component<T> build() {
       Preconditions.checkState(factory != null, "Missing required property: factory.");
       return new Component<>(
+          name,
           new HashSet<>(providedInterfaces),
           new HashSet<>(dependencies),
           instantiation,

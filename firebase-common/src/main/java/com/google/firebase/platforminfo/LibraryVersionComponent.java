@@ -15,6 +15,7 @@
 package com.google.firebase.platforminfo;
 
 import android.content.Context;
+import androidx.annotation.Nullable;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 
@@ -36,5 +37,16 @@ public class LibraryVersionComponent {
         .add(Dependency.required(Context.class))
         .factory(c -> LibraryVersion.create(sdkName, extractor.extract(c.get(Context.class))))
         .build();
+  }
+
+  @Nullable
+  public static String getNameIfLibraryVersionComponent(Component<?> component) {
+    if (!component.getProvidedInterfaces().contains(LibraryVersion.class)
+        || !component.getDependencies().isEmpty()) {
+      return null;
+    }
+    @SuppressWarnings("unchecked")
+    Component<LibraryVersion> versionComponent = (Component<LibraryVersion>) component;
+    return versionComponent.getFactory().create(null).getLibraryName();
   }
 }
