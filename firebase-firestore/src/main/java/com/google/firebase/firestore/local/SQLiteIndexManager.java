@@ -167,6 +167,17 @@ final class SQLiteIndexManager implements IndexManager {
     memoizeIndex(index);
   }
 
+  @Override
+  public void deleteFieldIndex(FieldIndex index) {
+    db.execute("DELETE FROM index_configuration WHERE index_id = ?", index.getIndexId());
+    db.execute("DELETE FROM index_entries WHERE index_id = ?", index.getIndexId());
+
+    Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
+    if (collectionIndices != null) {
+      collectionIndices.remove(index.getIndexId());
+    }
+  }
+
   private void updateFieldIndex(FieldIndex index) {
     db.execute(
         "REPLACE INTO index_configuration ("
@@ -250,6 +261,15 @@ final class SQLiteIndexManager implements IndexManager {
     hardAssert(started, "IndexManager not started");
     Map<Integer, FieldIndex> indexes = memoizedIndexes.get(collectionGroup);
     return indexes == null ? Collections.emptyList() : indexes.values();
+  }
+
+  @Override
+  public Collection<FieldIndex> getFieldIndexes() {
+    List<FieldIndex> allIndices = new ArrayList<>();
+    for (Map<Integer, FieldIndex> indices : memoizedIndexes.values()) {
+      allIndices.addAll(indices.values());
+    }
+    return allIndices;
   }
 
   /** Stores the index in the memoized indexes table. */
