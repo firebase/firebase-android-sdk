@@ -52,9 +52,6 @@ public interface IndexManager {
    */
   List<ResourcePath> getCollectionParents(String collectionId);
 
-  /** Updates the index entries for the given document. */
-  void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument);
-
   /**
    * Adds a field path index.
    *
@@ -91,10 +88,6 @@ public interface IndexManager {
   @Nullable
   String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
 
-  /**
-   * Updates the index entries for the provided documents and corresponding field indexes until the
-   * cap is reached. Updates the field indexes in persistence with the latest read time that was
-   * processed.
-   */
+  /** Updates the index entries for the provided documents. */
   void updateIndexEntries(Collection<Document> documents);
 }

@@ -71,7 +71,7 @@ public class UtilTest {
 
   private void validateDiffCollection(List<String> before, List<String> after) {
     List<String> result = new ArrayList<>(before);
-    Util.diffCollections(before, after, result::add, result::remove);
+    Util.diffCollections(before, after, String::compareTo, result::add, result::remove);
     assertThat(result).containsExactlyElementsIn(after);
   }
 }

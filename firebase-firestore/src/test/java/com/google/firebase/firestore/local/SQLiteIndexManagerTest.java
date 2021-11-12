@@ -27,11 +27,13 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -301,6 +303,20 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .orderBy(orderBy("value"))
             .limitToFirst(2);
     verifyResults(query, "coll/doc1", "coll/doc3");
+  }
+
+  @Test
+  public void testIndexEntriesAreUpdated() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+    Query query = query("coll").orderBy(orderBy("value"));
+
+    addDoc("coll/doc1", map("value", true));
+    verifyResults(query, "coll/doc1");
+
+    addDocs(doc("coll/doc1", 1, map()), doc("coll/doc2", 1, map("value", true)));
+    verifyResults(query, "coll/doc2");
   }
 
   @Test
@@ -670,12 +686,17 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void addDoc(String key, Map<String, Object> data) {
     MutableDocument doc = doc(key, 1, data);
-    indexManager.handleDocumentChange(null, doc);
+    indexManager.updateIndexEntries(Collections.singletonList(doc));
+  }
+
+  private void addDocs(Document... docs) {
+    indexManager.updateIndexEntries(Arrays.asList(docs));
   }
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
     FieldIndex fieldIndex = indexManager.getFieldIndex(target);
+    assertNotNull("Target not found", fieldIndex);
     Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);

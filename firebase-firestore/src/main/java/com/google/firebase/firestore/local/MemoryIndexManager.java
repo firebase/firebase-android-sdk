@@ -51,11 +51,6 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
-    // Field indices are not supported with memory persistence.
-  }
-
-  @Override
   public void addFieldIndex(FieldIndex index) {
     // Field indices are not supported with memory persistence.
   }
