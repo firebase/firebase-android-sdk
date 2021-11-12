@@ -12,7 +12,9 @@ LOCAL_MODULE := crashlytics-common
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/include \
     $(LOCAL_PATH)/../libcrashlytics/include \
+    $(LOCAL_PATH)/../libchrome/include \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad \
+    $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/mini_chromium \
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_CPPFLAGS := \
