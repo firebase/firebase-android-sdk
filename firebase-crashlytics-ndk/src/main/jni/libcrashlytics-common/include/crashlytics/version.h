@@ -16,6 +16,6 @@
 #define __CRASHLYTICS_VERSION_H__
 
 //! Authoritative libcrashlytics version string.
-#define VERSION "3.1.0"
+#define VERSION "3.2.0"
 
 #endif // __CRASHLYTICS_VERSION_H__
