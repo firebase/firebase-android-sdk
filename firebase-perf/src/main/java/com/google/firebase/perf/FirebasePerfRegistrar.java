@@ -22,9 +22,12 @@ import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.monitoring.TraceHandle;
+import com.google.firebase.monitoring.Tracer;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
+import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.Arrays;
@@ -52,6 +55,23 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(TransportFactory.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
+        Component.of(
+            name -> {
+              Trace trace = Trace.create(name);
+              trace.start();
+              return new TraceHandle() {
+                @Override
+                public void addAttribute(String name, String value) {
+                  trace.putAttribute(name, value);
+                }
+
+                @Override
+                public void close() {
+                  trace.stop();
+                }
+              };
+            },
+            Tracer.class),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
          * com.google.firebase.perf.application.AppStateMonitor#onActivityResumed(Activity)}. we use
