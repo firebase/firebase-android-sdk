@@ -14,9 +14,14 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -73,6 +78,8 @@ public class CustomModelDownloadService {
   static final String INSTALLATIONS_AUTH_TOKEN_HEADER = "X-Goog-Firebase-Installations-Auth";
 
   @VisibleForTesting static final String API_KEY_HEADER = "x-goog-api-key";
+  @VisibleForTesting static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
+  @VisibleForTesting static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
 
   @VisibleForTesting
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
@@ -81,26 +88,34 @@ public class CustomModelDownloadService {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseMlLogger eventLogger;
   private final String apiKey;
+  @Nullable private final String fingerprintHashForPackage;
+  private final Context context;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   public CustomModelDownloadService(
       FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
+    context = firebaseApp.getApplicationContext();
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
+    fingerprintHashForPackage = getFingerprintHashForPackage(context);
     executorService = Executors.newCachedThreadPool();
     this.eventLogger = FirebaseMlLogger.getInstance();
   }
 
   @VisibleForTesting
   CustomModelDownloadService(
+      Context context,
       FirebaseInstallationsApi firebaseInstallations,
       ExecutorService executorService,
       String apiKey,
+      String fingerprintHashForPackage,
       String downloadHost,
       FirebaseMlLogger eventLogger) {
+    this.context = context;
     this.firebaseInstallations = firebaseInstallations;
     this.executorService = executorService;
     this.apiKey = apiKey;
+    this.fingerprintHashForPackage = fingerprintHashForPackage;
     this.downloadHost = downloadHost;
     this.eventLogger = eventLogger;
   }
@@ -168,6 +183,14 @@ public class CustomModelDownloadService {
             connection.setRequestProperty(
                 INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
             connection.setRequestProperty(API_KEY_HEADER, apiKey);
+
+            // Headers required for Android API Key Restrictions.
+            connection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+
+            if (fingerprintHashForPackage != null) {
+              connection.setRequestProperty(X_ANDROID_CERT_HEADER, fingerprintHashForPackage);
+            }
+
             return fetchDownloadDetails(modelName, connection);
           });
 
@@ -408,5 +431,25 @@ public class CustomModelDownloadService {
       }
     }
     return errorStreamString;
+  }
+
+  /** Gets the Android package's SHA-1 fingerprint. */
+  @Nullable
+  private static String getFingerprintHashForPackage(Context context) {
+    byte[] hash;
+
+    try {
+      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + context.getPackageName());
+        return null;
+      } else {
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "No such package: " + context.getPackageName(), e);
+      return null;
+    }
   }
 }
