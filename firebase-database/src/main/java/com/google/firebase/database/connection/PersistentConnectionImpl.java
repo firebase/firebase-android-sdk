@@ -761,17 +761,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                 .addOnSuccessListener(
                     executorService,
                     aVoid -> {
-                      // Someone could have interrupted us while fetching the token,
-                      // marking the connection as Disconnected
-                      if (connectionState == ConnectionState.GettingToken) {
-                        if (thisGetTokenAttempt == currentGetTokenAttempt) {
+                      if (thisGetTokenAttempt == currentGetTokenAttempt) {
+                        if (connectionState == ConnectionState.GettingToken) {
                           logger.debug("Successfully fetched token, opening connection");
                           openNetworkConnection(authToken.getResult(), appCheckToken.getResult());
-                        } else {
-                          hardAssert(
-                              connectionState == ConnectionState.Disconnected,
-                              "Expected connection state disconnected, but was %s",
-                              connectionState);
+                        } else if (connectionState == ConnectionState.Disconnected) {
                           logger.debug(
                               "Not opening connection after token refresh, "
                                   + "because connection was set to disconnected");
