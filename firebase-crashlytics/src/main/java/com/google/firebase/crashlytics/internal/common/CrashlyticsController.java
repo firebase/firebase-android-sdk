@@ -423,7 +423,9 @@ class CrashlyticsController {
 
   void setCustomKey(String key, String value) {
     try {
-      userMetadata.setCustomKey(key, value);
+      if (userMetadata.setCustomKey(key, value)) {
+        cacheKeyData(userMetadata.getCustomKeys(), false);
+      }
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
@@ -432,7 +434,6 @@ class CrashlyticsController {
         return;
       }
     }
-    cacheKeyData(userMetadata.getCustomKeys(), false);
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
@@ -444,7 +445,9 @@ class CrashlyticsController {
 
   void setInternalKey(String key, String value) {
     try {
-      userMetadata.setInternalKey(key, value);
+      if (userMetadata.setInternalKey(key, value)) {
+        cacheKeyData(userMetadata.getInternalKeys(), true);
+      }
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
@@ -453,7 +456,6 @@ class CrashlyticsController {
         return;
       }
     }
-    cacheKeyData(userMetadata.getInternalKeys(), true);
   }
 
   /**

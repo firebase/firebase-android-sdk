@@ -44,8 +44,9 @@ public class UserMetadata {
     return customKeys.getKeys();
   }
 
-  public void setCustomKey(String key, String value) {
-    customKeys.setKey(key, value);
+  /** @return true when key is new, or the value associated with key has changed */
+  public boolean setCustomKey(String key, String value) {
+    return customKeys.setKey(key, value);
   }
 
   public void setCustomKeys(Map<String, String> keysAndValues) {
@@ -56,7 +57,7 @@ public class UserMetadata {
     return internalKeys.getKeys();
   }
 
-  public void setInternalKey(String key, String value) {
-    internalKeys.setKey(key, value);
+  public boolean setInternalKey(String key, String value) {
+    return internalKeys.setKey(key, value);
   }
 }

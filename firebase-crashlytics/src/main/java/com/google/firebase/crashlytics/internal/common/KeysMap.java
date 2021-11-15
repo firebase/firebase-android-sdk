@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,19 +43,24 @@ public class KeysMap {
     return Collections.unmodifiableMap(new HashMap<String, String>(keys));
   }
 
-  public synchronized void setKey(String key, String value) {
+  public synchronized boolean setKey(String key, String value) {
     String sanitizedKey = sanitizeKey(key);
     // The entry can be added if we're under the size limit or we're updating an existing entry
     if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
-      keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
-    } else {
-      Logger.getLogger()
-          .w(
-              "Ignored entry \""
-                  + key
-                  + "\" when adding custom keys. Maximum allowable: "
-                  + maxEntries);
+      String santitizedAttribute = sanitizeAttribute(value);
+      if (isEqual(keys.get(sanitizedKey), santitizedAttribute)) {
+        return false;
+      }
+      keys.put(sanitizedKey, value == null ? "" : santitizedAttribute);
+      return true;
     }
+    Logger.getLogger()
+        .w(
+            "Ignored entry \""
+                + key
+                + "\" when adding custom keys. Maximum allowable: "
+                + maxEntries);
+    return false;
   }
 
   public synchronized void setKeys(Map<String, String> keysAndValues) {
@@ -97,5 +103,12 @@ public class KeysMap {
       }
     }
     return input;
+  }
+
+  private static boolean isEqual(@Nullable String s1, @Nullable String s2) {
+    if (s1 == null) {
+      return s2 == null;
+    }
+    return s1.equals(s2);
   }
 }

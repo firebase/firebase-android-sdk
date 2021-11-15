@@ -104,6 +104,12 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     crashlyticsCore.setCustomKey(key1, value1);
     assertEquals(value1, metadata.getCustomKeys().get(key1));
 
+    // Adding an existing key with the same value should return false
+    assertFalse(metadata.setCustomKey(key1, value1));
+    assertTrue(metadata.setCustomKey(key1, "someOtherValue"));
+    assertTrue(metadata.setCustomKey(key1, value1));
+    assertFalse(metadata.setCustomKey(key1, value1));
+
     final String longValue = longId.replaceAll("0", "x");
     final String superLongValue = longValue + "some more chars";
 
