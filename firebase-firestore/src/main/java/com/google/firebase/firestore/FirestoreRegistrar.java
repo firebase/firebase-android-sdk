@@ -37,7 +37,6 @@ import java.util.List;
  * @hide
  */
 @Keep
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FirestoreRegistrar implements ComponentRegistrar {
   @Override
   @Keep
