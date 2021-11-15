@@ -80,9 +80,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   private void setUpArrayValueFilter() {
     indexManager.addFieldIndex(
         new FieldIndex("coll").withAddedField(field("values"), FieldIndex.Segment.Kind.CONTAINS));
-    addDoc("coll/doc1", map("values", Arrays.asList(1, 2, 3)));
-    addDoc("coll/doc2", map("values", Arrays.asList(4, 5, 6)));
-    addDoc("coll/doc3", map("values", Arrays.asList(7, 8, 9)));
+    addDoc("coll/doc4", map("values", Arrays.asList(1, 2, 3)));
+    addDoc("coll/doc5", map("values", Arrays.asList(4, 5, 6)));
+    addDoc("coll/doc6", map("values", Arrays.asList(7, 8, 9)));
   }
 
   @Override
@@ -219,7 +219,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testArrayContainsFilter() {
     setUpArrayValueFilter();
     Query query = query("coll").filter(filter("values", "array-contains", 1));
-    verifyResults(query, "coll/doc1");
+    verifyResults(query, "coll/doc4");
   }
 
   @Test
@@ -227,7 +227,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpArrayValueFilter();
     Query query =
         query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1, 2, 4)));
-    verifyResults(query, "coll/doc1", "coll/doc2");
+    verifyResults(query, "coll/doc4", "coll/doc5");
   }
 
   @Test
@@ -238,7 +238,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     addDoc("coll/nonmatching", map("values", 1));
     Query query = query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1)));
-    verifyResults(query, "coll/doc1");
+    verifyResults(query, "coll/doc4");
   }
 
   @Test
