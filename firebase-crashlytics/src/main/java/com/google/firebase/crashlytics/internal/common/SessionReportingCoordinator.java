@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
@@ -66,11 +67,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsDataProvider settingsProvider) {
-    final File rootFilesDirectory = new File(fileStore.getFilesDirPath());
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(rootFilesDirectory, settingsProvider);
+        new CrashlyticsReportPersistence(fileStore, settingsProvider);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context);
     return new SessionReportingCoordinator(
@@ -188,9 +188,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
-  @NonNull
-  public List<String> listSortedOpenSessionIds() {
-    return reportPersistence.listSortedOpenSessionIds();
+  public SortedSet<String> listSortedOpenSessionIds() {
+    return reportPersistence.getOpenSessionIds();
   }
 
   public boolean hasReportsToSend() {

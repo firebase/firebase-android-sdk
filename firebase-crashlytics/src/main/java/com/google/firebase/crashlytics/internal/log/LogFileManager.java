@@ -14,12 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.log;
 
-import android.content.Context;
 import androidx.annotation.Nullable;
-import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
-import java.util.Set;
 
 /**
  * Helper class which handles writing our log file using QueueFile. Methods of this class are not
@@ -27,32 +24,22 @@ import java.util.Set;
  */
 public class LogFileManager {
 
-  private static final String COLLECT_CUSTOM_LOGS = "com.crashlytics.CollectCustomLogs";
-
-  private static final String LOGFILE_EXT = ".temp";
-  private static final String LOGFILE_PREFIX = "crashlytics-userlog-";
+  private static final String LOGFILE_NAME = "userlog";
   private static final NoopLogStore NOOP_LOG_STORE = new NoopLogStore();
 
   static final int MAX_LOG_SIZE = 65536;
 
-  public interface DirectoryProvider {
-    File getLogFileDir();
-  }
-
-  private final Context context;
-  private final DirectoryProvider directoryProvider;
+  private final FileStore fileStore;
 
   private FileLogStore currentLog;
 
-  public LogFileManager(Context context, DirectoryProvider directoryProvider) {
-    this(context, directoryProvider, null);
+  public LogFileManager(FileStore fileStore) {
+    this.fileStore = fileStore;
+    this.currentLog = NOOP_LOG_STORE;
   }
 
-  public LogFileManager(
-      Context context, DirectoryProvider directoryProvider, String currentSessionId) {
-    this.context = context;
-    this.directoryProvider = directoryProvider;
-    this.currentLog = NOOP_LOG_STORE;
+  public LogFileManager(FileStore fileStore, String currentSessionId) {
+    this(fileStore);
     setCurrentSession(currentSessionId);
   }
 
@@ -66,14 +53,6 @@ public class LogFileManager {
     currentLog = NOOP_LOG_STORE;
 
     if (sessionId == null) {
-      return;
-    }
-
-    final boolean isLoggingEnabled =
-        CommonUtils.getBooleanResourceValue(context, COLLECT_CUSTOM_LOGS, true);
-
-    if (!isLoggingEnabled) {
-      Logger.getLogger().d("Preferences requested no custom logs. Aborting log file creation.");
       return;
     }
 
@@ -99,39 +78,13 @@ public class LogFileManager {
     currentLog.deleteLogFile();
   }
 
-  /**
-   * Discards all old log files, except for ones identified by the given session IDs.
-   *
-   * @param sessionIdsToKeep the session IDs of log files to retain.
-   */
-  public void discardOldLogFiles(Set<String> sessionIdsToKeep) {
-    final File[] logFiles = directoryProvider.getLogFileDir().listFiles();
-    if (logFiles != null) {
-      for (File file : logFiles) {
-        if (!sessionIdsToKeep.contains(getSessionIdForFile(file))) {
-          file.delete();
-        }
-      }
-    }
-  }
-
   /** package-private for testing */
   void setLogFile(File workingFile, int maxLogSize) {
     currentLog = new QueueFileLogStore(workingFile, maxLogSize);
   }
 
   private File getWorkingFileForSession(String sessionId) {
-    final String fileName = LOGFILE_PREFIX + sessionId + LOGFILE_EXT;
-    return new File(directoryProvider.getLogFileDir(), fileName);
-  }
-
-  private String getSessionIdForFile(File workingFile) {
-    final String filename = workingFile.getName();
-    final int indexOfExtension = filename.lastIndexOf(LOGFILE_EXT);
-    if (indexOfExtension == -1) {
-      return filename;
-    }
-    return filename.substring(LOGFILE_PREFIX.length(), indexOfExtension);
+    return fileStore.getSessionFile(sessionId, LOGFILE_NAME);
   }
 
   /**

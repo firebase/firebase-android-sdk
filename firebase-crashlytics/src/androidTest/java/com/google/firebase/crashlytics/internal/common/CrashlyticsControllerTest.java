@@ -82,7 +82,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     testFilesDirectory.mkdirs();
     mockFileStore = mock(FileStore.class);
     when(mockFileStore.getFilesDir()).thenReturn(testFilesDirectory);
-    when(mockFileStore.getFilesDirPath()).thenReturn(testFilesDirectory.getPath());
 
     final SettingsData testSettingsData = new TestSettingsData(3);
 

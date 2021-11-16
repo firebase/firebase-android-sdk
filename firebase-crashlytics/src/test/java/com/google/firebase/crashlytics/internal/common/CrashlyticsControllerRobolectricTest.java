@@ -37,7 +37,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.inject.Deferred;
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -55,7 +54,6 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private IdManager idManager;
   @Mock private SettingsDataProvider mockSettingsDataProvider;
   @Mock private FileStore mockFileStore;
-  @Mock private File mockFilesDirectory;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
   @Mock private LogFileManager.DirectoryProvider mockLogFileDirectoryProvider;

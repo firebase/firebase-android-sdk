@@ -33,7 +33,6 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -68,7 +67,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     mockResources = mock(Resources.class);
     testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
 
-    fileStore = new FileStoreImpl(getContext());
+    fileStore = new FileStore(getContext());
 
     cleanSdkDirectory();
 
