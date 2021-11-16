@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,7 +43,6 @@ import com.google.firebase.components.EagerSdkVerifier;
 import com.google.firebase.components.TestComponentOne;
 import com.google.firebase.components.TestComponentTwo;
 import com.google.firebase.components.TestUserAgentDependentComponent;
-import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import com.google.firebase.testing.FirebaseAppRule;
 import java.lang.reflect.InvocationTargetException;
@@ -91,12 +89,6 @@ public class FirebaseAppTest {
     localBroadcastManager = LocalBroadcastManager.getInstance(targetContext);
     // Force background detector state to foreground
     backgroundDetector.onActivityResumed(null);
-  }
-
-  @Test
-  public void whenAppInitializedHeartBeatTriggered() {
-    FirebaseApp firebaseApp = spy(FirebaseApp.initializeApp(targetContext, OPTIONS, "myApp"));
-    verify(firebaseApp.get(HeartBeatController.class), times(1));
   }
 
   @Test

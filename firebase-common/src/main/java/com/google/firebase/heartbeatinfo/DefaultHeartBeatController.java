@@ -33,9 +33,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
+/**
+ * Provides a function to store heartbeats and another function to
+ * retrieve stored heartbeats.
+ * */
 public class DefaultHeartBeatController implements HeartBeatController {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
@@ -49,7 +52,6 @@ public class DefaultHeartBeatController implements HeartBeatController {
   private static final ThreadFactory THREAD_FACTORY =
       r -> new Thread(r, "heartbeat-information-executor");
 
-  @Override
   public Task<Void> registerHeartBeat() {
     if (consumers.size() <= 0) {
       return Tasks.forResult(null);
@@ -66,7 +68,7 @@ public class DefaultHeartBeatController implements HeartBeatController {
   }
 
   @Override
-  public Task<String> getHeartBeatsHeader() throws JSONException {
+  public Task<String> getHeartBeatsHeader() {
     return Tasks.call(
         backgroundExecutor,
         () -> {
@@ -78,6 +80,7 @@ public class DefaultHeartBeatController implements HeartBeatController {
             JSONObject obj = new JSONObject();
             obj.put("agent", result.getUserAgent());
             obj.put("date", result.getUsedDates());
+            obj.put("version", "1");
             array.put(obj);
           }
           return Base64.encodeToString(array.toString().getBytes(), Base64.DEFAULT);
@@ -111,8 +114,8 @@ public class DefaultHeartBeatController implements HeartBeatController {
     this.userAgentProvider = userAgentProvider;
   }
 
-  public static @NonNull Component<HeartBeatController> component() {
-    return Component.builder(HeartBeatController.class)
+  public static @NonNull Component<DefaultHeartBeatController> component() {
+    return Component.builder(DefaultHeartBeatController.class, HeartBeatController.class)
         .add(Dependency.required(Context.class))
         .add(Dependency.required(FirebaseApp.class))
         .add(Dependency.setOf(HeartBeatConsumer.class))

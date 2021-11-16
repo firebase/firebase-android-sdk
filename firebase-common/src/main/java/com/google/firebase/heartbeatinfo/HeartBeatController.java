@@ -15,21 +15,13 @@
 package com.google.firebase.heartbeatinfo;
 
 import com.google.android.gms.tasks.Task;
-import org.json.JSONException;
 
 /**
  * Class provides information about heartbeats.
  *
- * <p>This exposes a function which returns the `HeartBeatCode` if both sdk heartbeat and global
- * heartbeat needs to sent then HeartBeat.COMBINED is returned. if only sdk heart beat needs to be
- * sent then HeartBeat.SDK is returned. if only global heart beat needs to be sent then
- * HeartBeat.GLOBAL is returned. if no heart beat needs to be sent then HeartBeat.NONE is returned.
- *
- * <p>This also exposes functions to store and retrieve haartBeat Information in the form of
- * HeartBeatResult.
+ * <p>This exposes a function which returns a base-64 encoded string based on the
+ * stored heartbeats.
  */
 public interface HeartBeatController {
-  Task<Void> registerHeartBeat();
-
-  Task<String> getHeartBeatsHeader() throws JSONException;
+  Task<String> getHeartBeatsHeader();
 }

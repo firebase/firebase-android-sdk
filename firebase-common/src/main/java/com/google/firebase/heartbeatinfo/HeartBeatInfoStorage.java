@@ -32,7 +32,8 @@ import java.util.Set;
 /**
  * Class responsible for storing all heartbeat related information.
  *
- * <p>This exposes functions to check if there is a need to send global/sdk heartbeat.
+ * <p>This exposes functions to store heartbeats and retrieve them in the form
+ * of HeartBeatResult.
  */
 public class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
@@ -102,26 +103,27 @@ public class HeartBeatInfoStorage {
   }
 
   synchronized void storeHeartBeat(long millis, String userAgentString) {
+    String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(new Date(millis));
+    String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
+    if(lastDateString.equals(dateString)) {
+      return;
+    }
     long heartBeatCount = firebaseSharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     if (heartBeatCount + 1 == HEART_BEAT_COUNT_LIMIT) {
       cleanUpStoredHeartBeats();
       heartBeatCount = firebaseSharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     }
-    String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date(millis));
-    String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
-    if (!lastDateString.equals(dateString)) {
-      Set<String> userAgentDateSet =
-          new HashSet<String>(
-              firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
-      userAgentDateSet.add(dateString);
-      heartBeatCount += 1;
-      firebaseSharedPreferences
-          .edit()
-          .putStringSet(userAgentString, userAgentDateSet)
-          .putLong(HEART_BEAT_COUNT_TAG, heartBeatCount)
-          .putString(LAST_STORED_DATE, dateString)
-          .apply();
-    }
+    Set<String> userAgentDateSet =
+        new HashSet<String>(
+            firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
+    userAgentDateSet.add(dateString);
+    heartBeatCount += 1;
+    firebaseSharedPreferences
+        .edit()
+        .putStringSet(userAgentString, userAgentDateSet)
+        .putLong(HEART_BEAT_COUNT_TAG, heartBeatCount)
+        .putString(LAST_STORED_DATE, dateString)
+        .apply();
   }
 
   private synchronized void cleanUpStoredHeartBeats() {
