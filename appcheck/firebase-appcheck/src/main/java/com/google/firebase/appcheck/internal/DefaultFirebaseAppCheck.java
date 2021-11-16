@@ -32,7 +32,6 @@ import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.internal.util.Clock;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
@@ -41,7 +40,6 @@ import java.util.List;
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   private static final long BUFFER_TIME_MILLIS = 5 * 60 * 1000; // 5 minutes in milliseconds
-  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
 
   private final FirebaseApp firebaseApp;
   private final Provider<UserAgentPublisher> userAgentPublisherProvider;
@@ -218,18 +216,14 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
             });
   }
 
-  @Nullable
-  String getUserAgent() {
-    return userAgentPublisherProvider.get() != null
-        ? userAgentPublisherProvider.get().getUserAgent()
-        : null;
+  @NonNull
+  Provider<UserAgentPublisher> getUserAgentPublisherProvider() {
+    return userAgentPublisherProvider;
   }
 
   @NonNull
-  HeartBeat getHeartbeatCode() {
-    return heartBeatInfoProvider.get() != null
-        ? heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG)
-        : HeartBeat.NONE;
+  Provider<HeartBeatInfo> getHeartBeatInfoProvider() {
+    return heartBeatInfoProvider;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */
