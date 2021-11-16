@@ -35,10 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/**
- * Provides a function to store heartbeats and another function to
- * retrieve stored heartbeats.
- * */
+/** Provides a function to store heartbeats and another function to retrieve stored heartbeats. */
 public class DefaultHeartBeatController implements HeartBeatController {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;

@@ -32,8 +32,7 @@ import java.util.Set;
 /**
  * Class responsible for storing all heartbeat related information.
  *
- * <p>This exposes functions to store heartbeats and retrieve them in the form
- * of HeartBeatResult.
+ * <p>This exposes functions to store heartbeats and retrieve them in the form of HeartBeatResult.
  */
 public class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
@@ -105,7 +104,7 @@ public class HeartBeatInfoStorage {
   synchronized void storeHeartBeat(long millis, String userAgentString) {
     String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(new Date(millis));
     String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
-    if(lastDateString.equals(dateString)) {
+    if (lastDateString.equals(dateString)) {
       return;
     }
     long heartBeatCount = firebaseSharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);

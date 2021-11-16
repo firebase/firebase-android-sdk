@@ -19,8 +19,7 @@ import com.google.android.gms.tasks.Task;
 /**
  * Class provides information about heartbeats.
  *
- * <p>This exposes a function which returns a base-64 encoded string based on the
- * stored heartbeats.
+ * <p>This exposes a function which returns a base-64 encoded string based on the stored heartbeats.
  */
 public interface HeartBeatController {
   Task<String> getHeartBeatsHeader();
