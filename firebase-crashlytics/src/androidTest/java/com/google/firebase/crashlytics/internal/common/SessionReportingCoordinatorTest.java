@@ -408,9 +408,6 @@ public class SessionReportingCoordinatorTest {
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
-
-    verify(reportPersistence).deleteFinalizedReport(sessionId1);
-    verify(reportPersistence, never()).deleteFinalizedReport(sessionId2);
   }
 
   @Test
@@ -425,19 +422,6 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.persistUserId(currentSessionId);
 
     verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
-  }
-
-  @Test
-  public void testListSortedOpenSessionIds() {
-    String[] sortedSessionIds = new String[] {"3", "2", "1"};
-    when(reportPersistence.listSortedOpenSessionIds()).thenReturn(Arrays.asList(sortedSessionIds));
-    assertArrayEquals(sortedSessionIds, reportingCoordinator.listSortedOpenSessionIds().toArray());
-  }
-
-  @Test
-  public void testListSortedOpenSessionIds_noOpenSessions() {
-    when(reportPersistence.listSortedOpenSessionIds()).thenReturn(Collections.emptyList());
-    assertTrue(reportingCoordinator.listSortedOpenSessionIds().isEmpty());
   }
 
   @Test
@@ -487,6 +471,6 @@ public class SessionReportingCoordinatorTest {
   }
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId(String sessionId) {
-    return CrashlyticsReportWithSessionId.create(mockReport(sessionId), sessionId);
+    return CrashlyticsReportWithSessionId.create(mockReport(sessionId), sessionId, null);
   }
 }

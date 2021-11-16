@@ -136,6 +136,6 @@ public class DataTransportCrashlyticsReportSenderTest {
   }
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId() {
-    return CrashlyticsReportWithSessionId.create(mock(CrashlyticsReport.class), "sessionId");
+    return CrashlyticsReportWithSessionId.create(mock(CrashlyticsReport.class), "sessionId", null);
   }
 }

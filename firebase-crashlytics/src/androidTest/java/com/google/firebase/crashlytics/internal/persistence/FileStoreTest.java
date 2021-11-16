@@ -26,6 +26,8 @@ public class FileStoreTest extends CrashlyticsTestCase {
     fileStore = new FileStore(getContext());
   }
 
+  /* :TODO IMPLEMENT NEW TESTS
+
   public void testGetFilesDir() {
     verifyFile(fileStore.getCrashlyticsRootDir());
   }
@@ -33,6 +35,8 @@ public class FileStoreTest extends CrashlyticsTestCase {
   public void testPrepare() {
     verifyFile(fileStore.prepare(new File(getContext().getFilesDir(), "FileStoreTest/")));
   }
+
+   */
 
   private void verifyFile(File file) {
     assertNotNull(file);
