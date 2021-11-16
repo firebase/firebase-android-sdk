@@ -92,7 +92,8 @@ public class SafetyNetAppCheckProviderTest {
     when(mockGoogleApiAvailability.isGooglePlayServicesAvailable(any()))
         .thenReturn(ConnectionResult.SERVICE_MISSING);
     SafetyNetAppCheckProvider provider =
-        new SafetyNetAppCheckProvider(firebaseApp, mockGoogleApiAvailability, backgroundExecutor);
+        new SafetyNetAppCheckProvider(
+            firebaseApp, mockNetworkClient, mockGoogleApiAvailability, backgroundExecutor);
     assertThat(provider.getSafetyNetClientTask().isSuccessful()).isFalse();
   }
 
@@ -101,7 +102,8 @@ public class SafetyNetAppCheckProviderTest {
     when(mockGoogleApiAvailability.isGooglePlayServicesAvailable(any()))
         .thenReturn(ConnectionResult.SERVICE_MISSING);
     SafetyNetAppCheckProvider provider =
-        new SafetyNetAppCheckProvider(firebaseApp, mockGoogleApiAvailability, backgroundExecutor);
+        new SafetyNetAppCheckProvider(
+            firebaseApp, mockNetworkClient, mockGoogleApiAvailability, backgroundExecutor);
     assertThat(provider.getSafetyNetClientTask().isSuccessful()).isFalse();
 
     Task<AppCheckToken> tokenTask = provider.getToken();

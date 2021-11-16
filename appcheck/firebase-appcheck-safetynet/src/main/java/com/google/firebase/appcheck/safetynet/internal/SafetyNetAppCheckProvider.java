@@ -57,21 +57,28 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
 
   /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
   public SafetyNetAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
-    this(firebaseApp, GoogleApiAvailability.getInstance(), Executors.newCachedThreadPool());
+    this(
+        firebaseApp,
+        new NetworkClient(firebaseApp),
+        GoogleApiAvailability.getInstance(),
+        Executors.newCachedThreadPool());
   }
 
   @VisibleForTesting
   SafetyNetAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
+      @NonNull NetworkClient networkClient,
       @NonNull GoogleApiAvailability googleApiAvailability,
       @NonNull ExecutorService backgroundExecutor) {
     checkNotNull(firebaseApp);
+    checkNotNull(networkClient);
     checkNotNull(googleApiAvailability);
+    checkNotNull(backgroundExecutor);
     this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.backgroundExecutor = backgroundExecutor;
     this.safetyNetClientTask = initSafetyNetClient(googleApiAvailability, this.backgroundExecutor);
-    this.networkClient = new NetworkClient(firebaseApp);
+    this.networkClient = networkClient;
     this.retryManager = new RetryManager();
   }
 
