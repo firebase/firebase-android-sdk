@@ -17,6 +17,8 @@ package com.google.firebase.firestore.model;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -32,9 +34,24 @@ import java.util.List;
  */
 public final class FieldIndex {
 
+  /** Compares indexes by collection group and segments. Ignores update time and index ID. */
+  public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
+      (left, right) -> {
+        int cmp = left.collectionGroup.compareTo(right.collectionGroup);
+        if (cmp != 0) return cmp;
+
+        Iterator<Segment> leftIt = left.segments.iterator();
+        Iterator<Segment> rightIt = right.segments.iterator();
+        while (leftIt.hasNext() && rightIt.hasNext()) {
+          cmp = leftIt.next().compareTo(rightIt.next());
+          if (cmp != 0) return cmp;
+        }
+        return Boolean.compare(leftIt.hasNext(), rightIt.hasNext());
+      };
+
   /** An index component consisting of field path and index type. */
   @AutoValue
-  public abstract static class Segment {
+  public abstract static class Segment implements Comparable<Segment> {
     /** The type of the index, e.g. for which type of query it can be used. */
     public enum Kind {
       /** Ordered index. Can be used for <, <=, ==, >=, >, !=, IN and NOT IN queries. */
@@ -54,6 +71,13 @@ public final class FieldIndex {
     @Override
     public String toString() {
       return String.format("Segment{fieldPath=%s, kind=%s}", getFieldPath(), getKind());
+    }
+
+    @Override
+    public int compareTo(Segment other) {
+      int cmp = getFieldPath().compareTo(other.getFieldPath());
+      if (cmp != 0) return cmp;
+      return getKind().compareTo(other.getKind());
     }
   }
 
@@ -153,6 +177,7 @@ public final class FieldIndex {
 
     FieldIndex fieldIndex = (FieldIndex) o;
 
+    if (indexId != fieldIndex.indexId) return false;
     if (!segments.equals(fieldIndex.segments)) return false;
     if (!updateTime.equals(fieldIndex.updateTime)) return false;
     return collectionGroup.equals(fieldIndex.collectionGroup);
@@ -161,6 +186,7 @@ public final class FieldIndex {
   @Override
   public int hashCode() {
     int result = collectionGroup.hashCode();
+    result = 31 * result + indexId;
     result = 31 * result + segments.hashCode();
     result = 31 * result + updateTime.hashCode();
     return result;
@@ -169,7 +195,7 @@ public final class FieldIndex {
   @Override
   public String toString() {
     return String.format(
-        "FieldIndex{collectionGroup='%s', segments=%s, updateTime=%s}",
-        collectionGroup, segments, updateTime);
+        "FieldIndex{indexId=%s, collectionGroup='%s', segments=%s, updateTime=%s}",
+        indexId, collectionGroup, segments, updateTime);
   }
 }

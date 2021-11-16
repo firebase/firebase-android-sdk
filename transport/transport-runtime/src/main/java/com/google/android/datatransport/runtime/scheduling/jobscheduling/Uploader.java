@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
@@ -136,18 +137,7 @@ public class Uploader {
         }
 
         if (transportContext.shouldUploadClientHealthMetrics()) {
-          ClientMetrics clientMetrics =
-              guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
-          EventInternal eventInternal =
-              EventInternal.builder()
-                  .setEventMillis(clock.getTime())
-                  .setUptimeMillis(uptimeClock.getTime())
-                  .setTransportName(CLIENT_HEALTH_METRICS_LOG_SOURCE)
-                  .setEncodedPayload(
-                      new EncodedPayload(Encoding.of("proto"), clientMetrics.toByteArray()))
-                  .build();
-          EventInternal decoratedEvent = backend.decorate(eventInternal);
-          eventInternals.add(decoratedEvent);
+          eventInternals.add(createMetricsEvent(backend));
         }
 
         response =
@@ -177,6 +167,13 @@ public class Uploader {
         if (response.getStatus() == BackendResponse.Status.OK) {
           maxNextRequestWaitMillis =
               Math.max(maxNextRequestWaitMillis, response.getNextRequestWaitMillis());
+          if (transportContext.shouldUploadClientHealthMetrics()) {
+            guard.runCriticalSection(
+                () -> {
+                  clientHealthMetricsStore.resetClientMetrics();
+                  return null;
+                });
+          }
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
           for (PersistedEvent persistedEvent : persistedEvents) {
@@ -205,5 +202,19 @@ public class Uploader {
               transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
           return null;
         });
+  }
+
+  @VisibleForTesting
+  public EventInternal createMetricsEvent(TransportBackend backend) {
+    ClientMetrics clientMetrics =
+        guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
+    return backend.decorate(
+        EventInternal.builder()
+            .setEventMillis(clock.getTime())
+            .setUptimeMillis(uptimeClock.getTime())
+            .setTransportName(CLIENT_HEALTH_METRICS_LOG_SOURCE)
+            .setEncodedPayload(
+                new EncodedPayload(Encoding.of("proto"), clientMetrics.toByteArray()))
+            .build());
   }
 }
