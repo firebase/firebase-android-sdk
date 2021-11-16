@@ -92,7 +92,7 @@ public class DefaultHeartBeatControllerTest {
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
         Base64.getEncoder()
-            .encodeToString("[{\"date\":[\"2015-02-03\"],\"agent\":\"test-agent\"}]".getBytes());
+            .encodeToString("[{\"date\":[\"2015-02-03\"],\"agent\":\"test-agent\",\"version\":\"1\"}]".getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }
 
@@ -120,7 +120,7 @@ public class DefaultHeartBeatControllerTest {
     String expected =
         Base64.getEncoder()
             .encodeToString(
-                "[{\"date\":[\"2015-03-02\",\"2015-03-01\"],\"agent\":\"test-agent\"}]".getBytes());
+                "[{\"date\":[\"2015-03-02\",\"2015-03-01\"],\"agent\":\"test-agent\",\"version\":\"1\"}]".getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }
 
@@ -150,7 +150,7 @@ public class DefaultHeartBeatControllerTest {
     String expected =
         Base64.getEncoder()
             .encodeToString(
-                "[{\"date\":[\"2015-03-02\"],\"agent\":\"test-agent\"},{\"date\":[\"2015-03-03\"],\"agent\":\"test-agent-1\"}]"
+                "[{\"date\":[\"2015-03-02\"],\"agent\":\"test-agent\",\"version\":\"1\"},{\"date\":[\"2015-03-03\"],\"agent\":\"test-agent-1\",\"version\":\"1\"}]"
                     .getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }
