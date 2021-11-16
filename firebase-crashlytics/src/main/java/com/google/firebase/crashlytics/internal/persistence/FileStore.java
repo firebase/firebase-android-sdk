@@ -68,14 +68,13 @@ public class FileStore {
 
   private static final String FILES_PATH = ".com.google.firebase.crashlytics.files.v1";
   private static final String SESSIONS_PATH = "open-sessions";
-  private static final String NATIVE_SESSIONS_PATH = "open-native-sessions";
+  private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
   private static final String PRIORITY_REPORTS_PATH = "priority-reports";
   private static final String NATIVE_REPORTS_PATH = "native-reports";
 
   private final File rootDir;
   private final File sessionsDir;
-  private final File nativeSessionsDir;
   private final File reportsDir;
   private final File priorityReportsDir;
   private final File nativeReportsDir;
@@ -83,16 +82,24 @@ public class FileStore {
   public FileStore(Context context) {
     rootDir = prepareBaseDir(new File(context.getFilesDir(), FILES_PATH));
     sessionsDir = prepareBaseDir(new File(rootDir, SESSIONS_PATH));
-    nativeSessionsDir = prepareBaseDir(new File(rootDir, NATIVE_SESSIONS_PATH));
     reportsDir = prepareBaseDir(new File(rootDir, REPORTS_PATH));
     priorityReportsDir = prepareBaseDir(new File(rootDir, PRIORITY_REPORTS_PATH));
     nativeReportsDir = prepareBaseDir(new File(rootDir, NATIVE_REPORTS_PATH));
   }
 
   public void cleanupLegacyFiles() {
-    File legacyDir = new File(rootDir.getParent(), ".com.google.firebase.crashlytics");
-    if (recursiveDelete(legacyDir)) {
-      Logger.getLogger().d("Deleted legacy Crashlytics files from " + legacyDir.getPath());
+    // Fixes b/195664514
+    // :TODO: consider removing this method in mid 2023, to give all clients time to upgrade
+    File[] legacyDirs =
+        new File[] {
+          new File(rootDir.getParent(), ".com.google.firebase.crashlytics"),
+          new File(rootDir.getParent(), ".com.google.firebase.crashlytics-ndk")
+        };
+
+    for (File legacyDir : legacyDirs) {
+      if (legacyDir.exists() && recursiveDelete(legacyDir)) {
+        Logger.getLogger().d("Deleted legacy Crashlytics files from " + legacyDir.getPath());
+      }
     }
   }
 
@@ -133,7 +140,7 @@ public class FileStore {
   }
 
   public File getNativeSessionDir(String sessionId) {
-    return prepareDir(new File(nativeSessionsDir, sessionId));
+    return prepareDir(new File(getSessionDir(sessionId), NATIVE_SESSION_SUBDIR));
   }
 
   public boolean deleteSessionFiles(String sessionId) {
@@ -167,17 +174,6 @@ public class FileStore {
 
   public List<File> getNativeReports() {
     return safeArrayToList(nativeReportsDir.listFiles());
-  }
-
-  public boolean deleteReport(String sessionId) {
-    // :TODO HW2021: Make this just the one-liner? return getReportFile(sessionId).delete()
-    File reportFile = getReport(sessionId);
-    if (reportFile.exists()) {
-      Logger.getLogger().v("Deleting session report: " + reportFile.getPath());
-      return reportFile.delete();
-    }
-    Logger.getLogger().d("Could not find report file to delete: " + reportFile.getPath());
-    return false;
   }
 
   private static File prepareDir(File file) {

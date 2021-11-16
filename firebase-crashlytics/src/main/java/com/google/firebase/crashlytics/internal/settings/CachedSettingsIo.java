@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
-import android.content.Context;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;

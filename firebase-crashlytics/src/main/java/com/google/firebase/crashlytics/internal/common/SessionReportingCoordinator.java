@@ -283,10 +283,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
     if (task.isSuccessful()) {
-      final CrashlyticsReportWithSessionId report = task.getResult();
+      CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
-      reportPersistence.deleteFinalizedReport(report.getSessionId());
+      File reportFile = report.getReportFile();
+      if (reportFile.delete()) {
+        Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
+      } else {
+        Logger.getLogger().w("Crashlytics could not delete report file: " + reportFile.getPath());
+      }
       return true;
     }
     Logger.getLogger()

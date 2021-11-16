@@ -68,8 +68,10 @@ public class CrashlyticsReportPersistence {
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
+
   private static final Comparator<? super File> LATEST_SESSION_ID_FIRST_COMPARATOR =
       (f1, f2) -> f2.getName().compareTo(f1.getName());
+
   private static final FilenameFilter EVENT_FILE_FILTER =
       (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX);
 
@@ -147,8 +149,12 @@ public class CrashlyticsReportPersistence {
     }
   }
 
+  /**
+   * @return all open session ids, sorted in ascending order of recency (such that the first element
+   *     is the most recently-opened session ID).
+   */
   public SortedSet<String> getOpenSessionIds() {
-    return new TreeSet<>(fileStore.getAllOpenSessionIds());
+    return new TreeSet<>(fileStore.getAllOpenSessionIds()).descendingSet();
   }
 
   /**
@@ -165,7 +171,7 @@ public class CrashlyticsReportPersistence {
   public boolean hasFinalizedReports() {
     return !fileStore.getReports().isEmpty()
         || !fileStore.getPriorityReports().isEmpty()
-        || fileStore.getNativeReports().isEmpty();
+        || !fileStore.getNativeReports().isEmpty();
   }
 
   public void deleteAllReports() {
@@ -179,10 +185,6 @@ public class CrashlyticsReportPersistence {
       //noinspection ResultOfMethodCallIgnored
       file.delete();
     }
-  }
-
-  public void deleteFinalizedReport(String sessionId) {
-    fileStore.deleteReport(sessionId);
   }
 
   /**
@@ -219,7 +221,8 @@ public class CrashlyticsReportPersistence {
     for (File reportFile : allReportFiles) {
       try {
         CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
-        allReports.add(CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName()));
+        allReports.add(
+            CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName(), reportFile));
       } catch (IOException e) {
         Logger.getLogger().w("Could not load report file " + reportFile + "; deleting", e);
         reportFile.delete();
@@ -229,8 +232,14 @@ public class CrashlyticsReportPersistence {
   }
 
   private SortedSet<String> capAndGetOpenSessions(@Nullable String currentSessionId) {
+
+    // Fixes b/195664514
+    fileStore.cleanupLegacyFiles();
+
     SortedSet<String> openSessionIds = getOpenSessionIds();
-    openSessionIds.remove(currentSessionId);
+    if (currentSessionId != null) {
+      openSessionIds.remove(currentSessionId);
+    }
     if (openSessionIds.size() <= MAX_OPEN_SESSIONS) {
       return openSessionIds;
     }

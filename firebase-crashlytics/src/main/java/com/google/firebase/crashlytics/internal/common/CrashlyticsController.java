@@ -40,7 +40,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -618,7 +617,6 @@ class CrashlyticsController {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
-      nativeComponent.finalizeSession(mostRecentSessionIdToClose);
     }
 
     String currentSessionId = null;

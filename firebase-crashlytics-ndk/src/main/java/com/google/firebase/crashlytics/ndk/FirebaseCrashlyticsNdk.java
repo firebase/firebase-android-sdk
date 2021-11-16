@@ -20,23 +20,18 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
-import java.io.File;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 
 /** The Crashlytics NDK Kit provides crash reporting functionality for Android NDK users. */
 class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
-
-  /** Relative sub-path to use for storing files. */
-  private static final String FILES_PATH = ".com.google.firebase.crashlytics-ndk";
 
   private static FirebaseCrashlyticsNdk instance;
 
   static FirebaseCrashlyticsNdk create(
       @NonNull Context context, boolean installHandlerDuringPrepareSession) {
-    final File rootDir = new File(context.getFilesDir(), FILES_PATH);
 
     final CrashpadController controller =
-        new CrashpadController(
-            context, new JniNativeApi(context), new NdkCrashFilesManager(rootDir));
+        new CrashpadController(context, new JniNativeApi(context), new FileStore(context));
 
     instance = new FirebaseCrashlyticsNdk(controller, installHandlerDuringPrepareSession);
     return instance;
@@ -91,15 +86,6 @@ class FirebaseCrashlyticsNdk implements CrashlyticsNativeComponent {
 
     if (installHandlerDuringPrepareSession) {
       signalHandlerInstaller.installHandler();
-    }
-  }
-
-  @Override
-  public void finalizeSession(@NonNull String sessionId) {
-
-    Logger.getLogger().d("Finalizing native session: " + sessionId);
-    if (!controller.finalizeSession(sessionId)) {
-      Logger.getLogger().w("Could not finalize native session: " + sessionId);
     }
   }
 
