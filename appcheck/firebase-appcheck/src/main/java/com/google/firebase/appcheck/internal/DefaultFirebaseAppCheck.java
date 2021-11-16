@@ -40,7 +40,6 @@ import java.util.List;
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   private static final long BUFFER_TIME_MILLIS = 5 * 60 * 1000; // 5 minutes in milliseconds
-  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
 
   private final FirebaseApp firebaseApp;
   private final Provider<UserAgentPublisher> userAgentPublisherProvider;
@@ -217,19 +216,14 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
             });
   }
 
-  @Nullable
-  String getUserAgent() {
-    return userAgentPublisherProvider.get() != null
-        ? userAgentPublisherProvider.get().getUserAgent()
-        : null;
+  @NonNull
+  Provider<UserAgentPublisher> getUserAgentPublisherProvider() {
+    return userAgentPublisherProvider;
   }
 
-  @Nullable
-  String getHeartbeatCode() {
-    return heartBeatInfoProvider.get() != null
-        ? Integer.toString(
-            heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG).getCode())
-        : null;
+  @NonNull
+  Provider<HeartBeatInfo> getHeartBeatInfoProvider() {
+    return heartBeatInfoProvider;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */

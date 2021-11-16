@@ -103,19 +103,6 @@ public class DebugAppCheckProviderTest {
   }
 
   @Test
-  public void testPublicConstructor_nullProjectId_expectThrows() {
-    FirebaseOptions firebaseOptionsNoProjectId =
-        new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build();
-    when(mockFirebaseApp.getOptions()).thenReturn(firebaseOptionsNoProjectId);
-
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          new DebugAppCheckProvider(mockFirebaseApp, null);
-        });
-  }
-
-  @Test
   public void testDetermineDebugSecret_noStoredSecret_createsNewSecret() {
     // Sanity check
     assertThat(storageHelper.retrieveDebugSecret()).isNull();
