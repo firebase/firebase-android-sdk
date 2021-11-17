@@ -46,6 +46,12 @@ public interface DocumentOverlayCache {
   /** Removes the overlay whose largest-batch-id equals to the given Id. */
   void removeOverlaysForBatchId(int batchId);
 
-  /** Returns all saved overlay for the given collection. */
-  Map<DocumentKey, Mutation> getOverlays(ResourcePath collection);
+  /**
+   * Returns all saved overlay for the given collection.
+   *
+   * @param collection The collection path to get the overlays for.
+   * @param sinceBatchId The minimum batch ID to return (inclusive). Only overlays that contain a
+   *     change at `sinceBatchId` or higher are returned.
+   */
+  Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId);
 }
