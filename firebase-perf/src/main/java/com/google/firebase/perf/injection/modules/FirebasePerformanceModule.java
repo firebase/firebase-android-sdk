@@ -31,16 +31,19 @@ import dagger.Provides;
 @Module
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;
+  private final long startTime;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
   private final Provider<TransportFactory> transportFactoryProvider;
 
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
+      @NonNull long startTime,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull Provider<RemoteConfigComponent> remoteConfigComponentProvider,
       @NonNull Provider<TransportFactory> transportFactoryProvider) {
     this.firebaseApp = firebaseApp;
+    this.startTime = startTime;
     this.firebaseInstallations = firebaseInstallations;
     this.remoteConfigComponentProvider = remoteConfigComponentProvider;
     this.transportFactoryProvider = transportFactoryProvider;
@@ -49,6 +52,11 @@ public class FirebasePerformanceModule {
   @Provides
   FirebaseApp providesFirebaseApp() {
     return firebaseApp;
+  }
+
+  @Provides
+  long providesStartTime() {
+    return startTime;
   }
 
   @Provides

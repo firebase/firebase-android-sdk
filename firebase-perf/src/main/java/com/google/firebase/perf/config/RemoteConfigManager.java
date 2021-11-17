@@ -24,6 +24,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -55,13 +56,13 @@ public class RemoteConfigManager {
 
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
-  private final long appStartTimeInMs;
   private final long appStartConfigFetchDelayInMs;
 
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
+  private long appStartTimeInMs;
 
   private RemoteConfigManager() {
     this(
@@ -94,8 +95,6 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    this.appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
@@ -121,6 +120,10 @@ public class RemoteConfigManager {
   public void setFirebaseRemoteConfigProvider(
       @Nullable Provider<RemoteConfigComponent> firebaseRemoteConfigProvider) {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
+  }
+
+  public void setAppStartTime(Timer appStartTime) {
+    this.appStartTimeInMs = TimeUnit.NANOSECONDS.toMillis(appStartTime.getHighResTime());
   }
 
   /**

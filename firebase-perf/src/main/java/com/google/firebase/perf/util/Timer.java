@@ -41,15 +41,15 @@ public class Timer implements Parcelable {
   }
 
   /**
-   * Construct a Timer object with input wall-clock time, assume high resolution time is same as
-   * wall-clock time.
+   * Construct a Timer object with input high resolution time, assume wall-clock time is same as
+   * high resolution time.
    *
-   * @param time wall-clock time in microseconds
+   * @param time high resolution time in nanoseconds
    */
   @VisibleForTesting
   public Timer(long time) {
-    this.timeInMicros = time;
-    highResTime = TimeUnit.MICROSECONDS.toNanos(time);
+    this.highResTime = time;
+    timeInMicros = TimeUnit.NANOSECONDS.toMicros(time);
   }
 
   /**

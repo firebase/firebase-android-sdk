@@ -53,7 +53,9 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.required(long.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
+            .alwaysEager()
             .build(),
         Component.builder(ExtendedTracer.class, Tracer.class)
             .factory(c -> new FirebasePerfInternalTracer())
@@ -74,6 +76,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .firebasePerformanceModule(
                 new FirebasePerformanceModule(
                     container.get(FirebaseApp.class),
+                    container.get(long.class),
                     container.get(FirebaseInstallationsApi.class),
                     container.getProvider(RemoteConfigComponent.class),
                     container.getProvider(TransportFactory.class)))

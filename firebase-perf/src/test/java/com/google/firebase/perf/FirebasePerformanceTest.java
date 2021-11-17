@@ -569,6 +569,7 @@ public class FirebasePerformanceTest {
 
     return new FirebasePerformance(
         FirebaseApp.getInstance(),
+        System.nanoTime(),
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,

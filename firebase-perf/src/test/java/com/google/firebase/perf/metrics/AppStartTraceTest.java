@@ -66,7 +66,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   // wall-clock time in microseconds
   private long appStartTime;
 
-  // high resolution time in microseconds
+  // high resolution CPU time in microseconds
   private long appStartHRT;
 
   @Before
@@ -83,8 +83,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .getTime();
     transportManager = mock(TransportManager.class);
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
-    appStartTime = FirebasePerfProvider.getAppStartTime().getMicros();
-    appStartHRT = FirebasePerfProvider.getAppStartTime().getHighResTime();
+    appStartTime = 0;
+    appStartHRT = 0;
   }
 
   @After
@@ -97,7 +97,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testLaunchActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService, new Timer(appStartTime, appStartHRT));
     // first activity goes through onCreate()->onStart()->onResume() state change.
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -173,7 +173,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testInterleavedActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService, new Timer(appStartTime, appStartHRT));
     // first activity onCreate()
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -208,7 +208,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testDelayedAppStart() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService, new Timer(appStartTime, appStartHRT));
     // Delays activity creation after 1 minute from app start time.
     currentTime = appStartTime + TimeUnit.MINUTES.toMicros(1) + 1;
     trace.onActivityCreated(activity1, bundle);
@@ -229,7 +229,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testStartFromBackground() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService, new Timer(appStartTime, appStartHRT));
     trace.setIsStartFromBackground();
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());
