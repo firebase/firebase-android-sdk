@@ -33,8 +33,6 @@ public interface CrashlyticsNativeComponent {
       long startedAtSeconds,
       @NonNull StaticSessionData sessionData);
 
-  void finalizeSession(@NonNull String sessionId);
-
   @NonNull
   NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId);
 }
