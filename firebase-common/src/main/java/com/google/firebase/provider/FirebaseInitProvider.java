@@ -33,10 +33,15 @@ public class FirebaseInitProvider extends ContentProvider {
 
   private static final String TAG = "FirebaseInitProvider";
 
+  private static final long APP_START_TIME = System.nanoTime();
   /** Should match the {@link FirebaseInitProvider} authority if $androidId is empty. */
   @VisibleForTesting
   static final String EMPTY_APPLICATION_ID_PROVIDER_AUTHORITY =
       "com.google.firebase.firebaseinitprovider";
+
+  public static long getAppStartTime() {
+    return APP_START_TIME;
+  }
 
   @Override
   public void attachInfo(@NonNull Context context, @NonNull ProviderInfo info) {

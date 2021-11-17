@@ -40,42 +40,42 @@ import com.google.firebase.perf.util.Timer;
 @Keep
 public class FirebasePerfProvider extends ContentProvider {
 
-  private static final Timer APP_START_TIME = new Clock().getTime();
+//  private static final Timer APP_START_TIME = new Clock().getTime();
   /** Should match the {@link FirebasePerfProvider} authority if $androidId is empty. */
   @VisibleForTesting
   static final String EMPTY_APPLICATION_ID_PROVIDER_AUTHORITY =
       "com.google.firebase.firebaseperfprovider";
 
-  private final Handler mainHandler = new Handler(Looper.getMainLooper());
-
-  public static Timer getAppStartTime() {
-    return APP_START_TIME;
-  }
+//  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+//
+//  public static Timer getAppStartTime() {
+//    return APP_START_TIME;
+//  }
 
   @Override
   public void attachInfo(Context context, ProviderInfo info) {
     // super.attachInfo calls onCreate(). Fail as early as possible.
     checkContentProviderAuthority(info);
     super.attachInfo(context, info);
-
-    // Initialize ConfigResolver early for accessing device caching layer.
-    ConfigResolver configResolver = ConfigResolver.getInstance();
-    configResolver.setContentProviderContext(getContext());
-
-    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
-    appStateMonitor.registerActivityLifecycleCallbacks(getContext());
-    appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
-
-    AppStartTrace appStartTrace = AppStartTrace.getInstance();
-    appStartTrace.registerActivityLifecycleCallbacks(getContext());
-
-    mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
-
-    // In the case of cold start, we create a session and start collecting gauges as early as
-    // possible.
-    // There is code in SessionManager that prevents us from resetting the session twice in case
-    // of app cold start.
-    SessionManager.getInstance().initializeGaugeCollection();
+//
+//    // Initialize ConfigResolver early for accessing device caching layer.
+//    ConfigResolver configResolver = ConfigResolver.getInstance();
+//    configResolver.setContentProviderContext(getContext());
+//
+//    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
+//    appStateMonitor.registerActivityLifecycleCallbacks(getContext());
+//    appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
+//
+//    AppStartTrace appStartTrace = AppStartTrace.getInstance();
+//    appStartTrace.registerActivityLifecycleCallbacks(getContext());
+//
+//    mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+//
+//    // In the case of cold start, we create a session and start collecting gauges as early as
+//    // possible.
+//    // There is code in SessionManager that prevents us from resetting the session twice in case
+//    // of app cold start.
+//    SessionManager.getInstance().initializeGaugeCollection();
   }
 
   /** Called before {@link Application#onCreate()}. */

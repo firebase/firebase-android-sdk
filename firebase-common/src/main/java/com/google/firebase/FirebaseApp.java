@@ -52,6 +52,7 @@ import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.monitoring.ComponentMonitoring;
 import com.google.firebase.monitoring.DelegatingTracer;
 import com.google.firebase.monitoring.Tracer;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -426,6 +427,7 @@ public class FirebaseApp {
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
+            .addComponent(Component.of(System.nanoTime(), long.class))
             .setProcessor(new ComponentMonitoring(tracer))
             .build();
 
