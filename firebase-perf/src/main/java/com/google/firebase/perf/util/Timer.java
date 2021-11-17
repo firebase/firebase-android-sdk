@@ -52,6 +52,10 @@ public class Timer implements Parcelable {
     highResTime = TimeUnit.MICROSECONDS.toNanos(time);
   }
 
+  public static Timer fromNanos(long nanos) {
+    return new Timer(TimeUnit.NANOSECONDS.toMicros(nanos), nanos);
+  }
+
   /**
    * Construct a Timer object with input wall-clock time and high resolution time.
    *
