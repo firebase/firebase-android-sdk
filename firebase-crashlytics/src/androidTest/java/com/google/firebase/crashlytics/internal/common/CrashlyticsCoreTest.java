@@ -36,6 +36,7 @@ import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEv
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;

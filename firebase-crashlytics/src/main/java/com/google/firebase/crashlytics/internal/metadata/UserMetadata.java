@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.common;
+package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import java.util.Map;
 
 /** Handles attributes set by the user. */
 public class UserMetadata {
-  static final int MAX_ATTRIBUTES = 64;
-  static final int MAX_ATTRIBUTE_SIZE = 1024;
-  static final int MAX_INTERNAL_KEY_SIZE = 8192;
+  @VisibleForTesting
+  public static final int MAX_ATTRIBUTES = 64;
+  @VisibleForTesting
+  public static final int MAX_ATTRIBUTE_SIZE = 1024;
+  @VisibleForTesting
+  public static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
   private String userId = null;
   private final KeysMap customKeys = new KeysMap(MAX_ATTRIBUTES, MAX_ATTRIBUTE_SIZE);

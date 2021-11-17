@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.log;
+package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;

@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.common;
+package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,7 +37,7 @@ import org.json.JSONObject;
  * Handles persistence of metadata for cases when we need to reload it on app restart for submission
  * with a previously unclosed crash session.
  */
-class MetaDataStore {
+public class MetaDataStore {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -89,7 +90,7 @@ class MetaDataStore {
     writeKeyData(sessionId, keyData, false);
   }
 
-  void writeKeyData(String sessionId, Map<String, String> keyData, boolean isInternal) {
+  public void writeKeyData(String sessionId, Map<String, String> keyData, boolean isInternal) {
     final File f =
         isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     Writer writer = null;
