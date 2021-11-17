@@ -16,6 +16,7 @@ LOCAL_CPPFLAGS := \
 
 LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/annotation_snapshot.cc \
+    $(THIRD_PARTY_PATH)/crashpad/snapshot/capture_memory.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/cpu_context.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/crashpad_info_client_options.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/crashpad_types/crashpad_info_reader.cc \
@@ -25,6 +26,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/elf/elf_symbol_table_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/elf/module_snapshot_elf.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/handle_snapshot.cc \
+    $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/capture_memory_delegate_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/cpu_context_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/debug_rendezvous.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/exception_snapshot_linux.cc \
@@ -33,13 +35,13 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/system_snapshot_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/linux/thread_snapshot_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/memory_snapshot.cc \
+    $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/exception_snapshot_minidump.cc \
+    $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/memory_snapshot_minidump.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/minidump_annotation_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/minidump_context_converter.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/minidump_simple_string_dictionary_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/minidump_string_list_reader.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/minidump_string_reader.cc \
-    $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/exception_snapshot_minidump.cc \
-    $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/memory_snapshot_minidump.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/module_snapshot_minidump.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/process_snapshot_minidump.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/minidump/system_snapshot_minidump.cc \
