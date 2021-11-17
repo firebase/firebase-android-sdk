@@ -33,7 +33,6 @@ import com.google.firebase.messaging.testing.Bundles;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -321,16 +320,17 @@ public class CommonNotificationBuilderRoboTest {
 
   @Test
   public void createNotificationInfo_withInvalidEventTime() {
+    long startTime = System.currentTimeMillis();
     String eventTime = "invalid_event_time";
-    int eventTimeExpected = 0;
-
     Bundle data = Bundles.of(KEY_EVENT_TIME, eventTime);
 
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     assertThat(notificationInfo.notificationBuilder.getNotification().when)
-        .isEqualTo(eventTimeExpected);
+        .isGreaterThan(startTime);
+    assertThat(notificationInfo.notificationBuilder.getNotification().when)
+        .isLessThan(System.currentTimeMillis());
   }
 
   @Test
@@ -409,7 +409,6 @@ public class CommonNotificationBuilderRoboTest {
   }
 
   @Test
-  @Ignore // notificationInfo.notificationBuilder.getNotification().visibility no longer accessible
   public void createNotificationInfo_withValidVisibility() {
     // VISIBILITY_PUBLIC, see:
     // https://developer.android.com/reference/android/support/v4/app/NotificationCompat.html#visibility_public
@@ -421,12 +420,11 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify
-    assertThat(notificationInfo.notificationBuilder.build().visibility)
+    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
         .isEqualTo(expectedVisibility);
   }
 
   @Test
-  @Ignore // notificationInfo.notificationBuilder.getNotification().visibility no longer accessible
   public void createNotificationInfo_withInvalidVisibility() {
     // set up
     String invalidVisibility = "a";
@@ -437,11 +435,11 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(notificationInfo.notificationBuilder.build().visibility).isEqualTo(0);
+    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+        .isEqualTo(0);
   }
 
   @Test
-  @Ignore // notificationInfo.notificationBuilder.getNotification().visibility no longer accessible
   public void createNotificationInfo_withInvalidVisibility_outOfBoundVisibility() {
     // set up
     String invalidVisibility = "123";
@@ -452,7 +450,8 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(notificationInfo.notificationBuilder.build().visibility).isEqualTo(0);
+    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+        .isEqualTo(0);
   }
 
   @Test

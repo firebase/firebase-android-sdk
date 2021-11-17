@@ -38,13 +38,13 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testStartWakefulService_InitsWakeLock() throws Exception {
-    WakeLockHolder.startWakefulService(context, new Intent("Any_Action"));
+    WakeLockHolder.startWakefulService(context, newIntent("Any_Action"));
     assertThat(ShadowPowerManager.getLatestWakeLock()).isNotNull();
   }
 
   @Test
   public void testStartWakefulService_AcquiresWakeLock() throws Exception {
-    Intent intent = new Intent("Any_Action");
+    Intent intent = newIntent("Any_Action");
 
     WakeLockHolder.startWakefulService(context, intent);
 
@@ -53,7 +53,7 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testCompleteWakefulIntent_ReleasesWakeLockIfPresent() throws Exception {
-    Intent intent = new Intent("Any_Action");
+    Intent intent = newIntent("Any_Action");
 
     WakeLockHolder.startWakefulService(context, intent);
     WakeLock wl = ShadowPowerManager.getLatestWakeLock();
@@ -64,16 +64,16 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testCompleteWakefulIntent_ReleasesWakeLockMultipleTimesTest() throws Exception {
-    Intent intent1 = new Intent("1");
+    Intent intent1 = newIntent("1");
     WakeLockHolder.startWakefulService(context, intent1);
     WakeLock wl = ShadowPowerManager.getLatestWakeLock();
     assertThat(wl.isHeld()).isTrue(); // WL Count = 1
 
-    Intent intent2 = new Intent("2");
+    Intent intent2 = newIntent("2");
     WakeLockHolder.startWakefulService(context, intent2);
     assertThat(wl.isHeld()).isTrue(); // WL Count = 2
 
-    Intent intent3 = new Intent("3");
+    Intent intent3 = newIntent("3");
     WakeLockHolder.startWakefulService(context, intent3);
     assertThat(wl.isHeld()).isTrue(); // WL Count = 3
 
@@ -83,7 +83,7 @@ public class WakeLockHolderRoboTest {
     WakeLockHolder.completeWakefulIntent(intent2);
     assertThat(wl.isHeld()).isTrue(); // WL Count = 1
 
-    Intent intent4 = new Intent("4");
+    Intent intent4 = newIntent("4");
     WakeLockHolder.startWakefulService(context, intent4);
     assertThat(wl.isHeld()).isTrue(); // WL Count = 2
 
@@ -96,7 +96,7 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testCompleteWakefulIntent_doesNotCrashOnDuplicateCalls() throws Exception {
-    Intent intent = new Intent("1");
+    Intent intent = newIntent("1");
     WakeLockHolder.startWakefulService(context, intent);
     WakeLock wl = ShadowPowerManager.getLatestWakeLock();
     WakeLockHolder.completeWakefulIntent(intent); // Normal case
@@ -106,7 +106,7 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testStartWakefulService_createsWakefulIntent() throws Exception {
-    Intent intent = new Intent();
+    Intent intent = newIntent(null);
 
     WakeLockHolder.startWakefulService(context, intent);
 
@@ -115,7 +115,7 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testCompleteWakefulIntent_removesWakefulMarker() throws Exception {
-    Intent intent = new Intent();
+    Intent intent = newIntent(null);
 
     WakeLockHolder.startWakefulService(context, intent);
     WakeLockHolder.completeWakefulIntent(intent);
@@ -125,12 +125,12 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testOnlyWakefulIntentsCauseWakeLockToBeReleased() throws Exception {
-    Intent intent = new Intent("1");
+    Intent intent = newIntent("1");
     WakeLockHolder.startWakefulService(context, intent);
     WakeLock wl = ShadowPowerManager.getLatestWakeLock();
     assertThat(wl.isHeld()).isTrue();
 
-    WakeLockHolder.completeWakefulIntent(new Intent("2"));
+    WakeLockHolder.completeWakefulIntent(newIntent("2"));
     assertThat(wl.isHeld()).isTrue();
 
     WakeLockHolder.completeWakefulIntent(intent);
@@ -139,7 +139,7 @@ public class WakeLockHolderRoboTest {
 
   @Test
   public void testStartWakefulService_multipleCallsOnlyAcquiresWakeLockOnce() throws Exception {
-    Intent intent = new Intent("1");
+    Intent intent = newIntent("1");
     WakeLockHolder.startWakefulService(context, intent); // Called once
     WakeLock wl = ShadowPowerManager.getLatestWakeLock();
     assertThat(wl.isHeld()).isTrue();
@@ -150,5 +150,9 @@ public class WakeLockHolderRoboTest {
     WakeLockHolder.completeWakefulIntent(intent);
     // Should be false since the same intent should not acquire wakelock more than once.
     assertThat(wl.isHeld()).isFalse();
+  }
+
+  private Intent newIntent(String action) {
+    return new Intent(action).setPackage(context.getPackageName());
   }
 }

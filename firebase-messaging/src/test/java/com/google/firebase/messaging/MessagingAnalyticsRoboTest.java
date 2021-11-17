@@ -54,7 +54,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -180,7 +179,6 @@ public class MessagingAnalyticsRoboTest {
    * Test that if there is no manifest nor run-time specification of whether FCM should export
    * delivery metrics to big query, the expected behavior is to not upload the metrics.
    */
-  @Ignore
   @Test
   public void testShouldExportDeliveryMetricsToBigQuery_noneManifestNoneSetter() {
     assertManifestFieldWithValue(MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED, null);
@@ -318,7 +316,6 @@ public class MessagingAnalyticsRoboTest {
    * flag should override the compile-time flag.
    */
   @Test
-  @Ignore
   public void testShouldExportDeliveryMetricsToBigQuery_falseManifestTrueSetter() throws Exception {
     editManifestApplicationMetadata()
         .putBoolean(MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED, false);
@@ -451,7 +448,6 @@ public class MessagingAnalyticsRoboTest {
 
   /* Notifications with FROM != "/topics/%" DO NOT report to Analytics Param.TOPIC */
   @Test
-  @Ignore
   public void testTopicsApiPopulatesParamTopic_fromComposerUiWithFromNotATopic() {
     Intent intent = createTestAnalyticsIntent();
 
@@ -837,7 +833,6 @@ public class MessagingAnalyticsRoboTest {
   }
 
   @Test
-  @Ignore
   public void getInstanceId_withIntentTo() {
     Bundle extras = new Bundle();
     extras.putString(MessagePayloadKeys.TO, "installation_id");
