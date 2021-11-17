@@ -53,13 +53,17 @@ public class DefaultHeartBeatController implements HeartBeatController {
     if (consumers.size() <= 0) {
       return Tasks.forResult(null);
     }
+
     return Tasks.call(
         backgroundExecutor,
         () -> {
-          this.storageProvider
-              .get()
-              .storeHeartBeat(
-                  System.currentTimeMillis(), this.userAgentProvider.get().getUserAgent());
+          synchronized (DefaultHeartBeatController.this) {
+            this.storageProvider
+                .get()
+                .storeHeartBeat(
+                    System.currentTimeMillis(), this.userAgentProvider.get().getUserAgent());
+          }
+
           return null;
         });
   }
@@ -69,18 +73,20 @@ public class DefaultHeartBeatController implements HeartBeatController {
     return Tasks.call(
         backgroundExecutor,
         () -> {
-          List<HeartBeatResult> allHeartBeats = this.storageProvider.get().getAllHeartBeats();
-          this.storageProvider.get().deleteAllHeartBeats();
-          JSONArray array = new JSONArray();
-          for (int i = 0; i < allHeartBeats.size(); i++) {
-            HeartBeatResult result = allHeartBeats.get(i);
-            JSONObject obj = new JSONObject();
-            obj.put("agent", result.getUserAgent());
-            obj.put("date", result.getUsedDates());
-            obj.put("version", "1");
-            array.put(obj);
+          synchronized (DefaultHeartBeatController.this) {
+            List<HeartBeatResult> allHeartBeats = this.storageProvider.get().getAllHeartBeats();
+            this.storageProvider.get().deleteAllHeartBeats();
+            JSONArray array = new JSONArray();
+            for (int i = 0; i < allHeartBeats.size(); i++) {
+              HeartBeatResult result = allHeartBeats.get(i);
+              JSONObject obj = new JSONObject();
+              obj.put("agent", result.getUserAgent());
+              obj.put("date", result.getUsedDates());
+              obj.put("version", "1");
+              array.put(obj);
+            }
+            return Base64.encodeToString(array.toString().getBytes(), Base64.DEFAULT);
           }
-          return Base64.encodeToString(array.toString().getBytes(), Base64.DEFAULT);
         });
   }
 

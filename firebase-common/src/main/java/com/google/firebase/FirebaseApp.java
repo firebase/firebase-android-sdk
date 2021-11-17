@@ -437,7 +437,8 @@ public class FirebaseApp {
                     getPersistenceKey(),
                     componentRuntime.get(Publisher.class)));
     defaultHeartBeatController = componentRuntime.getProvider(DefaultHeartBeatController.class);
-    this.addBackgroundStateChangeListener(
+
+    addBackgroundStateChangeListener(
         background -> {
           if (!background) {
             defaultHeartBeatController.get().registerHeartBeat();

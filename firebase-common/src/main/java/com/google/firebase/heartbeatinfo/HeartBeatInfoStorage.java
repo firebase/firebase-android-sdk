@@ -16,10 +16,9 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.content.ContextCompat;
+import androidx.core.os.UserManagerCompat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,24 +51,20 @@ public class HeartBeatInfoStorage {
 
   private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy z");
 
-  private final SharedPreferences sharedPreferences;
-  private final SharedPreferences firebaseSharedPreferences;
+  private SharedPreferences sharedPreferences = null;
+  private SharedPreferences firebaseSharedPreferences = null;
+  private boolean inDirectBoot = false;
 
   public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
-    this.sharedPreferences =
-        directBootSafe(applicationContext)
-            .getSharedPreferences(PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
-    this.firebaseSharedPreferences =
-        directBootSafe(applicationContext)
-            .getSharedPreferences(
-                HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
-  }
-
-  private static Context directBootSafe(Context applicationContext) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return applicationContext;
+    inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (!inDirectBoot) {
+      this.sharedPreferences =
+          applicationContext.getSharedPreferences(
+              PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
+      this.firebaseSharedPreferences =
+          applicationContext.getSharedPreferences(
+              HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
     }
-    return ContextCompat.createDeviceProtectedStorageContext(applicationContext);
   }
 
   @VisibleForTesting
@@ -86,11 +81,13 @@ public class HeartBeatInfoStorage {
   }
 
   synchronized void deleteAllHeartBeats() {
+    if (inDirectBoot) return;
     firebaseSharedPreferences.edit().clear().apply();
   }
 
   synchronized List<HeartBeatResult> getAllHeartBeats() {
     ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
+    if (inDirectBoot) return heartBeatResults;
     for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
         heartBeatResults.add(
@@ -102,6 +99,7 @@ public class HeartBeatInfoStorage {
   }
 
   synchronized void storeHeartBeat(long millis, String userAgentString) {
+    if (inDirectBoot) return;
     String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(new Date(millis));
     String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
     if (lastDateString.equals(dateString)) {
