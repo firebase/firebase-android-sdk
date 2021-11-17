@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import java.io.File;
 
 @AutoValue
 public abstract class CrashlyticsReportWithSessionId {
@@ -25,8 +26,11 @@ public abstract class CrashlyticsReportWithSessionId {
 
   public abstract String getSessionId();
 
+  public abstract File getReportFile();
+
   @NonNull
-  public static CrashlyticsReportWithSessionId create(CrashlyticsReport report, String sessionId) {
-    return new AutoValue_CrashlyticsReportWithSessionId(report, sessionId);
+  public static CrashlyticsReportWithSessionId create(
+      CrashlyticsReport report, String sessionId, File reportFile) {
+    return new AutoValue_CrashlyticsReportWithSessionId(report, sessionId, reportFile);
   }
 }

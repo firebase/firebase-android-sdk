@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
@@ -66,11 +67,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsDataProvider settingsProvider) {
-    final File rootFilesDirectory = new File(fileStore.getFilesDirPath());
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(rootFilesDirectory, settingsProvider);
+        new CrashlyticsReportPersistence(fileStore, settingsProvider);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context);
     return new SessionReportingCoordinator(
@@ -159,6 +159,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public void finalizeSessionWithNativeEvent(
       @NonNull String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
+
+    Logger.getLogger().d("SessionReportingCoordinator#finalizeSessionWithNativeEvent");
+
     ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
     for (NativeSessionFile nativeSessionFile : nativeSessionFiles) {
       FilesPayload.File filePayload = nativeSessionFile.asFilePayload();
@@ -188,9 +191,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.finalizeReports(currentSessionId, timestamp);
   }
 
-  @NonNull
-  public List<String> listSortedOpenSessionIds() {
-    return reportPersistence.listSortedOpenSessionIds();
+  public SortedSet<String> listSortedOpenSessionIds() {
+    return reportPersistence.getOpenSessionIds();
   }
 
   public boolean hasReportsToSend() {
@@ -284,10 +286,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
     if (task.isSuccessful()) {
-      final CrashlyticsReportWithSessionId report = task.getResult();
+      CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
-      reportPersistence.deleteFinalizedReport(report.getSessionId());
+      File reportFile = report.getReportFile();
+      if (reportFile.delete()) {
+        Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
+      } else {
+        Logger.getLogger().w("Crashlytics could not delete report file: " + reportFile.getPath());
+      }
       return true;
     }
     Logger.getLogger()

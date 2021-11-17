@@ -33,7 +33,6 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -68,9 +67,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     mockResources = mock(Resources.class);
     testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
 
-    fileStore = new FileStoreImpl(getContext());
-
-    cleanSdkDirectory();
+    fileStore = new FileStore(getContext());
 
     mockSettingsController = mock(SettingsController.class);
     final SettingsData settingsData = new TestSettingsData();
@@ -81,7 +78,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Override
   public void tearDown() throws Exception {
     super.tearDown();
-    cleanSdkDirectory();
   }
 
   private static final class CoreBuilder {
@@ -90,6 +86,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
     private ExecutorService crashHandlerExecutor;
+    private FileStore fileStore;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
       app = mock(FirebaseApp.class);
@@ -119,6 +116,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
       crashHandlerExecutor = new SameThreadExecutorService();
+      fileStore = new FileStore(context);
     }
 
     public CoreBuilder setNativeComponent(CrashlyticsNativeComponent nativeComponent) {
@@ -134,6 +132,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           arbiter,
           new DisabledBreadcrumbSource(),
           new UnavailableAnalyticsEventLogger(),
+          fileStore,
           crashHandlerExecutor);
     }
   }
@@ -180,18 +179,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
         return testAppInfo;
       }
     };
-  }
-
-  private void cleanSdkDirectory() {
-    // We need to get rid of all initialization markers and session files to test the
-    // behaviors in this test class
-    final File[] files = fileStore.getFilesDir().listFiles();
-
-    if (files != null) {
-      for (File f : files) {
-        f.delete();
-      }
-    }
   }
 
   // FIXME: Restore this test without hasOpenSession
@@ -290,6 +277,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private File getCrashMarkerFile() {
-    return new File(fileStore.getFilesDir(), CrashlyticsCore.CRASH_MARKER_FILE_NAME);
+    return fileStore.getCommonFile(CrashlyticsCore.CRASH_MARKER_FILE_NAME);
   }
 }

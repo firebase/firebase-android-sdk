@@ -69,14 +69,6 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
         });
   }
 
-  @Override
-  public void finalizeSession(@NonNull String sessionId) {
-    this.deferredNativeComponent.whenAvailable(
-        nativeComponent -> {
-          nativeComponent.get().finalizeSession(sessionId);
-        });
-  }
-
   @NonNull
   @Override
   public NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId) {

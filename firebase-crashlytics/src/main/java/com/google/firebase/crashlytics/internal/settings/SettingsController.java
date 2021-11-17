@@ -31,6 +31,7 @@ import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -90,12 +91,13 @@ public class SettingsController implements SettingsDataProvider {
       HttpRequestFactory httpRequestFactory,
       String versionCode,
       String versionName,
+      FileStore fileStore,
       DataCollectionArbiter dataCollectionArbiter) {
 
     final String installerPackageName = idManager.getInstallerPackageName();
     final CurrentTimeProvider currentTimeProvider = new SystemCurrentTimeProvider();
     final SettingsJsonParser settingsJsonParser = new SettingsJsonParser(currentTimeProvider);
-    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(context);
+    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(fileStore);
     final String settingsUrl = String.format(Locale.US, SETTINGS_URL_FORMAT, googleAppId);
     final SettingsSpiCall settingsSpiCall =
         new DefaultSettingsSpiCall(settingsUrl, httpRequestFactory);

@@ -30,6 +30,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import java.io.File;
 import java.util.concurrent.ExecutionException;
 import org.junit.Before;
 import org.junit.Test;
@@ -136,6 +137,7 @@ public class DataTransportCrashlyticsReportSenderTest {
   }
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId() {
-    return CrashlyticsReportWithSessionId.create(mock(CrashlyticsReport.class), "sessionId");
+    return CrashlyticsReportWithSessionId.create(
+        mock(CrashlyticsReport.class), "sessionId", new File("fake"));
   }
 }
