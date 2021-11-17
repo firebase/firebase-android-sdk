@@ -72,17 +72,17 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   private void setUpSingleValueFilter() {
     indexManager.addFieldIndex(
         new FieldIndex("coll").withAddedField(field("count"), FieldIndex.Segment.Kind.ASCENDING));
-    addDoc("coll/doc1", map("count", 1));
-    addDoc("coll/doc2", map("count", 2));
-    addDoc("coll/doc3", map("count", 3));
+    addDoc("coll/val1", map("count", 1));
+    addDoc("coll/val2", map("count", 2));
+    addDoc("coll/val3", map("count", 3));
   }
 
   private void setUpArrayValueFilter() {
     indexManager.addFieldIndex(
         new FieldIndex("coll").withAddedField(field("values"), FieldIndex.Segment.Kind.CONTAINS));
-    addDoc("coll/doc4", map("values", Arrays.asList(1, 2, 3)));
-    addDoc("coll/doc5", map("values", Arrays.asList(4, 5, 6)));
-    addDoc("coll/doc6", map("values", Arrays.asList(7, 8, 9)));
+    addDoc("coll/arr1", map("values", Arrays.asList(1, 2, 3)));
+    addDoc("coll/arr2", map("values", Arrays.asList(4, 5, 6)));
+    addDoc("coll/arr3", map("values", Arrays.asList(7, 8, 9)));
   }
 
   @Override
@@ -105,7 +105,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testEqualityFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "==", 2));
-    verifyResults(query, "coll/doc2");
+    verifyResults(query, "coll/val2");
   }
 
   @Test
@@ -122,70 +122,70 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNotEqualsFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "!=", 2));
-    verifyResults(query, "coll/doc1", "coll/doc3");
+    verifyResults(query, "coll/val1", "coll/val3");
   }
 
   @Test
   public void testLessThanFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "<", 2));
-    verifyResults(query, "coll/doc1");
+    verifyResults(query, "coll/val1");
   }
 
   @Test
   public void testLessThanOrEqualsFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "<=", 2));
-    verifyResults(query, "coll/doc1", "coll/doc2");
+    verifyResults(query, "coll/val1", "coll/val2");
   }
 
   @Test
   public void testGreaterThanOrEqualsFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", ">=", 2));
-    verifyResults(query, "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/val2", "coll/val3");
   }
 
   @Test
   public void testGreaterThanFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", ">", 2));
-    verifyResults(query, "coll/doc3");
+    verifyResults(query, "coll/val3");
   }
 
   @Test
   public void testRangeFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "<", 3));
-    verifyResults(query, "coll/doc2");
+    verifyResults(query, "coll/val2");
   }
 
   @Test
   public void testStartAtFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ true, 2));
-    verifyResults(query, "coll/doc2", "coll/doc3");
+    verifyResults(query, "coll/val2", "coll/val3");
   }
 
   @Test
   public void testStartAfterFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
-    verifyResults(query, "coll/doc3");
+    verifyResults(query, "coll/val3");
   }
 
   @Test
   public void testEndAtFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ true, 2));
-    verifyResults(query, "coll/doc1", "coll/doc2");
+    verifyResults(query, "coll/val1", "coll/val2");
   }
 
   @Test
   public void testEndBeforeFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).endAt(bound(/* inclusive= */ false, 2));
-    verifyResults(query, "coll/doc1");
+    verifyResults(query, "coll/val1");
   }
 
   @Test
@@ -198,28 +198,28 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .orderBy(orderBy("count"))
             .startAt(bound(/* inclusive= */ false, 1))
             .endAt(bound(/* inclusive= */ true, 2));
-    verifyResults(startAt, "coll/doc2");
+    verifyResults(startAt, "coll/val2");
   }
 
   @Test
   public void testInFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "in", Arrays.asList(1, 3)));
-    verifyResults(query, "coll/doc1", "coll/doc3");
+    verifyResults(query, "coll/val1", "coll/val3");
   }
 
   @Test
   public void testNotInFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "not-in", Arrays.asList(1, 2)));
-    verifyResults(query, "coll/doc3");
+    verifyResults(query, "coll/val3");
   }
 
   @Test
   public void testArrayContainsFilter() {
     setUpArrayValueFilter();
     Query query = query("coll").filter(filter("values", "array-contains", 1));
-    verifyResults(query, "coll/doc4");
+    verifyResults(query, "coll/arr1");
   }
 
   @Test
@@ -227,7 +227,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpArrayValueFilter();
     Query query =
         query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1, 2, 4)));
-    verifyResults(query, "coll/doc4", "coll/doc5");
+    verifyResults(query, "coll/arr1", "coll/arr2");
   }
 
   @Test
@@ -238,7 +238,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     addDoc("coll/nonmatching", map("values", 1));
     Query query = query("coll").filter(filter("values", "array-contains-any", Arrays.asList(1)));
-    verifyResults(query, "coll/doc4");
+    verifyResults(query, "coll/arr1");
   }
 
   @Test
