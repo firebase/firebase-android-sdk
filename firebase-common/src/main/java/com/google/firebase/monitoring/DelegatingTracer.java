@@ -16,10 +16,10 @@ package com.google.firebase.monitoring;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DelegatingTracer implements Tracer {
-  private final AtomicReference<Tracer> delegate = new AtomicReference<>();
+public class DelegatingTracer implements ExtendedTracer {
+  private final AtomicReference<ExtendedTracer> delegate = new AtomicReference<>();
 
-  public void setTracer(Tracer tracer) {
+  public void setTracer(ExtendedTracer tracer) {
     delegate.set(tracer);
   }
 
@@ -30,5 +30,14 @@ public class DelegatingTracer implements Tracer {
       return TraceHandle.NOOP;
     }
     return tracer.startTrace(name);
+  }
+
+  @Override
+  public void recordTrace(String name, long startNanos, long endNanos, String... attrs) {
+    ExtendedTracer tracer = delegate.get();
+    if (tracer == null) {
+      return;
+    }
+    tracer.recordTrace(name, startNanos, endNanos, attrs);
   }
 }

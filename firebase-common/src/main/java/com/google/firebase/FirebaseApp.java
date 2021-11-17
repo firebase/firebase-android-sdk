@@ -51,7 +51,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.monitoring.ComponentMonitoring;
 import com.google.firebase.monitoring.DelegatingTracer;
-import com.google.firebase.monitoring.Tracer;
+import com.google.firebase.monitoring.ExtendedTracer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -118,6 +118,7 @@ public class FirebaseApp {
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
       new CopyOnWriteArrayList<>();
+  private final DelegatingTracer tracer;
 
   /** Returns the application {@link Context}. */
   @NonNull
@@ -411,25 +412,39 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
+    this.tracer = new DelegatingTracer();
 
-    long startTime = System.nanoTime();
+    boolean tracingEnabled = isTracingEnabled();
 
+    long discoverStart = System.nanoTime();
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
-
-    DelegatingTracer tracer = new DelegatingTracer();
-    componentRuntime =
+    long discoverEnd = System.nanoTime();
+    ComponentRuntime.Builder runtimeBuilder =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
             .addComponentRegistrar(new FirebaseCommonRegistrar())
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
-            .addComponent(Component.of(options, FirebaseOptions.class))
-            .setProcessor(new ComponentMonitoring(tracer))
-            .build();
+            .addComponent(Component.of(options, FirebaseOptions.class));
+    if (tracingEnabled) {
+      runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));
+    }
+    componentRuntime = runtimeBuilder.build();
 
-    tracer.setTracer(componentRuntime.get(Tracer.class));
+    tracer.setTracer(componentRuntime.get(ExtendedTracer.class));
+
+    if (tracingEnabled) {
+      tracer.recordTrace(
+          "loadOptions",
+          options.loadStartTimeNanos,
+          options.loadEndNanos,
+          "version",
+          BuildConfig.VERSION_NAME);
+      tracer.recordTrace(
+          "discoverComponents", discoverStart, discoverEnd, "version", BuildConfig.VERSION_NAME);
+    }
 
     dataCollectionConfigStorage =
         new Lazy<>(
@@ -442,6 +457,10 @@ public class FirebaseApp {
 
   private void checkNotDeleted() {
     Preconditions.checkState(!deleted.get(), "FirebaseApp was deleted");
+  }
+
+  private boolean isTracingEnabled() {
+    return options.tracingEnabled() && UserManagerCompat.isUserUnlocked(applicationContext);
   }
 
   /** @hide */

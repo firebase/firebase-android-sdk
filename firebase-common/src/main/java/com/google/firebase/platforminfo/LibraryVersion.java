@@ -19,8 +19,8 @@ import javax.annotation.Nonnull;
 
 /** The class is not public to ensure other components cannot depend on it. */
 @AutoValue
-abstract class LibraryVersion {
-  static LibraryVersion create(String name, String version) {
+public abstract class LibraryVersion {
+  public static LibraryVersion create(String name, String version) {
     return new AutoValue_LibraryVersion(name, version);
   }
 

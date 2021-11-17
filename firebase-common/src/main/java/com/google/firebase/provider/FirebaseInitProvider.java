@@ -27,9 +27,16 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** Initializes Firebase APIs at app startup time. */
 public class FirebaseInitProvider extends ContentProvider {
+  /** @hide */
+  public static AtomicLong startTimeNanos = new AtomicLong(0);
+
+  public FirebaseInitProvider() {
+    startTimeNanos.set(System.nanoTime());
+  }
 
   private static final String TAG = "FirebaseInitProvider";
 
@@ -53,6 +60,7 @@ public class FirebaseInitProvider extends ContentProvider {
     } else {
       Log.i(TAG, "FirebaseApp initialization successful");
     }
+    startTimeNanos.set(0);
     return false;
   }
 

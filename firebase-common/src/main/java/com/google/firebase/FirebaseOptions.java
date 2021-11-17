@@ -25,11 +25,10 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
+import com.google.firebase.provider.FirebaseInitProvider;
 
 /** Configurable Firebase options. */
 public final class FirebaseOptions {
-
-  // TODO: deprecate and remove it once we can fetch these from Remote Config.
 
   private static final String API_KEY_RESOURCE_NAME = "google_api_key";
   private static final String APP_ID_RESOURCE_NAME = "google_app_id";
@@ -46,6 +45,10 @@ public final class FirebaseOptions {
   private final String gcmSenderId;
   private final String storageBucket;
   private final String projectId;
+
+  final long startupTimeNanos;
+  final long loadStartTimeNanos;
+  final long loadEndNanos;
 
   /** Builder for constructing FirebaseOptions. */
   public static final class Builder {
@@ -136,6 +139,28 @@ public final class FirebaseOptions {
       @Nullable String gcmSenderId,
       @Nullable String storageBucket,
       @Nullable String projectId) {
+    this(
+        applicationId,
+        apiKey,
+        databaseUrl,
+        gaTrackingId,
+        gcmSenderId,
+        storageBucket,
+        projectId,
+        0,
+        0);
+  }
+
+  private FirebaseOptions(
+      @NonNull String applicationId,
+      @NonNull String apiKey,
+      @Nullable String databaseUrl,
+      @Nullable String gaTrackingId,
+      @Nullable String gcmSenderId,
+      @Nullable String storageBucket,
+      @Nullable String projectId,
+      long startupTimeNanos,
+      long loadStartTimeNanos) {
     Preconditions.checkState(!isEmptyOrWhitespace(applicationId), "ApplicationId must be set.");
     this.applicationId = applicationId;
     this.apiKey = apiKey;
@@ -144,6 +169,13 @@ public final class FirebaseOptions {
     this.gcmSenderId = gcmSenderId;
     this.storageBucket = storageBucket;
     this.projectId = projectId;
+    this.startupTimeNanos = startupTimeNanos;
+    this.loadStartTimeNanos = loadStartTimeNanos;
+    this.loadEndNanos = loadStartTimeNanos == 0 ? 0 : System.nanoTime();
+  }
+
+  boolean tracingEnabled() {
+    return startupTimeNanos != 0;
   }
 
   /**
@@ -153,6 +185,8 @@ public final class FirebaseOptions {
    */
   @Nullable
   public static FirebaseOptions fromResource(@NonNull Context context) {
+    long startupTime = FirebaseInitProvider.startTimeNanos.get();
+    long loadStartTime = startupTime == 0 ? 0 : System.nanoTime();
     StringResourceValueReader reader = new StringResourceValueReader(context);
     String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
     if (TextUtils.isEmpty(applicationId)) {
@@ -165,7 +199,9 @@ public final class FirebaseOptions {
         reader.getString(GA_TRACKING_ID_RESOURCE_NAME),
         reader.getString(GCM_SENDER_ID_RESOURCE_NAME),
         reader.getString(STORAGE_BUCKET_RESOURCE_NAME),
-        reader.getString(PROJECT_ID_RESOURCE_NAME));
+        reader.getString(PROJECT_ID_RESOURCE_NAME),
+        startupTime,
+        loadStartTime);
   }
 
   /**
