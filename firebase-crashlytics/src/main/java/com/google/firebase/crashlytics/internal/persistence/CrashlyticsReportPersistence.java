@@ -207,6 +207,8 @@ public class CrashlyticsReportPersistence {
   public void finalizeSessionWithNativeEvent(
       String previousSessionId, CrashlyticsReport.FilesPayload ndkPayload) {
     final File reportFile = fileStore.getSessionFile(previousSessionId, REPORT_FILE_NAME);
+    Logger.getLogger()
+        .d("Writing native session report for " + previousSessionId + " to file: " + reportFile);
     synthesizeNativeReportFile(reportFile, ndkPayload, previousSessionId);
   }
 

@@ -76,6 +76,7 @@ public class CrashlyticsCore {
 
   private CrashlyticsController controller;
   private final IdManager idManager;
+  private final FileStore fileStore;
 
   @VisibleForTesting public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
@@ -94,6 +95,7 @@ public class CrashlyticsCore {
       DataCollectionArbiter dataCollectionArbiter,
       BreadcrumbSource breadcrumbSource,
       AnalyticsEventLogger analyticsEventLogger,
+      FileStore fileStore,
       ExecutorService crashHandlerExecutor) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
@@ -103,6 +105,7 @@ public class CrashlyticsCore {
     this.breadcrumbSource = breadcrumbSource;
     this.analyticsEventLogger = analyticsEventLogger;
     this.crashHandlerExecutor = crashHandlerExecutor;
+    this.fileStore = fileStore;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
@@ -126,7 +129,6 @@ public class CrashlyticsCore {
     }
 
     try {
-      final FileStore fileStore = new FileStore(context);
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 

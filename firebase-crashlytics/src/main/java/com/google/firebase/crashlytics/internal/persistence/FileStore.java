@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.persistence;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -23,7 +24,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-// TODO: Update this javadoc.
 /**
  * Controls creation files that are used by Crashlytics.
  *
@@ -35,6 +35,8 @@ import java.util.List;
  *       session. These files may or may not eventually be combined into a Crashlytics crash report
  *       file.
  *   <li>"Report" files, which are processed reports, ready to be uploaded to Crashlytics servers.
+ *       There are currently 3 types of report files: priority reports, (standard) reports, and
+ *       native.
  * </ul>
  *
  * The distinction allows us to put intermediate session files in session-specific directories, so
@@ -42,27 +44,8 @@ import java.util.List;
  * allows us to grab all prepared reports quickly, etc.
  *
  * <p>The files are stored in an versioned Crashlytics-specific directory, which is versioned to
- * make it straightforward to change how / where we store files in the future.
- *
- * <p>The current structure is: <code>
- *   .com.google.firebase.crashlytics.files.v1/
- *     open-sessions/
- *       SESSION-ID-A/
- *         file1
- *         file2
- *         ...
- *       SESSION-ID-B/
- *         file1
- *         file2
- *         ...
- *       SESSION-ID-n/
- *         ...
- *     prepared-reports/
- *       SESSION-ID-A.priority
- *       SESSION-ID-B
- *       SESSION-ID-C.native
- *       ...
- * </code> By convention, any use of new File(...) or similar outside of this class is a code smell.
+ * make it straightforward to change how / where we store files in the future. </code> By
+ * convention, any use of new File(...) or similar outside of this class is a code smell.
  */
 public class FileStore {
 
@@ -87,6 +70,11 @@ public class FileStore {
     nativeReportsDir = prepareBaseDir(new File(rootDir, NATIVE_REPORTS_PATH));
   }
 
+  @VisibleForTesting
+  public void deleteAllCrashlyticsFiles() {
+    recursiveDelete(rootDir);
+  }
+
   public void cleanupLegacyFiles() {
     // Fixes b/195664514
     // :TODO: consider removing this method in mid 2023, to give all clients time to upgrade
@@ -103,7 +91,7 @@ public class FileStore {
     }
   }
 
-  public static boolean recursiveDelete(File fileOrDirectory) {
+  static boolean recursiveDelete(File fileOrDirectory) {
     File[] files = fileOrDirectory.listFiles();
     if (files != null) {
       for (File file : files) {

@@ -69,9 +69,6 @@ public class CrashlyticsNativeComponentDeferredProxyTest {
         .prepareNativeSession(
             eq(TEST_SESSION_ID), eq(TEST_GENERATOR), eq(TEST_START_TIME), eq(sessionData));
 
-    proxy.finalizeSession(TEST_SESSION_ID);
-    Mockito.verify(component, Mockito.times(1)).finalizeSession(eq(TEST_SESSION_ID));
-
     proxy.getSessionFileProvider(TEST_SESSION_ID);
     Mockito.verify(component, Mockito.times(1)).getSessionFileProvider(eq(TEST_SESSION_ID));
   }

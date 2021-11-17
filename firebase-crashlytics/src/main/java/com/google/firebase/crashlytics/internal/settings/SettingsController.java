@@ -91,14 +91,13 @@ public class SettingsController implements SettingsDataProvider {
       HttpRequestFactory httpRequestFactory,
       String versionCode,
       String versionName,
+      FileStore fileStore,
       DataCollectionArbiter dataCollectionArbiter) {
 
     final String installerPackageName = idManager.getInstallerPackageName();
     final CurrentTimeProvider currentTimeProvider = new SystemCurrentTimeProvider();
     final SettingsJsonParser settingsJsonParser = new SettingsJsonParser(currentTimeProvider);
-    // :TODO HW2021 the FileStore object should probably be passed in rather than recreated here.
-    // (Or just pass in the file reference directly to the CachedSettingsIo constructor)
-    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(new FileStore(context));
+    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(fileStore);
     final String settingsUrl = String.format(Locale.US, SETTINGS_URL_FORMAT, googleAppId);
     final SettingsSpiCall settingsSpiCall =
         new DefaultSettingsSpiCall(settingsUrl, httpRequestFactory);

@@ -69,8 +69,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     fileStore = new FileStore(getContext());
 
-    cleanSdkDirectory();
-
     mockSettingsController = mock(SettingsController.class);
     final SettingsData settingsData = new TestSettingsData();
     when(mockSettingsController.getSettings()).thenReturn(settingsData);
@@ -80,7 +78,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   @Override
   public void tearDown() throws Exception {
     super.tearDown();
-    cleanSdkDirectory();
   }
 
   private static final class CoreBuilder {
@@ -89,6 +86,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
     private ExecutorService crashHandlerExecutor;
+    private FileStore fileStore;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
       app = mock(FirebaseApp.class);
@@ -118,6 +116,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
       crashHandlerExecutor = new SameThreadExecutorService();
+      fileStore = new FileStore(context);
     }
 
     public CoreBuilder setNativeComponent(CrashlyticsNativeComponent nativeComponent) {
@@ -133,6 +132,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           arbiter,
           new DisabledBreadcrumbSource(),
           new UnavailableAnalyticsEventLogger(),
+          fileStore,
           crashHandlerExecutor);
     }
   }
@@ -179,18 +179,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
         return testAppInfo;
       }
     };
-  }
-
-  private void cleanSdkDirectory() {
-    // We need to get rid of all initialization markers and session files to test the
-    // behaviors in this test class
-    final File[] files = fileStore.getFilesDir().listFiles();
-
-    if (files != null) {
-      for (File f : files) {
-        f.delete();
-      }
-    }
   }
 
   // FIXME: Restore this test without hasOpenSession
@@ -289,6 +277,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private File getCrashMarkerFile() {
-    return new File(fileStore.getFilesDir(), CrashlyticsCore.CRASH_MARKER_FILE_NAME);
+    return fileStore.getCommonFile(CrashlyticsCore.CRASH_MARKER_FILE_NAME);
   }
 }

@@ -159,6 +159,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   public void finalizeSessionWithNativeEvent(
       @NonNull String sessionId, @NonNull List<NativeSessionFile> nativeSessionFiles) {
+
+    Logger.getLogger().d("SessionReportingCoordinator#finalizeSessionWithNativeEvent");
+
     ArrayList<FilesPayload.File> nativeFiles = new ArrayList<>();
     for (NativeSessionFile nativeSessionFile : nativeSessionFiles) {
       FilesPayload.File filePayload = nativeSessionFile.asFilePayload();

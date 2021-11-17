@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.mockito.ArgumentCaptor;
@@ -58,8 +57,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private Context testContext;
   private IdManager idManager;
   private SettingsDataProvider testSettingsDataProvider;
-  private FileStore mockFileStore;
-  private File testFilesDirectory;
+  private FileStore testFileStore;
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
   private CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
@@ -79,13 +77,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
             installationsApiMock,
             DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
 
-    // For each test case, create a new, random subdirectory to guarantee a clean slate for file
-    // manipulation.
-    testFilesDirectory = new File(testContext.getFilesDir(), UUID.randomUUID().toString());
-    testFilesDirectory.mkdirs();
-    mockFileStore = mock(FileStore.class);
-    // :TODO: need to replace this?
-    //  when(mockFileStore.getFilesDir()).thenReturn(testFilesDirectory);
+    testFileStore = new FileStore(testContext);
 
     final SettingsData testSettingsData = new TestSettingsData(3);
 
@@ -98,21 +90,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(testSettingsDataProvider.getSettings()).thenReturn(testSettingsData);
     when(testSettingsDataProvider.getAppSettings())
         .thenReturn(Tasks.forResult(testSettingsData.appData));
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    recursiveDelete(testFilesDirectory);
-    super.tearDown();
-  }
-
-  private static void recursiveDelete(File file) {
-    if (file.isDirectory()) {
-      for (File f : file.listFiles()) {
-        recursiveDelete(f);
-      }
-    }
-    file.delete();
   }
 
   /** A convenience class for building CrashlyticsController instances for testing. */
@@ -155,7 +132,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     public CrashlyticsController build() {
 
       CrashlyticsFileMarker crashMarker =
-          new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, mockFileStore);
+          new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore);
 
       AppData appData =
           new AppData(
@@ -174,7 +151,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               new CrashlyticsBackgroundWorker(new SameThreadExecutorService()),
               idManager,
               dataCollectionArbiter,
-              mockFileStore,
+              testFileStore,
               crashMarker,
               appData,
               null,
@@ -229,11 +206,10 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testNativeCrashDataCausesNativeReport() throws Exception {
-    final String sessionId = "sessionId";
-    final String previousSessionId = "previousSessionId";
+    final String sessionId = "sessionId_1_new";
+    final String previousSessionId = "sessionId_0_previous";
 
-    final File testDir = new File(testContext.getFilesDir(), "testNative");
-    testDir.mkdir();
+    final File testDir = testFileStore.getNativeSessionDir(previousSessionId);
 
     final File minidump = new File(testDir, "crash.dmp");
     final File metadata = new File(testDir, "crash.device_info");
@@ -293,28 +269,24 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Arrays.asList(sessionId, previousSessionId)).descendingSet());
 
-    final LogFileManager logFileManager = new LogFileManager(mockFileStore, sessionId);
+    final LogFileManager logFileManager = new LogFileManager(testFileStore, sessionId);
     final CrashlyticsController controller =
         builder().setNativeComponent(mockNativeComponent).setLogFileManager(logFileManager).build();
 
     controller.finalizeSessions(testSettingsDataProvider);
-
-    File nativeDirectory = mockFileStore.getNativeSessionDir(sessionId);
-
-    final File[] processedFiles = nativeDirectory.listFiles();
-    assertEquals(
-        "Unexpected number of files found: " + Arrays.toString(processedFiles),
-        6,
-        processedFiles.length);
+    verify(mockSessionReportingCoordinator)
+        .finalizeSessionWithNativeEvent(eq(previousSessionId), any());
+    verify(mockSessionReportingCoordinator, never())
+        .finalizeSessionWithNativeEvent(eq(sessionId), any());
   }
 
   public void testMissingNativeComponentCausesNoReports() {
     final CrashlyticsController controller = createController();
     controller.finalizeSessions(testSettingsDataProvider);
 
-    List<String> sessions = mockFileStore.getAllOpenSessionIds();
+    List<String> sessions = testFileStore.getAllOpenSessionIds();
     for (String sessionId : sessions) {
-      final File[] nativeSessionFiles = mockFileStore.getNativeSessionDir(sessionId).listFiles();
+      final File[] nativeSessionFiles = testFileStore.getNativeSessionDir(sessionId).listFiles();
       assertEquals(0, nativeSessionFiles.length);
     }
   }
@@ -505,7 +477,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testFatalEvent_sendsAppExceptionEvent() {
     final String sessionId = "sessionId";
-    final LogFileManager logFileManager = new LogFileManager(mockFileStore);
+    final LogFileManager logFileManager = new LogFileManager(testFileStore);
     final AnalyticsEventLogger mockFirebaseAnalyticsLogger = mock(AnalyticsEventLogger.class);
     final CrashlyticsController controller =
         builder()

@@ -54,7 +54,7 @@ public class CrashlyticsControllerRobolectricTest {
   private Context testContext;
   @Mock private IdManager idManager;
   @Mock private SettingsDataProvider mockSettingsDataProvider;
-  @Mock private FileStore mockFileStore;
+  @Mock private FileStore testFileStore;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
 
@@ -72,7 +72,7 @@ public class CrashlyticsControllerRobolectricTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     testContext = getApplicationContext();
-    mockFileStore = new FileStore(testContext);
+    testFileStore = new FileStore(testContext);
   }
 
   @Test
@@ -152,8 +152,8 @@ public class CrashlyticsControllerRobolectricTest {
             new CrashlyticsBackgroundWorker(Runnable::run),
             idManager,
             mockDataCollectionArbiter,
-            mockFileStore,
-            new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, mockFileStore),
+            testFileStore,
+            new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore),
             appData,
             null,
             null,

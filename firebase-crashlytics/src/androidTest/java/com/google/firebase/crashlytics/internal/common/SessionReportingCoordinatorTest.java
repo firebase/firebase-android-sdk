@@ -37,6 +37,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAt
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -471,6 +472,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId(String sessionId) {
-    return CrashlyticsReportWithSessionId.create(mockReport(sessionId), sessionId, null);
+    return CrashlyticsReportWithSessionId.create(
+        mockReport(sessionId), sessionId, new File("fake"));
   }
 }

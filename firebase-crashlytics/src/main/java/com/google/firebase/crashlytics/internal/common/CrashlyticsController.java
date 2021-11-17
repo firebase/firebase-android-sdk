@@ -662,6 +662,9 @@ class CrashlyticsController {
             fileStore,
             previousSessionLogManager.getBytesForLog());
     NativeSessionFileGzipper.processNativeSessions(nativeSessionDirectory, nativeSessionFiles);
+
+    Logger.getLogger().d("CrashlyticsController#finalizePreviousNativeSession");
+
     reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
     previousSessionLogManager.clearLog();
   }
