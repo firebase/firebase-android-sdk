@@ -16,7 +16,7 @@ LOCAL_CPPFLAGS := \
 
 LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/annotation_snapshot.cc \
-	$(THIRD_PARTY_PATH)/crashpad/snapshot/capture_memory.cc \
+    $(THIRD_PARTY_PATH)/crashpad/snapshot/capture_memory.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/cpu_context.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/crashpad_info_client_options.cc \
     $(THIRD_PARTY_PATH)/crashpad/snapshot/crashpad_types/crashpad_info_reader.cc \
