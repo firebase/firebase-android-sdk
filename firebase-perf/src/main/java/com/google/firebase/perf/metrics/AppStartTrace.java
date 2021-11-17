@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
@@ -85,7 +84,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
    */
   private boolean isTooLateToInitUI = false;
 
-  private Timer appStartTime = null;
+  private final Timer appStartTime;
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
@@ -122,37 +121,32 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     // no-op, for backward compatibility with old version plugin.
   }
 
-  public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
+  public AppStartTrace(Timer appStartTime) {
+    this(TransportManager.getInstance(), new Clock(), appStartTime);
   }
 
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
-    if (instance == null) {
-      synchronized (AppStartTrace.class) {
-        if (instance == null) {
-          instance =
-              new AppStartTrace(
-                  transportManager,
-                  clock,
-                  new ThreadPoolExecutor(
-                      CORE_POOL_SIZE,
-                      MAX_POOL_SIZE,
-                      /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
-                      TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(1)));
-        }
-      }
-    }
-    return instance;
+  AppStartTrace(TransportManager transportManager, Clock clock, Timer appStartTime) {
+    this(
+        transportManager,
+        clock,
+        new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAX_POOL_SIZE,
+            /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(1)),
+        appStartTime);
   }
 
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
-      @NonNull ExecutorService executorService) {
+      @NonNull ExecutorService executorService,
+      @NonNull Timer appStartTime) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.executorService = executorService;
+    this.appStartTime = appStartTime;
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
@@ -188,8 +182,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
-    if (FirebasePerfProvider.getAppStartTime().getDurationMicros(onCreateTime)
-        > MAX_LATENCY_BEFORE_UI_INIT) {
+    if (this.appStartTime.getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
       isTooLateToInitUI = true;
     }
   }
@@ -215,7 +208,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.appStartTime = FirebasePerfProvider.getAppStartTime();
     this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(

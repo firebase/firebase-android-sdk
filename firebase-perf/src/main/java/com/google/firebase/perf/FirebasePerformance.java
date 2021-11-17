@@ -159,6 +159,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @Inject
   FirebasePerformance(
       FirebaseApp firebaseApp,
+      Timer initTime,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
@@ -185,6 +186,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
 
+    remoteConfigManager.setReferenceTimeInMs(initTime);
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
     this.configResolver.setMetadataBundle(mMetadataBundle);

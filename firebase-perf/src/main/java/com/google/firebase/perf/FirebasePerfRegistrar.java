@@ -14,22 +14,34 @@
 
 package com.google.firebase.perf;
 
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.Keep;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.monitoring.Tracer;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
+import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.metrics.FirebasePerfInternalTracer;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.util.Clock;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.time.StartupTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -56,7 +68,9 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
         Component.builder(ExtendedTracer.class, Tracer.class)
-            .factory(c -> new FirebasePerfInternalTracer())
+            .add(Dependency.required(Context.class))
+            .add(Dependency.optionalProvider(StartupTime.class))
+            .factory(FirebasePerfRegistrar::providesFirebasePerfInternalTracer)
             .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
@@ -68,6 +82,38 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
   }
 
+  @VisibleForTesting
+  static FirebasePerfInternalTracer providesFirebasePerfInternalTracer(
+      ComponentContainer container) {
+    Context appContext = container.get(Context.class);
+    Provider<StartupTime> startupTimeProvider = container.getProvider(StartupTime.class);
+
+    // Initialize ConfigResolver early for accessing device caching layer.
+    ConfigResolver.getInstance().setApplicationContext(appContext);
+
+    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
+    appStateMonitor.registerActivityLifecycleCallbacks(appContext);
+    appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
+
+    if (startupTimeProvider.get() != null) {
+      StartupTime startupTime = startupTimeProvider.get();
+      AppStartTrace appStartTrace =
+          new AppStartTrace(
+              new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
+      appStartTrace.registerActivityLifecycleCallbacks(appContext);
+
+      new Handler(Looper.getMainLooper())
+          .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+    }
+
+    // In the case of cold start, we create a session and start collecting gauges as early as
+    // possible.
+    // There is code in SessionManager that prevents us from resetting the session twice in case
+    // of app cold start.
+    SessionManager.getInstance().initializeGaugeCollection();
+    return new FirebasePerfInternalTracer();
+  }
+
   private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {
     FirebasePerformanceComponent component =
         DaggerFirebasePerformanceComponent.builder()
@@ -76,7 +122,8 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                     container.get(FirebaseApp.class),
                     container.get(FirebaseInstallationsApi.class),
                     container.getProvider(RemoteConfigComponent.class),
-                    container.getProvider(TransportFactory.class)))
+                    container.getProvider(TransportFactory.class),
+                    new Clock().getTime()))
             .build();
 
     return component.getFirebasePerformance();

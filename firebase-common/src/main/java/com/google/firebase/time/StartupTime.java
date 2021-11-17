@@ -1,9 +1,9 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-//
 // You may obtain a copy of the License at
+//
 //      http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/** @hide */
-package com.google.firebase.perf.provider;
+package com.google.firebase.time;
+
+import com.google.auto.value.AutoValue;
+
+@AutoValue
+public abstract class StartupTime {
+  public abstract Instant getInstant();
+
+  public static StartupTime create(Instant instant) {
+    return new AutoValue_StartupTime(instant);
+  }
+}

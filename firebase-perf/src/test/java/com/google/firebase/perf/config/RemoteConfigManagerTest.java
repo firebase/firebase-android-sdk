@@ -27,7 +27,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.util.Clock;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -809,10 +810,11 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to some time before fetch time is up
-    long appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    Timer appStartTime = new Clock().getTime();
+    remoteConfigManagerPartialMock.setReferenceTimeInMs(appStartTime);
+    long wallClockStartTime = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
-        .thenReturn(appStartTimeInMs + appStartConfigFetchDelay - 2000);
+        .thenReturn(wallClockStartTime + appStartConfigFetchDelay - 2000);
 
     simulateFirebaseRemoteConfigLastFetchStatus(
         FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET);
@@ -836,10 +838,11 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to 2s after fetch delay time is up
-    long appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    Timer appStartTime = new Clock().getTime();
+    remoteConfigManagerPartialMock.setReferenceTimeInMs(appStartTime);
+    long wallClockStartTime = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
-        .thenReturn(appStartTimeInMs + appStartConfigFetchDelay + 2000);
+        .thenReturn(wallClockStartTime + appStartConfigFetchDelay + 2000);
 
     simulateFirebaseRemoteConfigLastFetchStatus(
         FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET);
