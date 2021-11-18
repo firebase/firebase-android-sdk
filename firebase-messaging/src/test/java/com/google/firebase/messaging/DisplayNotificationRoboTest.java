@@ -58,7 +58,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -231,7 +230,6 @@ public class DisplayNotificationRoboTest {
    */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
-  @Ignore
   public void testAdaptiveIcon_viaParameter() {
     Bundle data = new Bundle();
     data.putString(KEY_ICON, "adaptive_icon");
@@ -247,7 +245,6 @@ public class DisplayNotificationRoboTest {
   /** Test that an adaptive icon is detected and avoided, when passed via metadata (on Android O) */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
-  @Ignore
   public void testAdaptiveIcon_viaMetadata() {
     Bundle metadata = new Bundle();
     metadata.putInt(
@@ -272,7 +269,6 @@ public class DisplayNotificationRoboTest {
    */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
-  @Ignore
   public void testAdaptiveIcon_viaDefaultIcon() {
     setApplicationIcon(
         context.getPackageName(), com.google.firebase.messaging.test.R.drawable.adaptive_icon);
@@ -309,7 +305,6 @@ public class DisplayNotificationRoboTest {
   /** Test that a non adaptive icon is ok on Android O. */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
-  @Ignore
   public void testNonAdaptiveIcon_AndroidO() {
     setApplicationIcon(
         context.getPackageName(), com.google.firebase.messaging.test.R.drawable.gcm_icon);
@@ -329,7 +324,6 @@ public class DisplayNotificationRoboTest {
   /** Test that a non adaptive icon with gradient is ok on Android O. */
   @Config(sdk = Build.VERSION_CODES.O)
   @Test
-  @Ignore
   public void testNonAdaptiveIconWithGradient_AndroidO() {
     setApplicationIcon(
         context.getPackageName(), com.google.firebase.messaging.test.R.drawable.icon_with_gradient);
@@ -481,7 +475,6 @@ public class DisplayNotificationRoboTest {
   /** Test that a valid notification with color is displayed. */
   @Test
   @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-  @Ignore
   public void testColor() {
     final String color = "#123456";
     Bundle data = new Bundle();
@@ -496,7 +489,6 @@ public class DisplayNotificationRoboTest {
 
   @Test
   @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-  @Ignore
   public void testNoColor() {
     Bundle data = new Bundle();
     data.putString(KEY_TITLE, "title 123");
@@ -511,7 +503,6 @@ public class DisplayNotificationRoboTest {
   /** Test that the user can choose the default color via AndroidManifest metadata. */
   @Test
   @Config(sdk = Build.VERSION_CODES.LOLLIPOP)
-  @Ignore
   public void testColorFromMetadata() {
     Bundle metadata = new Bundle();
     metadata.putInt(
