@@ -33,5 +33,14 @@
                 android:name="com.google.firebase.components:com.google.firebase.analytics.connector.internal.AnalyticsConnectorRegistrar"
                 tools:node="remove" />
         </service>
+
+        <activity
+            android:name="com.google.firebase.messaging.FirebaseMessagingServiceRoboTest$MyTestActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="click_action" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>
