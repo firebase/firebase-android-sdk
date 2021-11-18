@@ -150,7 +150,7 @@ final class SQLiteIndexManager implements IndexManager {
     int nextIndexId = memoizedMaxId + 1;
     index =
         FieldIndex.create(
-            nextIndexId, index.getCollectionGroup(), index.getSegments(), SnapshotVersion.NONE);
+            nextIndexId, index.getCollectionGroup(), index.getSegments(), index.getUpdateTime());
 
     db.execute(
         "INSERT INTO index_configuration ("

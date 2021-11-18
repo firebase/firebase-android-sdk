@@ -85,6 +85,7 @@ public abstract class FieldIndex {
       int indexId, String collectionGroup, List<Segment> segments, SnapshotVersion updateTime) {
     return new AutoValue_FieldIndex(indexId, collectionGroup, segments, updateTime);
   }
+
   /**
    * The index ID. Returns -1 if the index ID is not available (e.g. the index has not yet been
    * persisted).
@@ -110,6 +111,7 @@ public abstract class FieldIndex {
     }
     return filteredSegments;
   }
+
   /** Returns the ArrayContains/ArrayContainsAny segment for this index. */
   public @Nullable Segment getArraySegment() {
     for (Segment segment : getSegments()) {
