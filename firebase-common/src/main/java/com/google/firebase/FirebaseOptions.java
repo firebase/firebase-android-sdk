@@ -160,7 +160,7 @@ public final class FirebaseOptions {
       @Nullable String gcmSenderId,
       @Nullable String storageBucket,
       @Nullable String projectId,
-      @Nullable Instant startupTime,
+      @NonNull Instant startupTime,
       Instant loadStartTime) {
     Preconditions.checkState(!isEmptyOrWhitespace(applicationId), "ApplicationId must be set.");
     this.applicationId = applicationId;

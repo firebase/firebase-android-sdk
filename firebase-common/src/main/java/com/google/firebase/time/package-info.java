@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.monitoring;
-
-import com.google.firebase.time.Instant;
-
-public interface ExtendedTracer extends Tracer {
-  void recordTrace(String name, Instant start, Instant end, String... attrs);
-}
+/** @hide */
+package com.google.firebase.time;

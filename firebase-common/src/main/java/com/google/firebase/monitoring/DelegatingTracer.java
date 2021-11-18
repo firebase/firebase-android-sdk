@@ -17,6 +17,7 @@ package com.google.firebase.monitoring;
 import com.google.firebase.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+/** Tracer that delegates all calls to another tracer. */
 public class DelegatingTracer implements ExtendedTracer {
   private final AtomicReference<ExtendedTracer> delegate = new AtomicReference<>();
 

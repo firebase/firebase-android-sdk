@@ -14,6 +14,21 @@
 
 package com.google.firebase.monitoring;
 
+/**
+ * Allows "tracing" sections of code.
+ *
+ * <p>It's up to implementations to define what it "tracing" means.
+ *
+ * <p>The intended way to use this interface is try-with-resources. For example:
+ *
+ * <pre>{@code
+ * try(TraceHandle handle = tracer.startTrace("hello")) {
+ *     // run code
+ *     handle.addAttribute("attr", "value");
+ * }
+ * }</pre>
+ */
 public interface Tracer {
+  /** Initiate a named trace that needs to be {@link TraceHandle#close() closed via the handle.} */
   TraceHandle startTrace(String name);
 }

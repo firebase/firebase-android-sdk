@@ -37,7 +37,7 @@ public class FirebasePerfRegistrarTest {
 
     // Note: Although we have 3 deps but looks like size doesn't count deps towards interface like
     // FirebaseInstallationsApi
-    assertThat(components).hasSize(2);
+    assertThat(components).hasSize(3);
 
     Component<?> firebasePerfComponent = components.get(0);
 
