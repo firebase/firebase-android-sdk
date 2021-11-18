@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -37,13 +38,9 @@ import org.json.JSONObject;
  * Handles persistence of metadata for cases when we need to reload it on app restart for submission
  * with a previously unclosed crash session.
  */
-public class MetaDataStore {
+class MetaDataStore {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  private static final String USERDATA_FILENAME = "user-data";
-  private static final String KEYDATA_FILENAME = "keys";
-  private static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
   private static final String KEY_USER_ID = "userId";
 
@@ -53,11 +50,11 @@ public class MetaDataStore {
     this.fileStore = fileStore;
   }
 
-  public void writeUserData(String sessionId, UserMetadata data) {
+  public void writeUserData(String sessionId, String userId) {
     final File f = getUserDataFileForSession(sessionId);
     Writer writer = null;
     try {
-      final String userDataString = userDataToJson(data);
+      final String userDataString = userDataToJson(userId);
       writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), UTF_8));
       writer.write(userDataString);
       writer.flush();
@@ -68,22 +65,20 @@ public class MetaDataStore {
     }
   }
 
-  public UserMetadata readUserData(String sessionId) {
+  @Nullable
+  public String readUserId(String sessionId) {
     final File f = getUserDataFileForSession(sessionId);
-    if (!f.exists()) {
-      return new UserMetadata();
-    }
 
     InputStream is = null;
     try {
       is = new FileInputStream(f);
-      return jsonToUserData(CommonUtils.streamToString(is));
+      return jsonToUserId(CommonUtils.streamToString(is));
     } catch (Exception e) {
       Logger.getLogger().e("Error deserializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
-    return new UserMetadata();
+    return null;
   }
 
   public void writeKeyData(String sessionId, Map<String, String> keyData) {
@@ -131,30 +126,29 @@ public class MetaDataStore {
 
   @NonNull
   public File getUserDataFileForSession(String sessionId) {
-    return fileStore.getSessionFile(sessionId, USERDATA_FILENAME);
+    return fileStore.getSessionFile(sessionId, UserMetadata.USERDATA_FILENAME);
   }
 
   @NonNull
   public File getKeysFileForSession(String sessionId) {
-    return fileStore.getSessionFile(sessionId, KEYDATA_FILENAME);
+    return fileStore.getSessionFile(sessionId, UserMetadata.KEYDATA_FILENAME);
   }
 
   @NonNull
   public File getInternalKeysFileForSession(String sessionId) {
-    return fileStore.getSessionFile(sessionId, INTERNAL_KEYDATA_FILENAME);
+    return fileStore.getSessionFile(sessionId, UserMetadata.INTERNAL_KEYDATA_FILENAME);
   }
 
-  private static UserMetadata jsonToUserData(String json) throws JSONException {
+  @Nullable
+  private String jsonToUserId(String json) throws JSONException {
     final JSONObject dataObj = new JSONObject(json);
-    UserMetadata metadata = new UserMetadata();
-    metadata.setUserId(valueOrNull(dataObj, KEY_USER_ID));
-    return metadata;
+    return valueOrNull(dataObj, KEY_USER_ID);
   }
 
-  private static String userDataToJson(final UserMetadata userData) throws JSONException {
+  private static String userDataToJson(String userId) throws JSONException {
     return new JSONObject() {
       {
-        put(KEY_USER_ID, userData.getUserId());
+        put(KEY_USER_ID, userId);
       }
     }.toString();
   }
@@ -170,7 +164,7 @@ public class MetaDataStore {
     return keyData;
   }
 
-  private static String keysDataToJson(final Map<String, String> keyData) throws JSONException {
+  private static String keysDataToJson(final Map<String, String> keyData) {
     return new JSONObject(keyData).toString();
   }
 

@@ -32,7 +32,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
-import com.google.firebase.crashlytics.internal.metadata.MetaDataStore;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -426,7 +425,7 @@ class CrashlyticsController {
   void setCustomKey(String key, String value) {
     try {
       if (userMetadata.setCustomKey(key, value)) {
-        cacheKeyData(userMetadata.getCustomKeys(), false);
+        cacheKeyData(userMetadata, false);
       }
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
@@ -439,16 +438,14 @@ class CrashlyticsController {
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
-    // Write all the key/value pairs before doing anything computationally expensive.
     userMetadata.setCustomKeys(keysAndValues);
-    // Once all the key/value pairs are added, update the cache.
-    cacheKeyData(userMetadata.getCustomKeys(), false);
+    cacheKeyData(userMetadata, false);
   }
 
   void setInternalKey(String key, String value) {
     try {
       if (userMetadata.setInternalKey(key, value)) {
-        cacheKeyData(userMetadata.getInternalKeys(), true);
+        cacheKeyData(userMetadata, true);
       }
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
@@ -467,7 +464,7 @@ class CrashlyticsController {
    * immediately after setting a value. If this becomes a problem, we can investigate writing
    * synchronously, or potentially add an explicit user-facing API for synchronous writes.
    */
-  private void cacheUserData(final UserMetadata userMetaData) {
+  private void cacheUserData(UserMetadata userMetaData) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
@@ -477,8 +474,9 @@ class CrashlyticsController {
               Logger.getLogger().d("Tried to cache user data while no session was open.");
               return null;
             }
-            reportingCoordinator.persistUserId(currentSessionId);
-            new MetaDataStore(fileStore).writeUserData(currentSessionId, userMetaData);
+            // :TODO: Removing following line?
+            // reportingCoordinator.persistUserId(currentSessionId);
+            userMetaData.serializeUserDataIfNeeded(currentSessionId);
             return null;
           }
         });
@@ -491,13 +489,13 @@ class CrashlyticsController {
    * crash happens immediately after setting a value. If this becomes a problem, we can investigate
    * writing synchronously, or potentially add an explicit user-facing API for synchronous writes.
    */
-  private void cacheKeyData(final Map<String, String> keyData, boolean isInternal) {
+  private void cacheKeyData(UserMetadata userMetadata, boolean isInternal) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             final String currentSessionId = getCurrentSessionId();
-            new MetaDataStore(fileStore).writeKeyData(currentSessionId, keyData, isInternal);
+            userMetadata.serializeKeysIfNeeded(currentSessionId, isInternal);
             return null;
           }
         });
@@ -810,9 +808,10 @@ class CrashlyticsController {
       FileStore fileStore,
       byte[] logBytes) {
 
-    final MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+    final File userFile =
+        fileStore.getSessionFile(previousSessionId, UserMetadata.USERDATA_FILENAME);
+    final File keysFile =
+        fileStore.getSessionFile(previousSessionId, UserMetadata.KEYDATA_FILENAME);
 
     List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
     nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
@@ -854,8 +853,8 @@ class CrashlyticsController {
       // happened during the session.
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
-        final UserMetadata relevantUserMetadata = new UserMetadata();
-        relevantUserMetadata.setCustomKeys(new MetaDataStore(fileStore).readKeyData(sessionId));
+        final UserMetadata relevantUserMetadata =
+            UserMetadata.loadFromExistingSession(sessionId, fileStore);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {
