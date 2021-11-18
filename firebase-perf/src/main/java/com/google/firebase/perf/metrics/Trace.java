@@ -210,8 +210,7 @@ public class Trace extends AppStateUpdateHandler
   }
 
   /** Starts this trace. */
-  @Keep
-  public void start(Timer timer) {
+  void start(Timer timer) {
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
       logger.debug("Trace feature is disabled.");
       return;
@@ -251,8 +250,7 @@ public class Trace extends AppStateUpdateHandler
   }
 
   /** Stops this trace. */
-  @Keep
-  public void stop(Timer timer) {
+  void stop(Timer timer) {
     if (!hasStarted()) {
       logger.error("Trace '%s' has not been started so unable to stop!", name);
       return;

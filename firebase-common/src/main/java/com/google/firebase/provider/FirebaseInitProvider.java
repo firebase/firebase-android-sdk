@@ -27,9 +27,24 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.time.Instant;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Initializes Firebase APIs at app startup time. */
 public class FirebaseInitProvider extends ContentProvider {
+  /** @hide */
+  public static final Instant STARTUP_TIME = Instant.now();
+
+  private static final AtomicBoolean INIT_PROVIDER_INITIALIZING = new AtomicBoolean(false);
+
+  /**
+   * This method returns {@code true} only while {@link #onCreate()} is running.
+   *
+   * @hide
+   */
+  public static boolean isInitializing() {
+    return INIT_PROVIDER_INITIALIZING.get();
+  }
 
   private static final String TAG = "FirebaseInitProvider";
 
@@ -48,12 +63,17 @@ public class FirebaseInitProvider extends ContentProvider {
   /** Called before {@link Application#onCreate()}. */
   @Override
   public boolean onCreate() {
-    if (FirebaseApp.initializeApp(getContext()) == null) {
-      Log.i(TAG, "FirebaseApp initialization unsuccessful");
-    } else {
-      Log.i(TAG, "FirebaseApp initialization successful");
+    INIT_PROVIDER_INITIALIZING.set(true);
+    try {
+      if (FirebaseApp.initializeApp(getContext()) == null) {
+        Log.i(TAG, "FirebaseApp initialization unsuccessful");
+      } else {
+        Log.i(TAG, "FirebaseApp initialization successful");
+      }
+      return false;
+    } finally {
+      INIT_PROVIDER_INITIALIZING.set(false);
     }
-    return false;
   }
 
   /**

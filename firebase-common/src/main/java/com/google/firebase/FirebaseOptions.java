@@ -25,11 +25,11 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
+import com.google.firebase.provider.FirebaseInitProvider;
+import com.google.firebase.time.Instant;
 
 /** Configurable Firebase options. */
 public final class FirebaseOptions {
-
-  // TODO: deprecate and remove it once we can fetch these from Remote Config.
 
   private static final String API_KEY_RESOURCE_NAME = "google_api_key";
   private static final String APP_ID_RESOURCE_NAME = "google_app_id";
@@ -46,6 +46,10 @@ public final class FirebaseOptions {
   private final String gcmSenderId;
   private final String storageBucket;
   private final String projectId;
+
+  final Instant startupTime;
+  final Instant loadStartTime;
+  final Instant loadEndTime;
 
   /** Builder for constructing FirebaseOptions. */
   public static final class Builder {
@@ -136,6 +140,28 @@ public final class FirebaseOptions {
       @Nullable String gcmSenderId,
       @Nullable String storageBucket,
       @Nullable String projectId) {
+    this(
+        applicationId,
+        apiKey,
+        databaseUrl,
+        gaTrackingId,
+        gcmSenderId,
+        storageBucket,
+        projectId,
+        Instant.NEVER,
+        Instant.NEVER);
+  }
+
+  private FirebaseOptions(
+      @NonNull String applicationId,
+      @NonNull String apiKey,
+      @Nullable String databaseUrl,
+      @Nullable String gaTrackingId,
+      @Nullable String gcmSenderId,
+      @Nullable String storageBucket,
+      @Nullable String projectId,
+      @NonNull Instant startupTime,
+      Instant loadStartTime) {
     Preconditions.checkState(!isEmptyOrWhitespace(applicationId), "ApplicationId must be set.");
     this.applicationId = applicationId;
     this.apiKey = apiKey;
@@ -144,6 +170,13 @@ public final class FirebaseOptions {
     this.gcmSenderId = gcmSenderId;
     this.storageBucket = storageBucket;
     this.projectId = projectId;
+    this.startupTime = startupTime;
+    this.loadStartTime = loadStartTime;
+    this.loadEndTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
+  }
+
+  boolean isTracingEnabled() {
+    return startupTime.isValid();
   }
 
   /**
@@ -153,6 +186,12 @@ public final class FirebaseOptions {
    */
   @Nullable
   public static FirebaseOptions fromResource(@NonNull Context context) {
+    // We capture startup time only when FirebaseInitProvider is initializing(at app startup),
+    // otherwise it is meaningless as this method can be called by developers at any arbitrary time
+    // while their app is running.
+    Instant startupTime =
+        FirebaseInitProvider.isInitializing() ? FirebaseInitProvider.STARTUP_TIME : Instant.NEVER;
+    Instant loadStartTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
     StringResourceValueReader reader = new StringResourceValueReader(context);
     String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
     if (TextUtils.isEmpty(applicationId)) {
@@ -165,7 +204,9 @@ public final class FirebaseOptions {
         reader.getString(GA_TRACKING_ID_RESOURCE_NAME),
         reader.getString(GCM_SENDER_ID_RESOURCE_NAME),
         reader.getString(STORAGE_BUCKET_RESOURCE_NAME),
-        reader.getString(PROJECT_ID_RESOURCE_NAME));
+        reader.getString(PROJECT_ID_RESOURCE_NAME),
+        startupTime,
+        loadStartTime);
   }
 
   /**

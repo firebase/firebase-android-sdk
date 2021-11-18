@@ -19,6 +19,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentFactory;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRegistrarProcessor;
+import com.google.firebase.platforminfo.LibraryVersion;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,20 +60,25 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
     if (components.size() < 2) {
       return components;
     }
-    NamedComponent named = findTheOnlyLibraryName(components);
-    if (named == null) {
+    LibraryVersion libraryVersion = findTheOnlyLibraryName(components);
+    if (libraryVersion == null) {
       return components;
     }
     List<Component<?>> result = new ArrayList<>();
     boolean foundFirst = false;
     for (Component<?> component : components) {
-      if (component != named.component) {
+      if (!component.getProvidedInterfaces().contains(LibraryVersion.class)) {
         if (!foundFirst) {
           foundFirst = true;
 
           @SuppressWarnings("unchecked")
           Component<Object> cmp = (Component<Object>) component;
-          component = cmp.withFactory(wrap(named.name, cmp.getFactory()));
+          component =
+              cmp.withFactory(
+                  wrap(
+                      libraryVersion.getLibraryName(),
+                      libraryVersion.getVersion(),
+                      cmp.getFactory()));
         }
       }
       result.add(component);
@@ -81,21 +87,31 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
   }
 
   private List<Component<?>> wrapWithNames(List<Component<?>> components) {
+    if (components.size() < 2) {
+      return components;
+    }
+    LibraryVersion libraryVersion = findTheOnlyLibraryName(components);
+    if (libraryVersion == null) {
+      return components;
+    }
     List<Component<?>> result = new ArrayList<>();
     for (Component<?> component : components) {
       if (component.getName() != null) {
         @SuppressWarnings("unchecked")
         Component<Object> cmp = (Component<Object>) component;
-        component = cmp.withFactory(wrap(cmp.getName(), cmp.getFactory()));
+        component =
+            cmp.withFactory(
+                wrap(component.getName(), libraryVersion.getVersion(), cmp.getFactory()));
       }
       result.add(component);
     }
     return result;
   }
 
-  private <T> ComponentFactory<T> wrap(String name, ComponentFactory<T> factory) {
+  private <T> ComponentFactory<T> wrap(String name, String version, ComponentFactory<T> factory) {
     return c -> {
-      try (TraceHandle ignored = tracer.startTrace(name)) {
+      try (TraceHandle handle = tracer.startTrace(name)) {
+        handle.addAttribute("version", version);
         return factory.create(c);
       }
     };
@@ -111,17 +127,20 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
   }
 
   @Nullable
-  private static NamedComponent findTheOnlyLibraryName(List<Component<?>> components) {
-    NamedComponent result = null;
+  private static LibraryVersion findTheOnlyLibraryName(List<Component<?>> components) {
+    LibraryVersion result = null;
     for (Component<?> component : components) {
-      String name = LibraryVersionComponent.getNameIfLibraryVersionComponent(component);
-      if (name != null) {
-        if (result != null) {
-          // more than one library version found.
-          return null;
-        }
-        result = new NamedComponent(component, name);
+      if (result != null) {
+        return null;
       }
+      if (!component.getProvidedInterfaces().contains(LibraryVersion.class)
+          || !component.getDependencies().isEmpty()) {
+        continue;
+      }
+
+      @SuppressWarnings("unchecked")
+      Component<LibraryVersion> versionComponent = (Component<LibraryVersion>) component;
+      result = versionComponent.getFactory().create(null);
     }
     return result;
   }

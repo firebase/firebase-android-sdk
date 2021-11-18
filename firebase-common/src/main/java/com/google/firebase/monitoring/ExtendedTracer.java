@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.platforminfo;
+package com.google.firebase.monitoring;
 
-import com.google.auto.value.AutoValue;
-import javax.annotation.Nonnull;
+import com.google.firebase.time.Instant;
 
-/** The class is not public to ensure other components cannot depend on it. */
-@AutoValue
-public abstract class LibraryVersion {
-  public static LibraryVersion create(String name, String version) {
-    return new AutoValue_LibraryVersion(name, version);
-  }
-
-  @Nonnull
-  public abstract String getLibraryName();
-
-  @Nonnull
-  public abstract String getVersion();
+public interface ExtendedTracer extends Tracer {
+  void recordTrace(String name, Instant start, Instant end, String... attrs);
 }
