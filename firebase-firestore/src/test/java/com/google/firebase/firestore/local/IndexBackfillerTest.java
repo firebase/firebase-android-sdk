@@ -33,6 +33,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -266,16 +267,24 @@ public class IndexBackfillerTest {
 
   private void addFieldIndex(String collectionGroup, String fieldName) {
     FieldIndex fieldIndex =
-        new FieldIndex(collectionGroup)
-            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ASCENDING);
+        FieldIndex.create(
+            -1,
+            collectionGroup,
+            Collections.singletonList(
+                FieldIndex.Segment.create(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)),
+            SnapshotVersion.NONE);
     indexManager.addFieldIndex(fieldIndex);
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion readTime) {
-    indexManager.addFieldIndex(
-        new FieldIndex(collectionGroup)
-            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)
-            .withUpdateTime(readTime));
+    FieldIndex fieldIndex =
+        FieldIndex.create(
+            -1,
+            collectionGroup,
+            Collections.singletonList(
+                FieldIndex.Segment.create(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)),
+            readTime);
+    indexManager.addFieldIndex(fieldIndex);
   }
 
   private void addCollectionGroup(String collectionGroup, Timestamp updateTime) {

@@ -291,14 +291,13 @@ public final class LocalSerializer {
     return new BundledQuery(target, limitType);
   }
 
-  public Index encodeFieldIndex(FieldIndex fieldIndex) {
+  public Index encodeFieldIndexSegments(List<FieldIndex.Segment> segments) {
     Index.Builder index = Index.newBuilder();
     // The Mobile SDKs treat all indices as collection group indices, as we run all collection group
     // queries against each collection separately.
     index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
 
-    for (int i = 0; i < fieldIndex.segmentCount(); ++i) {
-      FieldIndex.Segment segment = fieldIndex.getSegment(i);
+    for (FieldIndex.Segment segment : segments) {
       Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
       indexField.setFieldPath(segment.getFieldPath().canonicalString());
       if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
@@ -314,9 +313,8 @@ public final class LocalSerializer {
     return index.build();
   }
 
-  public FieldIndex decodeFieldIndex(
-      String collectionGroup, int indexId, Index index, int updateSeconds, int updateNanos) {
-    FieldIndex fieldIndex = new FieldIndex(collectionGroup, indexId);
+  public List<FieldIndex.Segment> decodeFieldIndexSegments(Index index) {
+    List<FieldIndex.Segment> result = new ArrayList<>();
     for (Index.IndexField field : index.getFieldsList()) {
       FieldPath fieldPath = FieldPath.fromServerFormat(field.getFieldPath());
       FieldIndex.Segment.Kind kind =
@@ -325,11 +323,9 @@ public final class LocalSerializer {
               : (field.getOrder().equals(Index.IndexField.Order.ASCENDING)
                   ? FieldIndex.Segment.Kind.ASCENDING
                   : FieldIndex.Segment.Kind.DESCENDING);
-      fieldIndex = fieldIndex.withAddedField(fieldPath, kind);
+      result.add(FieldIndex.Segment.create(fieldPath, kind));
     }
-    fieldIndex =
-        fieldIndex.withUpdateTime(new SnapshotVersion(new Timestamp(updateSeconds, updateNanos)));
-    return fieldIndex;
+    return result;
   }
 
   public Mutation decodeMutation(Write mutation) {
