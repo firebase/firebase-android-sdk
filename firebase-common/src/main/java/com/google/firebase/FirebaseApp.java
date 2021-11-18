@@ -53,6 +53,8 @@ import com.google.firebase.monitoring.ComponentMonitoring;
 import com.google.firebase.monitoring.DelegatingTracer;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.time.Instant;
+import com.google.firebase.time.StartupTime;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -432,7 +434,8 @@ public class FirebaseApp {
             .addComponentRegistrar(new FirebaseCommonRegistrar())
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
-            .addComponent(Component.of(options, FirebaseOptions.class));
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .addComponent(Component.of(new StartupTime(options.startupTime), StartupTime.class));
     if (tracingEnabled) {
       runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));
     }

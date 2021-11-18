@@ -45,6 +45,7 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.time.StartupTime;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -165,7 +166,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   @Inject
   FirebasePerformance(
       FirebaseApp firebaseApp,
-      long startTime,
+      StartupTime startupTime,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
@@ -174,7 +175,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       SessionManager sessionManager) {
 
     this.firebaseApp = firebaseApp;
-    Timer appStartTime = new Timer(startTime);
+    Timer appStartTime =
+        new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos());
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.transportFactoryProvider = transportFactoryProvider;

@@ -18,7 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -39,6 +41,8 @@ import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.time.Instant;
+import com.google.firebase.time.StartupTime;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import org.junit.After;
@@ -106,6 +110,7 @@ public class FirebasePerformanceTest {
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
+    spySessionManager.setPerfSession(com.google.firebase.perf.session.PerfSession.create());
   }
 
   @Test
@@ -504,6 +509,27 @@ public class FirebasePerformanceTest {
     verify(spySessionManager).setApplicationContext(nullable(Context.class));
   }
 
+  @Test
+  public void initFirebasePerformance_initializesGaugeCollection() {
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
+    when(mockPerfSession.sessionId()).thenReturn("sessionId");
+    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+
+    spySessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = spySessionManager.perfSession().sessionId();
+    Assert.assertEquals(oldSessionId, spySessionManager.perfSession().sessionId());
+
+    FirebasePerformance unusedPerformance =
+        initializeFirebasePerformancePreferences(
+            /* metadataFireperfForceDeactivatedKey= */ null,
+            /* metadataFireperfEnabledKey= */ null,
+            /* sharedPreferencesEnabledDisabledKey= */ null);
+
+    Assert.assertEquals(oldSessionId, spySessionManager.perfSession().sessionId());
+    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
+  }
+
   private static SharedPreferences getSharedPreferences() {
     return ApplicationProvider.getApplicationContext()
         .getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
@@ -569,7 +595,7 @@ public class FirebasePerformanceTest {
 
     return new FirebasePerformance(
         FirebaseApp.getInstance(),
-        System.nanoTime(),
+        new StartupTime(Instant.now()),
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,

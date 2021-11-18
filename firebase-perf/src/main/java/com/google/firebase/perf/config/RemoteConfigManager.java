@@ -22,7 +22,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -123,7 +122,8 @@ public class RemoteConfigManager {
   }
 
   public void setAppStartTime(Timer appStartTime) {
-    this.appStartTimeInMs = TimeUnit.NANOSECONDS.toMillis(appStartTime.getHighResTime());
+    // Must use getMicros() because RemoteConfigManager uses wall-clock time
+    this.appStartTimeInMs = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
   }
 
   /**

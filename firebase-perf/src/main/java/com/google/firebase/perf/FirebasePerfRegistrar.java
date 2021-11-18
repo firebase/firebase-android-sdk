@@ -30,6 +30,7 @@ import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.perf.metrics.FirebasePerfInternalTracer;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.time.StartupTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
-            .add(Dependency.required(long.class))
+            .add(Dependency.required(StartupTime.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .alwaysEager()
             .build(),
@@ -76,7 +77,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .firebasePerformanceModule(
                 new FirebasePerformanceModule(
                     container.get(FirebaseApp.class),
-                    container.get(long.class),
+                    container.get(StartupTime.class),
                     container.get(FirebaseInstallationsApi.class),
                     container.getProvider(RemoteConfigComponent.class),
                     container.getProvider(TransportFactory.class)))

@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
@@ -183,8 +182,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
-    if (this.appStartTime.getDurationMicros(onCreateTime)
-        > MAX_LATENCY_BEFORE_UI_INIT) {
+    if (this.appStartTime.getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
       isTooLateToInitUI = true;
     }
   }
