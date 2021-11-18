@@ -608,17 +608,17 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(
+          String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE, field, kind, fieldAndKind);
+  }
+
+  public static FieldIndex fieldIndex(
       String collectionGroup, int indexId, SnapshotVersion readTime) {
     return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), readTime);
   }
 
   public static FieldIndex fieldIndex(String collectionGroup) {
     return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE);
-  }
-
-  public static FieldIndex fieldIndex(
-      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
-    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE, field, kind, fieldAndKind);
   }
 
   private static Map<String, Object> fromJsonString(String json) {

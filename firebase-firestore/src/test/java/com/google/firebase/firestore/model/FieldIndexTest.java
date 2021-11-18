@@ -59,9 +59,7 @@ public class FieldIndexTest {
   public void comparatorIncludesFieldName() {
     FieldIndex indexOriginal = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexSame = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
-    ;
     FieldIndex indexDifferent = fieldIndex("collA", "b", FieldIndex.Segment.Kind.ASCENDING);
-    ;
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
