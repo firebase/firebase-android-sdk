@@ -26,6 +26,7 @@ import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
 import com.google.firebase.provider.FirebaseInitProvider;
+import com.google.firebase.time.Instant;
 
 /** Configurable Firebase options. */
 public final class FirebaseOptions {
@@ -46,9 +47,9 @@ public final class FirebaseOptions {
   private final String storageBucket;
   private final String projectId;
 
-  final long startupTimeNanos;
-  final long loadStartTimeNanos;
-  final long loadEndNanos;
+  final Instant startupTime;
+  final Instant loadStartTime;
+  final Instant loadEndTime;
 
   /** Builder for constructing FirebaseOptions. */
   public static final class Builder {
@@ -147,8 +148,8 @@ public final class FirebaseOptions {
         gcmSenderId,
         storageBucket,
         projectId,
-        0,
-        0);
+        Instant.NEVER,
+        Instant.NEVER);
   }
 
   private FirebaseOptions(
@@ -159,8 +160,8 @@ public final class FirebaseOptions {
       @Nullable String gcmSenderId,
       @Nullable String storageBucket,
       @Nullable String projectId,
-      long startupTimeNanos,
-      long loadStartTimeNanos) {
+      @Nullable Instant startupTime,
+      Instant loadStartTime) {
     Preconditions.checkState(!isEmptyOrWhitespace(applicationId), "ApplicationId must be set.");
     this.applicationId = applicationId;
     this.apiKey = apiKey;
@@ -169,13 +170,13 @@ public final class FirebaseOptions {
     this.gcmSenderId = gcmSenderId;
     this.storageBucket = storageBucket;
     this.projectId = projectId;
-    this.startupTimeNanos = startupTimeNanos;
-    this.loadStartTimeNanos = loadStartTimeNanos;
-    this.loadEndNanos = loadStartTimeNanos == 0 ? 0 : System.nanoTime();
+    this.startupTime = startupTime;
+    this.loadStartTime = loadStartTime;
+    this.loadEndTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
   }
 
-  boolean tracingEnabled() {
-    return startupTimeNanos != 0;
+  boolean isTracingEnabled() {
+    return startupTime.isValid();
   }
 
   /**
@@ -185,8 +186,8 @@ public final class FirebaseOptions {
    */
   @Nullable
   public static FirebaseOptions fromResource(@NonNull Context context) {
-    long startupTime = FirebaseInitProvider.startTimeNanos.get();
-    long loadStartTime = startupTime == 0 ? 0 : System.nanoTime();
+    Instant startupTime = FirebaseInitProvider.startTimeNanos.get();
+    Instant loadStartTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
     StringResourceValueReader reader = new StringResourceValueReader(context);
     String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
     if (TextUtils.isEmpty(applicationId)) {

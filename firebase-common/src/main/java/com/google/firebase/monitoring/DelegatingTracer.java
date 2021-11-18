@@ -14,6 +14,7 @@
 
 package com.google.firebase.monitoring;
 
+import com.google.firebase.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DelegatingTracer implements ExtendedTracer {
@@ -33,11 +34,11 @@ public class DelegatingTracer implements ExtendedTracer {
   }
 
   @Override
-  public void recordTrace(String name, long startNanos, long endNanos, String... attrs) {
+  public void recordTrace(String name, Instant start, Instant end, String... attrs) {
     ExtendedTracer tracer = delegate.get();
     if (tracer == null) {
       return;
     }
-    tracer.recordTrace(name, startNanos, endNanos, attrs);
+    tracer.recordTrace(name, start, end, attrs);
   }
 }

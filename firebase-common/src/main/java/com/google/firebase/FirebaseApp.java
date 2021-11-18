@@ -52,6 +52,7 @@ import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.monitoring.ComponentMonitoring;
 import com.google.firebase.monitoring.DelegatingTracer;
 import com.google.firebase.monitoring.ExtendedTracer;
+import com.google.firebase.time.Instant;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -416,11 +417,11 @@ public class FirebaseApp {
 
     boolean tracingEnabled = isTracingEnabled();
 
-    long discoverStart = System.nanoTime();
+    Instant discoverStart = Instant.now();
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
-    long discoverEnd = System.nanoTime();
+    Instant discoverEnd = Instant.now();
     ComponentRuntime.Builder runtimeBuilder =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
@@ -438,8 +439,8 @@ public class FirebaseApp {
     if (tracingEnabled) {
       tracer.recordTrace(
           "loadOptions",
-          options.loadStartTimeNanos,
-          options.loadEndNanos,
+          options.loadStartTime,
+          options.loadEndTime,
           "version",
           BuildConfig.VERSION_NAME);
       tracer.recordTrace(
@@ -460,7 +461,7 @@ public class FirebaseApp {
   }
 
   private boolean isTracingEnabled() {
-    return options.tracingEnabled() && UserManagerCompat.isUserUnlocked(applicationContext);
+    return options.isTracingEnabled() && UserManagerCompat.isUserUnlocked(applicationContext);
   }
 
   /** @hide */
