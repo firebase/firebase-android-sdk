@@ -186,7 +186,11 @@ public final class FirebaseOptions {
    */
   @Nullable
   public static FirebaseOptions fromResource(@NonNull Context context) {
-    Instant startupTime = FirebaseInitProvider.startTimeNanos.get();
+    // We capture startup time only when FirebaseInitProvider is initializing(at app startup),
+    // otherwise it is meaningless as this method can be called by developers at any arbitrary time
+    // while their app is running.
+    Instant startupTime =
+        FirebaseInitProvider.isInitializing() ? FirebaseInitProvider.STARTUP_TIME : Instant.NEVER;
     Instant loadStartTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
     StringResourceValueReader reader = new StringResourceValueReader(context);
     String applicationId = reader.getString(APP_ID_RESOURCE_NAME);

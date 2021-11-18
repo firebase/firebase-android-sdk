@@ -100,6 +100,8 @@ public class FirebaseApp {
 
   private static final Executor UI_EXECUTOR = new UiExecutor();
 
+  private static final String[] VERSION_ATTRS = new String[] {"version", BuildConfig.VERSION_NAME};
+
   /** A map of (name, FirebaseApp) instances. */
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
@@ -113,6 +115,7 @@ public class FirebaseApp {
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
+  private final AtomicBoolean tracingEnabled = new AtomicBoolean();
   private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
 
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
@@ -416,6 +419,7 @@ public class FirebaseApp {
     this.tracer = new DelegatingTracer();
 
     boolean tracingEnabled = isTracingEnabled();
+    this.tracingEnabled.set(tracingEnabled);
 
     Instant discoverStart = Instant.now();
     List<Provider<ComponentRegistrar>> registrars =
@@ -437,14 +441,8 @@ public class FirebaseApp {
     tracer.setTracer(componentRuntime.get(ExtendedTracer.class));
 
     if (tracingEnabled) {
-      tracer.recordTrace(
-          "loadOptions",
-          options.loadStartTime,
-          options.loadEndTime,
-          "version",
-          BuildConfig.VERSION_NAME);
-      tracer.recordTrace(
-          "discoverComponents", discoverStart, discoverEnd, "version", BuildConfig.VERSION_NAME);
+      tracer.recordTrace("loadOptions", options.loadStartTime, options.loadEndTime, VERSION_ATTRS);
+      tracer.recordTrace("discoverComponents", discoverStart, discoverEnd, VERSION_ATTRS);
     }
 
     dataCollectionConfigStorage =
@@ -602,11 +600,15 @@ public class FirebaseApp {
           LOG_TAG,
           "Device in Direct Boot Mode: postponing initialization of Firebase APIs for app "
               + getName());
+      tracingEnabled.set(false);
       // Ensure that all APIs are initialized once the user unlocks the phone.
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {
       Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
       componentRuntime.initializeEagerComponents(isDefaultApp());
+      if (tracingEnabled.getAndSet(false)) {
+        tracer.recordTrace("firebaseInit", options.startupTime, Instant.now(), VERSION_ATTRS);
+      }
     }
   }
 
