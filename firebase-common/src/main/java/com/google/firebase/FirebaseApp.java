@@ -608,6 +608,7 @@ public class FirebaseApp {
       componentRuntime.initializeEagerComponents(isDefaultApp());
       if (tracingEnabled.getAndSet(false)) {
         tracer.recordTrace("firebaseInit", options.startupTime, Instant.now(), VERSION_ATTRS);
+        tracer.setTracer(null);
       }
     }
   }
