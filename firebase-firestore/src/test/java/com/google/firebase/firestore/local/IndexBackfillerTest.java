@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.local.SQLiteIndexManagerTest.getCollectionGroupsOrderByUpdateTime;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -33,7 +33,6 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -267,23 +266,13 @@ public class IndexBackfillerTest {
 
   private void addFieldIndex(String collectionGroup, String fieldName) {
     FieldIndex fieldIndex =
-        FieldIndex.create(
-            -1,
-            collectionGroup,
-            Collections.singletonList(
-                FieldIndex.Segment.create(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)),
-            SnapshotVersion.NONE);
+        fieldIndex(collectionGroup, fieldName, FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion readTime) {
     FieldIndex fieldIndex =
-        FieldIndex.create(
-            -1,
-            collectionGroup,
-            Collections.singletonList(
-                FieldIndex.Segment.create(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)),
-            readTime);
+        fieldIndex(collectionGroup, -1, readTime, fieldName, FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
   }
 

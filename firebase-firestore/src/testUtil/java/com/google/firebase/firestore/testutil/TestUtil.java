@@ -596,13 +596,13 @@ public class TestUtil {
       SnapshotVersion readTime,
       String field,
       FieldIndex.Segment.Kind kind,
-      Object... fieldAndKind) {
+      Object... fieldAndKinds) {
     List<FieldIndex.Segment> segments = new ArrayList<>();
     segments.add(FieldIndex.Segment.create(field(field), kind));
-    for (int i = 0; i < fieldAndKind.length; i += 2) {
+    for (int i = 0; i < fieldAndKinds.length; i += 2) {
       segments.add(
           FieldIndex.Segment.create(
-              field((String) fieldAndKind[i]), (FieldIndex.Segment.Kind) fieldAndKind[i + 1]));
+              field((String) fieldAndKinds[i]), (FieldIndex.Segment.Kind) fieldAndKinds[i + 1]));
     }
     return FieldIndex.create(indexId, collectionGroup, segments, readTime);
   }
