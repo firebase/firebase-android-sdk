@@ -16,6 +16,7 @@ package com.google.firebase.monitoring;
 
 import java.io.Closeable;
 
+/** A try-with-resources friendly trace handle that can also be used to add custom attributes. */
 public interface TraceHandle extends Closeable {
   TraceHandle NOOP =
       new TraceHandle() {

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+    Normally this would be injected by the gradle plugin, but we're
+    simulating its presence here for testing purposes.
+    -->
+    <string name="google_app_id" tools:ignore="ExtraTranslation">1:855246033427:android:6e48bff8253f3f6e6e</string>
+    <string name="google_api_key" tools:ignore="ExtraTranslation">AIzaSyD3asb-2pEZVqMkmL6M9N6nHZRR_znhrh0</string>
+</resources>

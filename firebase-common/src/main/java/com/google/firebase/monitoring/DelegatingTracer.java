@@ -14,12 +14,14 @@
 
 package com.google.firebase.monitoring;
 
+import com.google.firebase.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DelegatingTracer implements Tracer {
-  private final AtomicReference<Tracer> delegate = new AtomicReference<>();
+/** Tracer that delegates all calls to another tracer. */
+public class DelegatingTracer implements ExtendedTracer {
+  private final AtomicReference<ExtendedTracer> delegate = new AtomicReference<>();
 
-  public void setTracer(Tracer tracer) {
+  public void setTracer(ExtendedTracer tracer) {
     delegate.set(tracer);
   }
 
@@ -30,5 +32,14 @@ public class DelegatingTracer implements Tracer {
       return TraceHandle.NOOP;
     }
     return tracer.startTrace(name);
+  }
+
+  @Override
+  public void recordTrace(String name, Instant start, Instant end, String... attrs) {
+    ExtendedTracer tracer = delegate.get();
+    if (tracer == null) {
+      return;
+    }
+    tracer.recordTrace(name, start, end, attrs);
   }
 }
