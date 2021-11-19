@@ -14,14 +14,13 @@
 
 package com.google.firebase.time;
 
-public class StartupTime {
-    private final Instant instant;
+import com.google.auto.value.AutoValue;
 
-    public StartupTime(Instant instant) {
-        this.instant = instant;
-    }
+@AutoValue
+public abstract class StartupTime {
+    public abstract Instant getInstant();
 
-    public Instant getInstant() {
-        return instant;
+    public static StartupTime create(Instant instant) {
+        return new AutoValue_StartupTime(instant);
     }
 }

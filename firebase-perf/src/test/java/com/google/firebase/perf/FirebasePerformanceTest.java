@@ -571,7 +571,7 @@ public class FirebasePerformanceTest {
 
     return new FirebasePerformance(
         FirebaseApp.getInstance(),
-        new StartupTime(Instant.now()),
+        StartupTime.create(Instant.now()),
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,

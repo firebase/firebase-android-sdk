@@ -435,7 +435,7 @@ public class FirebaseApp {
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
-            .addComponent(Component.of(new StartupTime(options.startupTime), StartupTime.class));
+            .addComponent(Component.of(StartupTime.create(options.startupTime), StartupTime.class));
     if (tracingEnabled) {
       runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));
     }
