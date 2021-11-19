@@ -51,6 +51,7 @@ import com.google.firebase.perf.v1.PerfMetric;
 import com.google.firebase.perf.v1.PerfMetricOrBuilder;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
+import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
@@ -102,6 +103,7 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
+  private final DecimalFormat durationFormatter = new DecimalFormat("#.####");
   private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
@@ -617,9 +619,9 @@ public class TransportManager implements AppStateCallback {
     long durationInUs = traceMetric.getDurationUs();
     return String.format(
         Locale.ENGLISH,
-        "trace metric: %s (duration: %.4fms)",
+        "trace metric: %s (duration: %sms)",
         traceMetric.getName(),
-        durationInUs / 1000.0);
+        durationFormatter.format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
@@ -635,10 +637,10 @@ public class TransportManager implements AppStateCallback {
 
     return String.format(
         Locale.ENGLISH,
-        "network request trace: %s (responseCode: %s, responseTime: %.4fms)",
+        "network request trace: %s (responseCode: %s, responseTime: %sms)",
         networkRequestMetric.getUrl(),
         responseCode,
-        durationInUs / 1000.0);
+        durationFormatter.format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(GaugeMetric gaugeMetric) {
