@@ -18,6 +18,7 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotEmpty
 import static com.google.android.gms.common.util.Strings.isEmptyOrWhitespace;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -193,20 +194,24 @@ public final class FirebaseOptions {
         FirebaseInitProvider.isInitializing() ? FirebaseInitProvider.STARTUP_TIME : Instant.NEVER;
     Instant loadStartTime = startupTime.isValid() ? Instant.now() : Instant.NEVER;
     StringResourceValueReader reader = new StringResourceValueReader(context);
-    String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
-    if (TextUtils.isEmpty(applicationId)) {
+    try {
+      String applicationId = reader.getString(APP_ID_RESOURCE_NAME);
+      if (TextUtils.isEmpty(applicationId)) {
+        return null;
+      }
+      return new FirebaseOptions(
+          applicationId,
+          reader.getString(API_KEY_RESOURCE_NAME),
+          reader.getString(DATABASE_URL_RESOURCE_NAME),
+          reader.getString(GA_TRACKING_ID_RESOURCE_NAME),
+          reader.getString(GCM_SENDER_ID_RESOURCE_NAME),
+          reader.getString(STORAGE_BUCKET_RESOURCE_NAME),
+          reader.getString(PROJECT_ID_RESOURCE_NAME),
+          startupTime,
+          loadStartTime);
+    } catch (Resources.NotFoundException ex) {
       return null;
     }
-    return new FirebaseOptions(
-        applicationId,
-        reader.getString(API_KEY_RESOURCE_NAME),
-        reader.getString(DATABASE_URL_RESOURCE_NAME),
-        reader.getString(GA_TRACKING_ID_RESOURCE_NAME),
-        reader.getString(GCM_SENDER_ID_RESOURCE_NAME),
-        reader.getString(STORAGE_BUCKET_RESOURCE_NAME),
-        reader.getString(PROJECT_ID_RESOURCE_NAME),
-        startupTime,
-        loadStartTime);
   }
 
   /**

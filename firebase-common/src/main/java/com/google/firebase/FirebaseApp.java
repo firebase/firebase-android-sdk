@@ -101,7 +101,10 @@ public class FirebaseApp {
 
   private static final Executor UI_EXECUTOR = new UiExecutor();
 
-  private static final String[] VERSION_ATTRS = new String[] {"version", BuildConfig.VERSION_NAME};
+  private static final String[] VERSION_ATTRS =
+      new String[] {
+        "version", BuildConfig.VERSION_NAME, "optimized", ComponentMonitoring.isAppOptimized()
+      };
 
   /** A map of (name, FirebaseApp) instances. */
   @GuardedBy("LOCK")
@@ -428,6 +431,8 @@ public class FirebaseApp {
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
     Instant discoverEnd = Instant.now();
+
+    Instant runtimeStart = Instant.now();
     ComponentRuntime.Builder runtimeBuilder =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
@@ -439,12 +444,17 @@ public class FirebaseApp {
       runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));
     }
     componentRuntime = runtimeBuilder.build();
+    Instant runtimeEnd = Instant.now();
 
+    Instant tracerStart = Instant.now();
     tracer.setTracer(componentRuntime.get(ExtendedTracer.class));
+    Instant tracerEnd = Instant.now();
 
     if (tracingEnabled) {
       tracer.recordTrace("loadOptions", options.loadStartTime, options.loadEndTime, VERSION_ATTRS);
       tracer.recordTrace("discoverComponents", discoverStart, discoverEnd, VERSION_ATTRS);
+      tracer.recordTrace("runtimeInit", runtimeStart, runtimeEnd, VERSION_ATTRS);
+      tracer.recordTrace("tracerInit", tracerStart, tracerEnd, VERSION_ATTRS);
     }
 
     dataCollectionConfigStorage =
