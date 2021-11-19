@@ -81,14 +81,13 @@ class MemoryIndexManager implements IndexManager {
 
   @Nullable
   @Override
-  public String getNextCollectionGroupToUpdate(long maxSequenceNumber) {
+  public String getNextCollectionGroupToUpdate() {
     // Field indices are not supported with memory persistence.
     return null;
   }
 
   @Override
-  public void updateCollectionGroup(
-      String collectionGroup, long sequenceNumber, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
     // Field indices are not supported with memory persistence.
   }
 
@@ -107,12 +106,6 @@ class MemoryIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(Collection<Document> documents) {
     // Field indices are not supported with memory persistence.
-  }
-
-  @Override
-  public long getHighestSequenceNumber() {
-    // Field indices are not supported with memory persistence.
-    return -1;
   }
 
   /**

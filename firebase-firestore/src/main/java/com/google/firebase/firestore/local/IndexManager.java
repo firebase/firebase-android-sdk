@@ -87,22 +87,16 @@ public interface IndexManager {
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
-  /**
-   * Returns the next collection group to update. Returns {@code null} if no group exists or the
-   * next collection group is already at {@code maxSequenceNumber}.
-   */
+  /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable
-  String getNextCollectionGroupToUpdate(long maxSequenceNumber);
+  String getNextCollectionGroupToUpdate();
 
-  /** Updates the sequence number for the collection group and sets its latest read time. */
-  void updateCollectionGroup(String collectionGroup, long sequenceNumber, SnapshotVersion readTime);
+  /** Sets the collection group's latest read time. */
+  void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime);
 
   /**
    * Updates the index entries for the provided documents and corresponding field indexes until the
    * cap is reached.
    */
   void updateIndexEntries(Collection<Document> documents);
-
-  /** Returns the largest currently used sequence number (as used by the backfiller). */
-  long getHighestSequenceNumber();
 }

@@ -199,12 +199,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public @Nullable String getNextCollectionGroupToUpdate(long maxSequenceNumber) {
+  public @Nullable String getNextCollectionGroupToUpdate() {
     hardAssert(started, "IndexManager not started");
     FieldIndex nextIndex = nextIndexToUpdate.peek();
-    return nextIndex != null && nextIndex.getIndexState().getSequenceNumber() < maxSequenceNumber
-        ? nextIndex.getCollectionGroup()
-        : null;
+    return nextIndex != null ? nextIndex.getCollectionGroup() : null;
   }
 
   @Override
@@ -216,12 +214,6 @@ final class SQLiteIndexManager implements IndexManager {
         writeEntries(document, fieldIndex);
       }
     }
-  }
-
-  @Override
-  public long getHighestSequenceNumber() {
-    hardAssert(started, "IndexManager not started");
-    return memoizedMaxSequenceNumber;
   }
 
   @Override
@@ -609,23 +601,23 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(
-      String collectionGroup, long sequenceNumber, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
     hardAssert(started, "IndexManager not started");
 
+    ++memoizedMaxSequenceNumber;
     for (FieldIndex fieldIndex : getFieldIndexes(collectionGroup)) {
       FieldIndex updatedIndex =
           FieldIndex.create(
               fieldIndex.getIndexId(),
               fieldIndex.getCollectionGroup(),
               fieldIndex.getSegments(),
-              FieldIndex.IndexState.create(sequenceNumber, readTime));
+              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, readTime));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
               + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
           collectionGroup,
           user.getUid(),
-          sequenceNumber,
+          memoizedMaxSequenceNumber,
           readTime.getTimestamp().getSeconds(),
           readTime.getTimestamp().getNanoseconds());
       memoizeIndex(updatedIndex);

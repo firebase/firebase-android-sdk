@@ -189,7 +189,7 @@ public class IndexBackfillerTest {
     addDoc("coll1/docB", "foo", version(20));
     addDoc("coll2/docA", "foo", version(30));
 
-    String collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
     IndexBackfiller.Results results = backfiller.backfill();
@@ -197,7 +197,7 @@ public class IndexBackfillerTest {
 
     // Check that index entries are written in order of the collection group update times by
     // verifying the collection group update times have been updated in the correct order.
-    collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
   }
 
@@ -216,7 +216,7 @@ public class IndexBackfillerTest {
     addDoc("coll3/doc", "foo", version(30));
 
     // Check that coll3 is the next collection ID the backfiller should update
-    assertEquals("coll3", indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE));
+    assertEquals("coll3", indexManager.getNextCollectionGroupToUpdate());
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(1, results.getDocumentsProcessed());

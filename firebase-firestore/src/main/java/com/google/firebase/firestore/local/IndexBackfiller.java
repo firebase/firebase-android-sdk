@@ -29,8 +29,10 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -48,7 +50,6 @@ public class IndexBackfiller {
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
-  private long currentSequenceNumber = -1;
 
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
@@ -134,7 +135,6 @@ public class IndexBackfiller {
     return persistence.runTransaction(
         "Backfill Indexes",
         () -> {
-          currentSequenceNumber = indexManager.getHighestSequenceNumber() + 1;
           int documentsProcessed = writeIndexEntries(localDocumentsView);
           return new Results(/* hasRun= */ true, documentsProcessed);
         });
@@ -142,19 +142,18 @@ public class IndexBackfiller {
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
-    int documentsProcessed = 0;
-
-    while (documentsProcessed < maxDocumentsToProcess) {
-      int documentsRemaining = maxDocumentsToProcess - documentsProcessed;
-      String collectionGroup = indexManager.getNextCollectionGroupToUpdate(currentSequenceNumber);
-      if (collectionGroup == null) {
+    Set<String> processedCollectionGroups = new HashSet<>();
+    int documentsRemaining = maxDocumentsToProcess;
+    while (documentsRemaining > 0) {
+      String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
+      if (collectionGroup == null || processedCollectionGroups.contains(collectionGroup)) {
         break;
       }
-      documentsProcessed +=
+      documentsRemaining -=
           writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
+      processedCollectionGroups.add(collectionGroup);
     }
-
-    return documentsProcessed;
+    return maxDocumentsToProcess - documentsRemaining;
   }
 
   /** Writes entries for the fetched field indexes. */
@@ -175,7 +174,7 @@ public class IndexBackfiller {
     indexManager.updateIndexEntries(oldestDocuments);
 
     SnapshotVersion latestReadTime = getPostUpdateReadTime(oldestDocuments, earliestReadTime);
-    indexManager.updateCollectionGroup(collectionGroup, currentSequenceNumber, latestReadTime);
+    indexManager.updateCollectionGroup(collectionGroup, latestReadTime);
     return oldestDocuments.size();
   }
 

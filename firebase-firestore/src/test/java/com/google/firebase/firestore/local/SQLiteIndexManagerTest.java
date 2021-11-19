@@ -564,34 +564,20 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testCollectionGroupSequenceNumbersCanBeUpdated() {
+  public void testNextCollectionGroupAdvancesWhenCollectionIsUpdated() {
     indexManager.addFieldIndex(fieldIndex("coll1"));
     indexManager.addFieldIndex(fieldIndex("coll2"));
 
-    indexManager.updateCollectionGroup("coll1", 3, version(0));
-    indexManager.updateCollectionGroup("coll2", 5, version(0));
-    String collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
-    indexManager.updateCollectionGroup("coll2", 4, version(0));
-    collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
-    assertEquals("coll1", collectionGroup);
-
-    indexManager.updateCollectionGroup("coll2", 2, version(0));
-    collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    indexManager.updateCollectionGroup("coll1", version(0));
+    collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
-  }
 
-  @Test
-  public void testGetNextCollectionGroupIgnoresCurrentSequenceNumber() {
-    indexManager.addFieldIndex(fieldIndex("coll1"));
-
-    indexManager.updateCollectionGroup("coll1", 1, version(1));
-    String collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    indexManager.updateCollectionGroup("coll2", version(0));
+    collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
-
-    collectionGroup = indexManager.getNextCollectionGroupToUpdate(1);
-    assertNull(collectionGroup);
   }
 
   @Test
@@ -623,11 +609,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         fieldIndex("coll1", 1, IndexState.create(1, version(30)), "value", Kind.ASCENDING));
     sqLiteIndexManager.addFieldIndex(
         fieldIndex("coll2", 2, IndexState.create(2, version(0)), "value", Kind.CONTAINS));
-    String collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
     indexManager.deleteFieldIndex(indexManager.getFieldIndexes("coll1").iterator().next());
-    collectionGroup = indexManager.getNextCollectionGroupToUpdate(Long.MAX_VALUE);
+    collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
   }
 
