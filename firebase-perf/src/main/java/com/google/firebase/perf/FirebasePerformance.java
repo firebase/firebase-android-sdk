@@ -19,8 +19,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -87,8 +85,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   /** Maximum allowed length of the name of the {@link Trace} */
   @SuppressWarnings("unused") // Used in Javadoc.
   public static final int MAX_TRACE_NAME_LENGTH = Constants.MAX_TRACE_ID_LENGTH;
-
-  private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
   private final Map<String, String> mCustomAttributes = new ConcurrentHashMap<>();
 
