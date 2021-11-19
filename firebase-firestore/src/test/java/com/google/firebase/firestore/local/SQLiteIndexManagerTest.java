@@ -29,7 +29,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -661,9 +660,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void markCollectionGroupIndexedSetsCollectionToNextMax() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll1").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex("coll1", 1, version(10), "value", FieldIndex.Segment.Kind.ASCENDING));
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll2").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex("coll2", 2, version(10), "value", FieldIndex.Segment.Kind.ASCENDING));
 
     // Set `coll1` to max value.
     sqLiteIndexManager.markCollectionGroupIndexed("coll1");

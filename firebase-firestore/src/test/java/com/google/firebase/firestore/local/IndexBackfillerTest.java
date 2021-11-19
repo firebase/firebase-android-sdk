@@ -186,8 +186,6 @@ public class IndexBackfillerTest {
   }
 
   @Test
-  @Ignore("Flaky")
-  // TODO(indexing): This test is flaky. Fix.
   public void testBackfillUpdatesCollectionGroups() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");

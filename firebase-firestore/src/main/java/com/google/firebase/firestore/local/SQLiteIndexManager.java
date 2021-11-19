@@ -22,6 +22,7 @@ import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
