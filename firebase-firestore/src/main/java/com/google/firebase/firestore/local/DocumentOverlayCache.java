@@ -50,7 +50,7 @@ public interface DocumentOverlayCache {
    * Returns all saved overlays for the given collection.
    *
    * @param collection The collection path to get the overlays for.
-   * @param sinceBatchId The minimum batch ID to return (exclusive). Only overlays that contain a
+   * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
    *     change past `sinceBatchId` are returned.
    */
   Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId);
