@@ -32,16 +32,17 @@ import java.util.List;
  * group-scoped indices. Every index can be used for both single collection and collection group
  * queries.
  */
-public final class FieldIndex {
+@AutoValue
+public abstract class FieldIndex {
 
   /** Compares indexes by collection group and segments. Ignores update time and index ID. */
   public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
       (left, right) -> {
-        int cmp = left.collectionGroup.compareTo(right.collectionGroup);
+        int cmp = left.getCollectionGroup().compareTo(right.getCollectionGroup());
         if (cmp != 0) return cmp;
 
-        Iterator<Segment> leftIt = left.segments.iterator();
-        Iterator<Segment> rightIt = right.segments.iterator();
+        Iterator<Segment> leftIt = left.getSegments().iterator();
+        Iterator<Segment> rightIt = right.getSegments().iterator();
         while (leftIt.hasNext() && rightIt.hasNext()) {
           cmp = leftIt.next().compareTo(rightIt.next());
           if (cmp != 0) return cmp;
@@ -62,16 +63,15 @@ public final class FieldIndex {
       CONTAINS
     }
 
+    public static Segment create(FieldPath fieldPath, Kind kind) {
+      return new AutoValue_FieldIndex_Segment(fieldPath, kind);
+    }
+
     /** The field path of the component. */
     public abstract FieldPath getFieldPath();
 
     /** The indexes sorting order. */
     public abstract Kind getKind();
-
-    @Override
-    public String toString() {
-      return String.format("Segment{fieldPath=%s, kind=%s}", getFieldPath(), getKind());
-    }
 
     @Override
     public int compareTo(Segment other) {
@@ -81,61 +81,30 @@ public final class FieldIndex {
     }
   }
 
-  private final String collectionGroup;
-  private final int indexId;
-  private final List<Segment> segments;
-  private final SnapshotVersion updateTime;
-
-  public FieldIndex(String collectionGroup, int indexId) {
-    this.collectionGroup = collectionGroup;
-    this.segments = new ArrayList<>();
-    this.indexId = indexId;
-    this.updateTime = SnapshotVersion.NONE;
-  }
-
-  public FieldIndex(String collectionId) {
-    this(collectionId, -1);
-  }
-
-  FieldIndex(
-      String collectionGroup, int indexId, List<Segment> segments, SnapshotVersion updateTime) {
-    this.collectionGroup = collectionGroup;
-    this.segments = segments;
-    this.indexId = indexId;
-    this.updateTime = updateTime;
-  }
-
-  /** The collection ID this index applies to. */
-  public String getCollectionGroup() {
-    return collectionGroup;
+  public static FieldIndex create(
+      int indexId, String collectionGroup, List<Segment> segments, SnapshotVersion updateTime) {
+    return new AutoValue_FieldIndex(indexId, collectionGroup, segments, updateTime);
   }
 
   /**
    * The index ID. Returns -1 if the index ID is not available (e.g. the index has not yet been
    * persisted).
    */
-  public int getIndexId() {
-    return indexId;
-  }
+  public abstract int getIndexId();
 
-  public Segment getSegment(int index) {
-    return segments.get(index);
-  }
+  /** The collection ID this index applies to. */
+  public abstract String getCollectionGroup();
 
-  public int segmentCount() {
-    return segments.size();
-  }
+  /** Returns all field segments for this index. */
+  public abstract List<Segment> getSegments();
 
-  /**
-   * Returns the latest read time version that has been indexed by Firestore for this field index.
-   */
-  public SnapshotVersion getUpdateTime() {
-    return updateTime;
-  }
+  /** Returns when this index was last updated. */
+  public abstract SnapshotVersion getUpdateTime();
 
+  /** Returns all directional (ascending/descending) segments for this index. */
   public List<Segment> getDirectionalSegments() {
     List<Segment> filteredSegments = new ArrayList<>();
-    for (Segment segment : segments) {
+    for (Segment segment : getSegments()) {
       if (!segment.getKind().equals(Segment.Kind.CONTAINS)) {
         filteredSegments.add(segment);
       }
@@ -143,59 +112,14 @@ public final class FieldIndex {
     return filteredSegments;
   }
 
+  /** Returns the ArrayContains/ArrayContainsAny segment for this index. */
   public @Nullable Segment getArraySegment() {
-    for (Segment segment : segments) {
+    for (Segment segment : getSegments()) {
       if (segment.getKind().equals(Segment.Kind.CONTAINS)) {
         // Firestore queries can only have a single ArrayContains/ArrayContainsAny statements.
         return segment;
       }
     }
     return null;
-  }
-
-  /** Returns a new field index with additional index segment. */
-  public FieldIndex withAddedField(FieldPath fieldPath, Segment.Kind kind) {
-    List<Segment> newSegments = new ArrayList<>(segments);
-    newSegments.add(new AutoValue_FieldIndex_Segment(fieldPath, kind));
-    return new FieldIndex(collectionGroup, indexId, newSegments, updateTime);
-  }
-
-  /** Returns a new field index with the updated version. */
-  public FieldIndex withUpdateTime(SnapshotVersion updateTime) {
-    return new FieldIndex(collectionGroup, indexId, segments, updateTime);
-  }
-
-  /** Returns a new field index with the provided index id. */
-  public FieldIndex withIndexId(int indexId) {
-    return new FieldIndex(collectionGroup, indexId, segments, updateTime);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    FieldIndex fieldIndex = (FieldIndex) o;
-
-    if (indexId != fieldIndex.indexId) return false;
-    if (!segments.equals(fieldIndex.segments)) return false;
-    if (!updateTime.equals(fieldIndex.updateTime)) return false;
-    return collectionGroup.equals(fieldIndex.collectionGroup);
-  }
-
-  @Override
-  public int hashCode() {
-    int result = collectionGroup.hashCode();
-    result = 31 * result + indexId;
-    result = 31 * result + segments.hashCode();
-    result = 31 * result + updateTime.hashCode();
-    return result;
-  }
-
-  @Override
-  public String toString() {
-    return String.format(
-        "FieldIndex{indexId=%s, collectionGroup='%s', segments=%s, updateTime=%s}",
-        indexId, collectionGroup, segments, updateTime);
   }
 }

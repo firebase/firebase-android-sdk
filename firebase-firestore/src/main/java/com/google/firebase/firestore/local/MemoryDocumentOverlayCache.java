@@ -28,16 +28,16 @@ import java.util.TreeMap;
 public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   // A map sorted by DocumentKey, whose value is a pair of the largest batch id for the overlay
   // and the overlay itself.
-  private TreeMap<DocumentKey, Pair<Integer, Mutation>> overlays = new TreeMap<>();
-  Map<Integer, Set<DocumentKey>> overlayByBatchId = new HashMap<>();
+  private final TreeMap<DocumentKey, Pair<Integer, Mutation>> overlays = new TreeMap<>();
+  private final Map<Integer, Set<DocumentKey>> overlayByBatchId = new HashMap<>();
 
   @Nullable
   @Override
   public Mutation getOverlay(DocumentKey key) {
-    if (overlays.get(key) != null) {
-      return overlays.get(key).second;
+    Pair<Integer, Mutation> overlay = overlays.get(key);
+    if (overlay != null) {
+      return overlay.second;
     }
-
     return null;
   }
 
@@ -80,7 +80,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection) {
+  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId) {
     Map<DocumentKey, Mutation> result = new HashMap<>();
 
     int immediateChildrenPathLength = collection.length() + 1;
@@ -96,7 +96,11 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
       if (key.getPath().length() != immediateChildrenPathLength) {
         continue;
       }
-      result.put(entry.getKey(), entry.getValue().second);
+
+      Pair<Integer, Mutation> batchIdToOverlay = entry.getValue();
+      if (batchIdToOverlay.first > sinceBatchId) {
+        result.put(entry.getKey(), batchIdToOverlay.second);
+      }
     }
 
     return result;

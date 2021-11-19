@@ -15,10 +15,9 @@
 package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.model.FieldIndex.SEMANTIC_COMPARATOR;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,131 +29,61 @@ import org.robolectric.annotation.Config;
 public class FieldIndexTest {
 
   @Test
-  public void equalsIncludesCollectionGroup() {
-    FieldIndex indexOriginal = new FieldIndex("collA");
-    FieldIndex indexSame = new FieldIndex("collA");
-    FieldIndex indexDifferent = new FieldIndex("collB");
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
-  public void equalsIncludesIndexId() {
-    FieldIndex indexOriginal = new FieldIndex("collA").withIndexId(1);
-    FieldIndex indexSame = new FieldIndex("collA").withIndexId(1);
-    FieldIndex indexDifferent = new FieldIndex("collA").withIndexId(2);
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
-  public void equalsIncludesUpdateTime() {
-    FieldIndex indexOriginal = new FieldIndex("collA").withUpdateTime(version(1));
-    FieldIndex indexSame = new FieldIndex("collA").withUpdateTime(version(1));
-    FieldIndex indexDifferent = new FieldIndex("collA").withUpdateTime(version(2));
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
-  public void equalsIncludesFieldName() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexDifferent =
-        new FieldIndex("collA").withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
-  public void equalsIncludesSegmentKind() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexDifferent =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING);
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
-  public void equalsIncludesFieldLength() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexDifferent =
-        new FieldIndex("collA")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
-    assertEquals(indexOriginal, indexSame);
-    assertNotEquals(indexOriginal, indexDifferent);
-  }
-
-  @Test
   public void comparatorIncludesCollectionGroup() {
-    FieldIndex indexOriginal = new FieldIndex("collA");
-    FieldIndex indexSame = new FieldIndex("collA");
-    FieldIndex indexDifferent = new FieldIndex("collB");
+    FieldIndex indexOriginal = fieldIndex("collA");
+    FieldIndex indexSame = fieldIndex("collA");
+    FieldIndex indexDifferent = fieldIndex("collB");
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
   public void comparatorIgnoresIndexId() {
-    FieldIndex indexOriginal = new FieldIndex("collA").withIndexId(1);
-    FieldIndex indexSame = new FieldIndex("collA").withIndexId(1);
-    FieldIndex indexDifferent = new FieldIndex("collA").withIndexId(2);
+    FieldIndex indexOriginal = fieldIndex("collA", 1, SnapshotVersion.NONE);
+    FieldIndex indexSame = fieldIndex("collA", 1, SnapshotVersion.NONE);
+    FieldIndex indexDifferent = fieldIndex("collA", 2, SnapshotVersion.NONE);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
   public void comparatorIgnoreUpdateTime() {
-    FieldIndex indexOriginal = new FieldIndex("collA").withUpdateTime(version(1));
-    FieldIndex indexSame = new FieldIndex("collA").withUpdateTime(version(1));
-    FieldIndex indexDifferent = new FieldIndex("collA").withUpdateTime(version(2));
+    FieldIndex indexOriginal = fieldIndex("collA", 1, version(1));
+    FieldIndex indexSame = fieldIndex("collA", 1, version(1));
+    FieldIndex indexDifferent = fieldIndex("collA", 1, version(2));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
   public void comparatorIncludesFieldName() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexDifferent =
-        new FieldIndex("collA").withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexOriginal = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexSame = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexDifferent = fieldIndex("collA", "b", FieldIndex.Segment.Kind.ASCENDING);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
   public void comparatorIncludesSegmentKind() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexDifferent =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING);
+    FieldIndex indexOriginal = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexSame = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexDifferent = fieldIndex("collA", "a", FieldIndex.Segment.Kind.DESCENDING);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
-  public void comparatorIncludesSegmentLength() {
-    FieldIndex indexOriginal =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexSame =
-        new FieldIndex("collA").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING);
+  public void comparatorIncludesSegmentsLength() {
+    FieldIndex indexOriginal = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
+    FieldIndex indexSame = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexDifferent =
-        new FieldIndex("collA")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING);
+        fieldIndex(
+            "collA",
+            "a",
+            FieldIndex.Segment.Kind.ASCENDING,
+            "b",
+            FieldIndex.Segment.Kind.ASCENDING);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }

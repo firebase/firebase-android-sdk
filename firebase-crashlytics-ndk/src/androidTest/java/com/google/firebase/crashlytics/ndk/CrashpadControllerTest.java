@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
@@ -30,7 +31,7 @@ public class CrashpadControllerTest extends TestCase {
 
   private Context context;
   private NativeApi mockNativeApi;
-  private CrashFilesManager mockFilesManager;
+  private FileStore mockFileStore;
 
   private File testFilesDirectory;
 
@@ -39,8 +40,8 @@ public class CrashpadControllerTest extends TestCase {
     super.setUp();
     context = ApplicationProvider.getApplicationContext();
     mockNativeApi = mock(NativeApi.class);
-    mockFilesManager = mock(CrashFilesManager.class);
-    controller = new CrashpadController(context, mockNativeApi, mockFilesManager);
+    mockFileStore = mock(FileStore.class);
+    controller = new CrashpadController(context, mockNativeApi, mockFileStore);
   }
 
   @Override
@@ -74,14 +75,13 @@ public class CrashpadControllerTest extends TestCase {
     assertTrue(pendingDirectory.mkdir());
     assertTrue(new File(pendingDirectory, "crash.dmp").createNewFile());
     final String sessionId = "test";
-    when(mockFilesManager.hasSessionFileDirectory(sessionId)).thenReturn(true);
-    when(mockFilesManager.getSessionFileDirectory(sessionId)).thenReturn(testFilesDirectory);
+    when(mockFileStore.getNativeSessionDir(sessionId)).thenReturn(testFilesDirectory);
     assertTrue(controller.hasCrashDataForSession("test"));
   }
 
   public void testHasCrashDataForSession_noCrashDataReturnsFalse() {
     final String sessionId = "test";
-    when(mockFilesManager.hasSessionFileDirectory(sessionId)).thenReturn(false);
+    when(mockFileStore.getNativeSessionDir(sessionId)).thenReturn(testFilesDirectory);
     assertFalse(controller.hasCrashDataForSession("test"));
   }
 }

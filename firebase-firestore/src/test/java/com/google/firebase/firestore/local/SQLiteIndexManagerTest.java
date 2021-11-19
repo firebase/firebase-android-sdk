@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -70,16 +70,14 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   private void setUpSingleValueFilter() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("count"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "count", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/val1", map("count", 1));
     addDoc("coll/val2", map("count", 2));
     addDoc("coll/val3", map("count", 3));
   }
 
   private void setUpArrayValueFilter() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("values"), FieldIndex.Segment.Kind.CONTAINS));
+    indexManager.addFieldIndex(fieldIndex("coll", "values", FieldIndex.Segment.Kind.CONTAINS));
     addDoc("coll/arr1", map("values", Arrays.asList(1, 2, 3)));
     addDoc("coll/arr2", map("values", Arrays.asList(4, 5, 6)));
     addDoc("coll/arr3", map("values", Arrays.asList(7, 8, 9)));
@@ -95,8 +93,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void addsDocuments() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("exists"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "exists", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/doc1", map("exists", 1));
     addDoc("coll/doc2", map());
   }
@@ -110,8 +107,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testNestedFieldEqualityFilter() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("a.b"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a.b", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/doc1", map("a", map("b", 1)));
     addDoc("coll/doc2", map("a", map("b", 2)));
     Query query = query("coll").filter(filter("a.b", "==", 2));
@@ -257,8 +253,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testEqualityFilterWithNonMatchingType() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/boolean", map("value", true));
     addDoc("coll/string", map("value", "true"));
     addDoc("coll/number", map("value", 1));
@@ -268,8 +263,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testCollectionGroup() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll1").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll1", "value", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll1/doc1", map("value", true));
     addDoc("coll2/doc2/coll1/doc1", map("value", true));
     addDoc("coll2/doc2", map("value", true));
@@ -279,8 +273,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testLimitFilter() {
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/doc1", map("value", 1));
     addDoc("coll/doc2", map("value", 1));
     addDoc("coll/doc3", map("value", 1));
@@ -291,9 +284,12 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testLimitAppliesOrdering() {
     indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "value",
+            FieldIndex.Segment.Kind.CONTAINS,
+            "value",
+            FieldIndex.Segment.Kind.ASCENDING));
     addDoc("coll/doc1", map("value", Arrays.asList(1, "foo")));
     addDoc("coll/doc2", map("value", Arrays.asList(3, "foo")));
     addDoc("coll/doc3", map("value", Arrays.asList(2, "foo")));
@@ -309,7 +305,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testIndexEntriesAreUpdated() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
     Query query = query("coll").orderBy(orderBy("value"));
 
     addDoc("coll/doc1", map("value", true));
@@ -323,55 +319,60 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testAdvancedQueries() {
     // This test compares local query results with those received from the Java Server SDK.
 
+    indexManager.addFieldIndex(fieldIndex("coll", "null", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "int", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "float", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "string", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "multi", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "array", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "array", FieldIndex.Segment.Kind.DESCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "array", FieldIndex.Segment.Kind.CONTAINS));
+    indexManager.addFieldIndex(fieldIndex("coll", "map", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "map.field", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "prefix", FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("null"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "prefix",
+            FieldIndex.Segment.Kind.ASCENDING,
+            "suffix",
+            FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("int"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "a",
+            FieldIndex.Segment.Kind.ASCENDING,
+            "b",
+            FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("float"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "a",
+            FieldIndex.Segment.Kind.DESCENDING,
+            "b",
+            FieldIndex.Segment.Kind.ASCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("string"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "a",
+            FieldIndex.Segment.Kind.ASCENDING,
+            "b",
+            FieldIndex.Segment.Kind.DESCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("multi"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "a",
+            FieldIndex.Segment.Kind.DESCENDING,
+            "b",
+            FieldIndex.Segment.Kind.DESCENDING));
     indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.DESCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("array"), FieldIndex.Segment.Kind.CONTAINS));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("map"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("map.field"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("prefix"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("suffix"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll").withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.DESCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.DESCENDING)
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.DESCENDING));
-    indexManager.addFieldIndex(
-        new FieldIndex("coll")
-            .withAddedField(field("b"), FieldIndex.Segment.Kind.ASCENDING)
-            .withAddedField(field("a"), FieldIndex.Segment.Kind.ASCENDING));
+        fieldIndex(
+            "coll",
+            "b",
+            FieldIndex.Segment.Kind.ASCENDING,
+            "a",
+            FieldIndex.Segment.Kind.ASCENDING));
 
     List<Map<String, Object>> data =
         new ArrayList<Map<String, Object>>() {
@@ -611,14 +612,12 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testUpdateTime() {
     indexManager.addFieldIndex(
-        new FieldIndex("coll1")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
-            .withUpdateTime(new SnapshotVersion(new Timestamp(10, 20))));
+        fieldIndex("coll1", -1, version(20), "value", FieldIndex.Segment.Kind.ASCENDING));
 
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.iterator().next();
-    assertEquals(index.getUpdateTime(), new SnapshotVersion(new Timestamp(10, 20)));
+    assertEquals(index.getUpdateTime(), version(20));
   }
 
   @Test
@@ -642,22 +641,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testGetFieldIndexes() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll1")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
-            .withUpdateTime(version(30, 0)));
+        fieldIndex("coll1", 1, version(30), "value", FieldIndex.Segment.Kind.ASCENDING));
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll2")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
-            .withUpdateTime(SnapshotVersion.NONE));
+        fieldIndex("coll2", 2, SnapshotVersion.NONE, "value", FieldIndex.Segment.Kind.CONTAINS));
 
     Collection<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     Iterator<FieldIndex> it = indexes.iterator();
     assertEquals(it.next().getCollectionGroup(), "coll1");
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll1")
-            .withAddedField(field("newValue"), FieldIndex.Segment.Kind.CONTAINS)
-            .withUpdateTime(version(20, 0)));
+        fieldIndex("coll1", 3, version(20), "newValue", FieldIndex.Segment.Kind.CONTAINS));
 
     indexes = sqLiteIndexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 2);
@@ -670,13 +663,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testAddFieldIndexWritesToCollectionGroup() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll1")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING)
-            .withUpdateTime(version(30, 0)));
+        fieldIndex("coll1", 1, version(30), "value", FieldIndex.Segment.Kind.ASCENDING));
     sqLiteIndexManager.addFieldIndex(
-        new FieldIndex("coll2")
-            .withAddedField(field("value"), FieldIndex.Segment.Kind.CONTAINS)
-            .withUpdateTime(SnapshotVersion.NONE));
+        fieldIndex("coll2", 2, SnapshotVersion.NONE, "value", FieldIndex.Segment.Kind.CONTAINS));
     List<String> collectionGroups =
         getCollectionGroupsOrderByUpdateTime((SQLitePersistence) getPersistence());
     assertEquals(2, collectionGroups.size());

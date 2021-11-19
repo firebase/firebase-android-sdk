@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -71,6 +72,7 @@ public class FirebaseCrashlytics {
                 + " for "
                 + appIdentifier);
 
+    FileStore fileStore = new FileStore(context);
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
     final IdManager idManager =
         new IdManager(context, appIdentifier, firebaseInstallationsApi, arbiter);
@@ -92,6 +94,7 @@ public class FirebaseCrashlytics {
             arbiter,
             analyticsDeferredProxy.getDeferredBreadcrumbSource(),
             analyticsDeferredProxy.getAnalyticsEventLogger(),
+            fileStore,
             crashHandlerExecutor);
 
     final String googleAppId = app.getOptions().getApplicationId();
@@ -125,6 +128,7 @@ public class FirebaseCrashlytics {
             new HttpRequestFactory(),
             appData.versionCode,
             appData.versionName,
+            fileStore,
             arbiter);
 
     // Kick off actually fetching the settings.

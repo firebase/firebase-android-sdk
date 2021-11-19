@@ -54,7 +54,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -370,7 +369,6 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   @Config(sdk = VERSION_CODES.Q)
-  @Ignore
   public void isProxyNotificationEnabledDefaultsToTrueForNewerDevices() {
     FirebaseMessaging messaging =
         new FirebaseMessaging(
@@ -388,8 +386,7 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(maxSdk = VERSION_CODES.P)
-  @Ignore
+  @Config(sdk = VERSION_CODES.O)
   public void isProxyNotificationEnabledDefaultsToFalseForOlderDevices() {
     FirebaseMessaging messaging =
         new FirebaseMessaging(
@@ -407,16 +404,14 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(maxSdk = VERSION_CODES.P)
-  @Ignore
+  @Config(sdk = VERSION_CODES.O)
   public void setEnableProxyNotificationFailsOnOlderDevices() throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(true));
     assertThat(FirebaseMessaging.getInstance().isNotificationDelegationEnabled()).isFalse();
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
-  @Ignore
+  @Config(sdk = VERSION_CODES.Q)
   public void setEnableProxyNotificationWorksOnNewerDevices() throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(false));
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(true));
@@ -424,14 +419,14 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
+  @Config(sdk = VERSION_CODES.Q)
   public void setDisableProxyNotificationWorksOnNewerDevices() throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(false));
     assertThat(FirebaseMessaging.getInstance().isNotificationDelegationEnabled()).isFalse();
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
+  @Config(sdk = VERSION_CODES.Q)
   public void proxyNotificationEnabledIsFalseWhenUserSetsAnotherNotificationDelegate()
       throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(true));
@@ -441,8 +436,7 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
-  @Ignore
+  @Config(sdk = VERSION_CODES.Q)
   public void proxyNotificationEnabledIsTrueWhenGMSCoreIsSetAsNotificationDelegate()
       throws Exception {
     Tasks.await(FirebaseMessaging.getInstance().setNotificationDelegationEnabled(false));
@@ -452,7 +446,7 @@ public final class FirebaseMessagingRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.Q)
+  @Config(sdk = VERSION_CODES.Q)
   public void proxyNotificationEnabledIsFalseWhenUidIsWrong() throws Exception {
     // Set the app's uid so that ProxyNotificationInitializer.allowedToUse() returns false.
     context.getApplicationInfo().uid = Binder.getCallingUid() + 1;
