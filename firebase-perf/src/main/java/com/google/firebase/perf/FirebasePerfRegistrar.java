@@ -14,6 +14,9 @@
 
 package com.google.firebase.perf;
 
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
@@ -24,10 +27,15 @@ import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.monitoring.Tracer;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
+import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.metrics.FirebasePerfInternalTracer;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.time.StartupTime;
@@ -56,10 +64,11 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(TransportFactory.class))
             .add(Dependency.required(StartupTime.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
-            .alwaysEager()
             .build(),
         Component.builder(ExtendedTracer.class, Tracer.class)
-            .factory(c -> new FirebasePerfInternalTracer())
+            .add(Dependency.required(Context.class))
+            .add(Dependency.required(StartupTime.class))
+            .factory(FirebasePerfRegistrar::providesFirebasePerfInternalTracer)
             .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
@@ -69,6 +78,34 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
          * https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading)*
          */
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
+  }
+
+  private static FirebasePerfInternalTracer providesFirebasePerfInternalTracer(
+      ComponentContainer container) {
+    Context appContext = container.get(Context.class);
+    StartupTime startupTime = container.get(StartupTime.class);
+
+    // Initialize ConfigResolver early for accessing device caching layer.
+    ConfigResolver.getInstance().setApplicationContext(appContext);
+
+    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
+    appStateMonitor.registerActivityLifecycleCallbacks(appContext);
+    appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
+
+    AppStartTrace appStartTrace =
+        new AppStartTrace(
+            new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
+    appStartTrace.registerActivityLifecycleCallbacks(appContext);
+
+    new Handler(Looper.getMainLooper())
+        .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+
+    // In the case of cold start, we create a session and start collecting gauges as early as
+    // possible.
+    // There is code in SessionManager that prevents us from resetting the session twice in case
+    // of app cold start.
+    SessionManager.getInstance().initializeGaugeCollection();
+    return new FirebasePerfInternalTracer();
   }
 
   private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {

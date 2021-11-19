@@ -30,12 +30,10 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
-import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
@@ -188,27 +186,10 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    Context appContext = firebaseApp.getApplicationContext();
-    // Initialize ConfigResolver early for accessing device caching layer.
-    configResolver.setApplicationContext(appContext);
-
-    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
-    appStateMonitor.registerActivityLifecycleCallbacks(appContext);
-
-    AppStartTrace appStartTrace = new AppStartTrace(appStartTime);
-    appStartTrace.registerActivityLifecycleCallbacks(appContext);
-
-    mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
-
-    // In the case of cold start, we create a session and start collecting gauges as early as
-    // possible.
-    // There is code in SessionManager that prevents us from resetting the session twice in case
-    // of app cold start.
-    sessionManager.initializeGaugeCollection();
-
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
+    Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
 
@@ -221,7 +202,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
-      logger.info("**NO provider NEW fireperf");
       logger.info(
           String.format(
               "Firebase Performance Monitoring is successfully initialized! In a minute, visit the Firebase console to view your data: %s",
