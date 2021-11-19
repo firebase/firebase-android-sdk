@@ -376,7 +376,7 @@ final class SQLiteIndexManager implements IndexManager {
         "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?, ?)",
         indexId,
-        document.hasLocalMutations() ? user.getUid() : null,
+        user.getUid(),
         arrayValue,
         directionalValue,
         document.getKey().toString());
@@ -450,7 +450,7 @@ final class SQLiteIndexManager implements IndexManager {
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
     statement.append("SELECT document_name, directional_value FROM index_entries ");
-    statement.append("WHERE index_id = ?  AND (uid IS NULL or uid = ?) ");
+    statement.append("WHERE index_id = ? AND uid = ? ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
