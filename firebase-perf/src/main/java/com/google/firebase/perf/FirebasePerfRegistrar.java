@@ -18,6 +18,7 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Keep;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
@@ -80,7 +81,8 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
   }
 
-  private static FirebasePerfInternalTracer providesFirebasePerfInternalTracer(
+  @VisibleForTesting
+  static FirebasePerfInternalTracer providesFirebasePerfInternalTracer(
       ComponentContainer container) {
     Context appContext = container.get(Context.class);
     StartupTime startupTime = container.get(StartupTime.class);

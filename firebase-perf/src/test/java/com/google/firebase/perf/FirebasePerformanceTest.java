@@ -18,9 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
@@ -110,7 +108,6 @@ public class FirebasePerformanceTest {
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
-    spySessionManager.setPerfSession(com.google.firebase.perf.session.PerfSession.create());
   }
 
   @Test
@@ -507,27 +504,6 @@ public class FirebasePerformanceTest {
             /* sharedPreferencesEnabledDisabledKey= */ null);
 
     verify(spySessionManager).setApplicationContext(nullable(Context.class));
-  }
-
-  @Test
-  public void initFirebasePerformance_initializesGaugeCollection() {
-    com.google.firebase.perf.session.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.session.PerfSession.class);
-    when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
-
-    spySessionManager.setPerfSession(mockPerfSession);
-    String oldSessionId = spySessionManager.perfSession().sessionId();
-    Assert.assertEquals(oldSessionId, spySessionManager.perfSession().sessionId());
-
-    FirebasePerformance unusedPerformance =
-        initializeFirebasePerformancePreferences(
-            /* metadataFireperfForceDeactivatedKey= */ null,
-            /* metadataFireperfEnabledKey= */ null,
-            /* sharedPreferencesEnabledDisabledKey= */ null);
-
-    Assert.assertEquals(oldSessionId, spySessionManager.perfSession().sessionId());
-    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
   }
 
   private static SharedPreferences getSharedPreferences() {

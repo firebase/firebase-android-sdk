@@ -15,20 +15,50 @@
 package com.google.firebase.perf;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
+import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
+import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.time.Instant;
+import com.google.firebase.time.StartupTime;
 import java.util.List;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebasePerfRegistrarTest {
+
+  @Mock private ComponentContainer container;
+
+  @Before
+  public void setUp() {
+    initMocks(this);
+  }
+
+  @After
+  public void tearDownFirebaseApp() {
+    FirebaseApp.clearInstancesForTest();
+    SessionManager.getInstance()
+        .setPerfSession(com.google.firebase.perf.session.PerfSession.create());
+  }
 
   @Test
   public void testGetComponents() {
@@ -49,5 +79,26 @@ public class FirebasePerfRegistrarTest {
             Dependency.requiredProvider(TransportFactory.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
+  }
+
+  @Test
+  public void tracerComponentFactory_initializesGaugeCollection() {
+    com.google.firebase.perf.session.PerfSession mockPerfSession =
+        mock(com.google.firebase.perf.session.PerfSession.class);
+    when(mockPerfSession.sessionId()).thenReturn("sessionId");
+    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+    when(container.get(ArgumentMatchers.eq(Context.class)))
+        .thenReturn(ApplicationProvider.getApplicationContext());
+    when(container.get(ArgumentMatchers.eq(StartupTime.class)))
+        .thenReturn(new StartupTime(Instant.NEVER));
+
+    SessionManager.getInstance().setPerfSession(mockPerfSession);
+    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
+    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
+
+    FirebasePerfRegistrar.providesFirebasePerfInternalTracer(container);
+
+    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
+    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
   }
 }
