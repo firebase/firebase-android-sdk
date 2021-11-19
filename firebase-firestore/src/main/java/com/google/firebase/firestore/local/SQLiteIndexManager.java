@@ -393,7 +393,7 @@ final class SQLiteIndexManager implements IndexManager {
                     IndexEntry.create(
                         fieldIndex.getIndexId(),
                         documentKey,
-                        row.isNull(0) ? null : row.getString(0),
+                        row.getString(0),
                         row.getBlob(1),
                         row.isNull(2) ? null : row.getBlob(2))));
     return results;
