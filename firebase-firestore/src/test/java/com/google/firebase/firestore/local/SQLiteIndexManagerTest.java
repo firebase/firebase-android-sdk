@@ -669,13 +669,27 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void getMaxCollectionSequenceNumberOnEmptyTable() {
+  public void markCollectionGroupIndexedSetsCollectionToNextMax() {
     SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll1").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+    sqLiteIndexManager.addFieldIndex(
+        new FieldIndex("coll2").withAddedField(field("value"), FieldIndex.Segment.Kind.ASCENDING));
+
+    // Set `coll1` to max value.
+    sqLiteIndexManager.markCollectionGroupIndexed("coll1");
+    sqLiteIndexManager.markCollectionGroupIndexed("coll1");
     List<String> collectionGroups =
         getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
-    assertEquals(0, collectionGroups.size());
-    int value = sqLiteIndexManager.getMaxCollectionGroupSequenceNumber();
-    assertEquals(0, value);
+    assertEquals("coll2", collectionGroups.get(0));
+    assertEquals("coll1", collectionGroups.get(1));
+
+    // Mark `coll2` as indexed and verify that it has a higher sequence number than `coll1`.
+    sqLiteIndexManager.markCollectionGroupIndexed("coll2");
+    collectionGroups =
+        getCollectionGroupsOrderBySequenceNumber((SQLitePersistence) getPersistence());
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
   }
 
   private void addDoc(String key, Map<String, Object> data) {

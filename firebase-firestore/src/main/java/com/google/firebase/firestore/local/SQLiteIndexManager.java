@@ -54,7 +54,7 @@ import java.util.Set;
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
   private static final String TAG = SQLiteIndexManager.class.getSimpleName();
-  private static final int NEW_COLLECTION_GROUP_SEQUENCE_NUMBER = 0;
+  private static final int NEW_COLLECTION_GROUP_SEQUENCE_NUMBER = -1;
 
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
@@ -184,17 +184,15 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public @Nullable String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber) {
+  public @Nullable String getNextCollectionGroupToUpdate() {
     hardAssert(started, "IndexManager not started");
 
     final String[] nextCollectionGroup = {null};
     db.query(
             "SELECT collection_group "
                 + "FROM collection_group_update_times "
-                + "WHERE sequence_number <= ?"
                 + "ORDER BY sequence_number "
                 + "LIMIT 1")
-        .binding(currentMaxSequenceNumber)
         .firstValue(
             row -> {
               nextCollectionGroup[0] = row.getString(0);
@@ -205,10 +203,13 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    // Store that this collection group will updated.
-    setCollectionGroup(nextCollectionGroup[0], getMaxCollectionGroupSequenceNumber() + 1);
-
     return nextCollectionGroup[0];
+  }
+
+  @Override
+  public void markCollectionGroupIndexed(String collectionGroup) {
+    int currentMaxSequenceNumber = getMaxCollectionGroupSequenceNumber();
+    setCollectionGroup(collectionGroup, currentMaxSequenceNumber + 1);
   }
 
   @Override
@@ -639,9 +640,9 @@ final class SQLiteIndexManager implements IndexManager {
         sequenceNumber);
   }
 
-  @Override
-  public int getMaxCollectionGroupSequenceNumber() {
-    final int[] finalValue = {0};
+  /** Returns the highest collection group sequence number in the table. */
+  private int getMaxCollectionGroupSequenceNumber() {
+    final int[] finalValue = {NEW_COLLECTION_GROUP_SEQUENCE_NUMBER};
     db.query("SELECT MAX(sequence_number) FROM collection_group_update_times")
         .first(value -> finalValue[0] = value.getInt(0));
     return finalValue[0];

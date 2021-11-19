@@ -139,19 +139,22 @@ public class IndexBackfiller {
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
     int documentsProcessed = 0;
-    int currentMaxSequenceNumber = indexManager.getMaxCollectionGroupSequenceNumber();
+
+    // Track the starting collection group to ensure that the backfill stops after looping through
+    // all collections a single time.
+    String startingCollectionGroup = indexManager.getNextCollectionGroupToUpdate();
 
     // TODO(indexing): Handle pausing and resuming from the correct document if backfilling hits the
     // max doc limit while processing docs for a certain read time.
-    while (documentsProcessed < maxDocumentsToProcess) {
+    String collectionGroup = startingCollectionGroup;
+    while (collectionGroup != null && documentsProcessed < maxDocumentsToProcess) {
       int documentsRemaining = maxDocumentsToProcess - documentsProcessed;
-      String collectionGroup =
-          indexManager.getNextCollectionGroupToUpdate(currentMaxSequenceNumber);
-      if (collectionGroup == null) {
-        break;
-      }
       documentsProcessed +=
           writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
+      collectionGroup = indexManager.getNextCollectionGroupToUpdate();
+      if (collectionGroup == null || collectionGroup.equals(startingCollectionGroup)) {
+        break;
+      }
     }
 
     return documentsProcessed;
@@ -173,6 +176,13 @@ public class IndexBackfiller {
 
     Queue<Document> oldestDocuments = getOldestDocuments(documents, documentsRemaining);
     indexManager.updateIndexEntries(oldestDocuments);
+
+    // Mark the collection group as fully indexed if all documents in the collection have been
+    // indexed during this backfill iteration.
+    if (documentsRemaining >= documents.size()) {
+      indexManager.markCollectionGroupIndexed(collectionGroup);
+    }
+
     return oldestDocuments.size();
   }
 

@@ -237,6 +237,10 @@ public class IndexBackfillerTest {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
     addCollectionGroup("coll1", 1);
+    List<String> collectionGroup = getCollectionGroupsOrderBySequenceNumber(persistence);
+    assertEquals(2, collectionGroup.size());
+    assertEquals("coll2", collectionGroup.get(0));
+    assertEquals("coll1", collectionGroup.get(1));
     addDoc("coll1/docA", "foo", version(10, 0));
     addDoc("coll1/docB", "foo", version(10, 0));
     addDoc("coll2/docA", "foo", version(10, 0));
@@ -246,12 +250,38 @@ public class IndexBackfillerTest {
     assertEquals(3, results.getDocumentsProcessed());
 
     // Check that collection groups are updated even if the backfiller hits the write cap. Since
-    // `coll1` was already in the table, `coll2` should be processed first, and thus appear first
-    // in the ordering.
+    // `coll1` was already in the table, `coll2` should be fully indexed first, and thus appear
+    // later in the collection groups table.
     List<String> collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
     assertEquals(2, collectionGroups.size());
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
+  }
+
+  @Test
+  public void testBackfillPrioritizesInProgressIndexes() {
+    backfiller.setMaxDocumentsToProcess(1);
+    addFieldIndex("coll1", "foo");
+    addFieldIndex("coll2", "foo");
+    addCollectionGroup("coll1", 1);
+    addDoc("coll1/docA", "foo", version(10, 0));
+    addDoc("coll1/docB", "foo", version(10, 0));
+    addDoc("coll2/docA", "foo", version(10, 0));
+    addDoc("coll2/docB", "foo", version(10, 0));
+
+    // The backfiller should prioritize `coll2` since `coll1` is already in the collections table.
+    // Since the backfill was not completed, `coll2` should still come first in the ordering.
+    backfiller.backfill();
+    List<String> collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
     assertEquals("coll2", collectionGroups.get(0));
     assertEquals("coll1", collectionGroups.get(1));
+
+    // The 2nd loop should complete the backfill for `coll2` and assign it to the next highest
+    // collection seq number.
+    backfiller.backfill();
+    collectionGroups = getCollectionGroupsOrderBySequenceNumber(persistence);
+    assertEquals("coll1", collectionGroups.get(0));
+    assertEquals("coll2", collectionGroups.get(1));
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName) {

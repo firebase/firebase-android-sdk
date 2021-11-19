@@ -81,14 +81,17 @@ public interface IndexManager {
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
   /**
-   * Returns the next collection group to update. Returns null after reaching the provided max
-   * sequence number.
+   * Returns the next collection group to update based on the collection with the lowest sequence
+   * number. Returns null if no collection groups are found.
    */
   @Nullable
-  String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber);
+  String getNextCollectionGroupToUpdate();
 
-  /** Returns the highest sequence number in the collection groups table. */
-  int getMaxCollectionGroupSequenceNumber();
+  /**
+   * Marks the collection group as indexed by updating the sequence counter to the next highest
+   * value.
+   */
+  void markCollectionGroupIndexed(String collectionGroup);
 
   /**
    * Updates the index entries for the provided documents and corresponding field indexes until the

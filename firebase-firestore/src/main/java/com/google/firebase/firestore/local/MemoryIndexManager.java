@@ -74,15 +74,14 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public String getNextCollectionGroupToUpdate(int currentMaxSequenceNumber) {
+  public String getNextCollectionGroupToUpdate() {
     // Field indices are not supported with memory persistence.
     return null;
   }
 
   @Override
-  public int getMaxCollectionGroupSequenceNumber() {
+  public void markCollectionGroupIndexed(String collectionGroup) {
     // Field indices are not supported with memory persistence.
-    return -1;
   }
 
   @Override
