@@ -19,6 +19,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentFactory;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRegistrarProcessor;
+import com.google.firebase.internal.ObfuscationUtils;
 import com.google.firebase.platforminfo.LibraryVersion;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import java.util.List;
  * </ol>
  */
 public class ComponentMonitoring implements ComponentRegistrarProcessor {
+  private static final String IS_OBFUSCATED = String.valueOf(ObfuscationUtils.isAppObfuscated());
   private final Tracer tracer;
 
   public ComponentMonitoring(Tracer tracer) {
@@ -112,6 +114,7 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
     return c -> {
       try (TraceHandle handle = tracer.startTrace(name)) {
         handle.addAttribute("version", version);
+        handle.addAttribute("optimized", isAppOptimized());
         return factory.create(c);
       }
     };
@@ -145,13 +148,7 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
     return result;
   }
 
-  static class NamedComponent {
-    final Component<?> component;
-    final String name;
-
-    NamedComponent(Component<?> component, String name) {
-      this.component = component;
-      this.name = name;
-    }
+  public static String isAppOptimized() {
+    return IS_OBFUSCATED;
   }
 }
