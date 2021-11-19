@@ -103,7 +103,6 @@ public class TransportManager implements AppStateCallback {
   private static final int MAX_TRACE_METRICS_CACHE_SIZE = 50;
   private static final int MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE = 50;
   private static final int MAX_GAUGE_METRICS_CACHE_SIZE = 50;
-  private final DecimalFormat durationFormatter = new DecimalFormat("#.####");
   private final Map<String, Integer> cacheMap;
   private final ConcurrentLinkedQueue<PendingPerfEvent> pendingEventsQueue =
       new ConcurrentLinkedQueue<>();
@@ -621,7 +620,7 @@ public class TransportManager implements AppStateCallback {
         Locale.ENGLISH,
         "trace metric: %s (duration: %sms)",
         traceMetric.getName(),
-        durationFormatter.format(durationInUs / 1000.0));
+        new DecimalFormat("#.####").format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
@@ -640,7 +639,7 @@ public class TransportManager implements AppStateCallback {
         "network request trace: %s (responseCode: %s, responseTime: %sms)",
         networkRequestMetric.getUrl(),
         responseCode,
-        durationFormatter.format(durationInUs / 1000.0));
+        new DecimalFormat("#.####").format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(GaugeMetric gaugeMetric) {
