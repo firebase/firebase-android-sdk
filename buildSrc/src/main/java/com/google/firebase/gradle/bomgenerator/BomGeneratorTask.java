@@ -21,10 +21,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.firebase.gradle.bomgenerator.model.Dependency;
 import com.google.firebase.gradle.bomgenerator.model.VersionBump;
+import com.google.firebase.gradle.bomgenerator.tagging.GitClient;
+import com.google.firebase.gradle.bomgenerator.tagging.ShellExecutor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,6 +40,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.eclipse.aether.resolution.VersionRangeResolutionException;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.TaskAction;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -178,10 +182,14 @@ public class BomGeneratorTask extends DefaultTask {
    * everything in gMaven. This is meant to be a post-release task so that the BoM contains the most
    * recent versions of all artifacts.
    *
+   * <p>This task also tags the release candidate commit with the BoM version, the new version of
+   * releasing products, and the M version of the current release.
+   *
    * <p>Version overrides may be given to this task in a map like so: versionOverrides =
    * ["com.google.firebase:firebase-firestore": "17.0.1"]
    */
   @TaskAction
+  // TODO(yifany): needs a more accurate name
   public void generateBom() throws Exception {
     // Repo Access Setup
     RepositoryClient depPopulator = new RepositoryClient();
@@ -242,6 +250,8 @@ public class BomGeneratorTask extends DefaultTask {
     xmlWriter.writeXmlDocument(outputXmlDoc);
     documentationWriter.writeDocumentation(outputDocumentation);
     recipeWriter.writeVersionUpdate(outputRecipe);
+
+    tagVersions(version, bomDependencies);
   }
 
   // Finds the version for the BoM artifact.
@@ -312,5 +322,24 @@ public class BomGeneratorTask extends DefaultTask {
     } catch (SAXException | IOException | ParserConfigurationException e) {
       throw new RuntimeException("Failed to get contents of BoM version " + bomVersion, e);
     }
+  }
+
+  private void tagVersions(String bomVersion, List<Dependency> firebaseDependencies) {
+    Logger logger = this.getProject().getLogger();
+    if (!System.getenv().containsKey("FIREBASE_CI")) {
+      logger.warn("Tagging versions is skipped for non-CI environments.");
+      return;
+    }
+
+    String mRelease = System.getenv("PULL_BASE_REF");
+    String rcCommit = System.getenv("PULL_BASE_SHA");
+    ShellExecutor executor = new ShellExecutor(Paths.get(".").toFile(), logger::lifecycle);
+    GitClient git = new GitClient(mRelease, rcCommit, executor, logger::lifecycle);
+    git.tagReleaseVersion();
+    git.tagBomVersion(bomVersion);
+    firebaseDependencies.stream()
+        .filter(d -> d.versionBump() != VersionBump.NONE)
+        .forEach(d -> git.tagProductVersion(d.artifactId(), d.version()));
+    git.pushCreatedTags();
   }
 }

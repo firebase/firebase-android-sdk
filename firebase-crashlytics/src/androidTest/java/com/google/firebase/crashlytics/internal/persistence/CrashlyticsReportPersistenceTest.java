@@ -18,7 +18,7 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import androidx.test.runner.AndroidJUnit4;
+import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
@@ -38,20 +38,15 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import java.util.SortedSet;
 import org.mockito.internal.util.collections.Sets;
 
-@RunWith(AndroidJUnit4.class)
-public class CrashlyticsReportPersistenceTest {
+public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   private static final int VERY_LARGE_UPPER_LIMIT = 9999;
 
   private CrashlyticsReportPersistence reportPersistence;
-  @Rule public TemporaryFolder folder = new TemporaryFolder();
+  private FileStore fileStore;
 
   private static SettingsDataProvider getSettingsMock(
       int maxCompleteSessionsCount, int maxCustomExceptionEvents) {
@@ -64,14 +59,14 @@ public class CrashlyticsReportPersistenceTest {
     return settingsDataProvider;
   }
 
-  @Before
+  @Override
   public void setUp() throws Exception {
+    fileStore = new FileStore(getContext());
     reportPersistence =
         new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT));
+            fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT));
   }
 
-  @Test
   public void testListSortedOpenSessionIds() {
     final String[] expectedIds = new String[] {"sessionId3", "sessionId2", "sessionId1"};
 
@@ -79,18 +74,16 @@ public class CrashlyticsReportPersistenceTest {
     reportPersistence.persistReport(makeTestReport(expectedIds[0]));
     reportPersistence.persistReport(makeTestReport(expectedIds[2]));
 
-    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+    final SortedSet<String> openSessionIds = reportPersistence.getOpenSessionIds();
 
     assertArrayEquals(expectedIds, openSessionIds.toArray());
   }
 
-  @Test
   public void testListSortedOpenSessionIds_noOpenSessions() {
-    final List<String> openSessionIds = reportPersistence.listSortedOpenSessionIds();
+    SortedSet<String> openSessionIds = reportPersistence.getOpenSessionIds();
     assertTrue(openSessionIds.isEmpty());
   }
 
-  @Test
   public void testPersistReports_getStartTimestampMillis() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -101,7 +94,6 @@ public class CrashlyticsReportPersistenceTest {
         reportPersistence.getStartTimestampMillis(sessionId));
   }
 
-  @Test
   public void testHasFinalizedReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -117,17 +109,14 @@ public class CrashlyticsReportPersistenceTest {
     assertTrue(reportPersistence.hasFinalizedReports());
   }
 
-  @Test
   public void testHasFinalizedReports_noReports() {
     assertFalse(reportPersistence.hasFinalizedReports());
   }
 
-  @Test
   public void testLoadFinalizeReports_noReports_returnsNothing() {
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }
 
-  @Test
   public void testLoadFinalizedReports_reportWithNoEvents_returnsNothing() {
     final String sessionId = "testSession";
     final long timestamp = System.currentTimeMillis();
@@ -136,7 +125,6 @@ public class CrashlyticsReportPersistenceTest {
     assertTrue(reportPersistence.loadFinalizedReports().isEmpty());
   }
 
-  @Test
   public void testLoadFinalizedReports_reportThenEvent_returnsReportWithEvent() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -160,7 +148,6 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport);
   }
 
-  @Test
   public void testLoadFinalizedReports_reportThenMultipleEvents_returnsReportWithMultipleEvents() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -186,7 +173,6 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport);
   }
 
-  @Test
   public void
       testLoadFinalizedReports_reportsWithEventsInMultipleSessions_returnsReportsWithProperEvents() {
     final String sessionId1 = "testSession1";
@@ -222,7 +208,6 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport2);
   }
 
-  @Test
   public void testFinalizeReports_capsOpenSessions() throws IOException {
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
@@ -237,7 +222,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(8, finalizedReports.size());
   }
 
-  @Test
   public void testFinalizeReports_capsOldestSessionsFirst() throws IOException {
     DecimalFormat format = new DecimalFormat("00");
     for (int i = 0; i < 16; i++) {
@@ -267,7 +251,6 @@ public class CrashlyticsReportPersistenceTest {
     }
   }
 
-  @Test
   public void testFinalizeReports_skipsCappingCurrentSession() throws IOException {
     for (int i = 0; i < 16; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
@@ -285,11 +268,9 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(9, finalizedReports.size());
   }
 
-  @Test
-  public void testFinalizeReports_capsReports() throws IOException {
+  public void testFinalizeReports_capsReports() {
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
@@ -301,7 +282,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(4, finalizedReports.size());
   }
 
-  @Test
   public void testFinalizeReports_whenSettingsChanges_capsReports() throws IOException {
     SettingsDataProvider settingsDataProvider = mock(SettingsDataProvider.class);
     Settings settingsMock = mock(Settings.class);
@@ -311,7 +291,7 @@ public class CrashlyticsReportPersistenceTest {
         new SessionSettingsData(VERY_LARGE_UPPER_LIMIT, 8);
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
     when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
-    reportPersistence = new CrashlyticsReportPersistence(folder.newFolder(), settingsDataProvider);
+    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
 
     DecimalFormat format = new DecimalFormat("00");
     for (int i = 0; i < 16; i++) {
@@ -334,11 +314,9 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(8, finalizedReports.size());
   }
 
-  @Test
   public void testFinalizeReports_removesLowPriorityReportsFirst() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
 
     for (int i = 0; i < 10; i++) {
       boolean priority = i >= 3 && i <= 8;
@@ -356,13 +334,11 @@ public class CrashlyticsReportPersistenceTest {
     }
   }
 
-  @Test
   public void testFinalizeReports_prioritizesNativeAndNonnativeFatals() throws IOException {
 
     CrashlyticsReport.FilesPayload filesPayload = makeFilePayload();
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
 
     persistReportWithEvent(reportPersistence, "testSession1", true);
     reportPersistence.finalizeSessionWithNativeEvent("testSession1", filesPayload);
@@ -382,11 +358,9 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(4, finalizedReports.size());
   }
 
-  @Test
   public void testFinalizeReports_removesOldestReportsFirst() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
     for (int i = 0; i < 8; i++) {
       String sessionId = "testSession" + i;
       persistReportWithEvent(reportPersistence, sessionId, true);
@@ -413,7 +387,6 @@ public class CrashlyticsReportPersistenceTest {
     }
   }
 
-  @Test
   public void testLoadFinalizedReports_reportWithUserId_returnsReportWithProperUserId() {
     final String sessionId = "testSession";
     final String userId = "testUser";
@@ -434,7 +407,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(userId, finalizedReport.getSession().getUser().getIdentifier());
   }
 
-  @Test
   public void
       testLoadFinalizedReports_reportsWithUserIdInMultipleSessions_returnsReportsWithProperUserIds() {
     final String sessionId1 = "testSession1";
@@ -466,7 +438,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(userId2, finalizedReport2.getReport().getSession().getUser().getIdentifier());
   }
 
-  @Test
   public void testFinalizeSessionWithNativeEvent_writesNativeSessions() {
     final CrashlyticsReport testReport = makeTestReport("sessionId");
     reportPersistence.persistReport(testReport);
@@ -483,7 +454,6 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(filesPayload, finalizedReports.get(0).getReport().getNdkPayload());
   }
 
-  @Test
   public void testDeleteFinalizedReport_removesReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -496,12 +466,11 @@ public class CrashlyticsReportPersistenceTest {
 
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
 
-    reportPersistence.deleteFinalizedReport(sessionId);
+    fileStore.getReport(sessionId).delete();
 
     assertEquals(0, reportPersistence.loadFinalizedReports().size());
   }
 
-  @Test
   public void testDeleteFinalizedReport_withWrongSessionId_doesNotRemoveReports() {
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -514,12 +483,11 @@ public class CrashlyticsReportPersistenceTest {
 
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
 
-    reportPersistence.deleteFinalizedReport("wrongSessionId");
+    fileStore.getReport("wrongSessionId").delete();
 
     assertEquals(1, reportPersistence.loadFinalizedReports().size());
   }
 
-  @Test
   public void testDeleteAllReports_removesAllReports() {
     final String sessionId1 = "testSession1";
     final CrashlyticsReport testReport1 = makeTestReport(sessionId1);
@@ -542,11 +510,9 @@ public class CrashlyticsReportPersistenceTest {
     assertEquals(0, reportPersistence.loadFinalizedReports().size());
   }
 
-  @Test
   public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
@@ -578,7 +544,6 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport);
   }
 
-  @Test
   public void testPersistEvent_whenSettingsChanges_keepsAppropriateNumberOfMostRecentEvents()
       throws IOException {
     SettingsDataProvider settingsDataProvider = mock(SettingsDataProvider.class);
@@ -589,7 +554,7 @@ public class CrashlyticsReportPersistenceTest {
         new SessionSettingsData(8, VERY_LARGE_UPPER_LIMIT);
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
     when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
-    reportPersistence = new CrashlyticsReportPersistence(folder.newFolder(), settingsDataProvider);
+    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
 
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -668,11 +633,9 @@ public class CrashlyticsReportPersistenceTest {
         finalizedReport2);
   }
 
-  @Test
   public void testPersistReportWithAnrEvent() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(
-            folder.newFolder(), getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+        new CrashlyticsReportPersistence(fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final Event testEvent = makeTestAnrEvent();

@@ -94,13 +94,15 @@ final class SQLiteIndexManager implements IndexManager {
         .forEach(
             row -> {
               try {
+                int indexId = row.getInt(0);
+                String collectionGroup = row.getString(1);
+                List<FieldIndex.Segment> segments =
+                    serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
+                SnapshotVersion updateTime =
+                    new SnapshotVersion(new Timestamp(row.getLong(3), row.getInt(4)));
+
                 FieldIndex fieldIndex =
-                    serializer.decodeFieldIndex(
-                        row.getString(1),
-                        row.getInt(0),
-                        Index.parseFrom(row.getBlob(2)),
-                        row.getInt(3),
-                        row.getInt(4));
+                    FieldIndex.create(indexId, collectionGroup, segments, updateTime);
                 memoizeIndex(fieldIndex);
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Failed to decode index: " + e);
@@ -146,7 +148,9 @@ final class SQLiteIndexManager implements IndexManager {
     hardAssert(started, "IndexManager not started");
 
     int nextIndexId = memoizedMaxId + 1;
-    index = index.withIndexId(nextIndexId);
+    index =
+        FieldIndex.create(
+            nextIndexId, index.getCollectionGroup(), index.getSegments(), index.getUpdateTime());
 
     db.execute(
         "INSERT INTO index_configuration ("
@@ -157,13 +161,24 @@ final class SQLiteIndexManager implements IndexManager {
             + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
         nextIndexId,
         index.getCollectionGroup(),
-        encodeFieldIndex(index),
+        encodeSegments(index),
         index.getUpdateTime().getTimestamp().getSeconds(),
         index.getUpdateTime().getTimestamp().getNanoseconds());
 
     setCollectionGroup(index.getCollectionGroup(), NEW_COLLECTION_GROUP_SEQUENCE_NUMBER);
 
     memoizeIndex(index);
+  }
+
+  @Override
+  public void deleteFieldIndex(FieldIndex index) {
+    db.execute("DELETE FROM index_configuration WHERE index_id = ?", index.getIndexId());
+    db.execute("DELETE FROM index_entries WHERE index_id = ?", index.getIndexId());
+
+    Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
+    if (collectionIndices != null) {
+      collectionIndices.remove(index.getIndexId());
+    }
   }
 
   private void updateFieldIndex(FieldIndex index) {
@@ -176,7 +191,7 @@ final class SQLiteIndexManager implements IndexManager {
             + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
         index.getIndexId(),
         index.getCollectionGroup(),
-        encodeFieldIndex(index),
+        encodeSegments(index),
         index.getUpdateTime().getTimestamp().getSeconds(),
         index.getUpdateTime().getTimestamp().getNanoseconds());
 
@@ -247,6 +262,15 @@ final class SQLiteIndexManager implements IndexManager {
     return indexes == null ? Collections.emptyList() : indexes.values();
   }
 
+  @Override
+  public Collection<FieldIndex> getFieldIndexes() {
+    List<FieldIndex> allIndices = new ArrayList<>();
+    for (Map<Integer, FieldIndex> indices : memoizedIndexes.values()) {
+      allIndices.addAll(indices.values());
+    }
+    return allIndices;
+  }
+
   /** Stores the index in the memoized indexes table. */
   private void memoizeIndex(FieldIndex fieldIndex) {
     Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
@@ -267,7 +291,11 @@ final class SQLiteIndexManager implements IndexManager {
     if (baseIndex.getUpdateTime().compareTo(newReadTime) > 0) {
       return baseIndex;
     } else {
-      return baseIndex.withUpdateTime(newReadTime);
+      return FieldIndex.create(
+          baseIndex.getIndexId(),
+          baseIndex.getCollectionGroup(),
+          baseIndex.getSegments(),
+          newReadTime);
     }
   }
 
@@ -520,7 +548,7 @@ final class SQLiteIndexManager implements IndexManager {
 
     // Return the index with the most number of segments
     return Collections.max(
-        matchingIndexes, (l, r) -> Integer.compare(l.segmentCount(), r.segmentCount()));
+        matchingIndexes, (l, r) -> Integer.compare(l.getSegments().size(), r.getSegments().size()));
   }
 
   /**
@@ -626,8 +654,8 @@ final class SQLiteIndexManager implements IndexManager {
     return false;
   }
 
-  private byte[] encodeFieldIndex(FieldIndex fieldIndex) {
-    return serializer.encodeFieldIndex(fieldIndex).toByteArray();
+  private byte[] encodeSegments(FieldIndex fieldIndex) {
+    return serializer.encodeFieldIndexSegments(fieldIndex.getSegments()).toByteArray();
   }
 
   @VisibleForTesting

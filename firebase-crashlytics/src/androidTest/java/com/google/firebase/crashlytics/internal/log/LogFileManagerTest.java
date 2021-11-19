@@ -15,11 +15,15 @@
 package com.google.firebase.crashlytics.internal.log;
 
 import static com.google.firebase.crashlytics.internal.log.LogFileManager.MAX_LOG_SIZE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.test.runner.AndroidJUnit4;
+import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
@@ -29,11 +33,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @RunWith(AndroidJUnit4.class)
-public class LogFileManagerTest {
+public class LogFileManagerTest extends CrashlyticsTestCase {
 
   private static final int SMALL_MAX_LOG_SIZE = 100;
   private static final String logFormat = "%d %s\n";
@@ -41,8 +44,7 @@ public class LogFileManagerTest {
   @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Mock private Context mockContext;
-
-  @Mock private LogFileManager.DirectoryProvider mockDirectoryProvider;
+  @Mock private FileStore mockFileStore;
 
   private LogFileManager logFileManager;
   private File testLogFile;
@@ -52,10 +54,11 @@ public class LogFileManagerTest {
     MockitoAnnotations.initMocks(this);
 
     final File tempDir = temporaryFolder.newFolder();
-    Mockito.when(mockDirectoryProvider.getLogFileDir()).thenReturn(tempDir);
-
+    mockFileStore = mock(FileStore.class);
     testLogFile = new File(tempDir, "testLogFile.log");
-    logFileManager = new LogFileManager(mockContext, mockDirectoryProvider);
+    when(mockFileStore.getSessionFile(any(), any())).thenReturn(testLogFile);
+
+    logFileManager = new LogFileManager(mockFileStore);
   }
 
   @Test
@@ -317,7 +320,7 @@ public class LogFileManagerTest {
 
   @Test
   public void testInitialLogState() throws Exception {
-    assertNull(new LogFileManager(mockContext, mockDirectoryProvider).getBytesForLog());
+    assertNull(new LogFileManager(mockFileStore).getBytesForLog());
   }
 
   @Test
@@ -356,6 +359,13 @@ public class LogFileManagerTest {
 
   @Test
   public void testSessionChangeClearsLog() throws Exception {
+
+    File logFile1 = new File(testLogFile.getParent(), "log1");
+    File logFile2 = new File(testLogFile.getParent(), "log2");
+
+    when(mockFileStore.getSessionFile(eq("1"), any())).thenReturn(logFile1);
+    when(mockFileStore.getSessionFile(eq("2"), any())).thenReturn(logFile2);
+
     logFileManager.setCurrentSession("1");
 
     String logString = "test";

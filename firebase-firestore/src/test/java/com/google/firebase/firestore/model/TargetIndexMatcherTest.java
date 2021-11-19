@@ -17,6 +17,7 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
@@ -183,20 +184,20 @@ public class TargetIndexMatcherTest {
   public void validatesCollection() {
     {
       TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId").toTarget());
-      FieldIndex fieldIndex = new FieldIndex("collId");
+      FieldIndex fieldIndex = fieldIndex("collId");
       assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
       TargetIndexMatcher targetIndexMatcher =
           new TargetIndexMatcher(new Query(path(""), "collId").toTarget());
-      FieldIndex fieldIndex = new FieldIndex("collId");
+      FieldIndex fieldIndex = fieldIndex("collId");
       assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
       TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId2").toTarget());
-      FieldIndex fieldIndex = new FieldIndex("collId");
+      FieldIndex fieldIndex = fieldIndex("collId");
       expectError(
           () -> targetIndexMatcher.servedByIndex(fieldIndex),
           "INTERNAL ASSERTION FAILED: Collection IDs do not match");
@@ -556,26 +557,15 @@ public class TargetIndexMatcherTest {
 
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
-    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
+    FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
     assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
   private void validateDoesNotServeTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
-    FieldIndex expectedIndex = buildFieldIndex(field, kind, fieldsAndKind);
+    FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
     assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
-  }
-
-  private FieldIndex buildFieldIndex(
-      String field, FieldIndex.Segment.Kind kind, Object[] fieldAndKind) {
-    FieldIndex index = new FieldIndex("collId").withAddedField(field(field), kind);
-    for (int i = 0; i < fieldAndKind.length; i += 2) {
-      index =
-          index.withAddedField(
-              field((String) fieldAndKind[i]), (FieldIndex.Segment.Kind) fieldAndKind[i + 1]);
-    }
-    return index;
   }
 }

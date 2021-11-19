@@ -324,9 +324,9 @@ public final class FirestoreClient {
     return completionSource.getTask();
   }
 
-  public Task<Void> configureIndices(List<FieldIndex> fieldIndices) {
+  public Task<Void> configureFieldIndexes(List<FieldIndex> fieldIndices) {
     verifyNotTerminated();
-    return asyncQueue.enqueue(() -> localStore.configureIndices(fieldIndices));
+    return asyncQueue.enqueue(() -> localStore.configureFieldIndexes(fieldIndices));
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

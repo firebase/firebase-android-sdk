@@ -152,6 +152,31 @@ public abstract class DocumentOverlayCacheTestCase {
 
     m.remove(key("coll/doc1/sub/sub_doc"));
     m.remove(key("other/doc1"));
-    assertEquals(m, overlays.getOverlays(path("coll")));
+    assertEquals(m, overlays.getOverlays(path("coll"), -1));
+  }
+
+  @Test
+  public void testGetAllOverlaysSinceBatchId() {
+    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
+    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
+    Map<DocumentKey, Mutation> m = new HashMap<>();
+    m.put(key("coll/doc1"), m1);
+    m.put(key("coll/doc2"), m2);
+    overlays.saveOverlays(2, m);
+
+    Mutation m3 = deleteMutation("coll/doc3");
+    m = new HashMap<>();
+    m.put(key("coll/doc3"), m3);
+    overlays.saveOverlays(3, m);
+
+    Mutation m4 = deleteMutation("coll/doc4");
+    m = new HashMap<>();
+    m.put(key("coll/doc4"), m4);
+    overlays.saveOverlays(4, m);
+
+    Map<DocumentKey, Mutation> expected = new HashMap<>();
+    expected.put(key("coll/doc3"), m3);
+    expected.put(key("coll/doc4"), m4);
+    assertEquals(expected, overlays.getOverlays(path("coll"), 2));
   }
 }

@@ -17,7 +17,7 @@ package com.google.firebase.app.distribution.ktx
 import androidx.annotation.Keep
 import com.google.firebase.BuildConfig
 import com.google.firebase.FirebaseApp
-import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.app.distribution.FirebaseAppDistribution
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase

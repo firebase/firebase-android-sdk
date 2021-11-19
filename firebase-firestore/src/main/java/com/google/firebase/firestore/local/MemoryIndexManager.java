@@ -59,6 +59,11 @@ class MemoryIndexManager implements IndexManager {
     // Field indices are not supported with memory persistence.
   }
 
+  @Override
+  public void deleteFieldIndex(FieldIndex index) {
+    // Field indices are not supported with memory persistence.
+  }
+
   @Nullable
   @Override
   public FieldIndex getFieldIndex(Target target) {
@@ -86,6 +91,12 @@ class MemoryIndexManager implements IndexManager {
 
   @Override
   public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
+    // Field indices are not supported with memory persistence.
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<FieldIndex> getFieldIndexes() {
     // Field indices are not supported with memory persistence.
     return Collections.emptyList();
   }

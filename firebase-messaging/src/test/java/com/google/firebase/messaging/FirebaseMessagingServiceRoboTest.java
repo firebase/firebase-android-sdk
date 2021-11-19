@@ -74,7 +74,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatcher;
@@ -401,7 +400,6 @@ public class FirebaseMessagingServiceRoboTest {
 
   /** Test that a notification logs the correct event on tap. */
   @Test
-  @Ignore
   public void testNotification_clickAnalytics() throws Exception {
     FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
     simulateNotificationMessageWithAnalytics();
@@ -432,7 +430,6 @@ public class FirebaseMessagingServiceRoboTest {
 
   /** Test that a notification does not re-log events when the activity is recreated. */
   @Test
-  @Ignore
   public void testNotification_clickAnalytics_recreateActivity() throws Exception {
     FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
     simulateNotificationMessageWithAnalytics();

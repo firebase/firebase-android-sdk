@@ -62,6 +62,9 @@ public interface IndexManager {
    */
   void addFieldIndex(FieldIndex index);
 
+  /** Removes the given field index and deletes all index values. */
+  void deleteFieldIndex(FieldIndex index);
+
   /**
    * Returns a list of field indexes that correspond to the specified collection group.
    *
@@ -69,6 +72,9 @@ public interface IndexManager {
    * @return A collection of field indexes for the specified collection group.
    */
   Collection<FieldIndex> getFieldIndexes(String collectionGroup);
+
+  /** Returns all configured field indexes. */
+  Collection<FieldIndex> getFieldIndexes();
 
   /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no

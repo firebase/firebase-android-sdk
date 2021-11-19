@@ -15,7 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import java.io.File;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,32 +38,15 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   private static final String ESCAPED = "\ttest\nvalue";
 
-  private File filesDir;
+  private FileStore fileStore;
 
   private MetaDataStore storeUnderTest;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    filesDir = new File(getContext().getFilesDir(), "metadatastoretest");
-    clearTestDirectory();
-    filesDir.mkdir();
-    storeUnderTest = new MetaDataStore(filesDir);
-  }
-
-  @Override
-  public void tearDown() throws Exception {
-    clearTestDirectory();
-    super.tearDown();
-  }
-
-  private void clearTestDirectory() throws Exception {
-    File[] files = filesDir.listFiles();
-    files = (files == null) ? new File[0] : files;
-    for (File f : files) {
-      f.delete();
-    }
-    filesDir.delete();
+    fileStore = new FileStore(getContext());
+    storeUnderTest = new MetaDataStore(fileStore);
   }
 
   private static UserMetadata metadataWithUserId() {

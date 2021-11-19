@@ -30,13 +30,11 @@ import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import java.io.File;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -78,6 +76,7 @@ public class CrashlyticsCore {
 
   private CrashlyticsController controller;
   private final IdManager idManager;
+  private final FileStore fileStore;
 
   @VisibleForTesting public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
@@ -96,6 +95,7 @@ public class CrashlyticsCore {
       DataCollectionArbiter dataCollectionArbiter,
       BreadcrumbSource breadcrumbSource,
       AnalyticsEventLogger analyticsEventLogger,
+      FileStore fileStore,
       ExecutorService crashHandlerExecutor) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
@@ -105,6 +105,7 @@ public class CrashlyticsCore {
     this.breadcrumbSource = breadcrumbSource;
     this.analyticsEventLogger = analyticsEventLogger;
     this.crashHandlerExecutor = crashHandlerExecutor;
+    this.fileStore = fileStore;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
@@ -128,14 +129,11 @@ public class CrashlyticsCore {
     }
 
     try {
-      final FileStore fileStore = new FileStoreImpl(context);
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata = new UserMetadata();
-      final LogFileDirectoryProvider logFileDirectoryProvider =
-          new LogFileDirectoryProvider(fileStore);
-      final LogFileManager logFileManager = new LogFileManager(context, logFileDirectoryProvider);
+      final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
               MAX_STACK_SIZE, new RemoveRepeatsStrategy(NUM_STACK_REPETITIONS_ALLOWED));
@@ -162,7 +160,6 @@ public class CrashlyticsCore {
               appData,
               userMetadata,
               logFileManager,
-              logFileDirectoryProvider,
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger);
@@ -509,24 +506,4 @@ public class CrashlyticsCore {
   }
 
   // endregion
-
-  private static final class LogFileDirectoryProvider implements LogFileManager.DirectoryProvider {
-
-    private static final String LOG_FILES_DIR = "log-files";
-
-    private final FileStore rootFileStore;
-
-    public LogFileDirectoryProvider(FileStore rootFileStore) {
-      this.rootFileStore = rootFileStore;
-    }
-
-    @Override
-    public File getLogFileDir() {
-      final File logFileDir = new File(rootFileStore.getFilesDir(), LOG_FILES_DIR);
-      if (!logFileDir.exists()) {
-        logFileDir.mkdirs();
-      }
-      return logFileDir;
-    }
-  }
 }

@@ -44,6 +44,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -322,28 +323,31 @@ public class FirebaseFirestore {
         JSONArray indices = jsonObject.getJSONArray("indexes");
         for (int i = 0; i < indices.length(); ++i) {
           JSONObject definition = indices.getJSONObject(i);
-          FieldIndex fieldIndex = new FieldIndex(definition.getString("collectionGroup"));
+          String collectionGroup = definition.getString("collectionGroup");
+          List<FieldIndex.Segment> segments = new ArrayList<>();
 
           JSONArray fields = definition.optJSONArray("fields");
           for (int f = 0; fields != null && f < fields.length(); ++f) {
             JSONObject field = fields.getJSONObject(f);
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.CONTAINS);
+              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.CONTAINS));
             } else if ("ASCENDING".equals(field.optString("order"))) {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.ASCENDING);
+              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.ASCENDING));
             } else {
-              fieldIndex = fieldIndex.withAddedField(fieldPath, FieldIndex.Segment.Kind.DESCENDING);
+              segments.add(
+                  FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.DESCENDING));
             }
-            parsedIndices.add(fieldIndex);
           }
+
+          parsedIndices.add(FieldIndex.create(-1, collectionGroup, segments, SnapshotVersion.NONE));
         }
       }
     } catch (JSONException e) {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return client.configureIndices(parsedIndices);
+    return client.configureFieldIndexes(parsedIndices);
   }
 
   /**

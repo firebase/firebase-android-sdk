@@ -6,6 +6,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := crashpad_util
 LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/../../libchrome/include \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/.. \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad \
 

@@ -54,6 +54,7 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -587,6 +588,37 @@ public class TestUtil {
 
   public static ByteString streamToken(String contents) {
     return ByteString.copyFrom(contents, Charsets.UTF_8);
+  }
+
+  public static FieldIndex fieldIndex(
+      String collectionGroup,
+      int indexId,
+      SnapshotVersion readTime,
+      String field,
+      FieldIndex.Segment.Kind kind,
+      Object... fieldAndKinds) {
+    List<FieldIndex.Segment> segments = new ArrayList<>();
+    segments.add(FieldIndex.Segment.create(field(field), kind));
+    for (int i = 0; i < fieldAndKinds.length; i += 2) {
+      segments.add(
+          FieldIndex.Segment.create(
+              field((String) fieldAndKinds[i]), (FieldIndex.Segment.Kind) fieldAndKinds[i + 1]));
+    }
+    return FieldIndex.create(indexId, collectionGroup, segments, readTime);
+  }
+
+  public static FieldIndex fieldIndex(
+      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE, field, kind, fieldAndKind);
+  }
+
+  public static FieldIndex fieldIndex(
+      String collectionGroup, int indexId, SnapshotVersion readTime) {
+    return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), readTime);
+  }
+
+  public static FieldIndex fieldIndex(String collectionGroup) {
+    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE);
   }
 
   private static Map<String, Object> fromJsonString(String json) {
