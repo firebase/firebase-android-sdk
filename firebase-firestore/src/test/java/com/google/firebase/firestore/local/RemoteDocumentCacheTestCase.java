@@ -212,6 +212,24 @@ abstract class RemoteDocumentCacheTestCase {
     assertEquals(expected, values(results));
   }
 
+  @Test
+  public void testLatestReadTime() {
+    SnapshotVersion latestReadTime = remoteDocumentCache.getLatestReadTime();
+    assertEquals(SnapshotVersion.NONE, latestReadTime);
+
+    addTestDocumentAtPath("coll/a", /* updateTime= */ 0, /* readTime= */ 1);
+    latestReadTime = remoteDocumentCache.getLatestReadTime();
+    assertEquals(version(1), latestReadTime);
+
+    addTestDocumentAtPath("coll/b", /* updateTime= */ 0, /* readTime= */ 3);
+    latestReadTime = remoteDocumentCache.getLatestReadTime();
+    assertEquals(version(3), latestReadTime);
+
+    addTestDocumentAtPath("coll/c", /* updateTime= */ 0, /* readTime= */ 2);
+    latestReadTime = remoteDocumentCache.getLatestReadTime();
+    assertEquals(version(3), latestReadTime);
+  }
+
   private MutableDocument addTestDocumentAtPath(String path) {
     return addTestDocumentAtPath(path, 42, 42);
   }

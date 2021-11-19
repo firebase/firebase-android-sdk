@@ -15,12 +15,12 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -87,14 +87,22 @@ public interface IndexManager {
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
-  /** Returns the next collection group to update. */
+  /**
+   * Returns the next collection group to update. Returns {@code null} if no group exists or the
+   * next collection group is already at {@code maxSequenceNumber}.
+   */
   @Nullable
-  String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
+  String getNextCollectionGroupToUpdate(long maxSequenceNumber);
+
+  /** Updates the sequence number for the collection group and sets its latest read time. */
+  void updateCollectionGroup(String collectionGroup, long sequenceNumber, SnapshotVersion readTime);
 
   /**
    * Updates the index entries for the provided documents and corresponding field indexes until the
-   * cap is reached. Updates the field indexes in persistence with the latest read time that was
-   * processed.
+   * cap is reached.
    */
   void updateIndexEntries(Collection<Document> documents);
+
+  /** Returns the largest currently used sequence number (as used by the backfiller). */
+  long getHighestSequenceNumber();
 }

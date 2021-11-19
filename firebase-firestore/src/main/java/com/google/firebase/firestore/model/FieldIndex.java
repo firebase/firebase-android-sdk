@@ -81,9 +81,29 @@ public abstract class FieldIndex {
     }
   }
 
+  /** Stores the "high water mark" that indicates how updated the Index is for the current user. */
+  @AutoValue
+  public abstract static class IndexState {
+    public static IndexState DEFAULT = create(0, SnapshotVersion.NONE);
+
+    public static IndexState create(long sequenceNumber, SnapshotVersion readTime) {
+      return new AutoValue_FieldIndex_IndexState(sequenceNumber, readTime);
+    }
+
+    /**
+     * Returns a number that indicates when the index was last updated (relative to other indexes).
+     */
+    public abstract long getSequenceNumber();
+
+    /**
+     * Returns the latest read time version that has been indexed by Firestore for this field index.
+     */
+    public abstract SnapshotVersion getReadTime();
+  }
+
   public static FieldIndex create(
-      int indexId, String collectionGroup, List<Segment> segments, SnapshotVersion updateTime) {
-    return new AutoValue_FieldIndex(indexId, collectionGroup, segments, updateTime);
+      int indexId, String collectionGroup, List<Segment> segments, IndexState indexState) {
+    return new AutoValue_FieldIndex(indexId, collectionGroup, segments, indexState);
   }
 
   /**
@@ -98,8 +118,8 @@ public abstract class FieldIndex {
   /** Returns all field segments for this index. */
   public abstract List<Segment> getSegments();
 
-  /** Returns when this index was last updated. */
-  public abstract SnapshotVersion getUpdateTime();
+  /** Returns how up-to-date the index is for the current user. */
+  public abstract IndexState getIndexState();
 
   /** Returns all directional (ascending/descending) segments for this index. */
   public List<Segment> getDirectionalSegments() {
