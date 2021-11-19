@@ -608,7 +608,7 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(
-          String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
     return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE, field, kind, fieldAndKind);
   }
 
