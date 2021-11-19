@@ -82,7 +82,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBathId) {
+  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId) {
     int immediateChildrenPathLength = collection.length() + 1;
 
     String prefixPath = EncodedPath.encode(collection);
@@ -92,8 +92,8 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
     db.query(
             "SELECT path, overlay_mutation FROM document_overlays "
-                + "WHERE uid = ? AND path >= ? AND path < ? AND largest_batch_id >= ?")
-        .binding(uid, prefixPath, prefixSuccessorPath, sinceBathId)
+                + "WHERE uid = ? AND path >= ? AND path < ? AND largest_batch_id > ?")
+        .binding(uid, prefixPath, prefixSuccessorPath, sinceBatchId)
         .forEach(
             row -> {
               try {

@@ -177,6 +177,6 @@ public abstract class DocumentOverlayCacheTestCase {
     Map<DocumentKey, Mutation> expected = new HashMap<>();
     expected.put(key("coll/doc3"), m3);
     expected.put(key("coll/doc4"), m4);
-    assertEquals(expected, overlays.getOverlays(path("coll"), 3));
+    assertEquals(expected, overlays.getOverlays(path("coll"), 2));
   }
 }

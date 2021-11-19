@@ -98,7 +98,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
       }
 
       Pair<Integer, Mutation> batchIdToOverlay = entry.getValue();
-      if (batchIdToOverlay.first >= sinceBatchId) {
+      if (batchIdToOverlay.first > sinceBatchId) {
         result.put(entry.getKey(), batchIdToOverlay.second);
       }
     }
