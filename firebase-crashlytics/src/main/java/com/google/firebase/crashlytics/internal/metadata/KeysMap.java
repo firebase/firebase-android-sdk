@@ -15,8 +15,8 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +48,7 @@ class KeysMap {
     // The entry can be added if we're under the size limit or we're updating an existing entry
     if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
       String santitizedAttribute = sanitizeAttribute(value);
-      if (isEqual(keys.get(sanitizedKey), santitizedAttribute)) {
+      if (CommonUtils.nullSafeEquals(keys.get(sanitizedKey), santitizedAttribute)) {
         return false;
       }
       keys.put(sanitizedKey, value == null ? "" : santitizedAttribute);
@@ -103,12 +103,5 @@ class KeysMap {
       }
     }
     return input;
-  }
-
-  private static boolean isEqual(@Nullable String s1, @Nullable String s2) {
-    if (s1 == null) {
-      return s2 == null;
-    }
-    return s1.equals(s2);
   }
 }

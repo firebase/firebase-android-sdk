@@ -50,6 +50,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 class CrashlyticsController {
 
@@ -484,21 +485,33 @@ class CrashlyticsController {
 
   /**
    * Cache custom key metadata asynchronously in case of a non-graceful process exit. Can be
-   * reloaded and sent with the previous crash data on app restart. NOTE: Because this is
-   * asynchronous, it is performant in critical code paths, but susceptible to losing data if a
-   * crash happens immediately after setting a value. If this becomes a problem, we can investigate
-   * writing synchronously, or potentially add an explicit user-facing API for synchronous writes.
+   * reloaded and sent with the previous crash data on app restart. If there's a previously-queued
+   * task to serialize this data, this method will not generate a new task, since the existing task
+   * will always grab the latest copy of the key data when it executes.
    */
+  private final AtomicReference<Callable<Void>> queuedCustomKeysSerializer =
+      new AtomicReference<>(null);
+
+  private final AtomicReference<Callable<Void>> queuedInternalKeysSerializer =
+      new AtomicReference<>(null);
+
   private void cacheKeyData(UserMetadata userMetadata, boolean isInternal) {
-    backgroundWorker.submit(
+    AtomicReference<Callable<Void>> queuedCallable =
+        isInternal ? queuedInternalKeysSerializer : queuedCustomKeysSerializer;
+    Callable<Void> newCallable =
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
+            queuedCallable.set(null);
+
             final String currentSessionId = getCurrentSessionId();
             userMetadata.serializeKeysIfNeeded(currentSessionId, isInternal);
             return null;
           }
-        });
+        };
+    if (queuedCallable.compareAndSet(null, newCallable)) {
+      backgroundWorker.submit(newCallable);
+    }
   }
 
   // endregion
