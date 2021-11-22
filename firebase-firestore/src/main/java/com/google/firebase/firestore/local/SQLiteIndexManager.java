@@ -97,13 +97,14 @@ final class SQLiteIndexManager implements IndexManager {
 
     Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
 
-    // Fetch all index states if persisted for the user.
+    // Fetch all index states if persisted for the user. These states contain per user information
+    // on how up to date the index is.
     db.query(
             "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos "
-                + "FROM index_state WHERE uid = ?")
+                + "FROM index_state WHERE uid = ?").binding(uid)
         .forEach(
             row -> {
-              int indexId = row.getInt(1);
+              int indexId = row.getInt(0);
               long sequenceNumber = row.getLong(1);
               SnapshotVersion readTime =
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
@@ -119,6 +120,9 @@ final class SQLiteIndexManager implements IndexManager {
                 String collectionGroup = row.getString(1);
                 List<FieldIndex.Segment> segments =
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
+
+                // If we fetched an index state for the user above, combine it with this index.
+                // Otherwise, we use the default state.
                 FieldIndex.IndexState indexState =
                     indexStates.containsKey(indexId)
                         ? indexStates.get(indexId)

@@ -31,6 +31,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -582,20 +583,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testGetFieldIndexes() {
-    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addFieldIndex(
+    indexManager.addFieldIndex(
         fieldIndex("coll1", 1, IndexState.DEFAULT, "value", Kind.ASCENDING));
-    sqLiteIndexManager.addFieldIndex(
+    indexManager.addFieldIndex(
         fieldIndex("coll2", 2, IndexState.DEFAULT, "value", Kind.CONTAINS));
 
-    Collection<FieldIndex> indexes = sqLiteIndexManager.getFieldIndexes("coll1");
+    Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     Iterator<FieldIndex> it = indexes.iterator();
     assertEquals(it.next().getCollectionGroup(), "coll1");
-    sqLiteIndexManager.addFieldIndex(
+    indexManager.addFieldIndex(
         fieldIndex("coll1", 3, IndexState.DEFAULT, "newValue", Kind.CONTAINS));
 
-    indexes = sqLiteIndexManager.getFieldIndexes("coll1");
+    indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 2);
     it = indexes.iterator();
     assertEquals(it.next().getCollectionGroup(), "coll1");
@@ -604,10 +604,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testAddFieldIndexWritesToCollectionGroup() {
-    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addFieldIndex(
+    indexManager.addFieldIndex(
         fieldIndex("coll1", 1, IndexState.create(1, version(30)), "value", Kind.ASCENDING));
-    sqLiteIndexManager.addFieldIndex(
+    indexManager.addFieldIndex(
         fieldIndex("coll2", 2, IndexState.create(2, version(0)), "value", Kind.CONTAINS));
     String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
@@ -615,6 +614,45 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.deleteFieldIndex(indexManager.getFieldIndexes("coll1").iterator().next());
     collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
+  }
+
+  @Test
+  public void testChangeUser() {
+    IndexManager indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+
+    // Add two indexes and mark one as updated.
+    indexManager.addFieldIndex(fieldIndex("coll1", 1, IndexState.DEFAULT));
+    indexManager.addFieldIndex(fieldIndex("coll2", 2, IndexState.DEFAULT));
+    indexManager.updateCollectionGroup("coll1", version(1));
+
+    verifySequenceNumber(indexManager, "coll1", 1);
+    verifySequenceNumber(indexManager, "coll2", 0);
+
+    // New user signs it. The user should see all existing field indices.
+    // Sequence numbers are set to 0.
+    indexManager = persistence.getIndexManager(new User("authenticated"));
+    indexManager.start();
+
+    // Add a new index and mark it as updated.
+    indexManager.addFieldIndex(fieldIndex("coll3", 2, IndexState.DEFAULT));
+    indexManager.updateCollectionGroup("coll3", version(2));
+
+    verifySequenceNumber(indexManager, "coll1", 0);
+    verifySequenceNumber(indexManager, "coll2", 0);
+    verifySequenceNumber(indexManager, "coll3", 1);
+
+    // Original user signs it. The user should also see the new index with a zero sequence number.
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+
+    verifySequenceNumber(indexManager, "coll1", 1);
+    verifySequenceNumber(indexManager, "coll2", 0);
+    verifySequenceNumber(indexManager, "coll3", 0);
+  }
+
+  private void verifySequenceNumber(IndexManager indexManager, String collectionGroup, int expectedSequnceNumber) {
+    assertEquals(expectedSequnceNumber, indexManager.getFieldIndexes(collectionGroup).iterator().next().getIndexState().getSequenceNumber());
   }
 
   private void addDoc(String key, Map<String, Object> data) {
