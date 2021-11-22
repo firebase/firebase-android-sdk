@@ -364,9 +364,9 @@ class SQLiteSchema {
    */
   private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"index_configuration", "index_state", "collection_state", "index_entries"},
+        new String[] {"index_configuration", "index_state", "index_entries"},
         () -> {
-          // Global configuration for all existing indices
+          // Global configuration for all existing field indexes
           db.execSQL(
               "CREATE TABLE index_configuration ("
                   + "index_id INTEGER, "
@@ -378,14 +378,14 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE index_state ("
                   + "uid TEXT, "
-                  + "index_id INTEGER, " // Name of the collection group.
+                  + "index_id INTEGER, "
                   + "sequence_number INTEGER, " // Specifies the order of updates
-                  + "read_time_seconds INTEGER, " // Time of last index backfill update
+                  + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
                   + "PRIMARY KEY (uid, index_id))");
 
-          // The index entries stores the encoded entries for all fields. The table only has a
-          // single primary index. `array_value` should be set for all queries.
+          // The index entry table stores the encoded entries for all fields.
+          // The table only has a single primary index. `array_value` should be set for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
                   + "uid TEXT, " // user id

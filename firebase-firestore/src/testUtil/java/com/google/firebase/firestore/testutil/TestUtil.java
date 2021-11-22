@@ -611,7 +611,7 @@ public class TestUtil {
   public static FieldIndex fieldIndex(
       String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
     FieldIndex fieldIndex =
-        fieldIndex(collectionGroup, -1, IndexState.DEFAULT, field, kind, fieldAndKind);
+        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldAndKind);
     return fieldIndex;
   }
 
@@ -620,7 +620,7 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(String collectionGroup) {
-    return fieldIndex(collectionGroup, -1, IndexState.DEFAULT);
+    return fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE);
   }
 
   private static Map<String, Object> fromJsonString(String json) {

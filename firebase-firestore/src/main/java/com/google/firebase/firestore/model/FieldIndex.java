@@ -35,6 +35,16 @@ import java.util.List;
 @AutoValue
 public abstract class FieldIndex {
 
+  /** An ID for an index that has not yet been added to persistence. */
+  public static final int UNKNOWN_ID = -1;
+
+  /** The initial sequence number for each index. Gets updated during index backfill. */
+  public static final int INITIAL_SEQUENCE_NUMBER = 0;
+
+  /** The state of an index that has not yet been backfilled. */
+  public static IndexState INITIAL_STATE =
+      IndexState.create(INITIAL_SEQUENCE_NUMBER, SnapshotVersion.NONE);
+
   /** Compares indexes by collection group and segments. Ignores update time and index ID. */
   public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
       (left, right) -> {
@@ -84,8 +94,6 @@ public abstract class FieldIndex {
   /** Stores the "high water mark" that indicates how updated the Index is for the current user. */
   @AutoValue
   public abstract static class IndexState {
-    public static IndexState DEFAULT = create(0, SnapshotVersion.NONE);
-
     public static IndexState create(long sequenceNumber, SnapshotVersion readTime) {
       return new AutoValue_FieldIndex_IndexState(sequenceNumber, readTime);
     }

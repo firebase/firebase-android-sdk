@@ -584,16 +584,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testGetFieldIndexes() {
     indexManager.addFieldIndex(
-        fieldIndex("coll1", 1, IndexState.DEFAULT, "value", Kind.ASCENDING));
+        fieldIndex("coll1", 1, FieldIndex.INITIAL_STATE, "value", Kind.ASCENDING));
     indexManager.addFieldIndex(
-        fieldIndex("coll2", 2, IndexState.DEFAULT, "value", Kind.CONTAINS));
+        fieldIndex("coll2", 2, FieldIndex.INITIAL_STATE, "value", Kind.CONTAINS));
 
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     Iterator<FieldIndex> it = indexes.iterator();
     assertEquals(it.next().getCollectionGroup(), "coll1");
     indexManager.addFieldIndex(
-        fieldIndex("coll1", 3, IndexState.DEFAULT, "newValue", Kind.CONTAINS));
+        fieldIndex("coll1", 3, FieldIndex.INITIAL_STATE, "newValue", Kind.CONTAINS));
 
     indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 2);
@@ -622,8 +622,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.start();
 
     // Add two indexes and mark one as updated.
-    indexManager.addFieldIndex(fieldIndex("coll1", 1, IndexState.DEFAULT));
-    indexManager.addFieldIndex(fieldIndex("coll2", 2, IndexState.DEFAULT));
+    indexManager.addFieldIndex(fieldIndex("coll1", 1, FieldIndex.INITIAL_STATE));
+    indexManager.addFieldIndex(fieldIndex("coll2", 2, FieldIndex.INITIAL_STATE));
     indexManager.updateCollectionGroup("coll1", version(1));
 
     verifySequenceNumber(indexManager, "coll1", 1);
@@ -635,7 +635,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.start();
 
     // Add a new index and mark it as updated.
-    indexManager.addFieldIndex(fieldIndex("coll3", 2, IndexState.DEFAULT));
+    indexManager.addFieldIndex(fieldIndex("coll3", 2, FieldIndex.INITIAL_STATE));
     indexManager.updateCollectionGroup("coll3", version(2));
 
     verifySequenceNumber(indexManager, "coll1", 0);
@@ -651,8 +651,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     verifySequenceNumber(indexManager, "coll3", 0);
   }
 
-  private void verifySequenceNumber(IndexManager indexManager, String collectionGroup, int expectedSequnceNumber) {
-    assertEquals(expectedSequnceNumber, indexManager.getFieldIndexes(collectionGroup).iterator().next().getIndexState().getSequenceNumber());
+  private void verifySequenceNumber(
+      IndexManager indexManager, String collectionGroup, int expectedSequnceNumber) {
+    assertEquals(
+        expectedSequnceNumber,
+        indexManager
+            .getFieldIndexes(collectionGroup)
+            .iterator()
+            .next()
+            .getIndexState()
+            .getSequenceNumber());
   }
 
   private void addDoc(String key, Map<String, Object> data) {

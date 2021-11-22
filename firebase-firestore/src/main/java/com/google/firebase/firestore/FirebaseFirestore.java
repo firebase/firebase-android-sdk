@@ -340,7 +340,8 @@ public class FirebaseFirestore {
           }
 
           parsedIndices.add(
-              FieldIndex.create(-1, collectionGroup, segments, FieldIndex.IndexState.DEFAULT));
+              FieldIndex.create(
+                  FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
         }
       }
     } catch (JSONException e) {

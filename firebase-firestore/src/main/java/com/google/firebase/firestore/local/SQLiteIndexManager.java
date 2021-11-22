@@ -102,7 +102,8 @@ final class SQLiteIndexManager implements IndexManager {
     // on how up to date the index is.
     db.query(
             "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos "
-                + "FROM index_state WHERE uid = ?").binding(uid)
+                + "FROM index_state WHERE uid = ?")
+        .binding(uid)
         .forEach(
             row -> {
               int indexId = row.getInt(0);
@@ -123,13 +124,16 @@ final class SQLiteIndexManager implements IndexManager {
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
 
                 // If we fetched an index state for the user above, combine it with this index.
-                // Otherwise, we use the default state.
+                // We use the default state if we don't have an index state (e.g. the index was
+                // created while a different user as logged in).
                 FieldIndex.IndexState indexState =
                     indexStates.containsKey(indexId)
                         ? indexStates.get(indexId)
-                        : FieldIndex.IndexState.DEFAULT;
+                        : FieldIndex.INITIAL_STATE;
                 FieldIndex fieldIndex =
                     FieldIndex.create(indexId, collectionGroup, segments, indexState);
+
+                // Store the index and update `memoizedMaxIndexId` and `memoizedMaxSequenceNumber`.
                 memoizeIndex(fieldIndex);
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Failed to decode index: " + e);
@@ -237,7 +241,10 @@ final class SQLiteIndexManager implements IndexManager {
     return allIndices;
   }
 
-  /** Stores the index in the memoized indexes table. */
+  /**
+   * Stores the index in the memoized indexes table and updates {@link #nextIndexToUpdate}, {@link
+   * #memoizedMaxIndexId} and {@link #memoizedMaxSequenceNumber}.
+   */
   private void memoizeIndex(FieldIndex fieldIndex) {
     Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
     if (existingIndexes == null) {
@@ -257,10 +264,7 @@ final class SQLiteIndexManager implements IndexManager {
         Math.max(memoizedMaxSequenceNumber, fieldIndex.getIndexState().getSequenceNumber());
   }
 
-  /**
-   * If applicable, writes index entries for the given document. Returns whether any index entry was
-   * written.
-   */
+  /** Persists the index entries for the given document. */
   private void writeEntries(Document document, FieldIndex fieldIndex) {
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
@@ -621,7 +625,7 @@ final class SQLiteIndexManager implements IndexManager {
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
               + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
           collectionGroup,
-          user.getUid(),
+          uid,
           memoizedMaxSequenceNumber,
           readTime.getTimestamp().getSeconds(),
           readTime.getTimestamp().getNanoseconds());

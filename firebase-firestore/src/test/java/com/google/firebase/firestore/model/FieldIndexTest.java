@@ -40,17 +40,17 @@ public class FieldIndexTest {
 
   @Test
   public void comparatorIgnoresIndexId() {
-    FieldIndex indexOriginal = fieldIndex("collA", 1, IndexState.DEFAULT);
-    FieldIndex indexSame = fieldIndex("collA", 1, IndexState.DEFAULT);
-    FieldIndex indexDifferent = fieldIndex("collA", 2, IndexState.DEFAULT);
+    FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexDifferent = fieldIndex("collA", 2, FieldIndex.INITIAL_STATE);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
   public void comparatorIgnoresIndexState() {
-    FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.IndexState.DEFAULT);
-    FieldIndex indexSame = fieldIndex("collA", 1, IndexState.DEFAULT);
+    FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
     FieldIndex indexDifferent = fieldIndex("collA", 1, IndexState.create(1, version(2)));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));

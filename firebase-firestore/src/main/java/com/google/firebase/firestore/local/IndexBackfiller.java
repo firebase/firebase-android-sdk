@@ -178,7 +178,12 @@ public class IndexBackfiller {
     return oldestDocuments.size();
   }
 
-  /** Returns the new read time for the index. */
+  /**
+   * Returns the new read time for the index.
+   *
+   * @param documents a list of documents sorted by read time (ascending)
+   * @param currentReadTime the current read time of the index
+   */
   private SnapshotVersion getPostUpdateReadTime(
       List<Document> documents, SnapshotVersion currentReadTime) {
     SnapshotVersion latestReadTime =

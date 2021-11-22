@@ -91,7 +91,13 @@ public interface IndexManager {
   @Nullable
   String getNextCollectionGroupToUpdate();
 
-  /** Sets the collection group's latest read time. */
+  /**
+   * Sets the collection group's latest read time.
+   *
+   * <p>This method updates the read time for all field indices for the collection group and
+   * increments their sequence number. Subsequent calls to {@link #getNextCollectionGroupToUpdate()}
+   * will return a different collection group (unless only one collection group is configured).
+   */
   void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime);
 
   /**
