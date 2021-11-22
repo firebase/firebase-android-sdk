@@ -40,7 +40,7 @@ class MetaDataStore {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private static final String USERDATA_FILENAME = "user";
+  private static final String USERDATA_FILENAME = "user-data";
   private static final String KEYDATA_FILENAME = "keys";
   private static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
