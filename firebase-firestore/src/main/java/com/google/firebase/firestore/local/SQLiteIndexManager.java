@@ -57,6 +57,10 @@ import java.util.Set;
 final class SQLiteIndexManager implements IndexManager {
   private static final String TAG = SQLiteIndexManager.class.getSimpleName();
 
+  private final SQLitePersistence db;
+  private final LocalSerializer serializer;
+  private final String uid;
+
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
    * avoid re-writing the same entry repeatedly.
@@ -67,9 +71,6 @@ final class SQLiteIndexManager implements IndexManager {
   private final MemoryIndexManager.MemoryCollectionParentIndex collectionParentsCache =
       new MemoryIndexManager.MemoryCollectionParentIndex();
 
-  private final SQLitePersistence db;
-  private final LocalSerializer serializer;
-  private final User user;
   private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes = new HashMap<>();
   private final Queue<FieldIndex> nextIndexToUpdate =
       new PriorityQueue<>(
@@ -85,7 +86,7 @@ final class SQLiteIndexManager implements IndexManager {
   SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer, User user) {
     this.db = persistence;
     this.serializer = serializer;
-    this.user = user;
+    this.uid = user.isAuthenticated() ? user.getUid() : "";
   }
 
   @Override
@@ -317,7 +318,7 @@ final class SQLiteIndexManager implements IndexManager {
         "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?, ?)",
         indexId,
-        document.hasLocalMutations() ? user.getUid() : null,
+        uid,
         arrayValue,
         directionalValue,
         document.getKey().toString());
@@ -391,7 +392,7 @@ final class SQLiteIndexManager implements IndexManager {
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
     statement.append("SELECT document_name, directional_value FROM index_entries ");
-    statement.append("WHERE index_id = ?  AND (uid IS NULL or uid = ?) ");
+    statement.append("WHERE index_id = ? AND uid = ? ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
     }
@@ -445,7 +446,7 @@ final class SQLiteIndexManager implements IndexManager {
     int offset = 0;
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
-      bindArgs[offset++] = user.getUid();
+      bindArgs[offset++] = uid;
       if (arrayValues != null) {
         bindArgs[offset++] = encodeSingleElement(arrayValues.get(i / statementsPerArrayValue));
       }
