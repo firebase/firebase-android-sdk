@@ -49,60 +49,63 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     storeUnderTest = new MetaDataStore(fileStore);
   }
 
-  private UserMetadata metadataWithUserId() {
-    return metadataWithUserId(USER_ID);
+  private UserMetadata metadataWithUserId(String sessionId) {
+    return metadataWithUserId(sessionId, USER_ID);
   }
 
-  private UserMetadata metadataWithUserId(String id) {
-    UserMetadata metadata = new UserMetadata(fileStore);
-    metadata.setUserId(id);
+  private UserMetadata metadataWithUserId(String sessionId, String userId) {
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore);
+    metadata.setUserId(userId);
     return metadata;
   }
 
   public void testWriteUserData_allFields() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId().getUserId());
+    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals(USER_ID, userData.getUserId());
   }
 
   public void testWriteUserData_noFields() {
-    storeUnderTest.writeUserData(SESSION_ID_1, new UserMetadata(fileStore).getUserId());
+    storeUnderTest.writeUserData(
+        SESSION_ID_1, new UserMetadata(SESSION_ID_1, fileStore).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertNull(userData.getUserId());
   }
 
   public void testWriteUserData_singleField() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId().getUserId());
+    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals(USER_ID, userData.getUserId());
   }
 
   public void testWriteUserData_null() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(null).getUserId());
+    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, null).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals(null, userData.getUserId());
   }
 
   public void testWriteUserData_emptyString() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId("").getUserId());
+    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, "").getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals("", userData.getUserId());
   }
 
   public void testWriteUserData_unicode() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(UNICODE).getUserId());
+    storeUnderTest.writeUserData(
+        SESSION_ID_1, metadataWithUserId(SESSION_ID_1, UNICODE).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals(UNICODE, userData.getUserId());
   }
 
   public void testWriteUserData_escaped() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(ESCAPED).getUserId());
+    storeUnderTest.writeUserData(
+        SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore);
     assertEquals(ESCAPED.trim(), userData.getUserId());
   }
 
   public void testWriteUserData_readDifferentSession() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId().getUserId());
+    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore);
     assertNull(userData.getUserId());
   }

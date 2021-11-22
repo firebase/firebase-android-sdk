@@ -71,7 +71,7 @@ class CrashlyticsController {
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
   private final CrashlyticsFileMarker crashMarker;
-  private final UserMetadata userMetadata;
+  private UserMetadata userMetadata;
 
   private final CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -138,11 +138,13 @@ class CrashlyticsController {
   // region Exception handling
 
   void enableExceptionHandling(
-      Thread.UncaughtExceptionHandler defaultHandler, SettingsDataProvider settingsProvider) {
+      String sessionIdentifier,
+      Thread.UncaughtExceptionHandler defaultHandler,
+      SettingsDataProvider settingsProvider) {
     // This must be called before installing the controller with
     // Thread.setDefaultUncaughtExceptionHandler to ensure that we are ready to handle
     // any crashes we catch.
-    openSession();
+    openSession(sessionIdentifier);
     final CrashlyticsUncaughtExceptionHandler.CrashListener crashListener =
         new CrashlyticsUncaughtExceptionHandler.CrashListener() {
           @Override
@@ -193,7 +195,7 @@ class CrashlyticsController {
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsDataProvider);
-                doOpenSession();
+                doOpenSession(new CLSUUID(idManager).toString());
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
@@ -477,7 +479,7 @@ class CrashlyticsController {
             }
             // :TODO: Removing following line?
             // reportingCoordinator.persistUserId(currentSessionId);
-            userMetaData.serializeUserDataIfNeeded(currentSessionId);
+            userMetaData.serializeUserDataIfNeeded();
             return null;
           }
         });
@@ -505,7 +507,7 @@ class CrashlyticsController {
             queuedCallable.set(null);
 
             final String currentSessionId = getCurrentSessionId();
-            userMetadata.serializeKeysIfNeeded(currentSessionId, isInternal);
+            userMetadata.serializeKeysIfNeeded(isInternal);
             return null;
           }
         };
@@ -519,12 +521,12 @@ class CrashlyticsController {
   // region Session Management
 
   /** Open a new session on the single-threaded executor. */
-  void openSession() {
+  void openSession(String sessionIdentifier) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            doOpenSession();
+            doOpenSession(sessionIdentifier);
             return null;
           }
         });
@@ -576,9 +578,8 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doOpenSession() {
+  private void doOpenSession(String sessionIdentifier) {
     final long startedAtSeconds = getCurrentTimestampSeconds();
-    final String sessionIdentifier = new CLSUUID(idManager).toString();
 
     Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
 
@@ -595,6 +596,7 @@ class CrashlyticsController {
         startedAtSeconds,
         StaticSessionData.create(appData, osData, deviceData));
 
+    userMetadata = new UserMetadata(sessionIdentifier, fileStore);
     logFileManager.setCurrentSession(sessionIdentifier);
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }

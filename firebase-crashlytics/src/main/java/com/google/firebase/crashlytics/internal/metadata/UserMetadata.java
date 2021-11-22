@@ -33,6 +33,7 @@ public class UserMetadata {
   @VisibleForTesting public static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
   private final MetaDataStore metaDataStore;
+  private final String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
   // associated reference has been serialized since the last time it was updated.
@@ -48,7 +49,7 @@ public class UserMetadata {
 
   public static UserMetadata loadFromExistingSession(String sessionId, FileStore fileStore) {
     MetaDataStore store = new MetaDataStore(fileStore);
-    UserMetadata metadata = new UserMetadata(fileStore);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore);
     metadata.customKeys.getReference().setKeys(store.readKeyData(sessionId, false));
     metadata.internalKeys.getReference().setKeys(store.readKeyData(sessionId, true));
     metadata.setUserId(store.readUserId(sessionId));
@@ -56,7 +57,8 @@ public class UserMetadata {
     return metadata;
   }
 
-  public UserMetadata(FileStore fileStore) {
+  public UserMetadata(String sessionIdentifier, FileStore fileStore) {
+    this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
   }
 
@@ -123,11 +125,11 @@ public class UserMetadata {
     }
   }
 
-  public void serializeKeysIfNeeded(String sessionId, boolean isInternal) {
+  public void serializeKeysIfNeeded(boolean isInternal) {
     if (isInternal) {
-      serializeInternalKeysIfNeeded(sessionId);
+      serializeInternalKeysIfNeeded();
     } else {
-      serializeCustomKeysIfNeeded(sessionId);
+      serializeCustomKeysIfNeeded();
     }
   }
 
@@ -136,10 +138,10 @@ public class UserMetadata {
    * This method should be called on a worker thread, since the write operation (if necessary) may
    * be costly.
    */
-  public void serializeCustomKeysIfNeeded(String sessionId) {
+  public void serializeCustomKeysIfNeeded() {
     Map<String, String> keyData = getKeyDataForSerializationIfDirty(customKeys);
     if (keyData != null) {
-      metaDataStore.writeKeyData(sessionId, keyData, false);
+      metaDataStore.writeKeyData(sessionIdentifier, keyData, false);
     }
   }
 
@@ -148,10 +150,10 @@ public class UserMetadata {
    * called. This method should be called on a worker thread, since the write operation (if
    * necessary) may be costly.
    */
-  public void serializeInternalKeysIfNeeded(String sessionId) {
+  public void serializeInternalKeysIfNeeded() {
     Map<String, String> keyData = getKeyDataForSerializationIfDirty(internalKeys);
     if (keyData != null) {
-      metaDataStore.writeKeyData(sessionId, keyData, true);
+      metaDataStore.writeKeyData(sessionIdentifier, keyData, true);
     }
   }
 
@@ -160,7 +162,7 @@ public class UserMetadata {
    * called. This method should be called on a worker thread, since the write operation (if
    * necessary) may be costly.
    */
-  public void serializeUserDataIfNeeded(String sessionId) {
+  public void serializeUserDataIfNeeded() {
     String userIdString = null;
     boolean needsUpdate = false;
     synchronized (userId) {
@@ -171,7 +173,7 @@ public class UserMetadata {
       }
     }
     if (needsUpdate) {
-      metaDataStore.writeUserData(sessionId, userIdString);
+      metaDataStore.writeUserData(sessionIdentifier, userIdString);
     }
   }
 

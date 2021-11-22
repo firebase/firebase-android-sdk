@@ -51,6 +51,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class CrashlyticsControllerRobolectricTest {
   private static final String GOOGLE_APP_ID = "google:app:id";
+  private static final String SESSION_ID = "session_id";
 
   private Context testContext;
   @Mock private IdManager idManager;
@@ -161,7 +162,7 @@ public class CrashlyticsControllerRobolectricTest {
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class));
-    controller.openSession();
+    controller.openSession(SESSION_ID);
     return controller;
   }
 

@@ -53,6 +53,7 @@ import org.mockito.ArgumentCaptor;
 
 public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private static final String GOOGLE_APP_ID = "google:app:id";
+  private static final String SESSION_ID = "session_id";
 
   private Context testContext;
   private IdManager idManager;
@@ -170,7 +171,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   /** Creates a new CrashlyticsController with default options and opens a session. */
   private CrashlyticsController createController() {
     final CrashlyticsController controller = builder().build();
-    controller.openSession();
+    controller.openSession(SESSION_ID);
     return controller;
   }
 
@@ -488,7 +489,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
-    controller.openSession();
+    controller.openSession(SESSION_ID);
     controller.handleUncaughtException(
         testSettingsDataProvider, Thread.currentThread(), new RuntimeException("Fatal"));
     controller.finalizeSessions(testSettingsDataProvider);
