@@ -134,7 +134,8 @@ public class CrashlyticsCore {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
-      final UserMetadata userMetadata = new UserMetadata(sessionIdentifier, fileStore);
+      final UserMetadata userMetadata =
+          new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(

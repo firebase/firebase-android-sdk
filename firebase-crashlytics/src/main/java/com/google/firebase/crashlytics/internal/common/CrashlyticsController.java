@@ -50,7 +50,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 class CrashlyticsController {
 
@@ -422,97 +421,33 @@ class CrashlyticsController {
 
   void setUserId(String identifier) {
     userMetadata.setUserId(identifier);
-    cacheUserData(userMetadata);
   }
 
   void setCustomKey(String key, String value) {
     try {
-      if (userMetadata.setCustomKey(key, value)) {
-        cacheKeyData(userMetadata, false);
-      }
+      userMetadata.setCustomKey(key, value);
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
       } else {
         Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-        return;
       }
     }
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
     userMetadata.setCustomKeys(keysAndValues);
-    cacheKeyData(userMetadata, false);
   }
 
   void setInternalKey(String key, String value) {
     try {
-      if (userMetadata.setInternalKey(key, value)) {
-        cacheKeyData(userMetadata, true);
-      }
+      userMetadata.setInternalKey(key, value);
     } catch (IllegalArgumentException ex) {
       if (context != null && CommonUtils.isAppDebuggable(context)) {
         throw ex;
       } else {
         Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-        return;
       }
-    }
-  }
-
-  /**
-   * Cache user metadata asynchronously in case of a non-graceful process exit. Can be reloaded and
-   * sent with the previous crash data on app restart. NOTE: Because this is asynchronous, it is
-   * performant in critical code paths, but susceptible to losing data if a crash happens
-   * immediately after setting a value. If this becomes a problem, we can investigate writing
-   * synchronously, or potentially add an explicit user-facing API for synchronous writes.
-   */
-  private void cacheUserData(UserMetadata userMetaData) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            final String currentSessionId = getCurrentSessionId();
-            if (currentSessionId == null) {
-              Logger.getLogger().d("Tried to cache user data while no session was open.");
-              return null;
-            }
-            // :TODO: Removing following line?
-            // reportingCoordinator.persistUserId(currentSessionId);
-            userMetaData.serializeUserDataIfNeeded();
-            return null;
-          }
-        });
-  }
-
-  /**
-   * Cache custom key metadata asynchronously in case of a non-graceful process exit. Can be
-   * reloaded and sent with the previous crash data on app restart. If there's a previously-queued
-   * task to serialize this data, this method will not generate a new task, since the existing task
-   * will always grab the latest copy of the key data when it executes.
-   */
-  private final AtomicReference<Callable<Void>> queuedCustomKeysSerializer =
-      new AtomicReference<>(null);
-
-  private final AtomicReference<Callable<Void>> queuedInternalKeysSerializer =
-      new AtomicReference<>(null);
-
-  private void cacheKeyData(UserMetadata userMetadata, boolean isInternal) {
-    AtomicReference<Callable<Void>> queuedCallable =
-        isInternal ? queuedInternalKeysSerializer : queuedCustomKeysSerializer;
-    Callable<Void> newCallable =
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            queuedCallable.set(null);
-
-            final String currentSessionId = getCurrentSessionId();
-            userMetadata.serializeKeysIfNeeded(isInternal);
-            return null;
-          }
-        };
-    if (queuedCallable.compareAndSet(null, newCallable)) {
-      backgroundWorker.submit(newCallable);
     }
   }
 
@@ -596,7 +531,7 @@ class CrashlyticsController {
         startedAtSeconds,
         StaticSessionData.create(appData, osData, deviceData));
 
-    userMetadata = new UserMetadata(sessionIdentifier, fileStore);
+    userMetadata = new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
     logFileManager.setCurrentSession(sessionIdentifier);
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
@@ -869,7 +804,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

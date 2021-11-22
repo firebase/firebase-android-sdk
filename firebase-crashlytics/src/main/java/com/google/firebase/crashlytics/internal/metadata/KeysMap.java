@@ -47,7 +47,7 @@ class KeysMap {
     String sanitizedKey = sanitizeKey(key);
     // The entry can be added if we're under the size limit or we're updating an existing entry
     if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
-      String santitizedAttribute = sanitizeAttribute(value);
+      String santitizedAttribute = sanitizeString(value, maxEntryLength);
       if (CommonUtils.nullSafeEquals(keys.get(sanitizedKey), santitizedAttribute)) {
         return false;
       }
@@ -70,7 +70,7 @@ class KeysMap {
       // The entry can be added if we're under the size limit or we're updating an existing entry
       if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
         String value = entry.getValue();
-        keys.put(sanitizedKey, value == null ? "" : sanitizeAttribute(value));
+        keys.put(sanitizedKey, value == null ? "" : sanitizeString(value, maxEntryLength));
       } else {
         ++nOverLimit;
       }
@@ -91,15 +91,15 @@ class KeysMap {
     if (key == null) {
       throw new IllegalArgumentException("Custom attribute key must not be null.");
     }
-    return sanitizeAttribute(key);
+    return sanitizeString(key, maxEntryLength);
   }
 
-  /** Trims the string and truncates it to maxEntryLength, or returns null if input is null. */
-  public String sanitizeAttribute(String input) {
+  /** Trims the string and truncates it to maxLength, or returns null if input is null. */
+  public static String sanitizeString(String input, int maxLength) {
     if (input != null) {
       input = input.trim();
-      if (input.length() > maxEntryLength) {
-        input = input.substring(0, maxEntryLength);
+      if (input.length() > maxLength) {
+        input = input.substring(0, maxLength);
       }
     }
     return input;
