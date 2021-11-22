@@ -355,7 +355,7 @@ final class SQLiteIndexManager implements IndexManager {
               document.getKey(),
               uid,
               directionalValue,
-              /* arrayValue= */ null));
+              /* arrayValue= */ new byte[] {}));
     }
 
     return result;
@@ -374,9 +374,12 @@ final class SQLiteIndexManager implements IndexManager {
 
   private void deleteIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
-        "DELETE FROM index_entries WHERE index_id = ? AND uid = ? AND document_key = ?",
+        "DELETE FROM index_entries WHERE index_id = ? AND uid = ? AND array_value = ? "
+            + "AND directional_value = ? AND document_name = ?",
         indexEntry.getIndexId(),
         uid,
+        indexEntry.getArrayValue(),
+        indexEntry.getDirectionalValue(),
         document.getKey().toString());
   }
 
@@ -395,7 +398,7 @@ final class SQLiteIndexManager implements IndexManager {
                         documentKey,
                         row.getString(0),
                         row.getBlob(1),
-                        row.isNull(2) ? null : row.getBlob(2))));
+                        row.getBlob(2))));
     return results;
   }
 

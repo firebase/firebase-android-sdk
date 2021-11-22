@@ -17,7 +17,6 @@ package com.google.firebase.firestore.index;
 import static com.google.firebase.firestore.util.Util.compareByteArrays;
 import static com.google.firebase.firestore.util.Util.nullSafeCompare;
 
-import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Util;
@@ -29,9 +28,9 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
   public static IndexEntry create(
       int indexId,
       DocumentKey documentKey,
-      @Nullable String uid,
+      String uid,
       byte[] directionalValue,
-      @Nullable byte[] arrayValue) {
+      byte[] arrayValue) {
     return new AutoValue_IndexEntry(indexId, documentKey, uid, arrayValue, directionalValue);
   }
 
@@ -39,10 +38,10 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
 
   public abstract DocumentKey getDocumentKey();
 
-  public abstract @Nullable String getUid();
+  public abstract String getUid();
 
   @SuppressWarnings("mutable")
-  public abstract @Nullable byte[] getArrayValue();
+  public abstract byte[] getArrayValue();
 
   @SuppressWarnings("mutable")
   public abstract byte[] getDirectionalValue();
