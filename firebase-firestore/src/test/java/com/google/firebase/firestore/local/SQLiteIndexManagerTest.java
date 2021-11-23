@@ -298,9 +298,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testIndexEntriesAreUpdated() {
-    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addFieldIndex(
-        fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
     Query query = query("coll").orderBy(orderBy("value"));
 
     addDoc("coll/doc1", map("value", true));
@@ -312,9 +310,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   @Test
   public void testIndexEntriesAreUpdatedWithDeletedDoc() {
-    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
-    sqLiteIndexManager.addFieldIndex(
-        fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
     Query query = query("coll").orderBy(orderBy("value"));
 
     addDoc("coll/doc1", map("value", true));
