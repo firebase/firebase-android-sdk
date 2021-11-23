@@ -446,11 +446,13 @@ public class FirebaseApp {
     componentRuntime = runtimeBuilder.build();
     Instant runtimeEnd = Instant.now();
 
-    Instant tracerStart = Instant.now();
-    tracer.setTracer(componentRuntime.get(ExtendedTracer.class));
-    Instant tracerEnd = Instant.now();
-
     if (tracingEnabled) {
+      // Get the tracer only if tracing is enabled, this is required to make sure we don't try to
+      // initialize Firebase Performance in direct boot mode since it would crash.
+      Instant tracerStart = Instant.now();
+      tracer.setTracer(componentRuntime.get(ExtendedTracer.class));
+      Instant tracerEnd = Instant.now();
+
       tracer.recordTrace("loadOptions", options.loadStartTime, options.loadEndTime, VERSION_ATTRS);
       tracer.recordTrace("discoverComponents", discoverStart, discoverEnd, VERSION_ATTRS);
       tracer.recordTrace("runtimeInit", runtimeStart, runtimeEnd, VERSION_ATTRS);
@@ -625,6 +627,9 @@ public class FirebaseApp {
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {
       Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
+
+      // Tracer must be the first to initialize if present.
+      componentRuntime.get(ExtendedTracer.class);
       componentRuntime.initializeEagerComponents(isDefaultApp());
       defaultHeartBeatController.get().registerHeartBeat();
 
