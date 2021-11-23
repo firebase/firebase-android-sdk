@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
+import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
@@ -313,6 +314,20 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     addDocs(doc("coll/doc1", 1, map()), doc("coll/doc2", 1, map("value", true)));
     verifyResults(query, "coll/doc2");
+  }
+
+  @Test
+  public void testIndexEntriesAreUpdatedWithDeletedDoc() {
+    SQLiteIndexManager sqLiteIndexManager = (SQLiteIndexManager) indexManager;
+    sqLiteIndexManager.addFieldIndex(
+            fieldIndex("coll", "value", FieldIndex.Segment.Kind.ASCENDING));
+    Query query = query("coll").orderBy(orderBy("value"));
+
+    addDoc("coll/doc1", map("value", true));
+    verifyResults(query, "coll/doc1");
+
+    addDocs(deletedDoc("coll/doc1", 1));
+    verifyResults(query);
   }
 
   @Test
