@@ -62,7 +62,7 @@ public class FirebaseAppDistribution {
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInClient testerSignInClient,
       @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
-      @NonNull UpdateApkClient updateApkClient, 
+      @NonNull UpdateApkClient updateApkClient,
       @NonNull UpdateAabClient updateAabClient,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
@@ -243,16 +243,16 @@ public class FirebaseAppDistribution {
     if (cachedNewRelease == null) {
       LogWrapper.getInstance().v("New release not found.");
       return getErrorUpdateTask(
-              new FirebaseAppDistributionException(
-                      Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
     }
 
     if (cachedNewRelease.getDownloadUrl() == null) {
       LogWrapper.getInstance().v("Download failed to execute");
       return getErrorUpdateTask(
-              new FirebaseAppDistributionException(
-                      Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
-                      FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+              FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
     }
 
     if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
