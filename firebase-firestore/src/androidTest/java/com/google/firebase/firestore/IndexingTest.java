@@ -49,7 +49,7 @@ public class IndexingTest {
   }
 
   @Test
-  public void testCanConfigureIndices() throws ExecutionException, InterruptedException {
+  public void testCanConfigureIndexes() throws ExecutionException, InterruptedException {
     FirebaseFirestore db = testFirestore();
     Task<Void> indexTask =
         db.setIndexConfiguration(
