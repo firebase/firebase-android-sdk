@@ -186,7 +186,7 @@ public class FirebaseAppDistribution {
    * sign in UI
    */
   @NonNull
-  public Task<AppDistributionRelease> checkForNewRelease() {
+  public synchronized Task<AppDistributionRelease> checkForNewRelease() {
     if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
       LogWrapper.getInstance().v("Response in progress");
       return cachedCheckForNewReleaseTask;
