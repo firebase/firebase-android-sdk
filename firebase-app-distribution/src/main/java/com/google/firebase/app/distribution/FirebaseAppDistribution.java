@@ -15,6 +15,7 @@
 package com.google.firebase.app.distribution;
 
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
@@ -39,8 +40,9 @@ public class FirebaseAppDistribution {
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
   private final CheckForNewReleaseClient checkForNewReleaseClient;
-  private final UpdateAppClient updateAppClient;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+  private final UpdateApkClient updateApkClient;
+  private final UpdateAabClient updateAabClient;
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   @GuardedBy("updateTaskLock")
@@ -60,13 +62,15 @@ public class FirebaseAppDistribution {
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInClient testerSignInClient,
       @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
-      @NonNull UpdateAppClient updateAppClient,
+      @NonNull UpdateApkClient updateApkClient, 
+      @NonNull UpdateAabClient updateAabClient,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
     this.testerSignInClient = testerSignInClient;
     this.checkForNewReleaseClient = checkForNewReleaseClient;
-    this.updateAppClient = updateAppClient;
+    this.updateApkClient = updateApkClient;
+    this.updateAabClient = updateAabClient;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
@@ -83,7 +87,8 @@ public class FirebaseAppDistribution {
         new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
         new CheckForNewReleaseClient(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateAppClient(firebaseApp),
+        new UpdateApkClient(firebaseApp, new InstallApkClient()),
+        new UpdateAabClient(),
         signInStorage,
         lifecycleNotifier);
   }
@@ -226,7 +231,7 @@ public class FirebaseAppDistribution {
    * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
    * basic configuration and false for advanced configuration.
    */
-  private synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
+  public synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -235,7 +240,26 @@ public class FirebaseAppDistribution {
       return updateTask;
     }
 
-    return this.updateAppClient.updateApp(cachedNewRelease, showDownloadInNotificationManager);
+    if (cachedNewRelease == null) {
+      LogWrapper.getInstance().v("New release not found.");
+      return getErrorUpdateTask(
+              new FirebaseAppDistributionException(
+                      Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+    }
+
+    if (cachedNewRelease.getDownloadUrl() == null) {
+      LogWrapper.getInstance().v("Download failed to execute");
+      return getErrorUpdateTask(
+              new FirebaseAppDistributionException(
+                      Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                      FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+    }
+
+    if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
+      return this.updateAabClient.updateAab(cachedNewRelease);
+    } else {
+      return this.updateApkClient.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+    }
   }
 
   /** Returns true if the App Distribution tester is signed in */
@@ -370,5 +394,11 @@ public class FirebaseAppDistribution {
       updateDialog.dismiss();
       updateDialogShown = false;
     }
+  }
+
+  private UpdateTask getErrorUpdateTask(Exception e) {
+    UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    updateTask.setException(e);
+    return updateTask;
   }
 }

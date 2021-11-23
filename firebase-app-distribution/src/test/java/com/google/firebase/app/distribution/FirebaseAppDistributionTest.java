@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -90,7 +91,8 @@ public class FirebaseAppDistributionTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
   @Mock private CheckForNewReleaseClient mockCheckForNewReleaseClient;
-  @Mock private UpdateAppClient mockUpdateAppClient;
+  private UpdateApkClient mockUpdateApkClient;
+  @Mock private UpdateAabClient mockUpdateAabClient;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
@@ -118,7 +120,8 @@ public class FirebaseAppDistributionTest {
                 firebaseApp,
                 mockTesterSignInClient,
                 mockCheckForNewReleaseClient,
-                mockUpdateAppClient,
+                mockUpdateApkClient,
+                mockUpdateAabClient,
                 mockSignInStorage,
                 mockLifecycleNotifier));
 
@@ -220,7 +223,8 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     firebaseAppDistribution.setCachedNewRelease(newRelease);
-    when(mockUpdateAppClient.updateApp(newRelease, true)).thenReturn(new UpdateTaskImpl());
+  //  when(firebaseAppDistribution.updateApp(true)).thenReturn(new UpdateTaskImpl());
+    doReturn(new UpdateTaskImpl()).when(firebaseAppDistribution).updateApp(true);
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -376,7 +380,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.setCachedNewRelease(newRelease);
 
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
-    when(mockUpdateAppClient.updateApp(newRelease, true)).thenReturn(mockTask);
+    when(firebaseAppDistribution.updateApp(true)).thenReturn(mockTask);
     mockTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(1)
