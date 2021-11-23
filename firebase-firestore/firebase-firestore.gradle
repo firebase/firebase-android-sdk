@@ -168,6 +168,7 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
     testImplementation 'junit:junit:4.12'
+    testImplementation 'com.github.javafaker:javafaker:1.0.2'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
@@ -178,6 +179,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
     androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.github.javafaker:javafaker:1.0.2'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
     }

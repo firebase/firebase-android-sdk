@@ -529,7 +529,7 @@ public class FirebaseFirestore {
   }
 
   @VisibleForTesting
-  AsyncQueue getAsyncQueue() {
+  public AsyncQueue getAsyncQueue() {
     return asyncQueue;
   }
 
