@@ -695,13 +695,12 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .getSequenceNumber());
   }
 
-  private void addDoc(String key, Map<String, Object> data) {
-    MutableDocument doc = doc(key, 1, data);
-    indexManager.updateIndexEntries(Collections.singletonList(doc));
-  }
-
   private void addDocs(Document... docs) {
     indexManager.updateIndexEntries(Arrays.asList(docs));
+  }
+
+  private void addDoc(String key, Map<String, Object> data) {
+    addDocs(doc(key, 1, data));
   }
 
   private void verifyResults(Query query, String... documents) {
