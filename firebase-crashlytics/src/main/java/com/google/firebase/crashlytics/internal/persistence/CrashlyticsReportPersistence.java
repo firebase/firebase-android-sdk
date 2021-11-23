@@ -54,7 +54,7 @@ public class CrashlyticsReportPersistence {
   private static final int MAX_OPEN_SESSIONS = 8;
 
   private static final String REPORT_FILE_NAME = "report";
-  private static final String USER_FILE_NAME = "user";
+  private static final String USER_ID_FILE_NAME = "user-id";
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
@@ -142,7 +142,7 @@ public class CrashlyticsReportPersistence {
 
   public void persistUserIdForSession(@NonNull String userId, @NonNull String sessionId) {
     try {
-      writeTextFile(fileStore.getSessionFile(sessionId, USER_FILE_NAME), userId);
+      writeTextFile(fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME), userId);
     } catch (IOException e) {
       // Session directory is not guaranteed to exist
       Logger.getLogger().w("Could not persist user ID for session " + sessionId, e);
@@ -322,7 +322,7 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = null;
-    final File userIdFile = fileStore.getSessionFile(sessionId, USER_FILE_NAME);
+    final File userIdFile = fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME);
     if (userIdFile.isFile()) {
       try {
         userId = readTextFile(userIdFile);
