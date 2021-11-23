@@ -39,7 +39,6 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.Values;
 import java.util.ArrayList;
 import java.util.Arrays;
