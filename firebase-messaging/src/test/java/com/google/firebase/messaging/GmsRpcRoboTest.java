@@ -128,17 +128,7 @@ public class GmsRpcRoboTest {
           public HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
             return HeartBeat.GLOBAL;
           }
-
-          @Override
-          public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
-            return null;
-          }
-
-          @Override
-          public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
-            return null;
-          }
-        };
+    };
     Provider<HeartBeatInfo> heartBeatInfo = () -> heartBeatInfoObject;
     UserAgentPublisher userAgentPublisherObject = () -> USER_AGENT;
     Provider<UserAgentPublisher> userAgentPublisher = () -> userAgentPublisherObject;
