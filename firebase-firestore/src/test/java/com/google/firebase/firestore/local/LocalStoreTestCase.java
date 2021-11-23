@@ -38,7 +38,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.viewChanges;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -74,12 +73,10 @@ import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -158,11 +155,14 @@ public abstract class LocalStoreTestCase {
     MutationBatch batch = batches.remove(0);
     SnapshotVersion version = version(documentVersion);
     List<MutationResult> mutationResults =
-        transformResult == null
-            ? singletonList(new MutationResult(version, emptyList()))
-            : Arrays.stream(transformResult)
-                .map(o -> new MutationResult(version, Collections.singletonList(TestUtil.wrap(o))))
-                .collect(Collectors.toList());
+        Collections.singletonList(new MutationResult(version, emptyList()));
+    if (transformResult != null) {
+      mutationResults = new ArrayList<>();
+      for (Object o : transformResult) {
+        mutationResults.add(
+            new MutationResult(version, Collections.singletonList(TestUtil.wrap(o))));
+      }
+    }
     MutationBatchResult result =
         MutationBatchResult.create(batch, version, mutationResults, WriteStream.EMPTY_STREAM_TOKEN);
     lastChanges = localStore.acknowledgeBatch(result);
@@ -964,8 +964,12 @@ public abstract class LocalStoreTestCase {
     localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
-    // No mutations are read because only overlay is needed.
-    assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 0);
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      // No mutations are read because only overlay is needed.
+      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 0);
+    } else {
+      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
+    }
   }
 
   @Test
