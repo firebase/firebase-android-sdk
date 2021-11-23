@@ -5,7 +5,10 @@ THIRD_PARTY_PATH := ../../../../third_party
 include $(CLEAR_VARS)
 
 LOCAL_MODULE := crashpad_handler_lib
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/../../libchrome/include \
+    $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad \
+
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \
     -DCRASHPAD_ZLIB_SOURCE_SYSTEM \

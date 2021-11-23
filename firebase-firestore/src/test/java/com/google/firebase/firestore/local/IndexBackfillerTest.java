@@ -15,32 +15,29 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.local.SQLiteIndexManagerTest.getCollectionGroupsOrderByUpdateTime;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
-import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
+import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -95,26 +92,24 @@ public class IndexBackfillerTest {
     persistence.shutdown();
   }
 
-  // TODO(indexing): Re-enable this test once we have counters implemented.
   @Test
-  @Ignore
   public void testBackfillWritesLatestReadTimeToFieldIndexOnCompletion() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "bar");
-    addDoc("coll1/docA", "foo", version(10, 0));
-    addDoc("coll2/docA", "bar", version(20, 0));
+    addDoc("coll1/docA", "foo", version(10));
+    addDoc("coll2/docA", "bar", version(20));
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(2, results.getDocumentsProcessed());
 
     FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
     FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
-    assertEquals(version(10, 0), fieldIndex1.getUpdateTime());
-    assertEquals(version(20, 0), fieldIndex2.getUpdateTime());
+    assertEquals(version(10), fieldIndex1.getIndexState().getReadTime());
+    assertEquals(version(20), fieldIndex2.getIndexState().getReadTime());
 
     addDoc("coll1/docB", "foo", version(50, 10));
-    addDoc("coll1/docC", "foo", version(50, 0));
-    addDoc("coll2/docB", "bar", version(60, 0));
+    addDoc("coll1/docC", "foo", version(50));
+    addDoc("coll2/docB", "bar", version(60));
     addDoc("coll2/docC", "bar", version(60, 10));
 
     results = backfiller.backfill();
@@ -122,43 +117,41 @@ public class IndexBackfillerTest {
 
     fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
     fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
-    assertEquals(version(50, 10), fieldIndex1.getUpdateTime());
-    assertEquals(version(60, 10), fieldIndex2.getUpdateTime());
+    assertEquals(version(50, 10), fieldIndex1.getIndexState().getReadTime());
+    assertEquals(version(60, 10), fieldIndex2.getIndexState().getReadTime());
   }
 
   @Test
-  @Ignore("Flaky")
-  // TODO(indexing): This test is flaky. Fix.
   public void testBackfillFetchesDocumentsAfterEarliestReadTime() {
-    addFieldIndex("coll1", "foo", version(10, 0));
-    addFieldIndex("coll1", "boo", version(20, 0));
-    addFieldIndex("coll1", "moo", version(30, 0));
+    addFieldIndex("coll1", "foo", version(10));
 
     // Documents before earliest read time should not be fetched.
-    addDoc("coll1/docA", "foo", version(9, 0));
+    addDoc("coll1/docA", "foo", version(9));
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(0, results.getDocumentsProcessed());
 
+    // Read time of index should not change.
+    Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
+    assertEquals(version(10), it.next().getIndexState().getReadTime());
+
     // Documents that are after the earliest read time but before field index read time are fetched.
-    addDoc("coll1/docB", "boo", version(19, 0));
+    addDoc("coll1/docB", "boo", version(19));
     results = backfiller.backfill();
     assertEquals(1, results.getDocumentsProcessed());
 
-    // Field indexes should still hold the latest read time.
-    Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(10, 0), it.next().getUpdateTime());
-    assertEquals(version(20, 0), it.next().getUpdateTime());
-    assertEquals(version(30, 0), it.next().getUpdateTime());
+    // Field indexes should now hold the latest read time
+    it = indexManager.getFieldIndexes("coll1").iterator();
+    assertEquals(version(19), it.next().getIndexState().getReadTime());
   }
 
   @Test
   public void testBackfillWritesIndexEntries() {
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "bar");
-    addDoc("coll1/docA", "foo", version(10, 0));
-    addDoc("coll1/docB", "boo", version(10, 0));
-    addDoc("coll2/docA", "bar", version(10, 0));
-    addDoc("coll2/docB", "car", version(10, 0));
+    addDoc("coll1/docA", "foo", version(10));
+    addDoc("coll1/docB", "boo", version(10));
+    addDoc("coll2/docA", "bar", version(10));
+    addDoc("coll2/docB", "car", version(10));
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(4, results.getDocumentsProcessed());
@@ -170,73 +163,64 @@ public class IndexBackfillerTest {
 
     addFieldIndex("coll1", "foo");
     Target target = query("coll1").orderBy(orderBy("foo")).toTarget();
-    addDoc("coll1/docA", "foo", version(5, 0));
-    addDoc("coll1/docB", "foo", version(3, 0));
-    addDoc("coll1/docC", "foo", version(10, 0));
+    addDoc("coll1/docA", "foo", version(5));
+    addDoc("coll1/docB", "foo", version(3));
+    addDoc("coll1/docC", "foo", version(10));
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(2, results.getDocumentsProcessed());
 
-    FieldIndex persistedIndex = indexManager.getFieldIndex(target);
-    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
-    assertThat(keys).contains(key("coll1/docA"));
-    assertThat(keys).contains(key("coll1/docB"));
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
 
     results = backfiller.backfill();
     assertEquals(1, results.getDocumentsProcessed());
 
-    keys = indexManager.getDocumentsMatchingTarget(persistedIndex, query("coll1").toTarget());
-    assertThat(keys).contains(key("coll1/docA"));
-    assertThat(keys).contains(key("coll1/docB"));
-    assertThat(keys).contains(key("coll1/docC"));
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC");
   }
 
   @Test
   public void testBackfillUpdatesCollectionGroups() {
+    backfiller.setMaxDocumentsToProcess(2);
+
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
-    addFieldIndex("coll3", "foo");
-    addCollectionGroup("coll1", new Timestamp(30, 0));
-    addCollectionGroup("coll2", new Timestamp(30, 30));
-    addCollectionGroup("coll3", new Timestamp(10, 0));
-    addDoc("coll1/docA", "foo", version(10, 0));
-    addDoc("coll2/docA", "foo", version(10, 0));
-    addDoc("coll3/docA", "foo", version(10, 0));
+
+    addDoc("coll1/docA", "foo", version(10));
+    addDoc("coll1/docB", "foo", version(20));
+    addDoc("coll2/docA", "foo", version(30));
+
+    String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
+    assertEquals("coll1", collectionGroup);
 
     IndexBackfiller.Results results = backfiller.backfill();
-    assertEquals(3, results.getDocumentsProcessed());
+    assertEquals(2, results.getDocumentsProcessed());
 
-    // Check that index entries are written in order of the collection group update times by
-    // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
-    assertEquals(3, collectionGroups.size());
-    assertEquals("coll3", collectionGroups.get(0));
-    assertEquals("coll1", collectionGroups.get(1));
-    assertEquals("coll2", collectionGroups.get(2));
+    // Check that coll1 was backfilled and that coll2 is next
+    collectionGroup = indexManager.getNextCollectionGroupToUpdate();
+    assertEquals("coll2", collectionGroup);
   }
 
   @Test
-  @Ignore("Flaky")
-  // TODO(indexing): This test is flaky. Fix.
   public void testBackfillPrioritizesNewCollectionGroups() {
+    backfiller.setMaxDocumentsToProcess(1);
+
     // In this test case, `coll3` is a new collection group that hasn't been indexed, so it should
     // be processed ahead of the other collection groups.
-    addFieldIndex("coll1", "foo");
-    addFieldIndex("coll2", "foo");
-    addCollectionGroup("coll1", new Timestamp(1, 0));
-    addCollectionGroup("coll2", new Timestamp(2, 0));
-    addFieldIndex("coll3", "foo");
+    addFieldIndex("coll1", "foo", /* sequenceNumber= */ 1);
+    addFieldIndex("coll2", "foo", /* sequenceNumber= */ 2);
+    addFieldIndex("coll3", "foo", /* sequenceNumber= */ 0);
+
+    addDoc("coll1/doc", "foo", version(10));
+    addDoc("coll2/doc", "foo", version(20));
+    addDoc("coll3/doc", "foo", version(30));
+
+    // Check that coll3 is the next collection ID the backfiller should update
+    assertEquals("coll3", indexManager.getNextCollectionGroupToUpdate());
 
     IndexBackfiller.Results results = backfiller.backfill();
-    assertEquals(0, results.getDocumentsProcessed());
+    assertEquals(1, results.getDocumentsProcessed());
 
-    // Check that index entries are written in order of the collection group update times by
-    // verifying the collection group update times have been updated in the correct order.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
-    assertEquals(3, collectionGroups.size());
-    assertEquals("coll3", collectionGroups.get(0));
-    assertEquals("coll1", collectionGroups.get(1));
-    assertEquals("coll2", collectionGroups.get(2));
+    verifyQueryResults("coll3", "coll3/doc");
   }
 
   @Test
@@ -244,40 +228,52 @@ public class IndexBackfillerTest {
     backfiller.setMaxDocumentsToProcess(3);
     addFieldIndex("coll1", "foo");
     addFieldIndex("coll2", "foo");
-    addCollectionGroup("coll1", new Timestamp(1, 0));
-    addDoc("coll1/docA", "foo", version(10, 0));
-    addDoc("coll1/docB", "foo", version(10, 0));
-    addDoc("coll2/docA", "foo", version(10, 0));
-    addDoc("coll2/docB", "foo", version(10, 0));
+    addDoc("coll1/docA", "foo", version(10));
+    addDoc("coll1/docB", "foo", version(20));
+    addDoc("coll2/docA", "foo", version(30));
+    addDoc("coll2/docA", "foo", version(40));
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(3, results.getDocumentsProcessed());
 
-    // Check that collection groups are updated even if the backfiller hits the write cap. Since
-    // `coll1` was already in the table, `coll2` should be processed first, and thus appear first
-    // in the ordering.
-    List<String> collectionGroups = getCollectionGroupsOrderByUpdateTime(persistence);
-    assertEquals(2, collectionGroups.size());
-    assertEquals("coll2", collectionGroups.get(0));
-    assertEquals("coll1", collectionGroups.get(1));
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
+    verifyQueryResults("coll2", "coll2/docA");
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName) {
     FieldIndex fieldIndex =
-        new FieldIndex(collectionGroup)
-            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ASCENDING);
+        fieldIndex(collectionGroup, fieldName, FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
   }
 
-  private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion readTime) {
-    indexManager.addFieldIndex(
-        new FieldIndex(collectionGroup)
-            .withAddedField(field(fieldName), FieldIndex.Segment.Kind.ASCENDING)
-            .withUpdateTime(readTime));
+  private void addFieldIndex(String collectionGroup, String fieldName, SnapshotVersion version) {
+    FieldIndex fieldIndex =
+        fieldIndex(
+            collectionGroup,
+            FieldIndex.UNKNOWN_ID,
+            FieldIndex.IndexState.create(0, version),
+            fieldName,
+            FieldIndex.Segment.Kind.ASCENDING);
+    indexManager.addFieldIndex(fieldIndex);
   }
 
-  private void addCollectionGroup(String collectionGroup, Timestamp updateTime) {
-    indexManager.setCollectionGroupUpdateTime(collectionGroup, updateTime);
+  private void addFieldIndex(String collectionGroup, String fieldName, long sequenceNumber) {
+    FieldIndex fieldIndex =
+        fieldIndex(
+            collectionGroup,
+            FieldIndex.UNKNOWN_ID,
+            FieldIndex.IndexState.create(sequenceNumber, SnapshotVersion.NONE),
+            fieldName,
+            FieldIndex.Segment.Kind.ASCENDING);
+    indexManager.addFieldIndex(fieldIndex);
+  }
+
+  private void verifyQueryResults(String collectionGroup, String... expectedKeys) {
+    Target target = query(collectionGroup).orderBy(orderBy("foo")).toTarget();
+    FieldIndex persistedIndex = indexManager.getFieldIndex(target);
+    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
+    assertThat(actualKeys)
+        .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
   }
 
   /** Creates a document and adds it to the RemoteDocumentCache. */

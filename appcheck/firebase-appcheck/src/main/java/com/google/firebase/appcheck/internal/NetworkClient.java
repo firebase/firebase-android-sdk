@@ -26,7 +26,12 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.FirebaseAppCheck;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -58,12 +63,14 @@ public class NetworkClient {
   @VisibleForTesting static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
   @VisibleForTesting static final String X_ANDROID_PACKAGE = "X-Android-Package";
   @VisibleForTesting static final String X_ANDROID_CERT = "X-Android-Cert";
+  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
 
   private final Context context;
-  private final DefaultFirebaseAppCheck firebaseAppCheck;
   private final String apiKey;
   private final String appId;
   private final String projectId;
+  private final Provider<UserAgentPublisher> userAgentPublisherProvider;
+  private final Provider<HeartBeatInfo> heartBeatInfoProvider;
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({UNKNOWN, SAFETY_NET, DEBUG})
@@ -74,15 +81,34 @@ public class NetworkClient {
   public static final int DEBUG = 2;
 
   public NetworkClient(@NonNull FirebaseApp firebaseApp) {
-    checkNotNull(firebaseApp);
-    this.context = firebaseApp.getApplicationContext();
-    this.firebaseAppCheck = (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp);
-    this.apiKey = firebaseApp.getOptions().getApiKey();
-    this.appId = firebaseApp.getOptions().getApplicationId();
-    this.projectId = firebaseApp.getOptions().getProjectId();
+    this(
+        firebaseApp.getApplicationContext(),
+        firebaseApp.getOptions(),
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp))
+            .getUserAgentPublisherProvider(),
+        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp))
+            .getHeartBeatInfoProvider());
+  }
+
+  @VisibleForTesting
+  NetworkClient(
+      @NonNull Context context,
+      @NonNull FirebaseOptions firebaseOptions,
+      @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
+      @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider) {
+    checkNotNull(context);
+    checkNotNull(firebaseOptions);
+    checkNotNull(userAgentPublisherProvider);
+    checkNotNull(heartBeatInfoProvider);
+    this.context = context;
+    this.apiKey = firebaseOptions.getApiKey();
+    this.appId = firebaseOptions.getApplicationId();
+    this.projectId = firebaseOptions.getProjectId();
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions#getProjectId cannot be null.");
     }
+    this.userAgentPublisherProvider = userAgentPublisherProvider;
+    this.heartBeatInfoProvider = heartBeatInfoProvider;
   }
 
   /**
@@ -105,12 +131,17 @@ public class NetworkClient {
       urlConnection.setDoOutput(true);
       urlConnection.setFixedLengthStreamingMode(requestBytes.length);
       urlConnection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      if (firebaseAppCheck.getUserAgent() != null) {
-        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, firebaseAppCheck.getUserAgent());
+      String userAgent = getUserAgent();
+      if (userAgent != null) {
+        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, userAgent);
       }
-      if (firebaseAppCheck.getHeartbeatCode() != null) {
+
+      // getHeartbeatCode should not be called multiple times, as subsequent calls will return
+      // HeartBeat.NONE until the heartbeat is reset.
+      HeartBeat heartBeat = getHeartbeatCode();
+      if (heartBeat != HeartBeat.NONE) {
         urlConnection.setRequestProperty(
-            X_FIREBASE_CLIENT_LOG_TYPE, firebaseAppCheck.getHeartbeatCode());
+            X_FIREBASE_CLIENT_LOG_TYPE, Integer.toString(heartBeat.getCode()));
       }
 
       // Headers for Android API key restrictions.
@@ -150,6 +181,18 @@ public class NetworkClient {
     } finally {
       urlConnection.disconnect();
     }
+  }
+
+  private String getUserAgent() {
+    return userAgentPublisherProvider.get() != null
+        ? userAgentPublisherProvider.get().getUserAgent()
+        : null;
+  }
+
+  private HeartBeat getHeartbeatCode() {
+    return heartBeatInfoProvider.get() != null
+        ? heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG)
+        : HeartBeat.NONE;
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */

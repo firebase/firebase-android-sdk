@@ -75,6 +75,6 @@ class CrashlyticsFileMarker {
   }
 
   private File getMarkerFile() {
-    return new File(fileStore.getFilesDir(), markerName);
+    return fileStore.getCommonFile(markerName);
   }
 }

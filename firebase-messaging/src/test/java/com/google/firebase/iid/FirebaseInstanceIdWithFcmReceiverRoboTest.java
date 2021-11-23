@@ -125,7 +125,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   }
 
   @Test
-  @Config(minSdk = VERSION_CODES.O)
+  @Config(sdk = VERSION_CODES.O)
   public void testStartsService_oButAppNotTargetingO() throws Exception {
     setFinalStatic(Build.VERSION.class.getField("SDK_INT"), 26);
     context.getApplicationInfo().targetSdkVersion = VERSION_CODES.N_MR1;

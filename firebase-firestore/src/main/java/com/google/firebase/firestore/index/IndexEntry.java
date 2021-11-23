@@ -14,44 +14,43 @@
 
 package com.google.firebase.firestore.index;
 
-/**
- * Represents an index entry saved by the SDK in the local storage. Temporary placeholder, since
- * we'll probably serialize the indexValue right away rather than store it.
- */
-// TODO(indexing)
-public class IndexEntry {
-  private final int indexId;
-  private final byte[] arrayValue;
-  private final byte[] directionalValue;
-  private final String uid;
-  private final String documentName;
+import static com.google.firebase.firestore.util.Util.compareByteArrays;
+import static com.google.firebase.firestore.util.Util.nullSafeCompare;
 
-  public IndexEntry(
-      int indexId, byte[] arrayValue, byte[] directionalValue, String uid, String documentName) {
-    this.indexId = indexId;
-    this.arrayValue = arrayValue;
-    this.directionalValue = directionalValue;
-    this.uid = uid;
-    this.documentName = documentName;
+import com.google.auto.value.AutoValue;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.util.Util;
+
+/** Represents an index entry saved by the SDK in its local storage. */
+@AutoValue
+public abstract class IndexEntry implements Comparable<IndexEntry> {
+
+  public static IndexEntry create(
+      int indexId, DocumentKey documentKey, byte[] arrayValue, byte[] directionalValue) {
+    return new AutoValue_IndexEntry(indexId, documentKey, arrayValue, directionalValue);
   }
 
-  public int getIndexId() {
-    return indexId;
-  }
+  public abstract int getIndexId();
 
-  public byte[] getArrayValue() {
-    return arrayValue;
-  }
+  public abstract DocumentKey getDocumentKey();
 
-  public byte[] getDirectionalValue() {
-    return directionalValue;
-  }
+  @SuppressWarnings("mutable")
+  public abstract byte[] getArrayValue();
 
-  public String getUid() {
-    return uid;
-  }
+  @SuppressWarnings("mutable")
+  public abstract byte[] getDirectionalValue();
 
-  public String getDocumentName() {
-    return documentName;
+  @Override
+  public int compareTo(IndexEntry other) {
+    int cmp = Integer.compare(getIndexId(), other.getIndexId());
+    if (cmp != 0) return cmp;
+
+    cmp = getDocumentKey().compareTo(other.getDocumentKey());
+    if (cmp != 0) return cmp;
+
+    cmp = compareByteArrays(getDirectionalValue(), other.getDirectionalValue());
+    if (cmp != 0) return cmp;
+
+    return nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
   }
 }

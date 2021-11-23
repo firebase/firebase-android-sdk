@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -27,10 +26,13 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
@@ -44,6 +46,7 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
+  private final RemoteDocumentCache remoteDocumentCache;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
@@ -51,6 +54,7 @@ public class IndexBackfiller {
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
     this.scheduler = new Scheduler(asyncQueue);
+    this.remoteDocumentCache = persistence.getRemoteDocumentCache();
   }
 
   public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
@@ -131,7 +135,6 @@ public class IndexBackfiller {
     return persistence.runTransaction(
         "Backfill Indexes",
         () -> {
-          // TODO(indexing): Handle field indexes that are removed by the user.
           int documentsProcessed = writeIndexEntries(localDocumentsView);
           return new Results(/* hasRun= */ true, documentsProcessed);
         });
@@ -139,20 +142,18 @@ public class IndexBackfiller {
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
-    int documentsProcessed = 0;
-    Timestamp startingTimestamp = Timestamp.now();
-
-    while (documentsProcessed < maxDocumentsToProcess) {
-      int documentsRemaining = maxDocumentsToProcess - documentsProcessed;
-      String collectionGroup = indexManager.getNextCollectionGroupToUpdate(startingTimestamp);
-      if (collectionGroup == null) {
+    Set<String> processedCollectionGroups = new HashSet<>();
+    int documentsRemaining = maxDocumentsToProcess;
+    while (documentsRemaining > 0) {
+      String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
+      if (collectionGroup == null || processedCollectionGroups.contains(collectionGroup)) {
         break;
       }
-      documentsProcessed +=
+      documentsRemaining -=
           writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
+      processedCollectionGroups.add(collectionGroup);
     }
-
-    return documentsProcessed;
+    return maxDocumentsToProcess - documentsRemaining;
   }
 
   /** Writes entries for the fetched field indexes. */
@@ -160,42 +161,66 @@ public class IndexBackfiller {
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
-    // Use the earliest updateTime of all field indexes as the base updateTime.
-    SnapshotVersion earliestUpdateTime =
-        getEarliestUpdateTime(indexManager.getFieldIndexes(collectionGroup));
+    // Use the earliest readTime of all field indexes as the base readtime.
+    SnapshotVersion earliestReadTime =
+        getEarliestReadTime(indexManager.getFieldIndexes(collectionGroup));
 
     // TODO(indexing): Use limit queries to only fetch the required number of entries.
     // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocumentsMatchingQuery(query, earliestUpdateTime);
+        localDocumentsView.getDocumentsMatchingQuery(query, earliestReadTime);
 
-    Queue<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
+    List<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
     indexManager.updateIndexEntries(oldestDocuments);
+
+    SnapshotVersion latestReadTime = getPostUpdateReadTime(oldestDocuments, earliestReadTime);
+    indexManager.updateCollectionGroup(collectionGroup, latestReadTime);
     return oldestDocuments.size();
   }
 
-  /** Returns up to {@code count} documents sorted by read time. */
-  private Queue<Document> getOldestDocuments(
-      ImmutableSortedMap<DocumentKey, Document> documents, int count) {
-    Queue<Document> oldestDocuments =
-        new PriorityQueue<>(count + 1, (l, r) -> r.getReadTime().compareTo(l.getReadTime()));
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
-      oldestDocuments.add(entry.getValue());
-      if (oldestDocuments.size() > count) {
-        oldestDocuments.poll();
-      }
-    }
-    return oldestDocuments;
+  /**
+   * Returns the new read time for the index.
+   *
+   * @param documents a list of documents sorted by read time (ascending)
+   * @param currentReadTime the current read time of the index
+   */
+  private SnapshotVersion getPostUpdateReadTime(
+      List<Document> documents, SnapshotVersion currentReadTime) {
+    SnapshotVersion latestReadTime =
+        documents.isEmpty()
+            ? remoteDocumentCache.getLatestReadTime()
+            : documents.get(documents.size() - 1).getReadTime();
+    // Make sure the index does not go back in time
+    latestReadTime =
+        latestReadTime.compareTo(currentReadTime) > 0 ? latestReadTime : currentReadTime;
+    return latestReadTime;
   }
 
-  private SnapshotVersion getEarliestUpdateTime(Collection<FieldIndex> fieldIndexes) {
+  /** Returns up to {@code count} documents sorted by read time. */
+  private List<Document> getOldestDocuments(
+      ImmutableSortedMap<DocumentKey, Document> documents, int count) {
+    List<Document> oldestDocuments = new ArrayList<>();
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      oldestDocuments.add(entry.getValue());
+    }
+    Collections.sort(
+        oldestDocuments,
+        (l, r) -> {
+          int cmp = l.getReadTime().compareTo(r.getReadTime());
+          if (cmp != 0) return cmp;
+          return l.getKey().compareTo(r.getKey());
+        });
+    return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
+  }
+
+  private SnapshotVersion getEarliestReadTime(Collection<FieldIndex> fieldIndexes) {
     SnapshotVersion lowestVersion = null;
     for (FieldIndex fieldIndex : fieldIndexes) {
       lowestVersion =
           lowestVersion == null
-              ? fieldIndex.getUpdateTime()
-              : fieldIndex.getUpdateTime().compareTo(lowestVersion) < 0
-                  ? fieldIndex.getUpdateTime()
+              ? fieldIndex.getIndexState().getReadTime()
+              : fieldIndex.getIndexState().getReadTime().compareTo(lowestVersion) < 0
+                  ? fieldIndex.getIndexState().getReadTime()
                   : lowestVersion;
     }
     return lowestVersion;

@@ -37,9 +37,9 @@ import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.inject.Deferred;
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,11 +54,9 @@ public class CrashlyticsControllerRobolectricTest {
   private Context testContext;
   @Mock private IdManager idManager;
   @Mock private SettingsDataProvider mockSettingsDataProvider;
-  @Mock private FileStore mockFileStore;
-  @Mock private File mockFilesDirectory;
+  @Mock private FileStore testFileStore;
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
-  @Mock private LogFileManager.DirectoryProvider mockLogFileDirectoryProvider;
 
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
       new CrashlyticsNativeComponentDeferredProxy(
@@ -74,6 +72,7 @@ public class CrashlyticsControllerRobolectricTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     testContext = getApplicationContext();
+    testFileStore = new FileStore(testContext);
   }
 
   @Test
@@ -82,7 +81,7 @@ public class CrashlyticsControllerRobolectricTest {
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(Collections.singletonList(sessionId));
+        .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsData(true);
     controller.doCloseSessions(mockSettingsDataProvider);
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
@@ -103,7 +102,7 @@ public class CrashlyticsControllerRobolectricTest {
     List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(Collections.singletonList(sessionId));
+        .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsData(true);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator)
@@ -120,7 +119,7 @@ public class CrashlyticsControllerRobolectricTest {
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(Collections.singletonList(sessionId));
+        .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsData(false);
     controller.doCloseSessions(mockSettingsDataProvider);
     verify(mockSessionReportingCoordinator, never())
@@ -153,12 +152,11 @@ public class CrashlyticsControllerRobolectricTest {
             new CrashlyticsBackgroundWorker(Runnable::run),
             idManager,
             mockDataCollectionArbiter,
-            mockFileStore,
-            new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, mockFileStore),
+            testFileStore,
+            new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore),
             appData,
             null,
             null,
-            mockLogFileDirectoryProvider,
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class));

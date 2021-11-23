@@ -1,3 +1,7 @@
+# Unreleased
+- [fixed] Fixed a crash that prevented the RTDB SDK from reconnecting to the
+  backend if a token refresh attempt was unsuccesful.
+
 # 20.0.2
 - [fixed] The SDK can now continue to issue writes for apps that send an
   invalid App Check tokens if AppCheck enforcement is not enabled.

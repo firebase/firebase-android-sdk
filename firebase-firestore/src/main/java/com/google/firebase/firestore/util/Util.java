@@ -28,10 +28,13 @@ import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.SortedSet;
 
 /** A utility class for Firestore */
 public class Util {
@@ -97,18 +100,8 @@ public class Util {
     return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
   }
 
-  @SuppressWarnings("unchecked")
-  private static final Comparator COMPARABLE_COMPARATOR =
-      new Comparator<Comparable<?>>() {
-        @Override
-        public int compare(Comparable left, Comparable right) {
-          return left.compareTo(right);
-        }
-      };
-
-  @SuppressWarnings("unchecked")
   public static <T extends Comparable<T>> Comparator<T> comparator() {
-    return COMPARABLE_COMPARATOR;
+    return Comparable::compareTo;
   }
 
   public static FirebaseFirestoreException exceptionFromStatus(Status error) {
@@ -219,6 +212,34 @@ public class Util {
             });
   }
 
+  public static <T> int nullSafeCompare(
+      @Nullable T left, @Nullable T right, Comparator<T> comparator) {
+    if (left != null && right != null) {
+      return comparator.compare(left, right);
+    }
+    return left == null ? (right == null ? 0 : -1) : 1;
+  }
+
+  public static <T extends Comparable<T>> int nullSafeCompare(@Nullable T left, @Nullable T right) {
+    return nullSafeCompare(left, right, Comparable::compareTo);
+  }
+
+  public static int compareByteArrays(byte[] left, byte[] right) {
+    int size = Math.min(left.length, right.length);
+    for (int i = 0; i < size; i++) {
+      // Make sure the bytes are unsigned
+      int thisByte = left[i] & 0xff;
+      int otherByte = right[i] & 0xff;
+      if (thisByte < otherByte) {
+        return -1;
+      } else if (thisByte > otherByte) {
+        return 1;
+      }
+      // Byte values are equal, continue with comparison
+    }
+    return Util.compareIntegers(left.length, right.length);
+  }
+
   public static int compareByteStrings(ByteString left, ByteString right) {
     int size = Math.min(left.size(), right.size());
     for (int i = 0; i < size; i++) {
@@ -246,5 +267,103 @@ public class Util {
       }
     }
     return sb;
+  }
+
+  /**
+   * Compares two collections for equality using the provided comparator. The method computes the
+   * intersection and invokes `onAdd` for every element that is in `after` but not `before`.
+   * `onRemove` is invoked for every element in `before` but missing from `after`.
+   *
+   * <p>The method creates a copy of both `before` and `after` and runs in O(n log n), where n is
+   * the size of the two lists.
+   *
+   * @param before The elements that exist in the original set.
+   * @param after The elements to diff against the original set.
+   * @param comparator The comparator to use to define equality between elements.
+   * @param onAdd A function to invoke for every element that is part of `after` but not `before`.
+   * @param onRemove A function to invoke for every element that is part of `before` but not
+   *     `after`.
+   */
+  public static <T> void diffCollections(
+      Collection<T> before,
+      Collection<T> after,
+      Comparator<T> comparator,
+      Consumer<T> onAdd,
+      Consumer<T> onRemove) {
+    List<T> beforeEntries = new ArrayList<>(before);
+    Collections.sort(beforeEntries, comparator);
+    List<T> afterEntries = new ArrayList<>(after);
+    Collections.sort(afterEntries, comparator);
+
+    diffCollections(beforeEntries.iterator(), afterEntries.iterator(), comparator, onAdd, onRemove);
+  }
+
+  /**
+   * Compares two sorted sets for equality using their natural ordering. The method computes the
+   * intersection and invokes `onAdd` for every element that is in `after` but not `before`.
+   * `onRemove` is invoked for every element in `before` but missing from `after`.
+   *
+   * <p>The method creates a copy of both `before` and `after` and runs in O(n log n), where n is
+   * the size of the two lists.
+   *
+   * @param before The elements that exist in the original set.
+   * @param after The elements to diff against the original set.
+   * @param onAdd A function to invoke for every element that is part of `after` but not `before`.
+   * @param onRemove A function to invoke for every element that is part of `before` but not
+   *     `after`.
+   */
+  public static <T extends Comparable<T>> void diffCollections(
+      SortedSet<T> before, SortedSet<T> after, Consumer<T> onAdd, Consumer<T> onRemove) {
+    diffCollections(before.iterator(), after.iterator(), before.comparator(), onAdd, onRemove);
+  }
+
+  private static <T> void diffCollections(
+      Iterator<T> beforeSorted,
+      Iterator<T> afterSorted,
+      Comparator<? super T> comparator,
+      Consumer<T> onAdd,
+      Consumer<T> onRemove) {
+    @Nullable T beforeValue = advanceIterator(beforeSorted);
+    @Nullable T afterValue = advanceIterator(afterSorted);
+
+    // Walk through the two sets at the same time, using the ordering defined by `comparator`.
+    while (beforeValue != null || afterValue != null) {
+      boolean added = false;
+      boolean removed = false;
+
+      if (beforeValue != null && afterValue != null) {
+        int cmp = comparator.compare(beforeValue, afterValue);
+        if (cmp < 0) {
+          // The element was removed if the next element in our ordered walkthrough is only in
+          // `beforeSorted`.
+          removed = true;
+        } else if (cmp > 0) {
+          // The element was added if the next element in our ordered walkthrough is only in
+          // `afterSorted`.
+          added = true;
+        }
+      } else if (beforeValue != null) {
+        removed = true;
+      } else {
+        added = true;
+      }
+
+      if (added) {
+        onAdd.accept(afterValue);
+        afterValue = advanceIterator(afterSorted);
+      } else if (removed) {
+        onRemove.accept(beforeValue);
+        beforeValue = advanceIterator(beforeSorted);
+      } else {
+        beforeValue = advanceIterator(beforeSorted);
+        afterValue = advanceIterator(afterSorted);
+      }
+    }
+  }
+
+  /** Returns the next element from the iterator or `null` if none available. */
+  @Nullable
+  private static <T> T advanceIterator(Iterator<T> it) {
+    return it.hasNext() ? it.next() : null;
   }
 }

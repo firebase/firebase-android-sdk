@@ -54,6 +54,8 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexState;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -587,6 +589,38 @@ public class TestUtil {
 
   public static ByteString streamToken(String contents) {
     return ByteString.copyFrom(contents, Charsets.UTF_8);
+  }
+
+  public static FieldIndex fieldIndex(
+      String collectionGroup,
+      int indexId,
+      IndexState indexState,
+      String field,
+      FieldIndex.Segment.Kind kind,
+      Object... fieldAndKinds) {
+    List<FieldIndex.Segment> segments = new ArrayList<>();
+    segments.add(FieldIndex.Segment.create(field(field), kind));
+    for (int i = 0; i < fieldAndKinds.length; i += 2) {
+      segments.add(
+          FieldIndex.Segment.create(
+              field((String) fieldAndKinds[i]), (FieldIndex.Segment.Kind) fieldAndKinds[i + 1]));
+    }
+    return FieldIndex.create(indexId, collectionGroup, segments, indexState);
+  }
+
+  public static FieldIndex fieldIndex(
+      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+    FieldIndex fieldIndex =
+        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldAndKind);
+    return fieldIndex;
+  }
+
+  public static FieldIndex fieldIndex(String collectionGroup, int indexId, IndexState indexState) {
+    return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), indexState);
+  }
+
+  public static FieldIndex fieldIndex(String collectionGroup) {
+    return fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE);
   }
 
   private static Map<String, Object> fromJsonString(String json) {

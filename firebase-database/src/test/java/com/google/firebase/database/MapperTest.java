@@ -570,7 +570,7 @@ public class MapperTest {
     }
   }
 
-  @SuppressWarnings("ConstantField")
+  @SuppressWarnings({"ConstantField", "NonAsciiCharacters", "UnicodeInCode"})
   private static class UnicodeBean {
     private String 漢字;
 
@@ -1468,6 +1468,7 @@ public class MapperTest {
   }
 
   @Test
+  @SuppressWarnings("UnicodeInCode")
   public void roundTripUnicodeBean() {
     UnicodeBean bean = new UnicodeBean();
     bean.漢字 = "foo";

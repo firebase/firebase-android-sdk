@@ -26,7 +26,6 @@ import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsR
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -34,11 +33,13 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -51,16 +52,9 @@ public class CrashlyticsReportPersistence {
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private static final int MAX_OPEN_SESSIONS = 8;
-  private static final String WORKING_DIRECTORY_NAME = "report-persistence";
-  private static final String OPEN_SESSIONS_DIRECTORY_NAME = "sessions";
-  private static final String PRIORITY_REPORTS_DIRECTORY = "priority-reports";
-  private static final String NATIVE_REPORTS_DIRECTORY = "native-reports";
-  private static final String REPORTS_DIRECTORY = "reports";
 
   private static final String REPORT_FILE_NAME = "report";
-  private static final String USER_FILE_NAME = "user";
-  // A single session should have only a single AppExitInfo.
-  private static final String APP_EXIT_INFO_FILE_NAME = "app-exit-info";
+  private static final String USER_ID_FILE_NAME = "user-id";
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
@@ -71,36 +65,25 @@ public class CrashlyticsReportPersistence {
       EVENT_FILE_NAME_PREFIX.length() + EVENT_COUNTER_WIDTH;
   private static final String PRIORITY_EVENT_SUFFIX = "_";
   private static final String NORMAL_EVENT_SUFFIX = "";
-  private static final String EVENT_TYPE_ANR = "anr";
 
   private static final CrashlyticsReportJsonTransform TRANSFORM =
       new CrashlyticsReportJsonTransform();
+
   private static final Comparator<? super File> LATEST_SESSION_ID_FIRST_COMPARATOR =
       (f1, f2) -> f2.getName().compareTo(f1.getName());
+
   private static final FilenameFilter EVENT_FILE_FILTER =
       (f, name) -> name.startsWith(EVENT_FILE_NAME_PREFIX);
 
-  @NonNull private final AtomicInteger eventCounter = new AtomicInteger(0);
+  private final AtomicInteger eventCounter = new AtomicInteger(0);
 
-  // Storage for sessions that are still being written to
-  @NonNull private final File openSessionsDirectory;
-
-  // Storage for finalized reports
-  @NonNull private final File priorityReportsDirectory;
-  @NonNull private final File reportsDirectory;
-
-  // Storage for NDK Reports
-  @NonNull private final File nativeReportsDirectory;
+  private final FileStore fileStore;
 
   @NonNull private final SettingsDataProvider settingsDataProvider;
 
   public CrashlyticsReportPersistence(
-      @NonNull File rootDirectory, @NonNull SettingsDataProvider settingsDataProvider) {
-    final File workingDirectory = new File(rootDirectory, WORKING_DIRECTORY_NAME);
-    openSessionsDirectory = new File(workingDirectory, OPEN_SESSIONS_DIRECTORY_NAME);
-    priorityReportsDirectory = new File(workingDirectory, PRIORITY_REPORTS_DIRECTORY);
-    reportsDirectory = new File(workingDirectory, REPORTS_DIRECTORY);
-    nativeReportsDirectory = new File(workingDirectory, NATIVE_REPORTS_DIRECTORY);
+      FileStore fileStore, SettingsDataProvider settingsDataProvider) {
+    this.fileStore = fileStore;
     this.settingsDataProvider = settingsDataProvider;
   }
 
@@ -113,11 +96,10 @@ public class CrashlyticsReportPersistence {
 
     final String sessionId = session.getIdentifier();
     try {
-      final File sessionDirectory = prepareDirectory(getSessionDirectoryById(sessionId));
       final String json = TRANSFORM.reportToJson(report);
-      writeTextFile(new File(sessionDirectory, REPORT_FILE_NAME), json);
+      writeTextFile(fileStore.getSessionFile(sessionId, REPORT_FILE_NAME), json);
       writeTextFile(
-          new File(sessionDirectory, SESSION_START_TIMESTAMP_FILE_NAME),
+          fileStore.getSessionFile(sessionId, SESSION_START_TIMESTAMP_FILE_NAME),
           "",
           session.getStartedAt());
     } catch (IOException e) {
@@ -130,9 +112,6 @@ public class CrashlyticsReportPersistence {
    *
    * <p>Only a certain number of normal priority events are stored per-session. When this maximum is
    * reached, the oldest events will be dropped.
-   *
-   * @param event
-   * @param sessionId
    */
   public void persistEvent(
       @NonNull CrashlyticsReport.Session.Event event, @NonNull String sessionId) {
@@ -144,10 +123,6 @@ public class CrashlyticsReportPersistence {
    *
    * <p>Only a certain number of normal priority events are stored per-session. When this maximum is
    * reached, the oldest events will be dropped. High priority events are not subject to this limit.
-   *
-   * @param event
-   * @param sessionId
-   * @param isHighPriority
    */
   public void persistEvent(
       @NonNull CrashlyticsReport.Session.Event event,
@@ -155,70 +130,60 @@ public class CrashlyticsReportPersistence {
       boolean isHighPriority) {
     int maxEventsToKeep =
         settingsDataProvider.getSettings().getSessionData().maxCustomExceptionEvents;
-    final File sessionDirectory = getSessionDirectoryById(sessionId);
     final String json = TRANSFORM.eventToJson(event);
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
-      writeTextFile(new File(sessionDirectory, fileName), json);
+      writeTextFile(fileStore.getSessionFile(sessionId, fileName), json);
     } catch (IOException e) {
       Logger.getLogger().w("Could not persist event for session " + sessionId, e);
     }
-    trimEvents(sessionDirectory, maxEventsToKeep);
+    trimEvents(sessionId, maxEventsToKeep);
   }
 
   public void persistUserIdForSession(@NonNull String userId, @NonNull String sessionId) {
-    final File sessionDirectory = getSessionDirectoryById(sessionId);
     try {
-      writeTextFile(new File(sessionDirectory, USER_FILE_NAME), userId);
+      writeTextFile(fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME), userId);
     } catch (IOException e) {
       // Session directory is not guaranteed to exist
       Logger.getLogger().w("Could not persist user ID for session " + sessionId, e);
     }
   }
 
-  @NonNull
-  public List<String> listSortedOpenSessionIds() {
-    List<File> openSessionDirectories = getAllFilesInDirectory(openSessionsDirectory);
-    Collections.sort(openSessionDirectories, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    final List<String> openSessionIds = new ArrayList<>();
-    for (File f : openSessionDirectories) {
-      openSessionIds.add(f.getName());
-    }
-    return openSessionIds;
+  /**
+   * @return all open session ids, sorted in ascending order of recency (such that the first element
+   *     is the most recently-opened session ID).
+   */
+  public SortedSet<String> getOpenSessionIds() {
+    return new TreeSet<>(fileStore.getAllOpenSessionIds()).descendingSet();
   }
 
   /**
    * Gets the startTimestampMs of the given sessionId.
    *
-   * @param sessionId
    * @return startTimestampMs
    */
   public long getStartTimestampMillis(String sessionId) {
-    final File sessionDirectory = getSessionDirectoryById(sessionId);
     final File sessionStartTimestampFile =
-        new File(sessionDirectory, SESSION_START_TIMESTAMP_FILE_NAME);
+        fileStore.getSessionFile(sessionId, SESSION_START_TIMESTAMP_FILE_NAME);
     return sessionStartTimestampFile.lastModified();
   }
 
   public boolean hasFinalizedReports() {
-    return !getAllFinalizedReportFiles().isEmpty();
+    return !fileStore.getReports().isEmpty()
+        || !fileStore.getPriorityReports().isEmpty()
+        || !fileStore.getNativeReports().isEmpty();
   }
 
   public void deleteAllReports() {
-    for (File reportFile : getAllFinalizedReportFiles()) {
-      reportFile.delete();
-    }
+    deleteFiles(fileStore.getReports());
+    deleteFiles(fileStore.getPriorityReports());
+    deleteFiles(fileStore.getNativeReports());
   }
 
-  public void deleteFinalizedReport(String sessionId) {
-    final FilenameFilter filter = (d, f) -> f.startsWith(sessionId);
-    List<File> filteredReports =
-        combineReportFiles(
-            getFilesInDirectory(priorityReportsDirectory, filter),
-            getFilesInDirectory(nativeReportsDirectory, filter),
-            getFilesInDirectory(reportsDirectory, filter));
-    for (File reportFile : filteredReports) {
-      reportFile.delete();
+  private void deleteFiles(List<File> files) {
+    for (File file : files) {
+      //noinspection ResultOfMethodCallIgnored
+      file.delete();
     }
   }
 
@@ -227,23 +192,24 @@ public class CrashlyticsReportPersistence {
    *
    * @param currentSessionId current session ID (to skip). If this is null, all open sessions will
    *     be finalized.
-   * @param sessionEndTime
    */
   public void finalizeReports(@Nullable String currentSessionId, long sessionEndTime) {
-    final List<File> sessionDirectories = capAndGetOpenSessions(currentSessionId);
-    for (File sessionDirectory : sessionDirectories) {
-      Logger.getLogger().v("Finalizing report for session " + sessionDirectory.getName());
-      synthesizeReport(sessionDirectory, sessionEndTime);
-      recursiveDelete(sessionDirectory);
+    Collection<String> sessions = capAndGetOpenSessions(currentSessionId);
+    for (String sessionId : sessions) {
+      Logger.getLogger().v("Finalizing report for session " + sessionId);
+      synthesizeReport(sessionId, sessionEndTime);
+      // TODO: log deleted or failed
+      fileStore.deleteSessionFiles(sessionId);
     }
-
     capFinalizedReports();
   }
 
   public void finalizeSessionWithNativeEvent(
-      @NonNull String previousSessionId, @NonNull CrashlyticsReport.FilesPayload ndkPayload) {
-    final File reportFile = new File(getSessionDirectoryById(previousSessionId), REPORT_FILE_NAME);
-    synthesizeNativeReportFile(reportFile, nativeReportsDirectory, ndkPayload, previousSessionId);
+      String previousSessionId, CrashlyticsReport.FilesPayload ndkPayload) {
+    final File reportFile = fileStore.getSessionFile(previousSessionId, REPORT_FILE_NAME);
+    Logger.getLogger()
+        .d("Writing native session report for " + previousSessionId + " to file: " + reportFile);
+    synthesizeNativeReportFile(reportFile, ndkPayload, previousSessionId);
   }
 
   /**
@@ -254,11 +220,11 @@ public class CrashlyticsReportPersistence {
   public List<CrashlyticsReportWithSessionId> loadFinalizedReports() {
     final List<File> allReportFiles = getAllFinalizedReportFiles();
     final ArrayList<CrashlyticsReportWithSessionId> allReports = new ArrayList<>();
-    allReports.ensureCapacity(allReportFiles.size());
-    for (File reportFile : getAllFinalizedReportFiles()) {
+    for (File reportFile : allReportFiles) {
       try {
         CrashlyticsReport jsonReport = TRANSFORM.reportFromJson(readTextFile(reportFile));
-        allReports.add(CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName()));
+        allReports.add(
+            CrashlyticsReportWithSessionId.create(jsonReport, reportFile.getName(), reportFile));
       } catch (IOException e) {
         Logger.getLogger().w("Could not load report file " + reportFile + "; deleting", e);
         reportFile.delete();
@@ -267,24 +233,27 @@ public class CrashlyticsReportPersistence {
     return allReports;
   }
 
-  @NonNull
-  private List<File> capAndGetOpenSessions(@Nullable String currentSessionId) {
-    final FileFilter sessionDirectoryFilter =
-        (f) -> f.isDirectory() && !f.getName().equals(currentSessionId);
-    List<File> openSessionDirectories =
-        getFilesInDirectory(openSessionsDirectory, sessionDirectoryFilter);
-    Collections.sort(openSessionDirectories, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    if (openSessionDirectories.size() <= MAX_OPEN_SESSIONS) {
-      return openSessionDirectories;
+  private SortedSet<String> capAndGetOpenSessions(@Nullable String currentSessionId) {
+
+    // Fixes b/195664514
+    fileStore.cleanupLegacyFiles();
+
+    SortedSet<String> openSessionIds = getOpenSessionIds();
+    if (currentSessionId != null) {
+      openSessionIds.remove(currentSessionId);
+    }
+    if (openSessionIds.size() <= MAX_OPEN_SESSIONS) {
+      return openSessionIds;
     }
 
-    // Make a sublist of the reports that go over the size limit
-    List<File> openSessionDirectoriesToRemove =
-        openSessionDirectories.subList(MAX_OPEN_SESSIONS, openSessionDirectories.size());
-    for (File openSessionDirectory : openSessionDirectoriesToRemove) {
-      recursiveDelete(openSessionDirectory);
+    while (openSessionIds.size() > MAX_OPEN_SESSIONS) {
+      String id = openSessionIds.last();
+      Logger.getLogger().d("Removing session over cap: " + id);
+      // TODO: log deleted or failed
+      fileStore.deleteSessionFiles(id);
+      openSessionIds.remove(id);
     }
-    return openSessionDirectories.subList(0, MAX_OPEN_SESSIONS);
+    return openSessionIds;
   }
 
   private void capFinalizedReports() {
@@ -308,30 +277,31 @@ public class CrashlyticsReportPersistence {
    * @return finalized (no longer changing) files for Crashlytics Reports, sorted first from high to
    *     low priority, secondarily sorted from most recent to least
    */
-  @NonNull
   private List<File> getAllFinalizedReportFiles() {
-    return sortAndCombineReportFiles(
-        combineReportFiles(
-            getAllFilesInDirectory(priorityReportsDirectory),
-            getAllFilesInDirectory(nativeReportsDirectory)),
-        getAllFilesInDirectory(reportsDirectory));
+    List<File> sortedPriorityReports = new ArrayList<>();
+    sortedPriorityReports.addAll(fileStore.getPriorityReports());
+    sortedPriorityReports.addAll(fileStore.getNativeReports());
+    Collections.sort(sortedPriorityReports, LATEST_SESSION_ID_FIRST_COMPARATOR);
+
+    List<File> sortedReports = fileStore.getReports();
+    Collections.sort(sortedReports, LATEST_SESSION_ID_FIRST_COMPARATOR);
+
+    sortedPriorityReports.addAll(sortedReports);
+
+    return sortedPriorityReports;
   }
 
-  @NonNull
-  private File getSessionDirectoryById(@NonNull String sessionId) {
-    return new File(openSessionsDirectory, sessionId);
-  }
-
-  private void synthesizeReport(@NonNull File sessionDirectory, long sessionEndTime) {
-    final List<File> eventFiles = getFilesInDirectory(sessionDirectory, EVENT_FILE_FILTER);
+  private void synthesizeReport(String sessionId, long sessionEndTime) {
+    List<File> eventFiles = fileStore.getSessionFiles(sessionId, EVENT_FILE_FILTER);
 
     // Only process the session if it has associated events
     if (eventFiles.isEmpty()) {
-      Logger.getLogger().v("Session " + sessionDirectory.getName() + " has no events.");
+      Logger.getLogger().v("Session " + sessionId + " has no events.");
       return;
     }
 
     Collections.sort(eventFiles);
+
     final List<Event> events = new ArrayList<>();
     boolean isHighPriorityReport = false;
 
@@ -347,55 +317,49 @@ public class CrashlyticsReportPersistence {
 
     // b/168902195
     if (events.isEmpty()) {
-      Logger.getLogger().w("Could not parse event files for session " + sessionDirectory.getName());
+      Logger.getLogger().w("Could not parse event files for session " + sessionId);
       return;
     }
 
     String userId = null;
-    final File userIdFile = new File(sessionDirectory, USER_FILE_NAME);
+    final File userIdFile = fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME);
     if (userIdFile.isFile()) {
       try {
         userId = readTextFile(userIdFile);
       } catch (IOException e) {
-        Logger.getLogger().w("Could not read user ID file in " + sessionDirectory.getName(), e);
+        Logger.getLogger().w("Could not read user ID file in " + sessionId, e);
       }
     }
 
-    final File reportFile = new File(sessionDirectory, REPORT_FILE_NAME);
-    final File outputDirectory = isHighPriorityReport ? priorityReportsDirectory : reportsDirectory;
-    synthesizeReportFile(
-        reportFile, outputDirectory, events, sessionEndTime, isHighPriorityReport, userId);
+    final File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
+    synthesizeReportFile(reportFile, events, sessionEndTime, isHighPriorityReport, userId);
   }
 
-  private static void synthesizeNativeReportFile(
+  private void synthesizeNativeReportFile(
       @NonNull File reportFile,
-      @NonNull File outputDirectory,
       @NonNull CrashlyticsReport.FilesPayload ndkPayload,
       @NonNull String previousSessionId) {
     try {
       final CrashlyticsReport report =
           TRANSFORM.reportFromJson(readTextFile(reportFile)).withNdkPayload(ndkPayload);
 
-      writeTextFile(
-          new File(prepareDirectory(outputDirectory), previousSessionId),
-          TRANSFORM.reportToJson(report));
+      writeTextFile(fileStore.getNativeReport(previousSessionId), TRANSFORM.reportToJson(report));
     } catch (IOException e) {
       Logger.getLogger().w("Could not synthesize final native report file for " + reportFile, e);
     }
   }
 
-  private static void synthesizeReportFile(
+  private void synthesizeReportFile(
       @NonNull File reportFile,
-      @NonNull File outputDirectory,
       @NonNull List<Event> events,
       long sessionEndTime,
-      boolean isCrashed,
+      boolean isHighPriorityReport,
       @Nullable String userId) {
     try {
       CrashlyticsReport report =
           TRANSFORM
               .reportFromJson(readTextFile(reportFile))
-              .withSessionEndFields(sessionEndTime, isCrashed, userId)
+              .withSessionEndFields(sessionEndTime, isHighPriorityReport, userId)
               .withEvents(ImmutableList.from(events));
       final Session session = report.getSession();
 
@@ -404,35 +368,14 @@ public class CrashlyticsReportPersistence {
         return;
       }
 
-      writeTextFile(
-          new File(prepareDirectory(outputDirectory), session.getIdentifier()),
-          TRANSFORM.reportToJson(report));
+      File finalizedReportFile =
+          isHighPriorityReport
+              ? fileStore.getPriorityReport(session.getIdentifier())
+              : fileStore.getReport(session.getIdentifier());
+      writeTextFile(finalizedReportFile, TRANSFORM.reportToJson(report));
     } catch (IOException e) {
       Logger.getLogger().w("Could not synthesize final report file for " + reportFile, e);
     }
-  }
-
-  @NonNull
-  private static List<File> sortAndCombineReportFiles(@NonNull List<File>... reports) {
-    for (List<File> reportList : reports) {
-      Collections.sort(reportList, LATEST_SESSION_ID_FIRST_COMPARATOR);
-    }
-
-    return combineReportFiles(reports);
-  }
-
-  @NonNull
-  private static List<File> combineReportFiles(@NonNull List<File>... reports) {
-    final ArrayList<File> allReportsFiles = new ArrayList<>();
-    int totalReports = 0;
-    for (List<File> reportList : reports) {
-      totalReports += reportList.size();
-    }
-    allReportsFiles.ensureCapacity(totalReports);
-    for (List<File> reportList : reports) {
-      allReportsFiles.addAll(reportList);
-    }
-    return allReportsFiles;
   }
 
   private static boolean isHighPriorityEventFile(@NonNull String fileName) {
@@ -450,10 +393,10 @@ public class CrashlyticsReportPersistence {
     return EVENT_FILE_NAME_PREFIX + paddedEventNumber + prioritySuffix;
   }
 
-  private static int trimEvents(@NonNull File sessionDirectory, int maximum) {
+  private int trimEvents(String sessionId, int maximum) {
     final List<File> normalPriorityEventFiles =
-        getFilesInDirectory(
-            sessionDirectory, CrashlyticsReportPersistence::isNormalPriorityEventFile);
+        fileStore.getSessionFiles(
+            sessionId, CrashlyticsReportPersistence::isNormalPriorityEventFile);
     Collections.sort(normalPriorityEventFiles, CrashlyticsReportPersistence::oldestEventFileFirst);
     return capFilesCount(normalPriorityEventFiles, maximum);
   }
@@ -467,43 +410,6 @@ public class CrashlyticsReportPersistence {
     final String name1 = getEventNameWithoutPriority(f1.getName());
     final String name2 = getEventNameWithoutPriority(f2.getName());
     return name1.compareTo(name2);
-  }
-
-  @NonNull
-  private static List<File> getAllFilesInDirectory(@NonNull File directory) {
-    return getFilesInDirectory(directory, (FileFilter) null);
-  }
-
-  @NonNull
-  private static List<File> getFilesInDirectory(
-      @NonNull File directory, @Nullable FilenameFilter filter) {
-    if (!directory.isDirectory()) {
-      return Collections.emptyList();
-    }
-    final File[] files = (filter == null) ? directory.listFiles() : directory.listFiles(filter);
-    return (files != null) ? Arrays.asList(files) : Collections.emptyList();
-  }
-
-  @NonNull
-  private static List<File> getFilesInDirectory(
-      @NonNull File directory, @Nullable FileFilter filter) {
-    if (!directory.isDirectory()) {
-      return Collections.emptyList();
-    }
-    final File[] files = (filter == null) ? directory.listFiles() : directory.listFiles(filter);
-    return (files != null) ? Arrays.asList(files) : Collections.emptyList();
-  }
-
-  @NonNull
-  private static File prepareDirectory(@NonNull File directory) throws IOException {
-    if (!makeDirectory(directory)) {
-      throw new IOException("Could not create directory " + directory);
-    }
-    return directory;
-  }
-
-  private static boolean makeDirectory(@NonNull File directory) {
-    return directory.exists() || directory.mkdirs();
   }
 
   private static void writeTextFile(File file, String text) throws IOException {
@@ -546,22 +452,10 @@ public class CrashlyticsReportPersistence {
       if (numRetained <= maximum) {
         return numRetained;
       }
-      recursiveDelete(f);
+      FileStore.recursiveDelete(f);
       numRetained--;
     }
     return numRetained;
-  }
-
-  private static void recursiveDelete(@Nullable File file) {
-    if (file == null) {
-      return;
-    }
-    if (file.isDirectory()) {
-      for (File f : file.listFiles()) {
-        recursiveDelete(f);
-      }
-    }
-    file.delete();
   }
 
   private static long convertTimestampFromSecondsToMs(long timestampSeconds) {

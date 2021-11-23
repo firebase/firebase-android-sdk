@@ -325,7 +325,7 @@ class LocalDocumentsView {
           Query query, SnapshotVersion sinceReadTime) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
-    Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath());
+    Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
 
     // As documents might match the query because of their overlay we need to include all documents
     // in the result.

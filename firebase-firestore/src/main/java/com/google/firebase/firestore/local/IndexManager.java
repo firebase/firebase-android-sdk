@@ -15,12 +15,12 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -52,9 +52,6 @@ public interface IndexManager {
    */
   List<ResourcePath> getCollectionParents(String collectionId);
 
-  /** Updates the index entries for the given document. */
-  void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument);
-
   /**
    * Adds a field path index.
    *
@@ -63,6 +60,9 @@ public interface IndexManager {
    */
   void addFieldIndex(FieldIndex index);
 
+  /** Removes the given field index and deletes all index values. */
+  void deleteFieldIndex(FieldIndex index);
+
   /**
    * Returns a list of field indexes that correspond to the specified collection group.
    *
@@ -70,6 +70,9 @@ public interface IndexManager {
    * @return A collection of field indexes for the specified collection group.
    */
   Collection<FieldIndex> getFieldIndexes(String collectionGroup);
+
+  /** Returns all configured field indexes. */
+  Collection<FieldIndex> getFieldIndexes();
 
   /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no
@@ -81,14 +84,19 @@ public interface IndexManager {
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
-  /** Returns the next collection group to update. */
+  /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable
-  String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
+  String getNextCollectionGroupToUpdate();
 
   /**
-   * Updates the index entries for the provided documents and corresponding field indexes until the
-   * cap is reached. Updates the field indexes in persistence with the latest read time that was
-   * processed.
+   * Sets the collection group's latest read time.
+   *
+   * <p>This method updates the read time for all field indices for the collection group and
+   * increments their sequence number. Subsequent calls to {@link #getNextCollectionGroupToUpdate()}
+   * will return a different collection group (unless only one collection group is configured).
    */
+  void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime);
+
+  /** Updates the index entries for the provided documents. */
   void updateIndexEntries(Collection<Document> documents);
 }

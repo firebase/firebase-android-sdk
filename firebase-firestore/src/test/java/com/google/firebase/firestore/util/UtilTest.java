@@ -14,10 +14,15 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.protobuf.ByteString;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -34,5 +39,39 @@ public class UtilTest {
         "000102030405060708090a0b0c0d0e0f",
         Util.toDebugString(
             TestUtil.byteString(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xA, 0xB, 0xC, 0xD, 0xE, 0xF)));
+  }
+
+  @Test
+  public void testDiffCollectionsWithMissingElement() {
+    List<String> before = Arrays.asList("a", "b", "c");
+    List<String> after = Arrays.asList("a", "b");
+    validateDiffCollection(before, after);
+  }
+
+  @Test
+  public void testDiffCollectionsWithAddedElement() {
+    List<String> before = Arrays.asList("a", "b");
+    List<String> after = Arrays.asList("a", "b", "c");
+    validateDiffCollection(before, after);
+  }
+
+  @Test
+  public void testDiffCollectionsWithoutOrdering() {
+    List<String> before = Arrays.asList("b", "a");
+    List<String> after = Arrays.asList("a", "b");
+    validateDiffCollection(before, after);
+  }
+
+  @Test
+  public void testDiffCollectionsWithEmptyLists() {
+    validateDiffCollection(Collections.singletonList("a"), Collections.emptyList());
+    validateDiffCollection(Collections.emptyList(), Collections.singletonList("a"));
+    validateDiffCollection(Collections.emptyList(), Collections.emptyList());
+  }
+
+  private void validateDiffCollection(List<String> before, List<String> after) {
+    List<String> result = new ArrayList<>(before);
+    Util.diffCollections(before, after, String::compareTo, result::add, result::remove);
+    assertThat(result).containsExactlyElementsIn(after);
   }
 }

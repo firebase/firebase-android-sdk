@@ -22,14 +22,15 @@ import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import java.util.Collections;
+import com.google.firebase.platforminfo.LibraryVersionComponent;
+import java.util.Arrays;
 import java.util.List;
 
 @Keep
 public class TransportRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
+    return Arrays.asList(
         Component.builder(TransportFactory.class)
             .add(Dependency.required(Context.class))
             .factory(
@@ -37,6 +38,7 @@ public class TransportRegistrar implements ComponentRegistrar {
                   TransportRuntime.initialize(c.get(Context.class));
                   return TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
                 })
-            .build());
+            .build(),
+        LibraryVersionComponent.create("fire-transport", BuildConfig.VERSION_NAME));
   }
 }

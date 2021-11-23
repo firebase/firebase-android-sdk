@@ -79,4 +79,7 @@ interface RemoteDocumentCache {
    */
   ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, SnapshotVersion sinceReadTime);
+
+  /** Returns the latest read time of any document in the cache. */
+  SnapshotVersion getLatestReadTime();
 }

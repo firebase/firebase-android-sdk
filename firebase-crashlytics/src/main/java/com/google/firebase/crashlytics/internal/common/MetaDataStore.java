@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,17 +40,16 @@ class MetaDataStore {
 
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  private static final String USERDATA_SUFFIX = "user";
-  private static final String KEYDATA_SUFFIX = "keys";
-  private static final String INTERNAL_KEYDATA_SUFFIX = "internal-keys";
-  private static final String METADATA_EXT = ".meta";
+  private static final String USERDATA_FILENAME = "user-data";
+  private static final String KEYDATA_FILENAME = "keys";
+  private static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
   private static final String KEY_USER_ID = "userId";
 
-  private final File filesDir;
+  private final FileStore fileStore;
 
-  public MetaDataStore(File filesDir) {
-    this.filesDir = filesDir;
+  public MetaDataStore(FileStore fileStore) {
+    this.fileStore = fileStore;
   }
 
   public void writeUserData(String sessionId, UserMetadata data) {
@@ -130,17 +130,17 @@ class MetaDataStore {
 
   @NonNull
   public File getUserDataFileForSession(String sessionId) {
-    return new File(filesDir, sessionId + USERDATA_SUFFIX + METADATA_EXT);
+    return fileStore.getSessionFile(sessionId, USERDATA_FILENAME);
   }
 
   @NonNull
   public File getKeysFileForSession(String sessionId) {
-    return new File(filesDir, sessionId + KEYDATA_SUFFIX + METADATA_EXT);
+    return fileStore.getSessionFile(sessionId, KEYDATA_FILENAME);
   }
 
   @NonNull
   public File getInternalKeysFileForSession(String sessionId) {
-    return new File(filesDir, sessionId + INTERNAL_KEYDATA_SUFFIX + METADATA_EXT);
+    return fileStore.getSessionFile(sessionId, INTERNAL_KEYDATA_FILENAME);
   }
 
   private static UserMetadata jsonToUserData(String json) throws JSONException {
