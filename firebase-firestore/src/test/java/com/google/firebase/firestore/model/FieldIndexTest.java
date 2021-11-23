@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
+import static com.google.firebase.firestore.model.FieldIndex.IndexState;
 import static com.google.firebase.firestore.model.FieldIndex.SEMANTIC_COMPARATOR;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -39,18 +40,18 @@ public class FieldIndexTest {
 
   @Test
   public void comparatorIgnoresIndexId() {
-    FieldIndex indexOriginal = fieldIndex("collA", 1, SnapshotVersion.NONE);
-    FieldIndex indexSame = fieldIndex("collA", 1, SnapshotVersion.NONE);
-    FieldIndex indexDifferent = fieldIndex("collA", 2, SnapshotVersion.NONE);
+    FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexDifferent = fieldIndex("collA", 2, FieldIndex.INITIAL_STATE);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
 
   @Test
-  public void comparatorIgnoreUpdateTime() {
-    FieldIndex indexOriginal = fieldIndex("collA", 1, version(1));
-    FieldIndex indexSame = fieldIndex("collA", 1, version(1));
-    FieldIndex indexDifferent = fieldIndex("collA", 1, version(2));
+  public void comparatorIgnoresIndexState() {
+    FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
+    FieldIndex indexDifferent = fieldIndex("collA", 1, IndexState.create(1, version(2)));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }

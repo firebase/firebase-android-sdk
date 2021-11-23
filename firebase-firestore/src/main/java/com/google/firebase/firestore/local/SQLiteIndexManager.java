@@ -21,7 +21,6 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
@@ -50,11 +49,17 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
   private static final String TAG = SQLiteIndexManager.class.getSimpleName();
+
+  private final SQLitePersistence db;
+  private final LocalSerializer serializer;
+  private final String uid;
 
   /**
    * An in-memory copy of the index entries we've already written since the SDK launched. Used to
@@ -66,19 +71,22 @@ final class SQLiteIndexManager implements IndexManager {
   private final MemoryIndexManager.MemoryCollectionParentIndex collectionParentsCache =
       new MemoryIndexManager.MemoryCollectionParentIndex();
 
-  private final SQLitePersistence db;
-  private final LocalSerializer serializer;
-  private final String uid;
-  private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes;
+  private final Map<String, Map<Integer, FieldIndex>> memoizedIndexes = new HashMap<>();
+  private final Queue<FieldIndex> nextIndexToUpdate =
+      new PriorityQueue<>(
+          10,
+          (l, r) ->
+              Long.compare(
+                  l.getIndexState().getSequenceNumber(), r.getIndexState().getSequenceNumber()));
 
   private boolean started = false;
-  private int memoizedMaxId = -1;
+  private int memoizedMaxIndexId = -1;
+  private long memoizedMaxSequenceNumber = -1;
 
   SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer, User user) {
     this.db = persistence;
     this.serializer = serializer;
     this.uid = user.isAuthenticated() ? user.getUid() : "";
-    this.memoizedIndexes = new HashMap<>();
   }
 
   @Override
@@ -88,9 +96,25 @@ final class SQLiteIndexManager implements IndexManager {
       return;
     }
 
+    Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
+
+    // Fetch all index states if persisted for the user. These states contain per user information
+    // on how up to date the index is.
     db.query(
-            "SELECT index_id, collection_group, index_proto, update_time_seconds, "
-                + "update_time_nanos FROM index_configuration")
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos "
+                + "FROM index_state WHERE uid = ?")
+        .binding(uid)
+        .forEach(
+            row -> {
+              int indexId = row.getInt(0);
+              long sequenceNumber = row.getLong(1);
+              SnapshotVersion readTime =
+                  new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
+              indexStates.put(indexId, FieldIndex.IndexState.create(sequenceNumber, readTime));
+            });
+
+    // Fetch all indices and combine with user's index state if available.
+    db.query("SELECT index_id, collection_group, index_proto FROM index_configuration")
         .forEach(
             row -> {
               try {
@@ -98,11 +122,18 @@ final class SQLiteIndexManager implements IndexManager {
                 String collectionGroup = row.getString(1);
                 List<FieldIndex.Segment> segments =
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
-                SnapshotVersion updateTime =
-                    new SnapshotVersion(new Timestamp(row.getLong(3), row.getInt(4)));
 
+                // If we fetched an index state for the user above, combine it with this index.
+                // We use the default state if we don't have an index state (e.g. the index was
+                // created while a different user as logged in).
+                FieldIndex.IndexState indexState =
+                    indexStates.containsKey(indexId)
+                        ? indexStates.get(indexId)
+                        : FieldIndex.INITIAL_STATE;
                 FieldIndex fieldIndex =
-                    FieldIndex.create(indexId, collectionGroup, segments, updateTime);
+                    FieldIndex.create(indexId, collectionGroup, segments, indexState);
+
+                // Store the index and update `memoizedMaxIndexId` and `memoizedMaxSequenceNumber`.
                 memoizeIndex(fieldIndex);
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Failed to decode index: " + e);
@@ -147,27 +178,19 @@ final class SQLiteIndexManager implements IndexManager {
   public void addFieldIndex(FieldIndex index) {
     hardAssert(started, "IndexManager not started");
 
-    int nextIndexId = memoizedMaxId + 1;
+    int nextIndexId = memoizedMaxIndexId + 1;
     index =
         FieldIndex.create(
-            nextIndexId, index.getCollectionGroup(), index.getSegments(), index.getUpdateTime());
+            nextIndexId, index.getCollectionGroup(), index.getSegments(), index.getIndexState());
 
     db.execute(
         "INSERT INTO index_configuration ("
             + "index_id, "
             + "collection_group, "
-            + "index_proto, "
-            + "update_time_seconds, "
-            + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
+            + "index_proto) VALUES(?, ?, ?)",
         nextIndexId,
         index.getCollectionGroup(),
-        encodeSegments(index),
-        index.getUpdateTime().getTimestamp().getSeconds(),
-        index.getUpdateTime().getTimestamp().getNanoseconds());
-
-    // TODO(indexing): Use a 0-counter rather than the timestamp.
-    setCollectionGroupUpdateTime(index.getCollectionGroup(), SnapshotVersion.NONE.getTimestamp());
-
+        encodeSegments(index));
     memoizeIndex(index);
   }
 
@@ -175,88 +198,30 @@ final class SQLiteIndexManager implements IndexManager {
   public void deleteFieldIndex(FieldIndex index) {
     db.execute("DELETE FROM index_configuration WHERE index_id = ?", index.getIndexId());
     db.execute("DELETE FROM index_entries WHERE index_id = ?", index.getIndexId());
+    db.execute("DELETE FROM index_state WHERE index_id = ?", index.getIndexState());
 
+    nextIndexToUpdate.remove(index);
     Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
     if (collectionIndices != null) {
       collectionIndices.remove(index.getIndexId());
     }
   }
 
-  private void updateFieldIndex(FieldIndex index) {
-    db.execute(
-        "REPLACE INTO index_configuration ("
-            + "index_id, "
-            + "collection_group, "
-            + "index_proto, "
-            + "update_time_seconds, "
-            + "update_time_nanos) VALUES(?, ?, ?, ?, ?)",
-        index.getIndexId(),
-        index.getCollectionGroup(),
-        encodeSegments(index),
-        index.getUpdateTime().getTimestamp().getSeconds(),
-        index.getUpdateTime().getTimestamp().getNanoseconds());
-
-    memoizeIndex(index);
-  }
-
-  // TODO(indexing): Use a counter rather than the starting timestamp.
   @Override
-  public @Nullable String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+  public @Nullable String getNextCollectionGroupToUpdate() {
     hardAssert(started, "IndexManager not started");
-
-    final String[] nextCollectionGroup = {null};
-    db.query(
-            "SELECT collection_group "
-                + "FROM collection_group_update_times "
-                + "WHERE update_time_seconds <= ? AND update_time_nanos <= ?"
-                + "ORDER BY update_time_seconds, update_time_nanos "
-                + "LIMIT 1")
-        .binding(startingTimestamp.getSeconds(), startingTimestamp.getNanoseconds())
-        .firstValue(
-            row -> {
-              nextCollectionGroup[0] = row.getString(0);
-              return null;
-            });
-
-    if (nextCollectionGroup[0] == null) {
-      return null;
-    }
-
-    // Store that this collection group will updated.
-    // TODO(indexing): Store progress with a counter rather than a timestamp. If using a timestamp,
-    // use the read time of the last document read in the loop.
-    setCollectionGroupUpdateTime(nextCollectionGroup[0], Timestamp.now());
-
-    return nextCollectionGroup[0];
+    FieldIndex nextIndex = nextIndexToUpdate.peek();
+    return nextIndex != null ? nextIndex.getCollectionGroup() : null;
   }
 
   @Override
   public void updateIndexEntries(Collection<Document> documents) {
     hardAssert(started, "IndexManager not started");
-
-    Map<Integer, FieldIndex> updatedFieldIndexes = new HashMap<>();
-
     for (Document document : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
-        boolean modified = writeEntries(document, fieldIndex);
-        if (modified) {
-          // TODO(indexing): This would be much simpler with a sequence counter since we would
-          // always update the index to the next sequence value.
-          FieldIndex latestIndex =
-              updatedFieldIndexes.get(fieldIndex.getIndexId()) != null
-                  ? updatedFieldIndexes.get(fieldIndex.getIndexId())
-                  : fieldIndex;
-          FieldIndex updatedIndex = getPostUpdateIndex(latestIndex, document.getReadTime());
-          updatedFieldIndexes.put(fieldIndex.getIndexId(), updatedIndex);
-        }
+        writeEntries(document, fieldIndex);
       }
-    }
-
-    // TODO(indexing): Use RemoteDocumentCache's readTime version rather than the document version.
-    // This will require plumbing out the RDC's readTime into the IndexBackfiller.
-    for (FieldIndex updatedFieldIndex : updatedFieldIndexes.values()) {
-      updateFieldIndex(updatedFieldIndex);
     }
   }
 
@@ -276,59 +241,49 @@ final class SQLiteIndexManager implements IndexManager {
     return allIndices;
   }
 
-  /** Stores the index in the memoized indexes table. */
+  /**
+   * Stores the index in the memoized indexes table and updates {@link #nextIndexToUpdate}, {@link
+   * #memoizedMaxIndexId} and {@link #memoizedMaxSequenceNumber}.
+   */
   private void memoizeIndex(FieldIndex fieldIndex) {
     Map<Integer, FieldIndex> existingIndexes = memoizedIndexes.get(fieldIndex.getCollectionGroup());
     if (existingIndexes == null) {
       existingIndexes = new HashMap<>();
       memoizedIndexes.put(fieldIndex.getCollectionGroup(), existingIndexes);
     }
-    existingIndexes.put(fieldIndex.getIndexId(), fieldIndex);
-    memoizedMaxId = Math.max(memoizedMaxId, fieldIndex.getIndexId());
-  }
 
-  /**
-   * Returns a field index with the later read time.
-   *
-   * <p>This method should only be called on field indexes that had index entries written.
-   */
-  private FieldIndex getPostUpdateIndex(FieldIndex baseIndex, SnapshotVersion newReadTime) {
-    if (baseIndex.getUpdateTime().compareTo(newReadTime) > 0) {
-      return baseIndex;
-    } else {
-      return FieldIndex.create(
-          baseIndex.getIndexId(),
-          baseIndex.getCollectionGroup(),
-          baseIndex.getSegments(),
-          newReadTime);
+    FieldIndex existingIndex = existingIndexes.get(fieldIndex.getIndexId());
+    if (existingIndex != null) {
+      nextIndexToUpdate.remove(existingIndex);
     }
+
+    existingIndexes.put(fieldIndex.getIndexId(), fieldIndex);
+    nextIndexToUpdate.add(fieldIndex);
+    memoizedMaxIndexId = Math.max(memoizedMaxIndexId, fieldIndex.getIndexId());
+    memoizedMaxSequenceNumber =
+        Math.max(memoizedMaxSequenceNumber, fieldIndex.getIndexState().getSequenceNumber());
   }
 
-  /**
-   * If applicable, writes index entries for the given document. Returns whether any index entry was
-   * written.
-   */
-  private boolean writeEntries(Document document, FieldIndex fieldIndex) {
+  /** Persists the index entries for the given document. */
+  private void writeEntries(Document document, FieldIndex fieldIndex) {
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
-      return false;
+      return;
     }
 
     @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
     if (arraySegment != null) {
       Value value = document.getField(arraySegment.getFieldPath());
       if (!isArray(value)) {
-        return false;
+        return;
       }
 
       for (Value arrayValue : value.getArrayValue().getValuesList()) {
         addSingleEntry(
             document, fieldIndex.getIndexId(), encodeSingleElement(arrayValue), directionalValue);
       }
-      return true;
     } else {
       addSingleEntry(document, fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
-      return true;
     }
   }
 
@@ -350,17 +305,8 @@ final class SQLiteIndexManager implements IndexManager {
    * @param fieldIndexes A list of field indexes to apply.
    */
   private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
-    List<FieldIndex> updatedIndexes = new ArrayList<>();
-
     for (FieldIndex fieldIndex : fieldIndexes) {
-      boolean modified = writeEntries(document, fieldIndex);
-      if (modified) {
-        updatedIndexes.add(getPostUpdateIndex(fieldIndex, document.getVersion()));
-      }
-    }
-
-    for (FieldIndex updatedIndex : updatedIndexes) {
-      updateFieldIndex(updatedIndex);
+      writeEntries(document, fieldIndex);
     }
   }
 
@@ -663,14 +609,27 @@ final class SQLiteIndexManager implements IndexManager {
     return serializer.encodeFieldIndexSegments(fieldIndex.getSegments()).toByteArray();
   }
 
-  @VisibleForTesting
-  void setCollectionGroupUpdateTime(String collectionGroup, Timestamp updateTime) {
-    db.execute(
-        "INSERT OR REPLACE INTO collection_group_update_times "
-            + "(collection_group, update_time_seconds, update_time_nanos) "
-            + "VALUES (?, ?, ?)",
-        collectionGroup,
-        updateTime.getSeconds(),
-        updateTime.getNanoseconds());
+  @Override
+  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+    hardAssert(started, "IndexManager not started");
+
+    ++memoizedMaxSequenceNumber;
+    for (FieldIndex fieldIndex : getFieldIndexes(collectionGroup)) {
+      FieldIndex updatedIndex =
+          FieldIndex.create(
+              fieldIndex.getIndexId(),
+              fieldIndex.getCollectionGroup(),
+              fieldIndex.getSegments(),
+              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, readTime));
+      db.execute(
+          "REPLACE INTO index_state (index_id, uid,  sequence_number, "
+              + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
+          fieldIndex.getIndexId(),
+          uid,
+          memoizedMaxSequenceNumber,
+          readTime.getTimestamp().getSeconds(),
+          readTime.getTimestamp().getNanoseconds());
+      memoizeIndex(updatedIndex);
+    }
   }
 }

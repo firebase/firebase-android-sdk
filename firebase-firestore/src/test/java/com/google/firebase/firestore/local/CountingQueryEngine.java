@@ -156,6 +156,11 @@ class CountingQueryEngine implements QueryEngine {
         documentsReadByQuery[0] += result.size();
         return result;
       }
+
+      @Override
+      public SnapshotVersion getLatestReadTime() {
+        return subject.getLatestReadTime();
+      }
     };
   }
 

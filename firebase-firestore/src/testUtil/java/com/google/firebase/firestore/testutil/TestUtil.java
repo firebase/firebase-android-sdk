@@ -55,6 +55,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexState;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
@@ -593,7 +594,7 @@ public class TestUtil {
   public static FieldIndex fieldIndex(
       String collectionGroup,
       int indexId,
-      SnapshotVersion readTime,
+      IndexState indexState,
       String field,
       FieldIndex.Segment.Kind kind,
       Object... fieldAndKinds) {
@@ -604,21 +605,22 @@ public class TestUtil {
           FieldIndex.Segment.create(
               field((String) fieldAndKinds[i]), (FieldIndex.Segment.Kind) fieldAndKinds[i + 1]));
     }
-    return FieldIndex.create(indexId, collectionGroup, segments, readTime);
+    return FieldIndex.create(indexId, collectionGroup, segments, indexState);
   }
 
   public static FieldIndex fieldIndex(
       String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
-    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE, field, kind, fieldAndKind);
+    FieldIndex fieldIndex =
+        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldAndKind);
+    return fieldIndex;
   }
 
-  public static FieldIndex fieldIndex(
-      String collectionGroup, int indexId, SnapshotVersion readTime) {
-    return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), readTime);
+  public static FieldIndex fieldIndex(String collectionGroup, int indexId, IndexState indexState) {
+    return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), indexState);
   }
 
   public static FieldIndex fieldIndex(String collectionGroup) {
-    return fieldIndex(collectionGroup, -1, SnapshotVersion.NONE);
+    return fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE);
   }
 
   private static Map<String, Object> fromJsonString(String json) {
