@@ -26,6 +26,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
@@ -42,15 +43,18 @@ import java.util.List;
 
 class TesterSignInClient {
   private static final String TAG = "TesterSignIn:";
-
-  private TaskCompletionSource<Void> signInTaskCompletionSource = null;
-
-  private final String SIGNIN_REDIRECT_URL =
+  private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
+
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+
+  private final Object signInTaskLock = new Object();
+
+  @GuardedBy("signInTaskLock")
+  private TaskCompletionSource<Void> signInTaskCompletionSource = null;
 
   private AlertDialog alertDialog;
 
@@ -113,7 +117,7 @@ class TesterSignInClient {
   }
 
   @NonNull
-  public synchronized Task<Void> signInTester() {
+  public Task<Void> signInTester() {
 
     if (signInStorage.getSignInStatus()) {
       LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
@@ -123,7 +127,9 @@ class TesterSignInClient {
     if (this.isCurrentlySigningIn()) {
       LogWrapper.getInstance()
           .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
-      return signInTaskCompletionSource.getTask();
+      synchronized (signInTaskLock) {
+        return signInTaskCompletionSource.getTask();
+      }
     }
     Activity currentActivity = lifecycleNotifier.getCurrentActivity();
     if (currentActivity == null) {
@@ -133,16 +139,24 @@ class TesterSignInClient {
               ErrorMessages.APP_BACKGROUNDED,
               FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
     }
-    signInTaskCompletionSource = new TaskCompletionSource<>();
+
+    synchronized (signInTaskLock) {
+      signInTaskCompletionSource = new TaskCompletionSource<>();
+    }
 
     alertDialog = getSignInAlertDialog(currentActivity);
     alertDialog.show();
 
-    return signInTaskCompletionSource.getTask();
+    synchronized (signInTaskLock) {
+      return signInTaskCompletionSource.getTask();
+    }
   }
 
   private boolean isCurrentlySigningIn() {
-    return signInTaskCompletionSource != null && !signInTaskCompletionSource.getTask().isComplete();
+    synchronized (signInTaskLock) {
+      return signInTaskCompletionSource != null
+          && !signInTaskCompletionSource.getTask().isComplete();
+    }
   }
 
   private AlertDialog getSignInAlertDialog(Activity currentActivity) {
@@ -190,7 +204,9 @@ class TesterSignInClient {
   }
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    safeSetTaskException(signInTaskCompletionSource, e);
+    synchronized (signInTaskLock) {
+      safeSetTaskException(signInTaskCompletionSource, e);
+    }
     dismissAlertDialog();
   }
 
@@ -201,7 +217,9 @@ class TesterSignInClient {
   }
 
   private void setSuccessfulSignInResult() {
-    safeSetTaskResult(signInTaskCompletionSource, null);
+    synchronized (signInTaskLock) {
+      safeSetTaskResult(signInTaskCompletionSource, null);
+    }
     dismissAlertDialog();
   }
 

@@ -81,7 +81,7 @@ class InstallApkClient {
     }
   }
 
-  Task<Void> installApk(String path) {
+  synchronized Task<Void> installApk(String path) {
     synchronized (installTaskLock) {
       Activity currentActivity = lifeCycleNotifier.getCurrentActivity();
       // This ensures that we save the state of the install if the app is backgrounded during
