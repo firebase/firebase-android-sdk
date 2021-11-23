@@ -195,8 +195,7 @@ public class IndexBackfillerTest {
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(2, results.getDocumentsProcessed());
 
-    // Check that index entries are written in order of the collection group update times by
-    // verifying the collection group update times have been updated in the correct order.
+    // Check that coll1 was backfilled and that coll2 is next
     collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
   }
@@ -251,8 +250,8 @@ public class IndexBackfillerTest {
     FieldIndex fieldIndex =
         fieldIndex(
             collectionGroup,
-            -1,
-            FieldIndex.IndexState.create(0, version),
+            FieldIndex.UNKNOWN_ID,
+            FieldIndex.INITIAL_STATE,
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
@@ -262,7 +261,7 @@ public class IndexBackfillerTest {
     FieldIndex fieldIndex =
         fieldIndex(
             collectionGroup,
-            -1,
+            FieldIndex.UNKNOWN_ID,
             FieldIndex.IndexState.create(sequenceNumber, SnapshotVersion.NONE),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);

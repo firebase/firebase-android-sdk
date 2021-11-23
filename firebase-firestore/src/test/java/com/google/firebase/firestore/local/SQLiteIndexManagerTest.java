@@ -603,7 +603,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testAddFieldIndexWritesToCollectionGroup() {
+  public void testDeleteFieldIndexRemovesEntryFromCollectionGroup() {
     indexManager.addFieldIndex(
         fieldIndex("coll1", 1, IndexState.create(1, version(30)), "value", Kind.ASCENDING));
     indexManager.addFieldIndex(
@@ -624,10 +624,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     // Add two indexes and mark one as updated.
     indexManager.addFieldIndex(fieldIndex("coll1", 1, FieldIndex.INITIAL_STATE));
     indexManager.addFieldIndex(fieldIndex("coll2", 2, FieldIndex.INITIAL_STATE));
-    indexManager.updateCollectionGroup("coll1", version(1));
 
-    verifySequenceNumber(indexManager, "coll1", 1);
-    verifySequenceNumber(indexManager, "coll2", 0);
+    indexManager.updateCollectionGroup("coll2", version(1));
+
+    verifySequenceNumber(indexManager, "coll1", 0);
+    verifySequenceNumber(indexManager, "coll2", 1);
 
     // New user signs it. The user should see all existing field indices.
     // Sequence numbers are set to 0.
@@ -646,8 +647,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     indexManager.start();
 
-    verifySequenceNumber(indexManager, "coll1", 1);
-    verifySequenceNumber(indexManager, "coll2", 0);
+    verifySequenceNumber(indexManager, "coll1", 0);
+    verifySequenceNumber(indexManager, "coll2", 1);
     verifySequenceNumber(indexManager, "coll3", 0);
   }
 

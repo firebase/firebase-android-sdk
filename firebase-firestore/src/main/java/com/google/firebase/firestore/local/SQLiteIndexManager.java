@@ -624,7 +624,7 @@ final class SQLiteIndexManager implements IndexManager {
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
               + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
-          collectionGroup,
+          fieldIndex.getIndexId(),
           uid,
           memoizedMaxSequenceNumber,
           readTime.getTimestamp().getSeconds(),
