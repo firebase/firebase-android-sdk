@@ -358,8 +358,8 @@ class SQLiteSchema {
    * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
    * table apply for all users. It is not possible to only enable indices for a subset of users.
    *
-   * <p>The `index_state` table holds backfill information on each index that stores when it was last
-   * updated.
+   * <p>The `index_state` table holds backfill information on each index that stores when it was
+   * last updated.
    *
    * <p>The `index_entries` table holds the index values themselves. An index value is created for
    * each field combination that matches a configured index.

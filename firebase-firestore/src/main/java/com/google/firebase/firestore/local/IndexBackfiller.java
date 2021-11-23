@@ -115,8 +115,7 @@ public class IndexBackfiller {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(indexManager != null, "setIndexManager() not called");
     return persistence.runTransaction(
-        "Backfill Indexes",
-        () -> writeIndexEntries(localDocumentsView));
+        "Backfill Indexes", () -> writeIndexEntries(localDocumentsView));
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
