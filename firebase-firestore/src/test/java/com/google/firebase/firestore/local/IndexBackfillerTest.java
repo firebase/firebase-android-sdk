@@ -251,7 +251,7 @@ public class IndexBackfillerTest {
         fieldIndex(
             collectionGroup,
             FieldIndex.UNKNOWN_ID,
-            FieldIndex.INITIAL_STATE,
+            FieldIndex.IndexState.create(0, version),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
