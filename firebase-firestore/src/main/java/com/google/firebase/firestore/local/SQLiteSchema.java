@@ -377,23 +377,23 @@ class SQLiteSchema {
           // Per index per user state to track the backfill state for each index
           db.execSQL(
               "CREATE TABLE index_state ("
-                  + "uid TEXT, "
                   + "index_id INTEGER, "
+                  + "uid TEXT, "
                   + "sequence_number INTEGER, " // Specifies the order of updates
                   + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
-                  + "PRIMARY KEY (uid, index_id))");
+                  + "PRIMARY KEY (index_id, uid))");
 
           // The index entry table stores the encoded entries for all fields.
           // The table only has a single primary index. `array_value` should be set for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
-                  + "uid TEXT, " // user id
                   + "index_id INTEGER, " // The index_id of the field index creating this entry
+                  + "uid TEXT, "
                   + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
                   + "directional_value BLOB, " // index values for equality and inequalities
                   + "document_name TEXT, "
-                  + "PRIMARY KEY (uid, index_id, array_value, directional_value, document_name))");
+                  + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_name))");
 
           db.execSQL(
               "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");

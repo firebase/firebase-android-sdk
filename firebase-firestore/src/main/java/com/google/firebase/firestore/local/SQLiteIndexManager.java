@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.Values.isArray;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.diffCollections;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
@@ -30,6 +31,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
 import com.google.firebase.firestore.index.IndexByteEncoder;
+import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -52,6 +54,8 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
@@ -220,9 +224,28 @@ final class SQLiteIndexManager implements IndexManager {
     for (Document document : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
-        writeEntries(document, fieldIndex);
+        SortedSet<IndexEntry> existingEntries =
+            getExistingIndexEntries(document.getKey(), fieldIndex);
+        SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
+        if (!existingEntries.equals(newEntries)) {
+          updateEntries(document, existingEntries, newEntries);
+        }
       }
     }
+  }
+
+  /**
+   * Updates the index entries for the provided document by deleting entries that are no longer
+   * referenced in {@code newEntries} and adding all newly added entries.
+   */
+  private void updateEntries(
+      Document document, SortedSet<IndexEntry> existingEntries, SortedSet<IndexEntry> newEntries) {
+    Logger.debug(TAG, "Updating index entries for document '%s'", document.getKey());
+    diffCollections(
+        existingEntries,
+        newEntries,
+        entry -> addIndexEntry(document, entry),
+        entry -> deleteIndexEntry(document, entry));
   }
 
   @Override
@@ -264,68 +287,72 @@ final class SQLiteIndexManager implements IndexManager {
         Math.max(memoizedMaxSequenceNumber, fieldIndex.getIndexState().getSequenceNumber());
   }
 
-  /** Persists the index entries for the given document. */
-  private void writeEntries(Document document, FieldIndex fieldIndex) {
+  /** Creates the index entries for the given document. */
+  private SortedSet<IndexEntry> computeIndexEntries(Document document, FieldIndex fieldIndex) {
+    SortedSet<IndexEntry> result = new TreeSet<>();
+
     @Nullable byte[] directionalValue = encodeDirectionalElements(fieldIndex, document);
     if (directionalValue == null) {
-      return;
+      return result;
     }
 
     @Nullable FieldIndex.Segment arraySegment = fieldIndex.getArraySegment();
     if (arraySegment != null) {
       Value value = document.getField(arraySegment.getFieldPath());
-      if (!isArray(value)) {
-        return;
-      }
-
-      for (Value arrayValue : value.getArrayValue().getValuesList()) {
-        addSingleEntry(
-            document, fieldIndex.getIndexId(), encodeSingleElement(arrayValue), directionalValue);
+      if (isArray(value)) {
+        for (Value arrayValue : value.getArrayValue().getValuesList()) {
+          result.add(
+              IndexEntry.create(
+                  fieldIndex.getIndexId(),
+                  document.getKey(),
+                  encodeSingleElement(arrayValue),
+                  directionalValue));
+        }
       }
     } else {
-      addSingleEntry(document, fieldIndex.getIndexId(), /* arrayValue= */ null, directionalValue);
-    }
-  }
-
-  @Override
-  public void handleDocumentChange(@Nullable Document oldDocument, @Nullable Document newDocument) {
-    hardAssert(started, "IndexManager not started");
-    hardAssert(oldDocument == null, "Support for updating documents is not yet available");
-    hardAssert(newDocument != null, "Support for removing documents is not yet available");
-
-    DocumentKey documentKey = newDocument.getKey();
-    Collection<FieldIndex> fieldIndices = getFieldIndexes(documentKey.getCollectionGroup());
-    addIndexEntry(newDocument, fieldIndices);
-  }
-
-  /**
-   * Writes index entries for the field indexes that apply to the provided document.
-   *
-   * @param document The provided document to index.
-   * @param fieldIndexes A list of field indexes to apply.
-   */
-  private void addIndexEntry(Document document, Collection<FieldIndex> fieldIndexes) {
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      writeEntries(document, fieldIndex);
-    }
-  }
-
-  /** Adds a single index entry into the index entries table. */
-  private void addSingleEntry(
-      Document document, int indexId, @Nullable Object arrayValue, Object directionalValue) {
-    if (Logger.isDebugEnabled()) {
-      Logger.debug(
-          TAG, "Adding index values for document '%s' to index '%s'", document.getKey(), indexId);
+      result.add(
+          IndexEntry.create(
+              fieldIndex.getIndexId(), document.getKey(), new byte[] {}, directionalValue));
     }
 
+    return result;
+  }
+
+  private void addIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
         "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
             + "VALUES(?, ?, ?, ?, ?)",
-        indexId,
+        indexEntry.getIndexId(),
         uid,
-        arrayValue,
-        directionalValue,
+        indexEntry.getArrayValue(),
+        indexEntry.getDirectionalValue(),
         document.getKey().toString());
+  }
+
+  private void deleteIndexEntry(Document document, IndexEntry indexEntry) {
+    db.execute(
+        "DELETE FROM index_entries WHERE index_id = ? AND uid = ? AND array_value = ? "
+            + "AND directional_value = ? AND document_name = ?",
+        indexEntry.getIndexId(),
+        uid,
+        indexEntry.getArrayValue(),
+        indexEntry.getDirectionalValue(),
+        document.getKey().toString());
+  }
+
+  private SortedSet<IndexEntry> getExistingIndexEntries(
+      DocumentKey documentKey, FieldIndex fieldIndex) {
+    SortedSet<IndexEntry> results = new TreeSet<>();
+    db.query(
+            "SELECT array_value, directional_value FROM index_entries "
+                + "WHERE index_id = ? AND document_name = ? AND uid = ?")
+        .binding(fieldIndex.getIndexId(), documentKey.toString(), uid)
+        .forEach(
+            row ->
+                results.add(
+                    IndexEntry.create(
+                        fieldIndex.getIndexId(), documentKey, row.getBlob(0), row.getBlob(1))));
+    return results;
   }
 
   @Override
