@@ -15,12 +15,12 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -84,9 +84,18 @@ public interface IndexManager {
   /** Returns the documents that match the given target based on the provided index. */
   Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
 
-  /** Returns the next collection group to update. */
+  /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable
-  String getNextCollectionGroupToUpdate(Timestamp lastUpdateTime);
+  String getNextCollectionGroupToUpdate();
+
+  /**
+   * Sets the collection group's latest read time.
+   *
+   * <p>This method updates the read time for all field indices for the collection group and
+   * increments their sequence number. Subsequent calls to {@link #getNextCollectionGroupToUpdate()}
+   * will return a different collection group (unless only one collection group is configured).
+   */
+  void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime);
 
   /** Updates the index entries for the provided documents. */
   void updateIndexEntries(Collection<Document> documents);

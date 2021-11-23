@@ -217,6 +217,17 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     return matchingDocuments[0];
   }
 
+  @Override
+  public SnapshotVersion getLatestReadTime() {
+    SnapshotVersion latestReadTime =
+        db.query(
+                "SELECT read_time_seconds, read_time_nanos "
+                    + "FROM remote_documents ORDER BY read_time_seconds DESC, read_time_nanos DESC "
+                    + "LIMIT 1")
+            .firstValue(row -> new SnapshotVersion(new Timestamp(row.getLong(0), row.getInt(1))));
+    return latestReadTime != null ? latestReadTime : SnapshotVersion.NONE;
+  }
+
   private String pathForKey(DocumentKey key) {
     return EncodedPath.encode(key.getPath());
   }

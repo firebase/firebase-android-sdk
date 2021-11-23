@@ -16,12 +16,12 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,10 +74,16 @@ class MemoryIndexManager implements IndexManager {
     return Collections.emptySet();
   }
 
+  @Nullable
   @Override
-  public String getNextCollectionGroupToUpdate(Timestamp startingTimestamp) {
+  public String getNextCollectionGroupToUpdate() {
     // Field indices are not supported with memory persistence.
     return null;
+  }
+
+  @Override
+  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+    // Field indices are not supported with memory persistence.
   }
 
   @Override

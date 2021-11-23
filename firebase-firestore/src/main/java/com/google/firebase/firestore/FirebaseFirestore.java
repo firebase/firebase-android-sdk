@@ -44,7 +44,6 @@ import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -340,7 +339,9 @@ public class FirebaseFirestore {
             }
           }
 
-          parsedIndices.add(FieldIndex.create(-1, collectionGroup, segments, SnapshotVersion.NONE));
+          parsedIndices.add(
+              FieldIndex.create(
+                  FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
         }
       }
     } catch (JSONException e) {

@@ -26,19 +26,13 @@ import com.google.firebase.firestore.util.Util;
 public abstract class IndexEntry implements Comparable<IndexEntry> {
 
   public static IndexEntry create(
-      int indexId,
-      DocumentKey documentKey,
-      String uid,
-      byte[] directionalValue,
-      byte[] arrayValue) {
-    return new AutoValue_IndexEntry(indexId, documentKey, uid, arrayValue, directionalValue);
+      int indexId, DocumentKey documentKey, byte[] arrayValue, byte[] directionalValue) {
+    return new AutoValue_IndexEntry(indexId, documentKey, arrayValue, directionalValue);
   }
 
   public abstract int getIndexId();
 
   public abstract DocumentKey getDocumentKey();
-
-  public abstract String getUid();
 
   @SuppressWarnings("mutable")
   public abstract byte[] getArrayValue();
@@ -52,9 +46,6 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
     if (cmp != 0) return cmp;
 
     cmp = getDocumentKey().compareTo(other.getDocumentKey());
-    if (cmp != 0) return cmp;
-
-    cmp = nullSafeCompare(getUid(), other.getUid());
     if (cmp != 0) return cmp;
 
     cmp = compareByteArrays(getDirectionalValue(), other.getDirectionalValue());
