@@ -434,8 +434,10 @@ public class FirebaseApp {
             .addComponentRegistrar(new FirebaseCommonRegistrar())
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
-            .addComponent(Component.of(options, FirebaseOptions.class))
-            .addComponent(Component.of(StartupTime.create(options.startupTime), StartupTime.class));
+            .addComponent(Component.of(options, FirebaseOptions.class));
+    if (options.startupTime.isValid()) {
+      runtimeBuilder.addComponent(Component.of(StartupTime.create(options.startupTime), StartupTime.class));
+    }
     if (tracingEnabled) {
       runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));
     }

@@ -25,6 +25,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.monitoring.Tracer;
@@ -36,6 +37,7 @@ import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.metrics.FirebasePerfInternalTracer;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -63,12 +65,11 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
-            .add(Dependency.required(StartupTime.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
         Component.builder(ExtendedTracer.class, Tracer.class)
             .add(Dependency.required(Context.class))
-            .add(Dependency.required(StartupTime.class))
+            .add(Dependency.optionalProvider(StartupTime.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerfInternalTracer)
             .build(),
         /**
@@ -85,7 +86,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   static FirebasePerfInternalTracer providesFirebasePerfInternalTracer(
       ComponentContainer container) {
     Context appContext = container.get(Context.class);
-    StartupTime startupTime = container.get(StartupTime.class);
+    Provider<StartupTime> startupTimeProvider = container.getProvider(StartupTime.class);
 
     // Initialize ConfigResolver early for accessing device caching layer.
     ConfigResolver.getInstance().setApplicationContext(appContext);
@@ -94,13 +95,16 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
     appStateMonitor.registerActivityLifecycleCallbacks(appContext);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
-    AppStartTrace appStartTrace =
-        new AppStartTrace(
-            new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
-    appStartTrace.registerActivityLifecycleCallbacks(appContext);
+    if (startupTimeProvider.get() != null) {
+      StartupTime startupTime = startupTimeProvider.get();
+      AppStartTrace appStartTrace =
+              new AppStartTrace(
+                      new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
+      appStartTrace.registerActivityLifecycleCallbacks(appContext);
 
-    new Handler(Looper.getMainLooper())
-        .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+      new Handler(Looper.getMainLooper())
+              .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+    }
 
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.
@@ -116,10 +120,10 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .firebasePerformanceModule(
                 new FirebasePerformanceModule(
                     container.get(FirebaseApp.class),
-                    container.get(StartupTime.class),
                     container.get(FirebaseInstallationsApi.class),
                     container.getProvider(RemoteConfigComponent.class),
-                    container.getProvider(TransportFactory.class)))
+                    container.getProvider(TransportFactory.class),
+                    new Clock().getTime()))
             .build();
 
     return component.getFirebasePerformance();

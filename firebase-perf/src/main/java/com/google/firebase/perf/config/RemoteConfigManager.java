@@ -61,7 +61,7 @@ public class RemoteConfigManager {
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
-  private long appStartTimeInMs;
+  private long referenceTimeInMs;
 
   private RemoteConfigManager() {
     this(
@@ -121,9 +121,9 @@ public class RemoteConfigManager {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
   }
 
-  public void setAppStartTime(Timer appStartTime) {
+  public void setReferenceTimeInMs(Timer appStartTime) {
     // Must use getMicros() because RemoteConfigManager uses wall-clock time
-    this.appStartTimeInMs = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
+    this.referenceTimeInMs = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
   }
 
   /**
@@ -380,7 +380,7 @@ public class RemoteConfigManager {
    * @return true if the random delay has elapsed, false otherwise
    */
   private boolean hasAppStartConfigFetchDelayElapsed(long currentTimeInMs) {
-    return (currentTimeInMs - appStartTimeInMs) >= appStartConfigFetchDelayInMs;
+    return (currentTimeInMs - referenceTimeInMs) >= appStartConfigFetchDelayInMs;
   }
 
   // We want to fetch once when the app starts and every 12 hours after that.

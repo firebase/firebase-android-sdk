@@ -23,6 +23,7 @@ import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.time.StartupTime;
 import dagger.Module;
@@ -32,22 +33,22 @@ import dagger.Provides;
 @Module
 public class FirebasePerformanceModule {
   private final FirebaseApp firebaseApp;
-  private final StartupTime startupTime;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
   private final Provider<TransportFactory> transportFactoryProvider;
+  private final Timer initTime;
 
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull StartupTime startupTime,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull Provider<RemoteConfigComponent> remoteConfigComponentProvider,
-      @NonNull Provider<TransportFactory> transportFactoryProvider) {
+      @NonNull Provider<TransportFactory> transportFactoryProvider,
+      @NonNull Timer initTimestamp) {
     this.firebaseApp = firebaseApp;
-    this.startupTime = startupTime;
     this.firebaseInstallations = firebaseInstallations;
     this.remoteConfigComponentProvider = remoteConfigComponentProvider;
     this.transportFactoryProvider = transportFactoryProvider;
+    this.initTime = initTimestamp;
   }
 
   @Provides
@@ -56,8 +57,8 @@ public class FirebasePerformanceModule {
   }
 
   @Provides
-  StartupTime providesStartupTime() {
-    return startupTime;
+  Timer providesInitTime() {
+    return initTime;
   }
 
   @Provides

@@ -36,6 +36,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -571,7 +572,7 @@ public class FirebasePerformanceTest {
 
     return new FirebasePerformance(
         FirebaseApp.getInstance(),
-        StartupTime.create(Instant.now()),
+        new Clock().getTime(),
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,

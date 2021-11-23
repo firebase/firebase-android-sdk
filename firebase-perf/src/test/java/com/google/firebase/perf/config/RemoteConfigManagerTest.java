@@ -811,7 +811,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
     // Simulate time fast forward to some time before fetch time is up
     Timer appStartTime = new Clock().getTime();
-    remoteConfigManagerPartialMock.setAppStartTime(appStartTime);
+    remoteConfigManagerPartialMock.setReferenceTimeInMs(appStartTime);
     long wallClockStartTime = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(wallClockStartTime + appStartConfigFetchDelay - 2000);
@@ -839,7 +839,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
     // Simulate time fast forward to 2s after fetch delay time is up
     Timer appStartTime = new Clock().getTime();
-    remoteConfigManagerPartialMock.setAppStartTime(appStartTime);
+    remoteConfigManagerPartialMock.setReferenceTimeInMs(appStartTime);
     long wallClockStartTime = TimeUnit.MICROSECONDS.toMillis(appStartTime.getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(wallClockStartTime + appStartConfigFetchDelay + 2000);

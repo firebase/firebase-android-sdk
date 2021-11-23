@@ -76,8 +76,7 @@ public class FirebasePerfRegistrarTest {
             Dependency.required(FirebaseApp.class),
             Dependency.requiredProvider(RemoteConfigComponent.class),
             Dependency.required(FirebaseInstallationsApi.class),
-            Dependency.requiredProvider(TransportFactory.class),
-            Dependency.required(StartupTime.class));
+            Dependency.requiredProvider(TransportFactory.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
 
@@ -85,7 +84,7 @@ public class FirebasePerfRegistrarTest {
     assertThat(tracerComponent.getDependencies())
         .containsExactly(
             Dependency.required(Context.class),
-            Dependency.required(StartupTime.class));
+            Dependency.optionalProvider(StartupTime.class));
   }
 
   @Test
@@ -96,8 +95,8 @@ public class FirebasePerfRegistrarTest {
     when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
     when(container.get(ArgumentMatchers.eq(Context.class)))
         .thenReturn(ApplicationProvider.getApplicationContext());
-    when(container.get(ArgumentMatchers.eq(StartupTime.class)))
-        .thenReturn(StartupTime.create(Instant.NEVER));
+    when(container.getProvider(ArgumentMatchers.eq(StartupTime.class)))
+        .thenReturn(() -> null);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
