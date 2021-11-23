@@ -25,7 +25,6 @@ import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.time.StartupTime;
 import dagger.Module;
 import dagger.Provides;
 

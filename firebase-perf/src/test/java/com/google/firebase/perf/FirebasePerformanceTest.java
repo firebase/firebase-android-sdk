@@ -40,8 +40,6 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.time.Instant;
-import com.google.firebase.time.StartupTime;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import org.junit.After;

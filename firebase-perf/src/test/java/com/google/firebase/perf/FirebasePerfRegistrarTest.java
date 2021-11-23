@@ -31,7 +31,6 @@ import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.time.Instant;
 import com.google.firebase.time.StartupTime;
 import java.util.List;
 import org.junit.After;
@@ -83,8 +82,7 @@ public class FirebasePerfRegistrarTest {
     Component<?> tracerComponent = components.get(1);
     assertThat(tracerComponent.getDependencies())
         .containsExactly(
-            Dependency.required(Context.class),
-            Dependency.optionalProvider(StartupTime.class));
+            Dependency.required(Context.class), Dependency.optionalProvider(StartupTime.class));
   }
 
   @Test
@@ -95,8 +93,7 @@ public class FirebasePerfRegistrarTest {
     when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
     when(container.get(ArgumentMatchers.eq(Context.class)))
         .thenReturn(ApplicationProvider.getApplicationContext());
-    when(container.getProvider(ArgumentMatchers.eq(StartupTime.class)))
-        .thenReturn(() -> null);
+    when(container.getProvider(ArgumentMatchers.eq(StartupTime.class))).thenReturn(() -> null);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();

@@ -98,12 +98,12 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
     if (startupTimeProvider.get() != null) {
       StartupTime startupTime = startupTimeProvider.get();
       AppStartTrace appStartTrace =
-              new AppStartTrace(
-                      new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
+          new AppStartTrace(
+              new Timer(startupTime.getInstant().getMicros(), startupTime.getInstant().getNanos()));
       appStartTrace.registerActivityLifecycleCallbacks(appContext);
 
       new Handler(Looper.getMainLooper())
-              .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+          .post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
 
     // In the case of cold start, we create a session and start collecting gauges as early as
