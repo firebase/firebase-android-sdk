@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 
 import com.google.firebase.firestore.model.FieldIndex;
-import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.BeforeClass;
@@ -45,19 +45,10 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
 
   @Test
   public void testConfiguresIndexes() {
-    FieldIndex indexA =
-        fieldIndex("coll", 0, SnapshotVersion.NONE, "a", FieldIndex.Segment.Kind.ASCENDING);
-    FieldIndex indexB =
-        fieldIndex("coll", 1, SnapshotVersion.NONE, "b", FieldIndex.Segment.Kind.DESCENDING);
+    FieldIndex indexA = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "a", Kind.ASCENDING);
+    FieldIndex indexB = fieldIndex("coll", 1, FieldIndex.INITIAL_STATE, "b", Kind.DESCENDING);
     FieldIndex indexC =
-        fieldIndex(
-            "coll",
-            2,
-            SnapshotVersion.NONE,
-            "c1",
-            FieldIndex.Segment.Kind.ASCENDING,
-            "c2",
-            FieldIndex.Segment.Kind.CONTAINS);
+        fieldIndex("coll", 2, FieldIndex.INITIAL_STATE, "c1", Kind.ASCENDING, "c2", Kind.CONTAINS);
 
     configureFieldIndexes(Arrays.asList(indexA, indexB));
     Collection<FieldIndex> fieldIndexes = getFieldIndexes();

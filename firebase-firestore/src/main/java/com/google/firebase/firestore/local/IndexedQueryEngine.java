@@ -84,7 +84,7 @@ public class IndexedQueryEngine implements QueryEngine {
       ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
           localDocuments.getDocuments(keys);
       ImmutableSortedMap<DocumentKey, Document> additionalDocuments =
-          localDocuments.getDocumentsMatchingQuery(query, fieldIndex.getUpdateTime());
+          localDocuments.getDocumentsMatchingQuery(query, fieldIndex.getIndexState().getReadTime());
       for (Map.Entry<DocumentKey, Document> entry : additionalDocuments) {
         indexedDocuments = indexedDocuments.insert(entry.getKey(), entry.getValue());
       }

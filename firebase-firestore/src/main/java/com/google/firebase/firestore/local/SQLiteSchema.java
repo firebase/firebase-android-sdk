@@ -193,7 +193,6 @@ class SQLiteSchema {
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createFieldIndex();
-      createCollectionGroupsTable();
     }
   }
 
@@ -365,45 +364,39 @@ class SQLiteSchema {
    */
   private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"index_configuration", "index_entries"},
+        new String[] {"index_configuration", "index_state", "index_entries"},
         () -> {
-          // TODO(indexing): Do we need to store a different update time per user? We need to ensure
-          // that we index mutations entries for all users.
+          // Global configuration for all existing field indexes
           db.execSQL(
               "CREATE TABLE index_configuration ("
                   + "index_id INTEGER, "
                   + "collection_group TEXT, "
                   + "index_proto BLOB, " // V1 Admin index proto
-                  + "active INTEGER, " // whether index is active
-                  + "update_time_seconds INTEGER, " // time of last document update added to index
-                  + "update_time_nanos INTEGER, "
                   + "PRIMARY KEY (index_id))");
 
-          // The index entries table only has a single primary index. `array_value` should be set
-          // for all queries.
+          // Per index per user state to track the backfill state for each index
+          db.execSQL(
+              "CREATE TABLE index_state ("
+                  + "uid TEXT, "
+                  + "index_id INTEGER, "
+                  + "sequence_number INTEGER, " // Specifies the order of updates
+                  + "read_time_seconds INTEGER, " // Read time of last processed document
+                  + "read_time_nanos INTEGER, "
+                  + "PRIMARY KEY (uid, index_id))");
+
+          // The index entry table stores the encoded entries for all fields.
+          // The table only has a single primary index. `array_value` should be set for all queries.
           db.execSQL(
               "CREATE TABLE index_entries ("
+                  + "uid TEXT, " // user id
                   + "index_id INTEGER, " // The index_id of the field index creating this entry
                   + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
                   + "directional_value BLOB, " // index values for equality and inequalities
-                  + "uid TEXT, " // user id or null if there are no pending mutations
                   + "document_name TEXT, "
-                  + "PRIMARY KEY (index_id, array_value, directional_value, uid, document_name))");
-        });
-  }
+                  + "PRIMARY KEY (uid, index_id, array_value, directional_value, document_name))");
 
-  // TODO(indexing): Consolidate this table with the `collection_parents` table and figure out
-  // GC strategy.
-  private void createCollectionGroupsTable() {
-    ifTablesDontExist(
-        new String[] {"collection_group_update_times"},
-        () -> {
           db.execSQL(
-              "CREATE TABLE collection_group_update_times ("
-                  + "collection_group TEXT, " // Name of the collection group.
-                  + "update_time_seconds INTEGER," // Time of last index backfill update
-                  + "update_time_nanos INTEGER,"
-                  + "PRIMARY KEY (collection_group))");
+              "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");
         });
   }
 
