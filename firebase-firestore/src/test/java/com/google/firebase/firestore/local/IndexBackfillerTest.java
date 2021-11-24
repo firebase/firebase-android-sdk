@@ -104,8 +104,8 @@ public class IndexBackfillerTest {
 
     FieldIndex fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
     FieldIndex fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
-    assertEquals(version(10), fieldIndex1.getIndexState().getReadTime());
-    assertEquals(version(20), fieldIndex2.getIndexState().getReadTime());
+    assertEquals(version(10), fieldIndex1.getIndexState().getOffset().getReadTime());
+    assertEquals(version(20), fieldIndex2.getIndexState().getOffset().getReadTime());
 
     addDoc("coll1/docB", "foo", version(50, 10));
     addDoc("coll1/docC", "foo", version(50));
@@ -117,8 +117,8 @@ public class IndexBackfillerTest {
 
     fieldIndex1 = indexManager.getFieldIndexes("coll1").iterator().next();
     fieldIndex2 = indexManager.getFieldIndexes("coll2").iterator().next();
-    assertEquals(version(50, 10), fieldIndex1.getIndexState().getReadTime());
-    assertEquals(version(60, 10), fieldIndex2.getIndexState().getReadTime());
+    assertEquals(version(50, 10), fieldIndex1.getIndexState().getOffset().getReadTime());
+    assertEquals(version(60, 10), fieldIndex2.getIndexState().getOffset().getReadTime());
   }
 
   @Test
@@ -132,7 +132,7 @@ public class IndexBackfillerTest {
 
     // Read time of index should not change.
     Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(10), it.next().getIndexState().getReadTime());
+    assertEquals(version(10), it.next().getIndexState().getOffset().getReadTime());
 
     // Documents that are after the earliest read time but before field index read time are fetched.
     addDoc("coll1/docB", "boo", version(19));
@@ -141,7 +141,7 @@ public class IndexBackfillerTest {
 
     // Field indexes should now hold the latest read time
     it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(19), it.next().getIndexState().getReadTime());
+    assertEquals(version(19), it.next().getIndexState().getOffset().getReadTime());
   }
 
   @Test
@@ -166,6 +166,27 @@ public class IndexBackfillerTest {
     addDoc("coll1/docA", "foo", version(5));
     addDoc("coll1/docB", "foo", version(3));
     addDoc("coll1/docC", "foo", version(10));
+
+    IndexBackfiller.Results results = backfiller.backfill();
+    assertEquals(2, results.getDocumentsProcessed());
+
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
+
+    results = backfiller.backfill();
+    assertEquals(1, results.getDocumentsProcessed());
+
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC");
+  }
+
+  @Test
+  public void testBackfillUsesDocumentKeyOffsetForLargeSnapshots() {
+    backfiller.setMaxDocumentsToProcess(2);
+
+    addFieldIndex("coll1", "foo");
+    Target target = query("coll1").orderBy(orderBy("foo")).toTarget();
+    addDoc("coll1/docA", "foo", version(1));
+    addDoc("coll1/docB", "foo", version(1));
+    addDoc("coll1/docC", "foo", version(1));
 
     IndexBackfiller.Results results = backfiller.backfill();
     assertEquals(2, results.getDocumentsProcessed());
@@ -251,7 +272,7 @@ public class IndexBackfillerTest {
         fieldIndex(
             collectionGroup,
             FieldIndex.UNKNOWN_ID,
-            FieldIndex.IndexState.create(0, version),
+            FieldIndex.IndexState.create(0, version, DocumentKey.empty()),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
@@ -262,7 +283,7 @@ public class IndexBackfillerTest {
         fieldIndex(
             collectionGroup,
             FieldIndex.UNKNOWN_ID,
-            FieldIndex.IndexState.create(sequenceNumber, SnapshotVersion.NONE),
+            FieldIndex.IndexState.create(sequenceNumber, SnapshotVersion.NONE, DocumentKey.empty()),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);

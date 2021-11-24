@@ -16,6 +16,7 @@ package com.google.firebase.firestore.model;
 
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.Timestamp;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -43,7 +44,7 @@ public abstract class FieldIndex {
 
   /** The state of an index that has not yet been backfilled. */
   public static IndexState INITIAL_STATE =
-      IndexState.create(INITIAL_SEQUENCE_NUMBER, SnapshotVersion.NONE);
+      IndexState.create(INITIAL_SEQUENCE_NUMBER, SnapshotVersion.NONE, DocumentKey.empty());
 
   /** Compares indexes by collection group and segments. Ignores update time and index ID. */
   public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
@@ -94,8 +95,13 @@ public abstract class FieldIndex {
   /** Stores the "high water mark" that indicates how updated the Index is for the current user. */
   @AutoValue
   public abstract static class IndexState {
-    public static IndexState create(long sequenceNumber, SnapshotVersion readTime) {
-      return new AutoValue_FieldIndex_IndexState(sequenceNumber, readTime);
+    public static IndexState create(long sequenceNumber, IndexOffset offset) {
+      return new AutoValue_FieldIndex_IndexState(sequenceNumber, offset);
+    }
+
+    public static IndexState create(
+        long sequenceNumber, SnapshotVersion readTime, DocumentKey documentKey) {
+      return create(sequenceNumber, IndexOffset.create(readTime, documentKey));
     }
 
     /**
@@ -103,10 +109,53 @@ public abstract class FieldIndex {
      */
     public abstract long getSequenceNumber();
 
+    /** Returns the latest indexed read time and document. */
+    public abstract IndexOffset getOffset();
+  }
+
+  /** Stores the latest read time and document that were processed for an index. */
+  @AutoValue
+  public abstract static class IndexOffset implements Comparable<IndexOffset> {
+    public static final IndexOffset NONE = create(SnapshotVersion.NONE, DocumentKey.empty());
+
+    /**
+     * Creates an offset that matches all documents with a read time higher than {@code readTime} or
+     * with a key higher than {@code documentKey} (iff the read times match).
+     */
+    public static IndexOffset create(SnapshotVersion readTime, DocumentKey documentKey) {
+      return new AutoValue_FieldIndex_IndexOffset(readTime, documentKey);
+    }
+
+    /**
+     * Creates an offset that matches all documents with a read time higher than {@code readTime}.
+     */
+    public static IndexOffset create(SnapshotVersion readTime) {
+      long successorSeconds = readTime.getTimestamp().getSeconds();
+      int successorNanos = readTime.getTimestamp().getNanoseconds() + 1;
+      SnapshotVersion successor =
+          new SnapshotVersion(
+              successorNanos == 1e9
+                  ? new Timestamp(successorSeconds + 1, 0)
+                  : new Timestamp(successorSeconds, successorNanos));
+      return new AutoValue_FieldIndex_IndexOffset(successor, DocumentKey.empty());
+    }
+
     /**
      * Returns the latest read time version that has been indexed by Firestore for this field index.
      */
     public abstract SnapshotVersion getReadTime();
+
+    /**
+     * Returns the key of the last document that was indexed for this query. Returns {@link
+     * DocumentKey#empty} if no document has been indexed.
+     */
+    public abstract DocumentKey getDocumentKey();
+
+    public int compareTo(IndexOffset other) {
+      int cmp = getReadTime().compareTo(other.getReadTime());
+      if (cmp != 0) return cmp;
+      return getDocumentKey().compareTo(other.getDocumentKey());
+    }
   }
 
   public static FieldIndex create(

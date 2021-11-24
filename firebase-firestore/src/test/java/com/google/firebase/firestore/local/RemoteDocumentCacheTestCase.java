@@ -31,6 +31,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
@@ -180,7 +181,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, SnapshotVersion.NONE);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.NONE);
     List<MutableDocument> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
     // assertEquals(expected, values(results));
   }
@@ -194,8 +195,24 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(12));
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(12)));
     List<MutableDocument> expected = asList(doc("b/new", 3, docData));
+    assertEquals(expected, values(results));
+  }
+
+  @Test
+  public void testDocumentsMatchingQuerySinceReadTimeAndDocumentKey() {
+    Map<String, Object> docData = map("data", 2);
+    addTestDocumentAtPath("b/a", /* updateTime= */ 1, /* readTime= */ 11);
+    addTestDocumentAtPath("b/b", /* updateTime= */ 2, /*  readTime= = */ 11);
+    addTestDocumentAtPath("b/c", /* updateTime= */ 3, /*  readTime= = */ 11);
+    addTestDocumentAtPath("b/d", /* updateTime= */ 4, /*  readTime= = */ 12);
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(
+            query, IndexOffset.create(version(11), key("b/b")));
+    List<MutableDocument> expected = asList(doc("b/c", 3, docData), doc("b/d", 4, docData));
     assertEquals(expected, values(results));
   }
 
@@ -207,7 +224,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, version(1));
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(1)));
     List<MutableDocument> expected = asList(doc("b/old", 1, docData));
     assertEquals(expected, values(results));
   }

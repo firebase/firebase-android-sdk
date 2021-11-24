@@ -51,7 +51,8 @@ public class FieldIndexTest {
   public void comparatorIgnoresIndexState() {
     FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
     FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
-    FieldIndex indexDifferent = fieldIndex("collA", 1, IndexState.create(1, version(2)));
+    FieldIndex indexDifferent =
+        fieldIndex("collA", 1, IndexState.create(1, version(2), DocumentKey.empty()));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }

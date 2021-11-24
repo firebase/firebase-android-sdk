@@ -382,6 +382,7 @@ class SQLiteSchema {
                   + "sequence_number INTEGER, " // Specifies the order of updates
                   + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
+                  + "document_key TEXT, " // Key of the last processed document
                   + "PRIMARY KEY (index_id, uid))");
 
           // The index entry table stores the encoded entries for all fields.

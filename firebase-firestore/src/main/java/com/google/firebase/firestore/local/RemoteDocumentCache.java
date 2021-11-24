@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
@@ -73,12 +74,11 @@ interface RemoteDocumentCache {
    * <p>Cached entries for non-existing documents have no bearing on query results.
    *
    * @param query The query to match documents against.
-   * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
-   *     read since this snapshot version (exclusive).
+   * @param offset The read time and document key to start scanning at (exclusive).
    * @return The set of matching documents.
    */
   ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime);
+      Query query, FieldIndex.IndexOffset offset);
 
   /** Returns the latest read time of any document in the cache. */
   SnapshotVersion getLatestReadTime();
