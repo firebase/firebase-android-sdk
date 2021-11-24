@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 12;
+  static final int VERSION = 13;
 
   static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
 
@@ -57,13 +57,13 @@ class SQLiteSchema {
   static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
 
   /**
-   * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
+   * The batch size for data migrations.
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
    * reported that schema migrations failed for clients with thousands of documents. The number has
    * been chosen based on manual experiments.
    */
-  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 100;
+  private static final int MIGRATION_BATCH_SIZE = 100;
 
   private final SQLiteDatabase db;
 
@@ -170,6 +170,11 @@ class SQLiteSchema {
     if (fromVersion < 12 && toVersion >= 12) {
       createBundleCache();
     }
+
+    if (fromVersion < 13 && toVersion >= 13) {
+      rewriteDocumentKeys();
+    }
+
     /*
      * Adding a new migration? READ THIS FIRST!
      *
@@ -394,9 +399,6 @@ class SQLiteSchema {
                   + "directional_value BLOB, " // index values for equality and inequalities
                   + "document_name TEXT, "
                   + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_name))");
-
-          db.execSQL(
-              "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");
         });
   }
 
@@ -489,7 +491,7 @@ class SQLiteSchema {
                     + "SELECT TD.path FROM target_documents AS TD "
                     + "WHERE RD.path = TD.path AND TD.target_id = 0"
                     + ") LIMIT ?")
-            .binding(SEQUENCE_NUMBER_BATCH_SIZE);
+            .binding(MIGRATION_BATCH_SIZE);
 
     boolean[] resultsRemaining = new boolean[1];
 
@@ -602,6 +604,60 @@ class SQLiteSchema {
                 throw fail("Failed to decode Query data for target %s", targetId);
               }
             });
+  }
+
+  /**
+   * Migrates the remote_documents table to contain a distinct column for the document's collection
+   * path and its id.
+   */
+  private void rewriteDocumentKeys() {
+    // SQLite does not support dropping a primary key. To create a new primary key on
+    // collection_path and document_id we need to create a new table :(
+    db.execSQL("ALTER TABLE remote_documents RENAME TO tmp;");
+    db.execSQL(
+        "CREATE TABLE remote_documents ("
+            + "collection_path TEXT, "
+            + "document_id TEXT, "
+            + "read_time_nanos INTEGER, "
+            + "read_time_seconds INTEGER, "
+            + "contents BLOB, "
+            + "PRIMARY KEY (collection_path, document_id))");
+    db.execSQL(
+        "CREATE INDEX remote_documents_read_time ON remote_documents (read_time_nanos, read_time_seconds)");
+    db.execSQL(
+        "INSERT INTO remote_documents (collection_path, read_time_nanos, read_time_seconds, contents) "
+            + "SELECT path AS collection_path, read_time_nanos, read_time_seconds, contents FROM tmp");
+    db.execSQL("DROP TABLE tmp;");
+
+    // Process each entry to split the document key into collection_path and document_id
+    SQLitePersistence.Query documentsToMigrate =
+        new SQLitePersistence.Query(
+                db,
+                "SELECT collection_path FROM remote_documents WHERE document_id IS NULL LIMIT ?")
+            .binding(MIGRATION_BATCH_SIZE);
+    SQLiteStatement insertKey =
+        db.compileStatement(
+            "UPDATE remote_documents SET collection_path = ?, document_id = ? WHERE collection_path = ?");
+
+    boolean[] resultsRemaining = new boolean[1];
+
+    do {
+      resultsRemaining[0] = false;
+
+      documentsToMigrate.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+
+            String encodedPath = row.getString(0);
+            ResourcePath decodedPath = EncodedPath.decodeResourcePath(encodedPath);
+
+            insertKey.clearBindings();
+            insertKey.bindString(1, EncodedPath.encode(decodedPath.popLast()));
+            insertKey.bindString(2, decodedPath.getLastSegment());
+            insertKey.bindString(3, encodedPath);
+            hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
+          });
+    } while (resultsRemaining[0]);
   }
 
   private void createBundleCache() {

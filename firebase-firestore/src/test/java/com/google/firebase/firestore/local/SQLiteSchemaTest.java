@@ -548,7 +548,7 @@ public class SQLiteSchemaTest {
             QueryPurpose.LISTEN);
 
     db.execSQL(
-        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (? ,?, ?)",
         new Object[] {
           2, "invalid_canonical_id", serializer.encodeTargetData(initialTargetData).toByteArray()
         });
@@ -568,6 +568,35 @@ public class SQLiteSchemaTest {
               } catch (InvalidProtocolBufferException e) {
                 fail("Failed to decode Target data");
               }
+            });
+  }
+
+  @Test
+  public void rewritesDocumentKeys() {
+    schema.runSchemaUpgrades(0, 12);
+
+    ResourcePath path = path("coll/docA");
+    db.execSQL(
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?,?, ?, ?)",
+        new Object[] {EncodedPath.encode(path), 1, 2, new byte[] {3}});
+
+    schema.runSchemaUpgrades(12, 13);
+    new SQLitePersistence.Query(
+            db,
+            "SELECT collection_path, document_id, read_time_seconds, read_time_nanos, contents FROM remote_documents")
+        .forEach(
+            cursor -> {
+              String encodedCollectionPath = cursor.getString(0);
+              String documentId = cursor.getString(1);
+              long readTimeSeconds = cursor.getLong(2);
+              int readTimeNanos = cursor.getInt(3);
+              byte[] contents = cursor.getBlob(4);
+
+              assertEquals(path("coll"), EncodedPath.decodeResourcePath(encodedCollectionPath));
+              assertEquals("docA", documentId);
+              assertEquals(1, readTimeSeconds);
+              assertEquals(2, readTimeNanos);
+              assertArrayEquals(new byte[] {3}, contents);
             });
   }
 
