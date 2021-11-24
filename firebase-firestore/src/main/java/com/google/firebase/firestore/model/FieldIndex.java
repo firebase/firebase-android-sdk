@@ -120,7 +120,7 @@ public abstract class FieldIndex {
 
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime} or
-     * with a key higher than {@code documentKey} (iff the read times match).
+     * with a key higher than {@code documentKey} for equal read times.
      */
     public static IndexOffset create(SnapshotVersion readTime, DocumentKey documentKey) {
       return new AutoValue_FieldIndex_IndexOffset(readTime, documentKey);

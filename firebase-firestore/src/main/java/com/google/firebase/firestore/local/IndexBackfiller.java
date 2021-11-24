@@ -177,11 +177,23 @@ public class IndexBackfiller {
     return oldestDocuments.size();
   }
 
+  /** Returns the lowest offset for the provided index group. */
+  private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
+    IndexOffset lowestOffset = null;
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      if (lowestOffset == null
+          || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
+        lowestOffset = fieldIndex.getIndexState().getOffset();
+      }
+    }
+    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
+  }
+
   /**
    * Returns the offset for the index based on the newly indexed documents.
    *
    * @param documents a list of documents sorted by read time and key (ascending)
-   * @param currentOffset the current read time of the index
+   * @param currentOffset the current offset of the index group
    */
   private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
     IndexOffset latestOffset =
@@ -193,18 +205,6 @@ public class IndexBackfiller {
     // Make sure the index does not go back in time
     latestOffset = latestOffset.compareTo(currentOffset) > 0 ? latestOffset : currentOffset;
     return latestOffset;
-  }
-
-  /** Returns the lowest offset for the provided index group. */
-  private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
-    IndexOffset lowestOffset = null;
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      if (lowestOffset == null
-          || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
-        lowestOffset = fieldIndex.getIndexState().getOffset();
-      }
-    }
-    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
   }
 
   /** Returns up to {@code count} documents sorted by read time and key. */
