@@ -83,7 +83,6 @@ import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -154,7 +153,8 @@ public abstract class LocalStoreTestCase {
     notifyLocalViewChanges(viewChanges(targetId, fromCache, asList(), asList()));
   }
 
-  private void acknowledgeMutationWithTransform(long documentVersion, Object... transformResult) {
+  private void acknowledgeMutationWithTransformResults(
+      long documentVersion, Object... transformResult) {
     MutationBatch batch = batches.remove(0);
     SnapshotVersion version = version(documentVersion);
     List<MutationResult> mutationResults =
@@ -172,7 +172,7 @@ public abstract class LocalStoreTestCase {
   }
 
   private void acknowledgeMutation(long documentVersion) {
-    acknowledgeMutationWithTransform(documentVersion, null);
+    acknowledgeMutationWithTransformResults(documentVersion, null);
   }
 
   private void rejectMutation() {
@@ -1074,7 +1074,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
     assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
-    acknowledgeMutationWithTransform(2, 1);
+    acknowledgeMutationWithTransformResults(2, 1);
     assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
 
@@ -1288,11 +1288,11 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutationWithTransform(3, 1);
+    acknowledgeMutationWithTransformResults(3, 1);
     assertChanged(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutationWithTransform(4, 1339);
+    acknowledgeMutationWithTransformResults(4, 1339);
     assertChanged(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
   }
@@ -1337,7 +1337,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(
         doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
 
-    acknowledgeMutationWithTransform(3, 1338, asList("bar", "foo"));
+    acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
     assertChanged(
         doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
             .withReadTime(new SnapshotVersion(new Timestamp(0, 3000)))

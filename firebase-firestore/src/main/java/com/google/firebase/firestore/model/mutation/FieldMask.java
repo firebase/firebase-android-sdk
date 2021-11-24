@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.model.mutation;
 
 import com.google.firebase.firestore.model.FieldPath;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -26,6 +27,8 @@ import java.util.Set;
  * object foo. If foo is not an object, foo is replaced with an object containing foo.
  */
 public final class FieldMask {
+  public static FieldMask EMPTY = fromSet(new HashSet<>());
+
   public static FieldMask fromSet(Set<FieldPath> mask) {
     return new FieldMask(mask);
   }

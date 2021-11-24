@@ -203,8 +203,7 @@ class LocalDocumentsView {
     // along the way.
     for (MutationBatch batch : batches) {
       for (DocumentKey key : batch.getKeys()) {
-        FieldMask mask =
-            masks.containsKey(key) ? masks.get(key) : FieldMask.fromSet(new HashSet<>());
+        FieldMask mask = masks.containsKey(key) ? masks.get(key) : FieldMask.EMPTY;
         mask = batch.applyToLocalView(docs.get(key), mask);
         masks.put(key, mask);
         int batchId = batch.getBatchId();
