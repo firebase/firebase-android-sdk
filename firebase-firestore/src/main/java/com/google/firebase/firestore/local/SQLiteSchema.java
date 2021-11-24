@@ -103,6 +103,8 @@ class SQLiteSchema {
      * requirements for new migrations.
      */
 
+    long startTime = System.currentTimeMillis();
+
     if (fromVersion < 1 && toVersion >= 1) {
       createV1MutationQueue();
       createV1TargetCache();
@@ -199,6 +201,13 @@ class SQLiteSchema {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createFieldIndex();
     }
+
+    Logger.debug(
+        "SQLiteSchema",
+        "Migration from version %s to %s took %s milliseconds",
+        fromVersion,
+        toVersion,
+        System.currentTimeMillis() - startTime);
   }
 
   /**
