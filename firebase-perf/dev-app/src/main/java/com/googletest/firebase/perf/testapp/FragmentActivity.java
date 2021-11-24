@@ -33,28 +33,7 @@ public class FragmentActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    // Listening on FragmentManager's FragmentLifeCycleCallbacks
-    getSupportFragmentManager()
-        .registerFragmentLifecycleCallbacks(
-            new FragmentManager.FragmentLifecycleCallbacks() {
-              @Override
-              public void onFragmentViewCreated(
-                  @NonNull FragmentManager fm,
-                  @NonNull Fragment f,
-                  @NonNull View v,
-                  @Nullable Bundle savedInstanceState) {
-                super.onFragmentViewCreated(fm, f, v, savedInstanceState);
-                Log.d("FragmentManager", "View created " + f.getClass().getSimpleName());
-              }
-
-              @Override
-              public void onFragmentViewDestroyed(
-                  @NonNull FragmentManager fm, @NonNull Fragment f) {
-                super.onFragmentViewDestroyed(fm, f);
-                Log.d("FragmentManager", "View destroyed " + f.getClass().getSimpleName());
-              }
-            },
-            true);
+    registerListeners();
     setContentView(R.layout.activity_fragment);
     BottomNavigationView navView = findViewById(R.id.nav_view);
     // Passing each menu ID as a set of Ids because each
@@ -73,5 +52,83 @@ public class FragmentActivity extends AppCompatActivity {
     NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     NavigationUI.setupWithNavController(
         (BottomNavigationView) findViewById(R.id.nav_view), navController);
+    // Listening on FragmentManager's FragmentLifeCycleCallbacks
+  }
+
+  private boolean decorViewCheck() {
+    View v = this.getWindow().getDecorView();
+    return v.isHardwareAccelerated();
+  }
+
+  private void registerListeners() {
+    getSupportFragmentManager()
+        .registerFragmentLifecycleCallbacks(
+            new FragmentManager.FragmentLifecycleCallbacks() {
+              @Override
+              public void onFragmentPreCreated(
+                  @NonNull FragmentManager fm,
+                  @NonNull Fragment f,
+                  @Nullable Bundle savedInstanceState) {
+                super.onFragmentPreCreated(fm, f, savedInstanceState);
+                Log.d(
+                    "FragmentManager",
+                    "Fragment precreated" + f.getClass().getSimpleName() + decorViewCheck());
+              }
+
+              @Override
+              public void onFragmentCreated(
+                  @NonNull FragmentManager fm,
+                  @NonNull Fragment f,
+                  @Nullable Bundle savedInstanceState) {
+                super.onFragmentCreated(fm, f, savedInstanceState);
+                Log.d(
+                    "FragmentManager",
+                    "Fragment created " + f.getClass().getSimpleName() + decorViewCheck());
+              }
+
+              @Override
+              public void onFragmentViewCreated(
+                  @NonNull FragmentManager fm,
+                  @NonNull Fragment f,
+                  @NonNull View v,
+                  @Nullable Bundle savedInstanceState) {
+                super.onFragmentViewCreated(fm, f, v, savedInstanceState);
+                Log.d(
+                    "FragmentManager",
+                    "View created " + f.getClass().getSimpleName() + decorViewCheck());
+              }
+
+              @Override
+              public void onFragmentStarted(@NonNull FragmentManager fm, @NonNull Fragment f) {
+                super.onFragmentStarted(fm, f);
+                Log.d(
+                    "FragmentManager",
+                    "View started " + f.getClass().getSimpleName() + decorViewCheck());
+              }
+
+              @Override
+              public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
+                super.onFragmentResumed(fm, f);
+                Log.d(
+                    "FragmentManager",
+                    "View resumed " + f.getClass().getSimpleName() + decorViewCheck());
+              }
+
+              @Override
+              public void onFragmentStopped(@NonNull FragmentManager fm, @NonNull Fragment f) {
+                super.onFragmentStopped(fm, f);
+                Log.d("FragmentManager", "View stopped " + f.getClass().getSimpleName());
+              }
+
+              @Override
+              public void onFragmentViewDestroyed(
+                  @NonNull FragmentManager fm, @NonNull Fragment f) {
+                Log.d("FragmentManager", "View destroyed " + f.getClass().getSimpleName());
+                super.onFragmentViewDestroyed(fm, f);
+                //                              Log.d("FragmentManager", "View destroyed " +
+                // f.getClass().getSimpleName());
+              }
+            },
+            true);
   }
 }
