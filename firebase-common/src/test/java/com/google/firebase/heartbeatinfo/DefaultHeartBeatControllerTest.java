@@ -75,6 +75,18 @@ public class DefaultHeartBeatControllerTest {
   }
 
   @Test
+  public void getHeartBeatCode_globalHeartBeat() {
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+    assertThat(heartBeatController.getHeartBeatCode("fire-iid").getCode()).isEqualTo(2);
+  }
+
+  @Test
+  public void getHeartBeatCode_noHeartBeat() {
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
+    assertThat(heartBeatController.getHeartBeatCode("fire-iid").getCode()).isEqualTo(0);
+  }
+
+  @Test
   public void generateHeartBeat_oneHeartBeat()
       throws ExecutionException, InterruptedException, JSONException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();

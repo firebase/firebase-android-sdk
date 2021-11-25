@@ -37,7 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Provides a function to store heartbeats and another function to retrieve stored heartbeats. */
-public class DefaultHeartBeatController implements HeartBeatController {
+public class DefaultHeartBeatController implements HeartBeatController, HeartBeatInfo {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
 
@@ -131,7 +131,8 @@ public class DefaultHeartBeatController implements HeartBeatController {
   }
 
   public static @NonNull Component<DefaultHeartBeatController> component() {
-    return Component.builder(DefaultHeartBeatController.class, HeartBeatController.class)
+    return Component.builder(
+            DefaultHeartBeatController.class, HeartBeatController.class, HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
         .add(Dependency.required(FirebaseApp.class))
         .add(Dependency.setOf(HeartBeatConsumer.class))
@@ -144,5 +145,18 @@ public class DefaultHeartBeatController implements HeartBeatController {
                     c.setOf(HeartBeatConsumer.class),
                     c.getProvider(UserAgentPublisher.class)))
         .build();
+  }
+
+  @Override
+  public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
+    long presentTime = System.currentTimeMillis();
+    HeartBeatInfoStorage storage = storageProvider.get();
+    boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
+    if (shouldSendGlobalHB) {
+      storage.postHeartBeatCleanUp();
+      return HeartBeat.GLOBAL;
+    } else {
+      return HeartBeat.NONE;
+    }
   }
 }

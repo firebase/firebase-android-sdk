@@ -53,15 +53,9 @@ class HeartBeatInfoStorage {
   // As soon as you hit the limit of heartbeats. The number of stored heartbeats is halved.
   private static final int HEART_BEAT_COUNT_LIMIT = 30;
 
-  private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy z");
-
-  private SharedPreferences sharedPreferences;
   private SharedPreferences firebaseSharedPreferences;
 
   public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
-    this.sharedPreferences =
-        applicationContext.getSharedPreferences(
-            PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
     this.firebaseSharedPreferences =
         applicationContext.getSharedPreferences(
             HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
@@ -69,8 +63,7 @@ class HeartBeatInfoStorage {
 
   @VisibleForTesting
   @RestrictTo(RestrictTo.Scope.TESTS)
-  HeartBeatInfoStorage(SharedPreferences preferences, SharedPreferences firebaseSharedPreferences) {
-    this.sharedPreferences = preferences;
+  HeartBeatInfoStorage(SharedPreferences firebaseSharedPreferences) {
     this.firebaseSharedPreferences = firebaseSharedPreferences;
   }
 
@@ -81,7 +74,14 @@ class HeartBeatInfoStorage {
   }
 
   synchronized void deleteAllHeartBeats() {
-    firebaseSharedPreferences.edit().clear().apply();
+    SharedPreferences.Editor editor = firebaseSharedPreferences.edit();
+    for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
+      if (entry.getValue() instanceof Set) {
+        editor.remove(entry.getKey());
+      }
+    }
+    editor.remove(HEART_BEAT_COUNT_TAG);
+    editor.apply();
   }
 
   synchronized List<HeartBeatResult> getAllHeartBeats() {
@@ -93,7 +93,37 @@ class HeartBeatInfoStorage {
                 entry.getKey(), new ArrayList<String>((Set<String>) entry.getValue())));
       }
     }
+    updateGlobalHeartBeat(System.currentTimeMillis());
     return heartBeatResults;
+  }
+
+  synchronized void postHeartBeatCleanUp() {
+    String dateString = getFormattedDate(System.currentTimeMillis());
+    firebaseSharedPreferences.edit().putString(LAST_STORED_DATE, dateString).apply();
+
+    // Find stored heartbeat and clear it.
+    String userAgentString = "";
+    for (Map.Entry<String, ?> entry : firebaseSharedPreferences.getAll().entrySet()) {
+      if (entry.getValue() instanceof Set) {
+        Set<String> dateSet = (Set<String>) entry.getValue();
+        for (String date : dateSet) {
+          if (dateString.equals(date)) {
+            userAgentString = entry.getKey();
+          }
+        }
+      }
+    }
+    if (!userAgentString.equals("")) {
+      Set<String> userAgentDateSet =
+          new HashSet<String>(
+              firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
+      userAgentDateSet.remove(dateString);
+      if (userAgentDateSet.isEmpty()) {
+        firebaseSharedPreferences.edit().remove(userAgentString).apply();
+      } else {
+        firebaseSharedPreferences.edit().putStringSet(userAgentString, userAgentDateSet).apply();
+      }
+    }
   }
 
   synchronized String getFormattedDate(long millis) {
@@ -122,9 +152,13 @@ class HeartBeatInfoStorage {
             firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
     userAgentDateSet.add(dateString);
     heartBeatCount += 1;
+    if (userAgentDateSet.isEmpty()) {
+      firebaseSharedPreferences.edit().remove(userAgentString).apply();
+    } else {
+      firebaseSharedPreferences.edit().putStringSet(userAgentString, userAgentDateSet).apply();
+    }
     firebaseSharedPreferences
         .edit()
-        .putStringSet(userAgentString, userAgentDateSet)
         .putLong(HEART_BEAT_COUNT_TAG, heartBeatCount)
         .putString(LAST_STORED_DATE, dateString)
         .apply();
@@ -157,17 +191,15 @@ class HeartBeatInfoStorage {
   }
 
   synchronized long getLastGlobalHeartBeat() {
-    return sharedPreferences.getLong(GLOBAL, -1);
+    return firebaseSharedPreferences.getLong(GLOBAL, -1);
   }
 
   synchronized void updateGlobalHeartBeat(long millis) {
-    sharedPreferences.edit().putLong(GLOBAL, millis).apply();
+    firebaseSharedPreferences.edit().putLong(GLOBAL, millis).apply();
   }
 
-  static boolean isSameDateUtc(long base, long target) {
-    Date baseDate = new Date(base);
-    Date targetDate = new Date(target);
-    return !(FORMATTER.format(baseDate).equals(FORMATTER.format(targetDate)));
+  synchronized boolean isSameDateUtc(long base, long target) {
+    return getFormattedDate(base).equals(getFormattedDate(target));
   }
 
   /*
@@ -176,14 +208,14 @@ class HeartBeatInfoStorage {
    when the last heartbeat send for the sdk was later than a day before.
   */
   synchronized boolean shouldSendSdkHeartBeat(String heartBeatTag, long millis) {
-    if (sharedPreferences.contains(heartBeatTag)) {
-      if (isSameDateUtc(sharedPreferences.getLong(heartBeatTag, -1), millis)) {
-        sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+    if (firebaseSharedPreferences.contains(heartBeatTag)) {
+      if (!this.isSameDateUtc(firebaseSharedPreferences.getLong(heartBeatTag, -1), millis)) {
+        firebaseSharedPreferences.edit().putLong(heartBeatTag, millis).apply();
         return true;
       }
       return false;
     } else {
-      sharedPreferences.edit().putLong(heartBeatTag, millis).apply();
+      firebaseSharedPreferences.edit().putLong(heartBeatTag, millis).apply();
       return true;
     }
   }
