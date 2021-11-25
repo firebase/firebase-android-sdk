@@ -44,7 +44,6 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     List<Component<?>> result = new ArrayList<>();
     result.add(DefaultUserAgentPublisher.component());
-    result.add(DefaultHeartBeatInfo.component());
     result.add(DefaultHeartBeatController.component());
     result.add(
         LibraryVersionComponent.create(FIREBASE_ANDROID, String.valueOf(Build.VERSION.SDK_INT)));
