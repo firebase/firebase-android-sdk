@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import android.content.Context;
 import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -40,6 +41,8 @@ public class DefaultHeartBeatController implements HeartBeatController {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
 
+  private Context applicationContext;
+
   private final Provider<UserAgentPublisher> userAgentProvider;
 
   private final Set<HeartBeatConsumer> consumers;
@@ -51,6 +54,10 @@ public class DefaultHeartBeatController implements HeartBeatController {
 
   public Task<Void> registerHeartBeat() {
     if (consumers.size() <= 0) {
+      return Tasks.forResult(null);
+    }
+    boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (inDirectBoot) {
       return Tasks.forResult(null);
     }
 
@@ -70,22 +77,29 @@ public class DefaultHeartBeatController implements HeartBeatController {
 
   @Override
   public Task<String> getHeartBeatsHeader() {
+    boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (inDirectBoot) {
+      return Tasks.forResult("");
+    }
     return Tasks.call(
         backgroundExecutor,
         () -> {
           synchronized (DefaultHeartBeatController.this) {
-            List<HeartBeatResult> allHeartBeats = this.storageProvider.get().getAllHeartBeats();
-            this.storageProvider.get().deleteAllHeartBeats();
+            HeartBeatInfoStorage storage = this.storageProvider.get();
+            List<HeartBeatResult> allHeartBeats = storage.getAllHeartBeats();
+            storage.deleteAllHeartBeats();
             JSONArray array = new JSONArray();
             for (int i = 0; i < allHeartBeats.size(); i++) {
               HeartBeatResult result = allHeartBeats.get(i);
               JSONObject obj = new JSONObject();
               obj.put("agent", result.getUserAgent());
               obj.put("date", result.getUsedDates());
-              obj.put("version", "1");
               array.put(obj);
             }
-            return Base64.encodeToString(array.toString().getBytes(), Base64.DEFAULT);
+            JSONObject output = new JSONObject();
+            output.put("heartbeats", array);
+            output.put("version", "2");
+            return Base64.encodeToString(output.toString().getBytes(), Base64.DEFAULT);
           }
         });
   }
@@ -95,14 +109,13 @@ public class DefaultHeartBeatController implements HeartBeatController {
       String persistenceKey,
       Set<HeartBeatConsumer> consumers,
       Provider<UserAgentPublisher> userAgentProvider) {
-    // It is very important the executor is single threaded as otherwise it would lead to
-    // race conditions.
     this(
         () -> new HeartBeatInfoStorage(context, persistenceKey),
         consumers,
         new ThreadPoolExecutor(
             0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY),
         userAgentProvider);
+    this.applicationContext = context;
   }
 
   @VisibleForTesting

@@ -16,10 +16,14 @@ package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import androidx.core.os.UserManagerCompat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -33,7 +37,7 @@ import java.util.Set;
  *
  * <p>This exposes functions to store heartbeats and retrieve them in the form of HeartBeatResult.
  */
-public class HeartBeatInfoStorage {
+class HeartBeatInfoStorage {
   private static HeartBeatInfoStorage instance = null;
 
   private static final String GLOBAL = "fire-global";
@@ -51,20 +55,16 @@ public class HeartBeatInfoStorage {
 
   private static final SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy z");
 
-  private SharedPreferences sharedPreferences = null;
-  private SharedPreferences firebaseSharedPreferences = null;
-  private boolean inDirectBoot = false;
+  private SharedPreferences sharedPreferences;
+  private SharedPreferences firebaseSharedPreferences;
 
   public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
-    inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
-    if (!inDirectBoot) {
-      this.sharedPreferences =
-          applicationContext.getSharedPreferences(
-              PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
-      this.firebaseSharedPreferences =
-          applicationContext.getSharedPreferences(
-              HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
-    }
+    this.sharedPreferences =
+        applicationContext.getSharedPreferences(
+            PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
+    this.firebaseSharedPreferences =
+        applicationContext.getSharedPreferences(
+            HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);
   }
 
   @VisibleForTesting
@@ -81,26 +81,33 @@ public class HeartBeatInfoStorage {
   }
 
   synchronized void deleteAllHeartBeats() {
-    if (inDirectBoot) return;
     firebaseSharedPreferences.edit().clear().apply();
   }
 
   synchronized List<HeartBeatResult> getAllHeartBeats() {
     ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
-    if (inDirectBoot) return heartBeatResults;
     for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
         heartBeatResults.add(
             HeartBeatResult.create(
-                entry.getKey(), new ArrayList<String>((HashSet<String>) entry.getValue())));
+                entry.getKey(), new ArrayList<String>((Set<String>) entry.getValue())));
       }
     }
     return heartBeatResults;
   }
 
+  synchronized String getFormattedDate(long millis) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      Instant instant = new Date(millis).toInstant();
+      LocalDateTime ldt = instant.atOffset(ZoneOffset.UTC).toLocalDateTime();
+      return ldt.format(DateTimeFormatter.ISO_LOCAL_DATE);
+    } else {
+      return new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(new Date(millis));
+    }
+  }
+
   synchronized void storeHeartBeat(long millis, String userAgentString) {
-    if (inDirectBoot) return;
-    String dateString = new SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(new Date(millis));
+    String dateString = getFormattedDate(millis);
     String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
     if (lastDateString.equals(dateString)) {
       return;
@@ -129,10 +136,10 @@ public class HeartBeatInfoStorage {
     String userAgentString = "";
     for (Map.Entry<String, ?> entry : firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
-        HashSet<String> dateSet = (HashSet<String>) entry.getValue();
-        for (String ele : dateSet) {
-          if (lowestDate == null || lowestDate.compareTo(ele) > 0) {
-            lowestDate = ele;
+        Set<String> dateSet = (Set<String>) entry.getValue();
+        for (String date : dateSet) {
+          if (lowestDate == null || lowestDate.compareTo(date) > 0) {
+            lowestDate = date;
             userAgentString = entry.getKey();
           }
         }

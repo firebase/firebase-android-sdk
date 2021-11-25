@@ -303,7 +303,6 @@ public class FirebaseApp {
     }
 
     firebaseApp.initializeAllApis();
-    firebaseApp.defaultHeartBeatController.get().registerHeartBeat();
     return firebaseApp;
   }
 
@@ -593,6 +592,7 @@ public class FirebaseApp {
     } else {
       Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
       componentRuntime.initializeEagerComponents(isDefaultApp());
+      defaultHeartBeatController.get().registerHeartBeat();
     }
   }
 
