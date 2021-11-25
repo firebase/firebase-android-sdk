@@ -20,7 +20,6 @@ import android.os.Build;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
-import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
 import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
