@@ -1,0 +1,148 @@
+// Copyright 2021 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.heartbeatinfo;
+
+import android.content.Context;
+import android.util.Base64;
+import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
+import androidx.core.os.UserManagerCompat;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.components.Component;
+import com.google.firebase.components.Dependency;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.platforminfo.UserAgentPublisher;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/** Provides a function to store heartbeats and another function to retrieve stored heartbeats. */
+public class DefaultHeartBeatController implements HeartBeatController {
+
+  private final Provider<HeartBeatInfoStorage> storageProvider;
+
+  private Context applicationContext;
+
+  private final Provider<UserAgentPublisher> userAgentProvider;
+
+  private final Set<HeartBeatConsumer> consumers;
+
+  private final Executor backgroundExecutor;
+
+  private static final ThreadFactory THREAD_FACTORY =
+      r -> new Thread(r, "heartbeat-information-executor");
+
+  public Task<Void> registerHeartBeat() {
+    if (consumers.size() <= 0) {
+      return Tasks.forResult(null);
+    }
+    boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (inDirectBoot) {
+      return Tasks.forResult(null);
+    }
+
+    return Tasks.call(
+        backgroundExecutor,
+        () -> {
+          synchronized (DefaultHeartBeatController.this) {
+            this.storageProvider
+                .get()
+                .storeHeartBeat(
+                    System.currentTimeMillis(), this.userAgentProvider.get().getUserAgent());
+          }
+
+          return null;
+        });
+  }
+
+  @Override
+  public Task<String> getHeartBeatsHeader() {
+    boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
+    if (inDirectBoot) {
+      return Tasks.forResult("");
+    }
+    return Tasks.call(
+        backgroundExecutor,
+        () -> {
+          synchronized (DefaultHeartBeatController.this) {
+            HeartBeatInfoStorage storage = this.storageProvider.get();
+            List<HeartBeatResult> allHeartBeats = storage.getAllHeartBeats();
+            storage.deleteAllHeartBeats();
+            JSONArray array = new JSONArray();
+            for (int i = 0; i < allHeartBeats.size(); i++) {
+              HeartBeatResult result = allHeartBeats.get(i);
+              JSONObject obj = new JSONObject();
+              obj.put("agent", result.getUserAgent());
+              obj.put("date", result.getUsedDates());
+              array.put(obj);
+            }
+            JSONObject output = new JSONObject();
+            output.put("heartbeats", array);
+            output.put("version", "2");
+            return Base64.encodeToString(output.toString().getBytes(), Base64.DEFAULT);
+          }
+        });
+  }
+
+  private DefaultHeartBeatController(
+      Context context,
+      String persistenceKey,
+      Set<HeartBeatConsumer> consumers,
+      Provider<UserAgentPublisher> userAgentProvider) {
+    this(
+        () -> new HeartBeatInfoStorage(context, persistenceKey),
+        consumers,
+        new ThreadPoolExecutor(
+            0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY),
+        userAgentProvider);
+    this.applicationContext = context;
+  }
+
+  @VisibleForTesting
+  DefaultHeartBeatController(
+      Provider<HeartBeatInfoStorage> testStorage,
+      Set<HeartBeatConsumer> consumers,
+      Executor executor,
+      Provider<UserAgentPublisher> userAgentProvider) {
+    storageProvider = testStorage;
+    this.consumers = consumers;
+    this.backgroundExecutor = executor;
+    this.userAgentProvider = userAgentProvider;
+  }
+
+  public static @NonNull Component<DefaultHeartBeatController> component() {
+    return Component.builder(DefaultHeartBeatController.class, HeartBeatController.class)
+        .add(Dependency.required(Context.class))
+        .add(Dependency.required(FirebaseApp.class))
+        .add(Dependency.setOf(HeartBeatConsumer.class))
+        .add(Dependency.requiredProvider(UserAgentPublisher.class))
+        .factory(
+            c ->
+                new DefaultHeartBeatController(
+                    c.get(Context.class),
+                    c.get(FirebaseApp.class).getPersistenceKey(),
+                    c.setOf(HeartBeatConsumer.class),
+                    c.getProvider(UserAgentPublisher.class)))
+        .build();
+  }
+}

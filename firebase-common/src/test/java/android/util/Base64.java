@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.heartbeatinfo;
+package android.util;
 
-import com.google.auto.value.AutoValue;
-import java.util.List;
-
-/**
- * Stores the information about when the sdk was used and what kind of heartbeat needs to be sent
- * for the same.
- */
-@AutoValue
-public abstract class HeartBeatResult {
-  public abstract String getUserAgent();
-
-  public abstract List<String> getUsedDates();
-
-  public static HeartBeatResult create(String userAgent, List<String> dateList) {
-    return new AutoValue_HeartBeatResult(userAgent, dateList);
+public class Base64 {
+  public static String encodeToString(byte[] input, int flags) {
+    return java.util.Base64.getEncoder().encodeToString(input);
   }
 }

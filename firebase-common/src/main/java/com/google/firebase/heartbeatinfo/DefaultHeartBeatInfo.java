@@ -17,14 +17,10 @@ package com.google.firebase.heartbeatinfo;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.components.Lazy;
 import com.google.firebase.inject.Provider;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -44,11 +40,12 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
   private static final ThreadFactory THREAD_FACTORY =
       r -> new Thread(r, "heartbeat-information-executor");
 
-  private DefaultHeartBeatInfo(Context context, Set<HeartBeatConsumer> consumers) {
+  private DefaultHeartBeatInfo(
+      Context context, String persistenceKey, Set<HeartBeatConsumer> consumers) {
     // It is very important the executor is single threaded as otherwise it would lead to
     // race conditions.
     this(
-        new Lazy<>(() -> HeartBeatInfoStorage.getInstance(context)),
+        () -> new HeartBeatInfoStorage(context, persistenceKey),
         consumers,
         new ThreadPoolExecutor(
             0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY));
@@ -80,64 +77,17 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     return HeartBeat.NONE;
   }
 
-  @Override
-  public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
-    return Tasks.call(
-        backgroundExecutor,
-        () -> {
-          ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
-          boolean shouldSendGlobalHeartBeat = false;
-          HeartBeatInfoStorage storage = storageProvider.get();
-          List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
-          long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-          HeartBeat heartBeat;
-          for (SdkHeartBeatResult sdkHeartBeatResult : sdkHeartBeatResults) {
-            shouldSendGlobalHeartBeat =
-                HeartBeatInfoStorage.isSameDateUtc(
-                    lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
-            if (shouldSendGlobalHeartBeat) {
-              heartBeat = HeartBeat.COMBINED;
-            } else {
-              heartBeat = HeartBeat.SDK;
-            }
-            if (shouldSendGlobalHeartBeat) {
-              lastGlobalHeartBeat = sdkHeartBeatResult.getMillis();
-            }
-            heartBeatResults.add(
-                HeartBeatResult.create(
-                    sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
-          }
-          if (lastGlobalHeartBeat > 0) {
-            storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
-          }
-          return heartBeatResults;
-        });
-  }
-
-  @Override
-  public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
-    if (consumers.size() <= 0) {
-      return Tasks.forResult(null);
-    }
-    return Tasks.call(
-        backgroundExecutor,
-        () -> {
-          long presentTime = System.currentTimeMillis();
-          boolean shouldSendSdkHB =
-              storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-          if (shouldSendSdkHB) {
-            storageProvider.get().storeHeartBeatInformation(heartBeatTag, presentTime);
-          }
-          return null;
-        });
-  }
-
   public static @NonNull Component<HeartBeatInfo> component() {
     return Component.builder(HeartBeatInfo.class)
         .add(Dependency.required(Context.class))
+        .add(Dependency.required(FirebaseApp.class))
         .add(Dependency.setOf(HeartBeatConsumer.class))
         .factory(
-            c -> new DefaultHeartBeatInfo(c.get(Context.class), c.setOf(HeartBeatConsumer.class)))
+            c ->
+                new DefaultHeartBeatInfo(
+                    c.get(Context.class),
+                    c.get(FirebaseApp.class).getPersistenceKey(),
+                    c.setOf(HeartBeatConsumer.class)))
         .build();
   }
 }
