@@ -27,7 +27,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
-import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 
 /**
@@ -133,7 +132,7 @@ public class StrictModeRule implements TestRule {
           runGc();
           StrictMode.setVmPolicy(originalVmPolicy);
         }
-        MultipleFailureException.assertEmpty(new ArrayList<>(violations));
+        MultipleViolationsException.assertEmpty(new ArrayList<>(violations));
       }
     };
   }
