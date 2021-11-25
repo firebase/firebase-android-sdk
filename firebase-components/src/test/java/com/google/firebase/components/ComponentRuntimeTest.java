@@ -15,6 +15,7 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.components.Qualified.qualified;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
@@ -33,6 +34,10 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public final class ComponentRuntimeTest {
+  private @interface Qualifier1 {}
+
+  private @interface Qualifier2 {}
+
   private static final Executor EXECUTOR = Runnable::run;
 
   interface ComponentOne {
@@ -211,6 +216,21 @@ public final class ComponentRuntimeTest {
   }
 
   @Test
+  public void
+      container_withMultipleComponentsRegisteredForSameInterfaceButQualified_shouldNotThrow() {
+    ComponentRuntime runtime =
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(Component.of(1, Integer.class))
+            .addComponent(Component.of(2, qualified(Qualifier1.class, Integer.class)))
+            .addComponent(Component.of(3, qualified(Qualifier2.class, Integer.class)))
+            .build();
+
+    assertThat(runtime.get(Integer.class)).isEqualTo(1);
+    assertThat(runtime.get(qualified(Qualifier1.class, Integer.class))).isEqualTo(2);
+    assertThat(runtime.get(qualified(Qualifier2.class, Integer.class))).isEqualTo(3);
+  }
+
+  @Test
   public void container_withMissingDependencies_shouldThrow() {
     try {
       ComponentRuntime.builder(EXECUTOR)
@@ -265,7 +285,7 @@ public final class ComponentRuntimeTest {
   public void get_withNullInterface_shouldThrow() {
     ComponentRuntime runtime = ComponentRuntime.builder(EXECUTOR).build();
     try {
-      runtime.get(null);
+      runtime.get((Qualified<?>) null);
       fail("Expected exception not thrown.");
     } catch (NullPointerException ex) {
       // success.
@@ -348,6 +368,25 @@ public final class ComponentRuntimeTest {
     assertThat(runtime.setOf(Integer.class)).containsExactly(1, 2, 3, 4);
     assertThat(runtime.get(Float.class)).isEqualTo(2f);
     assertThat(runtime.get(Double.class)).isEqualTo(4d);
+  }
+
+  @Test
+  public void setComponents_withQualifiers_shouldContributeToAppropriateSets() {
+    ComponentRuntime runtime =
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponent(Component.of(5, Integer.class))
+            .addComponent(Component.intoSet(1, Integer.class))
+            .addComponent(Component.intoSet(3, Integer.class))
+            .addComponent(Component.intoSet(1, qualified(Qualifier1.class, Integer.class)))
+            .addComponent(Component.intoSet(2, qualified(Qualifier1.class, Integer.class)))
+            .addComponent(Component.intoSet(3, qualified(Qualifier2.class, Integer.class)))
+            .addComponent(Component.intoSet(4, qualified(Qualifier2.class, Integer.class)))
+            .build();
+
+    assertThat(runtime.get(Integer.class)).isEqualTo(5);
+    assertThat(runtime.setOf(Integer.class)).containsExactly(1, 3);
+    assertThat(runtime.setOf(qualified(Qualifier1.class, Integer.class))).containsExactly(1, 2);
+    assertThat(runtime.setOf(qualified(Qualifier2.class, Integer.class))).containsExactly(3, 4);
   }
 
   private static class DependsOnString {
