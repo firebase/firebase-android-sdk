@@ -41,7 +41,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
 
-  private Context applicationContext;
+  private final Context applicationContext;
 
   private final Provider<UserAgentPublisher> userAgentProvider;
 
@@ -114,8 +114,8 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         consumers,
         new ThreadPoolExecutor(
             0, 1, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), THREAD_FACTORY),
-        userAgentProvider);
-    this.applicationContext = context;
+        userAgentProvider,
+        context);
   }
 
   @VisibleForTesting
@@ -123,11 +123,13 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
       Provider<HeartBeatInfoStorage> testStorage,
       Set<HeartBeatConsumer> consumers,
       Executor executor,
-      Provider<UserAgentPublisher> userAgentProvider) {
+      Provider<UserAgentPublisher> userAgentProvider,
+      Context context) {
     storageProvider = testStorage;
     this.consumers = consumers;
     this.backgroundExecutor = executor;
     this.userAgentProvider = userAgentProvider;
+    this.applicationContext = context;
   }
 
   public static @NonNull Component<DefaultHeartBeatController> component() {
@@ -148,7 +150,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
   }
 
   @Override
-  public @NonNull HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
+  @NonNull public HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
     HeartBeatInfoStorage storage = storageProvider.get();
     boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);

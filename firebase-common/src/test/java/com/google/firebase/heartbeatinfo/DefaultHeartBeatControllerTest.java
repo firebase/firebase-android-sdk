@@ -22,6 +22,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+
+import androidx.test.core.app.ApplicationProvider;
+
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -47,6 +51,7 @@ public class DefaultHeartBeatControllerTest {
   private final String DEFAULT_USER_AGENT = "agent1";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private UserAgentPublisher publisher = mock(UserAgentPublisher.class);
+  private static Context applicationContext = mock(Context.class);
   private final Set<HeartBeatConsumer> logSources =
       new HashSet<HeartBeatConsumer>() {
         {
@@ -62,13 +67,13 @@ public class DefaultHeartBeatControllerTest {
     storeOnCompleteListener = new TestOnCompleteListener<>();
     getOnCompleteListener = new TestOnCompleteListener<>();
     heartBeatController =
-        new DefaultHeartBeatController(() -> storage, logSources, executor, () -> publisher);
+        new DefaultHeartBeatController(() -> storage, logSources, executor, () -> publisher, applicationContext);
   }
 
   @Test
   public void whenNoSource_dontStoreHeartBeat() throws ExecutionException, InterruptedException {
     DefaultHeartBeatController controller =
-        new DefaultHeartBeatController(() -> storage, new HashSet<>(), executor, () -> publisher);
+        new DefaultHeartBeatController(() -> storage, new HashSet<>(), executor, () -> publisher, applicationContext);
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     verify(storage, times(0)).storeHeartBeat(anyLong(), anyString());
