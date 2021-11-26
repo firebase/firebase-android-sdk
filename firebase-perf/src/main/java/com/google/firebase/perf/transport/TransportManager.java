@@ -618,7 +618,7 @@ public class TransportManager implements AppStateCallback {
     long durationInUs = traceMetric.getDurationUs();
     return String.format(
         Locale.ENGLISH,
-        "trace metric: %s (duration: %.4fms)",
+        "trace metric: %s (duration: %sms)",
         traceMetric.getName(),
         new DecimalFormat("#.####").format(durationInUs / 1000.0));
   }
@@ -636,7 +636,7 @@ public class TransportManager implements AppStateCallback {
 
     return String.format(
         Locale.ENGLISH,
-        "network request trace: %s (responseCode: %s, responseTime: %.4fms)",
+        "network request trace: %s (responseCode: %s, responseTime: %sms)",
         networkRequestMetric.getUrl(),
         responseCode,
         new DecimalFormat("#.####").format(durationInUs / 1000.0));
