@@ -101,7 +101,7 @@ class HeartBeatInfoStorage {
     // Find stored heartbeat and clear it.
     String userAgentString = null;
     for (Map.Entry<String, ?> entry : firebaseSharedPreferences.getAll().entrySet()) {
-      if(userAgentString != null) {
+      if (userAgentString != null) {
         break;
       }
       if (entry.getValue() instanceof Set) {
@@ -114,12 +114,12 @@ class HeartBeatInfoStorage {
         }
       }
     }
-    if(userAgentString == null) {
+    if (userAgentString == null) {
       return;
     }
     Set<String> userAgentDateSet =
-            new HashSet<String>(
-                    firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
+        new HashSet<String>(
+            firebaseSharedPreferences.getStringSet(userAgentString, new HashSet<String>()));
     userAgentDateSet.remove(dateString);
     if (userAgentDateSet.isEmpty()) {
       firebaseSharedPreferences.edit().remove(userAgentString).commit();
