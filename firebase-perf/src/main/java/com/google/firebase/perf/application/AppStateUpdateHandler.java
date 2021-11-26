@@ -45,6 +45,7 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     appStateCallback = new WeakReference<AppStateCallback>(this);
   }
 
+  /** @hide */
   protected void registerForAppState() {
     if (isRegisteredForAppState) {
       return;
@@ -54,6 +55,7 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     isRegisteredForAppState = true;
   }
 
+  /** @hide */
   protected void unregisterForAppState() {
     if (!isRegisteredForAppState) {
       return;
@@ -62,6 +64,7 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     isRegisteredForAppState = false;
   }
 
+  /** @hide */
   protected void incrementTsnsCount(int count) {
     appStateMonitor.incrementTsnsCount(count);
   }
