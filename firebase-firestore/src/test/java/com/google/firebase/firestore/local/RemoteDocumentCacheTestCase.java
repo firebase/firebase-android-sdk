@@ -187,7 +187,7 @@ abstract class RemoteDocumentCacheTestCase {
   }
 
   @Test
-  public void testDocumentsMatchingQuerySinceReadTime() {
+  public void testDocumentsMatchingQuerySinceReadTimeAndSeconds() {
     Map<String, Object> docData = map("data", 2);
     addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 11);
     addTestDocumentAtPath("b/current", /* updateTime= */ 2, /*  readTime= = */ 12);
@@ -197,6 +197,20 @@ abstract class RemoteDocumentCacheTestCase {
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(12)));
     List<MutableDocument> expected = asList(doc("b/new", 3, docData));
+    assertEquals(expected, values(results));
+  }
+
+  @Test
+  public void testDocumentsMatchingQuerySinceReadTimeAndNanoseconds() {
+    Map<String, Object> docData = map("data", 2);
+    add(doc("b/old", 1, docData), version(1, 1));
+    add(doc("b/current", 1, docData), version(1, 2));
+    add(doc("b/new", 1, docData), version(1, 3));
+
+    Query query = Query.atPath(path("b"));
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(1, 2)));
+    List<MutableDocument> expected = asList(doc("b/new", 1, docData));
     assertEquals(expected, values(results));
   }
 
