@@ -18,6 +18,7 @@ import static com.google.firebase.app.distribution.FirebaseAppDistributionExcept
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -49,10 +50,13 @@ import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLife
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -67,6 +71,7 @@ public class FirebaseAppDistributionTest {
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_IAS_ARTIFACT_ID = "ias-artifact-id";
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
+  private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
@@ -75,7 +80,7 @@ public class FirebaseAppDistributionTest {
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
-          .setDownloadUrl("https://test-url");
+          .setDownloadUrl(TEST_URL);
 
   private static final AppDistributionRelease TEST_RELEASE_NEWER_AAB =
       AppDistributionRelease.builder()
@@ -85,16 +90,27 @@ public class FirebaseAppDistributionTest {
           .setBinaryType(BinaryType.AAB)
           .build();
 
+  private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_APK_INTERNAL =
+      AppDistributionReleaseInternal.builder()
+          .setBuildVersion("3")
+          .setDisplayVersion("3.0")
+          .setReleaseNotes("Newer version.")
+          .setBinaryType(BinaryType.APK)
+          .setDownloadUrl(TEST_URL);
+
   private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
 
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInClient mockTesterSignInClient;
   @Mock private CheckForNewReleaseClient mockCheckForNewReleaseClient;
+  @Mock private InstallApkClient mockInstallApkClient;
   private UpdateApkClient mockUpdateApkClient;
   @Mock private UpdateAabClient mockUpdateAabClient;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+
+  Executor testExecutor = Executors.newSingleThreadExecutor();
 
   static class TestActivity extends Activity {}
 
@@ -113,6 +129,9 @@ public class FirebaseAppDistributionTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .setApiKey(TEST_API_KEY)
                 .build());
+
+    this.mockUpdateApkClient =
+        Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
 
     firebaseAppDistribution =
         spy(
@@ -223,8 +242,7 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     firebaseAppDistribution.setCachedNewRelease(newRelease);
-    //  when(firebaseAppDistribution.updateApp(true)).thenReturn(new UpdateTaskImpl());
-    doReturn(new UpdateTaskImpl()).when(firebaseAppDistribution).updateApp(true);
+    doReturn(new UpdateTaskImpl()).when(mockUpdateAabClient).updateAab(newRelease);
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -378,9 +396,8 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     firebaseAppDistribution.setCachedNewRelease(newRelease);
-
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
-    when(firebaseAppDistribution.updateApp(true)).thenReturn(mockTask);
+    when(mockUpdateAabClient.updateAab(newRelease)).thenReturn(mockTask);
     mockTask.updateProgress(
         UpdateProgress.builder()
             .setApkFileTotalBytes(1)
@@ -418,5 +435,70 @@ public class FirebaseAppDistributionTest {
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertEquals("Update canceled", e.getMessage());
     assertEquals(INSTALLATION_CANCELED, e.getErrorCode());
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
+
+    UpdateTask updateTask1 = firebaseAppDistribution.updateApp(true);
+    UpdateTask updateTask2 = firebaseAppDistribution.updateApp(true);
+
+    assertEquals(updateTask1, updateTask2);
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
+
+    UpdateTask updateTask1 = firebaseAppDistribution.updateApp();
+    UpdateTask updateTask2 = firebaseAppDistribution.updateApp();
+
+    assertEquals(updateTask1, updateTask2);
+  }
+
+  @Test
+  public void updateAppTask_whenNoReleaseAvailable_throwsError() {
+    firebaseAppDistribution.setCachedNewRelease(null);
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateApp(false);
+
+    assertFalse(updateTask.isSuccessful());
+    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
+    FirebaseAppDistributionException ex =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
+    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
+  }
+
+  @Test
+  public void updateApp_withAabReleaseAvailable_returnsSameAabTask() {
+    AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    firebaseAppDistribution.setCachedNewRelease(release);
+    UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
+    doReturn(updateTaskToReturn).when(mockUpdateAabClient).updateAab(release);
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
+
+    assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  @Test
+  public void updateApp_withApkReleaseAvailable_returnsSameApkTask() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_APK_INTERNAL.build();
+    firebaseAppDistribution.setCachedNewRelease(release);
+    UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
+    doReturn(updateTaskToReturn).when(mockUpdateApkClient).updateApk(release, false);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
+
+    assertEquals(updateTask, updateTaskToReturn);
   }
 }
