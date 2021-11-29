@@ -80,7 +80,6 @@ public final class Target {
     this.limit = limit;
     this.startAt = startAt;
     this.endAt = endAt;
-    // Should we call computeDnf here?
     this.dnf = computeDnf();
   }
 
@@ -510,8 +509,6 @@ public final class Target {
   }
 
   private List<CompositeFilter> computeDnf() {
-    // TODO(ehsann): take `filters` and generate `dnf` from it.
-
     List<CompositeFilter> result = new ArrayList<>();
     if (filters.isEmpty()) return result;
 
@@ -521,6 +518,8 @@ public final class Target {
       result.add(filter);
       return result;
     }
+
+    // TODO(ehsann): Implement DNF transform.
 
     return result;
   }

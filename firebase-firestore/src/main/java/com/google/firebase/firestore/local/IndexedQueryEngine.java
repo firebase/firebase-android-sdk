@@ -71,6 +71,7 @@ public class IndexedQueryEngine implements QueryEngine {
     hardAssert(indexManager != null, "setIndexManager() not called");
 
     // Queries that match all documents don't benefit from index-based lookups.
+    // TODO(ehsann): remove `query.containsCompositeFilters()` from this condition to serve composite queries from the index.
     if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
       return executeFullCollectionScan(query);
     }
