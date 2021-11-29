@@ -79,7 +79,6 @@ public class CheckForNewReleaseClientTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
-  @Mock private ReleaseIdentifierStorage mockReleaseIdentifierStorage;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -129,7 +128,6 @@ public class CheckForNewReleaseClientTest {
                 firebaseApp,
                 mockFirebaseAppDistributionTesterApiClient,
                 mockFirebaseInstallations,
-                mockReleaseIdentifierStorage,
                 testExecutor));
   }
 
@@ -309,27 +307,29 @@ public class CheckForNewReleaseClientTest {
   }
 
   @Test
-  public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue() {
+  public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue()
+      throws FirebaseAppDistributionException {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
     assertTrue(
         checkForNewReleaseClient.isSameAsInstalledRelease(getTestInstalledRelease().build()));
   }
 
   @Test
-  public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse() {
+  public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse()
+      throws FirebaseAppDistributionException {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
     assertFalse(checkForNewReleaseClient.isSameAsInstalledRelease(getTestNewRelease().build()));
   }
 
   @Test
-  public void isSameAsInstalledRelease_ifApkHashNotPresent_fallsBackToExternalCodeHash() {
+  public void isSameAsInstalledRelease_ifApkHashNotPresent_throwsError() {
     doReturn(CURRENT_APK_HASH).when(checkForNewReleaseClient).extractApkHash(any());
-    when(mockReleaseIdentifierStorage.getExternalCodeHash(any())).thenReturn(CURRENT_CODEHASH);
 
-    assertFalse(
-        checkForNewReleaseClient.isSameAsInstalledRelease(
-            getTestNewRelease().setApkHash("").build()));
-    verify(mockReleaseIdentifierStorage).getExternalCodeHash(CURRENT_APK_HASH);
+    assertThrows(
+        FirebaseAppDistributionException.class,
+        () ->
+            checkForNewReleaseClient.isSameAsInstalledRelease(
+                getTestNewRelease().setApkHash("").build()));
   }
 
   @Test
