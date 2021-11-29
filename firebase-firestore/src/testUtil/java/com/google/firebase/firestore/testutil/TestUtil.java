@@ -440,7 +440,7 @@ public class TestUtil {
 
               @Override
               public TargetData getTargetDataForTarget(int targetId) {
-                ResourcePath collectionPath = docs.get(0).getKey().getCollection();
+                ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
                 return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
             });

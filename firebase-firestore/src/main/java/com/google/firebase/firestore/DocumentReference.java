@@ -106,7 +106,7 @@ public class DocumentReference {
    */
   @NonNull
   public CollectionReference getParent() {
-    return new CollectionReference(key.getCollection(), firestore);
+    return new CollectionReference(key.getCollectionPath(), firestore);
   }
 
   /**

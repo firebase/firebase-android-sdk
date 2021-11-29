@@ -66,20 +66,20 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         "INSERT OR REPLACE INTO remote_documents "
             + "(collection_path, document_id, read_time_seconds, read_time_nanos, contents) "
             + "VALUES (?, ?, ?, ?, ?)",
-        EncodedPath.encode(documentKey.getCollection()),
+        EncodedPath.encode(documentKey.getCollectionPath()),
         documentKey.getPath().getLastSegment(),
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
         message.toByteArray());
 
-    indexManager.addToCollectionParentIndex(document.getKey().getCollection());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
 
   @Override
   public void remove(DocumentKey documentKey) {
     db.execute(
         "DELETE FROM remote_documents WHERE collection_path = ? AND document_id = ?",
-        EncodedPath.encode(documentKey.getCollection()),
+        EncodedPath.encode(documentKey.getCollectionPath()),
         documentKey.getDocumentId());
   }
 
@@ -89,7 +89,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         db.query(
                 "SELECT contents, read_time_seconds, read_time_nanos FROM remote_documents "
                     + "WHERE collection_path = ? AND document_id = ?")
-            .binding(EncodedPath.encode(documentKey.getCollection()), documentKey.getDocumentId())
+            .binding(EncodedPath.encode(documentKey.getCollectionPath()), documentKey.getDocumentId())
             .firstValue(row -> decodeMaybeDocument(row.getBlob(0), row.getInt(1), row.getInt(2)));
     return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }

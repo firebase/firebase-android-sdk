@@ -114,7 +114,7 @@ public final class DocumentKey implements Comparable<DocumentKey> {
   }
 
   /** Returns the fully qualified path to the parent collection. */
-  public ResourcePath getCollection() {
+  public ResourcePath getCollectionPath() {
     return path.popLast();
   }
 
