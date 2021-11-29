@@ -22,6 +22,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -33,13 +37,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public class DefaultHeartBeatControllerTest {
   private ExecutorService executor;
   private TestOnCompleteListener<Void> storeOnCompleteListener;
@@ -47,6 +52,7 @@ public class DefaultHeartBeatControllerTest {
   private final String DEFAULT_USER_AGENT = "agent1";
   private HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private UserAgentPublisher publisher = mock(UserAgentPublisher.class);
+  private static Context applicationContext = ApplicationProvider.getApplicationContext();
   private final Set<HeartBeatConsumer> logSources =
       new HashSet<HeartBeatConsumer>() {
         {
@@ -62,16 +68,30 @@ public class DefaultHeartBeatControllerTest {
     storeOnCompleteListener = new TestOnCompleteListener<>();
     getOnCompleteListener = new TestOnCompleteListener<>();
     heartBeatController =
-        new DefaultHeartBeatController(() -> storage, logSources, executor, () -> publisher);
+        new DefaultHeartBeatController(
+            () -> storage, logSources, executor, () -> publisher, applicationContext);
   }
 
   @Test
   public void whenNoSource_dontStoreHeartBeat() throws ExecutionException, InterruptedException {
     DefaultHeartBeatController controller =
-        new DefaultHeartBeatController(() -> storage, new HashSet<>(), executor, () -> publisher);
+        new DefaultHeartBeatController(
+            () -> storage, new HashSet<>(), executor, () -> publisher, applicationContext);
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     verify(storage, times(0)).storeHeartBeat(anyLong(), anyString());
+  }
+
+  @Test
+  public void getHeartBeatCode_globalHeartBeat() {
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.TRUE);
+    assertThat(heartBeatController.getHeartBeatCode("fire-iid").getCode()).isEqualTo(2);
+  }
+
+  @Test
+  public void getHeartBeatCode_noHeartBeat() {
+    when(storage.shouldSendGlobalHeartBeat(anyLong())).thenReturn(Boolean.FALSE);
+    assertThat(heartBeatController.getHeartBeatCode("fire-iid").getCode()).isEqualTo(0);
   }
 
   @Test
@@ -93,9 +113,58 @@ public class DefaultHeartBeatControllerTest {
     String expected =
         Base64.getEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-02-03\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}"
+                "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-02-03]\"}],\"version\":\"2\"}"
                     .getBytes());
-    assertThat(getOnCompleteListener.await()).isEqualTo(expected);
+    assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
+  }
+
+  @Test
+  public void firstNewThenOld_synchronizedCorrectly()
+      throws ExecutionException, InterruptedException {
+    Context context = ApplicationProvider.getApplicationContext();
+    SharedPreferences heartBeatSharedPreferences =
+        context.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
+    HeartBeatInfoStorage heartBeatInfoStorage =
+        new HeartBeatInfoStorage(heartBeatSharedPreferences);
+    DefaultHeartBeatController controller =
+        new DefaultHeartBeatController(
+            () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
+    String emptyString =
+        Base64.getEncoder().encodeToString("{\"heartbeats\":[],\"version\":\"2\"}".getBytes());
+    controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    controller.getHeartBeatsHeader().addOnCompleteListener(executor, getOnCompleteListener);
+    String output = getOnCompleteListener.await();
+    assertThat(output.replace("\n", "")).isNotEqualTo(emptyString);
+    int heartBeatCode = controller.getHeartBeatCode("test").getCode();
+    assertThat(heartBeatCode).isEqualTo(0);
+  }
+
+  @Test
+  public void firstOldThenNew_synchronizedCorrectly()
+      throws ExecutionException, InterruptedException {
+    Context context = ApplicationProvider.getApplicationContext();
+    SharedPreferences heartBeatSharedPreferences =
+        context.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
+    HeartBeatInfoStorage heartBeatInfoStorage =
+        new HeartBeatInfoStorage(heartBeatSharedPreferences);
+    DefaultHeartBeatController controller =
+        new DefaultHeartBeatController(
+            () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
+    String emptyString =
+        Base64.getEncoder().encodeToString("{\"heartbeats\":[],\"version\":\"2\"}".getBytes());
+    controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    int heartBeatCode = controller.getHeartBeatCode("test").getCode();
+    assertThat(heartBeatCode).isEqualTo(2);
+    controller.getHeartBeatsHeader().addOnCompleteListener(executor, getOnCompleteListener);
+    String output = getOnCompleteListener.await();
+    assertThat(output.replace("\n", "")).isEqualTo(emptyString);
+    controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
+    storeOnCompleteListener.await();
+    controller.getHeartBeatsHeader().addOnCompleteListener(executor, getOnCompleteListener);
+    output = getOnCompleteListener.await();
+    assertThat(output.replace("\n", "")).isEqualTo(emptyString);
   }
 
   @Test
@@ -119,12 +188,17 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    String expected =
-        Base64.getEncoder()
-            .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-03-02\",\"2015-03-01\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}"
-                    .getBytes());
-    assertThat(getOnCompleteListener.await()).isEqualTo(expected);
+    JSONObject output = new JSONObject();
+    JSONArray array = new JSONArray();
+    JSONObject obj = new JSONObject();
+    ;
+    obj.put("agent", "test-agent");
+    obj.put("date", dateList);
+    array.put(obj);
+    output.put("heartbeats", array);
+    output.put("version", "2");
+    String expected = Base64.getEncoder().encodeToString(output.toString().getBytes());
+    assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
   @Test
@@ -153,8 +227,8 @@ public class DefaultHeartBeatControllerTest {
     String expected =
         Base64.getEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-03-02\"],\"agent\":\"test-agent\"},{\"date\":[\"2015-03-03\"],\"agent\":\"test-agent-1\"}],\"version\":\"2\"}"
+                "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-03-02]\"},{\"agent\":\"test-agent-1\",\"date\":\"[2015-03-03]\"}],\"version\":\"2\"}"
                     .getBytes());
-    assertThat(getOnCompleteListener.await()).isEqualTo(expected);
+    assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 }
