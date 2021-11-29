@@ -42,6 +42,8 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -401,8 +403,8 @@ public class Query {
     }
 
     // We assume an implicit `AND` operation between all filters in the `where` method.
-    Filter topFilter = new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
-    return new Query(topFilter.apply(query, firestore), firestore);
+    CompositeFilter topFilter = new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
+    return new Query(query.filter(parseCompositeFilterValues(topFilter)), firestore);
   }
 
   /**
@@ -417,8 +419,124 @@ public class Query {
   private Query whereHelper(@NonNull FieldPath fieldPath, Operator op, Object value) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(op, "Provided op must not be null.");
-    Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, value);
-    return new Query(filter.apply(query, firestore), firestore);
+    FieldFilter filter = FieldFilter.create(fieldPath.getInternalPath(), op, value);
+    return new Query(query.filter(parseFieldFilterValue(filter)), firestore);
+  }
+
+  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
+  private void validateDisjunctiveFilterElements(Object valueObject, Operator op) {
+    if (!(valueObject instanceof List) || ((List) valueObject).size() == 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+    }
+    if (((List) valueObject).size() > 10) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters support a maximum of 10 elements in the value array.");
+    }
+  }
+
+  /**
+   * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
+   * value is anything other than a DocumentReference or String, or if the string is malformed.
+   */
+  private Value parseDocumentIdValue(
+      Object documentIdValue,
+      FirebaseFirestore firestore,
+      com.google.firebase.firestore.core.Query query) {
+    if (documentIdValue instanceof String) {
+      String documentId = (String) documentIdValue;
+      if (documentId.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+                + "document ID, but it was an empty string.");
+      }
+      if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection by FieldPath.documentId() you must "
+                + "provide a plain document ID, but '"
+                + documentId
+                + "' contains a '/' character.");
+      }
+      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
+      if (!DocumentKey.isDocumentKey(path)) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection group by FieldPath.documentId(), the "
+                + "value provided must result in a valid document path, but '"
+                + path
+                + "' is not because it has an odd number of segments ("
+                + path.length()
+                + ").");
+      }
+      return Values.refValue(firestore.getDatabaseId(), DocumentKey.fromPath(path));
+    } else if (documentIdValue instanceof DocumentReference) {
+      DocumentReference ref = (DocumentReference) documentIdValue;
+      return Values.refValue(firestore.getDatabaseId(), ref.getKey());
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+              + "String or DocumentReference, but it was of type: "
+              + Util.typeName(documentIdValue));
+    }
+  }
+
+  /**
+   * Parses the given filter's value from Object type to Value type.
+   *
+   * @return A new field filter that contains the parsed Value.
+   */
+  private FieldFilter parseFieldFilterValue(FieldFilter filter) {
+    // Parsing only needs to be performed once.
+    if (filter.getValue() != null) {
+      return filter;
+    }
+
+    Value parsedValue;
+    com.google.firebase.firestore.model.FieldPath field = filter.getField();
+    Operator operator = filter.getOperator();
+    Object valueObject = filter.getValueObject();
+    if (field.isKeyField()) {
+      if (operator == Operator.IN || operator == Operator.NOT_IN) {
+        validateDisjunctiveFilterElements(valueObject, operator);
+        ArrayValue.Builder referenceList = ArrayValue.newBuilder();
+        for (Object arrayValue : (List) valueObject) {
+          referenceList.addValues(parseDocumentIdValue(arrayValue, firestore, query));
+        }
+        parsedValue = Value.newBuilder().setArrayValue(referenceList).build();
+      } else {
+        parsedValue = parseDocumentIdValue(valueObject, firestore, query);
+      }
+    } else {
+      if (operator == Operator.IN
+          || operator == Operator.NOT_IN
+          || operator == Operator.ARRAY_CONTAINS_ANY) {
+        validateDisjunctiveFilterElements(valueObject, operator);
+      }
+      parsedValue =
+          firestore
+              .getUserDataReader()
+              .parseQueryValue(valueObject, operator == Operator.IN || operator == Operator.NOT_IN);
+    }
+    return FieldFilter.create(field, operator, parsedValue);
+  }
+
+  /**
+   * For all field filters within the given composite filter, parses the field filter's value from
+   * Object type to Value type.
+   *
+   * @return A new composite filter for which all the field filters contain a parsed Value.
+   */
+  private CompositeFilter parseCompositeFilterValues(CompositeFilter filter) {
+    List<Filter> parsedFilters = new ArrayList<>();
+    for (Filter subfilter : filter.getFilters()) {
+      if (subfilter instanceof FieldFilter) {
+        parsedFilters.add(parseFieldFilterValue((FieldFilter) subfilter));
+      } else if (filter instanceof CompositeFilter) {
+        parsedFilters.add(parseCompositeFilterValues((CompositeFilter) subfilter));
+      }
+    }
+    return new CompositeFilter(parsedFilters, filter.isAnd());
   }
 
   /**

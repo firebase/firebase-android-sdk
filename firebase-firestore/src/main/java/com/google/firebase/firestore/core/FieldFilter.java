@@ -17,17 +17,11 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Filter;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
-import com.google.firebase.firestore.util.Util;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.List;
@@ -100,6 +94,10 @@ public class FieldFilter extends Filter {
     return value;
   }
 
+  public Object getValueObject() {
+    return valueObject;
+  }
+
   /**
    * Gets a Filter instance for the provided path, operator, and value.
    *
@@ -157,91 +155,6 @@ public class FieldFilter extends Filter {
               + op.toString()
               + "' filters support a maximum of 10 elements in the value array.");
     }
-  }
-
-  /**
-   * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
-   * value is anything other than a DocumentReference or String, or if the string is malformed.
-   */
-  protected Value parseDocumentIdValue(
-      Object documentIdValue, FirebaseFirestore firestore, Query query) {
-    if (documentIdValue instanceof String) {
-      String documentId = (String) documentIdValue;
-      if (documentId.isEmpty()) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                + "document ID, but it was an empty string.");
-      }
-      if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying a collection by FieldPath.documentId() you must "
-                + "provide a plain document ID, but '"
-                + documentId
-                + "' contains a '/' character.");
-      }
-      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
-      if (!DocumentKey.isDocumentKey(path)) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying a collection group by FieldPath.documentId(), the "
-                + "value provided must result in a valid document path, but '"
-                + path
-                + "' is not because it has an odd number of segments ("
-                + path.length()
-                + ").");
-      }
-      return Values.refValue(firestore.getDatabaseId(), DocumentKey.fromPath(path));
-    } else if (documentIdValue instanceof DocumentReference) {
-      DocumentReference ref = (DocumentReference) documentIdValue;
-      return Values.refValue(firestore.getDatabaseId(), ref.getKey());
-    } else {
-      throw new IllegalArgumentException(
-          "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-              + "String or DocumentReference, but it was of type: "
-              + Util.typeName(documentIdValue));
-    }
-  }
-
-  /**
-   * If a `Value` has not been set for this filter, `valueObject` object will be parsed and a new
-   * filter with this `Value` will be returned. Otherwise returns the filter itself.
-   */
-  public FieldFilter parseValue(Query query, FirebaseFirestore firestore) {
-    // If `parseValue` is called multiple times, we only need to do the parsing the first time.
-    if (value != null) {
-      return this;
-    }
-
-    Value parsedValue;
-    if (field.isKeyField()) {
-      if (operator == Operator.IN || operator == Operator.NOT_IN) {
-        validateDisjunctiveFilterElements(valueObject, operator);
-        ArrayValue.Builder referenceList = ArrayValue.newBuilder();
-        for (Object arrayValue : (List) valueObject) {
-          referenceList.addValues(parseDocumentIdValue(arrayValue, firestore, query));
-        }
-        parsedValue = Value.newBuilder().setArrayValue(referenceList).build();
-      } else {
-        parsedValue = parseDocumentIdValue(valueObject, firestore, query);
-      }
-    } else {
-      if (operator == Operator.IN
-          || operator == Operator.NOT_IN
-          || operator == Operator.ARRAY_CONTAINS_ANY) {
-        validateDisjunctiveFilterElements(valueObject, operator);
-      }
-      parsedValue =
-          firestore
-              .getUserDataReader()
-              .parseQueryValue(valueObject, operator == Operator.IN || operator == Operator.NOT_IN);
-    }
-    return FieldFilter.create(field, operator, parsedValue);
-  }
-
-  /** Applies this filter to the given query */
-  @Override
-  public Query apply(Query query, FirebaseFirestore firestore) {
-    FieldFilter parsedFilter = parseValue(query, firestore);
-    return query.filter(parsedFilter);
   }
 
   @Override

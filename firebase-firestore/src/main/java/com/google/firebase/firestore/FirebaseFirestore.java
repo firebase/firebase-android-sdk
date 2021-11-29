@@ -761,11 +761,11 @@ public class FirebaseFirestore {
     return client;
   }
 
-  public DatabaseId getDatabaseId() {
+  DatabaseId getDatabaseId() {
     return databaseId;
   }
 
-  public UserDataReader getUserDataReader() {
+  UserDataReader getUserDataReader() {
     return userDataReader;
   }
 

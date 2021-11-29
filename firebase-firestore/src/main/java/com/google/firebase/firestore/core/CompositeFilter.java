@@ -1,9 +1,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.Filter;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.model.Document;
-import java.util.ArrayList;
 import java.util.List;
 
 interface FieldFilterCondition {
@@ -73,24 +71,6 @@ public class CompositeFilter extends Filter {
    */
   public FieldFilter getInequalityFilter() {
     return firstFieldFilterWhere(f -> f.isInequality());
-  }
-
-  public CompositeFilter parseValue(Query query, FirebaseFirestore firestore) {
-    List<Filter> parsedFilters = new ArrayList<>();
-    for (Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        parsedFilters.add(((FieldFilter) filter).parseValue(query, firestore));
-      } else if (filter instanceof CompositeFilter) {
-        parsedFilters.add(((CompositeFilter) filter).parseValue(query, firestore));
-      }
-    }
-    return new CompositeFilter(parsedFilters, isAnd);
-  }
-
-  @Override
-  public Query apply(Query query, FirebaseFirestore firestore) {
-    CompositeFilter parsedFilter = parseValue(query, firestore);
-    return query.filter(parsedFilter);
   }
 
   @Override

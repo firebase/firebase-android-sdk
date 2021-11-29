@@ -84,7 +84,7 @@ public class DocumentReference {
     return new DocumentReference(DocumentKey.fromPath(path), firestore);
   }
 
-  public DocumentKey getKey() {
+  DocumentKey getKey() {
     return key;
   }
 

@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import java.util.Arrays;
 
@@ -95,22 +94,22 @@ public abstract class Filter {
   }
 
   @NonNull
-  public static Filter in(@NonNull String field, @Nullable Object value) {
-    return in(FieldPath.fromDotSeparatedPath(field), value);
+  public static Filter inList(@NonNull String field, @Nullable Object value) {
+    return inList(FieldPath.fromDotSeparatedPath(field), value);
   }
 
   @NonNull
-  public static Filter in(@NonNull FieldPath fieldPath, @Nullable Object value) {
+  public static Filter inList(@NonNull FieldPath fieldPath, @Nullable Object value) {
     return FieldFilter.create(fieldPath.getInternalPath(), FieldFilter.Operator.IN, value);
   }
 
   @NonNull
-  public static Filter notIn(@NonNull String field, @Nullable Object value) {
-    return notIn(FieldPath.fromDotSeparatedPath(field), value);
+  public static Filter notInList(@NonNull String field, @Nullable Object value) {
+    return notInList(FieldPath.fromDotSeparatedPath(field), value);
   }
 
   @NonNull
-  public static Filter notIn(@NonNull FieldPath fieldPath, @Nullable Object value) {
+  public static Filter notInList(@NonNull FieldPath fieldPath, @Nullable Object value) {
     return FieldFilter.create(fieldPath.getInternalPath(), FieldFilter.Operator.NOT_IN, value);
   }
 
@@ -124,9 +123,8 @@ public abstract class Filter {
     return new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
   }
 
-  public abstract Query apply(Query query, FirebaseFirestore firestore);
+  public abstract boolean matches(@NonNull Document doc);
 
-  public abstract boolean matches(Document doc);
-
+  @NonNull
   public abstract String getCanonicalId();
 }
