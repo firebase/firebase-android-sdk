@@ -177,7 +177,7 @@ public class IndexBackfiller {
   private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
     IndexOffset latestOffset =
         documents.isEmpty()
-            ? IndexOffset.NONE
+            ? IndexOffset.create(remoteDocumentCache.getLatestReadTime())
             : IndexOffset.create(
                 documents.get(documents.size() - 1).getReadTime(),
                 documents.get(documents.size() - 1).getKey());

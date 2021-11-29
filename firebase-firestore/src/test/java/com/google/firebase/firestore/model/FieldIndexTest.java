@@ -17,9 +17,11 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.model.FieldIndex.IndexState;
 import static com.google.firebase.firestore.model.FieldIndex.SEMANTIC_COMPARATOR;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -88,5 +90,27 @@ public class FieldIndexTest {
             FieldIndex.Segment.Kind.ASCENDING);
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(-1, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
+  }
+
+  @Test
+  public void indexOffsetComparator() {
+    IndexOffset docAOffset = IndexOffset.create(version(1), key("foo/a"));
+    IndexOffset docBOffset = IndexOffset.create(version(1), key("foo/b"));
+    IndexOffset version1Offset = IndexOffset.create(version(1));
+    IndexOffset docCOffset = IndexOffset.create(version(2), key("foo/c"));
+    IndexOffset version2Offset = IndexOffset.create(version(2));
+
+    assertEquals(-1, docAOffset.compareTo(docBOffset));
+    assertEquals(-1, docAOffset.compareTo(version1Offset));
+    assertEquals(-1, version1Offset.compareTo(docCOffset));
+    assertEquals(-1, version1Offset.compareTo(version2Offset));
+    assertEquals(-1, docCOffset.compareTo(version2Offset));
+  }
+
+  @Test
+  public void indexOffsetAdvancesSeconds() {
+    IndexOffset actualSuccessor = IndexOffset.create(version(1, (int) 1e9 - 1));
+    IndexOffset expectedSuccessor = IndexOffset.create(version(2, 0), DocumentKey.empty());
+    assertEquals(expectedSuccessor, actualSuccessor);
   }
 }

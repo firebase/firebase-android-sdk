@@ -188,13 +188,13 @@ public class IndexBackfillerTest {
     addDoc("coll1/docB", "foo", version(1));
     addDoc("coll1/docC", "foo", version(1));
 
-    IndexBackfiller.Results results = backfiller.backfill();
-    assertEquals(2, results.getDocumentsProcessed());
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
 
     verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
 
-    results = backfiller.backfill();
-    assertEquals(1, results.getDocumentsProcessed());
+    documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
 
     verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC");
   }
@@ -259,6 +259,21 @@ public class IndexBackfillerTest {
 
     verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
     verifyQueryResults("coll2", "coll2/docA");
+  }
+
+  @Test
+  public void testBackfillUsesLatestReadTimeForEmptyCollections() {
+    addFieldIndex("coll", "foo", version(1));
+    addDoc("readtime/doc", "foo", version(2));
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(0, documentsProcessed);
+
+    addDoc("coll/ignored", "foo", version(2));
+    addDoc("coll/added", "foo", version(3));
+
+    documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName) {
