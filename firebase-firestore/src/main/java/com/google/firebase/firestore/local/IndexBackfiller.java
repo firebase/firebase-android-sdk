@@ -26,6 +26,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
 public class IndexBackfiller {
+  private static final String LOG_TAG = "IndexBackfiller";
+
   /** How long we wait to try running index backfill after SDK initialization. */
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
   /** Minimum amount of time between backfill checks, after the first one. */
@@ -63,29 +66,6 @@ public class IndexBackfiller {
 
   public void setIndexManager(IndexManager indexManager) {
     this.indexManager = indexManager;
-  }
-
-  public static class Results {
-    private final boolean hasRun;
-
-    private final int documentsProcessed;
-
-    static IndexBackfiller.Results DidNotRun() {
-      return new IndexBackfiller.Results(/* hasRun= */ false, 0);
-    }
-
-    Results(boolean hasRun, int documentsProcessed) {
-      this.hasRun = hasRun;
-      this.documentsProcessed = documentsProcessed;
-    }
-
-    public boolean hasRun() {
-      return hasRun;
-    }
-
-    public int getDocumentsProcessed() {
-      return documentsProcessed;
-    }
   }
 
   public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
@@ -118,7 +98,8 @@ public class IndexBackfiller {
               AsyncQueue.TimerId.INDEX_BACKFILL,
               delay,
               () -> {
-                backfill();
+                int documentsProcessed = backfill();
+                Logger.debug(LOG_TAG, "Documents written: %s", documentsProcessed);
                 hasRun = true;
                 scheduleBackfill();
               });
@@ -129,15 +110,12 @@ public class IndexBackfiller {
     return scheduler;
   }
 
-  public Results backfill() {
+  /** Runs a single backfill operation and returns the number of documents processed. */
+  public int backfill() {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(indexManager != null, "setIndexManager() not called");
     return persistence.runTransaction(
-        "Backfill Indexes",
-        () -> {
-          int documentsProcessed = writeIndexEntries(localDocumentsView);
-          return new Results(/* hasRun= */ true, documentsProcessed);
-        });
+        "Backfill Indexes", () -> writeIndexEntries(localDocumentsView));
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
@@ -149,6 +127,7 @@ public class IndexBackfiller {
       if (collectionGroup == null || processedCollectionGroups.contains(collectionGroup)) {
         break;
       }
+      Logger.debug(LOG_TAG, "Processing collection: %s", collectionGroup);
       documentsRemaining -=
           writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
       processedCollectionGroups.add(collectionGroup);

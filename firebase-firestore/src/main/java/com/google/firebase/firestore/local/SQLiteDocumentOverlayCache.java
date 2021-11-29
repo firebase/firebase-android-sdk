@@ -40,9 +40,11 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   @Nullable
   @Override
   public Mutation getOverlay(DocumentKey key) {
-    String path = EncodedPath.encode(key.getPath());
-    return db.query("SELECT overlay_mutation FROM document_overlays WHERE uid = ? AND path = ?")
-        .binding(uid, path)
+    String collectionPath = EncodedPath.encode(key.getPath().popLast());
+    String documentId = key.getPath().getLastSegment();
+    return db.query(
+            "SELECT overlay_mutation FROM document_overlays WHERE uid = ? AND collection_path = ? AND document_id = ?")
+        .binding(uid, collectionPath, documentId)
         .firstValue(
             row -> {
               if (row == null) return null;
@@ -57,11 +59,14 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+    String collectionPath = EncodedPath.encode(key.getPath().popLast());
+    String documentId = key.getPath().getLastSegment();
     db.execute(
         "INSERT OR REPLACE INTO document_overlays "
-            + "(uid, path, largest_batch_id, overlay_mutation) VALUES (?, ?, ?, ?)",
+            + "(uid, collection_path, document_id, largest_batch_id, overlay_mutation) VALUES (?, ?, ?, ?, ?)",
         uid,
-        EncodedPath.encode(key.getPath()),
+        collectionPath,
+        documentId,
         largestBatchId,
         serializer.encodeMutation(mutation).toByteArray());
   }
@@ -83,36 +88,22 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
   @Override
   public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId) {
-    int immediateChildrenPathLength = collection.length() + 1;
-
-    String prefixPath = EncodedPath.encode(collection);
-    String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
+    String collectionPath = EncodedPath.encode(collection);
 
     Map<DocumentKey, Mutation> result = new HashMap<>();
 
     db.query(
-            "SELECT path, overlay_mutation FROM document_overlays "
-                + "WHERE uid = ? AND path >= ? AND path < ? AND largest_batch_id > ?")
-        .binding(uid, prefixPath, prefixSuccessorPath, sinceBatchId)
+            "SELECT document_id, overlay_mutation FROM document_overlays "
+                + "WHERE uid = ? AND collection_path = ? AND largest_batch_id > ?")
+        .binding(uid, collectionPath, sinceBatchId)
         .forEach(
             row -> {
               try {
-                ResourcePath path = EncodedPath.decodeResourcePath(row.getString(0));
-                // The query is actually returning any path that starts with the query path prefix
-                // which may include documents in subcollections. For example, a query on 'rooms'
-                // will return rooms/abc/messages/xyx but we shouldn't match it. Fix this by
-                // discarding rows with document keys more than one segment longer than the query
-                // path.
-                // TODO(Overlay): Introduce a segment count of the path or a terminator to avoid
-                //  over selecting.
-                if (path.length() != immediateChildrenPathLength) {
-                  return;
-                }
-
+                String documentId = row.getString(0);
                 Write write = Write.parseFrom(row.getBlob(1));
                 Mutation mutation = serializer.decodeMutation(write);
 
-                result.put(DocumentKey.fromPath(path), mutation);
+                result.put(DocumentKey.fromPath(collection.append(documentId)), mutation);
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }
