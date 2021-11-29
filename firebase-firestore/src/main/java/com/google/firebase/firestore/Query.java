@@ -44,6 +44,7 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -403,7 +404,8 @@ public class Query {
     }
 
     // We assume an implicit `AND` operation between all filters in the `where` method.
-    CompositeFilter topFilter = new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
+    CompositeFilter topFilter =
+        new CompositeFilter(Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
     return new Query(query.filter(parseCompositeFilterValues(topFilter)), firestore);
   }
 
@@ -536,7 +538,7 @@ public class Query {
         parsedFilters.add(parseCompositeFilterValues((CompositeFilter) subfilter));
       }
     }
-    return new CompositeFilter(parsedFilters, filter.isAnd());
+    return new CompositeFilter(parsedFilters, filter.getOperator());
   }
 
   /**

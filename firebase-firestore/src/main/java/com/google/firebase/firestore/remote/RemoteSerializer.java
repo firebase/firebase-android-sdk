@@ -634,7 +634,8 @@ public final class RemoteSerializer {
 
   private StructuredQuery.Filter encodeFilters(List<Filter> filters) {
     com.google.firebase.firestore.core.CompositeFilter compositeFilter =
-        new com.google.firebase.firestore.core.CompositeFilter(filters, /*isAnd*/ true);
+        new com.google.firebase.firestore.core.CompositeFilter(
+            filters, CompositeFilter.Operator.AND);
     return encodeCompositeFilter(compositeFilter);
   }
 
@@ -722,11 +723,7 @@ public final class RemoteSerializer {
     }
 
     CompositeFilter.Builder composite = CompositeFilter.newBuilder();
-    // TODO(ehsann): use CompositeFilter.Operator.OR once it's available.
-    composite.setOp(
-        compositeFilter.isAnd()
-            ? CompositeFilter.Operator.AND
-            : CompositeFilter.Operator.UNRECOGNIZED);
+    composite.setOp(compositeFilter.getOperator());
     composite.addAllFilters(protos);
     return StructuredQuery.Filter.newBuilder().setCompositeFilter(composite).build();
   }
@@ -750,8 +747,7 @@ public final class RemoteSerializer {
           throw fail("Unrecognized Filter.filterType %d", filter.getFilterTypeCase());
       }
     }
-    return new com.google.firebase.firestore.core.CompositeFilter(
-        filters, compositeFilter.getOp() == CompositeFilter.Operator.AND ? true : false);
+    return new com.google.firebase.firestore.core.CompositeFilter(filters, compositeFilter.getOp());
   }
 
   @VisibleForTesting

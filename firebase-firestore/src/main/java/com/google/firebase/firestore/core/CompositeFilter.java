@@ -2,6 +2,7 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.model.Document;
+import com.google.firestore.v1.StructuredQuery.CompositeFilter.Operator;
 import java.util.List;
 
 interface FieldFilterCondition {
@@ -11,19 +12,24 @@ interface FieldFilterCondition {
 /** Represents a filter that is the conjunction or disjunction of other filters. */
 public class CompositeFilter extends Filter {
   private final List<Filter> filters;
-  private final boolean isAnd;
+  //  private final boolean isAnd;
+  private final Operator operator;
 
-  public CompositeFilter(List<Filter> filters, boolean isAnd) {
+  public CompositeFilter(List<Filter> filters, Operator operator) {
     this.filters = filters;
-    this.isAnd = isAnd;
+    this.operator = operator;
   }
 
   public List<Filter> getFilters() {
     return filters;
   }
 
+  public Operator getOperator() {
+    return operator;
+  }
+
   public boolean isAnd() {
-    return isAnd;
+    return operator == Operator.AND;
   }
 
   /**
@@ -31,7 +37,7 @@ public class CompositeFilter extends Filter {
    * FieldFilters (i.e. it does not contain any other composite filters).
    */
   public boolean isFlatAndFilter() {
-    return isAnd && !containsCompositeFilters();
+    return isAnd() && !containsCompositeFilters();
   }
 
   /**
@@ -75,7 +81,7 @@ public class CompositeFilter extends Filter {
 
   @Override
   public boolean matches(Document doc) {
-    if (isAnd) {
+    if (isAnd()) {
       // For conjunctions, all filters must match, so return false if any filter doesn't match.
       for (Filter filter : filters) {
         if (!filter.matches(doc)) {
@@ -99,7 +105,7 @@ public class CompositeFilter extends Filter {
     StringBuilder builder = new StringBuilder();
     for (Filter filter : filters) {
       if (builder.length() == 0) {
-        builder.append(isAnd ? "and(" : "or(");
+        builder.append(isAnd() ? "and(" : "or(");
       } else {
         builder.append(",");
       }

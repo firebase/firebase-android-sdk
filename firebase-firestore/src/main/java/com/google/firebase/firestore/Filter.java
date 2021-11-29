@@ -5,6 +5,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.model.Document;
+import com.google.firestore.v1.StructuredQuery;
 import java.util.Arrays;
 
 public abstract class Filter {
@@ -115,12 +116,15 @@ public abstract class Filter {
 
   @NonNull
   public static Filter or(Filter... filters) {
-    return new CompositeFilter(Arrays.asList(filters), /*isAnd*/ false);
+    // TODO(ehsann): Change this to Operator.OR once it is available.
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
   }
 
   @NonNull
   public static Filter and(Filter... filters) {
-    return new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
   }
 
   public abstract boolean matches(@NonNull Document doc);

@@ -77,6 +77,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
+import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -255,19 +256,24 @@ public class TestUtil {
   }
 
   public static CompositeFilter andFilter(List<Filter> filters) {
-    return new CompositeFilter(filters, true);
+    return new CompositeFilter(filters, StructuredQuery.CompositeFilter.Operator.AND);
   }
 
   public static CompositeFilter andFilter(Filter... filters) {
-    return new CompositeFilter(Arrays.asList(filters), true);
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
   }
 
   public static CompositeFilter orFilter(Filter... filters) {
-    return new CompositeFilter(Arrays.asList(filters), false);
+    // TODO(ehsann): Replace this with Operator.OR once it is available.
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
   }
 
   public static CompositeFilter orFilter(List<Filter> filters) {
-    return new CompositeFilter(filters, false);
+    // TODO(ehsann): Replace this with Operator.OR once it is available.
+    return new CompositeFilter(
+        filters, StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
   }
 
   public static Operator operatorFromString(String s) {

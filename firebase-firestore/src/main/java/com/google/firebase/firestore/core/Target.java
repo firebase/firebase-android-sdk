@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -513,7 +514,8 @@ public final class Target {
     if (filters.isEmpty()) return result;
 
     // For the simple case of traditional queries, return 1 filter.
-    CompositeFilter filter = new CompositeFilter(filters, true);
+    CompositeFilter filter =
+        new CompositeFilter(filters, StructuredQuery.CompositeFilter.Operator.AND);
     if (filter.isFlatAndFilter()) {
       result.add(filter);
       return result;
