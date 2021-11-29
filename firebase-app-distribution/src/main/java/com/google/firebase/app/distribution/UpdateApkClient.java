@@ -74,7 +74,7 @@ class UpdateApkClient {
     this.installApkClient = installApkClient;
   }
 
-  public synchronized UpdateTaskImpl updateApk(
+  public UpdateTaskImpl updateApk(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showDownloadNotificationManager) {
     synchronized (updateTaskLock) {
       if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
