@@ -14,38 +14,84 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
+import androidx.annotation.NonNull;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.Filter;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
+import java.util.List;
 
-/** Represents a filter to be applied to query. */
+/** Represents a single-field filter to be applied to query. */
 public class FieldFilter extends Filter {
+  public enum Operator {
+    LESS_THAN("<"),
+    LESS_THAN_OR_EQUAL("<="),
+    EQUAL("=="),
+    NOT_EQUAL("!="),
+    GREATER_THAN(">"),
+    GREATER_THAN_OR_EQUAL(">="),
+    ARRAY_CONTAINS("array_contains"),
+    ARRAY_CONTAINS_ANY("array_contains_any"),
+    IN("in"),
+    NOT_IN("not_in");
+
+    private final String text;
+
+    Operator(String text) {
+      this.text = text;
+    }
+
+    @Override
+    public String toString() {
+      return text;
+    }
+  }
+
   private final Operator operator;
 
   private final Value value;
 
   private final FieldPath field;
 
+  private final Object valueObject;
+
   /**
    * Creates a new filter that compares fields and values. Only intended to be called from
    * Filter.create().
+   */
+  protected FieldFilter(FieldPath field, Operator operator, Object valueObject) {
+    this.field = field;
+    this.operator = operator;
+    this.valueObject = valueObject;
+    this.value = null;
+  }
+
+  /**
+   * Creates a new filter that compares fields and values. Only intended to be called from
+   * Filter.create(). This is a more specialized constructor that takes a parsed Value.
    */
   protected FieldFilter(FieldPath field, Operator operator, Value value) {
     this.field = field;
     this.operator = operator;
     this.value = value;
+    this.valueObject = null;
   }
 
   public Operator getOperator() {
     return operator;
   }
 
-  @Override
   public FieldPath getField() {
     return field;
   }
@@ -60,16 +106,30 @@ public class FieldFilter extends Filter {
    * <p>Note that if the relation operator is EQUAL and the value is null or NaN, this will return
    * the appropriate NullFilter or NaNFilter class instead of a FieldFilter.
    */
-  public static FieldFilter create(FieldPath path, Operator operator, Value value) {
+  public static FieldFilter create(
+      @NonNull FieldPath path, @NonNull Operator operator, Object valueObject) {
+    checkNotNull(path, "Provided field path must not be null.");
+    checkNotNull(operator, "Provided op must not be null.");
+
+    // If we have a value that has not been parsed, store it and return a FieldFilter.
+    if (!(valueObject instanceof Value)) {
+      return new FieldFilter(path, operator, valueObject);
+    }
+
+    Value value = (Value) valueObject;
+
     if (path.isKeyField()) {
       if (operator == Operator.IN) {
         return new KeyFieldInFilter(path, value);
       } else if (operator == Operator.NOT_IN) {
         return new KeyFieldNotInFilter(path, value);
       } else {
-        hardAssert(
-            operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY,
-            operator.toString() + "queries don't make sense on document keys");
+        if (operator == Operator.ARRAY_CONTAINS || operator == Operator.ARRAY_CONTAINS_ANY) {
+          throw new IllegalArgumentException(
+              "Invalid query. You can't perform '"
+                  + operator.toString()
+                  + "' queries on FieldPath.documentId().");
+        }
         return new KeyFieldFilter(path, operator, value);
       }
     } else if (operator == Operator.ARRAY_CONTAINS) {
@@ -83,6 +143,105 @@ public class FieldFilter extends Filter {
     } else {
       return new FieldFilter(path, operator, value);
     }
+  }
+
+  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
+  protected void validateDisjunctiveFilterElements(Object valueObject, Operator op) {
+    if (!(valueObject instanceof List) || ((List) valueObject).size() == 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+    }
+    if (((List) valueObject).size() > 10) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters support a maximum of 10 elements in the value array.");
+    }
+  }
+
+  /**
+   * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
+   * value is anything other than a DocumentReference or String, or if the string is malformed.
+   */
+  protected Value parseDocumentIdValue(
+      Object documentIdValue, FirebaseFirestore firestore, Query query) {
+    if (documentIdValue instanceof String) {
+      String documentId = (String) documentIdValue;
+      if (documentId.isEmpty()) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+                + "document ID, but it was an empty string.");
+      }
+      if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection by FieldPath.documentId() you must "
+                + "provide a plain document ID, but '"
+                + documentId
+                + "' contains a '/' character.");
+      }
+      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
+      if (!DocumentKey.isDocumentKey(path)) {
+        throw new IllegalArgumentException(
+            "Invalid query. When querying a collection group by FieldPath.documentId(), the "
+                + "value provided must result in a valid document path, but '"
+                + path
+                + "' is not because it has an odd number of segments ("
+                + path.length()
+                + ").");
+      }
+      return Values.refValue(firestore.getDatabaseId(), DocumentKey.fromPath(path));
+    } else if (documentIdValue instanceof DocumentReference) {
+      DocumentReference ref = (DocumentReference) documentIdValue;
+      return Values.refValue(firestore.getDatabaseId(), ref.getKey());
+    } else {
+      throw new IllegalArgumentException(
+          "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
+              + "String or DocumentReference, but it was of type: "
+              + Util.typeName(documentIdValue));
+    }
+  }
+
+  /**
+   * If a `Value` has not been set for this filter, `valueObject` object will be parsed and a new
+   * filter with this `Value` will be returned. Otherwise returns the filter itself.
+   */
+  public FieldFilter parseValue(Query query, FirebaseFirestore firestore) {
+    // If `parseValue` is called multiple times, we only need to do the parsing the first time.
+    if (value != null) {
+      return this;
+    }
+
+    Value parsedValue;
+    if (field.isKeyField()) {
+      if (operator == Operator.IN || operator == Operator.NOT_IN) {
+        validateDisjunctiveFilterElements(valueObject, operator);
+        ArrayValue.Builder referenceList = ArrayValue.newBuilder();
+        for (Object arrayValue : (List) valueObject) {
+          referenceList.addValues(parseDocumentIdValue(arrayValue, firestore, query));
+        }
+        parsedValue = Value.newBuilder().setArrayValue(referenceList).build();
+      } else {
+        parsedValue = parseDocumentIdValue(valueObject, firestore, query);
+      }
+    } else {
+      if (operator == Operator.IN
+          || operator == Operator.NOT_IN
+          || operator == Operator.ARRAY_CONTAINS_ANY) {
+        validateDisjunctiveFilterElements(valueObject, operator);
+      }
+      parsedValue =
+          firestore
+              .getUserDataReader()
+              .parseQueryValue(valueObject, operator == Operator.IN || operator == Operator.NOT_IN);
+    }
+    return FieldFilter.create(field, operator, parsedValue);
+  }
+
+  /** Applies this filter to the given query */
+  @Override
+  public Query apply(Query query, FirebaseFirestore firestore) {
+    FieldFilter parsedFilter = parseValue(query, firestore);
+    return query.filter(parsedFilter);
   }
 
   @Override

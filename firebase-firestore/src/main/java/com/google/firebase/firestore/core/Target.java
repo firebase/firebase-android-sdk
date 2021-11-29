@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -51,6 +52,11 @@ public final class Target {
   private final @Nullable Bound startAt;
   private final @Nullable Bound endAt;
 
+  // DNF (Disjunctive Normal Form) representation of this target's filters.
+  // Each element in this list is an AND filter of FieldFilters.
+  // The query result is the disjunction (OR) of each of these AND filters.
+  private final List<CompositeFilter> dnf;
+
   /**
    * Initializes a Target with a path and additional query constraints. Path must currently be empty
    * if this is a collection group query.
@@ -74,6 +80,8 @@ public final class Target {
     this.limit = limit;
     this.startAt = startAt;
     this.endAt = endAt;
+    // Should we call computeDnf here?
+    this.dnf = computeDnf();
   }
 
   /** The base path of the query. */
@@ -96,6 +104,11 @@ public final class Target {
     return filters;
   }
 
+  /** The AND filters in the DNF. */
+  public List<CompositeFilter> getDnf() {
+    return dnf;
+  }
+
   /** The maximum number of results to return. Returns -1 if there is no limit on the query. */
   public long getLimit() {
     return limit;
@@ -116,15 +129,18 @@ public final class Target {
   }
 
   /**
-   * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. Returns
-   * {@code null} if there are no such filters.
+   * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters in the given
+   * AND filter's components. Returns {@code null} if there are no such filters.
    */
-  public @Nullable List<Value> getArrayValues(FieldIndex fieldIndex) {
+  public @Nullable List<Value> getArrayValuesForFilter(
+      FieldIndex fieldIndex, @Nullable CompositeFilter andFilter) {
+    if (andFilter == null) return null;
     @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
     if (segment == null) return null;
 
-    for (Filter filter : filters) {
-      if (filter.getField().equals(segment.getFieldPath())) {
+    for (Filter filter : andFilter.getFilters()) {
+      if (filter instanceof FieldFilter
+          && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
         FieldFilter fieldFilter = (FieldFilter) filter;
         switch (fieldFilter.getOperator()) {
           case ARRAY_CONTAINS_ANY:
@@ -139,15 +155,18 @@ public final class Target {
   }
 
   /**
-   * Returns the list of values that are used in != or NOT_IN filters. Returns {@code null} if there
-   * are no such filters.
+   * Returns the list of values that are used in != or NOT_IN filters in the given AND filter's
+   * components. Returns {@code null} if there are no such filters.
    */
-  public @Nullable List<Value> getNotInValues(FieldIndex fieldIndex) {
+  public @Nullable List<Value> getNotInValuesForFilter(
+      FieldIndex fieldIndex, @Nullable CompositeFilter andFilter) {
+    if (andFilter == null) return null;
     List<Value> values = new ArrayList<>();
 
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
+      for (Filter filter : andFilter.getFilters()) {
+        if (filter instanceof FieldFilter
+            && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
           switch (fieldFilter.getOperator()) {
             case EQUAL:
@@ -171,10 +190,11 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
+   * defined by {@code fieldIndex} for the given AND filter's components. Returns {@code null} if no
+   * lower bound exists.
    */
   @Nullable
-  public Bound getLowerBound(FieldIndex fieldIndex) {
+  public Bound getLowerBoundForFilter(FieldIndex fieldIndex, @Nullable CompositeFilter andFilter) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
@@ -184,45 +204,50 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          Value filterValue = null;
-          boolean filterInclusive = true;
+      if (andFilter != null) {
+        for (Filter filter : andFilter.getFilters()) {
+          if (filter instanceof FieldFilter
+              && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
+            FieldFilter fieldFilter = (FieldFilter) filter;
+            Value filterValue = null;
+            boolean filterInclusive = true;
 
-          switch (fieldFilter.getOperator()) {
-            case LESS_THAN:
-            case LESS_THAN_OR_EQUAL:
-              filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
-              break;
-            case EQUAL:
-            case IN:
-            case GREATER_THAN_OR_EQUAL:
-              filterValue = fieldFilter.getValue();
-              break;
-            case GREATER_THAN:
-              filterValue = fieldFilter.getValue();
-              filterInclusive = false;
-              break;
-            case NOT_EQUAL:
-              filterValue = Values.MIN_VALUE;
-              break;
-            case NOT_IN:
-              {
-                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                  arrayValue.addValues(Values.MIN_VALUE);
-                }
-                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+            switch (fieldFilter.getOperator()) {
+              case LESS_THAN:
+              case LESS_THAN_OR_EQUAL:
+                filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
                 break;
-              }
-            default:
-              // Remaining filters cannot be used as lower bounds.
-          }
+              case EQUAL:
+              case IN:
+              case GREATER_THAN_OR_EQUAL:
+                filterValue = fieldFilter.getValue();
+                break;
+              case GREATER_THAN:
+                filterValue = fieldFilter.getValue();
+                filterInclusive = false;
+                break;
+              case NOT_EQUAL:
+                filterValue = Values.MIN_VALUE;
+                break;
+              case NOT_IN:
+                {
+                  ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+                  for (int i = 0;
+                      i < fieldFilter.getValue().getArrayValue().getValuesCount();
+                      ++i) {
+                    arrayValue.addValues(Values.MIN_VALUE);
+                  }
+                  filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+                  break;
+                }
+              default:
+                // Remaining filters cannot be used as lower bounds.
+            }
 
-          if (max(segmentValue, filterValue) == filterValue) {
-            segmentValue = filterValue;
-            segmentInclusive = filterInclusive;
+            if (max(segmentValue, filterValue) == filterValue) {
+              segmentValue = filterValue;
+              segmentInclusive = filterInclusive;
+            }
           }
         }
       }
@@ -257,9 +282,11 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}. Returns {@code null} if no upper bound exists.
+   * index defined by {@code fieldIndex} for the given AND filter's components. Returns {@code null}
+   * if no upper bound exists.
    */
-  public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
+  public @Nullable Bound getUpperBoundForFilter(
+      FieldIndex fieldIndex, @Nullable CompositeFilter andFilter) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
@@ -269,46 +296,51 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          Value filterValue = null;
-          boolean filterInclusive = true;
+      if (andFilter != null) {
+        for (Filter filter : andFilter.getFilters()) {
+          if (filter instanceof FieldFilter
+              && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
+            FieldFilter fieldFilter = (FieldFilter) filter;
+            Value filterValue = null;
+            boolean filterInclusive = true;
 
-          switch (fieldFilter.getOperator()) {
-            case GREATER_THAN_OR_EQUAL:
-            case GREATER_THAN:
-              filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
-              filterInclusive = false;
-              break;
-            case EQUAL:
-            case IN:
-            case LESS_THAN_OR_EQUAL:
-              filterValue = fieldFilter.getValue();
-              break;
-            case LESS_THAN:
-              filterValue = fieldFilter.getValue();
-              filterInclusive = false;
-              break;
-            case NOT_EQUAL:
-              filterValue = Values.MAX_VALUE;
-              break;
-            case NOT_IN:
-              {
-                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                  arrayValue.addValues(Values.MAX_VALUE);
-                }
-                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+            switch (fieldFilter.getOperator()) {
+              case GREATER_THAN_OR_EQUAL:
+              case GREATER_THAN:
+                filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
+                filterInclusive = false;
                 break;
-              }
-            default:
-              // Remaining filters cannot be used as upper bounds.
-          }
+              case EQUAL:
+              case IN:
+              case LESS_THAN_OR_EQUAL:
+                filterValue = fieldFilter.getValue();
+                break;
+              case LESS_THAN:
+                filterValue = fieldFilter.getValue();
+                filterInclusive = false;
+                break;
+              case NOT_EQUAL:
+                filterValue = Values.MAX_VALUE;
+                break;
+              case NOT_IN:
+                {
+                  ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+                  for (int i = 0;
+                      i < fieldFilter.getValue().getArrayValue().getValuesCount();
+                      ++i) {
+                    arrayValue.addValues(Values.MAX_VALUE);
+                  }
+                  filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+                  break;
+                }
+              default:
+                // Remaining filters cannot be used as upper bounds.
+            }
 
-          if (min(segmentValue, filterValue) == filterValue) {
-            segmentValue = filterValue;
-            segmentInclusive = filterInclusive;
+            if (min(segmentValue, filterValue) == filterValue) {
+              segmentValue = filterValue;
+              segmentInclusive = filterInclusive;
+            }
           }
         }
       }
@@ -475,5 +507,21 @@ public final class Target {
 
     builder.append(")");
     return builder.toString();
+  }
+
+  private List<CompositeFilter> computeDnf() {
+    // TODO(ehsann): take `filters` and generate `dnf` from it.
+
+    List<CompositeFilter> result = new ArrayList<>();
+    if (filters.isEmpty()) return result;
+
+    // For the simple case of traditional queries, return 1 filter.
+    CompositeFilter filter = new CompositeFilter(filters, true);
+    if (filter.isFlatAndFilter()) {
+      result.add(filter);
+      return result;
+    }
+
+    return result;
   }
 }

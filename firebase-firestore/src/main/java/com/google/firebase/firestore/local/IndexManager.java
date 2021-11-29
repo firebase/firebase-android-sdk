@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -75,14 +76,29 @@ public interface IndexManager {
   Collection<FieldIndex> getFieldIndexes();
 
   /**
-   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
-   * index is configured.
+   * Returns an index that can be used to serve the provided target's conjunction filter.
+   *
+   * @param target The target for which we are looking for an index.
+   * @param andFilter The AND filter within the target's constraints for which we're looking for an
+   *     index. This can be null if the target has no filters.
+   * @return An index that can be used to serve the provided target's conjunction filter. Returns
+   *     {@code null} if no index is configured.
    */
   @Nullable
-  FieldIndex getFieldIndex(Target target);
+  FieldIndex getFieldIndex(Target target, @Nullable CompositeFilter andFilter);
 
-  /** Returns the documents that match the given target based on the provided index. */
-  Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
+  /**
+   * Returns the documents that match the given target's conjunction filter based on the provided
+   * index.
+   *
+   * @param target The target for which we are looking for documents.
+   * @param andFilter The AND filter within the target's constraints for which we're looking for
+   *     documents. This can be null if the target has no filters.
+   * @return The documents that match the given target's conjunction filter based on the provided
+   *     index.
+   */
+  Set<DocumentKey> getDocumentsMatchingTarget(
+      FieldIndex fieldIndex, Target target, @Nullable CompositeFilter andFilter);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable

@@ -17,9 +17,9 @@ package com.google.firebase.firestore.bundle;
 import android.util.Base64;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
@@ -235,6 +235,7 @@ public class BundleSerializer {
 
   private void decodeCompositeFilter(List<Filter> result, JSONObject compositeFilter)
       throws JSONException {
+    // TODO(ehsann): Bundles should support composite filters.
     if (!compositeFilter.getString("op").equals("AND")) {
       throw new IllegalArgumentException(
           "The Android SDK only supports composite filters of type 'AND'");
@@ -432,16 +433,17 @@ public class BundleSerializer {
 
     switch (operator) {
       case "IS_NAN":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NAN_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NAN_VALUE));
         break;
       case "IS_NULL":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NULL_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NULL_VALUE));
         break;
       case "IS_NOT_NAN":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NAN_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NAN_VALUE));
         break;
       case "IS_NOT_NULL":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NULL_VALUE));
+        result.add(
+            FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NULL_VALUE));
         break;
       default:
         throw new IllegalArgumentException("Unexpected unary filter: " + operator);

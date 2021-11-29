@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.model.FieldIndex.IndexState;
 import static com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -34,6 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
@@ -47,6 +49,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -241,8 +244,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
-    Query query = query("coll").filter(filter("unknown", "==", true));
-    assertNull(indexManager.getFieldIndex(query.toTarget()));
+    CompositeFilter filter = andFilter(filter("unknown", "==", true));
+    Query query = query("coll").filter(filter);
+    assertNull(indexManager.getFieldIndex(query.toTarget(), filter));
   }
 
   @Test
@@ -700,10 +704,20 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    FieldIndex fieldIndex = indexManager.getFieldIndex(target);
-    assertNotNull("Target not found", fieldIndex);
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
+    List<DocumentKey> results = new ArrayList<>();
+
+    if (target.getDnf().size() == 0) {
+      FieldIndex fieldIndex = indexManager.getFieldIndex(target, null);
+      assertNotNull("FieldIndex not found", fieldIndex);
+      results.addAll(indexManager.getDocumentsMatchingTarget(fieldIndex, target, null));
+    } else {
+      for (CompositeFilter filter : target.getDnf()) {
+        FieldIndex fieldIndex = indexManager.getFieldIndex(target, filter);
+        assertNotNull("FieldIndex not found", fieldIndex);
+        results.addAll(indexManager.getDocumentsMatchingTarget(fieldIndex, target, filter));
+      }
+    }
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }
 }

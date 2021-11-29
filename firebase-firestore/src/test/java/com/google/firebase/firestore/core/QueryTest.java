@@ -403,19 +403,19 @@ public class QueryTest {
   public void testFiltersArrays() {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
     MutableDocument doc1 = doc("collection/doc", 0, map("tags", asList("foo", 1, true)));
-    List<Filter> matchingFilters = asList(filter("tags", "==", asList("foo", 1, true)));
+    List<FieldFilter> matchingFilters = asList(filter("tags", "==", asList("foo", 1, true)));
 
-    List<Filter> nonMatchingFilters =
+    List<FieldFilter> nonMatchingFilters =
         asList(
             filter("tags", "==", "foo"),
             filter("tags", "==", asList("foo", 1)),
             filter("tags", "==", asList("foo", true, 1)));
 
-    for (Filter filter : matchingFilters) {
+    for (FieldFilter filter : matchingFilters) {
       assertTrue(baseQuery.filter(filter).matches(doc1));
     }
 
-    for (Filter filter : nonMatchingFilters) {
+    for (FieldFilter filter : nonMatchingFilters) {
       assertFalse(baseQuery.filter(filter).matches(doc1));
     }
   }
@@ -428,22 +428,22 @@ public class QueryTest {
             "collection/doc",
             0,
             map("tags", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)));
-    List<Filter> matchingFilters =
+    List<FieldFilter> matchingFilters =
         asList(
             filter("tags", "==", map("foo", "foo", "a", 0, "b", true, "c", Double.NaN)),
             filter("tags", "==", map("b", true, "a", 0, "foo", "foo", "c", Double.NaN)),
             filter("tags.foo", "==", "foo"));
 
-    List<Filter> nonMatchingFilters =
+    List<FieldFilter> nonMatchingFilters =
         asList(
             filter("tags", "==", "foo"),
             filter("tags", "==", map("foo", "foo", "a", 0, "b", true)));
 
-    for (Filter filter : matchingFilters) {
+    for (FieldFilter filter : matchingFilters) {
       assertTrue(baseQuery.filter(filter).matches(doc1));
     }
 
-    for (Filter filter : nonMatchingFilters) {
+    for (FieldFilter filter : nonMatchingFilters) {
       assertFalse(baseQuery.filter(filter).matches(doc1));
     }
   }

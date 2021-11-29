@@ -17,13 +17,13 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.Filter;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,6 +134,9 @@ public final class Query {
   /**
    * Returns true if this query does not specify any query constraints that could remove results.
    */
+  // TODO(ehsann): If we do allow composite filters with zero subfilters, then this should be
+  // updated.
+  // TODO(ehsann): How do we handle conditions that are always true? (e.g. age > 0 || age <= 0).
   public boolean matchesAllDocuments() {
     return filters.isEmpty()
         && limit == Target.NO_LIMIT
@@ -206,6 +209,12 @@ public final class Query {
         if (fieldfilter.isInequality()) {
           return fieldfilter.getField();
         }
+      } else if (filter instanceof CompositeFilter) {
+        CompositeFilter compositeFilter = (CompositeFilter) filter;
+        FieldFilter found = compositeFilter.getInequalityFilter();
+        if (found != null) {
+          return found.getField();
+        }
       }
     }
     return null;
@@ -223,9 +232,29 @@ public final class Query {
         if (operators.contains(filterOp)) {
           return filterOp;
         }
+      } else if (filter instanceof CompositeFilter) {
+        CompositeFilter compositeFilter = (CompositeFilter) filter;
+        FieldFilter fieldFilter =
+            compositeFilter.firstFieldFilterWhere(f -> operators.contains(f.getOperator()));
+        if (fieldFilter != null) {
+          return fieldFilter.getOperator();
+        }
       }
     }
     return null;
+  }
+
+  /**
+   * Returns true if the query contains any composite filters (AND/OR) of field filters. Returns
+   * false otherwise.
+   */
+  public boolean containsCompositeFilters() {
+    for (Filter filter : filters) {
+      if (filter instanceof CompositeFilter) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -236,23 +265,9 @@ public final class Query {
    */
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
-    FieldPath newInequalityField = null;
-    if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
-      newInequalityField = filter.getField();
-    }
 
-    FieldPath queryInequalityField = inequalityField();
-    Assert.hardAssert(
-        queryInequalityField == null
-            || newInequalityField == null
-            || queryInequalityField.equals(newInequalityField),
-        "Query must only have one inequality field");
-
-    Assert.hardAssert(
-        explicitSortOrder.isEmpty()
-            || newInequalityField == null
-            || explicitSortOrder.get(0).field.equals(newInequalityField),
-        "First orderBy must match inequality field");
+    // Throw an exception if adding this filter to the existing query is invalid.
+    validateNewFilter(filter);
 
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
@@ -268,12 +283,10 @@ public final class Query {
    */
   public Query orderBy(OrderBy order) {
     hardAssert(!isDocumentQuery(), "No ordering is allowed for document query");
-    if (explicitSortOrder.isEmpty()) {
-      FieldPath inequality = inequalityField();
-      if (inequality != null && !inequality.equals(order.field)) {
-        throw Assert.fail("First orderBy must match inequality field");
-      }
-    }
+
+    // Throw an exception if adding this OrderBy to the existing query is invalid.
+    validateOrderByField(order.field);
+
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
     return new Query(
@@ -584,5 +597,116 @@ public final class Query {
     builder.append(this.limitType.toString());
     builder.append(")");
     return builder.toString();
+  }
+
+  /**
+   * Given an operator, returns the set of operators that cannot be used with it.
+   *
+   * <p>Operators in a query must adhere to the following set of rules:
+   *
+   * <ol>
+   *   <li>Only one array operator is allowed.
+   *   <li>Only one disjunctive operator is allowed.
+   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
+   *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
+   * </ol>
+   *
+   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
+   * ARRAY_CONTAINS_ANY, NOT_IN
+   */
+  private List<Operator> conflictingOps(Operator op) {
+    switch (op) {
+      case NOT_EQUAL:
+        return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
+      case ARRAY_CONTAINS:
+        return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
+      case IN:
+        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case ARRAY_CONTAINS_ANY:
+        return Arrays.asList(
+            Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case NOT_IN:
+        return Arrays.asList(
+            Operator.ARRAY_CONTAINS,
+            Operator.ARRAY_CONTAINS_ANY,
+            Operator.IN,
+            Operator.NOT_IN,
+            Operator.NOT_EQUAL);
+      default:
+        return new ArrayList<>();
+    }
+  }
+
+  /** Ensures that adding an orderBy on the given field to the existing query is valid */
+  private void validateOrderByField(FieldPath field) {
+    FieldPath inequalityField = inequalityField();
+    if (getFirstOrderByField() == null && inequalityField != null) {
+      validateOrderByFieldMatchesInequality(field, inequalityField);
+    }
+  }
+
+  /** Ensures that orderBy and inequality (if any) are performed on the same field */
+  private void validateOrderByFieldMatchesInequality(
+      com.google.firebase.firestore.model.FieldPath orderBy,
+      com.google.firebase.firestore.model.FieldPath inequality) {
+    if (!orderBy.equals(inequality)) {
+      String inequalityString = inequality.canonicalString();
+      throw new IllegalArgumentException(
+          String.format(
+              "Invalid query. You have an inequality where filter (whereLessThan(), "
+                  + "whereGreaterThan(), etc.) on field '%s' and so you must also have '%s' as "
+                  + "your first orderBy() field, but your first orderBy() is currently on field "
+                  + "'%s' instead.",
+              inequalityString, inequalityString, orderBy.canonicalString()));
+    }
+  }
+
+  /** Ensures that adding the given filter to the existing query is valid */
+  private void validateNewFilter(Filter filter) {
+    if (filter instanceof FieldFilter) {
+      FieldFilter fieldFilter = (FieldFilter) filter;
+
+      // Validation related to inequalities.
+      if (fieldFilter.isInequality()) {
+        FieldPath existingInequality = inequalityField();
+        FieldPath newInequality = fieldFilter.getField();
+
+        // Do not allow inequality on more than one field.
+        if (existingInequality != null && !existingInequality.equals(newInequality)) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+                      + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+                      + "same field. But you have filters on '%s' and '%s'",
+                  existingInequality.canonicalString(), newInequality.canonicalString()));
+        }
+
+        // The inequality field and orderBy field should match.
+        FieldPath firstOrderByField = getFirstOrderByField();
+        if (firstOrderByField != null) {
+          validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
+        }
+      }
+
+      // Validation related to conflicting filter operations.
+      Operator filterOp = fieldFilter.getOperator();
+      Operator conflictingOp = findFilterOperator(conflictingOps(filterOp));
+      if (conflictingOp != null) {
+        // We special case when it's a duplicate op to give a slightly clearer error message.
+        if (conflictingOp == filterOp) {
+          throw new IllegalArgumentException(
+              "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
+        } else {
+          throw new IllegalArgumentException(
+              "Invalid Query. You cannot use '"
+                  + filterOp.toString()
+                  + "' filters with '"
+                  + conflictingOp.toString()
+                  + "' filters.");
+        }
+      }
+    } else if (filter instanceof CompositeFilter) {
+      // TODO(ehsann): implement validation for composite filters.
+    }
   }
 }

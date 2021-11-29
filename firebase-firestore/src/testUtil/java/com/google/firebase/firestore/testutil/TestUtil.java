@@ -35,13 +35,15 @@ import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.UserDataWriter;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -250,6 +252,22 @@ public class TestUtil {
 
   public static FieldFilter filter(String key, String operator, Object value) {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
+  }
+
+  public static CompositeFilter andFilter(List<Filter> filters) {
+    return new CompositeFilter(filters, true);
+  }
+
+  public static CompositeFilter andFilter(Filter... filters) {
+    return new CompositeFilter(Arrays.asList(filters), true);
+  }
+
+  public static CompositeFilter orFilter(Filter... filters) {
+    return new CompositeFilter(Arrays.asList(filters), false);
+  }
+
+  public static CompositeFilter orFilter(List<Filter> filters) {
+    return new CompositeFilter(filters, false);
   }
 
   public static Operator operatorFromString(String s) {

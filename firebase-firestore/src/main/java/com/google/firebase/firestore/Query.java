@@ -28,10 +28,10 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
@@ -42,8 +42,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.Util;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -389,6 +387,25 @@ public class Query {
   }
 
   /**
+   * TODO(ehsann): describe.
+   *
+   * @param filters
+   * @return
+   */
+  @NonNull
+  public Query where(@NonNull Filter... filters) {
+    // If no filters were provided, we can return the current query.
+    // TODO (ehsann): Maybe we shouldn't accept zero filters.
+    if (filters.length == 0) {
+      return this;
+    }
+
+    // We assume an implicit `AND` operation between all filters in the `where` method.
+    Filter topFilter = new CompositeFilter(Arrays.asList(filters), /*isAnd*/ true);
+    return new Query(topFilter.apply(query, firestore), firestore);
+  }
+
+  /**
    * Creates and returns a new {@code Query} with the additional filter that documents must contain
    * the specified field and the value should satisfy the relation constraint provided.
    *
@@ -400,192 +417,8 @@ public class Query {
   private Query whereHelper(@NonNull FieldPath fieldPath, Operator op, Object value) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(op, "Provided op must not be null.");
-    Value fieldValue;
-    com.google.firebase.firestore.model.FieldPath internalPath = fieldPath.getInternalPath();
-    if (internalPath.isKeyField()) {
-      if (op == Operator.ARRAY_CONTAINS || op == Operator.ARRAY_CONTAINS_ANY) {
-        throw new IllegalArgumentException(
-            "Invalid query. You can't perform '"
-                + op.toString()
-                + "' queries on FieldPath.documentId().");
-      } else if (op == Operator.IN || op == Operator.NOT_IN) {
-        validateDisjunctiveFilterElements(value, op);
-        ArrayValue.Builder referenceList = ArrayValue.newBuilder();
-        for (Object arrayValue : (List) value) {
-          referenceList.addValues(parseDocumentIdValue(arrayValue));
-        }
-        fieldValue = Value.newBuilder().setArrayValue(referenceList).build();
-      } else {
-        fieldValue = parseDocumentIdValue(value);
-      }
-    } else {
-      if (op == Operator.IN || op == Operator.NOT_IN || op == Operator.ARRAY_CONTAINS_ANY) {
-        validateDisjunctiveFilterElements(value, op);
-      }
-      fieldValue =
-          firestore
-              .getUserDataReader()
-              .parseQueryValue(value, op == Operator.IN || op == Operator.NOT_IN);
-    }
-    Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
-    validateNewFilter(filter);
-    return new Query(query.filter(filter), firestore);
-  }
-
-  private void validateOrderByField(com.google.firebase.firestore.model.FieldPath field) {
-    com.google.firebase.firestore.model.FieldPath inequalityField = query.inequalityField();
-    if (query.getFirstOrderByField() == null && inequalityField != null) {
-
-      validateOrderByFieldMatchesInequality(field, inequalityField);
-    }
-  }
-
-  /**
-   * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
-   * value is anything other than a DocumentReference or String, or if the string is malformed.
-   */
-  private Value parseDocumentIdValue(Object documentIdValue) {
-    if (documentIdValue instanceof String) {
-      String documentId = (String) documentIdValue;
-      if (documentId.isEmpty()) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-                + "document ID, but it was an empty string.");
-      }
-      if (!query.isCollectionGroupQuery() && documentId.contains("/")) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying a collection by FieldPath.documentId() you must "
-                + "provide a plain document ID, but '"
-                + documentId
-                + "' contains a '/' character.");
-      }
-      ResourcePath path = query.getPath().append(ResourcePath.fromString(documentId));
-      if (!DocumentKey.isDocumentKey(path)) {
-        throw new IllegalArgumentException(
-            "Invalid query. When querying a collection group by FieldPath.documentId(), the "
-                + "value provided must result in a valid document path, but '"
-                + path
-                + "' is not because it has an odd number of segments ("
-                + path.length()
-                + ").");
-      }
-      return Values.refValue(this.getFirestore().getDatabaseId(), DocumentKey.fromPath(path));
-    } else if (documentIdValue instanceof DocumentReference) {
-      DocumentReference ref = (DocumentReference) documentIdValue;
-      return Values.refValue(this.getFirestore().getDatabaseId(), ref.getKey());
-    } else {
-      throw new IllegalArgumentException(
-          "Invalid query. When querying with FieldPath.documentId() you must provide a valid "
-              + "String or DocumentReference, but it was of type: "
-              + Util.typeName(documentIdValue));
-    }
-  }
-
-  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
-  private void validateDisjunctiveFilterElements(Object value, Operator op) {
-    if (!(value instanceof List) || ((List) value).size() == 0) {
-      throw new IllegalArgumentException(
-          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
-    }
-    if (((List) value).size() > 10) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 10 elements in the value array.");
-    }
-  }
-
-  private void validateOrderByFieldMatchesInequality(
-      com.google.firebase.firestore.model.FieldPath orderBy,
-      com.google.firebase.firestore.model.FieldPath inequality) {
-    if (!orderBy.equals(inequality)) {
-      String inequalityString = inequality.canonicalString();
-      throw new IllegalArgumentException(
-          String.format(
-              "Invalid query. You have an inequality where filter (whereLessThan(), "
-                  + "whereGreaterThan(), etc.) on field '%s' and so you must also have '%s' as "
-                  + "your first orderBy() field, but your first orderBy() is currently on field "
-                  + "'%s' instead.",
-              inequalityString, inequalityString, orderBy.canonicalString()));
-    }
-  }
-
-  /**
-   * Given an operator, returns the set of operators that cannot be used with it.
-   *
-   * <p>Operators in a query must adhere to the following set of rules:
-   *
-   * <ol>
-   *   <li>Only one array operator is allowed.
-   *   <li>Only one disjunctive operator is allowed.
-   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
-   *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
-   * </ol>
-   *
-   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
-   * ARRAY_CONTAINS_ANY, NOT_IN
-   */
-  private List<Operator> conflictingOps(Operator op) {
-    switch (op) {
-      case NOT_EQUAL:
-        return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
-      case ARRAY_CONTAINS:
-        return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
-      case IN:
-        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
-      case ARRAY_CONTAINS_ANY:
-        return Arrays.asList(
-            Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
-      case NOT_IN:
-        return Arrays.asList(
-            Operator.ARRAY_CONTAINS,
-            Operator.ARRAY_CONTAINS_ANY,
-            Operator.IN,
-            Operator.NOT_IN,
-            Operator.NOT_EQUAL);
-      default:
-        return new ArrayList<>();
-    }
-  }
-
-  private void validateNewFilter(Filter filter) {
-    if (filter instanceof FieldFilter) {
-      FieldFilter fieldFilter = (FieldFilter) filter;
-      Operator filterOp = fieldFilter.getOperator();
-      if (fieldFilter.isInequality()) {
-        com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
-        com.google.firebase.firestore.model.FieldPath newInequality = filter.getField();
-
-        if (existingInequality != null && !existingInequality.equals(newInequality)) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "All where filters with an inequality (notEqualTo, notIn, lessThan, "
-                      + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
-                      + "same field. But you have filters on '%s' and '%s'",
-                  existingInequality.canonicalString(), newInequality.canonicalString()));
-        }
-        com.google.firebase.firestore.model.FieldPath firstOrderByField =
-            query.getFirstOrderByField();
-        if (firstOrderByField != null) {
-          validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
-        }
-      }
-      Operator conflictingOp = query.findFilterOperator(conflictingOps(filterOp));
-      if (conflictingOp != null) {
-        // We special case when it's a duplicate op to give a slightly clearer error message.
-        if (conflictingOp == filterOp) {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
-        } else {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use '"
-                  + filterOp.toString()
-                  + "' filters with '"
-                  + conflictingOp.toString()
-                  + "' filters.");
-        }
-      }
-    }
+    Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, value);
+    return new Query(filter.apply(query, firestore), firestore);
   }
 
   /**
@@ -652,7 +485,7 @@ public class Query {
           "Invalid query. You must not call Query.endAt() or Query.endBefore() before "
               + "calling Query.orderBy().");
     }
-    validateOrderByField(fieldPath);
+
     OrderBy.Direction dir =
         direction == Direction.ASCENDING
             ? OrderBy.Direction.ASCENDING

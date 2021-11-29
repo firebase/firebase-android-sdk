@@ -270,8 +270,8 @@ public class IndexBackfillerTest {
 
   private void verifyQueryResults(String collectionGroup, String... expectedKeys) {
     Target target = query(collectionGroup).orderBy(orderBy("foo")).toTarget();
-    FieldIndex persistedIndex = indexManager.getFieldIndex(target);
-    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
+    FieldIndex persistedIndex = indexManager.getFieldIndex(target, null);
+    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target, null);
     assertThat(actualKeys)
         .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
   }

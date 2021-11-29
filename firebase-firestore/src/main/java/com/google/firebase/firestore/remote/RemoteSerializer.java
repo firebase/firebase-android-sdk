@@ -20,9 +20,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -68,7 +68,6 @@ import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
-import com.google.firestore.v1.StructuredQuery.Filter.FilterTypeCase;
 import com.google.firestore.v1.StructuredQuery.Order;
 import com.google.firestore.v1.StructuredQuery.UnaryFilter;
 import com.google.firestore.v1.Target;
@@ -634,71 +633,62 @@ public final class RemoteSerializer {
   // Filters
 
   private StructuredQuery.Filter encodeFilters(List<Filter> filters) {
-    List<StructuredQuery.Filter> protos = new ArrayList<>(filters.size());
-    for (Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        protos.add(encodeUnaryOrFieldFilter((FieldFilter) filter));
-      }
-    }
-    if (filters.size() == 1) {
-      return protos.get(0);
-    } else {
-      CompositeFilter.Builder composite = CompositeFilter.newBuilder();
-      composite.setOp(CompositeFilter.Operator.AND);
-      composite.addAllFilters(protos);
-      return StructuredQuery.Filter.newBuilder().setCompositeFilter(composite).build();
-    }
+    com.google.firebase.firestore.core.CompositeFilter compositeFilter =
+        new com.google.firebase.firestore.core.CompositeFilter(filters, /*isAnd*/ true);
+    return encodeCompositeFilter(compositeFilter);
   }
 
   private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
-    List<StructuredQuery.Filter> filters;
-    if (proto.getFilterTypeCase() == FilterTypeCase.COMPOSITE_FILTER) {
-      hardAssert(
-          proto.getCompositeFilter().getOp() == CompositeFilter.Operator.AND,
-          "Only AND-type composite filters are supported, got %d",
-          proto.getCompositeFilter().getOp());
-      filters = proto.getCompositeFilter().getFiltersList();
-    } else {
-      filters = Collections.singletonList(proto);
+    List<Filter> result = new ArrayList<>();
+
+    Filter decodedFilter;
+    switch (proto.getFilterTypeCase()) {
+      case COMPOSITE_FILTER:
+        decodedFilter = decodeCompositeFilter(proto.getCompositeFilter());
+        break;
+      case FIELD_FILTER:
+        decodedFilter = decodeFieldFilter(proto.getFieldFilter());
+        break;
+      case UNARY_FILTER:
+        decodedFilter = decodeUnaryFilter(proto.getUnaryFilter());
+        break;
+      default:
+        throw fail("Unrecognized Filter.filterType %d", proto.getFilterTypeCase());
     }
 
-    List<Filter> result = new ArrayList<>(filters.size());
-    for (StructuredQuery.Filter filter : filters) {
-      switch (filter.getFilterTypeCase()) {
-        case COMPOSITE_FILTER:
-          throw fail("Nested composite filters are not supported.");
-
-        case FIELD_FILTER:
-          result.add(decodeFieldFilter(filter.getFieldFilter()));
-          break;
-
-        case UNARY_FILTER:
-          result.add(decodeUnaryFilter(filter.getUnaryFilter()));
-          break;
-
-        default:
-          throw fail("Unrecognized Filter.filterType %d", filter.getFilterTypeCase());
+    // The result for traditional queries could be a composite AND filter of field filters.
+    // But for now we will flatten the outermost AND filter (if any) so that the client-side
+    // indexing code can be used for traditional queries.
+    // TODO(ehsann): Once proper support for composite filters has been added to index manager,
+    // we can remove this flattening from here.
+    if (decodedFilter instanceof com.google.firebase.firestore.core.CompositeFilter) {
+      com.google.firebase.firestore.core.CompositeFilter compositeFilter =
+          (com.google.firebase.firestore.core.CompositeFilter) decodedFilter;
+      if (compositeFilter.isAnd() && !compositeFilter.containsCompositeFilters()) {
+        result.addAll(compositeFilter.getFilters());
+        return result;
       }
     }
 
+    result.add(decodedFilter);
     return result;
   }
 
   @VisibleForTesting
   StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
-    if (filter.getOperator() == Filter.Operator.EQUAL
-        || filter.getOperator() == Filter.Operator.NOT_EQUAL) {
+    if (filter.getOperator() == FieldFilter.Operator.EQUAL
+        || filter.getOperator() == FieldFilter.Operator.NOT_EQUAL) {
       UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
       unaryProto.setField(encodeFieldPath(filter.getField()));
       if (Values.isNanValue(filter.getValue())) {
         unaryProto.setOp(
-            filter.getOperator() == Filter.Operator.EQUAL
+            filter.getOperator() == FieldFilter.Operator.EQUAL
                 ? UnaryFilter.Operator.IS_NAN
                 : UnaryFilter.Operator.IS_NOT_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       } else if (Values.isNullValue(filter.getValue())) {
         unaryProto.setOp(
-            filter.getOperator() == Filter.Operator.EQUAL
+            filter.getOperator() == FieldFilter.Operator.EQUAL
                 ? UnaryFilter.Operator.IS_NULL
                 : UnaryFilter.Operator.IS_NOT_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
@@ -712,6 +702,59 @@ public final class RemoteSerializer {
   }
 
   @VisibleForTesting
+  StructuredQuery.Filter encodeCompositeFilter(
+      com.google.firebase.firestore.core.CompositeFilter compositeFilter) {
+    List<StructuredQuery.Filter> protos = new ArrayList<>(compositeFilter.getFilters().size());
+    for (Filter filter : compositeFilter.getFilters()) {
+      if (filter instanceof FieldFilter) {
+        protos.add(encodeUnaryOrFieldFilter((FieldFilter) filter));
+      } else if (filter instanceof com.google.firebase.firestore.core.CompositeFilter) {
+        protos.add(
+            encodeCompositeFilter((com.google.firebase.firestore.core.CompositeFilter) filter));
+      } else {
+        throw fail("Unrecognized filter type %s", filter.toString());
+      }
+    }
+
+    // If there's only one filter in the composite filter, use it directly.
+    if (protos.size() == 1) {
+      return protos.get(0);
+    }
+
+    CompositeFilter.Builder composite = CompositeFilter.newBuilder();
+    // TODO(ehsann): use CompositeFilter.Operator.OR once it's available.
+    composite.setOp(
+        compositeFilter.isAnd()
+            ? CompositeFilter.Operator.AND
+            : CompositeFilter.Operator.UNRECOGNIZED);
+    composite.addAllFilters(protos);
+    return StructuredQuery.Filter.newBuilder().setCompositeFilter(composite).build();
+  }
+
+  @VisibleForTesting
+  com.google.firebase.firestore.core.CompositeFilter decodeCompositeFilter(
+      StructuredQuery.CompositeFilter compositeFilter) {
+    List<Filter> filters = new ArrayList<>();
+    for (StructuredQuery.Filter filter : compositeFilter.getFiltersList()) {
+      switch (filter.getFilterTypeCase()) {
+        case COMPOSITE_FILTER:
+          filters.add(decodeCompositeFilter(filter.getCompositeFilter()));
+          break;
+        case FIELD_FILTER:
+          filters.add(decodeFieldFilter(filter.getFieldFilter()));
+          break;
+        case UNARY_FILTER:
+          filters.add(decodeUnaryFilter(filter.getUnaryFilter()));
+          break;
+        default:
+          throw fail("Unrecognized Filter.filterType %d", filter.getFilterTypeCase());
+      }
+    }
+    return new com.google.firebase.firestore.core.CompositeFilter(
+        filters, compositeFilter.getOp() == CompositeFilter.Operator.AND ? true : false);
+  }
+
+  @VisibleForTesting
   FieldFilter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
@@ -722,13 +765,13 @@ public final class RemoteSerializer {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NAN_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NAN_VALUE);
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NULL_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NULL_VALUE);
       case IS_NOT_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NAN_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NAN_VALUE);
       case IS_NOT_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NULL_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NULL_VALUE);
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());
     }

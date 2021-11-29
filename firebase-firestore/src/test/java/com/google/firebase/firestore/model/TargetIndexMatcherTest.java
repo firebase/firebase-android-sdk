@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
+import static com.google.firebase.firestore.testutil.TestUtil.andFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
@@ -25,6 +26,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.Query;
 import java.util.Arrays;
 import java.util.Collections;
@@ -183,20 +185,22 @@ public class TargetIndexMatcherTest {
   @Test
   public void validatesCollection() {
     {
-      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId").toTarget());
+      TargetIndexMatcher targetIndexMatcher =
+          new TargetIndexMatcher(query("collId").toTarget(), null);
       FieldIndex fieldIndex = fieldIndex("collId");
       assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
       TargetIndexMatcher targetIndexMatcher =
-          new TargetIndexMatcher(new Query(path(""), "collId").toTarget());
+          new TargetIndexMatcher(new Query(path(""), "collId").toTarget(), null);
       FieldIndex fieldIndex = fieldIndex("collId");
       assertDoesNotThrow(() -> targetIndexMatcher.servedByIndex(fieldIndex));
     }
 
     {
-      TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query("collId2").toTarget());
+      TargetIndexMatcher targetIndexMatcher =
+          new TargetIndexMatcher(query("collId2").toTarget(), null);
       FieldIndex fieldIndex = fieldIndex("collId");
       expectError(
           () -> targetIndexMatcher.servedByIndex(fieldIndex),
@@ -479,17 +483,19 @@ public class TargetIndexMatcherTest {
 
   @Test
   public void withInAndNotIn() {
-    Query q =
-        query("collId")
-            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
-            .filter(filter("b", "in", Arrays.asList(1, 2, 3)));
-    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
-    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
-    validateServesTarget(
-        q, "b", FieldIndex.Segment.Kind.ASCENDING, "a", FieldIndex.Segment.Kind.ASCENDING);
-    // If provided, equalities have to come first
-    validateDoesNotServeTarget(
-        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+    // TODO(ehsann): This is an invalid query. Query validation code throws an exception for this
+    // test.
+    //    Query q =
+    //        query("collId")
+    //            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
+    //            .filter(filter("b", "in", Arrays.asList(1, 2, 3)));
+    //    validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    //    validateServesTarget(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    //    validateServesTarget(
+    //        q, "b", FieldIndex.Segment.Kind.ASCENDING, "a", FieldIndex.Segment.Kind.ASCENDING);
+    //    // If provided, equalities have to come first
+    //    validateDoesNotServeTarget(
+    //        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
   }
 
   @Test
@@ -557,15 +563,19 @@ public class TargetIndexMatcherTest {
 
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
+    CompositeFilter filter = andFilter(query.getFilters());
+    assertTrue(filter.isFlatAndFilter());
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
-    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget(), filter);
     assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 
   private void validateDoesNotServeTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
+    CompositeFilter filter = andFilter(query.getFilters());
+    assertTrue(filter.isFlatAndFilter());
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
-    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget(), filter);
     assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
   }
 }
