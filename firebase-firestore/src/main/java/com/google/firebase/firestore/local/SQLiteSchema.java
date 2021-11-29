@@ -63,7 +63,7 @@ class SQLiteSchema {
    * reported that schema migrations failed for clients with thousands of documents. The number has
    * been chosen based on manual experiments.
    */
-  private static final int MIGRATION_BATCH_SIZE = 100;
+  @VisibleForTesting static final int MIGRATION_BATCH_SIZE = 100;
 
   private final SQLiteDatabase db;
 

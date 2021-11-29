@@ -577,7 +577,7 @@ public class SQLiteSchemaTest {
 
     ResourcePath path = path("coll/docA");
     db.execSQL(
-        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?,?, ?, ?)",
+        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {EncodedPath.encode(path), 1, 2, new byte[] {3}});
 
     schema.runSchemaUpgrades(12, 13);
@@ -598,6 +598,32 @@ public class SQLiteSchemaTest {
               assertEquals(2, readTimeNanos);
               assertArrayEquals(new byte[] {3}, contents);
             });
+  }
+
+  @Test
+  public void usesMultipleBatchesToRewriteDocumentKeys() {
+    schema.runSchemaUpgrades(0, 12);
+
+    for (int i = 0; i < SQLiteSchema.MIGRATION_BATCH_SIZE + 1; ++i) {
+      ResourcePath path = path(String.format("coll/doc%03d", i));
+      db.execSQL(
+          "INSERT INTO remote_documents (path) VALUES (?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
+
+    schema.runSchemaUpgrades(12, 13);
+
+    int[] current = new int[] {0};
+
+    new SQLitePersistence.Query(db, "SELECT document_id FROM remote_documents ORDER by document_id")
+        .forEach(
+            cursor -> {
+              String documentId = cursor.getString(0);
+              assertEquals(String.format("doc%03d", current[0]), documentId);
+              ++current[0];
+            });
+
+    assertEquals(current[0], SQLiteSchema.MIGRATION_BATCH_SIZE + 1);
   }
 
   @Test
