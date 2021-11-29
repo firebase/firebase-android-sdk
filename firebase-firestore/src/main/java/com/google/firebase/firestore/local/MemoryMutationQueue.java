@@ -152,7 +152,7 @@ final class MemoryMutationQueue implements MutationQueue {
       batchesByDocumentKey =
           batchesByDocumentKey.insert(new DocumentReference(mutation.getKey(), batchId));
 
-      indexManager.addToCollectionParentIndex(mutation.getKey().getPath().popLast());
+      indexManager.addToCollectionParentIndex(mutation.getKey().getCollection());
     }
 
     return batch;

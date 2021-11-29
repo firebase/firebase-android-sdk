@@ -66,21 +66,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         "INSERT OR REPLACE INTO remote_documents "
             + "(collection_path, document_id, read_time_seconds, read_time_nanos, contents) "
             + "VALUES (?, ?, ?, ?, ?)",
-        collectionForKey(documentKey),
+        EncodedPath.encode(documentKey.getCollection()),
         documentKey.getPath().getLastSegment(),
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
         message.toByteArray());
 
-    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollection());
   }
 
   @Override
   public void remove(DocumentKey documentKey) {
     db.execute(
         "DELETE FROM remote_documents WHERE collection_path = ? AND document_id = ?",
-        collectionForKey(documentKey),
-        documentKey.getPath().getLastSegment());
+        EncodedPath.encode(documentKey.getCollection()),
+        documentKey.getDocumentId());
   }
 
   @Override
@@ -89,7 +89,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         db.query(
                 "SELECT contents, read_time_seconds, read_time_nanos FROM remote_documents "
                     + "WHERE collection_path = ? AND document_id = ?")
-            .binding(collectionForKey(documentKey), documentKey.getPath().getLastSegment())
+            .binding(EncodedPath.encode(documentKey.getCollection()), documentKey.getDocumentId())
             .firstValue(row -> decodeMaybeDocument(row.getBlob(0), row.getInt(1), row.getInt(2)));
     return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }
@@ -217,10 +217,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                     + "LIMIT 1")
             .firstValue(row -> new SnapshotVersion(new Timestamp(row.getLong(0), row.getInt(1))));
     return latestReadTime != null ? latestReadTime : SnapshotVersion.NONE;
-  }
-
-  private String collectionForKey(DocumentKey key) {
-    return EncodedPath.encode(key.getPath().popLast());
   }
 
   private MutableDocument decodeMaybeDocument(

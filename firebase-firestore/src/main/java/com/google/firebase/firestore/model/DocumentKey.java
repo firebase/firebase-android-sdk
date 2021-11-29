@@ -113,6 +113,16 @@ public final class DocumentKey implements Comparable<DocumentKey> {
     return path.getSegment(path.length() - 2);
   }
 
+  /** Returns the fully qualified path to the parent collection. */
+  public ResourcePath getCollection() {
+    return path.popLast();
+  }
+
+  /** Returns the ID for this document key (i.e. the last path segment). */
+  public String getDocumentId() {
+    return path.getLastSegment();
+  }
+
   /** Returns true if the document is in the specified collectionId. */
   public boolean hasCollectionId(String collectionId) {
     return path.length() >= 2 && path.segments.get(path.length() - 2).equals(collectionId);
