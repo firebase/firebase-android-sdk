@@ -174,7 +174,8 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 13 && toVersion >= 13) {
-      rewriteDocumentKeys();
+      addParentPath();
+      ensureParentPath();
     }
 
     /*
@@ -408,6 +409,9 @@ class SQLiteSchema {
                   + "directional_value BLOB, " // index values for equality and inequalities
                   + "document_name TEXT, "
                   + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_name))");
+
+          db.execSQL(
+              "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");
         });
   }
 
@@ -437,6 +441,13 @@ class SQLiteSchema {
   private void addSequenceNumber() {
     if (!tableContainsColumn("target_documents", "sequence_number")) {
       db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+    }
+  }
+
+  private void addParentPath() {
+    if (!tableContainsColumn("remote_documents", "parent_path")) {
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN parent_path TEXT");
+      db.execSQL("CREATE INDEX parent_path_index ON remote_documents(parent_path)");
     }
   }
 
@@ -615,38 +626,14 @@ class SQLiteSchema {
             });
   }
 
-  /**
-   * Migrates the remote_documents table to contain a distinct column for the document's collection
-   * path and its id.
-   */
-  private void rewriteDocumentKeys() {
-    // SQLite does not support dropping a primary key. To create a new primary key on
-    // collection_path and document_id we need to create a new table :(
-    db.execSQL("ALTER TABLE remote_documents RENAME TO tmp;");
-    db.execSQL(
-        "CREATE TABLE remote_documents ("
-            + "collection_path TEXT, "
-            + "document_id TEXT, "
-            + "read_time_nanos INTEGER, "
-            + "read_time_seconds INTEGER, "
-            + "contents BLOB, "
-            + "PRIMARY KEY (collection_path, document_id))");
-    db.execSQL(
-        "CREATE INDEX remote_documents_read_time ON remote_documents (read_time_nanos, read_time_seconds)");
-    db.execSQL(
-        "INSERT INTO remote_documents (collection_path, read_time_nanos, read_time_seconds, contents) "
-            + "SELECT path AS collection_path, read_time_nanos, read_time_seconds, contents FROM tmp");
-    db.execSQL("DROP TABLE tmp;");
-
-    // Process each entry to split the document key into collection_path and document_id
+  /** Fill the remote_document's parent path column. */
+  private void ensureParentPath() {
     SQLitePersistence.Query documentsToMigrate =
         new SQLitePersistence.Query(
-                db,
-                "SELECT collection_path FROM remote_documents WHERE document_id IS NULL LIMIT ?")
+                db, "SELECT path FROM remote_documents WHERE parent_path IS NULL LIMIT ?")
             .binding(MIGRATION_BATCH_SIZE);
     SQLiteStatement insertKey =
-        db.compileStatement(
-            "UPDATE remote_documents SET collection_path = ?, document_id = ? WHERE collection_path = ?");
+        db.compileStatement("UPDATE remote_documents SET parent_path = ? WHERE path = ?");
 
     boolean[] resultsRemaining = new boolean[1];
 
@@ -662,8 +649,7 @@ class SQLiteSchema {
 
             insertKey.clearBindings();
             insertKey.bindString(1, EncodedPath.encode(decodedPath.popLast()));
-            insertKey.bindString(2, decodedPath.getLastSegment());
-            insertKey.bindString(3, encodedPath);
+            insertKey.bindString(2, encodedPath);
             hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
           });
     } while (resultsRemaining[0]);

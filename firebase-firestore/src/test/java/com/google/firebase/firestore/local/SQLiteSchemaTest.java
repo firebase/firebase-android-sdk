@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.local.SQLiteSchema.VERSION;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -144,7 +145,7 @@ public class SQLiteSchemaTest {
     // deletes an existing table or column, which would be very likely to break old versions of the
     // SDK relying on that table or column.
     Map<String, Set<String>> tables = new HashMap<>();
-    for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
+    for (int toVersion = 1; toVersion <= VERSION; toVersion++) {
       schema.runSchemaUpgrades(toVersion - 1, toVersion);
       Map<String, Set<String>> newTables = getCurrentSchema();
       assertNoRemovals(tables, newTables, toVersion);
@@ -154,10 +155,10 @@ public class SQLiteSchemaTest {
 
   @Test
   public void canRecoverFromDowngrades() {
-    for (int downgradeVersion = 0; downgradeVersion < SQLiteSchema.VERSION; downgradeVersion++) {
+    for (int downgradeVersion = 0; downgradeVersion < VERSION; downgradeVersion++) {
       // Upgrade schema to current, then upgrade from `downgradeVersion` to current
       schema.runSchemaUpgrades();
-      schema.runSchemaUpgrades(downgradeVersion, SQLiteSchema.VERSION);
+      schema.runSchemaUpgrades(downgradeVersion, VERSION);
     }
   }
 
@@ -437,6 +438,8 @@ public class SQLiteSchemaTest {
 
     SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
 
+    schema.runSchemaUpgrades(10, VERSION);
+
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
@@ -572,36 +575,32 @@ public class SQLiteSchemaTest {
   }
 
   @Test
-  public void rewritesDocumentKeys() {
+  public void addParentPaths() {
     schema.runSchemaUpgrades(0, 12);
 
-    ResourcePath path = path("coll/docA");
-    db.execSQL(
-        "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
-        new Object[] {EncodedPath.encode(path), 1, 2, new byte[] {3}});
+    ResourcePath paths[] = new ResourcePath[] {path("collA/doc"), path("collB/doc")};
+
+    for (ResourcePath path : paths) {
+      db.execSQL(
+          "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
 
     schema.runSchemaUpgrades(12, 13);
-    new SQLitePersistence.Query(
-            db,
-            "SELECT collection_path, document_id, read_time_seconds, read_time_nanos, contents FROM remote_documents")
+
+    int[] current = new int[] {0};
+    new SQLitePersistence.Query(db, "SELECT parent_path FROM remote_documents ORDER BY path")
         .forEach(
             cursor -> {
-              String encodedCollectionPath = cursor.getString(0);
-              String documentId = cursor.getString(1);
-              long readTimeSeconds = cursor.getLong(2);
-              int readTimeNanos = cursor.getInt(3);
-              byte[] contents = cursor.getBlob(4);
-
-              assertEquals(path("coll"), EncodedPath.decodeResourcePath(encodedCollectionPath));
-              assertEquals("docA", documentId);
-              assertEquals(1, readTimeSeconds);
-              assertEquals(2, readTimeNanos);
-              assertArrayEquals(new byte[] {3}, contents);
+              ResourcePath parentPath = EncodedPath.decodeResourcePath(cursor.getString(0));
+              assertEquals(paths[current[0]].popLast(), parentPath);
+              ++current[0];
             });
+    assertEquals(2, current[0]);
   }
 
   @Test
-  public void usesMultipleBatchesToRewriteDocumentKeys() {
+  public void usesMultipleBatchesToAddParentPaths() {
     schema.runSchemaUpgrades(0, 12);
 
     for (int i = 0; i < SQLiteSchema.MIGRATION_BATCH_SIZE + 1; ++i) {
@@ -614,16 +613,14 @@ public class SQLiteSchemaTest {
     schema.runSchemaUpgrades(12, 13);
 
     int[] current = new int[] {0};
-
-    new SQLitePersistence.Query(db, "SELECT document_id FROM remote_documents ORDER by document_id")
+    new SQLitePersistence.Query(db, "SELECT parent_path FROM remote_documents ORDER by path")
         .forEach(
             cursor -> {
-              String documentId = cursor.getString(0);
-              assertEquals(String.format("doc%03d", current[0]), documentId);
+              ResourcePath parentPath = EncodedPath.decodeResourcePath(cursor.getString(0));
+              assertEquals(path("coll"), parentPath);
               ++current[0];
             });
-
-    assertEquals(current[0], SQLiteSchema.MIGRATION_BATCH_SIZE + 1);
+    assertEquals(SQLiteSchema.MIGRATION_BATCH_SIZE + 1, current[0]);
   }
 
   @Test
