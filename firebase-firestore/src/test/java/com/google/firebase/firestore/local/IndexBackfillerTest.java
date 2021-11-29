@@ -188,13 +188,13 @@ public class IndexBackfillerTest {
     addDoc("coll1/docB", "foo", version(1));
     addDoc("coll1/docC", "foo", version(1));
 
-    IndexBackfiller.Results results = backfiller.backfill();
-    assertEquals(2, results.getDocumentsProcessed());
+    int results = backfiller.backfill();
+    assertEquals(2, results);
 
     verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
 
     results = backfiller.backfill();
-    assertEquals(1, results.getDocumentsProcessed());
+    assertEquals(1, results);
 
     verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC");
   }
