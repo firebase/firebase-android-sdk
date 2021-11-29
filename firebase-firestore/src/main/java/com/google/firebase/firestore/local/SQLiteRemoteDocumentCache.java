@@ -89,7 +89,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         db.query(
                 "SELECT contents, read_time_seconds, read_time_nanos FROM remote_documents "
                     + "WHERE collection_path = ? AND document_id = ?")
-            .binding(EncodedPath.encode(documentKey.getCollectionPath()), documentKey.getDocumentId())
+            .binding(
+                EncodedPath.encode(documentKey.getCollectionPath()), documentKey.getDocumentId())
             .firstValue(row -> decodeMaybeDocument(row.getBlob(0), row.getInt(1), row.getInt(2)));
     return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
   }
