@@ -97,8 +97,7 @@ class HeartBeatInfoStorage {
     return heartBeatResults;
   }
 
-  synchronized String dateStoredUserAgentString(String dateString) {
-    String userAgentString = null;
+  private synchronized String getStoredUserAgentString(String dateString) {
     for (Map.Entry<String, ?> entry : firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
         Set<String> dateSet = (Set<String>) entry.getValue();
@@ -112,9 +111,9 @@ class HeartBeatInfoStorage {
     return null;
   }
 
-  synchronized void removeStoredDate(String dateString) {
+  private synchronized void removeStoredDate(String dateString) {
     // Find stored heartbeat and clear it.
-    String userAgentString = dateStoredUserAgentString(dateString);
+    String userAgentString = getStoredUserAgentString(dateString);
     if (userAgentString == null) {
       return;
     }
@@ -135,7 +134,7 @@ class HeartBeatInfoStorage {
     removeStoredDate(dateString);
   }
 
-  synchronized String getFormattedDate(long millis) {
+  private synchronized String getFormattedDate(long millis) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       Instant instant = new Date(millis).toInstant();
       LocalDateTime ldt = instant.atOffset(ZoneOffset.UTC).toLocalDateTime();
