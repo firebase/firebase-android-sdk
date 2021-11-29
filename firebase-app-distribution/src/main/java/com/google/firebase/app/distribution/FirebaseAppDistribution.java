@@ -24,6 +24,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
@@ -36,6 +37,7 @@ import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLife
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class FirebaseAppDistribution {
+  private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInClient testerSignInClient;
@@ -43,18 +45,21 @@ public class FirebaseAppDistribution {
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final UpdateApkClient updateApkClient;
   private final UpdateAabClient updateAabClient;
-  private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
+  private final SignInStorage signInStorage;
 
-  @GuardedBy("updateTaskLock")
+  private final Object updateIfNewReleaseTaskLock = new Object();
+
+  @GuardedBy("updateIfNewReleaseTaskLock")
   private UpdateTaskImpl cachedUpdateIfNewReleaseTask;
 
-  private final Object updateTaskLock = new Object();
-  private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
+  private final Object cachedNewReleaseLock = new Object();
 
+  @GuardedBy("cachedNewReleaseLock")
   private AppDistributionReleaseInternal cachedNewRelease;
+
+  private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateDialog;
   private boolean updateDialogShown;
-  private final SignInStorage signInStorage;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -131,8 +136,8 @@ public class FirebaseAppDistribution {
    * to complete the download and installation.
    */
   @NonNull
-  public synchronized UpdateTask updateIfNewReleaseAvailable() {
-    synchronized (updateTaskLock) {
+  public UpdateTask updateIfNewReleaseAvailable() {
+    synchronized (updateIfNewReleaseTaskLock) {
       if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
         return cachedUpdateIfNewReleaseTask;
       }
@@ -168,7 +173,8 @@ public class FirebaseAppDistribution {
                       Constants.ErrorMessages.NETWORK_ERROR,
                       FirebaseAppDistributionException.Status.NETWORK_FAILURE));
             });
-    synchronized (updateTaskLock) {
+
+    synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
   }
@@ -223,7 +229,7 @@ public class FirebaseAppDistribution {
    * new release is cached from checkForNewRelease
    */
   @NonNull
-  public synchronized UpdateTask updateApp() {
+  public UpdateTask updateApp() {
     return updateApp(false);
   }
 
@@ -231,7 +237,7 @@ public class FirebaseAppDistribution {
    * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
    * basic configuration and false for advanced configuration.
    */
-  public synchronized UpdateTask updateApp(boolean showDownloadInNotificationManager) {
+  private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -255,10 +261,12 @@ public class FirebaseAppDistribution {
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
     }
 
-    if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
-      return this.updateAabClient.updateAab(cachedNewRelease);
-    } else {
-      return this.updateApkClient.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+    synchronized (cachedNewReleaseLock) {
+      if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
+        return this.updateAabClient.updateAab(cachedNewRelease);
+      } else {
+        return this.updateApkClient.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+      }
     }
   }
 
@@ -269,7 +277,7 @@ public class FirebaseAppDistribution {
 
   /** Signs out the App Distribution tester */
   public void signOutTester() {
-    this.cachedNewRelease = null;
+    setCachedNewRelease(null);
     this.signInStorage.setSignInStatus(false);
   }
 
@@ -287,13 +295,17 @@ public class FirebaseAppDistribution {
   }
 
   @VisibleForTesting
-  void setCachedNewRelease(AppDistributionReleaseInternal newRelease) {
-    this.cachedNewRelease = newRelease;
+  void setCachedNewRelease(@Nullable AppDistributionReleaseInternal newRelease) {
+    synchronized (cachedNewReleaseLock) {
+      this.cachedNewRelease = newRelease;
+    }
   }
 
   @VisibleForTesting
   AppDistributionReleaseInternal getCachedNewRelease() {
-    return this.cachedNewRelease;
+    synchronized (cachedNewReleaseLock) {
+      return this.cachedNewRelease;
+    }
   }
 
   private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
@@ -326,7 +338,7 @@ public class FirebaseAppDistribution {
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.update_yes_button),
         (dialogInterface, i) -> {
-          synchronized (updateTaskLock) {
+          synchronized (updateIfNewReleaseTaskLock) {
             // show download progress in notification manager
             updateApp(true)
                 .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask)
@@ -340,7 +352,7 @@ public class FirebaseAppDistribution {
         context.getString(R.string.update_no_button),
         (dialogInterface, i) -> {
           dialogInterface.dismiss();
-          synchronized (updateTaskLock) {
+          synchronized (updateIfNewReleaseTaskLock) {
             postProgressToCachedUpdateIfNewReleaseTask(
                 UpdateProgress.builder()
                     .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
@@ -355,16 +367,16 @@ public class FirebaseAppDistribution {
 
     updateDialog.show();
     updateDialogShown = true;
-    synchronized (updateTaskLock) {
+    synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
   }
 
   private void setCachedUpdateIfNewReleaseCompletionError(FirebaseAppDistributionException e) {
-    synchronized (updateTaskLock) {
+    synchronized (updateIfNewReleaseTaskLock) {
       safeSetTaskException(cachedUpdateIfNewReleaseTask, e);
-      dismissUpdateDialog();
     }
+    dismissUpdateDialog();
   }
 
   private void setCachedUpdateIfNewReleaseCompletionError(
@@ -377,16 +389,16 @@ public class FirebaseAppDistribution {
   }
 
   private void postProgressToCachedUpdateIfNewReleaseTask(UpdateProgress progress) {
-    synchronized (updateTaskLock) {
+    synchronized (updateIfNewReleaseTaskLock) {
       cachedUpdateIfNewReleaseTask.updateProgress(progress);
     }
   }
 
   private void setCachedUpdateIfNewReleaseResult() {
-    synchronized (updateTaskLock) {
+    synchronized (updateIfNewReleaseTaskLock) {
       safeSetTaskResult(cachedUpdateIfNewReleaseTask);
-      dismissUpdateDialog();
     }
+    dismissUpdateDialog();
   }
 
   private void dismissUpdateDialog() {

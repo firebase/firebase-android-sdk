@@ -37,7 +37,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 class CheckForNewReleaseClient {
-  private static final int NEW_RELEASE_THREAD_POOL_SIZE = 4;
   private static final String TAG = "CheckForNewReleaseClient:";
 
   private final FirebaseApp firebaseApp;
@@ -56,8 +55,7 @@ class CheckForNewReleaseClient {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    // TODO: verify if this is best way to use executorservice here
-    this.checkForNewReleaseExecutor = Executors.newFixedThreadPool(NEW_RELEASE_THREAD_POOL_SIZE);
+    this.checkForNewReleaseExecutor = Executors.newSingleThreadExecutor();
     this.releaseIdentifierStorage =
         new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }

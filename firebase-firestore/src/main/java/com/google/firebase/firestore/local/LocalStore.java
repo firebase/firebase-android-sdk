@@ -130,7 +130,7 @@ public final class LocalStore implements BundleCallback {
   private LocalDocumentsView localDocuments;
 
   /** Performs queries over the localDocuments (and potentially maintains indexes). */
-  private QueryEngine queryEngine;
+  private final QueryEngine queryEngine;
 
   /** The set of document references maintained by any local views. */
   private final ReferenceSet localViewReferences;
@@ -170,6 +170,7 @@ public final class LocalStore implements BundleCallback {
     this.queryEngine = queryEngine;
     this.indexBackfiller = indexBackfiller;
     queryEngine.setLocalDocumentsView(localDocuments);
+    queryEngine.setIndexManager(indexManager);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
