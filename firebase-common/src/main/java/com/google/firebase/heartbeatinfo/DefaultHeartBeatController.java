@@ -151,7 +151,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
 
   @Override
   @NonNull
-  public HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
+  public synchronized HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
     long presentTime = System.currentTimeMillis();
     HeartBeatInfoStorage storage = storageProvider.get();
     boolean shouldSendGlobalHB = storage.shouldSendGlobalHeartBeat(presentTime);
