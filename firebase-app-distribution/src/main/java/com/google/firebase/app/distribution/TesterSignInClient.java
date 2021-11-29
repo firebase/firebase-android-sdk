@@ -124,30 +124,26 @@ class TesterSignInClient {
       return Tasks.forResult(null);
     }
 
-    if (this.isCurrentlySigningIn()) {
-      LogWrapper.getInstance()
-          .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
-      synchronized (signInTaskLock) {
+    synchronized (signInTaskLock) {
+      if (this.isCurrentlySigningIn()) {
+        LogWrapper.getInstance()
+            .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
         return signInTaskCompletionSource.getTask();
       }
-    }
-    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-    if (currentActivity == null) {
-      LogWrapper.getInstance().e(TAG + "No foreground activity found.");
-      return Tasks.forException(
-          new FirebaseAppDistributionException(
-              ErrorMessages.APP_BACKGROUNDED,
-              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
-    }
+      Activity currentActivity = lifecycleNotifier.getCurrentActivity();
+      if (currentActivity == null) {
+        LogWrapper.getInstance().e(TAG + "No foreground activity found.");
+        return Tasks.forException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.APP_BACKGROUNDED,
+                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+      }
 
-    synchronized (signInTaskLock) {
       signInTaskCompletionSource = new TaskCompletionSource<>();
-    }
 
-    alertDialog = getSignInAlertDialog(currentActivity);
-    alertDialog.show();
+      alertDialog = getSignInAlertDialog(currentActivity);
+      alertDialog.show();
 
-    synchronized (signInTaskLock) {
       return signInTaskCompletionSource.getTask();
     }
   }
