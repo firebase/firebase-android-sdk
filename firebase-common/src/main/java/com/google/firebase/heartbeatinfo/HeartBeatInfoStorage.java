@@ -97,23 +97,24 @@ class HeartBeatInfoStorage {
     return heartBeatResults;
   }
 
-  synchronized void removeStoredDate(String dateString) {
-    // Find stored heartbeat and clear it.
+  synchronized String dateStoredUserAgentString(String dateString) {
     String userAgentString = null;
     for (Map.Entry<String, ?> entry : firebaseSharedPreferences.getAll().entrySet()) {
-      if (userAgentString != null) {
-        break;
-      }
       if (entry.getValue() instanceof Set) {
         Set<String> dateSet = (Set<String>) entry.getValue();
         for (String date : dateSet) {
           if (dateString.equals(date)) {
-            userAgentString = entry.getKey();
-            break;
+            return entry.getKey();
           }
         }
       }
     }
+    return null;
+  }
+
+  synchronized void removeStoredDate(String dateString) {
+    // Find stored heartbeat and clear it.
+    String userAgentString = dateStoredUserAgentString(dateString);
     if (userAgentString == null) {
       return;
     }
