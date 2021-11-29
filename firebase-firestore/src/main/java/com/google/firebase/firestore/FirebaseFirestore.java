@@ -297,13 +297,14 @@ public class FirebaseFirestore {
    * automatically start using the index once the index entries have been written.
    *
    * <p>The method accepts the JSON format exported by the Firebase CLI (`firebase
-   * firestore:indexes`). If the JSON format is invalid, this method rejects the returned task.
+   * firestore:indexes`). If the JSON format is invalid, this method throws an exception.
    *
    * @param json The JSON format exported by the Firebase CLI.
    * @return A task that resolves once all indices are successfully configured.
+   * @throws IllegalArgumentException if the JSON format is invalid
    */
   @VisibleForTesting
-  Task<Void> configureIndices(String json) {
+  Task<Void> setIndexConfiguration(String json) {
     ensureClientConfigured();
 
     // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
