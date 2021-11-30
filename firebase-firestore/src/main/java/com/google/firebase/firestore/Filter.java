@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.model.Document;
@@ -141,8 +142,12 @@ public abstract class Filter {
         Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
   }
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public abstract boolean matches(@NonNull Document doc);
 
+  /** @hide */
   @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public abstract String getCanonicalId();
 }

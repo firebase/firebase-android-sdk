@@ -131,6 +131,32 @@ package com.google.firebase.firestore {
     method @NonNull public static com.google.firebase.firestore.FieldValue serverTimestamp();
   }
 
+  public abstract class Filter {
+    ctor public Filter();
+    method @NonNull public static com.google.firebase.firestore.Filter and(com.google.firebase.firestore.Filter...);
+    method @NonNull public static com.google.firebase.firestore.Filter arrayContains(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter arrayContains(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter arrayContainsAny(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter arrayContainsAny(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter equalTo(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter equalTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter greaterThan(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter greaterThan(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter greaterThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter inList(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter inList(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter lessThan(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter lessThan(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter lessThanOrEqualTo(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter lessThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter notEqualTo(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter notEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter notInList(@NonNull String, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter notInList(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public static com.google.firebase.firestore.Filter or(com.google.firebase.firestore.Filter...);
+  }
+
   public class FirebaseFirestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull Runnable);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotsInSyncListener(@NonNull android.app.Activity, @NonNull Runnable);
@@ -305,6 +331,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.Query startAfter(java.lang.Object...);
     method @NonNull public com.google.firebase.firestore.Query startAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
     method @NonNull public com.google.firebase.firestore.Query startAt(java.lang.Object...);
+    method @NonNull public com.google.firebase.firestore.Query where(@NonNull com.google.firebase.firestore.Filter...);
     method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereArrayContains(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereArrayContainsAny(@NonNull String, @NonNull java.util.List<?>);
