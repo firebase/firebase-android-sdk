@@ -145,4 +145,14 @@ public class UpdateAabClientTest {
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
     assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
   }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+
+    UpdateTask updateTask1 = updateAabClient.updateAab(newRelease);
+    UpdateTask updateTask2 = updateAabClient.updateAab(newRelease);
+
+    assertEquals(updateTask1, updateTask2);
+  }
 }
