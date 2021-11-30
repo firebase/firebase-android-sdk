@@ -438,30 +438,6 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
-
-    UpdateTask updateTask1 = firebaseAppDistribution.updateApp(true);
-    UpdateTask updateTask2 = firebaseAppDistribution.updateApp(true);
-
-    assertEquals(updateTask1, updateTask2);
-  }
-
-  @Test
-  public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_APK_INTERNAL.build();
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
-
-    UpdateTask updateTask1 = firebaseAppDistribution.updateApp();
-    UpdateTask updateTask2 = firebaseAppDistribution.updateApp();
-
-    assertEquals(updateTask1, updateTask2);
-  }
-
-  @Test
   public void updateAppTask_whenNoReleaseAvailable_throwsError() {
     firebaseAppDistribution.setCachedNewRelease(null);
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);

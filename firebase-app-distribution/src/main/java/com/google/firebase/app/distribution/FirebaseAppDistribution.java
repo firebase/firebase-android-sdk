@@ -237,7 +237,7 @@ public class FirebaseAppDistribution {
    * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
    * basic configuration and false for advanced configuration.
    */
-  private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
+  public UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -245,23 +245,22 @@ public class FirebaseAppDistribution {
               Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
       return updateTask;
     }
-
-    if (cachedNewRelease == null) {
-      LogWrapper.getInstance().v("New release not found.");
-      return getErrorUpdateTask(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-    }
-
-    if (cachedNewRelease.getDownloadUrl() == null) {
-      LogWrapper.getInstance().v("Download failed to execute");
-      return getErrorUpdateTask(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
-              FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-    }
-
     synchronized (cachedNewReleaseLock) {
+      if (cachedNewRelease == null) {
+        LogWrapper.getInstance().v("New release not found.");
+        return getErrorUpdateTask(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+      }
+
+      if (cachedNewRelease.getDownloadUrl() == null) {
+        LogWrapper.getInstance().v("Download failed to execute");
+        return getErrorUpdateTask(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+      }
+
       if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
         return this.updateAabClient.updateAab(cachedNewRelease);
       } else {
