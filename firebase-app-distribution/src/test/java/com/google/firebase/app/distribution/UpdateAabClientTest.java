@@ -25,8 +25,6 @@ import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;

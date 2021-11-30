@@ -23,8 +23,6 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.Executor;
