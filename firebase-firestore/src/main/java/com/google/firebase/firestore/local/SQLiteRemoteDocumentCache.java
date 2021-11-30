@@ -63,10 +63,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     db.execute(
         "INSERT OR REPLACE INTO remote_documents "
-            + "(path, parent_path, read_time_seconds, read_time_nanos, contents) "
+            + "(path, path_length, read_time_seconds, read_time_nanos, contents) "
             + "VALUES (?, ?, ?, ?, ?)",
         EncodedPath.encode(documentKey.getPath()),
-        EncodedPath.encode(documentKey.getCollectionPath()),
+        documentKey.getPath().length(),
         timestamp.getSeconds(),
         timestamp.getNanoseconds(),
         message.toByteArray());
@@ -135,61 +135,65 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
 
-    String parentPath = EncodedPath.encode(query.getPath());
-    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    StringBuilder sql =
+        new StringBuilder(
+            "SELECT contents, read_time_seconds, read_time_nanos "
+                + "FROM remote_documents WHERE path >= ? AND path < ? AND path_length = ?");
 
-    ImmutableSortedMap<DocumentKey, MutableDocument>[] matchingDocuments =
-        (ImmutableSortedMap<DocumentKey, MutableDocument>[])
-            new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
+    Object[] bindVars = new Object[3 + (FieldIndex.IndexOffset.NONE.equals(offset) ? 0 : 6)];
 
-    SQLitePersistence.Query sqlQuery;
-    if (FieldIndex.IndexOffset.NONE.equals(offset)) {
-      sqlQuery =
-          db.query(
-                  "SELECT contents, read_time_seconds, read_time_nanos "
-                      + "FROM remote_documents WHERE parent_path = ?")
-              .binding(parentPath);
-    } else {
+    String prefix = EncodedPath.encode(query.getPath());
+
+    int i = 0;
+    bindVars[i++] = prefix;
+    bindVars[i++] = EncodedPath.prefixSuccessor(prefix);
+    bindVars[i++] = query.getPath().length() + 1;
+
+    if (!FieldIndex.IndexOffset.NONE.equals(offset)) {
       Timestamp readTime = offset.getReadTime().getTimestamp();
       DocumentKey documentKey = offset.getDocumentKey();
 
-      sqlQuery =
-          db.query(
-                  "SELECT contents, read_time_seconds, read_time_nanos "
-                      + "FROM remote_documents WHERE parent_path = ? AND ("
-                      + "read_time_seconds > ? OR ("
-                      + "read_time_seconds = ? AND read_time_nanos > ?) OR ("
-                      + "read_time_seconds = ? AND read_time_nanos = ? and path > ?))")
-              .binding(
-                  parentPath,
-                  readTime.getSeconds(),
-                  readTime.getSeconds(),
-                  readTime.getNanoseconds(),
-                  readTime.getSeconds(),
-                  readTime.getNanoseconds(),
-                  EncodedPath.encode(documentKey.getPath()));
+      sql.append(
+          " AND (read_time_seconds > ? OR ("
+              + "read_time_seconds = ? AND read_time_nanos > ?) OR ("
+              + "read_time_seconds = ? AND read_time_nanos = ? and path > ?))");
+      bindVars[i++] = readTime.getSeconds();
+      bindVars[i++] = readTime.getSeconds();
+      bindVars[i++] = readTime.getNanoseconds();
+      bindVars[i++] = readTime.getSeconds();
+      bindVars[i++] = readTime.getNanoseconds();
+      bindVars[i] = EncodedPath.encode(documentKey.getPath());
     }
-    sqlQuery.forEach(
-        row -> {
-          // Store row values in array entries to provide the correct context inside the executor.
-          final byte[] rawDocument = row.getBlob(0);
-          final int[] readTimeSeconds = {row.getInt(1)};
-          final int[] readTimeNanos = {row.getInt(2)};
 
-          // Since scheduling background tasks incurs overhead, we only dispatch to a
-          // background thread if there are still some documents remaining.
-          Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-          executor.execute(
-              () -> {
-                MutableDocument document =
-                    decodeMaybeDocument(rawDocument, readTimeSeconds[0], readTimeNanos[0]);
-                if (document.isFoundDocument() && query.matches(document)) {
-                  synchronized (SQLiteRemoteDocumentCache.this) {
-                    matchingDocuments[0] = matchingDocuments[0].insert(document.getKey(), document);
-                  }
-                }
-              });
-        });
+    ImmutableSortedMap<DocumentKey, MutableDocument>[] results =
+        (ImmutableSortedMap<DocumentKey, MutableDocument>[])
+            new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
+
+    db.query(sql.toString())
+        .binding(bindVars)
+        .forEach(
+            row -> {
+              // Store row values in array entries to provide the correct context inside the
+              // executor.
+              final byte[] rawDocument = row.getBlob(0);
+              final int[] readTimeSeconds = {row.getInt(1)};
+              final int[] readTimeNanos = {row.getInt(2)};
+
+              // Since scheduling background tasks incurs overhead, we only dispatch to a
+              // background thread if there are still some documents remaining.
+              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+              executor.execute(
+                  () -> {
+                    MutableDocument document =
+                        decodeMaybeDocument(rawDocument, readTimeSeconds[0], readTimeNanos[0]);
+                    if (document.isFoundDocument() && query.matches(document)) {
+                      synchronized (SQLiteRemoteDocumentCache.this) {
+                        results[0] = results[0].insert(document.getKey(), document);
+                      }
+                    }
+                  });
+            });
 
     try {
       backgroundQueue.drain();
@@ -197,7 +201,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       fail("Interrupted while deserializing documents", e);
     }
 
-    return matchingDocuments[0];
+    return results[0];
   }
 
   @Override

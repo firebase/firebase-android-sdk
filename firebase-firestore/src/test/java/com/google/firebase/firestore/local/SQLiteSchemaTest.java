@@ -578,10 +578,10 @@ public class SQLiteSchemaTest {
   }
 
   @Test
-  public void addParentPaths() {
+  public void addPathLengths() {
     schema.runSchemaUpgrades(0, 12);
 
-    ResourcePath paths[] = new ResourcePath[] {path("collA/doc"), path("collB/doc")};
+    ResourcePath paths[] = new ResourcePath[] {path("collA/doc"), path("collA/doc/collB/doc")};
 
     for (ResourcePath path : paths) {
       db.execSQL(
@@ -592,18 +592,17 @@ public class SQLiteSchemaTest {
     schema.runSchemaUpgrades(12, 13);
 
     int[] current = new int[] {0};
-    new SQLitePersistence.Query(db, "SELECT parent_path FROM remote_documents ORDER BY path")
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER BY path")
         .forEach(
             cursor -> {
-              ResourcePath parentPath = EncodedPath.decodeResourcePath(cursor.getString(0));
-              assertEquals(paths[current[0]].popLast(), parentPath);
+              assertEquals(paths[current[0]].length(), cursor.getInt(0));
               ++current[0];
             });
     assertEquals(2, current[0]);
   }
 
   @Test
-  public void usesMultipleBatchesToAddParentPaths() {
+  public void usesMultipleBatchesToAddPathLengths() {
     schema.runSchemaUpgrades(0, 12);
 
     for (int i = 0; i < SQLiteSchema.MIGRATION_BATCH_SIZE + 1; ++i) {
@@ -616,11 +615,10 @@ public class SQLiteSchemaTest {
     schema.runSchemaUpgrades(12, 13);
 
     int[] current = new int[] {0};
-    new SQLitePersistence.Query(db, "SELECT parent_path FROM remote_documents ORDER by path")
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER by path")
         .forEach(
             cursor -> {
-              ResourcePath parentPath = EncodedPath.decodeResourcePath(cursor.getString(0));
-              assertEquals(path("coll"), parentPath);
+              assertEquals(2, cursor.getInt(0));
               ++current[0];
             });
     assertEquals(SQLiteSchema.MIGRATION_BATCH_SIZE + 1, current[0]);

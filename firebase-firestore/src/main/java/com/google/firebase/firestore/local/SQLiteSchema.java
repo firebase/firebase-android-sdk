@@ -174,8 +174,8 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 13 && toVersion >= 13) {
-      addParentPath();
-      ensureParentPath();
+      addPathLength();
+      ensurePathLength();
     }
 
     /*
@@ -447,10 +447,10 @@ class SQLiteSchema {
     }
   }
 
-  private void addParentPath() {
-    if (!tableContainsColumn("remote_documents", "parent_path")) {
-      db.execSQL("ALTER TABLE remote_documents ADD COLUMN parent_path TEXT");
-      db.execSQL("CREATE INDEX parent_path_index ON remote_documents(parent_path)");
+  private void addPathLength() {
+    if (!tableContainsColumn("remote_documents", "path_length")) {
+      // The "path_length" column store the number of segments in the path.
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN path_length INTEGER");
     }
   }
 
@@ -629,14 +629,14 @@ class SQLiteSchema {
             });
   }
 
-  /** Fill the remote_document's parent path column. */
-  private void ensureParentPath() {
+  /** Fill the remote_document's path_length column. */
+  private void ensurePathLength() {
     SQLitePersistence.Query documentsToMigrate =
         new SQLitePersistence.Query(
-                db, "SELECT path FROM remote_documents WHERE parent_path IS NULL LIMIT ?")
+                db, "SELECT path FROM remote_documents WHERE path_length IS NULL LIMIT ?")
             .binding(MIGRATION_BATCH_SIZE);
     SQLiteStatement insertKey =
-        db.compileStatement("UPDATE remote_documents SET parent_path = ? WHERE path = ?");
+        db.compileStatement("UPDATE remote_documents SET path_length = ? WHERE path = ?");
 
     boolean[] resultsRemaining = new boolean[1];
 
@@ -651,7 +651,7 @@ class SQLiteSchema {
             ResourcePath decodedPath = EncodedPath.decodeResourcePath(encodedPath);
 
             insertKey.clearBindings();
-            insertKey.bindString(1, EncodedPath.encode(decodedPath.popLast()));
+            insertKey.bindLong(1, decodedPath.length());
             insertKey.bindString(2, encodedPath);
             hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
           });
