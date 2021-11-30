@@ -21,6 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
@@ -98,7 +99,8 @@ public class DefaultQueryEngine implements QueryEngine {
     // Retrieve all results for documents that were updated since the last limbo-document free
     // remote snapshot.
     ImmutableSortedMap<DocumentKey, Document> updatedResults =
-        localDocumentsView.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion);
+        localDocumentsView.getDocumentsMatchingQuery(
+            query, IndexOffset.create(lastLimboFreeSnapshotVersion));
 
     // We merge `previousResults` into `updateResults`, since `updateResults` is already a
     // ImmutableSortedMap. If a document is contained in both lists, then its contents are the same.
@@ -168,6 +170,6 @@ public class DefaultQueryEngine implements QueryEngine {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
-    return localDocumentsView.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
+    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE);
   }
 }

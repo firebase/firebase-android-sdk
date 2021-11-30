@@ -22,6 +22,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -132,7 +133,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      final Query query, SnapshotVersion sinceReadTime) {
+      final Query query, FieldIndex.IndexOffset offset) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -143,7 +144,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     String prefixPath = EncodedPath.encode(prefix);
     String prefixSuccessorPath = EncodedPath.prefixSuccessor(prefixPath);
-    Timestamp readTime = sinceReadTime.getTimestamp();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
 
@@ -152,27 +152,32 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             new ImmutableSortedMap[] {DocumentCollections.emptyMutableDocumentMap()};
 
     SQLitePersistence.Query sqlQuery;
-    if (sinceReadTime.equals(SnapshotVersion.NONE)) {
+    if (FieldIndex.IndexOffset.NONE.equals(offset)) {
       sqlQuery =
           db.query(
                   "SELECT path, contents, read_time_seconds, read_time_nanos "
                       + "FROM remote_documents WHERE path >= ? AND path < ?")
               .binding(prefixPath, prefixSuccessorPath);
     } else {
-      // Execute an index-free query and filter by read time. This is safe since all document
-      // changes to queries that have a lastLimboFreeSnapshotVersion (`sinceReadTime`) have a read
-      // time set.
+      Timestamp readTime = offset.getReadTime().getTimestamp();
+      DocumentKey documentKey = offset.getDocumentKey();
+
       sqlQuery =
           db.query(
                   "SELECT path, contents, read_time_seconds, read_time_nanos "
-                      + "FROM remote_documents WHERE path >= ? AND path < ?"
-                      + "AND (read_time_seconds > ? OR (read_time_seconds = ? AND read_time_nanos > ?))")
+                      + "FROM remote_documents WHERE path >= ? AND path < ? AND ("
+                      + "read_time_seconds > ? OR ("
+                      + "read_time_seconds = ? AND read_time_nanos > ?) OR ("
+                      + "read_time_seconds = ? AND read_time_nanos = ? and path > ?))")
               .binding(
                   prefixPath,
                   prefixSuccessorPath,
                   readTime.getSeconds(),
                   readTime.getSeconds(),
-                  readTime.getNanoseconds());
+                  readTime.getNanoseconds(),
+                  readTime.getSeconds(),
+                  readTime.getNanoseconds(),
+                  EncodedPath.encode(documentKey.getPath()));
     }
     sqlQuery.forEach(
         row -> {

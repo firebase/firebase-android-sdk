@@ -21,7 +21,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,7 +81,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
     // Field indices are not supported with memory persistence.
   }
 
