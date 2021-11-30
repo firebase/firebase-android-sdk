@@ -237,7 +237,7 @@ public class FirebaseAppDistribution {
    * Overloaded updateApp with boolean input showDownloadInNotificationsManager. Set to true for
    * basic configuration and false for advanced configuration.
    */
-  public UpdateTask updateApp(boolean showDownloadInNotificationManager) {
+  private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     if (!isTesterSignedIn()) {
       UpdateTaskImpl updateTask = new UpdateTaskImpl();
       updateTask.setException(
@@ -252,7 +252,6 @@ public class FirebaseAppDistribution {
             new FirebaseAppDistributionException(
                 Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
       }
-
       if (cachedNewRelease.getDownloadUrl() == null) {
         LogWrapper.getInstance().v("Download failed to execute");
         return getErrorUpdateTask(

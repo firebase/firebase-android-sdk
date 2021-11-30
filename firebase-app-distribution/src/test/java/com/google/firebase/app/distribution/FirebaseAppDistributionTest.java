@@ -442,7 +442,7 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.setCachedNewRelease(null);
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
-    UpdateTask updateTask = firebaseAppDistribution.updateApp(false);
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertFalse(updateTask.isSuccessful());
     assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
