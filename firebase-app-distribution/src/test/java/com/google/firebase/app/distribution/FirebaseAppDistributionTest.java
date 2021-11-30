@@ -45,8 +45,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;

@@ -18,7 +18,6 @@ import android.app.Application;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;

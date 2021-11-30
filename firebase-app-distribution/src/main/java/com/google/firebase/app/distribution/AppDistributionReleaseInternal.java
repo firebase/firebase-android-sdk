@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.internal;
+package com.google.firebase.app.distribution;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.app.distribution.BinaryType;
 
 /**
  * This class represents the AppDistributionRelease object returned by the App Distribution backend
@@ -32,7 +31,7 @@ public abstract class AppDistributionReleaseInternal {
 
   @NonNull
   public static Builder builder() {
-    return new AutoValue_AppDistributionReleaseInternal.Builder();
+    return new com.google.firebase.app.distribution.AutoValue_AppDistributionReleaseInternal.Builder();
   }
 
   /** The short bundle version of this build (example 1.0.0) */

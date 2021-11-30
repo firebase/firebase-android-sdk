@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.internal;
+package com.google.firebase.app.distribution;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
