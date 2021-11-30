@@ -23,7 +23,6 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.app.distribution.FirebaseAppDistributionTest.TestActivity;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

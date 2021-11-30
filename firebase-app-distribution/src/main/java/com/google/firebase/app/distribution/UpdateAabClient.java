@@ -23,7 +23,6 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.Executor;

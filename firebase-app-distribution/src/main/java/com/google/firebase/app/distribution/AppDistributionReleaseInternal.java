@@ -31,7 +31,8 @@ public abstract class AppDistributionReleaseInternal {
 
   @NonNull
   public static Builder builder() {
-    return new com.google.firebase.app.distribution.AutoValue_AppDistributionReleaseInternal.Builder();
+    return new com.google.firebase.app.distribution.AutoValue_AppDistributionReleaseInternal
+        .Builder();
   }
 
   /** The short bundle version of this build (example 1.0.0) */
