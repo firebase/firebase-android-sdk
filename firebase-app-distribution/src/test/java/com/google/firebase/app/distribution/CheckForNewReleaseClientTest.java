@@ -41,8 +41,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;

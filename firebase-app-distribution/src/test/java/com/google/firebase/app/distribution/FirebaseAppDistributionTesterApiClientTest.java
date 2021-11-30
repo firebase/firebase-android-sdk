@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
