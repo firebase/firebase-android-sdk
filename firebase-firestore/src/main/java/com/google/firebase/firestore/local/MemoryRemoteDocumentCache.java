@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -83,7 +84,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime) {
+      Query query, IndexOffset offset) {
     hardAssert(
         !query.isCollectionGroupQuery(),
         "CollectionGroup queries should be handled in LocalDocumentsView");
@@ -110,7 +111,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       }
 
       SnapshotVersion readTime = entry.getValue().second;
-      if (readTime.compareTo(sinceReadTime) <= 0) {
+      if (IndexOffset.create(readTime, doc.getKey()).compareTo(offset) <= 0) {
         continue;
       }
 

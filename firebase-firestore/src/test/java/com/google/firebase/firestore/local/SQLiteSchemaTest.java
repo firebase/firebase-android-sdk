@@ -38,6 +38,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.MaybeDocument;
@@ -443,12 +444,14 @@ public class SQLiteSchemaTest {
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(0));
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), IndexOffset.NONE);
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
-    results = remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
+    results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(
+            query("coll"), IndexOffset.create(version(2)));
     assertResultsContain(results, "coll/new");
   }
 

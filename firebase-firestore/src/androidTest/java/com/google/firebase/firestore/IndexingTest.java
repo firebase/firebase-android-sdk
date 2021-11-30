@@ -49,10 +49,10 @@ public class IndexingTest {
   }
 
   @Test
-  public void testCanConfigureIndices() throws ExecutionException, InterruptedException {
+  public void testCanConfigureIndexes() throws ExecutionException, InterruptedException {
     FirebaseFirestore db = testFirestore();
     Task<Void> indexTask =
-        db.configureIndices(
+        db.setIndexConfiguration(
             "{\n"
                 + "  \"indexes\": [\n"
                 + "    {\n"
@@ -89,7 +89,7 @@ public class IndexingTest {
   public void testBadJsonDoesNotCrashClient() {
     FirebaseFirestore db = testFirestore();
 
-    Assert.assertThrows(IllegalArgumentException.class, () -> db.configureIndices("{,"));
+    Assert.assertThrows(IllegalArgumentException.class, () -> db.setIndexConfiguration("{,"));
   }
 
   @Test
@@ -98,7 +98,7 @@ public class IndexingTest {
     Assert.assertThrows(
         IllegalArgumentException.class,
         () ->
-            db.configureIndices(
+            db.setIndexConfiguration(
                 "{\n"
                     + "  \"indexes\": [\n"
                     + "    {\n"

@@ -58,7 +58,7 @@ public class IndexedQueryEngine implements QueryEngine {
     hardAssert(localDocuments != null, "setLocalDocumentsView() not called");
 
     return query.isDocumentQuery()
-        ? localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE)
+        ? localDocuments.getDocumentsMatchingQuery(query, FieldIndex.IndexOffset.NONE)
         : performCollectionQuery(query);
   }
 
@@ -84,7 +84,7 @@ public class IndexedQueryEngine implements QueryEngine {
       ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
           localDocuments.getDocuments(keys);
       ImmutableSortedMap<DocumentKey, Document> additionalDocuments =
-          localDocuments.getDocumentsMatchingQuery(query, fieldIndex.getIndexState().getReadTime());
+          localDocuments.getDocumentsMatchingQuery(query, fieldIndex.getIndexState().getOffset());
       for (Map.Entry<DocumentKey, Document> entry : additionalDocuments) {
         indexedDocuments = indexedDocuments.insert(entry.getKey(), entry.getValue());
       }
@@ -98,6 +98,6 @@ public class IndexedQueryEngine implements QueryEngine {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
-    return localDocuments.getDocumentsMatchingQuery(query, SnapshotVersion.NONE);
+    return localDocuments.getDocumentsMatchingQuery(query, FieldIndex.IndexOffset.NONE);
   }
 }

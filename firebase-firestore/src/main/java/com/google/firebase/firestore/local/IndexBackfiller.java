@@ -23,9 +23,10 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 
 /** Implements the steps for backfilling indexes. */
 public class IndexBackfiller {
+  private static final String LOG_TAG = "IndexBackfiller";
+
   /** How long we wait to try running index backfill after SDK initialization. */
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
   /** Minimum amount of time between backfill checks, after the first one. */
@@ -63,29 +66,6 @@ public class IndexBackfiller {
 
   public void setIndexManager(IndexManager indexManager) {
     this.indexManager = indexManager;
-  }
-
-  public static class Results {
-    private final boolean hasRun;
-
-    private final int documentsProcessed;
-
-    static IndexBackfiller.Results DidNotRun() {
-      return new IndexBackfiller.Results(/* hasRun= */ false, 0);
-    }
-
-    Results(boolean hasRun, int documentsProcessed) {
-      this.hasRun = hasRun;
-      this.documentsProcessed = documentsProcessed;
-    }
-
-    public boolean hasRun() {
-      return hasRun;
-    }
-
-    public int getDocumentsProcessed() {
-      return documentsProcessed;
-    }
   }
 
   public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
@@ -118,7 +98,8 @@ public class IndexBackfiller {
               AsyncQueue.TimerId.INDEX_BACKFILL,
               delay,
               () -> {
-                backfill();
+                int documentsProcessed = backfill();
+                Logger.debug(LOG_TAG, "Documents written: %s", documentsProcessed);
                 hasRun = true;
                 scheduleBackfill();
               });
@@ -129,15 +110,12 @@ public class IndexBackfiller {
     return scheduler;
   }
 
-  public Results backfill() {
+  /** Runs a single backfill operation and returns the number of documents processed. */
+  public int backfill() {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(indexManager != null, "setIndexManager() not called");
     return persistence.runTransaction(
-        "Backfill Indexes",
-        () -> {
-          int documentsProcessed = writeIndexEntries(localDocumentsView);
-          return new Results(/* hasRun= */ true, documentsProcessed);
-        });
+        "Backfill Indexes", () -> writeIndexEntries(localDocumentsView));
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
@@ -149,6 +127,7 @@ public class IndexBackfiller {
       if (collectionGroup == null || processedCollectionGroups.contains(collectionGroup)) {
         break;
       }
+      Logger.debug(LOG_TAG, "Processing collection: %s", collectionGroup);
       documentsRemaining -=
           writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
       processedCollectionGroups.add(collectionGroup);
@@ -161,42 +140,53 @@ public class IndexBackfiller {
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
-    // Use the earliest readTime of all field indexes as the base readtime.
-    SnapshotVersion earliestReadTime =
-        getEarliestReadTime(indexManager.getFieldIndexes(collectionGroup));
+    // Use the earliest offset of all field indexes to query the local cache.
+    IndexOffset existingOffset = getExistingOffset(indexManager.getFieldIndexes(collectionGroup));
 
     // TODO(indexing): Use limit queries to only fetch the required number of entries.
     // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocumentsMatchingQuery(query, earliestReadTime);
+        localDocumentsView.getDocumentsMatchingQuery(query, existingOffset);
 
     List<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
     indexManager.updateIndexEntries(oldestDocuments);
 
-    SnapshotVersion latestReadTime = getPostUpdateReadTime(oldestDocuments, earliestReadTime);
-    indexManager.updateCollectionGroup(collectionGroup, latestReadTime);
+    IndexOffset newOffset = getNewOffset(oldestDocuments, existingOffset);
+    indexManager.updateCollectionGroup(collectionGroup, newOffset);
     return oldestDocuments.size();
   }
 
-  /**
-   * Returns the new read time for the index.
-   *
-   * @param documents a list of documents sorted by read time (ascending)
-   * @param currentReadTime the current read time of the index
-   */
-  private SnapshotVersion getPostUpdateReadTime(
-      List<Document> documents, SnapshotVersion currentReadTime) {
-    SnapshotVersion latestReadTime =
-        documents.isEmpty()
-            ? remoteDocumentCache.getLatestReadTime()
-            : documents.get(documents.size() - 1).getReadTime();
-    // Make sure the index does not go back in time
-    latestReadTime =
-        latestReadTime.compareTo(currentReadTime) > 0 ? latestReadTime : currentReadTime;
-    return latestReadTime;
+  /** Returns the lowest offset for the provided index group. */
+  private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
+    IndexOffset lowestOffset = null;
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      if (lowestOffset == null
+          || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
+        lowestOffset = fieldIndex.getIndexState().getOffset();
+      }
+    }
+    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
   }
 
-  /** Returns up to {@code count} documents sorted by read time. */
+  /**
+   * Returns the offset for the index based on the newly indexed documents.
+   *
+   * @param documents a list of documents sorted by read time and key (ascending)
+   * @param currentOffset the current offset of the index group
+   */
+  private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
+    IndexOffset latestOffset =
+        documents.isEmpty()
+            ? IndexOffset.create(remoteDocumentCache.getLatestReadTime())
+            : IndexOffset.create(
+                documents.get(documents.size() - 1).getReadTime(),
+                documents.get(documents.size() - 1).getKey());
+    // Make sure the index does not go back in time
+    latestOffset = latestOffset.compareTo(currentOffset) > 0 ? latestOffset : currentOffset;
+    return latestOffset;
+  }
+
+  /** Returns up to {@code count} documents sorted by read time and key. */
   private List<Document> getOldestDocuments(
       ImmutableSortedMap<DocumentKey, Document> documents, int count) {
     List<Document> oldestDocuments = new ArrayList<>();
@@ -205,25 +195,10 @@ public class IndexBackfiller {
     }
     Collections.sort(
         oldestDocuments,
-        (l, r) -> {
-          int cmp = l.getReadTime().compareTo(r.getReadTime());
-          if (cmp != 0) return cmp;
-          return l.getKey().compareTo(r.getKey());
-        });
+        (l, r) ->
+            IndexOffset.create(l.getReadTime(), l.getKey())
+                .compareTo(IndexOffset.create(r.getReadTime(), r.getKey())));
     return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
-  }
-
-  private SnapshotVersion getEarliestReadTime(Collection<FieldIndex> fieldIndexes) {
-    SnapshotVersion lowestVersion = null;
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      lowestVersion =
-          lowestVersion == null
-              ? fieldIndex.getIndexState().getReadTime()
-              : fieldIndex.getIndexState().getReadTime().compareTo(lowestVersion) < 0
-                  ? fieldIndex.getIndexState().getReadTime()
-                  : lowestVersion;
-    }
-    return lowestVersion;
   }
 
   @VisibleForTesting
