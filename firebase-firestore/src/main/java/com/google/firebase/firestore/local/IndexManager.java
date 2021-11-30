@@ -20,7 +20,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -91,11 +90,11 @@ public interface IndexManager {
   /**
    * Sets the collection group's latest read time.
    *
-   * <p>This method updates the read time for all field indices for the collection group and
+   * <p>This method updates the index offset for all field indices for the collection group and
    * increments their sequence number. Subsequent calls to {@link #getNextCollectionGroupToUpdate()}
    * will return a different collection group (unless only one collection group is configured).
    */
-  void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime);
+  void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset);
 
   /** Updates the index entries for the provided documents. */
   void updateIndexEntries(Collection<Document> documents);
