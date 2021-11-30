@@ -57,6 +57,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-inline:2.25.0'
 
+    androidTestImplementation project(':integ-testing')
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"

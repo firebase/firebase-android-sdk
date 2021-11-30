@@ -35,6 +35,7 @@ import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
@@ -110,12 +111,12 @@ public class QueryEngineTest {
             indexManager) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-              Query query, SnapshotVersion sinceReadTime) {
+              Query query, IndexOffset offset) {
             assertEquals(
                 "Observed query execution mode did not match expectation",
                 expectFullCollectionScan,
-                SnapshotVersion.NONE.equals(sinceReadTime));
-            return super.getDocumentsMatchingQuery(query, sinceReadTime);
+                IndexOffset.NONE.equals(offset));
+            return super.getDocumentsMatchingQuery(query, offset);
           }
         };
     queryEngine.setLocalDocumentsView(localDocuments);

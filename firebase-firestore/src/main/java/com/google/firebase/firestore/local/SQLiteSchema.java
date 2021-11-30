@@ -355,9 +355,11 @@ class SQLiteSchema {
    * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
    * table apply for all users. It is not possible to only enable indices for a subset of users.
    *
+   * <p>The `index_state` table holds backfill information on each index that stores when it was
+   * last updated.
+   *
    * <p>The `index_entries` table holds the index values themselves. An index value is created for
-   * each field combination that matches a configured index. If there are pending mutations that
-   * affect an indexed field, an additional index entry is created per mutated field.
+   * each field combination that matches a configured index.
    */
   private void createFieldIndex() {
     ifTablesDontExist(
@@ -379,6 +381,7 @@ class SQLiteSchema {
                   + "sequence_number INTEGER, " // Specifies the order of updates
                   + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
+                  + "document_key TEXT, " // Key of the last processed document
                   + "PRIMARY KEY (index_id, uid))");
 
           // The index entry table stores the encoded entries for all fields.
@@ -630,10 +633,11 @@ class SQLiteSchema {
           db.execSQL(
               "CREATE TABLE document_overlays ("
                   + "uid TEXT, "
-                  + "path TEXT, "
+                  + "collection_path TEXT, "
+                  + "document_id TEXT, "
                   + "largest_batch_id INTEGER, "
                   + "overlay_mutation BLOB, "
-                  + "PRIMARY KEY (uid, path))");
+                  + "PRIMARY KEY (uid, collection_path, document_id))");
           db.execSQL("CREATE INDEX batch_id_overlay ON document_overlays (uid, largest_batch_id)");
         });
   }

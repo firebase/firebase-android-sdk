@@ -105,7 +105,7 @@ final class SQLiteIndexManager implements IndexManager {
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
     db.query(
-            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos "
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key "
                 + "FROM index_state WHERE uid = ?")
         .binding(uid)
         .forEach(
@@ -114,7 +114,10 @@ final class SQLiteIndexManager implements IndexManager {
               long sequenceNumber = row.getLong(1);
               SnapshotVersion readTime =
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
-              indexStates.put(indexId, FieldIndex.IndexState.create(sequenceNumber, readTime));
+              DocumentKey documentKey =
+                  DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
+              indexStates.put(
+                  indexId, FieldIndex.IndexState.create(sequenceNumber, readTime, documentKey));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -637,7 +640,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
     hardAssert(started, "IndexManager not started");
 
     ++memoizedMaxSequenceNumber;
@@ -647,15 +650,16 @@ final class SQLiteIndexManager implements IndexManager {
               fieldIndex.getIndexId(),
               fieldIndex.getCollectionGroup(),
               fieldIndex.getSegments(),
-              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, readTime));
+              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, offset));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
-              + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
+              + "read_time_seconds, read_time_nanos, document_key) VALUES(?, ?, ?, ?, ?, ?)",
           fieldIndex.getIndexId(),
           uid,
           memoizedMaxSequenceNumber,
-          readTime.getTimestamp().getSeconds(),
-          readTime.getTimestamp().getNanoseconds());
+          offset.getReadTime().getTimestamp().getSeconds(),
+          offset.getReadTime().getTimestamp().getNanoseconds(),
+          EncodedPath.encode(offset.getDocumentKey().getPath()));
       memoizeIndex(updatedIndex);
     }
   }
