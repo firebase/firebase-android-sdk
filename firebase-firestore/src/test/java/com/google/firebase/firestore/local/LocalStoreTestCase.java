@@ -159,7 +159,8 @@ public abstract class LocalStoreTestCase {
     SnapshotVersion version = version(documentVersion);
     List<MutationResult> mutationResults =
         Collections.singletonList(new MutationResult(version, emptyList()));
-    if (transformResult != null) {
+
+    if (transformResult.length != 0) {
       mutationResults = new ArrayList<>();
       for (Object o : transformResult) {
         mutationResults.add(
@@ -172,7 +173,7 @@ public abstract class LocalStoreTestCase {
   }
 
   private void acknowledgeMutation(long documentVersion) {
-    acknowledgeMutationWithTransformResults(documentVersion, null);
+    acknowledgeMutationWithTransformResults(documentVersion);
   }
 
   private void rejectMutation() {
