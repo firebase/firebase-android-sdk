@@ -1,39 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?> <!-- Copyright 2020 Google Inc. All Rights Reserved. -->
-
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  xmlns:tools="http://schemas.android.com/tools"
-  package="com.google.firebase.testing.fireperf">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.google.firebase.testing.fireperf">
 
-  <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
-  <application
-    android:allowBackup="true"
-    android:debuggable="true"
-    android:label="FirePerf E2E Test App"
-    android:usesCleartextTraffic="true"
-    tools:ignore="HardcodedDebugMode,UnusedAttribute">
+    <application
+        android:allowBackup="true"
+        android:debuggable="true"
+        android:label="FirePerf E2E Test App"
+        android:usesCleartextTraffic="true"
+        tools:ignore="HardcodedDebugMode,UnusedAttribute">
+        <activity
+            android:name=".FragmentActivity"
+            android:exported="false"
+            android:label="@string/title_activity_fragment" />
+        <activity
+            android:name=".FirebasePerfActivity"
+            android:label="FirebasePerfActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-    <activity
-      android:label="FirebasePerfActivity"
-      android:name=".FirebasePerfActivity">
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LAUNCHER" />
-      </intent-filter>
-    </activity>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".FirebasePerfScreenTracesActivity"
+            android:label="FirebasePerfScreenTracesActivity" />
 
-    <activity
-      android:label="FirebasePerfScreenTracesActivity"
-      android:name=".FirebasePerfScreenTracesActivity" />
-
-    <meta-data
-      android:name="firebase_performance_logcat_enabled"
-      android:value="true" />
-
-    <meta-data
-      android:name="sessions_sampling_percentage"
-      android:value="100.0" />
-
-  </application>
+        <meta-data
+            android:name="firebase_performance_logcat_enabled"
+            android:value="true" />
+        <meta-data
+            android:name="sessions_sampling_percentage"
+            android:value="100.0" />
+    </application>
 
 </manifest>

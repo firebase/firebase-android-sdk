@@ -1,0 +1,8 @@
+<!-- Copyright 2021 Google Inc. All Rights Reserved. -->
+
+<resources>
+    <string name="title_activity_fragment">FragmentActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+</resources>
