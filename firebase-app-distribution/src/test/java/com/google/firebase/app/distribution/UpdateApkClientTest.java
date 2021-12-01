@@ -76,7 +76,7 @@ public class UpdateApkClientTest {
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() {
+  public void setup() throws FirebaseAppDistributionException {
 
     MockitoAnnotations.initMocks(this);
 
@@ -96,12 +96,11 @@ public class UpdateApkClientTest {
 
     this.updateApkClient =
         Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
+    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
   }
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
-
-    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
     UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
@@ -211,6 +210,8 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
+
     UpdateTask updateTask1 = updateApkClient.updateApk(TEST_RELEASE, false);
     UpdateTask updateTask2 = updateApkClient.updateApk(TEST_RELEASE, false);
 
