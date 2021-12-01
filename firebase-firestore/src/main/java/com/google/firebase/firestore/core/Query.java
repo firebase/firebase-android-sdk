@@ -203,7 +203,15 @@ public final class Query {
   /** Returns the field of the first filter on this Query that's an inequality, or null if none. */
   @Nullable
   public FieldPath inequalityField() {
-    for (Filter filter : filters) {
+    return inequalityFieldInList(filters);
+  }
+
+  /**
+   * Returns the field of the first filter in the given list that's an inequality, or null if none.
+   */
+  @Nullable
+  public FieldPath inequalityFieldInList(List<Filter> filterList) {
+    for (Filter filter : filterList) {
       if (filter instanceof FieldFilter) {
         FieldFilter fieldfilter = (FieldFilter) filter;
         if (fieldfilter.isInequality()) {
@@ -221,12 +229,12 @@ public final class Query {
   }
 
   /**
-   * Checks if any of the provided filter operators are included in the query and returns the first
-   * one that is, or null if none are.
+   * Checks if any of the provided operators are included in the given filter list and returns the
+   * first one that is, or null if none are.
    */
   @Nullable
-  public Operator findFilterOperator(List<Operator> operators) {
-    for (Filter filter : filters) {
+  private Operator findFilterOperatorInList(List<Operator> operators, List<Filter> filterList) {
+    for (Filter filter : filterList) {
       if (filter instanceof FieldFilter) {
         Operator filterOp = ((FieldFilter) filter).getOperator();
         if (operators.contains(filterOp)) {
@@ -267,7 +275,7 @@ public final class Query {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
 
     // Throw an exception if adding this filter to the existing query is invalid.
-    validateNewFilter(filter);
+    validateAddingNewFilter(filter);
 
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
@@ -285,7 +293,7 @@ public final class Query {
     hardAssert(!isDocumentQuery(), "No ordering is allowed for document query");
 
     // Throw an exception if adding this OrderBy to the existing query is invalid.
-    validateOrderByField(order.field);
+    validateAddingOrderByField(order.field);
 
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
@@ -638,7 +646,7 @@ public final class Query {
   }
 
   /** Ensures that adding an orderBy on the given field to the existing query is valid */
-  private void validateOrderByField(FieldPath field) {
+  private void validateAddingOrderByField(FieldPath field) {
     FieldPath inequalityField = inequalityField();
     if (getFirstOrderByField() == null && inequalityField != null) {
       validateOrderByFieldMatchesInequality(field, inequalityField);
@@ -646,9 +654,7 @@ public final class Query {
   }
 
   /** Ensures that orderBy and inequality (if any) are performed on the same field */
-  private void validateOrderByFieldMatchesInequality(
-      com.google.firebase.firestore.model.FieldPath orderBy,
-      com.google.firebase.firestore.model.FieldPath inequality) {
+  private void validateOrderByFieldMatchesInequality(FieldPath orderBy, FieldPath inequality) {
     if (!orderBy.equals(inequality)) {
       String inequalityString = inequality.canonicalString();
       throw new IllegalArgumentException(
@@ -662,51 +668,73 @@ public final class Query {
   }
 
   /** Ensures that adding the given filter to the existing query is valid */
-  private void validateNewFilter(Filter filter) {
+  private void validateAddingNewFilter(Filter filter) {
     if (filter instanceof FieldFilter) {
-      FieldFilter fieldFilter = (FieldFilter) filter;
-
-      // Validation related to inequalities.
-      if (fieldFilter.isInequality()) {
-        FieldPath existingInequality = inequalityField();
-        FieldPath newInequality = fieldFilter.getField();
-
-        // Do not allow inequality on more than one field.
-        if (existingInequality != null && !existingInequality.equals(newInequality)) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "All where filters with an inequality (notEqualTo, notIn, lessThan, "
-                      + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
-                      + "same field. But you have filters on '%s' and '%s'",
-                  existingInequality.canonicalString(), newInequality.canonicalString()));
-        }
-
-        // The inequality field and orderBy field should match.
-        FieldPath firstOrderByField = getFirstOrderByField();
-        if (firstOrderByField != null) {
-          validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
-        }
-      }
-
-      // Validation related to conflicting filter operations.
-      Operator filterOp = fieldFilter.getOperator();
-      Operator conflictingOp = findFilterOperator(conflictingOps(filterOp));
-      if (conflictingOp != null) {
-        // We special case when it's a duplicate op to give a slightly clearer error message.
-        if (conflictingOp == filterOp) {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
-        } else {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use '"
-                  + filterOp.toString()
-                  + "' filters with '"
-                  + conflictingOp.toString()
-                  + "' filters.");
-        }
-      }
+      validateAddingNewFieldFilter((FieldFilter) filter, filters);
     } else if (filter instanceof CompositeFilter) {
-      // TODO(ehsann): implement validation for composite filters.
+      validateAddingNewCompositeFilter((CompositeFilter) filter, filters);
+    }
+  }
+
+  /** Ensures that adding the given composite filter to the list of given filters is valid */
+  private void validateAddingNewCompositeFilter(
+      CompositeFilter compositeFilter, List<Filter> filterList) {
+    // The composite operation type (e.g. AND, OR) does not matter for validation.
+    // We can make a temporary list of filters which starts with `filterList`, and keep adding to it
+    // and validating each addition.
+    List<Filter> accumulatedList = new ArrayList<>();
+    accumulatedList.addAll(filterList);
+    for (Filter filter : compositeFilter.getFilters()) {
+      if (filter instanceof FieldFilter) {
+        validateAddingNewFieldFilter((FieldFilter) filter, accumulatedList);
+        accumulatedList.add(filter);
+      } else if (filter instanceof CompositeFilter) {
+        validateAddingNewCompositeFilter((CompositeFilter) filter, accumulatedList);
+        accumulatedList.add(filter);
+      }
+    }
+  }
+
+  /** Ensures that adding the given field filter to the list of given filters is valid */
+  private void validateAddingNewFieldFilter(FieldFilter fieldFilter, List<Filter> filterList) {
+    // Validation related to inequalities.
+    if (fieldFilter.isInequality()) {
+      FieldPath existingInequality = inequalityFieldInList(filterList);
+      FieldPath newInequality = fieldFilter.getField();
+
+      // Do not allow inequality on more than one field.
+      if (existingInequality != null && !existingInequality.equals(newInequality)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+                    + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+                    + "same field. But you have filters on '%s' and '%s'",
+                existingInequality.canonicalString(), newInequality.canonicalString()));
+      }
+
+      // The inequality field and orderBy field should match.
+      FieldPath firstOrderByField = getFirstOrderByField();
+      if (firstOrderByField != null) {
+        validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
+      }
+    }
+
+    // Validation related to conflicting filter operations.
+    Operator filterOp = fieldFilter.getOperator();
+    Operator conflictingOp = findFilterOperatorInList(conflictingOps(filterOp), filterList);
+    if (conflictingOp != null) {
+      // We special case when it's a duplicate op to give a slightly clearer error message.
+      if (conflictingOp == filterOp) {
+        throw new IllegalArgumentException(
+            "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
+      } else {
+        throw new IllegalArgumentException(
+            "Invalid Query. You cannot use '"
+                + filterOp.toString()
+                + "' filters with '"
+                + conflictingOp.toString()
+                + "' filters.");
+      }
     }
   }
 }
