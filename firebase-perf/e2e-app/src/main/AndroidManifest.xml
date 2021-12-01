@@ -13,7 +13,6 @@
         tools:ignore="HardcodedDebugMode,UnusedAttribute">
         <activity
             android:name=".FragmentActivity"
-            android:exported="false"
             android:label="@string/title_activity_fragment" />
         <activity
             android:name=".FirebasePerfActivity"
