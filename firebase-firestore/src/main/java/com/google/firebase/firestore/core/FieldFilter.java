@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
@@ -122,12 +123,9 @@ public class FieldFilter extends Filter {
       } else if (operator == Operator.NOT_IN) {
         return new KeyFieldNotInFilter(path, value);
       } else {
-        if (operator == Operator.ARRAY_CONTAINS || operator == Operator.ARRAY_CONTAINS_ANY) {
-          throw new IllegalArgumentException(
-              "Invalid query. You can't perform '"
-                  + operator.toString()
-                  + "' queries on FieldPath.documentId().");
-        }
+        hardAssert(
+            operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY,
+            operator.toString() + "queries don't make sense on document keys");
         return new KeyFieldFilter(path, operator, value);
       }
     } else if (operator == Operator.ARRAY_CONTAINS) {

@@ -425,20 +425,6 @@ public class Query {
     return new Query(query.filter(parseFieldFilterValue(filter)), firestore);
   }
 
-  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
-  private void validateDisjunctiveFilterElements(Object valueObject, Operator op) {
-    if (!(valueObject instanceof List) || ((List) valueObject).size() == 0) {
-      throw new IllegalArgumentException(
-          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
-    }
-    if (((List) valueObject).size() > 10) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 10 elements in the value array.");
-    }
-  }
-
   /**
    * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
    * value is anything other than a DocumentReference or String, or if the string is malformed.
@@ -499,7 +485,12 @@ public class Query {
     Operator operator = filter.getOperator();
     Object valueObject = filter.getValueObject();
     if (field.isKeyField()) {
-      if (operator == Operator.IN || operator == Operator.NOT_IN) {
+      if (operator == Operator.ARRAY_CONTAINS || operator == Operator.ARRAY_CONTAINS_ANY) {
+        throw new IllegalArgumentException(
+            "Invalid query. You can't perform '"
+                + operator.toString()
+                + "' queries on FieldPath.documentId().");
+      } else if (operator == Operator.IN || operator == Operator.NOT_IN) {
         validateDisjunctiveFilterElements(valueObject, operator);
         ArrayValue.Builder referenceList = ArrayValue.newBuilder();
         for (Object arrayValue : (List) valueObject) {
@@ -539,6 +530,20 @@ public class Query {
       }
     }
     return new CompositeFilter(parsedFilters, filter.getOperator());
+  }
+
+  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
+  private void validateDisjunctiveFilterElements(Object valueObject, Operator op) {
+    if (!(valueObject instanceof List) || ((List) valueObject).size() == 0) {
+      throw new IllegalArgumentException(
+          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
+    }
+    if (((List) valueObject).size() > 10) {
+      throw new IllegalArgumentException(
+          "Invalid Query. '"
+              + op.toString()
+              + "' filters support a maximum of 10 elements in the value array.");
+    }
   }
 
   /**
