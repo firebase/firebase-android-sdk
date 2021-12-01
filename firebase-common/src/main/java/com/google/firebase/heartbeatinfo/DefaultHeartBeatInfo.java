@@ -17,14 +17,10 @@ package com.google.firebase.heartbeatinfo;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.inject.Provider;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -78,56 +74,6 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
       return HeartBeat.SDK;
     }
     return HeartBeat.NONE;
-  }
-
-  public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
-    return Tasks.call(
-        backgroundExecutor,
-        () -> {
-          ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
-          boolean shouldSendGlobalHeartBeat = false;
-          HeartBeatInfoStorage storage = storageProvider.get();
-          List<SdkHeartBeatResult> sdkHeartBeatResults = storage.getStoredHeartBeats(true);
-          long lastGlobalHeartBeat = storage.getLastGlobalHeartBeat();
-          HeartBeat heartBeat;
-          for (SdkHeartBeatResult sdkHeartBeatResult : sdkHeartBeatResults) {
-            shouldSendGlobalHeartBeat =
-                HeartBeatInfoStorage.isSameDateUtc(
-                    lastGlobalHeartBeat, sdkHeartBeatResult.getMillis());
-            if (shouldSendGlobalHeartBeat) {
-              heartBeat = HeartBeat.COMBINED;
-            } else {
-              heartBeat = HeartBeat.SDK;
-            }
-            if (shouldSendGlobalHeartBeat) {
-              lastGlobalHeartBeat = sdkHeartBeatResult.getMillis();
-            }
-            heartBeatResults.add(
-                HeartBeatResult.create(
-                    sdkHeartBeatResult.getSdkName(), sdkHeartBeatResult.getMillis(), heartBeat));
-          }
-          if (lastGlobalHeartBeat > 0) {
-            storage.updateGlobalHeartBeat(lastGlobalHeartBeat);
-          }
-          return heartBeatResults;
-        });
-  }
-
-  public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
-    if (consumers.size() <= 0) {
-      return Tasks.forResult(null);
-    }
-    return Tasks.call(
-        backgroundExecutor,
-        () -> {
-          long presentTime = System.currentTimeMillis();
-          boolean shouldSendSdkHB =
-              storageProvider.get().shouldSendSdkHeartBeat(heartBeatTag, presentTime);
-          if (shouldSendSdkHB) {
-            storageProvider.get().storeHeartBeatInformation(heartBeatTag, presentTime);
-          }
-          return null;
-        });
   }
 
   public static @NonNull Component<HeartBeatInfo> component() {
