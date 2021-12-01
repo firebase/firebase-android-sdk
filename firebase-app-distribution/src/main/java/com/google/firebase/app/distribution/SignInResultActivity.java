@@ -22,10 +22,8 @@ import androidx.appcompat.app.AppCompatActivity;
  * Activity opened through Deep Link when returning from web signIn flow. SignIn task is successful
  * when SignInResultActivity is created.
  */
-class SignInResultActivity extends AppCompatActivity {
+public class SignInResultActivity extends AppCompatActivity {
   private static final String TAG = "SignInResultActivity:";
-
-  public SignInResultActivity() {}
 
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
