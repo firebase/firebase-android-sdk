@@ -33,7 +33,7 @@ class InstallActivity extends AppCompatActivity {
   private boolean unknownSourceEnablementInProgress = false;
   private boolean installInProgress = false;
 
-  public InstallActivity(){}
+  public InstallActivity() {}
 
   @Override
   public void onResume() {
