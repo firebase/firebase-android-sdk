@@ -33,7 +33,7 @@ import java.util.List;
  * @hide
  */
 @Keep
-public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
+class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   private static String TAG = "Registrar:";
 

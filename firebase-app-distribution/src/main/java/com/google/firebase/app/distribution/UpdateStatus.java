@@ -15,7 +15,7 @@
 package com.google.firebase.app.distribution;
 
 /** Enum for possible states during Update, used in UpdateProgress. */
-public enum UpdateStatus {
+enum UpdateStatus {
   /** Update queued but not started */
   PENDING,
 

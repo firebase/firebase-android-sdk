@@ -27,7 +27,7 @@ import com.google.auto.value.AutoValue;
  *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
  */
 @AutoValue
-public abstract class AppDistributionReleaseInternal {
+abstract class AppDistributionReleaseInternal {
 
   @NonNull
   public static Builder builder() {

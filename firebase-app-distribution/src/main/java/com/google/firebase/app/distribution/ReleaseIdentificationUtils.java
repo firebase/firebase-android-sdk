@@ -29,7 +29,7 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public final class ReleaseIdentificationUtils {
+final class ReleaseIdentificationUtils {
   private static final String TAG = "ReleaseIdentification";
   private static final int BYTES_IN_LONG = 8;
 

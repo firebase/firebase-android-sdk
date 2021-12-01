@@ -36,7 +36,9 @@ import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import javax.net.ssl.HttpsURLConnection;
 
-/** Client class that handles updateApp functionality for APKs in {@link UpdateAppClient}. */
+/**
+ * Client class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}.
+ */
 class UpdateApkClient {
   private static final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "UpdateApkClient:";

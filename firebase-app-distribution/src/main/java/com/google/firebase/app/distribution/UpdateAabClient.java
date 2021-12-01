@@ -29,7 +29,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
-/** Client class that handles updateApp functionality for AABs in {@link UpdateAppClient}. */
+/**
+ * Client class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}.
+ */
 class UpdateAabClient {
   private static final String TAG = "UpdateAabClient:";
 

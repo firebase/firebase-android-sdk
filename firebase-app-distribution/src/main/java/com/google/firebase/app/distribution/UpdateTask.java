@@ -19,7 +19,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import java.util.concurrent.Executor;
 
-public abstract class UpdateTask extends Task<Void> {
+abstract class UpdateTask extends Task<Void> {
   /**
    * Adds a listener that is called periodically while the UpdateTask executes.
    *

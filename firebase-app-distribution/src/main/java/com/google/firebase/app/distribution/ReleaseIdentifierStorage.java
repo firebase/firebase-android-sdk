@@ -17,7 +17,7 @@ package com.google.firebase.app.distribution;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-public class ReleaseIdentifierStorage {
+class ReleaseIdentifierStorage {
 
   private static final String RELEASE_IDENTIFIER_PREFERENCES_NAME =
       "FirebaseAppDistributionReleaseIdentifierStorage";
