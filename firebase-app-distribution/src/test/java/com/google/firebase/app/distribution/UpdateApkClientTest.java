@@ -31,7 +31,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -208,5 +207,13 @@ public class UpdateApkClientTest {
     updateApkClient.updateApk(TEST_RELEASE, false);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, false);
     assertEquals(0, shadowNotificationManager.size());
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
+    UpdateTask updateTask1 = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask2 = updateApkClient.updateApk(TEST_RELEASE, false);
+
+    assertEquals(updateTask1, updateTask2);
   }
 }

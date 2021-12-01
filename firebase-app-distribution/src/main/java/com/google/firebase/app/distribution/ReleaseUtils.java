@@ -14,8 +14,6 @@
 
 package com.google.firebase.app.distribution;
 
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-
 class ReleaseUtils {
   static AppDistributionRelease convertToAppDistributionRelease(
       AppDistributionReleaseInternal internalRelease) {

@@ -23,8 +23,8 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
@@ -140,42 +140,53 @@ public class IndexBackfiller {
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
-    // Use the earliest readTime of all field indexes as the base readtime.
-    SnapshotVersion earliestReadTime =
-        getEarliestReadTime(indexManager.getFieldIndexes(collectionGroup));
+    // Use the earliest offset of all field indexes to query the local cache.
+    IndexOffset existingOffset = getExistingOffset(indexManager.getFieldIndexes(collectionGroup));
 
     // TODO(indexing): Use limit queries to only fetch the required number of entries.
     // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocumentsMatchingQuery(query, earliestReadTime);
+        localDocumentsView.getDocumentsMatchingQuery(query, existingOffset);
 
     List<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
     indexManager.updateIndexEntries(oldestDocuments);
 
-    SnapshotVersion latestReadTime = getPostUpdateReadTime(oldestDocuments, earliestReadTime);
-    indexManager.updateCollectionGroup(collectionGroup, latestReadTime);
+    IndexOffset newOffset = getNewOffset(oldestDocuments, existingOffset);
+    indexManager.updateCollectionGroup(collectionGroup, newOffset);
     return oldestDocuments.size();
   }
 
-  /**
-   * Returns the new read time for the index.
-   *
-   * @param documents a list of documents sorted by read time (ascending)
-   * @param currentReadTime the current read time of the index
-   */
-  private SnapshotVersion getPostUpdateReadTime(
-      List<Document> documents, SnapshotVersion currentReadTime) {
-    SnapshotVersion latestReadTime =
-        documents.isEmpty()
-            ? remoteDocumentCache.getLatestReadTime()
-            : documents.get(documents.size() - 1).getReadTime();
-    // Make sure the index does not go back in time
-    latestReadTime =
-        latestReadTime.compareTo(currentReadTime) > 0 ? latestReadTime : currentReadTime;
-    return latestReadTime;
+  /** Returns the lowest offset for the provided index group. */
+  private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
+    IndexOffset lowestOffset = null;
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      if (lowestOffset == null
+          || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
+        lowestOffset = fieldIndex.getIndexState().getOffset();
+      }
+    }
+    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
   }
 
-  /** Returns up to {@code count} documents sorted by read time. */
+  /**
+   * Returns the offset for the index based on the newly indexed documents.
+   *
+   * @param documents a list of documents sorted by read time and key (ascending)
+   * @param currentOffset the current offset of the index group
+   */
+  private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
+    IndexOffset latestOffset =
+        documents.isEmpty()
+            ? IndexOffset.create(remoteDocumentCache.getLatestReadTime())
+            : IndexOffset.create(
+                documents.get(documents.size() - 1).getReadTime(),
+                documents.get(documents.size() - 1).getKey());
+    // Make sure the index does not go back in time
+    latestOffset = latestOffset.compareTo(currentOffset) > 0 ? latestOffset : currentOffset;
+    return latestOffset;
+  }
+
+  /** Returns up to {@code count} documents sorted by read time and key. */
   private List<Document> getOldestDocuments(
       ImmutableSortedMap<DocumentKey, Document> documents, int count) {
     List<Document> oldestDocuments = new ArrayList<>();
@@ -184,25 +195,10 @@ public class IndexBackfiller {
     }
     Collections.sort(
         oldestDocuments,
-        (l, r) -> {
-          int cmp = l.getReadTime().compareTo(r.getReadTime());
-          if (cmp != 0) return cmp;
-          return l.getKey().compareTo(r.getKey());
-        });
+        (l, r) ->
+            IndexOffset.create(l.getReadTime(), l.getKey())
+                .compareTo(IndexOffset.create(r.getReadTime(), r.getKey())));
     return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
-  }
-
-  private SnapshotVersion getEarliestReadTime(Collection<FieldIndex> fieldIndexes) {
-    SnapshotVersion lowestVersion = null;
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      lowestVersion =
-          lowestVersion == null
-              ? fieldIndex.getIndexState().getReadTime()
-              : fieldIndex.getIndexState().getReadTime().compareTo(lowestVersion) < 0
-                  ? fieldIndex.getIndexState().getReadTime()
-                  : lowestVersion;
-    }
-    return lowestVersion;
   }
 
   @VisibleForTesting

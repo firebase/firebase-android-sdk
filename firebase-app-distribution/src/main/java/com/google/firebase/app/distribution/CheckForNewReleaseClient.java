@@ -14,7 +14,7 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.firebase.app.distribution.internal.ReleaseIdentificationUtils.calculateApkHash;
+import static com.google.firebase.app.distribution.ReleaseIdentificationUtils.calculateApkHash;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -25,8 +25,6 @@ import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;

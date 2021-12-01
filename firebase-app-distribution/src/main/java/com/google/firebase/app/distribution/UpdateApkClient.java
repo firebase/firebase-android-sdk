@@ -15,6 +15,7 @@
 package com.google.firebase.app.distribution;
 
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.app.distribution.ReleaseIdentificationUtils.calculateApkHash;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
@@ -25,7 +26,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;

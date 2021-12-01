@@ -25,8 +25,6 @@ import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.FirebaseAppDistributionLifecycleNotifier;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -144,5 +142,15 @@ public class UpdateAabClientTest {
     FirebaseAppDistributionException exception =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
     assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+
+    UpdateTask updateTask1 = updateAabClient.updateAab(newRelease);
+    UpdateTask updateTask2 = updateAabClient.updateAab(newRelease);
+
+    assertEquals(updateTask1, updateTask2);
   }
 }

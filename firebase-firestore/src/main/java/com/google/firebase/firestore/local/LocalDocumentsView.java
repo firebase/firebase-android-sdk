@@ -23,9 +23,9 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -246,18 +246,17 @@ class LocalDocumentsView {
    * Performs a query against the local view of all documents.
    *
    * @param query The query to match documents against.
-   * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
-   *     read since this snapshot version (exclusive).
+   * @param offset Read time and key to start scanning by (exclusive).
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime) {
+      Query query, IndexOffset offset) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
       return getDocumentsMatchingDocumentQuery(path);
     } else if (query.isCollectionGroupQuery()) {
-      return getDocumentsMatchingCollectionGroupQuery(query, sinceReadTime);
+      return getDocumentsMatchingCollectionGroupQuery(query, offset);
     } else {
-      return getDocumentsMatchingCollectionQuery(query, sinceReadTime);
+      return getDocumentsMatchingCollectionQuery(query, offset);
     }
   }
 
@@ -274,7 +273,7 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
-      Query query, SnapshotVersion sinceReadTime) {
+      Query query, IndexOffset offset) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
@@ -287,7 +286,7 @@ class LocalDocumentsView {
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
       ImmutableSortedMap<DocumentKey, Document> collectionResults =
-          getDocumentsMatchingCollectionQuery(collectionQuery, sinceReadTime);
+          getDocumentsMatchingCollectionQuery(collectionQuery, offset);
       for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
       }
@@ -296,11 +295,11 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query, SnapshotVersion sinceReadTime) {
+      Query query, IndexOffset offset) {
     if (Persistence.OVERLAY_SUPPORT_ENABLED) {
       // TODO(Overlay): Remove the assert and just return `fromOverlay`.
       ImmutableSortedMap<DocumentKey, Document> fromOverlay =
-          getDocumentsMatchingCollectionQueryFromOverlayCache(query, sinceReadTime);
+          getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
       // TODO(Overlay): Delete below before merging. The code passes, but there are tests
       // looking at how many documents read from remote document, and this would double
       // the count.
@@ -313,16 +312,15 @@ class LocalDocumentsView {
        */
       return fromOverlay;
     } else {
-      return getDocumentsMatchingCollectionQueryFromMutationQueue(query, sinceReadTime);
+      return getDocumentsMatchingCollectionQueryFromMutationQueue(query, offset);
     }
   }
 
   /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromOverlayCache(
-          Query query, SnapshotVersion sinceReadTime) {
+      getDocumentsMatchingCollectionQueryFromOverlayCache(Query query, IndexOffset offset) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
 
     // As documents might match the query because of their overlay we need to include all documents
@@ -356,10 +354,9 @@ class LocalDocumentsView {
 
   /** Queries the remote documents and mutation queue, by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromMutationQueue(
-          Query query, SnapshotVersion sinceReadTime) {
+      getDocumentsMatchingCollectionQueryFromMutationQueue(Query query, IndexOffset offset) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, sinceReadTime);
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
 
     // TODO(indexing): We should plumb sinceReadTime through to the mutation queue
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
