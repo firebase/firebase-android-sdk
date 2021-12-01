@@ -466,7 +466,7 @@ public class Query {
     }
     if (params.hasStart()) {
       throw new IllegalArgumentException(
-          "Can't call startAt(), startAfte(), or equalTo() multiple times");
+          "Can't call startAt(), startAfter(), or equalTo() multiple times");
     }
     ChildKey childKey = null;
     if (key != null) {
