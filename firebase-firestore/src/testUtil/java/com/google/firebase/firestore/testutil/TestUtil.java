@@ -16,7 +16,6 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -223,10 +222,10 @@ public class TestUtil {
     return MutableDocument.newUnknownDocument(key(key), version(version));
   }
 
-  public static ImmutableSortedMap<DocumentKey, MutableDocument> docMap(
-      MutableDocument[] documents) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> map = emptyMutableDocumentMap();
-    for (MutableDocument maybeDocument : documents) {
+  public static <T extends Document> ImmutableSortedMap<DocumentKey, T> docMap(T... documents) {
+    ImmutableSortedMap<DocumentKey, T> map =
+        (ImmutableSortedMap<DocumentKey, T>) emptyDocumentMap();
+    for (T maybeDocument : documents) {
       map = map.insert(maybeDocument.getKey(), maybeDocument);
     }
     return map;

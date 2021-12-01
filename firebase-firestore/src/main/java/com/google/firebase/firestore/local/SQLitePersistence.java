@@ -54,6 +54,10 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+  /**
+   * The maximum number of bind args for a single statement. Set to 900 instead of 999 for safety.
+   */
+  public static final int MAX_ARGS = 900;
 
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore

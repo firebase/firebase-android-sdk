@@ -23,6 +23,8 @@ import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.database.collection.LLRBNode;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -222,19 +224,22 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(Collection<Document> documents) {
+  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    for (Document document : documents) {
-      Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
-      for (FieldIndex fieldIndex : fieldIndexes) {
-        SortedSet<IndexEntry> existingEntries =
-            getExistingIndexEntries(document.getKey(), fieldIndex);
-        SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
-        if (!existingEntries.equals(newEntries)) {
-          updateEntries(document, existingEntries, newEntries);
-        }
-      }
-    }
+    documents.inOrderTraversal(
+        new LLRBNode.NodeVisitor<DocumentKey, Document>() {
+          @Override
+          public void visitEntry(DocumentKey key, Document document) {
+            Collection<FieldIndex> fieldIndexes = getFieldIndexes(key.getCollectionGroup());
+            for (FieldIndex fieldIndex : fieldIndexes) {
+              SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(key, fieldIndex);
+              SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
+              if (!existingEntries.equals(newEntries)) {
+                updateEntries(document, existingEntries, newEntries);
+              }
+            }
+          }
+        });
   }
 
   /**

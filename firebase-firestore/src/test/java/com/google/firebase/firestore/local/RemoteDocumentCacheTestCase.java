@@ -247,6 +247,57 @@ abstract class RemoteDocumentCacheTestCase {
   }
 
   @Test
+  public void testNextDocumentsFromCollectionGroup() {
+    addTestDocumentAtPath("a/1");
+    addTestDocumentAtPath("a/2");
+    addTestDocumentAtPath("b/3");
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll("a", IndexOffset.NONE, Integer.MAX_VALUE);
+    assertThat(results.keySet()).containsExactly(key("a/1"), key("a/2"));
+  }
+
+  @Test
+  public void testNextDocumentsFromCollectionGroupWithLimit() {
+    addTestDocumentAtPath("a/1", /* updateTime= */ 1, /* readTime= */ 11);
+    addTestDocumentAtPath("b/2/a/2", /* updateTime= */ 1, /* readTime= */ 12);
+    addTestDocumentAtPath("a/3", /* updateTime= */ 1, /* readTime= */ 13);
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll("a", IndexOffset.NONE, 2);
+    assertThat(results.keySet()).containsExactly(key("a/1"), key("b/2/a/2"));
+  }
+
+  @Test
+  public void testNextDocumentsFromCollectionGroupWithOffset() {
+    addTestDocumentAtPath("a/1", /* updateTime= */ 1, /* readTime= */ 11);
+    addTestDocumentAtPath("b/2/a/2", /* updateTime= */ 2, /*  readTime= = */ 12);
+    addTestDocumentAtPath("a/3", /* updateTime= */ 3, /*  readTime= = */ 13);
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll("a", IndexOffset.create(version(11)), 2);
+    assertThat(results.keySet()).containsExactly(key("b/2/a/2"), key("a/3"));
+  }
+
+  @Test
+  public void testNextDocumentsForNonExistingCollectionGroup() {
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll("a", IndexOffset.create(version(11)), 2);
+    assertThat(results).isEmpty();
+  }
+
+  @Test
+  public void testNextDocumentsForLargeCollectionGroup() {
+    int size = 999 / SQLiteRemoteDocumentCache.BINDS_PER_STATEMENT + 1;
+    for (int i = 0; i < size; ++i) {
+      addTestDocumentAtPath("a/" + i + "/b/doc");
+    }
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll("b", IndexOffset.NONE, size);
+    assertThat(results).hasSize(size);
+  }
+
+  @Test
   public void testLatestReadTime() {
     SnapshotVersion latestReadTime = remoteDocumentCache.getLatestReadTime();
     assertEquals(SnapshotVersion.NONE, latestReadTime);

@@ -27,7 +27,10 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
@@ -82,6 +85,41 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
+  public Map<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int count) {
+    List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
+    Set<MutableDocument> allDocuments =
+        new TreeSet<>((l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r)));
+    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
+
+    for (ResourcePath collectionParent : collectionParents) {
+      ResourcePath documentParent = collectionParent.append(collectionGroup);
+      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
+          docs.iteratorFrom(DocumentKey.fromPath(documentParent.append("")));
+      while (iterator.hasNext()) {
+        Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
+        DocumentKey key = entry.getKey();
+
+        if (!documentParent.isPrefixOf(key.getPath())) {
+          break;
+        }
+
+        if (IndexOffset.fromDocument(entry.getValue()).compareTo(offset) > 0) {
+          allDocuments.add(entry.getValue());
+        }
+      }
+    }
+
+    Iterator<MutableDocument> it = allDocuments.iterator();
+    while (it.hasNext() && matchingDocuments.size() < count) {
+      MutableDocument document = it.next();
+      matchingDocuments.put(document.getKey(), document);
+    }
+
+    return matchingDocuments;
+  }
+
+  @Override
   public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
     hardAssert(
@@ -108,7 +146,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      if (IndexOffset.create(doc.getReadTime(), doc.getKey()).compareTo(offset) <= 0) {
+      if (IndexOffset.fromDocument(doc).compareTo(offset) <= 0) {
         continue;
       }
 

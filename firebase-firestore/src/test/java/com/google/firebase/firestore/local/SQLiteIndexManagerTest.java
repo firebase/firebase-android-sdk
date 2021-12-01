@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
@@ -707,7 +708,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   private void addDocs(Document... docs) {
-    indexManager.updateIndexEntries(Arrays.asList(docs));
+    indexManager.updateIndexEntries(docMap(docs));
   }
 
   private void addDoc(String key, Map<String, Object> data) {

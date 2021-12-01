@@ -145,6 +145,11 @@ public abstract class FieldIndex {
       return new AutoValue_FieldIndex_IndexOffset(successor, DocumentKey.empty());
     }
 
+    /** Creates a new offset based on the provided document. */
+    public static IndexOffset fromDocument(Document document) {
+      return new AutoValue_FieldIndex_IndexOffset(document.getReadTime(), document.getKey());
+    }
+
     /**
      * Returns the latest read time version that has been indexed by Firestore for this field index.
      */

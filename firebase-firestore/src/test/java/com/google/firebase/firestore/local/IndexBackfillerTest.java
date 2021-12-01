@@ -27,6 +27,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -123,6 +124,7 @@ public class IndexBackfillerTest {
 
   @Test
   public void testBackfillFetchesDocumentsAfterEarliestReadTime() {
+    addDoc("latest/doc", "foo", version(10));
     addFieldIndex("coll1", "foo", version(10));
 
     // Documents before earliest read time should not be fetched.
@@ -130,9 +132,9 @@ public class IndexBackfillerTest {
     int documentsProcessed = backfiller.backfill();
     assertEquals(0, documentsProcessed);
 
-    // Read time of index should not change.
+    // Read time should be the highest read time from the cache.
     Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(10), it.next().getIndexState().getOffset().getReadTime());
+    assertEquals(IndexOffset.create(version(10)), it.next().getIndexState().getOffset());
 
     // Documents that are after the earliest read time but before field index read time are fetched.
     addDoc("coll1/docB", "boo", version(19));
