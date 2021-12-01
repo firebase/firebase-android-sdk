@@ -80,7 +80,6 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
     return HeartBeat.NONE;
   }
 
-  @Override
   public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
     return Tasks.call(
         backgroundExecutor,
@@ -114,7 +113,6 @@ public class DefaultHeartBeatInfo implements HeartBeatInfo {
         });
   }
 
-  @Override
   public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
     if (consumers.size() <= 0) {
       return Tasks.forResult(null);
