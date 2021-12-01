@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -22,7 +23,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.values;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -54,6 +54,7 @@ import org.junit.Test;
  * </ol>
  */
 abstract class RemoteDocumentCacheTestCase {
+  private final Map<String, Object> DOC_DATA = map("data", 2);
 
   private Persistence persistence;
   private RemoteDocumentCache remoteDocumentCache;
@@ -127,7 +128,7 @@ abstract class RemoteDocumentCacheTestCase {
     List<String> paths = new ArrayList<>();
     Map<DocumentKey, MutableDocument> expected = new HashMap<>();
     for (int i = 0; i < lotsOfDocuments; i++) {
-      String path = "foo/" + String.valueOf(i);
+      String path = "foo/" + i;
       paths.add(path);
       expected.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
     }
@@ -173,7 +174,6 @@ abstract class RemoteDocumentCacheTestCase {
   public void testDocumentsMatchingQuery() {
     // TODO: This just verifies that we do a prefix scan against the
     // query path. We'll need more tests once we add index support.
-    Map<String, Object> docData = map("data", 2);
     addTestDocumentAtPath("a/1");
     addTestDocumentAtPath("b/1");
     addTestDocumentAtPath("b/2");
@@ -182,13 +182,23 @@ abstract class RemoteDocumentCacheTestCase {
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.NONE);
-    List<MutableDocument> expected = asList(doc("b/1", 42, docData), doc("b/2", 42, docData));
-    // assertEquals(expected, values(results));
+    assertThat(values(results)).containsExactly(doc("b/1", 42, DOC_DATA), doc("b/2", 42, DOC_DATA));
+  }
+
+  @Test
+  public void testDocumentsMatchingQueryExcludesSubcollections() {
+    addTestDocumentAtPath("a/1");
+    addTestDocumentAtPath("a/1/b/1");
+    addTestDocumentAtPath("a/2");
+
+    Query query = Query.atPath(path("a"));
+    ImmutableSortedMap<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.NONE);
+    assertThat(values(results)).containsExactly(doc("a/1", 42, DOC_DATA), doc("a/2", 42, DOC_DATA));
   }
 
   @Test
   public void testDocumentsMatchingQuerySinceReadTimeAndSeconds() {
-    Map<String, Object> docData = map("data", 2);
     addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 11);
     addTestDocumentAtPath("b/current", /* updateTime= */ 2, /*  readTime= = */ 12);
     addTestDocumentAtPath("b/new", /* updateTime= */ 3, /*  readTime= = */ 13);
@@ -196,27 +206,23 @@ abstract class RemoteDocumentCacheTestCase {
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(12)));
-    List<MutableDocument> expected = asList(doc("b/new", 3, docData));
-    assertEquals(expected, values(results));
+    assertThat(values(results)).containsExactly(doc("b/new", 3, DOC_DATA));
   }
 
   @Test
   public void testDocumentsMatchingQuerySinceReadTimeAndNanoseconds() {
-    Map<String, Object> docData = map("data", 2);
-    add(doc("b/old", 1, docData), version(1, 1));
-    add(doc("b/current", 1, docData), version(1, 2));
-    add(doc("b/new", 1, docData), version(1, 3));
+    add(doc("b/old", 1, DOC_DATA), version(1, 1));
+    add(doc("b/current", 1, DOC_DATA), version(1, 2));
+    add(doc("b/new", 1, DOC_DATA), version(1, 3));
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(1, 2)));
-    List<MutableDocument> expected = asList(doc("b/new", 1, docData));
-    assertEquals(expected, values(results));
+    assertThat(values(results)).containsExactly(doc("b/new", 1, DOC_DATA));
   }
 
   @Test
   public void testDocumentsMatchingQuerySinceReadTimeAndDocumentKey() {
-    Map<String, Object> docData = map("data", 2);
     addTestDocumentAtPath("b/a", /* updateTime= */ 1, /* readTime= */ 11);
     addTestDocumentAtPath("b/b", /* updateTime= */ 2, /*  readTime= = */ 11);
     addTestDocumentAtPath("b/c", /* updateTime= */ 3, /*  readTime= = */ 11);
@@ -226,21 +232,18 @@ abstract class RemoteDocumentCacheTestCase {
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(
             query, IndexOffset.create(version(11), key("b/b")));
-    List<MutableDocument> expected = asList(doc("b/c", 3, docData), doc("b/d", 4, docData));
-    assertEquals(expected, values(results));
+    assertThat(values(results)).containsExactly(doc("b/c", 3, DOC_DATA), doc("b/d", 4, DOC_DATA));
   }
 
   @Test
   public void testDocumentsMatchingUsesReadTimeNotUpdateTime() {
-    Map<String, Object> docData = map("data", 2);
     addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 2);
     addTestDocumentAtPath("b/new", /* updateTime= */ 2, /* readTime= */ 1);
 
     Query query = Query.atPath(path("b"));
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, IndexOffset.create(version(1)));
-    List<MutableDocument> expected = asList(doc("b/old", 1, docData));
-    assertEquals(expected, values(results));
+    assertThat(values(results)).containsExactly(doc("b/old", 1, DOC_DATA));
   }
 
   @Test

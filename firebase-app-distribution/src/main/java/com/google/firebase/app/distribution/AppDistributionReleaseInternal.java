@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.internal;
+package com.google.firebase.app.distribution;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.app.distribution.BinaryType;
 
 /**
  * This class represents the AppDistributionRelease object returned by the App Distribution backend

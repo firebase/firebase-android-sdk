@@ -99,7 +99,7 @@ public class GitClient {
             + " -o IdentitiesOnly=yes"
             + " -o UserKnownHostsFile=/dev/null"
             + " -o StrictHostKeyChecking=no";
-    String command = String.format("git config core.sshCommand %s", ssh);
+    String command = String.format("git config core.sshCommand \"%s\"", ssh);
     executor.execute(command, handler);
   }
 }

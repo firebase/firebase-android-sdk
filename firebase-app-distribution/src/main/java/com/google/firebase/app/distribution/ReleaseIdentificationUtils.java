@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.internal;
+package com.google.firebase.app.distribution;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.app.distribution.LogWrapper;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;

@@ -16,7 +16,6 @@ package com.google.firebase.app.distribution;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
 
 public class ReleaseIdentifierStorage {
 
