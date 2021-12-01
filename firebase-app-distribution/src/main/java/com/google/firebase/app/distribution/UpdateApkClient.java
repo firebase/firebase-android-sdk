@@ -15,7 +15,6 @@
 package com.google.firebase.app.distribution;
 
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-import static com.google.firebase.app.distribution.ReleaseIdentificationUtils.calculateApkHash;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
