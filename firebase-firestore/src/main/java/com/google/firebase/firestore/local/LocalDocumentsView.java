@@ -337,7 +337,6 @@ class LocalDocumentsView {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
       Map<Document, Integer> documentToBatchIds =
           getDocumentsMatchingCollectionQueryWithBatchId(collectionQuery, offset);
-      ;
       results.putAll(documentToBatchIds);
     }
     return results;

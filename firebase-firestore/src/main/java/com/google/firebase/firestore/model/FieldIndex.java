@@ -176,7 +176,7 @@ public abstract class FieldIndex {
       if (cmp != 0) return cmp;
       cmp = getDocumentKey().compareTo(other.getDocumentKey());
       if (cmp != 0) return cmp;
-      return getLargestBatchId() < other.getLargestBatchId() ? -1 : 1;
+      return Integer.signum(getLargestBatchId() - other.getLargestBatchId());
     }
   }
 
