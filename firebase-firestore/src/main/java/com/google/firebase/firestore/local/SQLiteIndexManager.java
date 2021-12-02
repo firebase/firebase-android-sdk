@@ -226,20 +226,16 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    documents.inOrderTraversal(
-        new LLRBNode.NodeVisitor<DocumentKey, Document>() {
-          @Override
-          public void visitEntry(DocumentKey key, Document document) {
-            Collection<FieldIndex> fieldIndexes = getFieldIndexes(key.getCollectionGroup());
-            for (FieldIndex fieldIndex : fieldIndexes) {
-              SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(key, fieldIndex);
-              SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
-              if (!existingEntries.equals(newEntries)) {
-                updateEntries(document, existingEntries, newEntries);
-              }
-            }
-          }
-        });
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
+      for (FieldIndex fieldIndex : fieldIndexes) {
+        SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(entry.getKey(), fieldIndex);
+        SortedSet<IndexEntry> newEntries = computeIndexEntries(entry.getValue(), fieldIndex);
+        if (!existingEntries.equals(newEntries)) {
+          updateEntries(entry.getValue(), existingEntries, newEntries);
+        }
+      }
+    }
   }
 
   /**
