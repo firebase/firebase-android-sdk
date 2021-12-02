@@ -426,7 +426,7 @@ public class SQLiteSchemaTest {
         new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
 
     // Run the index-free migration.
-    schema.runSchemaUpgrades(8, 10);
+    schema.runSchemaUpgrades(8, 14);
     db.execSQL(
         "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
