@@ -284,7 +284,7 @@ class SQLiteSchema {
     mutationDeleter.bindString(1, uid);
     mutationDeleter.bindLong(2, batchId);
     int deleted = mutationDeleter.executeUpdateDelete();
-    hardAssert(deleted != 0, "Mutatiohn batch (%s, %d) did not exist", uid, batchId);
+    hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batchId);
 
     // Delete all index entries for this batch
     db.execSQL(
@@ -385,6 +385,7 @@ class SQLiteSchema {
                   + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
                   + "document_key TEXT, " // Key of the last processed document
+                  + "largest_batch_id INTEGER, " // Largest mutation batch id that was processed
                   + "PRIMARY KEY (index_id, uid))");
 
           // The index entry table stores the encoded entries for all fields.

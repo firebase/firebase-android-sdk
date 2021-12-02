@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.util.Pair;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -316,7 +317,32 @@ class LocalDocumentsView {
     }
   }
 
-  /** Queries the remote documents and overlays by doing a full collection scan. */
+  /**
+   * Returns a mapping of documents that match the provided query and offset mapped to the
+   * corresponding batch id.
+   */
+  // TODO(indexing): Support adding local mutations to collection group table.
+  public Map<Document, Integer> getDocumentsBatchIdsMatchingCollectionGroupQuery(
+      Query query, IndexOffset offset) {
+    hardAssert(
+        query.getPath().isEmpty(),
+        "Currently we only support collection group queries at the root.");
+    String collectionId = query.getCollectionGroup();
+    Map<Document, Integer> results = new HashMap<>();
+    List<ResourcePath> parents = indexManager.getCollectionParents(collectionId);
+
+    // Perform a collection query against each parent that contains the collectionId and
+    // aggregate the results.
+    for (ResourcePath parent : parents) {
+      Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
+      Map<Document, Integer> documentToBatchIds =
+          getDocumentsMatchingCollectionQueryWithBatchId(collectionQuery, offset);
+      ;
+      results.putAll(documentToBatchIds);
+    }
+    return results;
+  }
+
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromOverlayCache(Query query, IndexOffset offset) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
@@ -325,16 +351,7 @@ class LocalDocumentsView {
 
     // As documents might match the query because of their overlay we need to include all documents
     // in the result.
-    Set<DocumentKey> missingDocuments = new HashSet<>();
-    for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      if (!remoteDocuments.containsKey(entry.getKey())) {
-        missingDocuments.add(entry.getKey());
-      }
-    }
-    for (Map.Entry<DocumentKey, MutableDocument> entry :
-        remoteDocumentCache.getAll(missingDocuments).entrySet()) {
-      remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
-    }
+    remoteDocuments = updateRemoteDocumentsWithOverlayDocuments(remoteDocuments, overlays.keySet());
 
     // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
@@ -346,6 +363,53 @@ class LocalDocumentsView {
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
+      }
+    }
+
+    return results;
+  }
+
+  /** Updates the provided remote documents to include documents in the overlay. */
+  private ImmutableSortedMap<DocumentKey, MutableDocument>
+      updateRemoteDocumentsWithOverlayDocuments(
+          ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments,
+          Set<DocumentKey> overlayDocumentKeys) {
+    Set<DocumentKey> missingDocuments = new HashSet<>();
+    for (DocumentKey key : overlayDocumentKeys) {
+      if (!remoteDocuments.containsKey(key)) {
+        missingDocuments.add(key);
+      }
+    }
+    for (Map.Entry<DocumentKey, MutableDocument> entry :
+        remoteDocumentCache.getAll(missingDocuments).entrySet()) {
+      remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
+    }
+    return remoteDocuments;
+  }
+
+  /** Queries the remote documents and overlays by doing a full collection scan. */
+  public Map<Document, Integer> getDocumentsMatchingCollectionQueryWithBatchId(
+      Query query, IndexOffset offset) {
+    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
+    Map<DocumentKey, Pair<Integer, Mutation>> overlays =
+        documentOverlayCache.getOverlaysWithBatchId(query.getPath(), offset.getLargestBatchId());
+
+    // As documents might match the query because of their overlay we need to include all documents
+    // in the result.
+    remoteDocuments = updateRemoteDocumentsWithOverlayDocuments(remoteDocuments, overlays.keySet());
+
+    // Apply the overlays and match against the query.
+    Map<Document, Integer> results = new HashMap<>();
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+      int batchId = overlays.get(docEntry.getKey()).first;
+      Mutation overlay = overlays.get(docEntry.getKey()).second;
+      if (overlay != null) {
+        overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
+      }
+      // Finally, insert the documents that still match the query
+      if (query.matches(docEntry.getValue())) {
+        results.put(docEntry.getValue(), batchId);
       }
     }
 

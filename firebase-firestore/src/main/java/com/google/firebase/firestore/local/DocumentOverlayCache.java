@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -54,4 +55,14 @@ public interface DocumentOverlayCache {
    *     change past `sinceBatchId` are returned.
    */
   Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId);
+
+  /**
+   * Returns a mapping of overlays containing the largest batch id for each overlay mutation.
+   *
+   * @param collection The collection path to get the overlays for.
+   * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
+   *     change past `sinceBatchId` are returned.
+   */
+  Map<DocumentKey, Pair<Integer, Mutation>> getOverlaysWithBatchId(
+      ResourcePath collection, int sinceBatchId);
 }

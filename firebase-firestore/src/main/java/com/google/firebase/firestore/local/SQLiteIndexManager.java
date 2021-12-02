@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
@@ -105,7 +106,8 @@ final class SQLiteIndexManager implements IndexManager {
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
     db.query(
-            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key "
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, "
+                + "document_key, largest_batch_id "
                 + "FROM index_state WHERE uid = ?")
         .binding(uid)
         .forEach(
@@ -116,8 +118,10 @@ final class SQLiteIndexManager implements IndexManager {
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
               DocumentKey documentKey =
                   DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
-              indexStates.put(
-                  indexId, FieldIndex.IndexState.create(sequenceNumber, readTime, documentKey));
+              int largestBatchId = row.getInt(5);
+              FieldIndex.IndexOffset offset =
+                  FieldIndex.IndexOffset.create(readTime, documentKey, largestBatchId);
+              indexStates.put(indexId, FieldIndex.IndexState.create(sequenceNumber, offset));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -247,6 +251,7 @@ final class SQLiteIndexManager implements IndexManager {
     diffCollections(
         existingEntries,
         newEntries,
+        IndexEntry.SEMANTIC_COMPARATOR,
         entry -> addIndexEntry(document, entry),
         entry -> deleteIndexEntry(document, entry));
   }
@@ -343,8 +348,8 @@ final class SQLiteIndexManager implements IndexManager {
         document.getKey().toString());
   }
 
-  private SortedSet<IndexEntry> getExistingIndexEntries(
-      DocumentKey documentKey, FieldIndex fieldIndex) {
+  @VisibleForTesting
+  SortedSet<IndexEntry> getExistingIndexEntries(DocumentKey documentKey, FieldIndex fieldIndex) {
     SortedSet<IndexEntry> results = new TreeSet<>();
     db.query(
             "SELECT array_value, directional_value FROM index_entries "

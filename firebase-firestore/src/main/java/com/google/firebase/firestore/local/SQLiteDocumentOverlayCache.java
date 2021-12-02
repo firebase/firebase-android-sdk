@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -104,6 +105,36 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
                 Mutation mutation = serializer.decodeMutation(write);
 
                 result.put(DocumentKey.fromPath(collection.append(documentId)), mutation);
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Overlay failed to parse: %s", e);
+              }
+            });
+
+    return result;
+  }
+
+  @Override
+  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlaysWithBatchId(
+      ResourcePath collection, int sinceBatchId) {
+    String collectionPath = EncodedPath.encode(collection);
+
+    Map<DocumentKey, Pair<Integer, Mutation>> result = new HashMap<>();
+
+    db.query(
+            "SELECT document_id, overlay_mutation, largest_batch_id FROM document_overlays "
+                + "WHERE uid = ? AND collection_path = ? AND largest_batch_id > ?")
+        .binding(uid, collectionPath, sinceBatchId)
+        .forEach(
+            row -> {
+              try {
+                String documentId = row.getString(0);
+                Write write = Write.parseFrom(row.getBlob(1));
+                int largestBatchId = row.getInt(2);
+                Mutation mutation = serializer.decodeMutation(write);
+
+                result.put(
+                    DocumentKey.fromPath(collection.append(documentId)),
+                    new Pair(largestBatchId, mutation));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }

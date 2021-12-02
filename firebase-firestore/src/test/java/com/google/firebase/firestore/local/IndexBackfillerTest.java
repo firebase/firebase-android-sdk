@@ -17,27 +17,38 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.index.IndexEntry;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -276,6 +287,129 @@ public class IndexBackfillerTest {
     assertEquals(1, documentsProcessed);
   }
 
+  @Test
+  public void testBackfillHandlesLocalMutationsAfterRemoteDocs() {
+    backfiller.setMaxDocumentsToProcess(2);
+    addFieldIndex("coll1", "foo");
+
+    addDoc("coll1/docA", "foo", version(10));
+    addDoc("coll1/docB", "foo", version(20));
+    addDoc("coll1/docC", "foo", version(30));
+    addSetMutationsToOverlay(1, "coll1/docD");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
+
+    documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC", "coll1/docD");
+  }
+
+  @Test
+  public void testBackfillMutationsUpToDocumentLimitAndUpdatesBatchIdOnIndex() {
+    backfiller.setMaxDocumentsToProcess(2);
+    addFieldIndex("coll1", "foo");
+    addDoc("coll1/docA", "foo", version(10));
+    addSetMutationsToOverlay(2, "coll1/docB");
+    addSetMutationsToOverlay(3, "coll1/docC");
+    addSetMutationsToOverlay(4, "coll1/docD");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
+    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+    assertEquals(2, fieldIndex.getIndexState().getOffset().getLargestBatchId());
+
+    documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC", "coll1/docD");
+    fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+    assertEquals(4, fieldIndex.getIndexState().getOffset().getLargestBatchId());
+  }
+
+  // TODO(indexing): Support adding local mutations to collection group table so this test passes.
+  @Test
+  @Ignore
+  public void testBackfillMutationsWithNoPriorRemoteDoc() {
+    addFieldIndex("coll1", "foo");
+    addSetMutationsToOverlay(2, "coll1/docA");
+    addSetMutationsToOverlay(4, "coll1/docB");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+  }
+
+  @Test
+  public void testBackfillMutationFinishesMutationBatchEvenIfItExceedsLimit() {
+    backfiller.setMaxDocumentsToProcess(2);
+    addFieldIndex("coll1", "foo");
+    addDoc("coll1/docA", "foo", version(10));
+    addSetMutationsToOverlay(2, "coll1/docB", "coll1/docC", "coll1/docD");
+    addSetMutationsToOverlay(3, "coll1/docE");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(4, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB", "coll1/docC", "coll1/docD");
+  }
+
+  @Test
+  public void testBackfillMutationsFromHighWaterMark() {
+    backfiller.setMaxDocumentsToProcess(2);
+    addFieldIndex("coll1", "foo");
+    addDoc("coll1/docA", "foo", version(10));
+    addSetMutationsToOverlay(3, "coll1/docB");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults("coll1", "coll1/docA", "coll1/docB");
+
+    addSetMutationsToOverlay(1, "coll1/docC");
+    addSetMutationsToOverlay(2, "coll1/docD");
+    documentsProcessed = backfiller.backfill();
+    assertEquals(0, documentsProcessed);
+  }
+
+  @Test
+  public void testBackfillUpdatesExistingDocToNewValue() {
+    backfiller.setMaxDocumentsToProcess(1);
+    addFieldIndex("coll1", "foo");
+    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+
+    Document docA = addDoc("coll1/docA", "foo", version(10));
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+    SortedSet<IndexEntry> before = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+
+    // Update doc to new remote version with new value.
+    removeDoc(docA);
+    addDoc("coll1/docA", "foo", version(40), 5);
+    documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+    SortedSet<IndexEntry> after = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+    assertNotEquals(before.first().getDirectionalValue(), after.first().getDirectionalValue());
+  }
+
+  @Test
+  public void testBackfillUpdatesDocsThatNoLongerMatch() {
+    backfiller.setMaxDocumentsToProcess(1);
+    addFieldIndex("coll1", "foo");
+    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+
+    Document docA = addDoc("coll1/docA", "foo", version(10));
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+    SortedSet<IndexEntry> before = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+
+    // Update doc to new remote version with new value that doesn't match field index.
+    removeDoc(docA);
+    addDoc("coll1/docA", "bar", version(40), 5);
+    documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+    SortedSet<IndexEntry> after = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+    assertTrue(after.isEmpty());
+  }
+
   private void addFieldIndex(String collectionGroup, String fieldName) {
     FieldIndex fieldIndex =
         fieldIndex(collectionGroup, fieldName, FieldIndex.Segment.Kind.ASCENDING);
@@ -313,8 +447,29 @@ public class IndexBackfillerTest {
   }
 
   /** Creates a document and adds it to the RemoteDocumentCache. */
-  private void addDoc(String path, String field, SnapshotVersion readTime) {
-    MutableDocument doc = doc(path, 10, map(field, 2));
+  private Document addDoc(String path, String field, SnapshotVersion readTime) {
+    return addDoc(path, field, readTime, 2);
+  }
+
+  /** Creates a document and adds it to the RemoteDocumentCache. */
+  private Document addDoc(String path, String field, SnapshotVersion readTime, int value) {
+    MutableDocument doc = doc(path, 10, map(field, value));
     persistence.getRemoteDocumentCache().add(doc, readTime);
+    return doc;
+  }
+
+  /** Removes the specified document from the RemoteDocumentCache. */
+  private void removeDoc(Document doc) {
+    persistence.getRemoteDocumentCache().remove(doc.getKey());
+  }
+
+  /** Adds a set mutation to a batch with the specified id for every specified document path. */
+  private void addSetMutationsToOverlay(int batchId, String... paths) {
+    Map<DocumentKey, Mutation> map = new HashMap<>();
+    for (String path : paths) {
+      Mutation mutation = setMutation(path, map("foo", "bar"));
+      map.put(key(path), mutation);
+    }
+    persistence.getDocumentOverlay(User.UNAUTHENTICATED).saveOverlays(batchId, map);
   }
 }

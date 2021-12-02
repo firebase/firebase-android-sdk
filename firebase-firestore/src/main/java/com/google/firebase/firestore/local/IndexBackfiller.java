@@ -137,23 +137,56 @@ public class IndexBackfiller {
 
   /** Writes entries for the fetched field indexes. */
   private int writeEntriesForCollectionGroup(
-      LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
+      LocalDocumentsView localDocumentsView,
+      String collectionGroup,
+      int documentsRemainingUnderCap) {
+    int documentsProcessed = 0;
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
     // Use the earliest offset of all field indexes to query the local cache.
-    IndexOffset existingOffset = getExistingOffset(indexManager.getFieldIndexes(collectionGroup));
+    Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
+    IndexOffset existingOffset = getExistingOffset(fieldIndexes);
 
     // TODO(indexing): Use limit queries to only fetch the required number of entries.
-    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> documents =
         localDocumentsView.getDocumentsMatchingQuery(query, existingOffset);
 
-    List<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
+    List<Document> oldestDocuments = getOldestDocuments(documents, documentsRemainingUnderCap);
     indexManager.updateIndexEntries(oldestDocuments);
+    documentsProcessed += oldestDocuments.size();
 
     IndexOffset newOffset = getNewOffset(oldestDocuments, existingOffset);
+
+    // Start indexing mutations only after catching up for read time. This must be done separately
+    // since the backfill's first pass is in read time order rather than mutation batch id order.
+    int documentsRemaining = documentsRemainingUnderCap - oldestDocuments.size();
+    if (documentsRemaining > 0) {
+      int earliestBatchId = getEarliestBatchId(fieldIndexes);
+      newOffset =
+          IndexOffset.create(newOffset.getReadTime(), newOffset.getDocumentKey(), earliestBatchId);
+      Map<Document, Integer> documentToBatchId =
+          localDocumentsView.getDocumentsBatchIdsMatchingCollectionGroupQuery(query, newOffset);
+
+      // Write index entries for documents touched by local mutations and update the offset to the
+      // new largest batch id.
+      if (!documentToBatchId.isEmpty()) {
+        List<Document> documentsByBatchId =
+            getDocumentsByBatchId(documentToBatchId, documentsRemaining);
+
+        // Largest batch id is the last element in documentsByBatchId since it's sorted in ascending
+        // order by batch id.
+        int newLargestBatchId =
+            documentToBatchId.get(documentsByBatchId.get(documentsByBatchId.size() - 1));
+        newOffset =
+            IndexOffset.create(
+                newOffset.getReadTime(), newOffset.getDocumentKey(), newLargestBatchId);
+        indexManager.updateIndexEntries(documentsByBatchId);
+        documentsProcessed += documentsByBatchId.size();
+      }
+    }
+
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
-    return oldestDocuments.size();
+    return documentsProcessed;
   }
 
   /** Returns the lowest offset for the provided index group. */
@@ -169,7 +202,8 @@ public class IndexBackfiller {
   }
 
   /**
-   * Returns the offset for the index based on the newly indexed documents.
+   * Returns the read time and document key offset for the index based on the newly indexed
+   * documents.
    *
    * @param documents a list of documents sorted by read time and key (ascending)
    * @param currentOffset the current offset of the index group
@@ -199,6 +233,40 @@ public class IndexBackfiller {
             IndexOffset.create(l.getReadTime(), l.getKey())
                 .compareTo(IndexOffset.create(r.getReadTime(), r.getKey())));
     return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
+  }
+
+  /**
+   * Returns up to {@code count} documents sorted by batch id ascending, except in cases where the
+   * mutation batch id contains more documents. This method will always return all documents in a
+   * mutation batch, even if it goes over the limit.
+   *
+   * <p>For example, if count = 2, and we have: (docA, batch1), (docB, batch2), and (docC, batch2),
+   * all three documents will be returned since docC is also part of batch2.
+   */
+  private List<Document> getDocumentsByBatchId(
+      Map<Document, Integer> documentToBatchId, int count) {
+    List<Document> oldestDocuments = new ArrayList<>(documentToBatchId.keySet());
+    Collections.sort(
+        oldestDocuments, (l, r) -> documentToBatchId.get(l).compareTo(documentToBatchId.get(r)));
+    int i = Math.min(count, oldestDocuments.size()) - 1;
+
+    // Include all documents that match the last document's batch id.
+    int lastBatchId = documentToBatchId.get(oldestDocuments.get(i));
+    while (i < oldestDocuments.size()
+        && lastBatchId == documentToBatchId.get(oldestDocuments.get(i))) {
+      ++i;
+    }
+    return oldestDocuments.subList(0, i);
+  }
+
+  /** Returns the earliest batch id from the specified field indexes. */
+  private int getEarliestBatchId(Collection<FieldIndex> fieldIndexes) {
+    int lowestBatchId = (int) Double.POSITIVE_INFINITY;
+    for (FieldIndex fieldIndex : fieldIndexes) {
+      lowestBatchId =
+          Math.min(fieldIndex.getIndexState().getOffset().getLargestBatchId(), lowestBatchId);
+    }
+    return lowestBatchId;
   }
 
   @VisibleForTesting

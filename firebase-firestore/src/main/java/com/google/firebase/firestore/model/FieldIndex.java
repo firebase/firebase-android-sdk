@@ -42,6 +42,9 @@ public abstract class FieldIndex {
   /** The initial sequence number for each index. Gets updated during index backfill. */
   public static final int INITIAL_SEQUENCE_NUMBER = 0;
 
+  /** The initial mutation batch id for each index. Gets updated during index backfill. */
+  public static final int INITIAL_LARGEST_BATCH_ID = 0;
+
   /** The state of an index that has not yet been backfilled. */
   public static IndexState INITIAL_STATE =
       IndexState.create(INITIAL_SEQUENCE_NUMBER, SnapshotVersion.NONE, DocumentKey.empty());
@@ -116,14 +119,20 @@ public abstract class FieldIndex {
   /** Stores the latest read time and document that were processed for an index. */
   @AutoValue
   public abstract static class IndexOffset implements Comparable<IndexOffset> {
-    public static final IndexOffset NONE = create(SnapshotVersion.NONE, DocumentKey.empty());
+    public static final IndexOffset NONE =
+        create(SnapshotVersion.NONE, DocumentKey.empty(), INITIAL_LARGEST_BATCH_ID);
+
+    public static IndexOffset create(
+        SnapshotVersion readTime, DocumentKey key, int largestBatchId) {
+      return new AutoValue_FieldIndex_IndexOffset(readTime, key, largestBatchId);
+    }
 
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime} or
      * with a key higher than {@code documentKey} for equal read times.
      */
     public static IndexOffset create(SnapshotVersion readTime, DocumentKey documentKey) {
-      return new AutoValue_FieldIndex_IndexOffset(readTime, documentKey);
+      return new AutoValue_FieldIndex_IndexOffset(readTime, documentKey, INITIAL_LARGEST_BATCH_ID);
     }
 
     /**
@@ -142,7 +151,8 @@ public abstract class FieldIndex {
               successorNanos == 1e9
                   ? new Timestamp(successorSeconds + 1, 0)
                   : new Timestamp(successorSeconds, successorNanos));
-      return new AutoValue_FieldIndex_IndexOffset(successor, DocumentKey.empty());
+      return new AutoValue_FieldIndex_IndexOffset(
+          successor, DocumentKey.empty(), INITIAL_LARGEST_BATCH_ID);
     }
 
     /**
@@ -156,10 +166,17 @@ public abstract class FieldIndex {
      */
     public abstract DocumentKey getDocumentKey();
 
+    /*
+     * Returns the largest mutation batch id that's been processed by Firestore.
+     */
+    public abstract int getLargestBatchId();
+
     public int compareTo(IndexOffset other) {
       int cmp = getReadTime().compareTo(other.getReadTime());
       if (cmp != 0) return cmp;
-      return getDocumentKey().compareTo(other.getDocumentKey());
+      cmp = getDocumentKey().compareTo(other.getDocumentKey());
+      if (cmp != 0) return cmp;
+      return getLargestBatchId() < other.getLargestBatchId() ? -1 : 1;
     }
   }
 
