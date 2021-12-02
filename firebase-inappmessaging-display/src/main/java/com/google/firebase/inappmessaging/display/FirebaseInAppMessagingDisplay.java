@@ -349,6 +349,10 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         new FiamImageLoader.Callback() {
           @Override
           public void onSuccess() {
+            if (activity.isFinishing()) {
+              Logging.logi("Activity is finishing or does not have valid window token. Cannot show FIAM.");
+              return;
+            }
             // Setup dismiss on touch outside
             if (!bindingWrapper.getConfig().backgroundEnabled()) {
               bindingWrapper
