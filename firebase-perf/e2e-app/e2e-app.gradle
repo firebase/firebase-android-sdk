@@ -96,6 +96,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0'
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
+    implementation 'com.google.android.material:material:1.4.0'
 
     // 3rd party Deps
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
