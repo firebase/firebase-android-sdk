@@ -23,6 +23,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -84,9 +85,9 @@ class CountingQueryEngine implements QueryEngine {
 
   /**
    * Returns the number of documents returned by the RemoteDocumentCache's
-   * `getDocumentsMatchingQuery()` API (since the last call to `resetCounts()`)
+   * `getAll()` API (since the last call to `resetCounts()`)
    */
-  int getDocumentsReadByQuery() {
+  int getDocumentsReadByColllection() {
     return documentsReadByQuery[0];
   }
 
@@ -102,7 +103,7 @@ class CountingQueryEngine implements QueryEngine {
    * Returns the number of mutations returned by the MutationQueue's
    * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
    */
-  int getMutationsReadByQuery() {
+  int getMutationsReadByCollection() {
     return mutationsReadByQuery[0];
   }
 
@@ -158,10 +159,8 @@ class CountingQueryEngine implements QueryEngine {
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-          Query query, IndexOffset offset) {
-        ImmutableSortedMap<DocumentKey, MutableDocument> result =
-            subject.getAllDocumentsMatchingQuery(query, offset);
+      public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
         documentsReadByQuery[0] += result.size();
         return result;
       }

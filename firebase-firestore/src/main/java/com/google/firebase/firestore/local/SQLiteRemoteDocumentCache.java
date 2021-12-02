@@ -20,9 +20,6 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -229,23 +226,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      final Query query, IndexOffset offset) {
-    hardAssert(
-        !query.isCollectionGroupQuery(),
-        "CollectionGroup queries should be handled in LocalDocumentsView");
-
-    Map<DocumentKey, MutableDocument> allDocuments =
-        getAll(Collections.singletonList(query.getPath()), offset, Integer.MAX_VALUE);
-
-    ImmutableSortedMap<DocumentKey, MutableDocument> matchingDocuments =
-        DocumentCollections.emptyMutableDocumentMap();
-    for (MutableDocument document : allDocuments.values()) {
-      if (document.isFoundDocument() && query.matches(document)) {
-        matchingDocuments = matchingDocuments.insert(document.getKey(), document);
-      }
-    }
-    return matchingDocuments;
+  public Map<DocumentKey, MutableDocument> getAll(
+      final ResourcePath collection, IndexOffset offset) {
+    return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE);
   }
 
   @Override

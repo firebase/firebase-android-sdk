@@ -322,26 +322,21 @@ class LocalDocumentsView {
   /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromOverlayCache(Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
+    Map<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAll(query.getPath(), offset);
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
 
-    // As documents might match the query because of their overlay we need to include all documents
-    // in the result.
-    Set<DocumentKey> missingDocuments = new HashSet<>();
+    // As documents might match the query because of their overlay we need to include documents
+    // for all overlays in the initial document set.
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       if (!remoteDocuments.containsKey(entry.getKey())) {
-        missingDocuments.add(entry.getKey());
+        remoteDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
       }
-    }
-    for (Map.Entry<DocumentKey, MutableDocument> entry :
-        remoteDocumentCache.getAll(missingDocuments).entrySet()) {
-      remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
     }
 
     // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Mutation overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
         overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
@@ -358,13 +353,11 @@ class LocalDocumentsView {
   /** Queries the remote documents and mutation queue, by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document>
       getDocumentsMatchingCollectionQueryFromMutationQueue(Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
+    Map<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAll(query.getPath(), offset);
 
     // TODO(indexing): We should plumb sinceReadTime through to the mutation queue
     List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
-
-    remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
 
     for (MutationBatch batch : matchingBatches) {
       for (Mutation mutation : batch.getMutations()) {
@@ -378,18 +371,18 @@ class LocalDocumentsView {
         if (document == null) {
           // Create invalid document to apply mutations on top of
           document = MutableDocument.newInvalidDocument(key);
-          remoteDocuments = remoteDocuments.insert(key, document);
+          remoteDocuments.put(key, document);
         }
         mutation.applyToLocalView(
             document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
         if (!document.isFoundDocument()) {
-          remoteDocuments = remoteDocuments.remove(key);
+          remoteDocuments.remove(key);
         }
       }
     }
 
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
@@ -397,36 +390,5 @@ class LocalDocumentsView {
     }
 
     return results;
-  }
-
-  /**
-   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
-   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
-   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
-   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
-   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
-   * missing results for the query.
-   */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
-      List<MutationBatch> matchingBatches,
-      ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
-    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
-          missingDocKeys.add(mutation.getKey());
-        }
-      }
-    }
-
-    ImmutableSortedMap<DocumentKey, MutableDocument> mergedDocs = existingDocs;
-    Map<DocumentKey, MutableDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
-    for (Map.Entry<DocumentKey, MutableDocument> entry : missingDocs.entrySet()) {
-      if (entry.getValue().isFoundDocument()) {
-        mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
-      }
-    }
-
-    return mergedDocs;
   }
 }

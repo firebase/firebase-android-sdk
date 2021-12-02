@@ -14,12 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -90,26 +88,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
     Set<MutableDocument> allDocuments =
         new TreeSet<>((l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r)));
-    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
-
     for (ResourcePath collectionParent : collectionParents) {
-      ResourcePath documentParent = collectionParent.append(collectionGroup);
-      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
-          docs.iteratorFrom(DocumentKey.fromPath(documentParent.append("")));
-      while (iterator.hasNext()) {
-        Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
-        DocumentKey key = entry.getKey();
-
-        if (!documentParent.isPrefixOf(key.getPath())) {
-          break;
-        }
-
-        if (IndexOffset.fromDocument(entry.getValue()).compareTo(offset) > 0) {
-          allDocuments.add(entry.getValue());
-        }
-      }
+      allDocuments.addAll(getAll(collectionParent.append(collectionGroup), offset).values());
     }
 
+    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
     Iterator<MutableDocument> it = allDocuments.iterator();
     while (it.hasNext() && matchingDocuments.size() < count) {
       MutableDocument document = it.next();
@@ -120,41 +103,35 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
-    hardAssert(
-        !query.isCollectionGroupQuery(),
-        "CollectionGroup queries should be handled in LocalDocumentsView");
-    ImmutableSortedMap<DocumentKey, MutableDocument> result = emptyMutableDocumentMap();
+  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+    Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
-    ResourcePath queryPath = query.getPath();
-    DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
+    DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
     Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
+      MutableDocument doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
-      if (!queryPath.isPrefixOf(key.getPath())) {
+      if (!collection.isPrefixOf(key.getPath())) {
+        // We are now scanning the next collection. Abort.
         break;
       }
 
-      MutableDocument doc = entry.getValue();
-      if (!doc.isFoundDocument()) {
+      if (key.getPath().length() > collection.length() + 1) {
+        // Exclude entries from subcollections.
         continue;
       }
 
       if (IndexOffset.fromDocument(doc).compareTo(offset) <= 0) {
+        // The document sorts before the offset.
         continue;
       }
 
-      if (!query.matches(doc)) {
-        continue;
-      }
-
-      result = result.insert(doc.getKey(), doc.clone());
+      result.put(doc.getKey(), doc.clone());
     }
 
     return result;

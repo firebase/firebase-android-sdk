@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 13;
+  static final int VERSION = 14;
 
   static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
 
@@ -176,6 +176,10 @@ class SQLiteSchema {
     if (fromVersion < 13 && toVersion >= 13) {
       addPathLength();
       ensurePathLength();
+    }
+
+    if (fromVersion < 14 && toVersion >= 14) {
+      ensureReadTime();
     }
 
     /*
@@ -656,6 +660,12 @@ class SQLiteSchema {
             hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
           });
     } while (resultsRemaining[0]);
+  }
+
+  /** Initialize the remote_document's read_time column with 0 values if they are not set. */
+  private void ensureReadTime() {
+    db.execSQL(
+        "UPDATE remote_documents SET read_time_seconds = 0, read_time_nanos = 0 WHERE read_time_seconds IS NULL");
   }
 
   private void createBundleCache() {

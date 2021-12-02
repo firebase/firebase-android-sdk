@@ -317,8 +317,9 @@ public abstract class LocalStoreTestCase {
    * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int byKey, int byQuery) {
-    assertEquals("Mutations read (by query)", byQuery, queryEngine.getMutationsReadByQuery());
+  private void assertMutationsRead(int byKey, int byCollection) {
+    assertEquals(
+        "Mutations read (by collection)", byCollection, queryEngine.getMutationsReadByCollection());
     assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
   }
 
@@ -326,9 +327,11 @@ public abstract class LocalStoreTestCase {
    * Asserts the expected numbers of documents read by the RemoteDocumentCache since the last call
    * to `resetPersistenceStats()`.
    */
-  private void assertRemoteDocumentsRead(int byKey, int byQuery) {
+  private void assertRemoteDocumentsRead(int byKey, int byCollection) {
     assertEquals(
-        "Remote documents read (by query)", byQuery, queryEngine.getDocumentsReadByQuery());
+        "Remote documents read (by collection)",
+        byCollection,
+        queryEngine.getDocumentsReadByColllection());
     assertEquals("Remote documents read (by key)", byKey, queryEngine.getDocumentsReadByKey());
   }
 
@@ -973,9 +976,9 @@ public abstract class LocalStoreTestCase {
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
 
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     if (!Persistence.OVERLAY_SUPPORT_ENABLED) {
-      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
+      assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 1);
     }
   }
 
@@ -1101,7 +1104,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query, but note that we read all existing documents from the RemoteDocumentCache
     // since we do not yet have target mapping.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
 
     // Issue a RemoteEvent to persist the target mapping.
     applyRemoteEvent(
@@ -1115,7 +1118,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query again, this time verifying that we only read the two documents that match
     // the query.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 2, /* byQuery= */ 0);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("foo/a", "foo/b");
   }
 
