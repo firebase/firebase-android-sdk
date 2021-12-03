@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 12;
+  static final int VERSION = 13;
 
   static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
 
@@ -57,13 +57,13 @@ class SQLiteSchema {
   static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
 
   /**
-   * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
+   * The batch size for data migrations.
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
    * reported that schema migrations failed for clients with thousands of documents. The number has
    * been chosen based on manual experiments.
    */
-  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 100;
+  @VisibleForTesting static final int MIGRATION_BATCH_SIZE = 100;
 
   private final SQLiteDatabase db;
 
@@ -102,6 +102,8 @@ class SQLiteSchema {
      * the pattern. Make sure to increment `VERSION` and to read the comment below about
      * requirements for new migrations.
      */
+
+    long startTime = System.currentTimeMillis();
 
     if (fromVersion < 1 && toVersion >= 1) {
       createV1MutationQueue();
@@ -170,6 +172,12 @@ class SQLiteSchema {
     if (fromVersion < 12 && toVersion >= 12) {
       createBundleCache();
     }
+
+    if (fromVersion < 13 && toVersion >= 13) {
+      addPathLength();
+      ensurePathLength();
+    }
+
     /*
      * Adding a new migration? READ THIS FIRST!
      *
@@ -194,6 +202,13 @@ class SQLiteSchema {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
       createFieldIndex();
     }
+
+    Logger.debug(
+        "SQLiteSchema",
+        "Migration from version %s to %s took %s milliseconds",
+        fromVersion,
+        toVersion,
+        System.currentTimeMillis() - startTime);
   }
 
   /**
@@ -432,6 +447,13 @@ class SQLiteSchema {
     }
   }
 
+  private void addPathLength() {
+    if (!tableContainsColumn("remote_documents", "path_length")) {
+      // The "path_length" column store the number of segments in the path.
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN path_length INTEGER");
+    }
+  }
+
   private boolean hasReadTime() {
     boolean hasReadTimeSeconds = tableContainsColumn("remote_documents", "read_time_seconds");
     boolean hasReadTimeNanos = tableContainsColumn("remote_documents", "read_time_nanos");
@@ -492,7 +514,7 @@ class SQLiteSchema {
                     + "SELECT TD.path FROM target_documents AS TD "
                     + "WHERE RD.path = TD.path AND TD.target_id = 0"
                     + ") LIMIT ?")
-            .binding(SEQUENCE_NUMBER_BATCH_SIZE);
+            .binding(MIGRATION_BATCH_SIZE);
 
     boolean[] resultsRemaining = new boolean[1];
 
@@ -605,6 +627,35 @@ class SQLiteSchema {
                 throw fail("Failed to decode Query data for target %s", targetId);
               }
             });
+  }
+
+  /** Populates the remote_document's path_length column. */
+  private void ensurePathLength() {
+    SQLitePersistence.Query documentsToMigrate =
+        new SQLitePersistence.Query(
+                db, "SELECT path FROM remote_documents WHERE path_length IS NULL LIMIT ?")
+            .binding(MIGRATION_BATCH_SIZE);
+    SQLiteStatement insertKey =
+        db.compileStatement("UPDATE remote_documents SET path_length = ? WHERE path = ?");
+
+    boolean[] resultsRemaining = new boolean[1];
+
+    do {
+      resultsRemaining[0] = false;
+
+      documentsToMigrate.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+
+            String encodedPath = row.getString(0);
+            ResourcePath decodedPath = EncodedPath.decodeResourcePath(encodedPath);
+
+            insertKey.clearBindings();
+            insertKey.bindLong(1, decodedPath.length());
+            insertKey.bindString(2, encodedPath);
+            hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
+          });
+    } while (resultsRemaining[0]);
   }
 
   private void createBundleCache() {

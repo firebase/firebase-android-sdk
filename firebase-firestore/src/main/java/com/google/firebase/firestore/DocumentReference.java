@@ -96,7 +96,7 @@ public class DocumentReference {
 
   @NonNull
   public String getId() {
-    return key.getPath().getLastSegment();
+    return key.getDocumentId();
   }
 
   /**
@@ -106,7 +106,7 @@ public class DocumentReference {
    */
   @NonNull
   public CollectionReference getParent() {
-    return new CollectionReference(key.getPath().popLast(), firestore);
+    return new CollectionReference(key.getCollectionPath(), firestore);
   }
 
   /**

@@ -58,7 +58,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     docs = docs.insert(document.getKey(), document.clone().withReadTime(readTime));
     latestReadTime = readTime.compareTo(latestReadTime) > 0 ? readTime : latestReadTime;
 
-    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
 
   @Override
