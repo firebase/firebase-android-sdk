@@ -633,7 +633,7 @@ class SQLiteSchema {
             });
   }
 
-  /** Fill the remote_document's path_length column. */
+  /** Populates the remote_document's path_length column. */
   private void ensurePathLength() {
     SQLitePersistence.Query documentsToMigrate =
         new SQLitePersistence.Query(
