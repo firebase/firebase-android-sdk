@@ -55,8 +55,5 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
     return nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
   }
 
-  public static final Comparator<IndexEntry> SEMANTIC_COMPARATOR =
-      (left, right) -> {
-        return left.compareTo(right);
-      };
+  public static final Comparator<IndexEntry> SEMANTIC_COMPARATOR = IndexEntry::compareTo;
 }
