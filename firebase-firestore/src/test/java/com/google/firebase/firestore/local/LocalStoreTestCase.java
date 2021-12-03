@@ -331,7 +331,7 @@ public abstract class LocalStoreTestCase {
     assertEquals(
         "Remote documents read (by collection)",
         byCollection,
-        queryEngine.getDocumentsReadByColllection());
+        queryEngine.getDocumentsReadByCollection());
     assertEquals("Remote documents read (by key)", byKey, queryEngine.getDocumentsReadByKey());
   }
 

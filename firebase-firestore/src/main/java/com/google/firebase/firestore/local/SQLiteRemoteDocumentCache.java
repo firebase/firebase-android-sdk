@@ -226,8 +226,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(
-      final ResourcePath collection, IndexOffset offset) {
+  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
     return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE);
   }
 

@@ -74,7 +74,7 @@ interface RemoteDocumentCache {
    * @param collectionGroup The collection group to scan.
    * @param offset The offset to start the scan at.
    * @param count The number of results to return.
-   * @return A map with next set of documents.
+   * @return A newly created map with next set of documents.
    */
   Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int count);
 
@@ -83,7 +83,7 @@ interface RemoteDocumentCache {
    *
    * @param collection The collection to read.
    * @param offset The read time and document key to start scanning at (exclusive).
-   * @return The set of matching documents.
+   * @return A newly created map with the set of documents in the collection.
    */
   Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
 

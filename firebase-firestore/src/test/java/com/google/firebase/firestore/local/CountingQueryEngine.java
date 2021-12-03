@@ -38,9 +38,9 @@ import java.util.Map;
 class CountingQueryEngine implements QueryEngine {
   private final QueryEngine queryEngine;
 
-  private final int[] mutationsReadByQuery = new int[] {0};
+  private final int[] mutationsReadByCollection = new int[] {0};
   private final int[] mutationsReadByKey = new int[] {0};
-  private final int[] documentsReadByQuery = new int[] {0};
+  private final int[] documentsReadByCollection = new int[] {0};
   private final int[] documentsReadByKey = new int[] {0};
 
   CountingQueryEngine(QueryEngine queryEngine) {
@@ -48,9 +48,9 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   void resetCounts() {
-    mutationsReadByQuery[0] = 0;
+    mutationsReadByCollection[0] = 0;
     mutationsReadByKey[0] = 0;
-    documentsReadByQuery[0] = 0;
+    documentsReadByCollection[0] = 0;
     documentsReadByKey[0] = 0;
   }
 
@@ -84,11 +84,11 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   /**
-   * Returns the number of documents returned by the RemoteDocumentCache's
-   * `getAll()` API (since the last call to `resetCounts()`)
+   * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
+   * last call to `resetCounts()`)
    */
-  int getDocumentsReadByColllection() {
-    return documentsReadByQuery[0];
+  int getDocumentsReadByCollection() {
+    return documentsReadByCollection[0];
   }
 
   /**
@@ -104,7 +104,7 @@ class CountingQueryEngine implements QueryEngine {
    * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
    */
   int getMutationsReadByCollection() {
-    return mutationsReadByQuery[0];
+    return mutationsReadByCollection[0];
   }
 
   /**
@@ -154,14 +154,14 @@ class CountingQueryEngine implements QueryEngine {
       public Map<DocumentKey, MutableDocument> getAll(
           String collectionGroup, IndexOffset offset, int count) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, count);
-        documentsReadByQuery[0] += result.size();
+        documentsReadByCollection[0] += result.size();
         return result;
       }
 
       @Override
       public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
-        documentsReadByQuery[0] += result.size();
+        documentsReadByCollection[0] += result.size();
         return result;
       }
 
@@ -249,7 +249,7 @@ class CountingQueryEngine implements QueryEngine {
       @Override
       public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
         List<MutationBatch> result = subject.getAllMutationBatchesAffectingQuery(query);
-        mutationsReadByQuery[0] += result.size();
+        mutationsReadByCollection[0] += result.size();
         return result;
       }
 
