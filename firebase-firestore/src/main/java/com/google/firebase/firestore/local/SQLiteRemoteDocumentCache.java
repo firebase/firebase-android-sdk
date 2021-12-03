@@ -140,7 +140,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             "SELECT contents, read_time_seconds, read_time_nanos "
                 + "FROM remote_documents WHERE path >= ? AND path < ? AND path_length = ?");
 
-    Object[] bindVars = new Object[3 + (FieldIndex.IndexOffset.NONE.equals(offset) ? 0 : 6)];
+    boolean hasOffset = !FieldIndex.IndexOffset.NONE.equals(offset);
+    Object[] bindVars = new Object[3 + (hasOffset ? 6 : 0)];
 
     String prefix = EncodedPath.encode(query.getPath());
 
@@ -149,7 +150,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     bindVars[i++] = EncodedPath.prefixSuccessor(prefix);
     bindVars[i++] = query.getPath().length() + 1;
 
-    if (!FieldIndex.IndexOffset.NONE.equals(offset)) {
+    if (hasOffset) {
       Timestamp readTime = offset.getReadTime().getTimestamp();
       DocumentKey documentKey = offset.getDocumentKey();
 
