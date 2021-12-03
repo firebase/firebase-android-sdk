@@ -14,15 +14,17 @@
         <activity
             android:name=".FragmentActivity"
             android:label="@string/title_activity_fragment"
-            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
-        <activity
-            android:name=".FirebasePerfActivity"
-            android:label="FirebasePerfActivity">
+            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".FirebasePerfActivity"
+            android:label="FirebasePerfActivity">
+
         </activity>
         <activity
             android:name=".FirebasePerfScreenTracesActivity"
