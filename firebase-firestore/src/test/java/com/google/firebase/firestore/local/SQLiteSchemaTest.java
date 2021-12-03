@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.local.SQLiteSchema.VERSION;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -145,7 +146,7 @@ public class SQLiteSchemaTest {
     // deletes an existing table or column, which would be very likely to break old versions of the
     // SDK relying on that table or column.
     Map<String, Set<String>> tables = new HashMap<>();
-    for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
+    for (int toVersion = 1; toVersion <= VERSION; toVersion++) {
       schema.runSchemaUpgrades(toVersion - 1, toVersion);
       Map<String, Set<String>> newTables = getCurrentSchema();
       assertNoRemovals(tables, newTables, toVersion);
@@ -155,10 +156,10 @@ public class SQLiteSchemaTest {
 
   @Test
   public void canRecoverFromDowngrades() {
-    for (int downgradeVersion = 0; downgradeVersion < SQLiteSchema.VERSION; downgradeVersion++) {
+    for (int downgradeVersion = 0; downgradeVersion < VERSION; downgradeVersion++) {
       // Upgrade schema to current, then upgrade from `downgradeVersion` to current
       schema.runSchemaUpgrades();
-      schema.runSchemaUpgrades(downgradeVersion, SQLiteSchema.VERSION);
+      schema.runSchemaUpgrades(downgradeVersion, VERSION);
     }
   }
 
@@ -438,6 +439,8 @@ public class SQLiteSchemaTest {
 
     SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
 
+    schema.runSchemaUpgrades(10, VERSION);
+
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
     ImmutableSortedMap<DocumentKey, MutableDocument> results =
@@ -551,7 +554,7 @@ public class SQLiteSchemaTest {
             QueryPurpose.LISTEN);
 
     db.execSQL(
-        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (? ,?, ?)",
         new Object[] {
           2, "invalid_canonical_id", serializer.encodeTargetData(initialTargetData).toByteArray()
         });
@@ -572,6 +575,53 @@ public class SQLiteSchemaTest {
                 fail("Failed to decode Target data");
               }
             });
+  }
+
+  @Test
+  public void addPathLengths() {
+    schema.runSchemaUpgrades(0, 12);
+
+    ResourcePath paths[] = new ResourcePath[] {path("collA/doc"), path("collA/doc/collB/doc")};
+
+    for (ResourcePath path : paths) {
+      db.execSQL(
+          "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
+
+    schema.runSchemaUpgrades(12, 13);
+
+    int[] current = new int[] {0};
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER BY path")
+        .forEach(
+            cursor -> {
+              assertEquals(paths[current[0]].length(), cursor.getInt(0));
+              ++current[0];
+            });
+    assertEquals(2, current[0]);
+  }
+
+  @Test
+  public void usesMultipleBatchesToAddPathLengths() {
+    schema.runSchemaUpgrades(0, 12);
+
+    for (int i = 0; i < SQLiteSchema.MIGRATION_BATCH_SIZE + 1; ++i) {
+      ResourcePath path = path(String.format("coll/doc%03d", i));
+      db.execSQL(
+          "INSERT INTO remote_documents (path) VALUES (?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
+
+    schema.runSchemaUpgrades(12, 13);
+
+    int[] current = new int[] {0};
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER by path")
+        .forEach(
+            cursor -> {
+              assertEquals(2, cursor.getInt(0));
+              ++current[0];
+            });
+    assertEquals(SQLiteSchema.MIGRATION_BATCH_SIZE + 1, current[0]);
   }
 
   @Test

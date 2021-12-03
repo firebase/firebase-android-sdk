@@ -284,6 +284,6 @@ public class ConformanceTest {
   }
 
   private String getId(Document document) {
-    return DocumentKey.fromName(document.getName()).getPath().getLastSegment();
+    return DocumentKey.fromName(document.getName()).getDocumentId();
   }
 }
