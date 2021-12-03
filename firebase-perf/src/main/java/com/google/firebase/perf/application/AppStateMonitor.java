@@ -21,6 +21,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
@@ -31,6 +32,8 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
+import com.google.firebase.perf.util.FrameMetricsCalculator;
+import com.google.firebase.perf.util.FrameMetricsCalculator.FrameMetrics;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -98,6 +101,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
   }
 
+  public FrameMetricsAggregator getFrameMetricsAggregator() {
+    return frameMetricsAggregator;
+  }
+
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
     // Make sure the callback is registered only once.
     if (isRegisteredForLifecycleCallbacks) {
@@ -139,8 +146,20 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     tsnsCount.addAndGet(value);
   }
 
+  // Add fragment lifecycle listners to monitor the scrren rendering performance of all the
+  // fragemnts in the activity.
   @Override
-  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+//    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+//      System.out.println("*** onActivityCreated " + activity.getClass().getSimpleName());
+//      if (activity instanceof AppCompatActivity) {
+//        AppCompatActivity appCompatActivity = (AppCompatActivity) activity;
+//        appCompatActivity
+//            .getSupportFragmentManager()
+//            .registerFragmentLifecycleCallbacks(new FragmentMonitor(appCompatActivity), true);
+//      }
+//    }
+  }
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
@@ -308,9 +327,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     activityToScreenTraceMap.remove(activity);
 
-    int totalFrames = 0;
-    int slowFrames = 0;
-    int frozenFrames = 0;
     /**
      * Resets the metrics data and returns the currently-collected metrics. Note that {@link
      * FrameMetricsAggregator#reset()} will not stop recording for the activity. The reason of using
@@ -319,28 +335,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
      * disabled activities.
      */
     SparseIntArray[] arr = frameMetricsAggregator.reset();
-    if (arr != null) {
-      SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
-      if (frameTimes != null) {
-        for (int i = 0; i < frameTimes.size(); i++) {
-          int frameTime = frameTimes.keyAt(i);
-          int numFrames = frameTimes.valueAt(i);
-          totalFrames += numFrames;
-          if (frameTime > Constants.FROZEN_FRAME_TIME) {
-            // Frozen frames mean the app appear frozen.  The recommended thresholds is 700ms
-            frozenFrames += numFrames;
-          }
-          if (frameTime > Constants.SLOW_FRAME_TIME) {
-            // Slow frames are anything above 16ms (i.e. 60 frames/second)
-            slowFrames += numFrames;
-          }
-        }
-      }
-    }
-    if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
-      // All metrics are zero, no need to send screen trace.
-      // return;
-    }
+    FrameMetrics frameMetrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    int totalFrames = frameMetrics.getTotalFrames();
+    int slowFrames = frameMetrics.getSlowFrames();
+    int frozenFrames = frameMetrics.getFrozenFrames();
+
     // Only incrementMetric if corresponding metric is non-zero.
     if (totalFrames > 0) {
       screenTrace.putMetric(Constants.CounterNames.FRAMES_TOTAL.toString(), totalFrames);
