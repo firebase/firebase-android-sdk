@@ -16,12 +16,18 @@ package com.googletest.firebase.perf.testapp;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -29,6 +35,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class FragmentActivity extends AppCompatActivity {
+  SharedViewModel model;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -53,9 +60,26 @@ public class FragmentActivity extends AppCompatActivity {
     NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     NavigationUI.setupWithNavController(
         (BottomNavigationView) findViewById(R.id.nav_view), navController);
+    model = new ViewModelProvider(this).get(SharedViewModel.class);
   }
 
   @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.menu, menu);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+    switch (item.getItemId()) {
+      case R.id.action_change_gif:
+        model.changeImage();
+      default:
+        return super.onOptionsItemSelected(item);
+    }
+  }
+
+    @Override
   protected void onStart() {
     super.onStart();
     Log.d(

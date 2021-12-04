@@ -18,17 +18,23 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.googletest.firebase.perf.testapp.R;
+import com.googletest.firebase.perf.testapp.SharedViewModel;
 
 public class HomeFragment extends Fragment {
 
   private HomeViewModel homeViewModel;
+  private SharedViewModel sharedViewModel;
 
   public View onCreateView(
       @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -47,6 +53,15 @@ public class HomeFragment extends Fragment {
                 textView.setText(s);
               }
             });
+    // Gif loading for testing
+    sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+    final ImageView imageView = root.findViewById(R.id.img_home);
+    sharedViewModel.getImageSrc().observe(getViewLifecycleOwner(), new Observer<String>() {
+      @Override
+      public void onChanged(String s) {
+        Glide.with(requireActivity()).load(s).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(imageView);
+      }
+    });
     return root;
   }
 }
