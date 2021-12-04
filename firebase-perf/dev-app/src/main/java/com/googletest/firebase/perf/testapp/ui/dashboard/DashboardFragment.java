@@ -25,7 +25,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.googletest.firebase.perf.testapp.R;
@@ -56,12 +55,20 @@ public class DashboardFragment extends Fragment {
     // Gif loading for testing
     sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
     final ImageView imageView = root.findViewById(R.id.img_dashboard);
-    sharedViewModel.getImageSrc().observe(getViewLifecycleOwner(), new Observer<String>() {
-        @Override
-        public void onChanged(String s) {
-            Glide.with(requireActivity()).load(s).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(imageView);
-        }
-    });
+    sharedViewModel
+        .getImageSrc()
+        .observe(
+            getViewLifecycleOwner(),
+            new Observer<String>() {
+              @Override
+              public void onChanged(String s) {
+                Glide.with(requireActivity())
+                    .load(s)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .skipMemoryCache(true)
+                    .into(imageView);
+              }
+            });
     return root;
   }
 }
