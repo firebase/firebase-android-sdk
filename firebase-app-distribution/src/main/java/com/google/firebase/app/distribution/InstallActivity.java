@@ -28,7 +28,7 @@ import java.io.File;
  * Activity opened during installation in {@link FirebaseAppDistribution} after APK download is
  * finished.
  */
-public class InstallActivity extends AppCompatActivity {
+class InstallActivity extends AppCompatActivity {
   private static final String TAG = "InstallActivity: ";
   private boolean unknownSourceEnablementInProgress = false;
   private boolean installInProgress = false;
