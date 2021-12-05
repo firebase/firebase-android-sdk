@@ -23,8 +23,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-class FirebaseAppDistributionLifecycleNotifier
-    implements Application.ActivityLifecycleCallbacks {
+class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
