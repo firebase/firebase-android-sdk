@@ -16,6 +16,5 @@ package com.google.firebase.app.distribution;
 
 import androidx.core.content.FileProvider;
 
-class FirebaseAppDistributionFileProvider extends FileProvider {
-  public FirebaseAppDistributionFileProvider() {}
+public class FirebaseAppDistributionFileProvider extends FileProvider {
 }
