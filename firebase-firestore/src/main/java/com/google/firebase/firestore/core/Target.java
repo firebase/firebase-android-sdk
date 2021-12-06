@@ -513,15 +513,40 @@ public final class Target {
     List<CompositeFilter> result = new ArrayList<>();
     if (filters.isEmpty()) return result;
 
-    // For the simple case of traditional queries, return 1 filter.
+    // There's an implicit AND operator between all filters in a Target.
     CompositeFilter filter =
         new CompositeFilter(filters, StructuredQuery.CompositeFilter.Operator.AND);
+
+    // For simple cases that are conjunction of 1 more filters, there's no need to perform a DNF
+    // transform because `filter` is already in DNF form.
     if (filter.isFlatAndFilter()) {
       result.add(filter);
       return result;
     }
 
-    // TODO(ehsann): Implement DNF transform.
+    Filter dnf = filter.computeDnf();
+
+    if (dnf instanceof FieldFilter) {
+      result.add(
+          new CompositeFilter(
+              Collections.singletonList(dnf), StructuredQuery.CompositeFilter.Operator.AND));
+    } else if (dnf instanceof CompositeFilter) {
+      CompositeFilter dnfResult = (CompositeFilter) dnf;
+      if (dnfResult.isAnd()) {
+        result.add(dnfResult);
+      } else {
+        for (Filter subfilter : dnfResult.getFilters()) {
+          if (subfilter instanceof FieldFilter) {
+            result.add(
+                new CompositeFilter(
+                    Collections.singletonList(subfilter),
+                    StructuredQuery.CompositeFilter.Operator.AND));
+          } else if (subfilter instanceof CompositeFilter) {
+            result.add((CompositeFilter) subfilter);
+          }
+        }
+      }
+    }
 
     return result;
   }

@@ -150,4 +150,24 @@ public abstract class Filter {
   @NonNull
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   public abstract String getCanonicalId();
+
+  /** @hide */
+  @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public abstract Filter applyAssociativity();
+
+  /** @hide */
+  @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public abstract Filter applyDistribution(@Nullable Filter other);
+
+  /** @hide */
+  @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public abstract Filter computeDnf();
+
+  /** @hide */
+  @NonNull
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public abstract boolean equals(Object o);
 }

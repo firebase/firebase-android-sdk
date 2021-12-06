@@ -18,12 +18,15 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -141,20 +144,6 @@ public class FieldFilter extends Filter {
     }
   }
 
-  /** Validates that the value passed into a disjunctive filter satisfies all array requirements. */
-  protected void validateDisjunctiveFilterElements(Object valueObject, Operator op) {
-    if (!(valueObject instanceof List) || ((List) valueObject).size() == 0) {
-      throw new IllegalArgumentException(
-          "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
-    }
-    if (((List) valueObject).size() > 10) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 10 elements in the value array.");
-    }
-  }
-
   @Override
   public boolean matches(Document doc) {
     Value other = doc.getField(field);
@@ -203,6 +192,50 @@ public class FieldFilter extends Filter {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
     return getField().canonicalString() + getOperator().toString() + Values.canonicalId(getValue());
+  }
+
+  /** Applying associativity property to a single field filter results in itself. */
+  @NonNull
+  @Override
+  public Filter applyAssociativity() {
+    return this;
+  }
+
+  @NonNull
+  @Override
+  public Filter applyDistribution(@Nullable Filter other) {
+    if (other == null) {
+      return this;
+    }
+
+    if (other instanceof FieldFilter) {
+      return new CompositeFilter(
+          Arrays.asList(this, other), StructuredQuery.CompositeFilter.Operator.AND);
+    }
+
+    hardAssert(
+        other instanceof CompositeFilter, "only FieldFilters and CompositeFilters are supported.");
+    CompositeFilter compositeOther = (CompositeFilter) other;
+    if (compositeOther.isAnd()) {
+      // Distributing AND over AND is a Merge. Example: A & ( B & C ) --> (A & B & C)
+      return compositeOther.addFilter(this);
+    } else {
+      // Distributing AND over OR. Example: A & (B | C) --> (A & B) | (A & C).
+      // B & ( C | D | (E & F) | (G & H) )
+      List<Filter> newFilters = new ArrayList<>();
+      for (Filter subfilter : compositeOther.getFilters()) {
+        newFilters.add(this.applyDistribution(subfilter));
+      }
+      // TODO(ehsann): Use OPERATOR_OR.
+      return new CompositeFilter(
+          newFilters, StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
+    }
+  }
+
+  @NonNull
+  @Override
+  public Filter computeDnf() {
+    return this;
   }
 
   @Override
