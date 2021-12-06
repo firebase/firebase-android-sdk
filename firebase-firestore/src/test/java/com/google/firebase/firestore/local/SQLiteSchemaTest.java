@@ -691,8 +691,8 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsOverlaysAndMigrationTable() {
-    // 13 is the version we enable Overlay
-    schema.runSchemaUpgrades(0, 13);
+    // 14 is the version we enable Overlay
+    schema.runSchemaUpgrades(0, 14);
     assertTableExists("document_overlays");
     assertTableExists("data_migrations");
 
