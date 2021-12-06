@@ -49,7 +49,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 13;
+  static final int VERSION = 14;
 
   // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
@@ -167,6 +167,20 @@ class SQLiteSchema {
     if (fromVersion < 12 && toVersion >= 12) {
       createBundleCache();
     }
+
+    if (fromVersion < 13 && toVersion >= 13) {
+      addPathLength();
+      ensurePathLength();
+    }
+
+    if (fromVersion < 14 && toVersion >= 14) {
+      Preconditions.checkState(
+          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
+      createOverlays();
+      createDataMigrationTable();
+      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
+    }
+
     /*
      * Adding a new schema upgrade? READ THIS FIRST!
      *
