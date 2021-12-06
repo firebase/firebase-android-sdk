@@ -160,7 +160,7 @@ public class CompositeFilter extends Filter {
   public int hashCode() {
     int result = 37;
     result = 31 * result + operator.hashCode();
-    for(Filter filter : filters) {
+    for (Filter filter : filters) {
       result += filter.hashCode();
     }
     return result;
