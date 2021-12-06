@@ -255,8 +255,6 @@ public class IntegrationTestUtil {
     // This unfortunately is a global setting that affects existing Firestore clients.
     Logger.setLogLevel(logLevel);
 
-    // TODO(Overlay): Remove below once this is ready to ship.
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
     Persistence.INDEXING_SUPPORT_ENABLED = true;
 
     Context context = ApplicationProvider.getApplicationContext();
