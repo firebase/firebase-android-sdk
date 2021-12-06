@@ -502,6 +502,7 @@ public final class LocalStore implements BundleCallback {
       @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
       SnapshotVersion globalVersion) {
     Map<DocumentKey, MutableDocument> changedDocs = new HashMap<>();
+    List<DocumentKey> removedDocs = new ArrayList<>();
     Set<DocumentKey> conditionChanged = new HashSet<>();
 
     // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
@@ -525,7 +526,7 @@ public final class LocalStore implements BundleCallback {
       if (doc.isNoDocument() && doc.getVersion().equals(SnapshotVersion.NONE)) {
         // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
         // these documents from cache since we lost access.
-        remoteDocuments.remove(doc.getKey());
+        removedDocs.add(doc.getKey());
         changedDocs.put(key, doc);
       } else if (!existingDoc.isValidDocument()
           || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
@@ -545,6 +546,7 @@ public final class LocalStore implements BundleCallback {
             doc.getVersion());
       }
     }
+    remoteDocuments.removeAll(removedDocs);
     return new DocumentChangeResult(changedDocs, conditionChanged);
   }
 

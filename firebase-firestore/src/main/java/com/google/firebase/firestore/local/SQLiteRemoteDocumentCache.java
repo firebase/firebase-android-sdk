@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentCollections;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -30,6 +31,7 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,10 +77,24 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void remove(DocumentKey documentKey) {
-    String path = EncodedPath.encode(documentKey.getPath());
+  public void removeAll(Collection<DocumentKey> keys) {
+    if (keys.isEmpty()) return;
+    List<Object> encodedPaths = new ArrayList<>();
+    List<Document> deletedDocs = new ArrayList<>();
 
-    db.execute("DELETE FROM remote_documents WHERE path = ?", path);
+    for (DocumentKey key : keys) {
+      encodedPaths.add(EncodedPath.encode(key.getPath()));
+      deletedDocs.add(MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db, "DELETE FROM remote_documents WHERE path IN (", encodedPaths, ")");
+    while (longQuery.hasMoreSubqueries()) {
+      longQuery.executeNextSubquery();
+    }
+
+    indexManager.updateIndexEntries(deletedDocs);
   }
 
   @Override

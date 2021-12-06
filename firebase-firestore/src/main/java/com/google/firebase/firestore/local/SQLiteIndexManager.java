@@ -224,6 +224,8 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(Collection<Document> documents) {
     hardAssert(started, "IndexManager not started");
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) return;
+
     for (Document document : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {

@@ -20,6 +20,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -45,8 +46,8 @@ interface RemoteDocumentCache {
    */
   void add(MutableDocument document, SnapshotVersion readTime);
 
-  /** Removes the cached entry for the given key (no-op if no entry exists). */
-  void remove(DocumentKey documentKey);
+  /** Removes the cached entries for the given keys (no-op if no entry exists). */
+  void removeAll(Collection<DocumentKey> keys);
 
   /**
    * Looks up an entry in the cache.
