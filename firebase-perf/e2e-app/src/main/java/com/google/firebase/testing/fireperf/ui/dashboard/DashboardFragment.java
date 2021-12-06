@@ -23,9 +23,15 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.testing.fireperf.ListAdapter;
+
 import com.google.firebase.testing.fireperf.R;
 
 public class DashboardFragment extends Fragment {
+
+  private static final int NUM_LIST_ITEMS = 100;
 
   private DashboardViewModel dashboardViewModel;
 
@@ -35,17 +41,11 @@ public class DashboardFragment extends Fragment {
         new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory())
             .get(DashboardViewModel.class);
     View root = inflater.inflate(R.layout.fragment_dashboard, container, false);
-    final TextView textView = root.findViewById(R.id.text_dashboard);
-    dashboardViewModel
-        .getText()
-        .observe(
-            getViewLifecycleOwner(),
-            new Observer<String>() {
-              @Override
-              public void onChanged(@Nullable String s) {
-                textView.setText(s);
-              }
-            });
+
+    RecyclerView numbersList = root.findViewById(R.id.rv_numbers_dash);
+    numbersList.setLayoutManager(new LinearLayoutManager(requireContext()));
+    numbersList.setHasFixedSize(true);
+    numbersList.setAdapter(new ListAdapter(NUM_LIST_ITEMS));
     return root;
   }
 }

@@ -33,7 +33,7 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.NumberViewHold
    *
    * @param numberOfItems Number of items to display in list
    */
-  ListAdapter(int numberOfItems) {
+  public ListAdapter(int numberOfItems) {
     this.numberOfItems = numberOfItems;
   }
 
