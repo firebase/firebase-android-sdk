@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -143,8 +144,7 @@ public class CrashlyticsControllerRobolectricTest {
             "packageName",
             "versionCode",
             "versionName",
-            /*developmentPlatform=*/ null,
-            /*developmentPlatformVersion=*/ null);
+            mock(DevelopmentPlatformProvider.class));
 
     final CrashlyticsController controller =
         new CrashlyticsController(
