@@ -34,7 +34,7 @@ import java.util.Map;
  * A test-only QueryEngine that forwards all API calls and exposes the number of documents and
  * mutations read.
  */
-class CountingQueryEngine implements QueryEngine {
+class CountingQueryEngine extends QueryEngine {
   private final QueryEngine queryEngine;
 
   private final int[] mutationsReadByQuery = new int[] {0};
@@ -54,27 +54,22 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
-    LocalDocumentsView view =
+  public void initialize(LocalDocumentsView localDocuments, IndexManager indexManager) {
+    LocalDocumentsView wrappedView =
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             wrapMutationQueue(localDocuments.getMutationQueue()),
             localDocuments.getDocumentOverlayCache(),
             localDocuments.getIndexManager());
-    queryEngine.setLocalDocumentsView(view);
-  }
-
-  @Override
-  public void setIndexManager(IndexManager indexManager) {
-    // Not implemented.
+    queryEngine.initialize(wrappedView, indexManager);
   }
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
-      SnapshotVersion lastLimboFreeSnapshotVersion,
-      ImmutableSortedSet<DocumentKey> remoteKeys) {
-    return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
+      ImmutableSortedSet<DocumentKey> remoteKeys,
+      SnapshotVersion lastLimboFreeSnapshotVersion) {
+    return queryEngine.getDocumentsMatchingQuery(query, remoteKeys, lastLimboFreeSnapshotVersion);
   }
 
   /** Returns the query engine that is used as the backing implementation. */
@@ -132,7 +127,6 @@ class CountingQueryEngine implements QueryEngine {
         subject.remove(documentKey);
       }
 
-      @Nullable
       @Override
       public MutableDocument get(DocumentKey documentKey) {
         MutableDocument result = subject.get(documentKey);
