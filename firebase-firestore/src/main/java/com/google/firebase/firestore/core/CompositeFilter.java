@@ -156,6 +156,16 @@ public class CompositeFilter extends Filter {
     return operator == other.operator && filters.equals(other.filters);
   }
 
+  @Override
+  public int hashCode() {
+    int result = 37;
+    result = 31 * result + operator.hashCode();
+    for(Filter filter : filters) {
+      result += filter.hashCode();
+    }
+    return result;
+  }
+
   /**
    * Returns a new composite filter that contains all filter from `this` plus all the given filters
    */
