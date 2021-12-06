@@ -3,7 +3,9 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.1.0
-- [feature] Performance optimization for offline usage.
+- [changed] Performance optimization for offline usage.
+- [changed] Improved performance for queries with collections that contain
+  subcollections.
 
 # 24.0.0
 - [feature] Added support for Firebase AppCheck.

@@ -31,7 +31,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +76,7 @@ public class UpdateApkClientTest {
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() {
+  public void setup() throws FirebaseAppDistributionException {
 
     MockitoAnnotations.initMocks(this);
 
@@ -97,12 +96,11 @@ public class UpdateApkClientTest {
 
     this.updateApkClient =
         Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
+    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
   }
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
-
-    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
     UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
@@ -208,5 +206,15 @@ public class UpdateApkClientTest {
     updateApkClient.updateApk(TEST_RELEASE, false);
     updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, false);
     assertEquals(0, shadowNotificationManager.size());
+  }
+
+  @Test
+  public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
+    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
+
+    UpdateTask updateTask1 = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask2 = updateApkClient.updateApk(TEST_RELEASE, false);
+
+    assertEquals(updateTask1, updateTask2);
   }
 }

@@ -14,7 +14,7 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.firebase.app.distribution.internal.ReleaseIdentificationUtils.calculateApkHash;
+import static com.google.firebase.app.distribution.ReleaseIdentificationUtils.calculateApkHash;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -25,8 +25,6 @@ import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.app.distribution.internal.AppDistributionReleaseInternal;
-import com.google.firebase.app.distribution.internal.ReleaseIdentificationUtils;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
@@ -42,8 +40,8 @@ class CheckForNewReleaseClient {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
+  // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
-  private final ReleaseIdentifierStorage releaseIdentifierStorage;
 
   Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
   private final Executor checkForNewReleaseExecutor;
@@ -56,20 +54,16 @@ class CheckForNewReleaseClient {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.checkForNewReleaseExecutor = Executors.newSingleThreadExecutor();
-    this.releaseIdentifierStorage =
-        new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
   }
 
   CheckForNewReleaseClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull ReleaseIdentifierStorage releaseIdentifierStorage,
       @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.releaseIdentifierStorage = releaseIdentifierStorage;
     this.checkForNewReleaseExecutor = executor;
   }
 
@@ -160,7 +154,8 @@ class CheckForNewReleaseClient {
   }
 
   @VisibleForTesting
-  boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
+  boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
     if (newRelease.getBinaryType().equals(BinaryType.APK)) {
       return hasSameHashAsInstalledRelease(newRelease);
     }
@@ -203,7 +198,8 @@ class CheckForNewReleaseClient {
     return cachedApkHashes.get(key);
   }
 
-  private boolean hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease) {
+  private boolean hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
     try {
       Context context = firebaseApp.getApplicationContext();
       PackageInfo metadataPackageInfo =
@@ -213,12 +209,9 @@ class CheckForNewReleaseClient {
       String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
 
       if (installedReleaseApkHash.isEmpty() || newRelease.getApkHash().isEmpty()) {
-        // We don't have enough information about the APK hashes. Fallback to the external codehash.
-        // TODO: Consider removing this when all returned releases have the efficient ApkHash
-        String externalCodeHash =
-            releaseIdentifierStorage.getExternalCodeHash(installedReleaseApkHash);
-        LogWrapper.getInstance().v(TAG + "Defaulting to external codehash " + externalCodeHash);
-        return externalCodeHash != null && externalCodeHash.equals(newRelease.getCodeHash());
+        LogWrapper.getInstance().e(TAG + "Missing APK hash.");
+        throw new FirebaseAppDistributionException(
+            Constants.ErrorMessages.UNKNOWN_ERROR, FirebaseAppDistributionException.Status.UNKNOWN);
       }
       // If the hash of the zipped APK for the retrieved newRelease is equal to the stored hash
       // of the installed release, then they are the same release.

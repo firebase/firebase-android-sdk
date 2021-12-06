@@ -48,7 +48,7 @@ public class TestCaseConverter {
       if (response.hasDocument()) {
         Document document = response.getDocument();
         DocumentKey documentKey = DocumentKey.fromName(document.getName());
-        String collectionId = documentKey.getPath().popLast().getLastSegment();
+        String collectionId = documentKey.getCollectionGroup();
         List<Document> documents =
             collections.computeIfAbsent(collectionId, name -> new ArrayList<>());
         documents.add(document);

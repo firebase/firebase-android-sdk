@@ -17,7 +17,6 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.util.Pair;
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -34,7 +33,7 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, Pair<MutableDocument, SnapshotVersion>> docs;
+  private ImmutableSortedMap<DocumentKey, MutableDocument> docs;
   /** Manages the collection group index. */
   private IndexManager indexManager;
   /** The latest read time of any document in the cache. */
@@ -56,10 +55,10 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
-    docs = docs.insert(document.getKey(), new Pair<>(document.clone(), readTime));
+    docs = docs.insert(document.getKey(), document.clone().withReadTime(readTime));
     latestReadTime = readTime.compareTo(latestReadTime) > 0 ? readTime : latestReadTime;
 
-    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
 
   @Override
@@ -69,8 +68,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public MutableDocument get(DocumentKey key) {
-    Pair<MutableDocument, SnapshotVersion> entry = docs.get(key);
-    return entry != null ? entry.first.clone() : MutableDocument.newInvalidDocument(key);
+    MutableDocument doc = docs.get(key);
+    return doc != null ? doc.clone() : MutableDocument.newInvalidDocument(key);
   }
 
   @Override
@@ -94,24 +93,22 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     // we need to match the query against.
     ResourcePath queryPath = query.getPath();
     DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
-    Iterator<Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>>> iterator =
-        docs.iteratorFrom(prefix);
+    Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>> entry = iterator.next();
+      Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
 
       DocumentKey key = entry.getKey();
       if (!queryPath.isPrefixOf(key.getPath())) {
         break;
       }
 
-      MutableDocument doc = entry.getValue().first;
+      MutableDocument doc = entry.getValue();
       if (!doc.isFoundDocument()) {
         continue;
       }
 
-      SnapshotVersion readTime = entry.getValue().second;
-      if (IndexOffset.create(readTime, doc.getKey()).compareTo(offset) <= 0) {
+      if (IndexOffset.create(doc.getReadTime(), doc.getKey()).compareTo(offset) <= 0) {
         continue;
       }
 
@@ -149,7 +146,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     @NonNull
     @Override
     public Iterator<MutableDocument> iterator() {
-      Iterator<Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>>> iterator =
+      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
       return new Iterator<MutableDocument>() {
         @Override
@@ -159,7 +156,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
         @Override
         public MutableDocument next() {
-          return iterator.next().getValue().first;
+          return iterator.next().getValue();
         }
       };
     }
