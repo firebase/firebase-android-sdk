@@ -71,6 +71,7 @@ public class FragmentActivity extends AppCompatActivity {
     switch (item.getItemId()) {
       case R.id.action_change_gif:
         model.changeImage();
+        return true;
       default:
         return super.onOptionsItemSelected(item);
     }
