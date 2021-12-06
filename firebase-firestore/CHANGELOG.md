@@ -2,7 +2,8 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# Unreleased
+# 24.1.0
+- [changed] Performance optimization for offline usage.
 - [changed] Improved performance for queries with collections that contain
   subcollections.
 
