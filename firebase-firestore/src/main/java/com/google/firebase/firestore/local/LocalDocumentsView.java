@@ -97,36 +97,6 @@ class LocalDocumentsView {
     return fromOverlay;
   }
 
-  // Internal version of {@code getDocument} that allows reusing batches.
-  private Document getDocument(DocumentKey key, List<MutationBatch> inBatches) {
-    MutableDocument document = remoteDocumentCache.get(key);
-    for (MutationBatch batch : inBatches) {
-      batch.applyToLocalView(document);
-    }
-    return document;
-  }
-
-  /**
-   * Applies the given {@code batches} to the given {@code docs}. The docs are updated to reflect
-   * the contents of the mutations.
-   *
-   * <p>Returns a {@link DocumentKey} to {@link FieldMask} map, representing the fields mutated for
-   * each document. This is useful to build overlays.
-   */
-  private Map<DocumentKey, FieldMask> applyLocalMutationsToDocuments(
-      Map<DocumentKey, MutableDocument> docs, List<MutationBatch> batches) {
-    Map<DocumentKey, FieldMask> changedMasks = new HashMap<>();
-    for (Map.Entry<DocumentKey, MutableDocument> base : docs.entrySet()) {
-      FieldMask mask = null;
-      for (MutationBatch batch : batches) {
-        mask = batch.applyToLocalView(base.getValue(), mask);
-      }
-      changedMasks.put(base.getKey(), mask);
-    }
-
-    return changedMasks;
-  }
-
   /**
    * Gets the local view of the documents identified by {@code keys}.
    *
@@ -280,9 +250,7 @@ class LocalDocumentsView {
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, Document> fromOverlay =
-        getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
-    return fromOverlay;
+    return getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
   }
 
   /** Queries the remote documents and overlays by doing a full collection scan. */
