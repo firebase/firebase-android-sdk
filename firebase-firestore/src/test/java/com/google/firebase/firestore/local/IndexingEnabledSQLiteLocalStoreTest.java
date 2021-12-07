@@ -21,7 +21,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.testutil.TestUtil.noChangeEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static java.util.Collections.emptyList;
@@ -79,7 +78,6 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
     int targetId = allocateQuery(query);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
-    applyRemoteEvent(noChangeEvent(targetId, 10));
 
     backfillIndexes();
 
@@ -97,12 +95,9 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
     int targetId = allocateQuery(query);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
-    applyRemoteEvent(noChangeEvent(targetId, 10));
-
     backfillIndexes();
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 20, map("matches", true)), targetId));
-    applyRemoteEvent(noChangeEvent(targetId, 20));
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 1);
