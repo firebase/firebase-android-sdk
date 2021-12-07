@@ -94,13 +94,6 @@ class LocalDocumentsView {
       overlay.applyToLocalView(fromOverlay, null, Timestamp.now());
     }
 
-    // TODO(Overlay): Remove below and just return `fromOverlay`.
-    List<MutationBatch> batches = mutationQueue.getAllMutationBatchesAffectingDocumentKey(key);
-    Document fromMutationQueue = getDocument(key, batches);
-    hardAssert(
-        fromOverlay.equals(fromMutationQueue),
-        "Document from overlay does not match mutation queue");
-
     return fromOverlay;
   }
 
@@ -287,19 +280,8 @@ class LocalDocumentsView {
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
-    // TODO(Overlay): Remove the assert and just return `fromOverlay`.
     ImmutableSortedMap<DocumentKey, Document> fromOverlay =
         getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
-    // TODO(Overlay): Delete below before merging. The code passes, but there are tests
-    // looking at how many documents read from remote document, and this would double
-    // the count.
-    /*
-    ImmutableSortedMap<DocumentKey, Document> fromMutationQueue =
-        getDocumentsMatchingCollectionQueryFromMutationQueue(query, sinceReadTime);
-    hardAssert(
-        fromOverlay.equals(fromMutationQueue),
-        "Documents from overlay do not match mutation queue version.");
-     */
     return fromOverlay;
   }
 
