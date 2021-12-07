@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics.ndk;
 
-import static com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider.UNITY_PLATFORM;
-
 import android.content.Context;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -43,8 +41,7 @@ public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
     Context context = container.get(Context.class);
     // The signal handler is installed immediately for non-Unity apps. For Unity apps, it will
     // be installed when the Firebase Unity SDK explicitly calls installSignalHandler().
-    boolean installHandlerDuringPrepSession =
-        !UNITY_PLATFORM.equals(new DevelopmentPlatformProvider(context).getDevelopmentPlatform());
+    boolean installHandlerDuringPrepSession = !DevelopmentPlatformProvider.isUnity(context);
     return FirebaseCrashlyticsNdk.create(context, installHandlerDuringPrepSession);
   }
 }
