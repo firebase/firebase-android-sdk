@@ -153,8 +153,9 @@ public class CrashlyticsReportDataCapture {
             .setVersion(appData.versionCode)
             .setDisplayVersion(appData.versionName)
             .setInstallationUuid(idManager.getCrashlyticsInstallId())
-            .setDevelopmentPlatform(appData.developmentPlatform)
-            .setDevelopmentPlatformVersion(appData.developmentPlatformVersion);
+            .setDevelopmentPlatform(appData.developmentPlatformProvider.getDevelopmentPlatform())
+            .setDevelopmentPlatformVersion(
+                appData.developmentPlatformProvider.getDevelopmentPlatformVersion());
     return builder.build();
   }
 
