@@ -41,14 +41,5 @@ public class FragmentActivity extends AppCompatActivity {
         Navigation.findNavController(this, R.id.nav_host_fragment_activity_fragment);
     NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     NavigationUI.setupWithNavController(navView, navController);
-    ((AppCompatActivity)this).getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
-      int[] fragmentIds = new int[] {R.id.navigation_dashboard, R.id.navigation_notifications, R.id.navigation_home};
-      int idx = 0;
-      @Override
-      public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
-        super.onFragmentResumed(fm, f);
-        if (idx < 3) navController.navigate(fragmentIds[idx++]);
-      }
-    }, true);
   }
 }

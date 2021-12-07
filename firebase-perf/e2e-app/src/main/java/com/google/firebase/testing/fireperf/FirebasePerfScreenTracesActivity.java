@@ -16,7 +16,6 @@ package com.google.firebase.testing.fireperf;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.WindowManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -45,11 +44,5 @@ public class FirebasePerfScreenTracesActivity extends Activity {
     numbersList.setLayoutManager(layoutManager);
     numbersList.setHasFixedSize(true);
     numbersList.setAdapter(listAdapter);
-  }
-
-  @Override
-  protected void onStop() {
-    super.onStop();
-    Log.d("FirebasePerfScreenTracesActivity", "onStop");
   }
 }
