@@ -32,7 +32,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -46,12 +46,12 @@ class DisplayNotification {
 
   private static final int IMAGE_DOWNLOAD_TIMEOUT_SECONDS = 5;
 
-  private final Executor networkIoExecutor;
+  private final ExecutorService networkIoExecutor;
   private final Context context;
   private final NotificationParams params;
 
   public DisplayNotification(
-      Context context, NotificationParams params, Executor networkIoExecutor) {
+      Context context, NotificationParams params, ExecutorService networkIoExecutor) {
     this.networkIoExecutor = networkIoExecutor;
     this.context = context;
     this.params = params;
