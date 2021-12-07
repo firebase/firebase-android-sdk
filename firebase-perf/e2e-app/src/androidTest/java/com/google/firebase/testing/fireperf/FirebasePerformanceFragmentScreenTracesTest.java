@@ -19,28 +19,25 @@ import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPositio
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static com.google.common.truth.Truth.assertThat;
 
-import java.util.Arrays;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.test.filters.MediumTest;
-import androidx.test.ext.junit.rules.ActivityScenarioRule;
-import androidx.test.runner.AndroidJUnit4;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.After;
-import org.junit.runner.RunWith;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.test.core.app.ActivityScenario;
 import androidx.lifecycle.Lifecycle.State;
-
-import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import androidx.test.filters.MediumTest;
+import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.testing.fireperf.ui.dashboard.DashboardFragment;
+import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
 import com.google.firebase.testing.fireperf.ui.notifications.NotificationsFragment;
+import java.util.Arrays;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Scrolls a slow RecyclerView all the way to the end, which should generate slow and frozen frame
@@ -50,61 +47,70 @@ import com.google.firebase.testing.fireperf.ui.notifications.NotificationsFragme
 @MediumTest
 public class FirebasePerformanceFragmentScreenTracesTest {
 
-    @Rule
-    public ActivityScenarioRule<FragmentActivity> activityRule =
-            new ActivityScenarioRule<>(FragmentActivity.class);
+  @Rule
+  public ActivityScenarioRule<FragmentActivity> activityRule =
+      new ActivityScenarioRule<>(FragmentActivity.class);
 
-    @Test
-    public void scrollAndCycleThroughAllFragments() throws InterruptedException {
-        activityRule.getScenario().onActivity(activity -> {
-            ((AppCompatActivity) activity).getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
-                @Override
-                public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
-                    super.onFragmentResumed(fm, f);
-                    notifyNavigationLock();
-                }
-            }, true);
-        });
-        scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
-        activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_dashboard));
-        blockUntilNavigationDone();
-        scrollRecyclerViewToEnd(DashboardFragment.NUM_LIST_ITEMS, R.id.rv_numbers_dash);
-        activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_notifications));
-        blockUntilNavigationDone();
-        scrollRecyclerViewToEnd(NotificationsFragment.NUM_LIST_ITEMS, R.id.rv_numbers_notif);
-        assertThat(activityRule.getScenario().getState()).isIn(Arrays.asList(State.CREATED, State.RESUMED));
-        activityRule.getScenario().moveToState(State.CREATED);
+  @Test
+  public void scrollAndCycleThroughAllFragments() throws InterruptedException {
+    activityRule
+        .getScenario()
+        .onActivity(
+            activity -> {
+              ((AppCompatActivity) activity)
+                  .getSupportFragmentManager()
+                  .registerFragmentLifecycleCallbacks(
+                      new FragmentManager.FragmentLifecycleCallbacks() {
+                        @Override
+                        public void onFragmentResumed(
+                            @NonNull FragmentManager fm, @NonNull Fragment f) {
+                          super.onFragmentResumed(fm, f);
+                          notifyNavigationLock();
+                        }
+                      },
+                      true);
+            });
+    scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
+    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_dashboard));
+    blockUntilNavigationDone();
+    scrollRecyclerViewToEnd(DashboardFragment.NUM_LIST_ITEMS, R.id.rv_numbers_dash);
+    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_notifications));
+    blockUntilNavigationDone();
+    scrollRecyclerViewToEnd(NotificationsFragment.NUM_LIST_ITEMS, R.id.rv_numbers_notif);
+    assertThat(activityRule.getScenario().getState())
+        .isIn(Arrays.asList(State.CREATED, State.RESUMED));
+    activityRule.getScenario().moveToState(State.CREATED);
+  }
+
+  private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
+    int currItemCount = 0;
+
+    while (currItemCount < itemCount) {
+      onView(withId(viewId)).perform(scrollToPosition(currItemCount));
+      currItemCount += 5;
+    }
+  }
+
+  private synchronized void blockUntilNavigationDone() throws InterruptedException {
+    wait();
+  }
+
+  private synchronized void notifyNavigationLock() {
+    notify();
+  }
+
+  static class NavigateAction implements ActivityScenario.ActivityAction {
+    private final int destinationId;
+
+    public NavigateAction(int destinationId) {
+      this.destinationId = destinationId;
     }
 
-    private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
-        int currItemCount = 0;
-
-        while (currItemCount < itemCount) {
-            onView(withId(viewId)).perform(scrollToPosition(currItemCount));
-            currItemCount += 5;
-        }
+    @Override
+    public void perform(Activity activity) {
+      NavController navController =
+          Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
+      navController.navigate(destinationId);
     }
-
-    private synchronized void blockUntilNavigationDone() throws InterruptedException {
-        wait();
-    }
-
-    private synchronized void notifyNavigationLock() {
-        notify();
-    }
-
-    static class NavigateAction implements ActivityScenario.ActivityAction {
-        private final int destinationId;
-
-        public NavigateAction(int destinationId) {
-            this.destinationId = destinationId;
-        }
-
-        @Override
-        public void perform(Activity activity) {
-            NavController navController =
-                    Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
-            navController.navigate(destinationId);
-        }
-    }
+  }
 }
