@@ -51,7 +51,6 @@ class SQLiteSchema {
    */
   static final int VERSION = 15;
 
-
   // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
   static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 

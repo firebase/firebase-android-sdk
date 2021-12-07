@@ -217,8 +217,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                   () -> {
                     MutableDocument document =
                         decodeMaybeDocument(rawDocument, readTimeSeconds[0], readTimeNanos[0]);
-                      synchronized (SQLiteRemoteDocumentCache.this) {
-                        results[0].put(document.getKey(), document);
+                    synchronized (SQLiteRemoteDocumentCache.this) {
+                      results[0].put(document.getKey(), document);
                     }
                   });
             });
