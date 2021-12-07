@@ -25,12 +25,18 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.googletest.firebase.perf.testapp.ListAdapter;
 import com.googletest.firebase.perf.testapp.R;
 import com.googletest.firebase.perf.testapp.SharedViewModel;
 
 public class NotificationsFragment extends Fragment {
+
+  public static int NUM_LIST_ITEMS = 100;
 
   private NotificationsViewModel notificationsViewModel;
   private SharedViewModel sharedViewModel;
@@ -69,6 +75,15 @@ public class NotificationsFragment extends Fragment {
                     .into(imageView);
               }
             });
+
+    // Recycler View setup
+    RecyclerView numbersList = root.findViewById(R.id.rv_fragment_notifications);
+    LinearLayoutManager layoutManager = new LinearLayoutManager(requireActivity());
+    ListAdapter listAdapter = new ListAdapter(NUM_LIST_ITEMS);
+
+    numbersList.setLayoutManager(layoutManager);
+    numbersList.setHasFixedSize(true);
+    numbersList.setAdapter(listAdapter);
     return root;
   }
 }
