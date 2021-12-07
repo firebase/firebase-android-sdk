@@ -31,7 +31,7 @@ import com.google.firebase.testing.fireperf.R;
 
 public class DashboardFragment extends Fragment {
 
-  private static final int NUM_LIST_ITEMS = 100;
+  public static final int NUM_LIST_ITEMS = 100;
 
   private DashboardViewModel dashboardViewModel;
 
@@ -41,6 +41,8 @@ public class DashboardFragment extends Fragment {
         new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory())
             .get(DashboardViewModel.class);
     View root = inflater.inflate(R.layout.fragment_dashboard, container, false);
+    TextView textView = root.findViewById(R.id.text_dashboard);
+    dashboardViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
     RecyclerView numbersList = root.findViewById(R.id.rv_numbers_dash);
     numbersList.setLayoutManager(new LinearLayoutManager(requireContext()));

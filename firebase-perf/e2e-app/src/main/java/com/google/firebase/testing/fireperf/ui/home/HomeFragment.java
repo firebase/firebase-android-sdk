@@ -29,9 +29,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.testing.fireperf.ListAdapter;
 import com.google.firebase.testing.fireperf.R;
 
+import org.w3c.dom.Text;
+
 public class HomeFragment extends Fragment {
 
-  private static final int NUM_LIST_ITEMS = 100;
+  public static final int NUM_LIST_ITEMS = 100;
 
   private HomeViewModel homeViewModel;
 
@@ -41,6 +43,8 @@ public class HomeFragment extends Fragment {
         new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory())
             .get(HomeViewModel.class);
     View root = inflater.inflate(R.layout.fragment_home, container, false);
+    TextView textView = root.findViewById(R.id.text_home);
+    homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
     RecyclerView numbersList = root.findViewById(R.id.rv_numbers_home);
     numbersList.setLayoutManager(new LinearLayoutManager(requireContext()));

@@ -19,7 +19,8 @@ import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPositio
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.appcompat.app.AppCompatActivity;
+import java.util.Arrays;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.filters.MediumTest;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.runner.AndroidJUnit4;
@@ -27,12 +28,19 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.After;
 import org.junit.runner.RunWith;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.Until;
-import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import android.app.Activity;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.test.core.app.ActivityScenario;
 import androidx.lifecycle.Lifecycle.State;
-import android.util.Log;
+
+import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
+import com.google.firebase.testing.fireperf.ui.dashboard.DashboardFragment;
+import com.google.firebase.testing.fireperf.ui.notifications.NotificationsFragment;
 
 /**
  * Scrolls a slow RecyclerView all the way to the end, which should generate slow and frozen frame
@@ -43,29 +51,60 @@ import android.util.Log;
 public class FirebasePerformanceFragmentScreenTracesTest {
 
     @Rule
-    public ActivityScenarioRule<FirebasePerfScreenTracesActivity> activityRule =
-            new ActivityScenarioRule<>(FirebasePerfScreenTracesActivity.class);
-
-    @After
-    public void stopActivity_toTriggerSendScreenTraces() {
-        activityRule.getScenario().moveToState(State.CREATED);
-    }
+    public ActivityScenarioRule<FragmentActivity> activityRule =
+            new ActivityScenarioRule<>(FragmentActivity.class);
 
     @Test
-    public void cycleThroughAllFragments() {
+    public void scrollAndCycleThroughAllFragments() throws InterruptedException {
         activityRule.getScenario().onActivity(activity -> {
-            NavController navController =
-                    Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
-            AppCompatActivity appCompatActivityactivity = (AppCompatActivity) activity;
-            appCompatActivityactivity.getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
-                int[] fragmentIds = new int[] {R.id.navigation_dashboard, R.id.navigation_notifications, R.id.navigation_home};
-                int idx = 0;
+            ((AppCompatActivity) activity).getSupportFragmentManager().registerFragmentLifecycleCallbacks(new FragmentManager.FragmentLifecycleCallbacks() {
                 @Override
                 public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
                     super.onFragmentResumed(fm, f);
-                    navController.navigate(fragmentIds[idx++]);
+                    notifyNavigationLock();
                 }
             }, true);
         });
+        scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
+        activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_dashboard));
+        blockUntilNavigationDone();
+        scrollRecyclerViewToEnd(DashboardFragment.NUM_LIST_ITEMS, R.id.rv_numbers_dash);
+        activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_notifications));
+        blockUntilNavigationDone();
+        scrollRecyclerViewToEnd(NotificationsFragment.NUM_LIST_ITEMS, R.id.rv_numbers_notif);
+        assertThat(activityRule.getScenario().getState()).isIn(Arrays.asList(State.CREATED, State.RESUMED));
+        activityRule.getScenario().moveToState(State.CREATED);
+    }
+
+    private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
+        int currItemCount = 0;
+
+        while (currItemCount < itemCount) {
+            onView(withId(viewId)).perform(scrollToPosition(currItemCount));
+            currItemCount += 5;
+        }
+    }
+
+    private synchronized void blockUntilNavigationDone() throws InterruptedException {
+        wait();
+    }
+
+    private synchronized void notifyNavigationLock() {
+        notify();
+    }
+
+    static class NavigateAction implements ActivityScenario.ActivityAction {
+        private final int destinationId;
+
+        public NavigateAction(int destinationId) {
+            this.destinationId = destinationId;
+        }
+
+        @Override
+        public void perform(Activity activity) {
+            NavController navController =
+                    Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
+            navController.navigate(destinationId);
+        }
     }
 }

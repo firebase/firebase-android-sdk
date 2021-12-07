@@ -31,7 +31,7 @@ import com.google.firebase.testing.fireperf.R;
 
 public class NotificationsFragment extends Fragment {
 
-  private static final int NUM_LIST_ITEMS = 100;
+  public static final int NUM_LIST_ITEMS = 100;
 
   private NotificationsViewModel notificationsViewModel;
 
@@ -41,6 +41,8 @@ public class NotificationsFragment extends Fragment {
         new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory())
             .get(NotificationsViewModel.class);
     View root = inflater.inflate(R.layout.fragment_notifications, container, false);
+    TextView textView = root.findViewById(R.id.text_notifications);
+    notificationsViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
     RecyclerView numbersList = root.findViewById(R.id.rv_numbers_notif);
     numbersList.setLayoutManager(new LinearLayoutManager(requireContext()));
