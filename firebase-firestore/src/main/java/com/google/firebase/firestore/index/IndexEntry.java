@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.util.Util.nullSafeCompare;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.Util;
-import java.util.Comparator;
 
 /** Represents an index entry saved by the SDK in its local storage. */
 @AutoValue
@@ -54,6 +53,4 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
 
     return nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
   }
-
-  public static final Comparator<IndexEntry> SEMANTIC_COMPARATOR = IndexEntry::compareTo;
 }
