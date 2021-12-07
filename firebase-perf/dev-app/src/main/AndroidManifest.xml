@@ -15,7 +15,7 @@
             android:name=".FragmentActivity"
             android:exported="false"
             android:label="@string/title_activity_fragment"
-            android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity
             android:name=".PerfTestActivity"
             android:label="Perf Test App">

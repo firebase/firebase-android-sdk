@@ -22,6 +22,7 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
@@ -40,6 +41,8 @@ public class FragmentActivity extends AppCompatActivity {
     registerListeners();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_fragment);
+    Toolbar toolbar = findViewById(R.id.toolbar_fragment_activity);
+    setSupportActionBar(toolbar);
     BottomNavigationView navView = findViewById(R.id.nav_view);
     // Passing each menu ID as a set of Ids because each
     // menu should be considered as top level destinations.

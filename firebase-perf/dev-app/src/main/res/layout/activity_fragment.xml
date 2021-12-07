@@ -3,8 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingTop="?attr/actionBarSize">
+    android:layout_height="match_parent" >
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent" >
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar_fragment_activity"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:menu="@menu/menu"
+            style="@style/Widget.MaterialComponents.Toolbar.Primary" />
+    </com.google.android.material.appbar.AppBarLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/nav_view"
