@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
 
@@ -365,5 +366,23 @@ public class Util {
   @Nullable
   private static <T> T advanceIterator(Iterator<T> it) {
     return it.hasNext() ? it.next() : null;
+  }
+
+  /** Returns an iterable that iterates over the values in a map. */
+  public static <K, V> Iterable<V> values(Iterable<Map.Entry<K, V>> map) {
+    return () -> {
+      Iterator<Map.Entry<K, V>> iterator = map.iterator();
+      return new Iterator<V>() {
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
+
+        @Override
+        public V next() {
+          return iterator.next().getValue();
+        }
+      };
+    };
   }
 }

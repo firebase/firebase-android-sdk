@@ -54,8 +54,7 @@ public class SQLiteOverlayMigrationManagerTest {
         PersistenceTestHelpers.createSQLitePersistenceForVersion("test-data-migration", 12);
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
   }
 
@@ -94,8 +93,7 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
@@ -118,8 +116,7 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
@@ -147,8 +144,7 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     DocumentOverlayCache overlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
@@ -175,8 +171,7 @@ public class SQLiteOverlayMigrationManagerTest {
     // Switch to a different user
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), new User("another_user"));
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), new User("another_user"));
     localStore.start();
     writeMutation(setMutation("foo/bar", map("foo", "set-by-another_user")));
 
@@ -185,8 +180,7 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(

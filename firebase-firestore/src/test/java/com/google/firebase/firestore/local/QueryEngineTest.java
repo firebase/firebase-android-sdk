@@ -98,7 +98,7 @@ public class QueryEngineTest {
 
     documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
-    queryEngine = new DefaultQueryEngine();
+    queryEngine = new QueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
@@ -119,7 +119,7 @@ public class QueryEngineTest {
             return super.getDocumentsMatchingQuery(query, offset);
           }
         };
-    queryEngine.setLocalDocumentsView(localDocuments);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   /** Adds the provided documents to the query target mapping. */
@@ -185,8 +185,8 @@ public class QueryEngineTest {
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
             query,
-            lastLimboFreeSnapshotVersion,
-            targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
+            targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID),
+            lastLimboFreeSnapshotVersion);
     View view =
         new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
@@ -405,8 +405,8 @@ public class QueryEngineTest {
             () ->
                 queryEngine.getDocumentsMatchingQuery(
                     query,
-                    LAST_LIMBO_FREE_SNAPSHOT,
-                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
+                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID),
+                    LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
   }
 }
