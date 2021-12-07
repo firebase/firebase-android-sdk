@@ -56,15 +56,16 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
   @Override
   public List<Component<?>> processRegistrar(ComponentRegistrar registrar) {
     List<Component<?>> components = registrar.getComponents();
-    if (anyHasExplicitName(components)) {
-      return wrapWithNames(components);
-    }
     if (components.size() < 2) {
       return components;
     }
     LibraryVersion libraryVersion = findTheOnlyLibraryName(components);
     if (libraryVersion == null) {
       return components;
+    }
+
+    if (anyHasExplicitName(components)) {
+      return wrapWithNames(components, libraryVersion);
     }
     List<Component<?>> result = new ArrayList<>();
     boolean foundFirst = false;
@@ -88,14 +89,8 @@ public class ComponentMonitoring implements ComponentRegistrarProcessor {
     return result;
   }
 
-  private List<Component<?>> wrapWithNames(List<Component<?>> components) {
-    if (components.size() < 2) {
-      return components;
-    }
-    LibraryVersion libraryVersion = findTheOnlyLibraryName(components);
-    if (libraryVersion == null) {
-      return components;
-    }
+  private List<Component<?>> wrapWithNames(
+      List<Component<?>> components, LibraryVersion libraryVersion) {
     List<Component<?>> result = new ArrayList<>();
     for (Component<?> component : components) {
       if (component.getName() != null) {
