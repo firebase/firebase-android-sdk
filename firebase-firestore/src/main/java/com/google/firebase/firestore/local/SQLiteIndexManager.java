@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
@@ -251,7 +250,6 @@ final class SQLiteIndexManager implements IndexManager {
     diffCollections(
         existingEntries,
         newEntries,
-        IndexEntry.SEMANTIC_COMPARATOR,
         entry -> addIndexEntry(document, entry),
         entry -> deleteIndexEntry(document, entry));
   }
@@ -348,8 +346,8 @@ final class SQLiteIndexManager implements IndexManager {
         document.getKey().toString());
   }
 
-  @VisibleForTesting
-  SortedSet<IndexEntry> getExistingIndexEntries(DocumentKey documentKey, FieldIndex fieldIndex) {
+  private SortedSet<IndexEntry> getExistingIndexEntries(
+      DocumentKey documentKey, FieldIndex fieldIndex) {
     SortedSet<IndexEntry> results = new TreeSet<>();
     db.query(
             "SELECT array_value, directional_value FROM index_entries "

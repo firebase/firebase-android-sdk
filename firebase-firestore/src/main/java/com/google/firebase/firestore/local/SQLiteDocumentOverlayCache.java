@@ -88,33 +88,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId) {
-    String collectionPath = EncodedPath.encode(collection);
-
-    Map<DocumentKey, Mutation> result = new HashMap<>();
-
-    db.query(
-            "SELECT document_id, overlay_mutation FROM document_overlays "
-                + "WHERE uid = ? AND collection_path = ? AND largest_batch_id > ?")
-        .binding(uid, collectionPath, sinceBatchId)
-        .forEach(
-            row -> {
-              try {
-                String documentId = row.getString(0);
-                Write write = Write.parseFrom(row.getBlob(1));
-                Mutation mutation = serializer.decodeMutation(write);
-
-                result.put(DocumentKey.fromPath(collection.append(documentId)), mutation);
-              } catch (InvalidProtocolBufferException e) {
-                throw fail("Overlay failed to parse: %s", e);
-              }
-            });
-
-    return result;
-  }
-
-  @Override
-  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlaysWithBatchId(
+  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlays(
       ResourcePath collection, int sinceBatchId) {
     String collectionPath = EncodedPath.encode(collection);
 

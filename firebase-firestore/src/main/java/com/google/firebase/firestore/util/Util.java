@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.SortedSet;
 
 /** A utility class for Firestore */
 public class Util {
@@ -295,6 +296,27 @@ public class Util {
     Collections.sort(afterEntries, comparator);
 
     diffCollections(beforeEntries.iterator(), afterEntries.iterator(), comparator, onAdd, onRemove);
+  }
+
+  /**
+   * Compares two sorted sets for equality using their natural ordering. The method computes the
+   * intersection and invokes `onAdd` for every element that is in `after` but not `before`.
+   * `onRemove` is invoked for every element in `before` but missing from `after`.
+   *
+   * <p>The method creates a copy of both `before` and `after` and runs in O(n log n), where n is
+   * the size of the two lists.
+   *
+   * @param before The elements that exist in the original set.
+   * @param after The elements to diff against the original set.
+   * @param onAdd A function to invoke for every element that is part of `after` but not `before`.
+   * @param onRemove A function to invoke for every element that is part of `before` but not
+   *     `after`.
+   */
+  public static <T extends Comparable<T>> void diffCollections(
+      SortedSet<T> before, SortedSet<T> after, Consumer<T> onAdd, Consumer<T> onRemove) {
+    Comparator<T> cmp =
+        before.comparator() != null ? (Comparator<T>) before.comparator() : T::compareTo;
+    diffCollections(before.iterator(), after.iterator(), cmp, onAdd, onRemove);
   }
 
   private static <T> void diffCollections(

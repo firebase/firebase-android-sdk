@@ -16,23 +16,17 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -49,7 +43,6 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private final RemoteDocumentCache remoteDocumentCache;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
@@ -57,7 +50,6 @@ public class IndexBackfiller {
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
     this.scheduler = new Scheduler(asyncQueue);
-    this.remoteDocumentCache = persistence.getRemoteDocumentCache();
   }
 
   public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
@@ -114,12 +106,11 @@ public class IndexBackfiller {
   public int backfill() {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(indexManager != null, "setIndexManager() not called");
-    return persistence.runTransaction(
-        "Backfill Indexes", () -> writeIndexEntries(localDocumentsView));
+    return persistence.runTransaction("Backfill Indexes", this::writeIndexEntries);
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
-  private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
+  private int writeIndexEntries() {
     Set<String> processedCollectionGroups = new HashSet<>();
     int documentsRemaining = maxDocumentsToProcess;
     while (documentsRemaining > 0) {
@@ -128,62 +119,39 @@ public class IndexBackfiller {
         break;
       }
       Logger.debug(LOG_TAG, "Processing collection: %s", collectionGroup);
-      documentsRemaining -=
-          writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
+      documentsRemaining -= writeEntriesForCollectionGroup(collectionGroup, documentsRemaining);
       processedCollectionGroups.add(collectionGroup);
     }
     return maxDocumentsToProcess - documentsRemaining;
   }
 
-  /** Writes entries for the fetched field indexes. */
+  /**
+   * Writes entries for the corresponding field indexes in the provided collection group. Returns
+   * the number of documents processed.
+   */
   private int writeEntriesForCollectionGroup(
-      LocalDocumentsView localDocumentsView,
-      String collectionGroup,
-      int documentsRemainingUnderCap) {
+      String collectionGroup, int documentsRemainingUnderCap) {
     int documentsProcessed = 0;
-    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
 
     // Use the earliest offset of all field indexes to query the local cache.
     Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
-    IndexOffset existingOffset = getExistingOffset(fieldIndexes);
+    IndexOffset startingOffset = getExistingOffset(fieldIndexes);
 
-    // TODO(indexing): Use limit queries to only fetch the required number of entries.
-    ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocumentsMatchingQuery(query, existingOffset);
-
-    List<Document> oldestDocuments = getOldestDocuments(documents, documentsRemainingUnderCap);
-    indexManager.updateIndexEntries(oldestDocuments);
-    documentsProcessed += oldestDocuments.size();
-
-    IndexOffset newOffset = getNewOffset(oldestDocuments, existingOffset);
-
-    // Start indexing mutations only after catching up for read time. This must be done separately
-    // since the backfill's first pass is in read time order rather than mutation batch id order.
-    int documentsRemaining = documentsRemainingUnderCap - oldestDocuments.size();
-    if (documentsRemaining > 0) {
-      int earliestBatchId = getEarliestBatchId(fieldIndexes);
-      newOffset =
-          IndexOffset.create(newOffset.getReadTime(), newOffset.getDocumentKey(), earliestBatchId);
-      Map<Document, Integer> documentToBatchId =
-          localDocumentsView.getDocumentsBatchIdsMatchingCollectionGroupQuery(query, newOffset);
-
-      // Write index entries for documents touched by local mutations and update the offset to the
-      // new largest batch id.
-      if (!documentToBatchId.isEmpty()) {
-        List<Document> documentsByBatchId =
-            getDocumentsByBatchId(documentToBatchId, documentsRemaining);
-
-        // Largest batch id is the last element in documentsByBatchId since it's sorted in ascending
-        // order by batch id.
-        int newLargestBatchId =
-            documentToBatchId.get(documentsByBatchId.get(documentsByBatchId.size() - 1));
-        newOffset =
-            IndexOffset.create(
-                newOffset.getReadTime(), newOffset.getDocumentKey(), newLargestBatchId);
-        indexManager.updateIndexEntries(documentsByBatchId);
-        documentsProcessed += documentsByBatchId.size();
-      }
-    }
+    // Represents documents indexed and the updated offset post-update.
+    Pair<IndexOffset, List<Document>> pair =
+        localDocumentsView.getNextDocumentsAndOffsetForCollectionGroup(
+            collectionGroup, startingOffset, /* updateMemoizedResults=` */ true);
+    IndexOffset newOffset;
+    List<Document> documentsToIndex;
+    do {
+      newOffset = pair.first;
+      documentsToIndex = pair.second;
+      indexManager.updateIndexEntries(documentsToIndex);
+      documentsProcessed += documentsToIndex.size();
+      pair =
+          localDocumentsView.getNextDocumentsAndOffsetForCollectionGroup(
+              collectionGroup, newOffset, /* updateMemoizedResults= */ false);
+    } while (documentsProcessed < documentsRemainingUnderCap && !documentsToIndex.isEmpty());
 
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
     return documentsProcessed;
@@ -198,70 +166,19 @@ public class IndexBackfiller {
         lowestOffset = fieldIndex.getIndexState().getOffset();
       }
     }
-    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
-  }
+    lowestOffset = lowestOffset == null ? IndexOffset.NONE : lowestOffset;
 
-  /**
-   * Returns the read time and document key offset for the index based on the newly indexed
-   * documents.
-   *
-   * @param documents a list of documents sorted by read time and key (ascending)
-   * @param currentOffset the current offset of the index group
-   */
-  private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
-    IndexOffset latestOffset =
-        documents.isEmpty()
-            ? IndexOffset.create(remoteDocumentCache.getLatestReadTime())
-            : IndexOffset.create(
-                documents.get(documents.size() - 1).getReadTime(),
-                documents.get(documents.size() - 1).getKey());
-    // Make sure the index does not go back in time
-    latestOffset = latestOffset.compareTo(currentOffset) > 0 ? latestOffset : currentOffset;
-    return latestOffset;
-  }
-
-  /** Returns up to {@code count} documents sorted by read time and key. */
-  private List<Document> getOldestDocuments(
-      ImmutableSortedMap<DocumentKey, Document> documents, int count) {
-    List<Document> oldestDocuments = new ArrayList<>();
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
-      oldestDocuments.add(entry.getValue());
-    }
-    Collections.sort(
-        oldestDocuments,
-        (l, r) ->
-            IndexOffset.create(l.getReadTime(), l.getKey())
-                .compareTo(IndexOffset.create(r.getReadTime(), r.getKey())));
-    return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
-  }
-
-  /**
-   * Returns up to {@code count} documents sorted by batch id ascending, except in cases where the
-   * mutation batch id contains more documents. This method will always return all documents in a
-   * mutation batch, even if it goes over the limit.
-   *
-   * <p>For example, if count = 2, and we have: (docA, batch1), (docB, batch2), and (docC, batch2),
-   * all three documents will be returned since docC is also part of batch2.
-   */
-  private List<Document> getDocumentsByBatchId(
-      Map<Document, Integer> documentToBatchId, int count) {
-    List<Document> oldestDocuments = new ArrayList<>(documentToBatchId.keySet());
-    Collections.sort(
-        oldestDocuments, (l, r) -> documentToBatchId.get(l).compareTo(documentToBatchId.get(r)));
-    int i = Math.min(count, oldestDocuments.size()) - 1;
-
-    // Include all documents that match the last document's batch id.
-    int lastBatchId = documentToBatchId.get(oldestDocuments.get(i));
-    while (i < oldestDocuments.size()
-        && lastBatchId == documentToBatchId.get(oldestDocuments.get(i))) {
-      ++i;
-    }
-    return oldestDocuments.subList(0, i);
+    // Add earliest batch id to offset
+    int earliestBatchId = getEarliestBatchId(fieldIndexes);
+    lowestOffset =
+        IndexOffset.create(
+            lowestOffset.getReadTime(), lowestOffset.getDocumentKey(), earliestBatchId);
+    return lowestOffset;
   }
 
   /** Returns the earliest batch id from the specified field indexes. */
   private int getEarliestBatchId(Collection<FieldIndex> fieldIndexes) {
-    int lowestBatchId = (int) Double.POSITIVE_INFINITY;
+    int lowestBatchId = Integer.MAX_VALUE;
     for (FieldIndex fieldIndex : fieldIndexes) {
       lowestBatchId =
           Math.min(fieldIndex.getIndexState().getOffset().getLargestBatchId(), lowestBatchId);

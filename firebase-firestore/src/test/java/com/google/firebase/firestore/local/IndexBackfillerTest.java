@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -24,12 +25,9 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertNotEquals;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -43,7 +41,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -379,15 +376,17 @@ public class IndexBackfillerTest {
     Document docA = addDoc("coll1/docA", "foo", version(10));
     int documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    SortedSet<IndexEntry> before = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+    Target target = query("coll1").filter(filter("foo", "==", 5)).toTarget();
+    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    assertEquals(0, matching.size());
 
     // Update doc to new remote version with new value.
     removeDoc(docA);
     addDoc("coll1/docA", "foo", version(40), 5);
     documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    SortedSet<IndexEntry> after = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
-    assertNotEquals(before.first().getDirectionalValue(), after.first().getDirectionalValue());
+    matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    assertEquals(1, matching.size());
   }
 
   @Test
@@ -399,15 +398,46 @@ public class IndexBackfillerTest {
     Document docA = addDoc("coll1/docA", "foo", version(10));
     int documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    SortedSet<IndexEntry> before = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
+    Target target = query("coll1").filter(filter("foo", ">", 0)).toTarget();
+    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    assertEquals(1, matching.size());
 
     // Update doc to new remote version with new value that doesn't match field index.
     removeDoc(docA);
     addDoc("coll1/docA", "bar", version(40), 5);
     documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    SortedSet<IndexEntry> after = indexManager.getExistingIndexEntries(docA.getKey(), fieldIndex);
-    assertTrue(after.isEmpty());
+    matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    assertEquals(0, matching.size());
+  }
+
+  @Test
+  public void testBackfillUpdatesToLatestReadTimeInRemoteDocumentCache() {
+    // check that offset is set to rdc latest read time if no docs match current coll
+    addFieldIndex("coll1", "foo");
+    addDoc("coll2/doc", "foo", version(5));
+    addDoc("coll3/doc", "foo", version(10));
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(0, documentsProcessed);
+
+    // Offset should be set to latest read time in the cache if no documents were indexed.
+    Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
+    assertEquals(version(0, 10001), it.next().getIndexState().getOffset().getReadTime());
+  }
+
+  @Test
+  public void testBackfillDoesNotProcessSameDocumentTwice() {
+    addFieldIndex("coll", "foo");
+    addDoc("coll/doc", "foo", version(5));
+    addSetMutationsToOverlay(1, "coll/doc");
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+
+    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll").iterator().next();
+    assertEquals(version(5), fieldIndex.getIndexState().getOffset().getReadTime());
+    assertEquals(1, fieldIndex.getIndexState().getOffset().getLargestBatchId());
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName) {

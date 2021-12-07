@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import android.util.Pair;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -150,9 +151,12 @@ public abstract class DocumentOverlayCacheTestCase {
     m.put(key("other/doc1"), m5);
     overlays.saveOverlays(3, m);
 
-    m.remove(key("coll/doc1/sub/sub_doc"));
-    m.remove(key("other/doc1"));
-    assertEquals(m, overlays.getOverlays(path("coll"), -1));
+    Map<DocumentKey, Pair<Integer, Mutation>> expected = new HashMap<>();
+    expected.put(key("coll/doc1"), new Pair<>(3, m1));
+    expected.put(key("coll/doc2"), new Pair<>(3, m2));
+    expected.put(key("coll/doc3"), new Pair<>(3, m3));
+
+    assertEquals(expected, overlays.getOverlays(path("coll"), -1));
   }
 
   @Test
@@ -174,9 +178,9 @@ public abstract class DocumentOverlayCacheTestCase {
     m.put(key("coll/doc4"), m4);
     overlays.saveOverlays(4, m);
 
-    Map<DocumentKey, Mutation> expected = new HashMap<>();
-    expected.put(key("coll/doc3"), m3);
-    expected.put(key("coll/doc4"), m4);
+    Map<DocumentKey, Pair<Integer, Mutation>> expected = new HashMap<>();
+    expected.put(key("coll/doc3"), new Pair<>(3, m3));
+    expected.put(key("coll/doc4"), new Pair<>(4, m4));
     assertEquals(expected, overlays.getOverlays(path("coll"), 2));
   }
 }

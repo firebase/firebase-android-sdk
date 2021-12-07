@@ -80,34 +80,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId) {
-    Map<DocumentKey, Mutation> result = new HashMap<>();
-
-    int immediateChildrenPathLength = collection.length() + 1;
-    DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
-    Map<DocumentKey, Pair<Integer, Mutation>> view = overlays.tailMap(prefix);
-
-    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : view.entrySet()) {
-      DocumentKey key = entry.getKey();
-      if (!collection.isPrefixOf(key.getPath())) {
-        break;
-      }
-      // Documents from sub-collections
-      if (key.getPath().length() != immediateChildrenPathLength) {
-        continue;
-      }
-
-      Pair<Integer, Mutation> batchIdToOverlay = entry.getValue();
-      if (batchIdToOverlay.first > sinceBatchId) {
-        result.put(entry.getKey(), batchIdToOverlay.second);
-      }
-    }
-
-    return result;
-  }
-
-  @Override
-  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlaysWithBatchId(
+  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlays(
       ResourcePath collection, int sinceBatchId) {
     Map<DocumentKey, Pair<Integer, Mutation>> result = new HashMap<>();
 
