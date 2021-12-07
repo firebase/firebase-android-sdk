@@ -27,7 +27,6 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.googletest.firebase.perf.testapp.ListAdapter;
@@ -36,7 +35,7 @@ import com.googletest.firebase.perf.testapp.SharedViewModel;
 
 public class NotificationsFragment extends Fragment {
 
-  public static int NUM_LIST_ITEMS = 100;
+  public static final int NUM_LIST_ITEMS = 100;
 
   private NotificationsViewModel notificationsViewModel;
   private SharedViewModel sharedViewModel;

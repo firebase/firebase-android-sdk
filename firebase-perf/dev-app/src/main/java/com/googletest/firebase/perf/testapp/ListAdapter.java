@@ -41,8 +41,8 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.NumberViewHold
   @Override
   public NumberViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
     return new NumberViewHolder(
-            LayoutInflater.from(viewGroup.getContext())
-                    .inflate(R.layout.number_list_item, viewGroup, /* attachToRoot= */ false));
+        LayoutInflater.from(viewGroup.getContext())
+            .inflate(R.layout.number_list_item, viewGroup, /* attachToRoot= */ false));
   }
 
   @Override
@@ -93,4 +93,3 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.NumberViewHold
     }
   }
 }
-
