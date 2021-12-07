@@ -204,17 +204,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .binding(bindVars)
         .forEach(
             row -> {
+              // Store row values in array entries to provide the correct context inside the
+              // executor.
               final byte[] rawDocument = row.getBlob(0);
               final int[] readTimeSeconds = {row.getInt(1)};
               final int[] readTimeNanos = {row.getInt(2)};
 
+              // Since scheduling background tasks incurs overhead, we only dispatch to a
+              // background thread if there are still some documents remaining.
               Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
               executor.execute(
                   () -> {
                     MutableDocument document =
                         decodeMaybeDocument(rawDocument, readTimeSeconds[0], readTimeNanos[0]);
-                    synchronized (SQLiteRemoteDocumentCache.this) {
-                      results[0].put(document.getKey(), document);
+                      synchronized (SQLiteRemoteDocumentCache.this) {
+                        results[0].put(document.getKey(), document);
                     }
                   });
             });

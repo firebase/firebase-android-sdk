@@ -696,8 +696,7 @@ class CrashlyticsController {
         appData.versionName,
         idManager.getCrashlyticsInstallId(),
         DeliveryMechanism.determineFrom(appData.installerPackageName).getId(),
-        appData.developmentPlatform,
-        appData.developmentPlatformVersion);
+        appData.developmentPlatformProvider);
   }
 
   private static StaticSessionData.OsData createOsData(Context context) {
