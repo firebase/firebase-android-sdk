@@ -32,6 +32,7 @@ import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
@@ -343,8 +344,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
             "packageName",
             "versionCode",
             "versionName",
-            "Unity",
-            "1.0");
+            mock(DevelopmentPlatformProvider.class));
 
     crashlyticsCore.onPreExecute(appData, mockSettingsController);
 

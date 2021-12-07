@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 
 /** Carries static information about the app. */
@@ -31,8 +30,7 @@ public class AppData {
   public final String versionCode;
   public final String versionName;
 
-  @Nullable public final String developmentPlatform;
-  @Nullable public final String developmentPlatformVersion;
+  public final DevelopmentPlatformProvider developmentPlatformProvider;
 
   public static AppData create(
       Context context,
@@ -56,8 +54,7 @@ public class AppData {
         packageName,
         versionCode,
         versionName,
-        developmentPlatformProvider.getDevelopmentPlatform(),
-        developmentPlatformProvider.getDevelopmentPlatformVersion());
+        developmentPlatformProvider);
   }
 
   public AppData(
@@ -67,15 +64,13 @@ public class AppData {
       String packageName,
       String versionCode,
       String versionName,
-      @Nullable String developmentPlatform,
-      @Nullable String developmentPlatformVersion) {
+      DevelopmentPlatformProvider developmentPlatformProvider) {
     this.googleAppId = googleAppId;
     this.buildId = buildId;
     this.installerPackageName = installerPackageName;
     this.packageName = packageName;
     this.versionCode = versionCode;
     this.versionName = versionName;
-    this.developmentPlatform = developmentPlatform;
-    this.developmentPlatformVersion = developmentPlatformVersion;
+    this.developmentPlatformProvider = developmentPlatformProvider;
   }
 }

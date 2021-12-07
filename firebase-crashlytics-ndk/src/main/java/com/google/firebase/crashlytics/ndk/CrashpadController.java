@@ -118,8 +118,8 @@ public class CrashpadController {
             appData.versionName(),
             appData.installUuid(),
             appData.deliveryMechanism(),
-            appData.developmentPlatform(),
-            appData.developmentPlatformVersion());
+            appData.developmentPlatformProvider().getDevelopmentPlatform(),
+            appData.developmentPlatformProvider().getDevelopmentPlatformVersion());
     writeSessionJsonFile(fileStore, sessionId, json, APP_METADATA_FILE);
   }
 

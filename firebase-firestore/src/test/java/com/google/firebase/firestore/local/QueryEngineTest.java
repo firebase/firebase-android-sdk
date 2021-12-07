@@ -409,16 +409,4 @@ public class QueryEngineTest {
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
   }
-
-  @Test
-  public void doesNotIncludeDocumentsDeletedByMutation_OverlayEnabled() throws Exception {
-    boolean saved = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-
-    try {
-      doesNotIncludeDocumentsDeletedByMutation();
-    } finally {
-      Persistence.OVERLAY_SUPPORT_ENABLED = saved;
-    }
-  }
 }
