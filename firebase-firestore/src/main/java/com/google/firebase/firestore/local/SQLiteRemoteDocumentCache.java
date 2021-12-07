@@ -79,6 +79,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public void removeAll(Collection<DocumentKey> keys) {
     if (keys.isEmpty()) return;
+
     List<Object> encodedPaths = new ArrayList<>();
     List<Document> deletedDocs = new ArrayList<>();
 
