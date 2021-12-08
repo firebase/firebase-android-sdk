@@ -248,14 +248,9 @@ class LocalDocumentsView {
     return results;
   }
 
+  /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
-    return getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
-  }
-
-  /** Queries the remote documents and overlays by doing a full collection scan. */
-  private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromOverlayCache(Query query, IndexOffset offset) {
     ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
@@ -287,80 +282,5 @@ class LocalDocumentsView {
     }
 
     return results;
-  }
-
-  /** Queries the remote documents and mutation queue, by doing a full collection scan. */
-  private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromMutationQueue(Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
-
-    // TODO(indexing): We should plumb sinceReadTime through to the mutation queue
-    List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
-
-    remoteDocuments = addMissingBaseDocuments(matchingBatches, remoteDocuments);
-
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        // Only process documents belonging to the collection.
-        if (!query.getPath().isImmediateParentOf(mutation.getKey().getPath())) {
-          continue;
-        }
-
-        DocumentKey key = mutation.getKey();
-        MutableDocument document = remoteDocuments.get(key);
-        if (document == null) {
-          // Create invalid document to apply mutations on top of
-          document = MutableDocument.newInvalidDocument(key);
-          remoteDocuments = remoteDocuments.insert(key, document);
-        }
-        mutation.applyToLocalView(
-            document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
-        if (!document.isFoundDocument()) {
-          remoteDocuments = remoteDocuments.remove(key);
-        }
-      }
-    }
-
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
-      // Finally, insert the documents that still match the query
-      if (query.matches(docEntry.getValue())) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * It is possible that a {@code PatchMutation} can make a document match a query, even if the
-   * version in the {@code RemoteDocumentCache} is not a match yet (waiting for server to ack). To
-   * handle this, we find all document keys affected by the {@code PatchMutation}s that are not in
-   * {@code existingDocs} yet, and back fill them via {@code remoteDocumentCache.getAll}, otherwise
-   * those {@code PatchMutation}s will be ignored because no base document can be found, and lead to
-   * missing results for the query.
-   */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> addMissingBaseDocuments(
-      List<MutationBatch> matchingBatches,
-      ImmutableSortedMap<DocumentKey, MutableDocument> existingDocs) {
-    HashSet<DocumentKey> missingDocKeys = new HashSet<>();
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        if (mutation instanceof PatchMutation && !existingDocs.containsKey(mutation.getKey())) {
-          missingDocKeys.add(mutation.getKey());
-        }
-      }
-    }
-
-    ImmutableSortedMap<DocumentKey, MutableDocument> mergedDocs = existingDocs;
-    Map<DocumentKey, MutableDocument> missingDocs = remoteDocumentCache.getAll(missingDocKeys);
-    for (Map.Entry<DocumentKey, MutableDocument> entry : missingDocs.entrySet()) {
-      if (entry.getValue().isFoundDocument()) {
-        mergedDocs = mergedDocs.insert(entry.getKey(), entry.getValue());
-      }
-    }
-
-    return mergedDocs;
   }
 }
