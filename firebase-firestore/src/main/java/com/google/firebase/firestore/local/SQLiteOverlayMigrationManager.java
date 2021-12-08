@@ -39,9 +39,6 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
 
   @Override
   public void run() {
-    if (Persistence.OVERLAY_SUPPORT_ENABLED == false || !hasPendingOverlayMigration()) {
-      return;
-    }
     buildOverlays();
   }
 

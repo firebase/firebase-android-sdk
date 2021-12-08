@@ -978,12 +978,8 @@ public abstract class LocalStoreTestCase {
     localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
-    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-      // No mutations are read because only overlay is needed.
-      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 0);
-    } else {
-      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
-    }
+    // No mutations are read because only overlay is needed.
+    assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 0);
   }
 
   @Test
