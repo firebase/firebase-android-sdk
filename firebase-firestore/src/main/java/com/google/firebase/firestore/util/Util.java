@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -384,5 +385,20 @@ public class Util {
         }
       };
     };
+  }
+
+  /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
+  public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
+    if (data.size() <= n) {
+      return data;
+    } else {
+      List<Map.Entry<K, V>> sortedVlaues = new ArrayList<>(data.entrySet());
+      Collections.sort(sortedVlaues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
+      Map<K, V> result = new HashMap<>();
+      for (int i = 0; i < n; ++i) {
+        result.put(sortedVlaues.get(i).getKey(), sortedVlaues.get(i).getValue());
+      }
+      return result;
+    }
   }
 }

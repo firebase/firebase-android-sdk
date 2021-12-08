@@ -64,7 +64,7 @@ android {
 
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion project.targetSdkVersion
         versionName version
 

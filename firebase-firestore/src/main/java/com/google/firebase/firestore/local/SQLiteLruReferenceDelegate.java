@@ -162,7 +162,6 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
     boolean resultsRemaining = true;
 
     List<DocumentKey> docsToRemove = new ArrayList<>();
-
     while (resultsRemaining) {
       int rowsProccessed =
           persistence

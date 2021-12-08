@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider.UNITY_PLATFORM;
 import static com.google.firebase.crashlytics.internal.common.CrashlyticsReportDataCapture.GENERATOR;
 import static com.google.firebase.crashlytics.internal.common.CrashlyticsReportDataCapture.GENERATOR_TYPE;
 import static org.junit.Assert.assertArrayEquals;
@@ -51,6 +50,7 @@ import org.mockito.MockitoAnnotations;
 
 @RunWith(AndroidJUnit4.class)
 public class CrashlyticsReportDataCaptureTest {
+  private static final String UNITY_PLATFORM = "Unity";
 
   private Context context = getContext();
   private IdManager idManager;

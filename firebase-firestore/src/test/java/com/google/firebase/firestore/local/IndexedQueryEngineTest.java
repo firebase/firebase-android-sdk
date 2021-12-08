@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -27,7 +28,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -80,10 +80,10 @@ public class IndexedQueryEngineTest {
     MutableDocument doc3 = doc("coll/c", 3, map("foo", true));
 
     remoteDocuments.add(doc1, doc1.getVersion());
-    indexManager.updateIndexEntries(Collections.singletonList(doc1));
+    indexManager.updateIndexEntries(docMap(doc1));
 
     remoteDocuments.add(doc2, doc2.getVersion());
-    indexManager.updateIndexEntries(Collections.singletonList(doc2));
+    indexManager.updateIndexEntries(docMap(doc2));
 
     remoteDocuments.add(doc3, doc3.getVersion());
 

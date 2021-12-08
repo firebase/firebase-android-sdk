@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
@@ -73,4 +74,7 @@ public interface Document {
    * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
    */
   boolean hasPendingWrites();
+
+  @NonNull
+  MutableDocument clone();
 }
