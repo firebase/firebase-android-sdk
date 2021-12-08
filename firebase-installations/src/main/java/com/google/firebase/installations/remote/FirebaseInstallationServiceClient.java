@@ -30,6 +30,7 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException;
@@ -89,6 +90,7 @@ public class FirebaseInstallationServiceClient {
   private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
 
   private static final String HEART_BEAT_HEADER = "x-firebase-client";
+  private static final String GMP_APP_HEADER = "x-firebase-gmpid";
 
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
@@ -115,10 +117,14 @@ public class FirebaseInstallationServiceClient {
   private final Context context;
   private final Provider<HeartBeatController> heartBeatProvider;
   private final RequestLimiter requestLimiter;
+  private final FirebaseApp firebaseApp;
 
   public FirebaseInstallationServiceClient(
-      @NonNull Context context, @NonNull Provider<HeartBeatController> heartBeatProvider) {
+      @NonNull Context context,
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<HeartBeatController> heartBeatProvider) {
     this.context = context;
+    this.firebaseApp = firebaseApp;
     this.heartBeatProvider = heartBeatProvider;
     this.requestLimiter = new RequestLimiter();
   }
@@ -485,6 +491,8 @@ public class FirebaseInstallationServiceClient {
       try {
         httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Tasks.await(heartBeatController.getHeartBeatsHeader()));
+        httpURLConnection.addRequestProperty(
+            GMP_APP_HEADER, firebaseApp.getOptions().getApplicationId());
       } catch (ExecutionException e) {
         Log.w(TAG, "Failed to get heartbeats header");
       } catch (InterruptedException e) {
