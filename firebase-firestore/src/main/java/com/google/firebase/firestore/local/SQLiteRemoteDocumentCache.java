@@ -16,8 +16,8 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
-import static com.google.firebase.firestore.util.Util.trimMap;
 
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -157,7 +157,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             getAll(
                 collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, limit));
       }
-      return trimMap(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
+      return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
   }
 

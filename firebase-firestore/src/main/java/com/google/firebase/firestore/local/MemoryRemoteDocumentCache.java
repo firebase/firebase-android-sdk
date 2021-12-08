@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
-import static com.google.firebase.firestore.util.Util.trimMap;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -28,10 +27,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
@@ -88,30 +84,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public Map<DocumentKey, MutableDocument> getAll(
       String collectionGroup, IndexOffset offset, int limit) {
-    // Note: This method is pretty inefficient, but t is not called since the method is only used
-    // during index backfill, which is not supported by memory persistence.
-
-    List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
-    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
-
-    for (ResourcePath collectionParent : collectionParents) {
-      ResourcePath documentParent = collectionParent.append(collectionGroup);
-      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
-          docs.iteratorFrom(DocumentKey.fromPath(documentParent.append("")));
-      while (iterator.hasNext()) {
-        Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
-        DocumentKey key = entry.getKey();
-        MutableDocument document = entry.getValue();
-        if (!documentParent.isPrefixOf(key.getPath())) {
-          break;
-        }
-        if (IndexOffset.fromDocument(document).compareTo(offset) > 0) {
-          matchingDocuments.put(key, document);
-        }
-      }
-    }
-
-    return trimMap(matchingDocuments, limit, IndexOffset.DOCUMENT_COMPARATOR);
+    // This method should only be called from the IndexBackfiller if SQLite is enabled.
+    throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
   }
 
   @Override

@@ -369,15 +369,15 @@ public class Util {
     return it.hasNext() ? it.next() : null;
   }
 
-  /** Returns a map with the first {#code count} elements of {#code data} when sorted by comp. */
-  public static <K, V> Map<K, V> trimMap(Map<K, V> data, int count, Comparator<V> comp) {
-    if (data.size() <= count) {
+  /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
+  public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
+    if (data.size() <= n) {
       return data;
     } else {
       List<Map.Entry<K, V>> sortedVlaues = new ArrayList<>(data.entrySet());
       Collections.sort(sortedVlaues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
       Map<K, V> result = new HashMap<>();
-      for (int i = 0; i < count; ++i) {
+      for (int i = 0; i < n; ++i) {
         result.put(sortedVlaues.get(i).getKey(), sortedVlaues.get(i).getValue());
       }
       return result;
