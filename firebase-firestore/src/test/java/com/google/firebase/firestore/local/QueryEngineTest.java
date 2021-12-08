@@ -185,8 +185,8 @@ public class QueryEngineTest {
     ImmutableSortedMap<DocumentKey, Document> docs =
         queryEngine.getDocumentsMatchingQuery(
             query,
-            targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID),
-            lastLimboFreeSnapshotVersion);
+            lastLimboFreeSnapshotVersion,
+            targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID));
     View view =
         new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
@@ -405,8 +405,8 @@ public class QueryEngineTest {
             () ->
                 queryEngine.getDocumentsMatchingQuery(
                     query,
-                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID),
-                    LAST_LIMBO_FREE_SNAPSHOT));
+                    LAST_LIMBO_FREE_SNAPSHOT,
+                    targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
   }
 }
