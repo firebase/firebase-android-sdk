@@ -25,10 +25,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
@@ -84,22 +81,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getAll(
-      String collectionGroup, IndexOffset offset, int count) {
-    List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
-    Set<MutableDocument> allDocuments =
-        new TreeSet<>((l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r)));
-    for (ResourcePath collectionParent : collectionParents) {
-      allDocuments.addAll(getAll(collectionParent.append(collectionGroup), offset).values());
-    }
-
-    Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
-    Iterator<MutableDocument> it = allDocuments.iterator();
-    while (it.hasNext() && matchingDocuments.size() < count) {
-      MutableDocument document = it.next();
-      matchingDocuments.put(document.getKey(), document);
-    }
-
-    return matchingDocuments;
+      String collectionGroup, IndexOffset offset, int limit) {
+    // This method should only be called from the IndexBackfiller if SQLite is enabled.
+    throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
   }
 
   @Override

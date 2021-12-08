@@ -38,7 +38,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.viewChanges;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -75,16 +74,17 @@ import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -155,23 +155,27 @@ public abstract class LocalStoreTestCase {
     notifyLocalViewChanges(viewChanges(targetId, fromCache, asList(), asList()));
   }
 
-  private void acknowledgeMutation(long documentVersion, @Nullable Object transformResult) {
+  private void acknowledgeMutationWithTransformResults(
+      long documentVersion, Object... transformResult) {
     MutationBatch batch = batches.remove(0);
     SnapshotVersion version = version(documentVersion);
-    MutationResult mutationResult =
-        new MutationResult(
-            version,
-            transformResult != null
-                ? Collections.singletonList(TestUtil.wrap(transformResult))
-                : Collections.emptyList());
+    List<MutationResult> mutationResults =
+        Collections.singletonList(new MutationResult(version, emptyList()));
+
+    if (transformResult.length != 0) {
+      mutationResults =
+          Arrays.stream(transformResult)
+              .map(r -> new MutationResult(version, Collections.singletonList(TestUtil.wrap(r))))
+              .collect(Collectors.toList());
+    }
+
     MutationBatchResult result =
-        MutationBatchResult.create(
-            batch, version, singletonList(mutationResult), WriteStream.EMPTY_STREAM_TOKEN);
+        MutationBatchResult.create(batch, version, mutationResults, WriteStream.EMPTY_STREAM_TOKEN);
     lastChanges = localStore.acknowledgeBatch(result);
   }
 
   private void acknowledgeMutation(long documentVersion) {
-    acknowledgeMutation(documentVersion, null);
+    acknowledgeMutationWithTransformResults(documentVersion);
   }
 
   private void rejectMutation() {
@@ -975,9 +979,11 @@ public abstract class LocalStoreTestCase {
     resetPersistenceStats();
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
-
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    if (!Persistence.OVERLAY_SUPPORT_ENABLED) {
+    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
+      // No mutations are read because only overlay is needed.
+      assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 0);
+    } else {
       assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 1);
     }
   }
@@ -1073,7 +1079,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
     assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
-    acknowledgeMutation(2, 1);
+    acknowledgeMutationWithTransformResults(2, 1);
     assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
 
@@ -1287,19 +1293,17 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutation(3, 1);
+    acknowledgeMutationWithTransformResults(3, 1);
     assertChanged(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutation(4, 1339);
+    acknowledgeMutationWithTransformResults(4, 1339);
     assertChanged(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
   }
 
   @Test
-  @Ignore("Test fails in CI")
-  // TODO(Overlay): Fix me :)
-  public void testHoldsBackOnlyNonIdempotentTransforms() {
+  public void testHoldsBackTransforms() {
     Query query = Query.atPath(ResourcePath.fromString("foo"));
     allocateQuery(query);
     assertTargetId(2);
@@ -1336,8 +1340,13 @@ public abstract class LocalStoreTestCase {
             asList(2),
             emptyList()));
     assertChanged(
-        doc("foo/bar", 2, map("sum", 1, "array_union", asList("bar", "foo")))
-            .setHasLocalMutations());
+        doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
+
+    acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
+    assertChanged(
+        doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
+            .withReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
+            .setHasCommittedMutations());
   }
 
   @Test

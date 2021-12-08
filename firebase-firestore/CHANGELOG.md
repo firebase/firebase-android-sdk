@@ -2,8 +2,10 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# Unreleased
-- [changed] Improved performance for queries with collections that contain
+# 24.1.0
+- [changed] Improved performance for databases that contain many document
+  updates that have not yet been synced with the backend.
+- [changed] Improved performance for queries against collections that contain
   subcollections.
 
 # 24.0.0

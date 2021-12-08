@@ -15,7 +15,6 @@
 package com.google.firebase.app.distribution;
 
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-import static com.google.firebase.app.distribution.ReleaseIdentificationUtils.calculateApkHash;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
@@ -51,8 +50,6 @@ class UpdateApkClient {
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
 
-  private final ReleaseIdentifierStorage releaseIdentifierStorage;
-
   private final Object updateTaskLock = new Object();
 
   public UpdateApkClient(
@@ -64,8 +61,6 @@ class UpdateApkClient {
       @NonNull Executor downloadExecutor,
       @NonNull FirebaseApp firebaseApp,
       @NonNull InstallApkClient installApkClient) {
-    this.releaseIdentifierStorage =
-        new ReleaseIdentifierStorage(firebaseApp.getApplicationContext());
     this.appDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
     this.downloadExecutor = downloadExecutor;
@@ -248,14 +243,6 @@ class UpdateApkClient {
           new FirebaseAppDistributionException(
               Constants.ErrorMessages.NETWORK_ERROR,
               FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-    }
-
-    File downloadedFile = new File(firebaseApp.getApplicationContext().getFilesDir(), fileName);
-
-    String internalCodeHash = calculateApkHash(downloadedFile);
-
-    if (internalCodeHash != null) {
-      releaseIdentifierStorage.setCodeHashMap(internalCodeHash, newRelease);
     }
 
     // completion

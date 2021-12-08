@@ -14,8 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.model;
 
-import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 
 @AutoValue
 public abstract class StaticSessionData {
@@ -44,11 +44,7 @@ public abstract class StaticSessionData {
 
     public abstract int deliveryMechanism();
 
-    @Nullable
-    public abstract String developmentPlatform();
-
-    @Nullable
-    public abstract String developmentPlatformVersion();
+    public abstract DevelopmentPlatformProvider developmentPlatformProvider();
 
     public static AppData create(
         String appIdentifier,
@@ -56,16 +52,14 @@ public abstract class StaticSessionData {
         String versionName,
         String installUuid,
         int deliveryMechanism,
-        @Nullable String developmentPlatform,
-        @Nullable String developmentPlatformVersion) {
+        DevelopmentPlatformProvider developmentPlatformProvider) {
       return new AutoValue_StaticSessionData_AppData(
           appIdentifier,
           versionCode,
           versionName,
           installUuid,
           deliveryMechanism,
-          developmentPlatform,
-          developmentPlatformVersion);
+          developmentPlatformProvider);
     }
   }
 

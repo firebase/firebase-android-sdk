@@ -116,6 +116,9 @@ public abstract class FieldIndex {
   /** Stores the latest read time and document that were processed for an index. */
   @AutoValue
   public abstract static class IndexOffset implements Comparable<IndexOffset> {
+    public static final Comparator<MutableDocument> DOCUMENT_COMPARATOR =
+        (l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r));
+
     public static final IndexOffset NONE = create(SnapshotVersion.NONE, DocumentKey.empty());
 
     /**

@@ -49,12 +49,10 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 14;
-
-  static final int OVERLAY_SUPPORT_VERSION = VERSION + 1;
+  static final int VERSION = 15;
 
   // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = OVERLAY_SUPPORT_VERSION + 1;
+  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
 
   /**
    * The batch size for data migrations.
@@ -75,14 +73,11 @@ class SQLiteSchema {
   }
 
   void runSchemaUpgrades() {
-    runSchemaUpgrades(0, VERSION);
+    runSchemaUpgrades(0);
   }
 
   void runSchemaUpgrades(int fromVersion) {
     int toVersion = VERSION;
-    if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-      toVersion = OVERLAY_SUPPORT_VERSION;
-    }
     if (Persistence.INDEXING_SUPPORT_ENABLED) {
       toVersion = INDEXING_SUPPORT_VERSION;
     }
@@ -179,11 +174,19 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 14 && toVersion >= 14) {
+      Preconditions.checkState(
+          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
+      createOverlays();
+      createDataMigrationTable();
+      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
+    }
+
+    if (fromVersion < 15 && toVersion >= 15) {
       ensureReadTime();
     }
 
     /*
-     * Adding a new migration? READ THIS FIRST!
+     * Adding a new schema upgrade? READ THIS FIRST!
      *
      * Be aware that the SDK version may be downgraded then re-upgraded. This means that running
      * your new migration must not prevent older versions of the SDK from functioning. Additionally,
@@ -194,13 +197,6 @@ class SQLiteSchema {
      *    maintained invariants from later versions, so migrations that update values cannot assume
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
-    if (fromVersion < OVERLAY_SUPPORT_VERSION && toVersion >= OVERLAY_SUPPORT_VERSION) {
-      Preconditions.checkState(
-          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
-      createOverlays();
-      createDataMigrationTable();
-      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
-    }
 
     if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
       Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
@@ -633,7 +629,7 @@ class SQLiteSchema {
             });
   }
 
-  /** Fill the remote_document's path_length column. */
+  /** Populates the remote_document's path_length column. */
   private void ensurePathLength() {
     SQLitePersistence.Query documentsToMigrate =
         new SQLitePersistence.Query(
@@ -718,7 +714,9 @@ class SQLiteSchema {
   }
 
   private void addPendingDataMigration(String migration) {
-    db.execSQL("INSERT INTO data_migrations (migration_name) VALUES (?)", new String[] {migration});
+    db.execSQL(
+        "INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)",
+        new String[] {migration});
   }
 
   private boolean tableExists(String table) {

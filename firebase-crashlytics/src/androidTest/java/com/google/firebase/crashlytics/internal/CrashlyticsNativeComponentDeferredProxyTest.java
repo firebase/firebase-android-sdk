@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal;
 
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 
 import androidx.annotation.NonNull;
 import androidx.test.runner.AndroidJUnit4;
@@ -57,7 +58,7 @@ public class CrashlyticsNativeComponentDeferredProxyTest {
 
     StaticSessionData.AppData appData =
         StaticSessionData.AppData.create(
-            "appId", "123", "1.2.3", "install_id", 0, "unity", "unityVersion");
+            "appId", "123", "1.2.3", "install_id", 0, mock(DevelopmentPlatformProvider.class));
     StaticSessionData.OsData osData = StaticSessionData.OsData.create("release", "codeName", false);
     StaticSessionData.DeviceData deviceData =
         StaticSessionData.DeviceData.create(

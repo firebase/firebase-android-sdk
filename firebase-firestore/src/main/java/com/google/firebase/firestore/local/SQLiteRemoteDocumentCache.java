@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import androidx.annotation.VisibleForTesting;
@@ -133,7 +134,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getAll(
-      String collectionGroup, IndexOffset offset, int count) {
+      String collectionGroup, IndexOffset offset, int limit) {
     List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
     List<ResourcePath> collections = new ArrayList<>(collectionParents.size());
     for (ResourcePath collectionParent : collectionParents) {
@@ -143,7 +144,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, count);
+      return getAll(collections, offset, limit);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -151,9 +152,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       for (int i = 0; i < collections.size(); i += pageSize) {
         results.putAll(
             getAll(
-                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, count));
+                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, limit));
       }
-      return results;
+      return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
   }
 
@@ -201,10 +202,14 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .binding(bindVars)
         .forEach(
             row -> {
+              // Store row values in array entries to provide the correct context inside the
+              // executor.
               final byte[] rawDocument = row.getBlob(0);
               final int[] readTimeSeconds = {row.getInt(1)};
               final int[] readTimeNanos = {row.getInt(2)};
 
+              // Since scheduling background tasks incurs overhead, we only dispatch to a
+              // background thread if there are still some documents remaining.
               Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
               executor.execute(
                   () -> {
