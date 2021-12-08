@@ -82,6 +82,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
+  public Map<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int limit) {
+    // This method should only be called from the IndexBackfiller if SQLite is enabled.
+    throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
+  }
+
+  @Override
   public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
     hardAssert(
@@ -108,7 +115,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      if (IndexOffset.create(doc.getReadTime(), doc.getKey()).compareTo(offset) <= 0) {
+      if (IndexOffset.fromDocument(doc).compareTo(offset) <= 0) {
         continue;
       }
 

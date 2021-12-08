@@ -278,9 +278,7 @@ public final class LocalStore implements BundleCallback {
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
           Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
-          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
-          }
+          documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
           return new LocalWriteResult(batch.getBatchId(), documents);
         });
   }
@@ -310,10 +308,8 @@ public final class LocalStore implements BundleCallback {
           applyWriteToRemoteDocuments(batchResult);
           mutationQueue.performConsistencyCheck();
 
-          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlayCache.removeOverlaysForBatchId(batchResult.getBatch().getBatchId());
-            localDocuments.recalculateAndSaveOverlays(getKeysWithTransformResults(batchResult));
-          }
+          documentOverlayCache.removeOverlaysForBatchId(batchResult.getBatch().getBatchId());
+          localDocuments.recalculateAndSaveOverlays(getKeysWithTransformResults(batchResult));
 
           return localDocuments.getDocuments(batch.getKeys());
         });
@@ -350,10 +346,8 @@ public final class LocalStore implements BundleCallback {
           mutationQueue.removeMutationBatch(toReject);
           mutationQueue.performConsistencyCheck();
 
-          if (Persistence.OVERLAY_SUPPORT_ENABLED) {
-            documentOverlayCache.removeOverlaysForBatchId(batchId);
-            localDocuments.recalculateAndSaveOverlays(toReject.getKeys());
-          }
+          documentOverlayCache.removeOverlaysForBatchId(batchId);
+          localDocuments.recalculateAndSaveOverlays(toReject.getKeys());
 
           return localDocuments.getDocuments(toReject.getKeys());
         });

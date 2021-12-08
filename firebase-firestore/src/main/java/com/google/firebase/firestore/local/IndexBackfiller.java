@@ -19,19 +19,15 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -138,22 +134,18 @@ public class IndexBackfiller {
   /** Writes entries for the fetched field indexes. */
   private int writeEntriesForCollectionGroup(
       LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
-    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
+    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
 
     // Use the earliest offset of all field indexes to query the local cache.
     IndexOffset existingOffset = getExistingOffset(indexManager.getFieldIndexes(collectionGroup));
-
-    // TODO(indexing): Use limit queries to only fetch the required number of entries.
-    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocumentsMatchingQuery(query, existingOffset);
+        localDocumentsView.getDocuments(collectionGroup, existingOffset, entriesRemainingUnderCap);
+    indexManager.updateIndexEntries(documents);
 
-    List<Document> oldestDocuments = getOldestDocuments(documents, entriesRemainingUnderCap);
-    indexManager.updateIndexEntries(oldestDocuments);
-
-    IndexOffset newOffset = getNewOffset(oldestDocuments, existingOffset);
+    IndexOffset newOffset = getNewOffset(documents, existingOffset);
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
-    return oldestDocuments.size();
+
+    return documents.size();
   }
 
   /** Returns the lowest offset for the provided index group. */
@@ -168,37 +160,22 @@ public class IndexBackfiller {
     return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
   }
 
-  /**
-   * Returns the offset for the index based on the newly indexed documents.
-   *
-   * @param documents a list of documents sorted by read time and key (ascending)
-   * @param currentOffset the current offset of the index group
-   */
-  private IndexOffset getNewOffset(List<Document> documents, IndexOffset currentOffset) {
-    IndexOffset latestOffset =
-        documents.isEmpty()
-            ? IndexOffset.create(remoteDocumentCache.getLatestReadTime())
-            : IndexOffset.create(
-                documents.get(documents.size() - 1).getReadTime(),
-                documents.get(documents.size() - 1).getKey());
-    // Make sure the index does not go back in time
-    latestOffset = latestOffset.compareTo(currentOffset) > 0 ? latestOffset : currentOffset;
-    return latestOffset;
-  }
-
-  /** Returns up to {@code count} documents sorted by read time and key. */
-  private List<Document> getOldestDocuments(
-      ImmutableSortedMap<DocumentKey, Document> documents, int count) {
-    List<Document> oldestDocuments = new ArrayList<>();
-    for (Map.Entry<DocumentKey, Document> entry : documents) {
-      oldestDocuments.add(entry.getValue());
+  /** Returns the offset for the index based on the newly indexed documents. */
+  private IndexOffset getNewOffset(
+      ImmutableSortedMap<DocumentKey, Document> documents, IndexOffset currentOffset) {
+    if (documents.isEmpty()) {
+      return IndexOffset.create(remoteDocumentCache.getLatestReadTime());
+    } else {
+      IndexOffset latestOffset = currentOffset;
+      Iterator<Map.Entry<DocumentKey, Document>> it = documents.iterator();
+      while (it.hasNext()) {
+        IndexOffset newOffset = IndexOffset.fromDocument(it.next().getValue());
+        if (newOffset.compareTo(latestOffset) > 0) {
+          latestOffset = newOffset;
+        }
+      }
+      return latestOffset;
     }
-    Collections.sort(
-        oldestDocuments,
-        (l, r) ->
-            IndexOffset.create(l.getReadTime(), l.getKey())
-                .compareTo(IndexOffset.create(r.getReadTime(), r.getKey())));
-    return oldestDocuments.subList(0, Math.min(count, oldestDocuments.size()));
   }
 
   @VisibleForTesting

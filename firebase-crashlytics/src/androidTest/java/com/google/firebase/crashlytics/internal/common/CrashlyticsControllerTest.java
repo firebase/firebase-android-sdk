@@ -34,6 +34,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.log.LogFileManager;
@@ -142,8 +143,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               "packageName",
               "versionCode",
               "versionName",
-              /*developmentPlatform=*/ null,
-              /*developmentPlatformVersion=*/ null);
+              mock(DevelopmentPlatformProvider.class));
 
       final CrashlyticsController controller =
           new CrashlyticsController(

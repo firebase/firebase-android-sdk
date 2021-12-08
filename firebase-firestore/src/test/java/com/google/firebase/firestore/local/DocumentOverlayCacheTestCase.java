@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -51,17 +50,6 @@ public abstract class DocumentOverlayCacheTestCase {
   private Persistence persistence;
   private DocumentOverlayCache overlays;
   private static boolean overlayEnabled = false;
-
-  @BeforeClass
-  public static void beforeClass() {
-    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-  }
 
   @Before
   public void setUp() {
