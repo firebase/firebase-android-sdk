@@ -494,9 +494,10 @@ public class FirebaseInstallationServiceClient {
         httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Tasks.await(heartBeatController.getHeartBeatsHeader()));
       } catch (ExecutionException e) {
-        Log.w(TAG, "Failed to get heartbeats header");
+        Log.w(TAG, "Failed to get heartbeats header", e);
       } catch (InterruptedException e) {
-        Log.w(TAG, "Failed to get heartbeats header");
+        Thread.currentThread().interrupt();
+        Log.w(TAG, "Failed to get heartbeats header", e);
       }
     }
     httpURLConnection.addRequestProperty(X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
