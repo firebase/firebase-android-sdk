@@ -15,10 +15,12 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
@@ -688,5 +690,66 @@ public class QueryTest {
 
   private void assertCanonicalId(Query query, String expectedCanonicalId) {
     assertEquals(expectedCanonicalId, query.toTarget().getCanonicalId());
+  }
+
+  @Test
+  public void testOrQuery() {
+    MutableDocument doc1 = doc("collection/1", 0, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("collection/2", 0, map("a", 2, "b", 1));
+    MutableDocument doc3 = doc("collection/3", 0, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("collection/4", 0, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("collection/5", 0, map("a", 1, "b", 1));
+
+    // Two equalities: a==1 || b==1.
+    Query query1 = Query.atPath(ResourcePath.fromString("collection")).filter(orFilter(filter("a", "==", 1), filter("b", "==", 1)));
+    assertTrue(query1.matches(doc1));
+    assertTrue(query1.matches(doc2));
+    assertFalse(query1.matches(doc3));
+    assertTrue(query1.matches(doc4));
+    assertTrue(query1.matches(doc5));
+
+    // with one inequality: a>2 || b==1.
+    Query query2 = Query.atPath(ResourcePath.fromString("collection")).filter(orFilter(filter("a", ">", 2), filter("b", "==", 1)));
+    assertFalse(query2.matches(doc1));
+    assertTrue(query2.matches(doc2));
+    assertTrue(query2.matches(doc3));
+    assertFalse(query2.matches(doc4));
+    assertTrue(query2.matches(doc5));
+
+    // Already in DNF form: (a==1 && b==0) || (a==3 && b==2)
+    Query query3 = Query.atPath(ResourcePath.fromString("collection")).filter(
+            orFilter(
+                    andFilter(filter("a", "==", 1), filter("b", "==", 0)),
+                    andFilter(filter("a", "==", 3), filter("b", "==", 2))));
+
+    assertTrue(query3.matches(doc1));
+    assertFalse(query3.matches(doc2));
+    assertTrue(query3.matches(doc3));
+    assertFalse(query3.matches(doc4));
+    assertFalse(query3.matches(doc5));
+
+    // a==1 && (b==0 || b==3).
+    Query query4 = Query.atPath(ResourcePath.fromString("collection")).filter(
+            andFilter(
+                    filter("a", "==", 1),
+                    orFilter(filter("b", "==", 0), filter("b", "==", 3))));
+
+    assertTrue(query4.matches(doc1));
+    assertFalse(query4.matches(doc2));
+    assertFalse(query4.matches(doc3));
+    assertTrue(query4.matches(doc4));
+    assertFalse(query4.matches(doc5));
+
+    // (a==2 || b==2) && (a==3 || b==3)
+    Query query5 = Query.atPath(ResourcePath.fromString("collection")).filter(
+            andFilter(
+                    orFilter(filter("a", "==", 2), filter("b", "==", 2)),
+                    orFilter(filter("a", "==", 3), filter("b", "==", 3))));
+
+    assertFalse(query5.matches(doc1));
+    assertFalse(query5.matches(doc2));
+    assertTrue(query5.matches(doc3));
+    assertFalse(query5.matches(doc4));
+    assertFalse(query5.matches(doc5));
   }
 }
