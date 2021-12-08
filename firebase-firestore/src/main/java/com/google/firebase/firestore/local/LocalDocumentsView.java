@@ -29,6 +29,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -374,13 +375,16 @@ class LocalDocumentsView {
 
   private void memoizeDocuments(String collectionGroup, IndexOffset offset) {
     Query query = new Query(ResourcePath.EMPTY, collectionGroup);
-    memoizeDocuments(collectionGroup, offset);
     ImmutableSortedMap<DocumentKey, Document> documents = getDocumentsMatchingQuery(query, offset);
     memoizedDocumentKeys.clear();
     for (Map.Entry<DocumentKey, Document> document : documents) {
-      memoizedDocumentKeys.add(document.getKey());
-      memoizedDocumentsByReadTime.add(document.getValue());
+      if (document.getValue().getVersion() != SnapshotVersion.NONE) {
+        memoizedDocumentKeys.add(document.getKey());
+        memoizedDocumentsByReadTime.add(document.getValue());
+      }
     }
+    // TODO(indexing): Store largest batch id on Document class so we can avoid fetching documents
+    // a second time.
     memoizedBatchIdToDocuments =
         getDocumentsBatchIdsMatchingCollectionGroupQuery(collectionGroup, offset);
   }
@@ -466,7 +470,11 @@ class LocalDocumentsView {
     // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
-      Mutation overlay = overlays.get(docEntry.getKey()).second;
+      // TODO: revert to before merge and check what the difference was. Guess is that
+      // LDV.getDocumentsMatchingQuery() now creates documents for docs that are mutations
+      // whereas before it only took documents from RDC and applied overlays
+      Pair<Integer, Mutation> pair = overlays.get(docEntry.getKey());
+      Mutation overlay = pair != null ? pair.second : null;
       if (overlay != null) {
         overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
       }
