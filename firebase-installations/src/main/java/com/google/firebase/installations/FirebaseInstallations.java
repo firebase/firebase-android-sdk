@@ -134,7 +134,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             THREAD_FACTORY),
         firebaseApp,
         new FirebaseInstallationServiceClient(
-            firebaseApp.getApplicationContext(), firebaseApp, heartBeatProvider),
+            firebaseApp.getApplicationContext(), heartBeatProvider),
         new PersistedInstallation(firebaseApp),
         Utils.getInstance(),
         new IidStore(firebaseApp),

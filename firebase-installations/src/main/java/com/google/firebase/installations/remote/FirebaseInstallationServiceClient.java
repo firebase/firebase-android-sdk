@@ -30,7 +30,6 @@ import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException;
@@ -117,14 +116,10 @@ public class FirebaseInstallationServiceClient {
   private final Context context;
   private final Provider<HeartBeatController> heartBeatProvider;
   private final RequestLimiter requestLimiter;
-  private final FirebaseApp firebaseApp;
 
   public FirebaseInstallationServiceClient(
-      @NonNull Context context,
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<HeartBeatController> heartBeatProvider) {
+      @NonNull Context context, @NonNull Provider<HeartBeatController> heartBeatProvider) {
     this.context = context;
-    this.firebaseApp = firebaseApp;
     this.heartBeatProvider = heartBeatProvider;
     this.requestLimiter = new RequestLimiter();
   }
@@ -489,8 +484,6 @@ public class FirebaseInstallationServiceClient {
     HeartBeatController heartBeatController = heartBeatProvider.get();
     if (heartBeatController != null) {
       try {
-        httpURLConnection.addRequestProperty(
-            GMP_APP_HEADER, firebaseApp.getOptions().getApplicationId());
         httpURLConnection.addRequestProperty(
             HEART_BEAT_HEADER, Tasks.await(heartBeatController.getHeartBeatsHeader()));
       } catch (ExecutionException e) {
