@@ -22,7 +22,6 @@ import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -30,7 +29,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
-import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -162,40 +160,36 @@ class TesterSignInClient {
     alertDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.singin_yes_button),
-        new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialogInterface, int i) {
-            firebaseInstallationsApi
-                .getId()
-                .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
-                .addOnFailureListener(
-                    new OnFailureListener() {
-                      @Override
-                      public void onFailure(@NonNull Exception e) {
-                        LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
-                        setSignInTaskCompletionError(
-                            new FirebaseAppDistributionException(
-                                Constants.ErrorMessages.AUTHENTICATION_ERROR,
-                                AUTHENTICATION_FAILURE,
-                                e));
-                      }
-                    });
-          }
+        (dialogInterface, i) -> {
+          firebaseInstallationsApi
+              .getId()
+              .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
+              .addOnFailureListener(
+                  e -> {
+                    LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
+                    setSignInTaskCompletionError(
+                        new FirebaseAppDistributionException(
+                            Constants.ErrorMessages.AUTHENTICATION_ERROR,
+                            AUTHENTICATION_FAILURE,
+                            e));
+                  });
         });
+
     alertDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.singin_no_button),
-        new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialogInterface, int i) {
-            LogWrapper.getInstance().v("Sign in has been canceled.");
-            setSignInTaskCompletionError(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-            dialogInterface.dismiss();
-          }
-        });
+        (dialogInterface, i) -> dismissSignInDialogCallback());
+
+    alertDialog.setOnCancelListener(dialogInterface -> dismissSignInDialogCallback());
+
     return alertDialog;
+  }
+
+  private void dismissSignInDialogCallback() {
+    LogWrapper.getInstance().v("Sign in has been canceled.");
+    setSignInTaskCompletionError(
+        new FirebaseAppDistributionException(
+            ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
   }
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
