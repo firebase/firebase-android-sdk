@@ -70,7 +70,7 @@ class UpdateAabClient {
     this.tryCancelAabUpdateTask();
   }
 
-  public UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
+  UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
     synchronized (updateAabLock) {
       if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
         return cachedUpdateTask;
