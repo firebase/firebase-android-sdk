@@ -37,7 +37,6 @@ import com.google.common.base.Supplier;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.heartbeatinfo.HeartBeatResult;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -47,7 +46,6 @@ import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.LibraryVersion;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Rule;
@@ -127,16 +125,6 @@ public class GmsRpcRoboTest {
           @Override
           public HeartBeat getHeartBeatCode(@NonNull String heartBeatTag) {
             return HeartBeat.GLOBAL;
-          }
-
-          @Override
-          public Task<Void> storeHeartBeatInfo(@NonNull String heartBeatTag) {
-            return null;
-          }
-
-          @Override
-          public Task<List<HeartBeatResult>> getAndClearStoredHeartBeatInfo() {
-            return null;
           }
         };
     Provider<HeartBeatInfo> heartBeatInfo = () -> heartBeatInfoObject;
