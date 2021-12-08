@@ -57,7 +57,7 @@ abstract class RemoteDocumentCacheTestCase {
   private final Map<String, Object> DOC_DATA = map("data", 2);
 
   private Persistence persistence;
-  private RemoteDocumentCache remoteDocumentCache;
+  protected RemoteDocumentCache remoteDocumentCache;
 
   @Before
   public void setUp() {
@@ -264,11 +264,11 @@ abstract class RemoteDocumentCacheTestCase {
     assertEquals(version(3), latestReadTime);
   }
 
-  private MutableDocument addTestDocumentAtPath(String path) {
+  protected MutableDocument addTestDocumentAtPath(String path) {
     return addTestDocumentAtPath(path, 42, 42);
   }
 
-  private MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
+  protected MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
     MutableDocument doc = doc(path, updateTime, map("data", 2));
     add(doc, version(readTime));
     return doc;
