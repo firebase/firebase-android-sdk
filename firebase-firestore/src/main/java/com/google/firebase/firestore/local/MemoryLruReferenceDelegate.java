@@ -20,7 +20,6 @@ import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.HashMap;
 import java.util.Map;
