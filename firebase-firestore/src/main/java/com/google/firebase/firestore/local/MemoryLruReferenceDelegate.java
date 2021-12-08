@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Consumer;
@@ -117,7 +118,7 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   public int removeOrphanedDocuments(long upperBound) {
     int count = 0;
     MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
-    for (MutableDocument doc : cache.getDocuments()) {
+    for (Document doc : cache.getDocuments()) {
       DocumentKey key = doc.getKey();
       if (!isPinned(key, upperBound)) {
         cache.remove(key);

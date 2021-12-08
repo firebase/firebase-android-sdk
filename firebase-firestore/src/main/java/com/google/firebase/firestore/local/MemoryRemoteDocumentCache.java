@@ -14,10 +14,12 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -31,14 +33,14 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, MutableDocument> docs;
+  private ImmutableSortedMap<DocumentKey, Document> docs;
   /** Manages the collection group index. */
   private IndexManager indexManager;
   /** The latest read time of any document in the cache. */
   private SnapshotVersion latestReadTime;
 
   MemoryRemoteDocumentCache() {
-    docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
+    docs = emptyDocumentMap();
     latestReadTime = SnapshotVersion.NONE;
   }
 
@@ -66,7 +68,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public MutableDocument get(DocumentKey key) {
-    MutableDocument doc = docs.get(key);
+    Document doc = docs.get(key);
     return doc != null ? doc.clone() : MutableDocument.newInvalidDocument(key);
   }
 
@@ -93,11 +95,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
     DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
-    Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator = docs.iteratorFrom(prefix);
+    Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
-      MutableDocument doc = entry.getValue();
+      Map.Entry<DocumentKey, Document> entry = iterator.next();
+      Document doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
       if (!collection.isPrefixOf(key.getPath())) {
@@ -126,13 +128,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     return latestReadTime;
   }
 
-  Iterable<MutableDocument> getDocuments() {
+  Iterable<Document> getDocuments() {
     return new DocumentIterable();
   }
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MutableDocument doc : new DocumentIterable()) {
+    for (Document doc : new DocumentIterable()) {
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
@@ -141,20 +143,20 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
    */
-  private class DocumentIterable implements Iterable<MutableDocument> {
+  private class DocumentIterable implements Iterable<Document> {
     @NonNull
     @Override
-    public Iterator<MutableDocument> iterator() {
-      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
+    public Iterator<Document> iterator() {
+      Iterator<Map.Entry<DocumentKey, Document>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
-      return new Iterator<MutableDocument>() {
+      return new Iterator<Document>() {
         @Override
         public boolean hasNext() {
           return iterator.hasNext();
         }
 
         @Override
-        public MutableDocument next() {
+        public Document next() {
           return iterator.next().getValue();
         }
       };
