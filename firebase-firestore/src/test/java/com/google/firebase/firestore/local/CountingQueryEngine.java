@@ -154,26 +154,15 @@ class CountingQueryEngine implements QueryEngine {
       public Map<DocumentKey, MutableDocument> getAll(
           String collectionGroup, IndexOffset offset, int limit) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, limit);
-<<<<<<< HEAD
         documentsReadByCollection[0] += result.size();
-=======
-        documentsReadByQuery[0] += result.size();
->>>>>>> master
+
         return result;
       }
 
       @Override
-<<<<<<< HEAD
       public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
         documentsReadByCollection[0] += result.size();
-=======
-      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-          Query query, IndexOffset offset) {
-        ImmutableSortedMap<DocumentKey, MutableDocument> result =
-            subject.getAllDocumentsMatchingQuery(query, offset);
-        documentsReadByQuery[0] += result.size();
->>>>>>> master
         return result;
       }
 

@@ -281,46 +281,4 @@ class LocalDocumentsView {
 
     return results;
   }
-
-  /** Queries the remote documents and mutation queue, by doing a full collection scan. */
-  private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromMutationQueue(Query query, IndexOffset offset) {
-    Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAll(query.getPath(), offset);
-
-    // TODO(indexing): We should plumb sinceReadTime through to the mutation queue
-    List<MutationBatch> matchingBatches = mutationQueue.getAllMutationBatchesAffectingQuery(query);
-
-    for (MutationBatch batch : matchingBatches) {
-      for (Mutation mutation : batch.getMutations()) {
-        // Only process documents belonging to the collection.
-        if (!query.getPath().isImmediateParentOf(mutation.getKey().getPath())) {
-          continue;
-        }
-
-        DocumentKey key = mutation.getKey();
-        MutableDocument document = remoteDocuments.get(key);
-        if (document == null) {
-          // Create invalid document to apply mutations on top of
-          document = MutableDocument.newInvalidDocument(key);
-          remoteDocuments.put(key, document);
-        }
-        mutation.applyToLocalView(
-            document, FieldMask.fromSet(new HashSet<>()), batch.getLocalWriteTime());
-        if (!document.isFoundDocument()) {
-          remoteDocuments.remove(key);
-        }
-      }
-    }
-
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
-      // Finally, insert the documents that still match the query
-      if (query.matches(docEntry.getValue())) {
-        results = results.insert(docEntry.getKey(), docEntry.getValue());
-      }
-    }
-
-    return results;
-  }
 }
