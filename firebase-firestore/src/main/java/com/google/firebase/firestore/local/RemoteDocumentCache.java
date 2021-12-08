@@ -14,11 +14,10 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
 
@@ -72,24 +71,18 @@ interface RemoteDocumentCache {
    * @param collectionGroup The collection group to scan.
    * @param offset The offset to start the scan at.
    * @param limit The maximum number of results to return.
-   * @return A map with next set of documents.
+   * @return A newly created map with next set of documents.
    */
   Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
 
   /**
-   * Executes a query against the cached Document entries
+   * Returns the documents from the provided collection.
    *
-   * <p>Implementations may return extra documents if convenient. The results should be re-filtered
-   * by the consumer before presenting them to the user.
-   *
-   * <p>Cached entries for non-existing documents have no bearing on query results.
-   *
-   * @param query The query to match documents against.
+   * @param collection The collection to read.
    * @param offset The read time and document key to start scanning at (exclusive).
-   * @return The set of matching documents.
+   * @return A newly created map with the set of documents in the collection.
    */
-  ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, IndexOffset offset);
+  Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
 
   /** Returns the latest read time of any document in the cache. */
   SnapshotVersion getLatestReadTime();

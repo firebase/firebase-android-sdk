@@ -254,26 +254,21 @@ class LocalDocumentsView {
   /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query, offset);
+    Map<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAll(query.getPath(), offset);
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
 
-    // As documents might match the query because of their overlay we need to include all documents
-    // in the result.
-    Set<DocumentKey> missingDocuments = new HashSet<>();
+    // As documents might match the query because of their overlay we need to include documents
+    // for all overlays in the initial document set.
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       if (!remoteDocuments.containsKey(entry.getKey())) {
-        missingDocuments.add(entry.getKey());
+        remoteDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
       }
-    }
-    for (Map.Entry<DocumentKey, MutableDocument> entry :
-        remoteDocumentCache.getAll(missingDocuments).entrySet()) {
-      remoteDocuments = remoteDocuments.insert(entry.getKey(), entry.getValue());
     }
 
     // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments) {
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Mutation overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
         overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
