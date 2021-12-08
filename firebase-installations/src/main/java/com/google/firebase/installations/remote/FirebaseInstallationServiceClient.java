@@ -490,9 +490,9 @@ public class FirebaseInstallationServiceClient {
     if (heartBeatController != null) {
       try {
         httpURLConnection.addRequestProperty(
-            HEART_BEAT_HEADER, Tasks.await(heartBeatController.getHeartBeatsHeader()));
-        httpURLConnection.addRequestProperty(
             GMP_APP_HEADER, firebaseApp.getOptions().getApplicationId());
+        httpURLConnection.addRequestProperty(
+            HEART_BEAT_HEADER, Tasks.await(heartBeatController.getHeartBeatsHeader()));
       } catch (ExecutionException e) {
         Log.w(TAG, "Failed to get heartbeats header");
       } catch (InterruptedException e) {
