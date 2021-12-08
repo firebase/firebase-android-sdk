@@ -191,10 +191,13 @@ class LocalDocumentsView {
     recalculateAndSaveOverlays(docs);
   }
 
-  // TODO: The Querying implementation here should move 100% to the query engines.
-  // Instead, we should just provide a getCollectionDocuments() method here that return all the
-  // documents in a given collection so that query engine can do that and then filter in
-  // memory.
+  /** Gets the local view of the next {@code count} documents based on their read time. */
+  ImmutableSortedMap<DocumentKey, Document> getDocuments(
+      String collectionGroup, IndexOffset offset, int count) {
+    Map<DocumentKey, MutableDocument> docs =
+        remoteDocumentCache.getAll(collectionGroup, offset, count);
+    return getLocalViewOfDocuments(docs, new HashSet<>());
+  }
 
   /**
    * Performs a query against the local view of all documents.

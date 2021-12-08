@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Map;
@@ -66,6 +66,17 @@ interface RemoteDocumentCache {
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
+   * Looks up the next {@code limit} documents for a collection group based on the provided offset.
+   * The ordering is based on the document's read time and key.
+   *
+   * @param collectionGroup The collection group to scan.
+   * @param offset The offset to start the scan at.
+   * @param limit The maximum number of results to return.
+   * @return A map with next set of documents.
+   */
+  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
+
+  /**
    * Executes a query against the cached Document entries
    *
    * <p>Implementations may return extra documents if convenient. The results should be re-filtered
@@ -78,7 +89,7 @@ interface RemoteDocumentCache {
    * @return The set of matching documents.
    */
   ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, FieldIndex.IndexOffset offset);
+      Query query, IndexOffset offset);
 
   /** Returns the latest read time of any document in the cache. */
   SnapshotVersion getLatestReadTime();
