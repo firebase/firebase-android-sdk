@@ -23,6 +23,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -37,9 +38,9 @@ import java.util.Map;
 class CountingQueryEngine implements QueryEngine {
   private final QueryEngine queryEngine;
 
-  private final int[] mutationsReadByQuery = new int[] {0};
+  private final int[] mutationsReadByCollection = new int[] {0};
   private final int[] mutationsReadByKey = new int[] {0};
-  private final int[] documentsReadByQuery = new int[] {0};
+  private final int[] documentsReadByCollection = new int[] {0};
   private final int[] documentsReadByKey = new int[] {0};
 
   CountingQueryEngine(QueryEngine queryEngine) {
@@ -47,9 +48,9 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   void resetCounts() {
-    mutationsReadByQuery[0] = 0;
+    mutationsReadByCollection[0] = 0;
     mutationsReadByKey[0] = 0;
-    documentsReadByQuery[0] = 0;
+    documentsReadByCollection[0] = 0;
     documentsReadByKey[0] = 0;
   }
 
@@ -83,11 +84,11 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   /**
-   * Returns the number of documents returned by the RemoteDocumentCache's
-   * `getDocumentsMatchingQuery()` API (since the last call to `resetCounts()`)
+   * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
+   * last call to `resetCounts()`)
    */
-  int getDocumentsReadByQuery() {
-    return documentsReadByQuery[0];
+  int getDocumentsReadByCollection() {
+    return documentsReadByCollection[0];
   }
 
   /**
@@ -102,8 +103,8 @@ class CountingQueryEngine implements QueryEngine {
    * Returns the number of mutations returned by the MutationQueue's
    * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
    */
-  int getMutationsReadByQuery() {
-    return mutationsReadByQuery[0];
+  int getMutationsReadByCollection() {
+    return mutationsReadByCollection[0];
   }
 
   /**
@@ -153,16 +154,15 @@ class CountingQueryEngine implements QueryEngine {
       public Map<DocumentKey, MutableDocument> getAll(
           String collectionGroup, IndexOffset offset, int limit) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, limit);
-        documentsReadByQuery[0] += result.size();
+        documentsReadByCollection[0] += result.size();
+
         return result;
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-          Query query, IndexOffset offset) {
-        ImmutableSortedMap<DocumentKey, MutableDocument> result =
-            subject.getAllDocumentsMatchingQuery(query, offset);
-        documentsReadByQuery[0] += result.size();
+      public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
+        documentsReadByCollection[0] += result.size();
         return result;
       }
 
@@ -250,7 +250,7 @@ class CountingQueryEngine implements QueryEngine {
       @Override
       public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
         List<MutationBatch> result = subject.getAllMutationBatchesAffectingQuery(query);
-        mutationsReadByQuery[0] += result.size();
+        mutationsReadByCollection[0] += result.size();
         return result;
       }
 
