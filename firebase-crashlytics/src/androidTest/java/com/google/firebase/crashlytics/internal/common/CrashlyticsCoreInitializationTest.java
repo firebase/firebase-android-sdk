@@ -30,6 +30,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -263,8 +264,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
             "packageName",
             "versionCode",
             "versionName",
-            "Unity",
-            "1.0");
+            mock(DevelopmentPlatformProvider.class));
   }
 
   private void setupResource(Integer resId, String type, String name, String value) {

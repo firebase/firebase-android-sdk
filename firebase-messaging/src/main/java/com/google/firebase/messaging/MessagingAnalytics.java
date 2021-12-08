@@ -238,6 +238,13 @@ public class MessagingAnalytics {
    */
   @VisibleForTesting
   static void logToScion(String event, Bundle extras) {
+    try {
+      FirebaseApp.getInstance();
+    } catch (IllegalStateException e) {
+      Log.e(TAG, "Default FirebaseApp has not been initialized. Skip logging event to GA.");
+      return;
+    }
+
     if (extras == null) {
       extras = new Bundle();
     }

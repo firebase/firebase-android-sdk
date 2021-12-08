@@ -3,8 +3,9 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.1.0
-- [changed] Performance optimization for offline usage.
-- [changed] Improved performance for queries with collections that contain
+- [changed] Improved performance for databases that contain many document
+  updates that have not yet been synced with the backend.
+- [changed] Improved performance for queries against collections that contain
   subcollections.
 
 # 24.0.0
