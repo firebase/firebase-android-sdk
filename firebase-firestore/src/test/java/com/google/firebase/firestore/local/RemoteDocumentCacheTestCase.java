@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
-import static com.google.firebase.firestore.util.Util.values;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
