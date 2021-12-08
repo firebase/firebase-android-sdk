@@ -89,7 +89,6 @@ public class FirebaseInstallationServiceClient {
   private static final String FIREBASE_INSTALLATIONS_ID_HEARTBEAT_TAG = "fire-installations-id";
 
   private static final String HEART_BEAT_HEADER = "x-firebase-client";
-  private static final String GMP_APP_HEADER = "x-firebase-gmpid";
 
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
