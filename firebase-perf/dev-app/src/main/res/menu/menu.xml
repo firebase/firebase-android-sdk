@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" tools:context=".FragmentActivity">
+    <item
+        android:id="@+id/action_change_gif"
+        android:icon="@android:drawable/ic_popup_sync"
+        android:title="TODO"
+        app:showAsAction="always"/>
+</menu>

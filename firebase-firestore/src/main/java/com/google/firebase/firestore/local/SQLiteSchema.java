@@ -174,8 +174,6 @@ class SQLiteSchema {
     }
 
     if (fromVersion < 14 && toVersion >= 14) {
-      Preconditions.checkState(
-          Persistence.OVERLAY_SUPPORT_ENABLED || Persistence.INDEXING_SUPPORT_ENABLED);
       createOverlays();
       createDataMigrationTable();
       addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
