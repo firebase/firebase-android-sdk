@@ -66,18 +66,15 @@ interface RemoteDocumentCache {
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
-   * Looks up the next {@code count} documents for a collection group based on the provided offset.
+   * Looks up the next {@code limit} documents for a collection group based on the provided offset.
    * The ordering is based on the document's read time and key.
-   *
-   * <p>This method may return more results than requested if a collection group scan scans more
-   * than 100 collections.
    *
    * @param collectionGroup The collection group to scan.
    * @param offset The offset to start the scan at.
-   * @param count The number of results to return.
+   * @param limit The maximum number of results to return.
    * @return A map with next set of documents.
    */
-  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int count);
+  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
 
   /**
    * Executes a query against the cached Document entries

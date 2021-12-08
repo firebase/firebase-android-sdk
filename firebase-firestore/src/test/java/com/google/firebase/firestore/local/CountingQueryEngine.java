@@ -151,8 +151,8 @@ class CountingQueryEngine implements QueryEngine {
 
       @Override
       public Map<DocumentKey, MutableDocument> getAll(
-          String collectionGroup, IndexOffset offset, int count) {
-        Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, count);
+          String collectionGroup, IndexOffset offset, int limit) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, limit);
         documentsReadByQuery[0] += result.size();
         return result;
       }

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.trimMap;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -86,10 +87,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getAll(
-      String collectionGroup, IndexOffset offset, int count) {
+      String collectionGroup, IndexOffset offset, int limit) {
+    // Note: This method is pretty inefficient, but t is not called since the method is only used
+    // during index backfill, which is not supported by memory persistence.
+
     List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
-    Set<MutableDocument> allDocuments =
-        new TreeSet<>((l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r)));
     Map<DocumentKey, MutableDocument> matchingDocuments = new HashMap<>();
 
     for (ResourcePath collectionParent : collectionParents) {
@@ -99,24 +101,17 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       while (iterator.hasNext()) {
         Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
         DocumentKey key = entry.getKey();
-
+        MutableDocument document = entry.getValue();
         if (!documentParent.isPrefixOf(key.getPath())) {
           break;
         }
-
-        if (IndexOffset.fromDocument(entry.getValue()).compareTo(offset) > 0) {
-          allDocuments.add(entry.getValue());
+        if (IndexOffset.fromDocument(document).compareTo(offset) > 0) {
+          matchingDocuments.put(key, document);
         }
       }
     }
 
-    Iterator<MutableDocument> it = allDocuments.iterator();
-    while (it.hasNext() && matchingDocuments.size() < count) {
-      MutableDocument document = it.next();
-      matchingDocuments.put(document.getKey(), document);
-    }
-
-    return matchingDocuments;
+    return trimMap(matchingDocuments, limit, IndexOffset.DOCUMENT_COMPARATOR);
   }
 
   @Override

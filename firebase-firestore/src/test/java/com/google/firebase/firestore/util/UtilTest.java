@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.util.Util.trimMap;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -22,7 +23,10 @@ import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -67,6 +71,17 @@ public class UtilTest {
     validateDiffCollection(Collections.singletonList("a"), Collections.emptyList());
     validateDiffCollection(Collections.emptyList(), Collections.singletonList("a"));
     validateDiffCollection(Collections.emptyList(), Collections.emptyList());
+  }
+
+
+  @Test
+  public void testTrimMap() {
+    Map<Integer, Integer> data = new HashMap<>();
+    data.put(1, 1);
+    data.put(3, 3);
+    data.put(2, 2);
+    data = trimMap(data, 2, Integer::compare);
+    assertThat(data).containsExactly(1, 1, 2,2);
   }
 
   private void validateDiffCollection(List<String> before, List<String> after) {

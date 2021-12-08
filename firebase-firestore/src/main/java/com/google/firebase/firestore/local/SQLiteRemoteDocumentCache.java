@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
+import static com.google.firebase.firestore.util.Util.trimMap;
 
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
@@ -136,7 +137,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getAll(
-      String collectionGroup, IndexOffset offset, int count) {
+      String collectionGroup, IndexOffset offset, int limit) {
     List<ResourcePath> collectionParents = indexManager.getCollectionParents(collectionGroup);
     List<ResourcePath> collections = new ArrayList<>(collectionParents.size());
     for (ResourcePath collectionParent : collectionParents) {
@@ -146,7 +147,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, count);
+      return getAll(collections, offset, limit);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -154,9 +155,9 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       for (int i = 0; i < collections.size(); i += pageSize) {
         results.putAll(
             getAll(
-                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, count));
+                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, limit));
       }
-      return results;
+      return trimMap(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
   }
 
