@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Map;
 
 /**
@@ -36,7 +36,7 @@ public interface DocumentOverlayCache {
    * for that key.
    */
   @Nullable
-  Mutation getOverlay(DocumentKey key);
+  Overlay getOverlay(DocumentKey key);
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
@@ -57,5 +57,5 @@ public interface DocumentOverlayCache {
    * @return Mapping of each document key in the collection to its largest batch id and overlay
    *     mutation.
    */
-  Map<DocumentKey, Pair<Integer, Mutation>> getOverlays(ResourcePath collection, int sinceBatchId);
+  Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
 }

@@ -138,7 +138,7 @@ public class IndexBackfiller {
 
     // Represents documents and the updated offset post-update.
     Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> pair =
-        localDocumentsView.getNextDocumentsFromOffset(
+        localDocumentsView.getNextDocumentsAndOffset(
             collectionGroup, existingOffset, documentsRemainingUnderCap);
     IndexOffset newOffset = pair.first;
     ImmutableSortedMap<DocumentKey, Document> documentsToIndex = pair.second;

@@ -88,7 +88,10 @@ public final class SetMutation extends Mutation {
 
   @Override
   public FieldMask applyToLocalView(
-      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+      MutableDocument document,
+      @Nullable FieldMask previousMask,
+      int batchId,
+      Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!this.getPrecondition().isValidFor(document)) {
@@ -98,7 +101,9 @@ public final class SetMutation extends Mutation {
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
-    document.convertToFoundDocument(document.getVersion(), localValue).setHasLocalMutations();
+    document
+        .convertToFoundDocument(document.getVersion(), localValue)
+        .setHasLocalMutations(batchId);
     // SetMutation overwrites all fields.
     return null;
   }

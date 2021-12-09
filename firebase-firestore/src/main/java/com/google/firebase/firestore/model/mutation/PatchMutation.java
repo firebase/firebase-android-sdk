@@ -129,7 +129,10 @@ public final class PatchMutation extends Mutation {
 
   @Override
   public @Nullable FieldMask applyToLocalView(
-      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+      MutableDocument document,
+      @Nullable FieldMask previousMask,
+      int batchId,
+      Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (!getPrecondition().isValidFor(document)) {
@@ -143,7 +146,7 @@ public final class PatchMutation extends Mutation {
     value.setAll(transformResults);
     document
         .convertToFoundDocument(document.getVersion(), document.getData())
-        .setHasLocalMutations();
+        .setHasLocalMutations(batchId);
 
     if (previousMask == null) {
       return null;

@@ -101,7 +101,7 @@ public class QuerySnapshotTest {
 
   @Test
   public void testIncludeMetadataChanges() {
-    MutableDocument doc1Old = doc("foo/bar", 1, wrapObject("a", "b")).setHasLocalMutations();
+    MutableDocument doc1Old = doc("foo/bar", 1, wrapObject("a", "b")).setHasLocalMutations(0);
     MutableDocument doc1New = doc("foo/bar", 1, wrapObject("a", "b"));
 
     MutableDocument doc2Old = doc("foo/baz", 1, wrapObject("a", "b"));

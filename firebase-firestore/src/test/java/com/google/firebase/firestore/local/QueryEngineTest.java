@@ -64,9 +64,9 @@ public class QueryEngineTest {
   private static final MutableDocument NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
   private static final MutableDocument PENDING_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", true, "order", 1)).setHasLocalMutations();
+      doc("coll/a", 1, map("matches", true, "order", 1)).setHasLocalMutations(0);
   private static final MutableDocument PENDING_NON_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", false, "order", 1)).setHasLocalMutations();
+      doc("coll/a", 1, map("matches", false, "order", 1)).setHasLocalMutations(0);
   private static final MutableDocument UPDATED_DOC_A =
       doc("coll/a", 11, map("matches", true, "order", 1));
   private static final MutableDocument MATCHING_DOC_B =
@@ -375,7 +375,7 @@ public class QueryEngineTest {
     persistQueryMapping(key("coll/a"), key("coll/b"));
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
-    addDocument(doc("coll/a", 1, map("order", 2)).setHasLocalMutations());
+    addDocument(doc("coll/a", 1, map("order", 2)).setHasLocalMutations(0));
 
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
@@ -385,7 +385,7 @@ public class QueryEngineTest {
     assertEquals(
         docSet(
             query.comparator(),
-            doc("coll/a", 1, map("order", 2)).setHasLocalMutations(),
+            doc("coll/a", 1, map("order", 2)).setHasLocalMutations(0),
             doc("coll/b", 1, map("order", 3))),
         docs);
   }

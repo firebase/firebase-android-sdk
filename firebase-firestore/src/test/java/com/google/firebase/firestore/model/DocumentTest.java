@@ -60,6 +60,6 @@ public class DocumentTest {
     assertNotEquals(doc1, doc(key1, 1, data2));
     assertNotEquals(doc1, doc(key2, 1, data1));
     assertNotEquals(doc1, doc(key1, 2, data1));
-    assertNotEquals(doc1, doc(key1, 1, data1).setHasLocalMutations());
+    assertNotEquals(doc1, doc(key1, 1, data1).setHasLocalMutations(0));
   }
 }

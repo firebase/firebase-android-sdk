@@ -16,12 +16,12 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.HashMap;
@@ -40,11 +40,11 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
   @Nullable
   @Override
-  public Mutation getOverlay(DocumentKey key) {
+  public Overlay getOverlay(DocumentKey key) {
     String collectionPath = EncodedPath.encode(key.getPath().popLast());
     String documentId = key.getPath().getLastSegment();
     return db.query(
-            "SELECT overlay_mutation FROM document_overlays WHERE uid = ? AND collection_path = ? AND document_id = ?")
+            "SELECT overlay_mutation, largest_batch_id FROM document_overlays WHERE uid = ? AND collection_path = ? AND document_id = ?")
         .binding(uid, collectionPath, documentId)
         .firstValue(
             row -> {
@@ -52,7 +52,8 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
               try {
                 Write mutation = Write.parseFrom(row.getBlob(0));
-                return serializer.decodeMutation(mutation);
+                int largestBatchId = row.getInt(1);
+                return new Overlay(largestBatchId, serializer.decodeMutation(mutation));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }
@@ -88,11 +89,10 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   @Override
-  public Map<DocumentKey, Pair<Integer, Mutation>> getOverlays(
-      ResourcePath collection, int sinceBatchId) {
+  public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
     String collectionPath = EncodedPath.encode(collection);
 
-    Map<DocumentKey, Pair<Integer, Mutation>> result = new HashMap<>();
+    Map<DocumentKey, Overlay> result = new HashMap<>();
 
     db.query(
             "SELECT document_id, overlay_mutation, largest_batch_id FROM document_overlays "
@@ -108,7 +108,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
                 result.put(
                     DocumentKey.fromPath(collection.append(documentId)),
-                    new Pair(largestBatchId, mutation));
+                    new Overlay(largestBatchId, mutation));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }

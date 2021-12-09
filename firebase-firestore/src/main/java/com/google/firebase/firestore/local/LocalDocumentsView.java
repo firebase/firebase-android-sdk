@@ -31,6 +31,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -92,10 +93,12 @@ class LocalDocumentsView {
    *     for it.
    */
   Document getDocument(DocumentKey key) {
-    Mutation overlay = documentOverlayCache.getOverlay(key);
+    Overlay overlay = documentOverlayCache.getOverlay(key);
     MutableDocument fromOverlay = remoteDocumentCache.get(key);
     if (overlay != null) {
-      overlay.applyToLocalView(fromOverlay, null, Timestamp.now());
+      overlay
+          .getMutation()
+          .applyToLocalView(fromOverlay, null, overlay.getLargestBatchId(), Timestamp.now());
     }
 
     return fromOverlay;
@@ -133,7 +136,7 @@ class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
-      Mutation overlay = documentOverlayCache.getOverlay(entry.getKey());
+      Overlay overlay = documentOverlayCache.getOverlay(entry.getKey());
       // Recalculate an overlay if the document's existence state is changed due to a remote
       // event *and* the overlay is a PatchMutation. This is because document existence state
       // can change if some patch mutation's preconditions are met.
@@ -141,10 +144,12 @@ class LocalDocumentsView {
       // mutation whose precondition does not match before the change (hence overlay==null),
       // but would now match.
       if (existenceStateChanged.contains(entry.getKey())
-          && (overlay == null || overlay instanceof PatchMutation)) {
+          && (overlay == null || overlay.getMutation() instanceof PatchMutation)) {
         recalculateDocuments.put(entry.getKey(), docs.get(entry.getKey()));
       } else if (overlay != null) {
-        overlay.applyToLocalView(entry.getValue(), null, Timestamp.now());
+        overlay
+            .getMutation()
+            .applyToLocalView(entry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
       }
     }
 
@@ -272,7 +277,7 @@ class LocalDocumentsView {
    * @return A pair containing the next offset and a list of documents that follow the provided
    *     offset.
    */
-  public Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsFromOffset(
+  public Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsAndOffset(
       String collectionGroup, IndexOffset offset, int count) {
     ImmutableSortedMap<DocumentKey, Document> documents =
         getDocuments(collectionGroup, offset, count);
@@ -335,12 +340,11 @@ class LocalDocumentsView {
       Query query, IndexOffset offset) {
     Map<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAll(query.getPath(), offset);
-    Map<DocumentKey, Pair<Integer, Mutation>> overlays =
-        documentOverlayCache.getOverlays(query.getPath(), -1);
+    Map<DocumentKey, Overlay> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.
-    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : overlays.entrySet()) {
+    for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
       if (!remoteDocuments.containsKey(entry.getKey())) {
         remoteDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
       }
@@ -349,10 +353,11 @@ class LocalDocumentsView {
     // Apply the overlays and match against the query.
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
-      Pair<Integer, Mutation> pair = overlays.get(docEntry.getKey());
-      Mutation overlay = pair != null ? pair.second : null;
-      if (overlay != null) {
-        overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
+      Overlay overlay = overlays.get(docEntry.getKey());
+      Mutation mutation = overlay != null ? overlay.getMutation() : null;
+      if (mutation != null) {
+        mutation.applyToLocalView(
+            docEntry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
@@ -369,21 +374,22 @@ class LocalDocumentsView {
   public Map<Document, Integer> getDocumentsInOverlayCacheByBatchId(
       Query query, IndexOffset offset) {
     Map<DocumentKey, MutableDocument> remoteDocuments = new HashMap<>();
-    Map<DocumentKey, Pair<Integer, Mutation>> overlays =
+    Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
 
     // Apply overlays to empty mutable document map to generate base.
-    for (Map.Entry<DocumentKey, Pair<Integer, Mutation>> entry : overlays.entrySet()) {
+    for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
       remoteDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
     }
 
     // Apply the overlays and match against the query.
     Map<Document, Integer> results = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
-      int batchId = overlays.get(docEntry.getKey()).first;
-      Mutation overlay = overlays.get(docEntry.getKey()).second;
-      if (overlay != null) {
-        overlay.applyToLocalView(docEntry.getValue(), null, Timestamp.now());
+      Overlay overlay = overlays.get(docEntry.getKey());
+      int batchId = overlay.getLargestBatchId();
+      Mutation mutation = overlay.getMutation();
+      if (mutation != null) {
+        mutation.applyToLocalView(docEntry.getValue(), null, batchId, Timestamp.now());
       }
       // Finally, insert the documents that still match the query.
       if (query.matches(docEntry.getValue())) {

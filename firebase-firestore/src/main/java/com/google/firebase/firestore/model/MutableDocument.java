@@ -65,6 +65,7 @@ public final class MutableDocument implements Document, Cloneable {
   private SnapshotVersion readTime;
   private ObjectValue value;
   private DocumentState documentState;
+  private int batchId;
 
   private MutableDocument(DocumentKey key) {
     this.key = key;
@@ -157,8 +158,9 @@ public final class MutableDocument implements Document, Cloneable {
     return this;
   }
 
-  public MutableDocument setHasLocalMutations() {
+  public MutableDocument setHasLocalMutations(int batchId) {
     this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
+    this.batchId = Math.max(this.batchId, batchId);
     return this;
   }
 
@@ -180,6 +182,10 @@ public final class MutableDocument implements Document, Cloneable {
   @Override
   public SnapshotVersion getReadTime() {
     return readTime;
+  }
+
+  public int getMutationBatchID() {
+    return batchId;
   }
 
   @Override

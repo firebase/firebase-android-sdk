@@ -63,7 +63,10 @@ public final class VerifyMutation extends Mutation {
 
   @Override
   public FieldMask applyToLocalView(
-      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+      MutableDocument document,
+      @Nullable FieldMask previousMask,
+      int batchId,
+      Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 }
