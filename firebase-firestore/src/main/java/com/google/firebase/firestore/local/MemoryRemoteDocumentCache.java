@@ -25,6 +25,7 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -62,8 +63,16 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void remove(DocumentKey key) {
-    docs = docs.remove(key);
+  public void removeAll(Collection<DocumentKey> keys) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
+
+    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    for (DocumentKey key : keys) {
+      docs = docs.remove(key);
+      deletedDocs =
+          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+    indexManager.updateIndexEntries(deletedDocs);
   }
 
   @Override

@@ -225,6 +225,8 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) return;
+
     for (Map.Entry<DocumentKey, Document> entry : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
@@ -503,6 +505,10 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
+
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
+      return null;
+    }
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =

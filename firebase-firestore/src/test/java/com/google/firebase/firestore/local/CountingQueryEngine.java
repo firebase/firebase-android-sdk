@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ import java.util.Map;
  * A test-only QueryEngine that forwards all API calls and exposes the number of documents and
  * mutations read.
  */
-class CountingQueryEngine implements QueryEngine {
+class CountingQueryEngine extends QueryEngine {
   private final QueryEngine queryEngine;
 
   private final int[] mutationsReadByCollection = new int[] {0};
@@ -55,19 +56,14 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   @Override
-  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
-    LocalDocumentsView view =
+  public void initialize(LocalDocumentsView localDocuments, IndexManager indexManager) {
+    LocalDocumentsView wrappedView =
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             wrapMutationQueue(localDocuments.getMutationQueue()),
             localDocuments.getDocumentOverlayCache(),
             localDocuments.getIndexManager());
-    queryEngine.setLocalDocumentsView(view);
-  }
-
-  @Override
-  public void setIndexManager(IndexManager indexManager) {
-    // Not implemented.
+    queryEngine.initialize(wrappedView, indexManager);
   }
 
   @Override
@@ -129,11 +125,10 @@ class CountingQueryEngine implements QueryEngine {
       }
 
       @Override
-      public void remove(DocumentKey documentKey) {
-        subject.remove(documentKey);
+      public void removeAll(Collection<DocumentKey> keys) {
+        subject.removeAll(keys);
       }
 
-      @Nullable
       @Override
       public MutableDocument get(DocumentKey documentKey) {
         MutableDocument result = subject.get(documentKey);
