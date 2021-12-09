@@ -234,48 +234,28 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() {
-    // mockSignInStorage returns false then true to simulate logging in during first signIn check in
-    // updateIfNewReleaseAvailable
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
-    doReturn(new UpdateTaskImpl()).when(mockUpdateAabClient).updateAab(newRelease);
+    updateToNewRelease(TEST_RELEASE_NEWER_AAB_INTERNAL.build());
 
-    firebaseAppDistribution.updateIfNewReleaseAvailable();
-
-    // Update flow
-    verify(mockTesterSignInClient, times(1)).signInTester();
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    AlertDialog dialog = verifyUpdateAlertDialog();
     assertEquals(
         String.format(
             "Version %s (%s) is available.\n\nRelease notes: %s",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(),
             TEST_RELEASE_NEWER_AAB.getVersionCode(),
             TEST_RELEASE_NEWER_AAB.getReleaseNotes()),
-        shadowOf(updateDialog).getMessage().toString());
-    assertTrue(updateDialog.isShowing());
+        shadowOf(dialog).getMessage().toString());
   }
 
   @Test
   public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    AppDistributionReleaseInternal newRelease =
-        TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build();
-    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
+    updateToNewRelease(TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build());
 
-    firebaseAppDistribution.updateIfNewReleaseAvailable();
-
-    // Update flow
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    AlertDialog dialog = verifyUpdateAlertDialog();
     assertEquals(
         String.format(
             "Version %s (%s) is available.",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getVersionCode()),
-        shadowOf(updateDialog).getMessage().toString());
+        shadowOf(dialog).getMessage().toString());
   }
 
   @Test
@@ -353,6 +333,34 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
+  public void updateToNewRelease_whenDialogDismissed_taskFails() {
+    UpdateTask updateTask = updateToNewRelease(TEST_RELEASE_NEWER_AAB_INTERNAL.build());
+    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+
+    assertFalse(updateDialog.isShowing());
+    assertFalse(updateTask.isSuccessful());
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+  }
+
+  @Test
+  public void updateToNewRelease_whenDialogCanceled_taskFails() {
+    UpdateTask updateTask = updateToNewRelease(TEST_RELEASE_NEWER_AAB_INTERNAL.build());
+    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    updateDialog.onBackPressed(); // cancels the dialog
+
+    assertFalse(updateDialog.isShowing());
+    assertFalse(updateTask.isSuccessful());
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+  }
+
+  @Test
   public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() {
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
@@ -372,14 +380,6 @@ public class FirebaseAppDistributionTest {
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertEquals(Constants.ErrorMessages.NETWORK_ERROR, e.getMessage());
     assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, e.getErrorCode());
-  }
-
-  @Test
-  public void updateToNewRelease_callsSignInTester() {
-    when(mockCheckForNewReleaseClient.checkForNewRelease())
-        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
-    firebaseAppDistribution.updateIfNewReleaseAvailable();
-    verify(mockTesterSignInClient, times(1)).signInTester();
   }
 
   @Test
@@ -474,5 +474,21 @@ public class FirebaseAppDistributionTest {
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  private UpdateTask updateToNewRelease(AppDistributionReleaseInternal newRelease) {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    firebaseAppDistribution.setCachedNewRelease(newRelease);
+
+    return firebaseAppDistribution.updateIfNewReleaseAvailable();
+  }
+
+  private AlertDialog verifyUpdateAlertDialog() {
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(dialog.isShowing());
+
+    return dialog;
   }
 }
