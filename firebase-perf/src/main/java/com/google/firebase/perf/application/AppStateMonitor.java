@@ -165,6 +165,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
     System.out.println("*** onActivityCreated " + activity.getClass().getSimpleName());
+    if (activity instanceof AppCompatActivity == false) {
+      return;
+    }
     AppCompatActivity appCompatActivityactivity = (AppCompatActivity) activity;
     appCompatActivityactivity
         .getSupportFragmentManager()
