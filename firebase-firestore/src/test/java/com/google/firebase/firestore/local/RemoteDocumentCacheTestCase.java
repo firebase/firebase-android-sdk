@@ -34,6 +34,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,48 +92,51 @@ abstract class RemoteDocumentCacheTestCase {
 
   @Test
   public void testSetAndReadSeveralDocuments() {
-    String[] paths = {"a/b", "a/b/c/d/e/f"};
+    List<DocumentKey> keys = Arrays.asList(key("a/b"), key("a/b"));
     Map<DocumentKey, MutableDocument> written = new HashMap<>();
-    for (String path : paths) {
-      written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+    for (DocumentKey key : keys) {
+      written.put(key, addTestDocumentAtPath(key));
     }
-
-    Map<DocumentKey, MutableDocument> read = getAll(Arrays.asList(paths));
+    Map<DocumentKey, MutableDocument> read = remoteDocumentCache.getAll(keys);
     assertEquals(written, read);
   }
 
   @Test
   public void testReadSeveralDocumentsIncludingMissingDocument() {
-    String[] paths = {"foo/1", "foo/2"};
+    List<DocumentKey> keys = new ArrayList<>(Arrays.asList(key("foo/1"), key("foo/2")));
     Map<DocumentKey, MutableDocument> written = new HashMap<>();
-    for (String path : paths) {
-      written.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+    for (DocumentKey key : keys) {
+      written.put(key, addTestDocumentAtPath(key));
     }
     written.put(DocumentKey.fromPathString("foo/nonexistent"), null);
 
-    List<String> keys = new ArrayList<>(Arrays.asList(paths));
-    keys.add("foo/nonexistent");
+    keys.add(key("foo/nonexistent"));
     written.put(key("foo/nonexistent"), MutableDocument.newInvalidDocument(key("foo/nonexistent")));
-    Map<DocumentKey, MutableDocument> read = getAll(keys);
+    Map<DocumentKey, MutableDocument> read = remoteDocumentCache.getAll(keys);
     assertEquals(written, read);
   }
 
   // PORTING NOTE: this test only applies to Android, because it's the only platform where the
   // implementation of getAll might split the input into several queries.
   @Test
-  public void testSetAndReadLotsOfDocuments() {
+  public void testSetReadAndDeleteLotsOfDocuments() {
     // Make sure to force SQLite implementation to split the large query into several smaller ones.
     int lotsOfDocuments = 2000;
-    List<String> paths = new ArrayList<>();
+    List<DocumentKey> keys = new ArrayList<>();
     Map<DocumentKey, MutableDocument> expected = new HashMap<>();
     for (int i = 0; i < lotsOfDocuments; i++) {
-      String path = "foo/" + i;
-      paths.add(path);
-      expected.put(DocumentKey.fromPathString(path), addTestDocumentAtPath(path));
+      DocumentKey key = key("foo/" + i);
+      keys.add(key);
+      expected.put(key, addTestDocumentAtPath(key));
     }
 
-    Map<DocumentKey, MutableDocument> read = getAll(paths);
+    Map<DocumentKey, MutableDocument> read = remoteDocumentCache.getAll(keys);
     assertEquals(expected, read);
+
+    remoteDocumentCache.removeAll(keys);
+
+    read = remoteDocumentCache.getAll(keys);
+    assertThat(read.values().stream().filter(MutableDocument::isFoundDocument).toArray()).isEmpty();
   }
 
   @Test
@@ -265,6 +269,10 @@ abstract class RemoteDocumentCacheTestCase {
     return addTestDocumentAtPath(path, 42, 42);
   }
 
+  protected MutableDocument addTestDocumentAtPath(DocumentKey key) {
+    return addTestDocumentAtPath(key.getPath().canonicalString(), 42, 42);
+  }
+
   protected MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
     MutableDocument doc = doc(path, updateTime, map("data", 2));
     add(doc, version(readTime));
@@ -279,17 +287,8 @@ abstract class RemoteDocumentCacheTestCase {
     return remoteDocumentCache.get(key(path));
   }
 
-  private Map<DocumentKey, MutableDocument> getAll(Iterable<String> paths) {
-    List<DocumentKey> keys = new ArrayList<>();
-
-    for (String path : paths) {
-      keys.add(key(path));
-    }
-
-    return remoteDocumentCache.getAll(keys);
-  }
-
   private void remove(String path) {
-    persistence.runTransaction("remove entry", () -> remoteDocumentCache.remove(key(path)));
+    persistence.runTransaction(
+        "remove entry", () -> remoteDocumentCache.removeAll(Collections.singletonList(key(path))));
   }
 }
