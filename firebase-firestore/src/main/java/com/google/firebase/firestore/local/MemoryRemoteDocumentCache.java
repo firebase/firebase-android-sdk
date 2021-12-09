@@ -14,15 +14,18 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -60,8 +63,16 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void remove(DocumentKey key) {
-    docs = docs.remove(key);
+  public void removeAll(Collection<DocumentKey> keys) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
+
+    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    for (DocumentKey key : keys) {
+      docs = docs.remove(key);
+      deletedDocs =
+          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+    indexManager.updateIndexEntries(deletedDocs);
   }
 
   @Override

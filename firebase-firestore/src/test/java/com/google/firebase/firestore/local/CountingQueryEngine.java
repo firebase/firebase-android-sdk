@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -124,8 +125,8 @@ class CountingQueryEngine extends QueryEngine {
       }
 
       @Override
-      public void remove(DocumentKey documentKey) {
-        subject.remove(documentKey);
+      public void removeAll(Collection<DocumentKey> keys) {
+        subject.removeAll(keys);
       }
 
       @Override

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.firstNEntries;
@@ -21,6 +22,8 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -31,6 +34,7 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,10 +83,26 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public void remove(DocumentKey documentKey) {
-    String path = EncodedPath.encode(documentKey.getPath());
+  public void removeAll(Collection<DocumentKey> keys) {
+    if (keys.isEmpty()) return;
 
-    db.execute("DELETE FROM remote_documents WHERE path = ?", path);
+    List<Object> encodedPaths = new ArrayList<>();
+    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+
+    for (DocumentKey key : keys) {
+      encodedPaths.add(EncodedPath.encode(key.getPath()));
+      deletedDocs =
+          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db, "DELETE FROM remote_documents WHERE path IN (", encodedPaths, ")");
+    while (longQuery.hasMoreSubqueries()) {
+      longQuery.executeNextSubquery();
+    }
+
+    indexManager.updateIndexEntries(deletedDocs);
   }
 
   @Override
