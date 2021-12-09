@@ -564,7 +564,7 @@ public class MutationTest {
       MutableDocument base,
       MutationResult mutationResult,
       MutableDocument expected) {
-    MutableDocument clone = base.clone();
+    MutableDocument clone = base.mutableCopy();
     mutation.applyToRemoteDocument(clone, mutationResult);
     assertEquals(expected, clone);
   }
@@ -1033,8 +1033,8 @@ public class MutationTest {
   }
 
   private void verifyOverlayRoundTrips(MutableDocument doc, Mutation... mutations) {
-    MutableDocument docForMutations = doc.clone();
-    MutableDocument docForOverlay = doc.clone();
+    MutableDocument docForMutations = doc.mutableCopy();
+    MutableDocument docForOverlay = doc.mutableCopy();
     Timestamp now = Timestamp.now();
 
     FieldMask mask = null;
