@@ -15,8 +15,15 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static java.util.Collections.singletonList;
 
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
 import java.util.Arrays;
@@ -57,5 +64,40 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
     configureFieldIndexes(Arrays.asList(indexA, indexC));
     fieldIndexes = getFieldIndexes();
     assertThat(fieldIndexes).containsExactly(indexA, indexC);
+  }
+
+  @Test
+  public void testUsesIndexes() {
+    FieldIndex index = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "matches", Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 0);
+    assertQueryReturned("coll/a");
+  }
+
+  @Test
+  public void testUsesPartialIndexesWhenAvailable() {
+    FieldIndex index = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "matches", Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 1);
+    assertQueryReturned("coll/a", "coll/b");
   }
 }

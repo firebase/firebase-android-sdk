@@ -369,6 +369,24 @@ public class Util {
     return it.hasNext() ? it.next() : null;
   }
 
+  /** Returns an iterable that iterates over the values in a map. */
+  public static <K, V> Iterable<V> values(Iterable<Map.Entry<K, V>> map) {
+    return () -> {
+      Iterator<Map.Entry<K, V>> iterator = map.iterator();
+      return new Iterator<V>() {
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
+
+        @Override
+        public V next() {
+          return iterator.next().getValue();
+        }
+      };
+    };
+  }
+
   /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
   public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
     if (data.size() <= n) {

@@ -504,6 +504,10 @@ final class SQLiteIndexManager implements IndexManager {
   public FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
 
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
+      return null;
+    }
+
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
         target.getCollectionGroup() != null

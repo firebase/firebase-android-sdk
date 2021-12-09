@@ -169,8 +169,7 @@ public final class LocalStore implements BundleCallback {
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
     this.queryEngine = queryEngine;
     this.indexBackfiller = indexBackfiller;
-    queryEngine.setLocalDocumentsView(localDocuments);
-    queryEngine.setIndexManager(indexManager);
+    queryEngine.initialize(localDocuments, indexManager);
 
     localViewReferences = new ReferenceSet();
     persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
@@ -215,8 +214,7 @@ public final class LocalStore implements BundleCallback {
     // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
-    queryEngine.setLocalDocumentsView(localDocuments);
-    queryEngine.setIndexManager(indexManager);
+    queryEngine.initialize(localDocuments, indexManager);
 
     // TODO(indexing): Add spec tests that test these components change after a user change
     remoteDocuments.setIndexManager(indexManager);
@@ -849,7 +847,7 @@ public final class LocalStore implements BundleCallback {
         queryEngine.getDocumentsMatchingQuery(
             query,
             usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
-            usePreviousResults ? remoteKeys : DocumentKey.emptyKeySet());
+            remoteKeys);
     return new QueryResult(documents, remoteKeys);
   }
 

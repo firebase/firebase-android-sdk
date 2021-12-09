@@ -17,6 +17,8 @@ package com.google.firebase.firestore.testutil;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
@@ -84,6 +86,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -420,7 +423,7 @@ public class TestUtil {
 
   public static RemoteEvent addedRemoteEvent(
       MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    return addedRemoteEvent(Collections.singletonList(doc), updatedInTargets, removedFromTargets);
+    return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets);
   }
 
   public static RemoteEvent addedRemoteEvent(
@@ -454,6 +457,10 @@ public class TestUtil {
     }
 
     return aggregator.createRemoteEvent(version);
+  }
+
+  public static RemoteEvent addedRemoteEvent(MutableDocument doc, Integer targetId) {
+    return addedRemoteEvent(singletonList(doc), singletonList(targetId), emptyList());
   }
 
   public static RemoteEvent updateRemoteEvent(
@@ -559,7 +566,7 @@ public class TestUtil {
   }
 
   public static MutationResult mutationResult(long version) {
-    return new MutationResult(version(version), Collections.emptyList());
+    return new MutationResult(version(version), emptyList());
   }
 
   public static LocalViewChanges viewChanges(
@@ -615,7 +622,7 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(String collectionGroup, int indexId, IndexState indexState) {
-    return FieldIndex.create(indexId, collectionGroup, Collections.emptyList(), indexState);
+    return FieldIndex.create(indexId, collectionGroup, emptyList(), indexState);
   }
 
   public static FieldIndex fieldIndex(String collectionGroup) {
@@ -635,15 +642,23 @@ public class TestUtil {
     return fromJsonString(json.replace("'", "\""));
   }
 
-  /** Converts the values of an ImmutableSortedMap into a list, preserving key order. */
-  public static <T> List<T> values(ImmutableSortedMap<?, T> map) {
-    List<T> result = new ArrayList<>();
-    for (Map.Entry<?, T> entry : map) {
-      result.add(entry.getValue());
-    }
-    return result;
-  }
+  /** Returns an iterable that iterates over the keys in a map. */
+  public static <K, V> Iterable<K> keys(Iterable<Map.Entry<K, V>> map) {
+    return () -> {
+      Iterator<Entry<K, V>> iterator = map.iterator();
+      return new Iterator<K>() {
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
 
+        @Override
+        public K next() {
+          return iterator.next().getKey();
+        }
+      };
+    };
+  }
   /**
    * Asserts that the actual set is equal to the expected one.
    *
