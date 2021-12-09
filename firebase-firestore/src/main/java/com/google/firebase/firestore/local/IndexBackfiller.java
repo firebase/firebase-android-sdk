@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.Pair;
@@ -29,7 +28,6 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +44,6 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private final RemoteDocumentCache remoteDocumentCache;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
@@ -54,7 +51,6 @@ public class IndexBackfiller {
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
     this.scheduler = new Scheduler(asyncQueue);
-    this.remoteDocumentCache = persistence.getRemoteDocumentCache();
   }
 
   public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
@@ -136,34 +132,20 @@ public class IndexBackfiller {
    */
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
-    int documentsProcessed = 0;
-
     // Use the earliest offset of all field indexes to query the local cache.
     Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
-    IndexOffset startingOffset = getExistingOffset(fieldIndexes);
+    IndexOffset existingOffset = getExistingOffset(fieldIndexes);
 
-    // Represents documents indexed and the updated offset post-update.
-    Pair<IndexOffset, List<Document>> pair =
-        localDocumentsView.getNextDocumentsAndOffsetForCollectionGroup(
-            collectionGroup, startingOffset, /* updateMemoizedResults=` */ true);
-    IndexOffset newOffset;
-    List<Document> documentsToIndex;
-    do {
-      newOffset = pair.first;
-      documentsToIndex = pair.second;
-      ImmutableSortedMap<DocumentKey, Document> documentsMap = emptyDocumentMap();
-      for (Document document : documentsToIndex) {
-        documentsMap = documentsMap.insert(document.getKey(), document);
-      }
-      indexManager.updateIndexEntries(documentsMap);
-      documentsProcessed += documentsToIndex.size();
-      pair =
-          localDocumentsView.getNextDocumentsAndOffsetForCollectionGroup(
-              collectionGroup, newOffset, /* updateMemoizedResults= */ false);
-    } while (documentsProcessed < documentsRemainingUnderCap && !documentsToIndex.isEmpty());
+    // Represents documents and the updated offset post-update.
+    Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> pair =
+        localDocumentsView.getNextDocumentsFromOffset(
+            collectionGroup, existingOffset, documentsRemainingUnderCap);
+    IndexOffset newOffset = pair.first;
+    ImmutableSortedMap<DocumentKey, Document> documentsToIndex = pair.second;
 
+    indexManager.updateIndexEntries(documentsToIndex);
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
-    return documentsProcessed;
+    return documentsToIndex.size();
   }
 
   /** Returns the lowest offset for the provided index group. */

@@ -28,15 +28,14 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,10 +53,6 @@ class LocalDocumentsView {
   private final MutationQueue mutationQueue;
   private final DocumentOverlayCache documentOverlayCache;
   private final IndexManager indexManager;
-  private final Set<DocumentKey> memoizedDocumentKeys = new HashSet<>();
-  private List<Document> memoizedDocumentsByReadTime = new ArrayList<>();
-  private ImmutableSortedMap<Integer, List<Document>> memoizedBatchIdToDocuments =
-      ImmutableSortedMap.Builder.emptyMap(StandardComparator.getComparator(Integer.class));
 
   LocalDocumentsView(
       RemoteDocumentCache remoteDocumentCache,
@@ -260,109 +255,48 @@ class LocalDocumentsView {
     return results;
   }
 
-  /** Queries the remote documents and overlays by doing a full collection scan. */
-  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query, IndexOffset offset) {
-    ImmutableSortedMap<DocumentKey, Document> fromOverlay =
-        getDocumentsMatchingCollectionQueryFromOverlayCache(query, offset);
-    return fromOverlay;
-  }
-
   /**
    * Given a collection group, returns the next documents that follow the provided offset, along
    * with an updated offset.
    *
-   * <p>The first call to this method should set {@code updateMemoizedResults} to {@code true} to
-   * load remote documents and mutations into persistence. Subsequent calls to this method should be
-   * made with {@code updateMemoizedResults} set to {@code false} {@code offset} set to the offset
-   * returned by the previous call.
-   *
    * <p>This method returns documents in order of read time from the provided offset, followed by
-   * documents with mutations in order of batch id from the offset.
+   * documents with mutations in order of batch id from the offset. Since all documents in a batch
+   * are returned together, the total number of documents returned can exceed {@code count}.
    *
    * <p>If no documents are found, returns an empty list and an offset with the latest read time in
    * the remote document cache.
    *
    * @param collectionGroup The collection group for the documents.
    * @param offset The offset to index into.
-   * @param updateMemoizedResults Whether to load documents and mutations from persistence.
+   * @param count The number of documents to return
    * @return A pair containing the next offset and a list of documents that follow the provided
    *     offset.
    */
-  public Pair<IndexOffset, List<Document>> getNextDocumentsAndOffsetForCollectionGroup(
-      String collectionGroup, IndexOffset offset, boolean updateMemoizedResults) {
+  public Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsFromOffset(
+      String collectionGroup, IndexOffset offset, int count) {
+    ImmutableSortedMap<DocumentKey, Document> documents =
+        getDocuments(collectionGroup, offset, count);
 
-    if (updateMemoizedResults) {
-      memoizeDocuments(collectionGroup, offset);
-
-      // If there are no matching documents from the memoization, fast forward the index offset to
-      // the latest read time of the remote documents.
-      if (memoizedDocumentsByReadTime.isEmpty() && memoizedBatchIdToDocuments.isEmpty()) {
-        // TODO(indexing): update offset to include high-water mark for global largest batch id
-        IndexOffset newOffset = IndexOffset.create(remoteDocumentCache.getLatestReadTime());
-        newOffset = newOffset.compareTo(offset) > 0 ? newOffset : offset;
-        return new Pair<>(newOffset, new ArrayList<>());
-      }
-    }
-
-    if (!memoizedDocumentsByReadTime.isEmpty()) {
-      return getNextDocumentsByReadTime(offset);
-    } else if (!memoizedBatchIdToDocuments.isEmpty()) {
-      return getNextDocumentsByBatchId(offset);
-    } else {
-      return new Pair<>(offset, new ArrayList<>());
-    }
-  }
-
-  private void memoizeDocuments(String collectionGroup, IndexOffset offset) {
-    Query query = new Query(ResourcePath.EMPTY, collectionGroup);
-    ImmutableSortedMap<DocumentKey, Document> documents = getDocumentsMatchingQuery(query, offset);
-    memoizedDocumentKeys.clear();
-    for (Map.Entry<DocumentKey, Document> document : documents) {
-      if (document.getValue().getVersion() != SnapshotVersion.NONE) {
-        memoizedDocumentKeys.add(document.getKey());
-        memoizedDocumentsByReadTime.add(document.getValue());
-      }
-    }
     // TODO(indexing): Store largest batch id on Document class so we can avoid fetching documents
     // a second time.
-    memoizedBatchIdToDocuments =
+    ImmutableSortedMap<Integer, List<Document>> batchIdToDocuments =
         getDocumentsBatchIdsMatchingCollectionGroupQuery(collectionGroup, offset);
-  }
+    IndexOffset newOffset = getNewOffset(documents, offset);
 
-  private Pair<IndexOffset, List<Document>> getNextDocumentsByReadTime(IndexOffset offset) {
-    Document documentToIndex = memoizedDocumentsByReadTime.get(0);
-    IndexOffset newOffset =
-        IndexOffset.create(documentToIndex.getReadTime(), documentToIndex.getKey());
-    // Make sure the index does not go back in time.
-    newOffset = newOffset.compareTo(offset) > 0 ? newOffset : offset;
+    // Start updating by mutation batch id if under limit.
+    while (documents.size() < count && !batchIdToDocuments.isEmpty()) {
+      int lowestBatchId = batchIdToDocuments.getMinKey();
+      List<Document> documentsInBatch = batchIdToDocuments.get(lowestBatchId);
 
-    memoizedDocumentsByReadTime =
-        memoizedDocumentsByReadTime.subList(1, memoizedDocumentsByReadTime.size());
-    return new Pair<>(newOffset, Collections.singletonList(documentToIndex));
-  }
-
-  private Pair<IndexOffset, List<Document>> getNextDocumentsByBatchId(IndexOffset offset) {
-    List<Document> documentsToIndex;
-    int lowestBatchId;
-    do {
-      lowestBatchId = memoizedBatchIdToDocuments.getMinKey();
-      documentsToIndex = memoizedBatchIdToDocuments.get(lowestBatchId);
-      memoizedBatchIdToDocuments = memoizedBatchIdToDocuments.remove(lowestBatchId);
-
-      // Skip documents that were already indexed in documentsByReadTime.
-      List<Document> duplicates = new ArrayList<>();
-      for (Document document : documentsToIndex) {
-        if (memoizedDocumentKeys.contains(document.getKey())) {
-          duplicates.add(document);
-        }
+      for (Document document : documentsInBatch) {
+        documents = documents.insert(document.getKey(), document);
       }
-      documentsToIndex.removeAll(duplicates);
+      newOffset =
+          IndexOffset.create(newOffset.getReadTime(), newOffset.getDocumentKey(), lowestBatchId);
+      batchIdToDocuments = batchIdToDocuments.remove(lowestBatchId);
+    }
 
-    } while (documentsToIndex.isEmpty() && !memoizedBatchIdToDocuments.isEmpty());
-    IndexOffset newOffset =
-        IndexOffset.create(offset.getReadTime(), offset.getDocumentKey(), lowestBatchId);
-    return new Pair<>(newOffset, documentsToIndex);
+    return new Pair<>(newOffset, documents);
   }
 
   /**
@@ -397,8 +331,8 @@ class LocalDocumentsView {
     return results;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document>
-      getDocumentsMatchingCollectionQueryFromOverlayCache(Query query, IndexOffset offset) {
+  private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
+      Query query, IndexOffset offset) {
     Map<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAll(query.getPath(), offset);
     Map<DocumentKey, Pair<Integer, Mutation>> overlays =
@@ -458,5 +392,23 @@ class LocalDocumentsView {
     }
 
     return results;
+  }
+
+  /** Returns the offset for the index based on the newly indexed documents. */
+  private IndexOffset getNewOffset(
+      ImmutableSortedMap<DocumentKey, Document> documents, IndexOffset currentOffset) {
+    if (documents.isEmpty()) {
+      return IndexOffset.create(remoteDocumentCache.getLatestReadTime());
+    } else {
+      IndexOffset latestOffset = currentOffset;
+      Iterator<Map.Entry<DocumentKey, Document>> it = documents.iterator();
+      while (it.hasNext()) {
+        IndexOffset newOffset = IndexOffset.fromDocument(it.next().getValue());
+        if (newOffset.compareTo(latestOffset) > 0) {
+          latestOffset = newOffset;
+        }
+      }
+      return latestOffset;
+    }
   }
 }
