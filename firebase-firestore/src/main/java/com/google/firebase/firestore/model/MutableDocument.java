@@ -229,7 +229,7 @@ public final class MutableDocument implements Document {
 
   @Override
   @NonNull
-  public MutableDocument clone() {
+  public MutableDocument mutableCopy() {
     return new MutableDocument(key, documentType, version, readTime, value.clone(), documentState);
   }
 

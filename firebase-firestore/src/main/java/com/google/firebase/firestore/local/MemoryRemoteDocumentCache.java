@@ -55,7 +55,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
-    docs = docs.insert(document.getKey(), document.clone().withReadTime(readTime));
+    docs = docs.insert(document.getKey(), document.mutableCopy().withReadTime(readTime));
     latestReadTime = readTime.compareTo(latestReadTime) > 0 ? readTime : latestReadTime;
 
     indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
@@ -69,7 +69,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MutableDocument get(DocumentKey key) {
     Document doc = docs.get(key);
-    return doc != null ? doc.clone() : MutableDocument.newInvalidDocument(key);
+    return doc != null ? doc.mutableCopy() : MutableDocument.newInvalidDocument(key);
   }
 
   @Override
@@ -117,7 +117,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      result.put(doc.getKey(), doc.clone());
+      result.put(doc.getKey(), doc.mutableCopy());
     }
 
     return result;

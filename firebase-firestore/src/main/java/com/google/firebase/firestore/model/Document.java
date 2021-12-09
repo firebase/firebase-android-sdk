@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.model;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
@@ -23,7 +22,7 @@ import java.util.Comparator;
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public interface Document extends Cloneable {
+public interface Document {
   /** A document comparator that returns document by key and key only. */
   Comparator<Document> KEY_COMPARATOR = (left, right) -> left.getKey().compareTo(right.getKey());
 
@@ -75,6 +74,6 @@ public interface Document extends Cloneable {
    */
   boolean hasPendingWrites();
 
-  @NonNull
-  MutableDocument clone();
+  /** Creates a mutable copy of this document. */
+  MutableDocument mutableCopy();
 }
