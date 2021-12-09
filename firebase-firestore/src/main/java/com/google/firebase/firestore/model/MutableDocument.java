@@ -26,7 +26,7 @@ import com.google.firestore.v1.Value;
  * one of these states even after all mutations have been applied, {@link #isValidDocument} returns
  * false and the document should be removed from all views.
  */
-public final class MutableDocument implements Document, Cloneable {
+public final class MutableDocument implements Document {
 
   private enum DocumentType {
     /**
@@ -229,7 +229,7 @@ public final class MutableDocument implements Document, Cloneable {
 
   @Override
   @NonNull
-  public MutableDocument clone() {
+  public MutableDocument mutableCopy() {
     return new MutableDocument(key, documentType, version, readTime, value.clone(), documentState);
   }
 

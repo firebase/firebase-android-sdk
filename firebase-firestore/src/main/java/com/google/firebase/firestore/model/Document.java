@@ -73,4 +73,7 @@ public interface Document {
    * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
    */
   boolean hasPendingWrites();
+
+  /** Creates a mutable copy of this document. */
+  MutableDocument mutableCopy();
 }
