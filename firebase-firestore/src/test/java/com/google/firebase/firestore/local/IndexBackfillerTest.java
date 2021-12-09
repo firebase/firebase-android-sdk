@@ -31,12 +31,14 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -131,6 +133,7 @@ public class IndexBackfillerTest {
 
   @Test
   public void testBackfillFetchesDocumentsAfterEarliestReadTime() {
+    addDoc("latest/doc", "foo", version(10));
     addFieldIndex("coll1", "foo", version(10));
 
     // Documents before earliest read time should not be fetched.
@@ -138,9 +141,9 @@ public class IndexBackfillerTest {
     int documentsProcessed = backfiller.backfill();
     assertEquals(0, documentsProcessed);
 
-    // Read time of index should not change.
+    // Read time should be the highest read time from the cache.
     Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(10), it.next().getIndexState().getOffset().getReadTime());
+    assertEquals(IndexOffset.create(version(10)), it.next().getIndexState().getOffset());
 
     // Documents that are after the earliest read time but before field index read time are fetched.
     addDoc("coll1/docB", "boo", version(19));
@@ -490,7 +493,7 @@ public class IndexBackfillerTest {
 
   /** Removes the specified document from the RemoteDocumentCache. */
   private void removeDoc(Document doc) {
-    persistence.getRemoteDocumentCache().remove(doc.getKey());
+    persistence.getRemoteDocumentCache().removeAll(Collections.singletonList(doc.getKey()));
   }
 
   /** Adds a set mutation to a batch with the specified id for every specified document path. */

@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
 import static com.google.firebase.firestore.local.SQLiteSchema.VERSION;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
-import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -34,7 +34,6 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -45,11 +44,13 @@ import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -426,7 +427,7 @@ public class SQLiteSchemaTest {
         new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
 
     // Run the index-free migration.
-    schema.runSchemaUpgrades(8, 10);
+    schema.runSchemaUpgrades(8, 14);
     db.execSQL(
         "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
@@ -443,15 +444,13 @@ public class SQLiteSchemaTest {
 
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), IndexOffset.NONE);
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll(path("coll"), IndexOffset.NONE);
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
-    results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(
-            query("coll"), IndexOffset.create(version(2)));
+    results = remoteDocumentCache.getAll(path("coll"), IndexOffset.create(version(2)));
     assertResultsContain(results, "coll/new");
   }
 
@@ -727,11 +726,9 @@ public class SQLiteSchemaTest {
   }
 
   private void assertResultsContain(
-      ImmutableSortedMap<DocumentKey, MutableDocument> actualResults, String... docs) {
-    for (String doc : docs) {
-      assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
-    }
-    assertEquals("Results contain unexpected entries", docs.length, actualResults.size());
+      Map<DocumentKey, MutableDocument> actualResults, String... docs) {
+    assertThat(actualResults.keySet())
+        .containsExactly(Arrays.stream(docs).map(TestUtil::key).toArray());
   }
 
   private void assertTableExists(String tableName) {

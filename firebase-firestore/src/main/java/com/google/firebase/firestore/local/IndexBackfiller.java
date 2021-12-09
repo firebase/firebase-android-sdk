@@ -14,12 +14,15 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.Pair;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -43,6 +46,7 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
+  private final RemoteDocumentCache remoteDocumentCache;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
@@ -50,6 +54,7 @@ public class IndexBackfiller {
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
     this.scheduler = new Scheduler(asyncQueue);
+    this.remoteDocumentCache = persistence.getRemoteDocumentCache();
   }
 
   public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
@@ -146,7 +151,11 @@ public class IndexBackfiller {
     do {
       newOffset = pair.first;
       documentsToIndex = pair.second;
-      indexManager.updateIndexEntries(documentsToIndex);
+      ImmutableSortedMap<DocumentKey, Document> documentsMap = emptyDocumentMap();
+      for (Document document : documentsToIndex) {
+        documentsMap = documentsMap.insert(document.getKey(), document);
+      }
+      indexManager.updateIndexEntries(documentsMap);
       documentsProcessed += documentsToIndex.size();
       pair =
           localDocumentsView.getNextDocumentsAndOffsetForCollectionGroup(

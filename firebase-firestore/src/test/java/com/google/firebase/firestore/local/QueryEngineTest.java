@@ -98,7 +98,7 @@ public class QueryEngineTest {
 
     documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
-    queryEngine = new DefaultQueryEngine();
+    queryEngine = new QueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
@@ -119,7 +119,7 @@ public class QueryEngineTest {
             return super.getDocumentsMatchingQuery(query, offset);
           }
         };
-    queryEngine.setLocalDocumentsView(localDocuments);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   /** Adds the provided documents to the query target mapping. */

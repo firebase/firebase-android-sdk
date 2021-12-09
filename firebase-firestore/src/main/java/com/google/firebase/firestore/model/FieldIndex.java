@@ -127,6 +127,9 @@ public abstract class FieldIndex {
       return new AutoValue_FieldIndex_IndexOffset(readTime, key, largestBatchId);
     }
 
+    public static final Comparator<MutableDocument> DOCUMENT_COMPARATOR =
+        (l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r));
+
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime} or
      * with a key higher than {@code documentKey} for equal read times.
@@ -153,6 +156,12 @@ public abstract class FieldIndex {
                   : new Timestamp(successorSeconds, successorNanos));
       return new AutoValue_FieldIndex_IndexOffset(
           successor, DocumentKey.empty(), INITIAL_LARGEST_BATCH_ID);
+    }
+
+    /** Creates a new offset based on the provided document. */
+    public static IndexOffset fromDocument(Document document) {
+      return new AutoValue_FieldIndex_IndexOffset(
+          document.getReadTime(), document.getKey(), INITIAL_LARGEST_BATCH_ID);
     }
 
     /**

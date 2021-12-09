@@ -23,6 +23,7 @@ import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -225,16 +226,17 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(Collection<Document> documents) {
+  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    for (Document document : documents) {
-      Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) return;
+
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
-        SortedSet<IndexEntry> existingEntries =
-            getExistingIndexEntries(document.getKey(), fieldIndex);
-        SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
+        SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(entry.getKey(), fieldIndex);
+        SortedSet<IndexEntry> newEntries = computeIndexEntries(entry.getValue(), fieldIndex);
         if (!existingEntries.equals(newEntries)) {
-          updateEntries(document, existingEntries, newEntries);
+          updateEntries(entry.getValue(), existingEntries, newEntries);
         }
       }
     }
@@ -506,6 +508,10 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
+
+    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
+      return null;
+    }
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
