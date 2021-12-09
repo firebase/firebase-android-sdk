@@ -41,7 +41,7 @@ public class IndexedQueryEngineTest {
   /** Current state of indexing support. Used for restoring after test run. */
   private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
 
-  private IndexedQueryEngine queryEngine;
+  private QueryEngine queryEngine;
   private IndexManager indexManager;
   private RemoteDocumentCache remoteDocuments;
 
@@ -63,14 +63,14 @@ public class IndexedQueryEngineTest {
 
     remoteDocuments = persistence.getRemoteDocumentCache();
     remoteDocuments.setIndexManager(indexManager);
-    queryEngine = new IndexedQueryEngine();
-    queryEngine.setLocalDocumentsView(
+    queryEngine = new QueryEngine();
+    LocalDocumentsView localDocumentsView =
         new LocalDocumentsView(
             remoteDocuments,
             persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
-            indexManager));
-    queryEngine.setIndexManager(indexManager);
+            indexManager);
+    queryEngine.initialize(localDocumentsView, indexManager);
   }
 
   @Test
