@@ -35,8 +35,9 @@ public class FrameMetricsCalculator {
           }
         }
       }
-    } else {
-      System.out.println("*** frameTimes is null");
+      else {
+        System.out.println("*** frameTimes is null");
+      }
     }
 
     // Only incrementMetric if corresponding metric is non-zero.

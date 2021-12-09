@@ -150,19 +150,24 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   // fragemnts in the activity.
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-//    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
-//      System.out.println("*** onActivityCreated " + activity.getClass().getSimpleName());
-//      if (activity instanceof AppCompatActivity) {
-//        AppCompatActivity appCompatActivity = (AppCompatActivity) activity;
-//        appCompatActivity
-//            .getSupportFragmentManager()
-//            .registerFragmentLifecycleCallbacks(new FragmentMonitor(appCompatActivity), true);
-//      }
-//    }
+    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+      System.out.println("*** onActivityCreated " + activity.getClass().getSimpleName());
+      if (activity instanceof AppCompatActivity) {
+        AppCompatActivity appCompatActivity = (AppCompatActivity) activity;
+        appCompatActivity
+            .getSupportFragmentManager()
+            .registerFragmentLifecycleCallbacks(new FragmentMonitor(appCompatActivity, clock, transportManager, this), true);
+      }
+    }
   }
 
   @Override
-  public void onActivityDestroyed(Activity activity) {}
+  public void onActivityDestroyed(Activity activity) {
+    System.out.println("*** " + activity.getClass().getSimpleName() + " onActivityDestroyed");
+//    if (isScreenTraceSupported(activity)) {
+//      sendScreenTrace(activity);
+//    }
+  }
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
@@ -182,6 +187,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public synchronized void onActivityStopped(Activity activity) {
+    System.out.println("*** " + activity.getClass().getSimpleName() + " onActivityStopped");
     if (isScreenTraceSupported(activity)) {
       sendScreenTrace(activity);
     }
@@ -352,7 +358,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     if (Utils.isDebugLoggingEnabled(activity.getApplicationContext())) {
       logger.debug(
-          "sendScreenTrace name:"
+          "*** sendScreenTrace name:"
               + getScreenTraceName(activity)
               + " _fr_tot:"
               + totalFrames

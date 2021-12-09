@@ -26,15 +26,14 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
       new WeakHashMap<>();
   private final AppCompatActivity activity;
   private final Clock clock;
+  private final TransportManager transportManager;
+  private final AppStateMonitor appStateMonitor;
 
-  // The attribute key for the parent fragment of a fragment screen trace.
-  private static final String PARENT_FRAGMENT_ATTRIBUTE_KEY_PREFIX = "Parent Fragment ";
-  // The attribute key for the hosting activity of a fragment screen trace.
-  private static final String ACTIVITY_ATTRIBUTE_KEY = "Hosting Activity";
-
-  public FragmentMonitor(AppCompatActivity activity) {
+  public FragmentMonitor(AppCompatActivity activity, Clock clock, TransportManager transportManager, AppStateMonitor appStateMonitor) {
     this.activity = activity;
-    this.clock = new Clock();
+    this.clock = clock;
+    this.transportManager = transportManager;
+    this.appStateMonitor = appStateMonitor;
   }
 
   /**
@@ -55,26 +54,22 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
     Trace screenTrace =
         new Trace(
             getFragmentScreenTraceName(fragment),
-            TransportManager.getInstance(),
+            transportManager,
             clock,
-            AppStateMonitor.getInstance());
+            appStateMonitor);
     screenTrace.start();
 
     // Put parent fragments and hosting activity as attribute
-    Fragment curFragment = fragment;
-    int parentFragmentIndex = 1;
-    while (curFragment.getParentFragment() != null) {
-      screenTrace.putAttribute(
-          PARENT_FRAGMENT_ATTRIBUTE_KEY_PREFIX + parentFragmentIndex,
-          curFragment.getParentFragment().getClass().getSimpleName());
-      curFragment = curFragment.getParentFragment();
+    if (fragment.getParentFragment() != null) {
+      screenTrace.putAttribute(Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY, fragment.getParentFragment().getClass().getSimpleName());
     }
-    screenTrace.putAttribute(ACTIVITY_ATTRIBUTE_KEY, activity.getClass().getSimpleName());
+    screenTrace.putAttribute(Constants.ACTIVITY_ATTRIBUTE_KEY, activity.getClass().getSimpleName());
+
 
     fragmentToScreenTraceMap.put(fragment, screenTrace);
     FrameMetrics frameMetrics =
         FrameMetricsCalculator.calculateFrameMetrics(
-            AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
+            appStateMonitor.getFrameMetricsAggregator().getMetrics());
     System.out.println("*** " + fragment.getClass().getSimpleName() + " started "
         + frameMetrics.getTotalFrames()
         + " "
@@ -88,7 +83,6 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
   @Override
   public void onFragmentStopped(
       @NonNull FragmentManager fragmentManager, @NonNull Fragment fragment) {
-//    System.out.println("*** " + fragment.getClass().getSimpleName() + " stopped " + fragment.getClass().getSimpleName());
     if (!fragmentToScreenTraceMap.containsKey(fragment)
         || !fragmentToInitialFrameMetricsMap.containsKey(fragment)) {
       return;
@@ -100,7 +94,7 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
 
     FrameMetrics curFrameMetrics =
         FrameMetricsCalculator.calculateFrameMetrics(
-            AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
+            appStateMonitor.getFrameMetricsAggregator().getMetrics());
 
     // Calculate the frames by computing the difference between the current frame metrics snapshot
     // and the initial frame metrics snapshot.
@@ -137,7 +131,7 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
     }
     if (Utils.isDebugLoggingEnabled(activity.getApplicationContext())) {
       logger.debug(
-          "sendScreenTrace name:"
+          "*** sendScreenTrace name:"
               + getFragmentScreenTraceName(fragment)
               + " _fr_tot:"
               + totalFrames
@@ -155,7 +149,7 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
                                     @NonNull View v, @Nullable Bundle savedInstanceState) {
     FrameMetrics curFrameMetrics =
         FrameMetricsCalculator.calculateFrameMetrics(
-            AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
+            appStateMonitor.getFrameMetricsAggregator().getMetrics());
     System.out.println(
         "*** " + f.getClass().getSimpleName() + " onFragmentViewCreatead "
             + curFrameMetrics.getTotalFrames()
@@ -168,7 +162,7 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
   public void onFragmentViewDestroyed(@NonNull FragmentManager fm, @NonNull Fragment f) {
     FrameMetrics curFrameMetrics =
         FrameMetricsCalculator.calculateFrameMetrics(
-            AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
+            appStateMonitor.getFrameMetricsAggregator().getMetrics());
     System.out.println(
         "*** " + f.getClass().getSimpleName() + " onFragmentViewDestroyed "
             + curFrameMetrics.getTotalFrames()
