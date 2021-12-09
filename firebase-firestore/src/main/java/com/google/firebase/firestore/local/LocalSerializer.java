@@ -21,7 +21,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
@@ -49,7 +48,7 @@ public final class LocalSerializer {
   }
 
   /** Encodes a MaybeDocument model to the equivalent protocol buffer for local storage. */
-  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(Document document) {
+  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(MutableDocument document) {
     com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
 
@@ -89,7 +88,7 @@ public final class LocalSerializer {
    * Encodes a Document for local storage. This differs from the v1 RPC serializer for Documents in
    * that it preserves the updateTime, which is considered an output only value by the server.
    */
-  private com.google.firestore.v1.Document encodeDocument(Document document) {
+  private com.google.firestore.v1.Document encodeDocument(MutableDocument document) {
     com.google.firestore.v1.Document.Builder builder =
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -111,7 +110,8 @@ public final class LocalSerializer {
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(Document document) {
+  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(
+      MutableDocument document) {
     com.google.firebase.firestore.proto.NoDocument.Builder builder =
         com.google.firebase.firestore.proto.NoDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -130,7 +130,7 @@ public final class LocalSerializer {
 
   /** Encodes a UnknownDocument value to the equivalent proto. */
   private com.google.firebase.firestore.proto.UnknownDocument encodeUnknownDocument(
-      Document document) {
+      MutableDocument document) {
     com.google.firebase.firestore.proto.UnknownDocument.Builder builder =
         com.google.firebase.firestore.proto.UnknownDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));

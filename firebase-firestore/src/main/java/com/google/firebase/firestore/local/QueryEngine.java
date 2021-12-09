@@ -81,8 +81,8 @@ public class QueryEngine {
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query,
-      ImmutableSortedSet<DocumentKey> remoteKeys,
-      SnapshotVersion lastLimboFreeSnapshotVersion) {
+      SnapshotVersion lastLimboFreeSnapshotVersion,
+      ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(initialized, "initialize() not called");
 
     ImmutableSortedMap<DocumentKey, Document> result =
@@ -118,7 +118,8 @@ public class QueryEngine {
     Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
-    return mergeResults(values(indexedDocuments), query, fieldIndex.getIndexState().getOffset());
+    return appendRemainingResults(
+        values(indexedDocuments), query, fieldIndex.getIndexState().getOffset());
   }
 
   /**
@@ -158,7 +159,8 @@ public class QueryEngine {
           query.toString());
     }
 
-    return mergeResults(previousResults, query, IndexOffset.create(lastLimboFreeSnapshotVersion));
+    return appendRemainingResults(
+        previousResults, query, IndexOffset.create(lastLimboFreeSnapshotVersion));
   }
 
   /** Applies the query filter and sorting to the provided documents. */
@@ -223,15 +225,18 @@ public class QueryEngine {
     return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE);
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> mergeResults(
-      Iterable<Document> before, Query query, IndexOffset offset) {
-    // Retrieve all results for documents that were updated since the last limbo-document free
-    // remote snapshot.
-    ImmutableSortedMap<DocumentKey, Document> after =
+  /**
+   * Combines the results from an indexed execution with the remaining documents that have not yet
+   * been indexed.
+   */
+  private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
+      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
+    // Retrieve all results for documents that were updated since the offset.
+    ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
-    for (Document entry : before) {
-      after = after.insert(entry.getKey(), entry);
+    for (Document entry : indexedResults) {
+      remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
-    return after;
+    return remainingResults;
   }
 }

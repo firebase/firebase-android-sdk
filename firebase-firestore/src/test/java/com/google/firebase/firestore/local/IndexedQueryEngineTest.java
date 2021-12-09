@@ -90,7 +90,7 @@ public class IndexedQueryEngineTest {
     Query queryWithFilter = query("coll").filter(filter("foo", "==", true));
     ImmutableSortedMap<DocumentKey, Document> results =
         queryEngine.getDocumentsMatchingQuery(
-            queryWithFilter, DocumentKey.emptyKeySet(), SnapshotVersion.NONE);
+            queryWithFilter, SnapshotVersion.NONE, DocumentKey.emptyKeySet());
 
     assertTrue(results.containsKey(doc1.getKey()));
     assertTrue(results.containsKey(doc2.getKey()));

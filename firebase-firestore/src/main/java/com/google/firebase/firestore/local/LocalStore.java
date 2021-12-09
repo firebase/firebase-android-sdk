@@ -848,8 +848,8 @@ public final class LocalStore implements BundleCallback {
     ImmutableSortedMap<DocumentKey, Document> documents =
         queryEngine.getDocumentsMatchingQuery(
             query,
-            remoteKeys,
-            usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE);
+            usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
+            remoteKeys);
     return new QueryResult(documents, remoteKeys);
   }
 

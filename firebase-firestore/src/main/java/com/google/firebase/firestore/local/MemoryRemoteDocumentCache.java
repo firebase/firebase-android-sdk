@@ -34,14 +34,14 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, Document> docs;
+  private ImmutableSortedMap<DocumentKey, MutableDocument> docs;
   /** Manages the collection group index. */
   private IndexManager indexManager;
   /** The latest read time of any document in the cache. */
   private SnapshotVersion latestReadTime;
 
   MemoryRemoteDocumentCache() {
-    docs = emptyDocumentMap();
+    docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
     latestReadTime = SnapshotVersion.NONE;
   }
 
@@ -77,7 +77,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public MutableDocument get(DocumentKey key) {
-    Document doc = docs.get(key);
+    MutableDocument doc = docs.get(key);
     return doc != null ? doc.clone() : MutableDocument.newInvalidDocument(key);
   }
 
@@ -104,11 +104,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
     DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
-    Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
+    Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Document> entry = iterator.next();
-      Document doc = entry.getValue();
+      Map.Entry<DocumentKey, MutableDocument> entry = iterator.next();
+      MutableDocument doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
       if (!collection.isPrefixOf(key.getPath())) {
@@ -137,13 +137,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     return latestReadTime;
   }
 
-  Iterable<Document> getDocuments() {
+  Iterable<MutableDocument> getDocuments() {
     return new DocumentIterable();
   }
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (Document doc : new DocumentIterable()) {
+    for (MutableDocument doc : new DocumentIterable()) {
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
@@ -152,20 +152,20 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
    */
-  private class DocumentIterable implements Iterable<Document> {
+  private class DocumentIterable implements Iterable<MutableDocument> {
     @NonNull
     @Override
-    public Iterator<Document> iterator() {
-      Iterator<Map.Entry<DocumentKey, Document>> iterator =
+    public Iterator<MutableDocument> iterator() {
+      Iterator<Map.Entry<DocumentKey, MutableDocument>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
-      return new Iterator<Document>() {
+      return new Iterator<MutableDocument>() {
         @Override
         public boolean hasNext() {
           return iterator.hasNext();
         }
 
         @Override
-        public Document next() {
+        public MutableDocument next() {
           return iterator.next().getValue();
         }
       };
