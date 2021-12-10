@@ -19,32 +19,6 @@ package com.google.firebase.app.distribution {
     method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionRelease.Builder setVersionCode(@NonNull long);
   }
 
-  public abstract class AppDistributionReleaseInternal {
-    ctor public AppDistributionReleaseInternal();
-    method @NonNull public static com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder builder();
-    method @Nullable public abstract String getApkHash();
-    method @NonNull public abstract com.google.firebase.app.distribution.BinaryType getBinaryType();
-    method @NonNull public abstract String getBuildVersion();
-    method @Nullable public abstract String getCodeHash();
-    method @NonNull public abstract String getDisplayVersion();
-    method @Nullable public abstract String getDownloadUrl();
-    method @Nullable public abstract String getIasArtifactId();
-    method @Nullable public abstract String getReleaseNotes();
-  }
-
-  public abstract static class AppDistributionReleaseInternal.Builder {
-    ctor public AppDistributionReleaseInternal.Builder();
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal build();
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setApkHash(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setBinaryType(@NonNull com.google.firebase.app.distribution.BinaryType);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setBuildVersion(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setCodeHash(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setDisplayVersion(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setDownloadUrl(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setIasArtifactId(@NonNull String);
-    method @NonNull public abstract com.google.firebase.app.distribution.AppDistributionReleaseInternal.Builder setReleaseNotes(@Nullable String);
-  }
-
   public enum BinaryType {
     enum_constant public static final com.google.firebase.app.distribution.BinaryType AAB;
     enum_constant public static final com.google.firebase.app.distribution.BinaryType APK;
@@ -126,24 +100,8 @@ package com.google.firebase.app.distribution {
     method public void onResume();
   }
 
-  public class LogWrapper {
-    method public void d(@NonNull String);
-    method public void e(@NonNull String);
-    method public void e(@NonNull String, @NonNull Throwable);
-    method @NonNull public static com.google.firebase.app.distribution.LogWrapper getInstance();
-    method public void i(@NonNull String);
-    method public void v(@NonNull String);
-    method public void w(@NonNull String);
-  }
-
   public interface OnProgressListener {
     method public void onProgressUpdate(@NonNull com.google.firebase.app.distribution.UpdateProgress);
-  }
-
-  public final class ReleaseIdentificationUtils {
-    ctor public ReleaseIdentificationUtils();
-    method @Nullable public static String calculateApkHash(@NonNull java.io.File);
-    method @Nullable public static String extractInternalAppSharingArtifactId(@NonNull android.content.Context);
   }
 
   public class SignInResultActivity extends androidx.appcompat.app.AppCompatActivity {
