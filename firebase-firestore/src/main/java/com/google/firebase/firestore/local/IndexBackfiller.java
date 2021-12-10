@@ -127,8 +127,7 @@ public class IndexBackfiller {
   }
 
   /**
-   * Writes entries for the corresponding field indexes in the provided collection group. Returns
-   * the number of documents processed.
+   * Writes entries for the provided collection group. Returns the number of documents processed.
    */
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
@@ -137,6 +136,7 @@ public class IndexBackfiller {
     IndexOffset existingOffset = getExistingOffset(fieldIndexes);
 
     // Represents documents and the updated offset post-update.
+    // TODO(mrschmidt): Add mutation batch id to the document, so we don't have to return the offset
     Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> pair =
         localDocumentsView.getNextDocumentsAndOffset(
             collectionGroup, existingOffset, documentsRemainingUnderCap);
@@ -151,30 +151,22 @@ public class IndexBackfiller {
   /** Returns the lowest offset for the provided index group. */
   private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
     IndexOffset lowestOffset = null;
+    int lowestBatchId = Integer.MAX_VALUE;
     for (FieldIndex fieldIndex : fieldIndexes) {
       if (lowestOffset == null
           || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
         lowestOffset = fieldIndex.getIndexState().getOffset();
       }
+      lowestBatchId =
+          Math.min(fieldIndex.getIndexState().getOffset().getLargestBatchId(), lowestBatchId);
     }
     lowestOffset = lowestOffset == null ? IndexOffset.NONE : lowestOffset;
 
     // Add earliest batch id to offset
-    int earliestBatchId = getEarliestBatchId(fieldIndexes);
     lowestOffset =
         IndexOffset.create(
-            lowestOffset.getReadTime(), lowestOffset.getDocumentKey(), earliestBatchId);
+            lowestOffset.getReadTime(), lowestOffset.getDocumentKey(), lowestBatchId);
     return lowestOffset;
-  }
-
-  /** Returns the earliest batch id from the specified field indexes. */
-  private int getEarliestBatchId(Collection<FieldIndex> fieldIndexes) {
-    int lowestBatchId = Integer.MAX_VALUE;
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      lowestBatchId =
-          Math.min(fieldIndex.getIndexState().getOffset().getLargestBatchId(), lowestBatchId);
-    }
-    return lowestBatchId;
   }
 
   @VisibleForTesting

@@ -14,26 +14,21 @@
 
 package com.google.firebase.firestore.model.mutation;
 
+import com.google.auto.value.AutoValue;
+
 /**
  * Representation of an overlay computed by Firestore.
  *
  * <p>Holds information about a mutation and the largest batch id in Firestore when the mutation was
  * created.
  */
-public class Overlay {
-  private final int largestBatchId;
-  private final Mutation mutation;
-
-  public Overlay(int largestBatchId, Mutation mutation) {
-    this.largestBatchId = largestBatchId;
-    this.mutation = mutation;
+@AutoValue
+public abstract class Overlay {
+  public static Overlay create(int largestBatchId, Mutation mutation) {
+    return new AutoValue_Overlay(largestBatchId, mutation);
   }
 
-  public int getLargestBatchId() {
-    return largestBatchId;
-  }
+  public abstract int getLargestBatchId();
 
-  public Mutation getMutation() {
-    return mutation;
-  }
+  public abstract Mutation getMutation();
 }

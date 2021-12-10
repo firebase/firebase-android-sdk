@@ -115,14 +115,6 @@ class LocalDocumentsView {
     return getLocalViewOfDocuments(docs, new HashSet<>());
   }
 
-  /** Gets the local view of the next {@code count} documents based on their read time. */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(
-      String collectionGroup, IndexOffset offset, int count) {
-    Map<DocumentKey, MutableDocument> docs =
-        remoteDocumentCache.getAll(collectionGroup, offset, count);
-    return getLocalViewOfDocuments(docs, new HashSet<>());
-  }
-
   /**
    * Similar to {@link #getDocuments}, but creates the local view from the given {@code baseDocs}
    * without retrieving documents from the local store.
@@ -208,6 +200,14 @@ class LocalDocumentsView {
     recalculateAndSaveOverlays(docs);
   }
 
+  /** Gets the local view of the next {@code count} documents based on their read time. */
+  ImmutableSortedMap<DocumentKey, Document> getDocuments(
+      String collectionGroup, IndexOffset offset, int count) {
+    Map<DocumentKey, MutableDocument> docs =
+        remoteDocumentCache.getAll(collectionGroup, offset, count);
+    return getLocalViewOfDocuments(docs, new HashSet<>());
+  }
+
   /**
    * Performs a query against the local view of all documents.
    *
@@ -268,14 +268,14 @@ class LocalDocumentsView {
    * documents with mutations in order of batch id from the offset. Since all documents in a batch
    * are returned together, the total number of documents returned can exceed {@code count}.
    *
-   * <p>If no documents are found, returns an empty list and an offset with the latest read time in
+   * <p>If no documents are found, returns an empty map and an offset with the latest read time in
    * the remote document cache.
    *
    * @param collectionGroup The collection group for the documents.
    * @param offset The offset to index into.
    * @param count The number of documents to return
-   * @return A pair containing the next offset and a list of documents that follow the provided
-   *     offset.
+   * @return A pair containing the next offset that corresponds to the next documents and a map of
+   *     documents that follow the provided offset.
    */
   public Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsAndOffset(
       String collectionGroup, IndexOffset offset, int count) {
@@ -324,13 +324,12 @@ class LocalDocumentsView {
           getDocumentsInOverlayCacheByBatchId(collectionQuery, offset);
       for (Document document : documentToBatchIds.keySet()) {
         int batchId = documentToBatchIds.get(document);
-        if (!results.containsKey(batchId)) {
-          List<Document> documents = new ArrayList<>();
-          documents.add(document);
-          results = results.insert(batchId, documents);
-        } else {
-          results.get(batchId).add(document);
+        List<Document> entry = results.get(batchId);
+        if (entry == null) {
+          entry = new ArrayList<>();
+          results = results.insert(batchId, entry);
         }
+        entry.add(document);
       }
     }
     return results;
@@ -354,10 +353,11 @@ class LocalDocumentsView {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
-      Mutation mutation = overlay != null ? overlay.getMutation() : null;
-      if (mutation != null) {
-        mutation.applyToLocalView(
-            docEntry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
+      if (overlay != null) {
+        overlay
+            .getMutation()
+            .applyToLocalView(
+                docEntry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
@@ -373,24 +373,21 @@ class LocalDocumentsView {
    */
   public Map<Document, Integer> getDocumentsInOverlayCacheByBatchId(
       Query query, IndexOffset offset) {
-    Map<DocumentKey, MutableDocument> remoteDocuments = new HashMap<>();
+    Map<DocumentKey, MutableDocument> localDocuments = new HashMap<>();
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
 
     // Apply overlays to empty mutable document map to generate base.
     for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
-      remoteDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
+      localDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
     }
 
     // Apply the overlays and match against the query.
     Map<Document, Integer> results = new HashMap<>();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
+    for (Map.Entry<DocumentKey, MutableDocument> docEntry : localDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       int batchId = overlay.getLargestBatchId();
-      Mutation mutation = overlay.getMutation();
-      if (mutation != null) {
-        mutation.applyToLocalView(docEntry.getValue(), null, batchId, Timestamp.now());
-      }
+      overlay.getMutation().applyToLocalView(docEntry.getValue(), null, batchId, Timestamp.now());
       // Finally, insert the documents that still match the query.
       if (query.matches(docEntry.getValue())) {
         results.put(docEntry.getValue(), batchId);

@@ -53,7 +53,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
               try {
                 Write mutation = Write.parseFrom(row.getBlob(0));
                 int largestBatchId = row.getInt(1);
-                return new Overlay(largestBatchId, serializer.decodeMutation(mutation));
+                return Overlay.create(largestBatchId, serializer.decodeMutation(mutation));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }
@@ -108,7 +108,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
                 result.put(
                     DocumentKey.fromPath(collection.append(documentId)),
-                    new Overlay(largestBatchId, mutation));
+                    Overlay.create(largestBatchId, mutation));
               } catch (InvalidProtocolBufferException e) {
                 throw fail("Overlay failed to parse: %s", e);
               }

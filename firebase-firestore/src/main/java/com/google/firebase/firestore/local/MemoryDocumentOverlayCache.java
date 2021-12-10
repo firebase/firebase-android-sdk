@@ -48,7 +48,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
       overlayByBatchId.get(existing.getLargestBatchId()).remove(mutation.getKey());
     }
 
-    overlays.put(mutation.getKey(), new Overlay(largestBatchId, mutation));
+    overlays.put(mutation.getKey(), Overlay.create(largestBatchId, mutation));
 
     // Create the associate of this overlay to the given largestBatchId.
     if (overlayByBatchId.get(largestBatchId) == null) {

@@ -140,9 +140,9 @@ public abstract class DocumentOverlayCacheTestCase {
     overlays.saveOverlays(3, m);
 
     Map<DocumentKey, Overlay> expected = new HashMap<>();
-    expected.put(key("coll/doc1"), new Overlay(3, m1));
-    expected.put(key("coll/doc2"), new Overlay(3, m2));
-    expected.put(key("coll/doc3"), new Overlay(3, m3));
+    expected.put(key("coll/doc1"), Overlay.create(3, m1));
+    expected.put(key("coll/doc2"), Overlay.create(3, m2));
+    expected.put(key("coll/doc3"), Overlay.create(3, m3));
 
     verifyOverlayMaps(expected, overlays.getOverlays(path("coll"), -1));
   }
@@ -167,8 +167,8 @@ public abstract class DocumentOverlayCacheTestCase {
     overlays.saveOverlays(4, m);
 
     Map<DocumentKey, Overlay> expected = new HashMap<>();
-    expected.put(key("coll/doc3"), new Overlay(3, m3));
-    expected.put(key("coll/doc4"), new Overlay(4, m4));
+    expected.put(key("coll/doc3"), Overlay.create(3, m3));
+    expected.put(key("coll/doc4"), Overlay.create(4, m4));
     verifyOverlayMaps(expected, overlays.getOverlays(path("coll"), 2));
   }
 
