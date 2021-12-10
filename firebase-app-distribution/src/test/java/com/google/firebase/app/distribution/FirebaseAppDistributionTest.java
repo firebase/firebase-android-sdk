@@ -165,11 +165,11 @@ public class FirebaseAppDistributionTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 
   @Test
   public void checkForNewRelease_whenCheckForNewReleaseFails_throwsError() {
-    firebaseAppDistribution.setCachedNewRelease(null);
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
             Tasks.forException(
@@ -234,55 +234,40 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() {
-    // mockSignInStorage returns false then true to simulate logging in during first signIn check in
-    // updateIfNewReleaseAvailable
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false).thenReturn(true);
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
-    doReturn(new UpdateTaskImpl()).when(mockUpdateAabClient).updateAab(newRelease);
+    when(mockCheckForNewReleaseClient.checkForNewRelease())
+        .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Update flow
-    verify(mockTesterSignInClient, times(1)).signInTester();
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    AlertDialog dialog = verifyUpdateAlertDialog();
     assertEquals(
         String.format(
             "Version %s (%s) is available.\n\nRelease notes: %s",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(),
             TEST_RELEASE_NEWER_AAB.getVersionCode(),
             TEST_RELEASE_NEWER_AAB.getReleaseNotes()),
-        shadowOf(updateDialog).getMessage().toString());
-    assertTrue(updateDialog.isShowing());
+        shadowOf(dialog).getMessage().toString());
   }
 
   @Test
   public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    AppDistributionReleaseInternal newRelease =
-        TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build();
-    when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
+    when(mockCheckForNewReleaseClient.checkForNewRelease())
+        .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build())));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Update flow
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    AlertDialog dialog = verifyUpdateAlertDialog();
     assertEquals(
         String.format(
             "Version %s (%s) is available.",
             TEST_RELEASE_NEWER_AAB.getDisplayVersion(), TEST_RELEASE_NEWER_AAB.getVersionCode()),
-        shadowOf(updateDialog).getMessage().toString());
+        shadowOf(dialog).getMessage().toString());
   }
 
   @Test
   public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(null));
-    firebaseAppDistribution.setCachedNewRelease(null);
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -298,7 +283,6 @@ public class FirebaseAppDistributionTest {
   public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(null));
-    firebaseAppDistribution.setCachedNewRelease(null);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -353,6 +337,41 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
+  public void updateToNewRelease_whenDialogDismissed_taskFails() {
+    when(mockCheckForNewReleaseClient.checkForNewRelease())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+
+    assertFalse(updateDialog.isShowing());
+    assertFalse(updateTask.isSuccessful());
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+  }
+
+  @Test
+  public void updateToNewRelease_whenDialogCanceled_taskFails() {
+    when(mockCheckForNewReleaseClient.checkForNewRelease())
+        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    updateDialog.onBackPressed(); // cancels the dialog
+
+    assertFalse(updateDialog.isShowing());
+    assertFalse(updateTask.isSuccessful());
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+  }
+
+  @Test
   public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() {
     when(mockCheckForNewReleaseClient.checkForNewRelease())
         .thenReturn(
@@ -375,14 +394,6 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_callsSignInTester() {
-    when(mockCheckForNewReleaseClient.checkForNewRelease())
-        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
-    firebaseAppDistribution.updateIfNewReleaseAvailable();
-    verify(mockTesterSignInClient, times(1)).signInTester();
-  }
-
-  @Test
   public void signOutTester_setsSignInStatusFalse() {
     firebaseAppDistribution.signOutTester();
     verify(mockSignInStorage).setSignInStatus(false);
@@ -390,10 +401,8 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
     when(mockUpdateAabClient.updateAab(newRelease)).thenReturn(mockTask);
     mockTask.updateProgress(
@@ -419,10 +428,8 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void taskCancelledOnScreenRotation() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockCheckForNewReleaseClient.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.setCachedNewRelease(newRelease);
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -474,5 +481,13 @@ public class FirebaseAppDistributionTest {
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  private AlertDialog verifyUpdateAlertDialog() {
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(dialog.isShowing());
+
+    return dialog;
   }
 }

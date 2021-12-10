@@ -141,11 +141,8 @@ public class TesterSignInClientTest {
 
     testerSignInClient.signInTester();
 
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -161,11 +158,8 @@ public class TesterSignInClientTest {
 
     testerSignInClient.signInTester();
 
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -191,11 +185,8 @@ public class TesterSignInClientTest {
   @Test
   public void signInTester_whenReturnFromSignIn_taskSucceeds() {
     Task signInTask = testerSignInClient.signInTester();
-    if (ShadowAlertDialog.getLatestDialog() instanceof AlertDialog) {
-      AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-      assertTrue(dialog.isShowing());
-      dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-    }
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     // Simulate re-entering app
     testerSignInClient.onActivityCreated(mockSignInResultActivity);
@@ -216,5 +207,41 @@ public class TesterSignInClientTest {
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
     assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+  }
+
+  @Test
+  public void signInTester_whenDialogDismissed_taskFails() {
+    Task signInTask = testerSignInClient.signInTester();
+
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+
+    assertFalse(signInTask.isSuccessful());
+    Exception e = signInTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+  }
+
+  @Test
+  public void signInTester_whenDialogCanceled_taskFails() {
+    Task signInTask = testerSignInClient.signInTester();
+
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.onBackPressed(); // cancel dialog
+
+    assertFalse(signInTask.isSuccessful());
+    Exception e = signInTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+  }
+
+  private AlertDialog verifySignInAlertDialog() {
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(dialog.isShowing());
+
+    return dialog;
   }
 }
