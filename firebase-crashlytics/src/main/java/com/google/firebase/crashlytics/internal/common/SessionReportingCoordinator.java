@@ -367,6 +367,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private @Nullable ApplicationExitInfo findRelevantApplicationExitInfo(
       String sessionId, List<ApplicationExitInfo> applicationExitInfoList) {
     long sessionStartTime = reportPersistence.getStartTimestampMillis(sessionId);
+    ApplicationExitInfo alternateApplicationExitInfo = null;
 
     // The order of ApplicationExitInfos is latest first.
     // Java For-each preserves the order.
@@ -379,12 +380,29 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       // If the ApplicationExitInfo is not an ANR, but it was within the session, loop through
       // all ApplicationExitInfos that fall within the session.
       if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_ANR) {
+        try {
+          // There are cases where the process gets an ANR but recovers, and dies for another reason
+          // later, and the stack traces will be included in the record. If it's available, we'll
+          // consider
+          // this
+          // ApplicationExitInfo to be an ANR if an ApplicationExitInfo with REASON_ANR isn't
+          // available.
+          if (alternateApplicationExitInfo == null
+              // Exclude REASON_CRASH_NATIVE because the format of TraceInputStream isn't identical
+              // to the format for REASON_ANR.
+              && applicationExitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
+              && applicationExitInfo.getTraceInputStream() != null) {
+            alternateApplicationExitInfo = applicationExitInfo;
+          }
+        } catch (IOException ignored) {
+        }
+
         continue;
       }
 
       return applicationExitInfo;
     }
 
-    return null;
+    return alternateApplicationExitInfo;
   }
 }
