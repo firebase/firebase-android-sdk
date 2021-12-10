@@ -22,9 +22,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
 import android.net.Uri;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,10 +43,6 @@ import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
 public class UpdateAabClientTest {
-
-  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
   private static final Executor testExecutor = Executors.newSingleThreadExecutor();
@@ -75,15 +69,6 @@ public class UpdateAabClientTest {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
-
-    FirebaseApp firebaseApp =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApplicationId(TEST_APP_ID_1)
-                .setProjectId(TEST_PROJECT_ID)
-                .setApiKey(TEST_API_KEY)
-                .build());
 
     activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
