@@ -14,21 +14,23 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
-import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-
 import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -55,26 +57,42 @@ class FirebaseAppDistributionTesterApiClient {
 
   public static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public @NonNull AppDistributionReleaseInternal fetchNewRelease(
+  /**
+   * Fetches and returns the lastest release for the app that the tester has access to, or null if
+   * the tester doesn't have access to any releases.
+   */
+  @Nullable
+  public AppDistributionReleaseInternal fetchNewRelease(
       @NonNull String fid,
       @NonNull String appId,
       @NonNull String apiKey,
       @NonNull String authToken,
       @NonNull Context context)
       throws FirebaseAppDistributionException {
+    HttpsURLConnection connection = openHttpsUrlConnection(appId, fid, apiKey, authToken, context);
+    String responseBody;
+    try (BufferedInputStream inputStream = new BufferedInputStream(connection.getInputStream())) {
+      responseBody = convertInputStreamToString(inputStream);
+    } catch (IOException e) {
+      throw getExceptionForHttpResponse(connection, e);
+    } finally {
+      connection.disconnect();
+    }
+    return parseNewRelease(responseBody);
+  }
 
-    AppDistributionReleaseInternal newRelease;
-    HttpsURLConnection connection = openHttpsUrlConnection(appId, fid);
+  AppDistributionReleaseInternal parseNewRelease(String responseBody)
+      throws FirebaseAppDistributionException {
     try {
-      connection.setRequestMethod(REQUEST_METHOD);
-      connection.setRequestProperty(API_KEY_HEADER, apiKey);
-      connection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
-      connection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
-      connection.addRequestProperty(
-          X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage(context));
-
-      InputStream inputStream = connection.getInputStream();
-      JSONObject newReleaseJson = readFetchReleaseInputStream(inputStream);
+      JSONObject responseJson = new JSONObject(responseBody);
+      if (!responseJson.has("releases")) {
+        return null;
+      }
+      JSONArray releasesJson = responseJson.getJSONArray("releases");
+      if (releasesJson.length() == 0) {
+        return null;
+      }
+      JSONObject newReleaseJson = releasesJson.getJSONObject(0);
       final String displayVersion = newReleaseJson.getString(DISPLAY_VERSION_JSON_KEY);
       final String buildVersion = newReleaseJson.getString(BUILD_VERSION_JSON_KEY);
       String releaseNotes = tryGetValue(newReleaseJson, RELEASE_NOTES_JSON_KEY);
@@ -88,7 +106,7 @@ class FirebaseAppDistributionTesterApiClient {
               ? BinaryType.APK
               : BinaryType.AAB;
 
-      newRelease =
+      AppDistributionReleaseInternal newRelease =
           AppDistributionReleaseInternal.builder()
               .setDisplayVersion(displayVersion)
               .setBuildVersion(buildVersion)
@@ -99,48 +117,50 @@ class FirebaseAppDistributionTesterApiClient {
               .setApkHash(apkHash)
               .setDownloadUrl(downloadUrl)
               .build();
-      inputStream.close();
 
-    } catch (IOException | JSONException e) {
-      if (e instanceof JSONException) {
-        LogWrapper.getInstance().e(TAG + "Error parsing the new release.", e);
-        throw new FirebaseAppDistributionException(
-            Constants.ErrorMessages.JSON_PARSING_ERROR, NETWORK_FAILURE, e);
-      }
-      throw getExceptionForHttpResponse(connection);
-    } finally {
-      connection.disconnect();
+      LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
+      return newRelease;
+    } catch (JSONException e) {
+      LogWrapper.getInstance().e(TAG + "Error parsing the new release.", e);
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
-    LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
-    return newRelease;
   }
 
   private FirebaseAppDistributionException getExceptionForHttpResponse(
-      HttpsURLConnection connection) {
+      HttpsURLConnection connection, Exception cause) {
+    // TODO(lkellogg): this try-catch should be unnecessary because it will only throw an
+    // IOException here if we couldn't connect to the server, in which case getInputStream() would
+    // have already failed with the same exception. We also weirdly have to choose one of the two
+    // thrown exceptions to set as the cause. We can avoid this by checking the response code
+    // first, and then catching any unexpected exceptions when reading the input stream, essentially
+    // combining the "default" case below with this try-catch.
+    int responseCode;
     try {
-      LogWrapper.getInstance().e(TAG + "Failed due to " + connection.getResponseCode());
-      switch (connection.getResponseCode()) {
-        case 401:
-          return new FirebaseAppDistributionException(
-              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE);
-        case 403:
-        case 400:
-          return new FirebaseAppDistributionException(
-              Constants.ErrorMessages.AUTHORIZATION_ERROR, AUTHENTICATION_FAILURE);
-        case 404:
-          return new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NOT_FOUND_ERROR, AUTHENTICATION_FAILURE);
-        case 408:
-        case 504:
-          return new FirebaseAppDistributionException(
-              Constants.ErrorMessages.TIMEOUT_ERROR, NETWORK_FAILURE);
-        default:
-          return new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE);
-      }
-    } catch (IOException ex) {
+      responseCode = connection.getResponseCode();
+    } catch (IOException e) {
       return new FirebaseAppDistributionException(
-          Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, ex);
+          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+    }
+    LogWrapper.getInstance().e(TAG + "Failed due to " + responseCode);
+    switch (responseCode) {
+      case 401:
+        return new FirebaseAppDistributionException(
+            ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE, cause);
+      case 403:
+      case 400:
+        return new FirebaseAppDistributionException(
+            ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE, cause);
+      case 404:
+        return new FirebaseAppDistributionException(
+            ErrorMessages.NOT_FOUND_ERROR, Status.AUTHENTICATION_FAILURE, cause);
+      case 408:
+      case 504:
+        return new FirebaseAppDistributionException(
+            ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE, cause);
+      default:
+        return new FirebaseAppDistributionException(
+            ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN, cause);
     }
   }
 
@@ -152,24 +172,8 @@ class FirebaseAppDistributionTesterApiClient {
     }
   }
 
-  private JSONObject readFetchReleaseInputStream(InputStream in)
-      throws FirebaseAppDistributionException, IOException {
-    JSONObject newRelease;
-    InputStream jsonIn = new BufferedInputStream(in);
-    String result = convertInputStreamToString(jsonIn);
-    try {
-      JSONObject json = new JSONObject(result);
-      newRelease = json.getJSONArray("releases").getJSONObject(0);
-    } catch (JSONException e) {
-      throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.JSON_PARSING_ERROR,
-          FirebaseAppDistributionException.Status.UNKNOWN,
-          e);
-    }
-    return newRelease;
-  }
-
-  HttpsURLConnection openHttpsUrlConnection(String appId, String fid)
+  HttpsURLConnection openHttpsUrlConnection(
+      String appId, String fid, String apiKey, String authToken, Context context)
       throws FirebaseAppDistributionException {
     HttpsURLConnection httpsURLConnection;
     URL url = getReleasesEndpointUrl(appId, fid);
@@ -177,8 +181,18 @@ class FirebaseAppDistributionTesterApiClient {
       httpsURLConnection = (HttpsURLConnection) url.openConnection();
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, e);
+          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     }
+    try {
+      httpsURLConnection.setRequestMethod(REQUEST_METHOD);
+    } catch (ProtocolException e) {
+      throw new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN, e);
+    }
+    httpsURLConnection.setRequestProperty(API_KEY_HEADER, apiKey);
+    httpsURLConnection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
+    httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    httpsURLConnection.addRequestProperty(
+        X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage(context));
     return httpsURLConnection;
   }
 
@@ -188,9 +202,7 @@ class FirebaseAppDistributionTesterApiClient {
       return new URL(String.format(RELEASE_ENDPOINT_URL_FORMAT, appId, fid));
     } catch (MalformedURLException e) {
       throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.UNKNOWN_ERROR,
-          FirebaseAppDistributionException.Status.UNKNOWN,
-          e);
+          ErrorMessages.UNKNOWN_ERROR, FirebaseAppDistributionException.Status.UNKNOWN, e);
     }
   }
 
@@ -204,11 +216,7 @@ class FirebaseAppDistributionTesterApiClient {
     return result.toString();
   }
 
-  /**
-   * Gets the Android package's SHA-1 fingerprint.
-   *
-   * @param context
-   */
+  /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage(Context context) {
     byte[] hash;
 

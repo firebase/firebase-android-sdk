@@ -119,6 +119,11 @@ class CheckForNewReleaseClient {
           firebaseAppDistributionTesterApiClient.fetchNewRelease(
               fid, appId, apiKey, authToken, firebaseApp.getApplicationContext());
 
+      if (retrievedNewRelease == null) {
+        LogWrapper.getInstance().v(TAG + "Tester does not have access to any releases");
+        return null;
+      }
+
       if (!canInstall(retrievedNewRelease)) {
         LogWrapper.getInstance().v(TAG + "New release has lower version code than current release");
         return null;
