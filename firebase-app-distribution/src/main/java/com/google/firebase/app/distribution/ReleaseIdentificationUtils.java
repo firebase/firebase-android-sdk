@@ -34,7 +34,7 @@ final class ReleaseIdentificationUtils {
   private static final int BYTES_IN_LONG = 8;
 
   @Nullable
-  public static String extractInternalAppSharingArtifactId(@NonNull Context appContext) {
+  static String extractInternalAppSharingArtifactId(@NonNull Context appContext) {
     try {
       PackageInfo packageInfo =
           appContext
@@ -51,7 +51,7 @@ final class ReleaseIdentificationUtils {
   }
 
   @Nullable
-  public static String calculateApkHash(@NonNull File file) {
+  static String calculateApkHash(@NonNull File file) {
     LogWrapper.getInstance().v(TAG + "Calculating release id for " + file.getPath());
     LogWrapper.getInstance().v(TAG + "File size: " + file.length());
 

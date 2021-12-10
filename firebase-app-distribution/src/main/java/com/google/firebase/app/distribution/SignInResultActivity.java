@@ -25,8 +25,6 @@ import androidx.appcompat.app.AppCompatActivity;
 public class SignInResultActivity extends AppCompatActivity {
   private static final String TAG = "SignInResultActivity:";
 
-  public SignInResultActivity() {}
-
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
     super.onCreate(savedInstanceBundle);
