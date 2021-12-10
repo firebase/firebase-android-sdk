@@ -391,6 +391,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
               // Exclude REASON_CRASH_NATIVE because the format of TraceInputStream isn't identical
               // to the format for REASON_ANR.
               && applicationExitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
+              // Ignore REASON_CRASH.
+              && applicationExitInfo.getReason() != ApplicationExitInfo.REASON_CRASH
+              // Ignore REASON_EXIT_SELF.
+              && applicationExitInfo.getReason() != ApplicationExitInfo.REASON_EXIT_SELF
               && applicationExitInfo.getTraceInputStream() != null) {
             alternateApplicationExitInfo = applicationExitInfo;
           }
