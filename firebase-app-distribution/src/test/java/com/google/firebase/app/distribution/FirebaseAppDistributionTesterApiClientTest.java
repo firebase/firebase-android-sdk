@@ -49,8 +49,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private Context applicationContext;
-  @Mock
-  private HttpsURLConnection mockHttpsURLConnection;
+  @Mock private HttpsURLConnection mockHttpsURLConnection;
 
   @Before
   public void setup() throws Exception {

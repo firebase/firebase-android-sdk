@@ -106,16 +106,17 @@ class FirebaseAppDistributionTesterApiClient {
               ? BinaryType.APK
               : BinaryType.AAB;
 
-      AppDistributionReleaseInternal newRelease = AppDistributionReleaseInternal.builder()
-          .setDisplayVersion(displayVersion)
-          .setBuildVersion(buildVersion)
-          .setReleaseNotes(releaseNotes)
-          .setBinaryType(binaryType)
-          .setIasArtifactId(iasArtifactId)
-          .setCodeHash(codeHash)
-          .setApkHash(apkHash)
-          .setDownloadUrl(downloadUrl)
-          .build();
+      AppDistributionReleaseInternal newRelease =
+          AppDistributionReleaseInternal.builder()
+              .setDisplayVersion(displayVersion)
+              .setBuildVersion(buildVersion)
+              .setReleaseNotes(releaseNotes)
+              .setBinaryType(binaryType)
+              .setIasArtifactId(iasArtifactId)
+              .setCodeHash(codeHash)
+              .setApkHash(apkHash)
+              .setDownloadUrl(downloadUrl)
+              .build();
 
       LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
       return newRelease;
@@ -171,8 +172,8 @@ class FirebaseAppDistributionTesterApiClient {
     }
   }
 
-  HttpsURLConnection openHttpsUrlConnection(String appId, String fid, String apiKey,
-      String authToken, Context context)
+  HttpsURLConnection openHttpsUrlConnection(
+      String appId, String fid, String apiKey, String authToken, Context context)
       throws FirebaseAppDistributionException {
     HttpsURLConnection httpsURLConnection;
     URL url = getReleasesEndpointUrl(appId, fid);
@@ -201,9 +202,7 @@ class FirebaseAppDistributionTesterApiClient {
       return new URL(String.format(RELEASE_ENDPOINT_URL_FORMAT, appId, fid));
     } catch (MalformedURLException e) {
       throw new FirebaseAppDistributionException(
-          ErrorMessages.UNKNOWN_ERROR,
-          FirebaseAppDistributionException.Status.UNKNOWN,
-          e);
+          ErrorMessages.UNKNOWN_ERROR, FirebaseAppDistributionException.Status.UNKNOWN, e);
     }
   }
 
@@ -217,9 +216,7 @@ class FirebaseAppDistributionTesterApiClient {
     return result.toString();
   }
 
-  /**
-   * Gets the Android package's SHA-1 fingerprint.
-   */
+  /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage(Context context) {
     byte[] hash;
 
