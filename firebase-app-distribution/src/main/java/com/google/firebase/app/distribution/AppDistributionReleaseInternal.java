@@ -27,77 +27,77 @@ import com.google.auto.value.AutoValue;
  *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
  */
 @AutoValue
-public abstract class AppDistributionReleaseInternal {
+abstract class AppDistributionReleaseInternal {
 
   @NonNull
-  public static Builder builder() {
+  static Builder builder() {
     return new AutoValue_AppDistributionReleaseInternal.Builder();
   }
 
   /** The short bundle version of this build (example 1.0.0) */
   @NonNull
-  public abstract String getDisplayVersion();
+  abstract String getDisplayVersion();
 
   /** The bundle version of this build (example: 123) */
   @NonNull
-  public abstract String getBuildVersion();
+  abstract String getBuildVersion();
 
   /** The release notes for this build */
   @Nullable
-  public abstract String getReleaseNotes();
+  abstract String getReleaseNotes();
 
   /** The binary type for this build */
   @NonNull
-  public abstract BinaryType getBinaryType();
+  abstract BinaryType getBinaryType();
 
   /** Hash of binary of an Android app */
   @Nullable
-  public abstract String getCodeHash();
+  abstract String getCodeHash();
 
   /** Efficient hash of an Android apk. Used to identify a release */
   @Nullable
-  public abstract String getApkHash();
+  abstract String getApkHash();
 
   /**
    * IAS artifact id. This value is inserted into the manifest of APK's installed via Used to map a
    * release to an APK installed via an app bundle
    */
   @Nullable
-  public abstract String getIasArtifactId();
+  abstract String getIasArtifactId();
 
   /** Short-lived download URL */
   @Nullable
-  public abstract String getDownloadUrl();
+  abstract String getDownloadUrl();
 
   /** Builder for {@link AppDistributionReleaseInternal}. */
   @AutoValue.Builder
-  public abstract static class Builder {
+  abstract static class Builder {
 
     @NonNull
-    public abstract Builder setDisplayVersion(@NonNull String value);
+    abstract Builder setDisplayVersion(@NonNull String value);
 
     @NonNull
-    public abstract Builder setBuildVersion(@NonNull String value);
+    abstract Builder setBuildVersion(@NonNull String value);
 
     @NonNull
-    public abstract Builder setReleaseNotes(@Nullable String value);
+    abstract Builder setReleaseNotes(@Nullable String value);
 
     @NonNull
-    public abstract Builder setBinaryType(@NonNull BinaryType value);
+    abstract Builder setBinaryType(@NonNull BinaryType value);
 
     @NonNull
-    public abstract Builder setCodeHash(@NonNull String value);
+    abstract Builder setCodeHash(@NonNull String value);
 
     @NonNull
-    public abstract Builder setApkHash(@NonNull String value);
+    abstract Builder setApkHash(@NonNull String value);
 
     @NonNull
-    public abstract Builder setIasArtifactId(@NonNull String value);
+    abstract Builder setIasArtifactId(@NonNull String value);
 
     @NonNull
-    public abstract Builder setDownloadUrl(@NonNull String value);
+    abstract Builder setDownloadUrl(@NonNull String value);
 
     @NonNull
-    public abstract AppDistributionReleaseInternal build();
+    abstract AppDistributionReleaseInternal build();
   }
 }
