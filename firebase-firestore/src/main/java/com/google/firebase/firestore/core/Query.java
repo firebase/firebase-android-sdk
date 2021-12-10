@@ -17,7 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.Filter;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -238,7 +239,7 @@ public final class Query {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
     FieldPath newInequalityField = null;
     if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
-      newInequalityField = filter.getField();
+      newInequalityField = ((FieldFilter) filter).getField();
     }
 
     FieldPath queryInequalityField = inequalityField();

@@ -20,9 +20,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -686,19 +686,19 @@ public final class RemoteSerializer {
 
   @VisibleForTesting
   StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
-    if (filter.getOperator() == Filter.Operator.EQUAL
-        || filter.getOperator() == Filter.Operator.NOT_EQUAL) {
+    if (filter.getOperator() == FieldFilter.Operator.EQUAL
+        || filter.getOperator() == FieldFilter.Operator.NOT_EQUAL) {
       UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
       unaryProto.setField(encodeFieldPath(filter.getField()));
       if (Values.isNanValue(filter.getValue())) {
         unaryProto.setOp(
-            filter.getOperator() == Filter.Operator.EQUAL
+            filter.getOperator() == FieldFilter.Operator.EQUAL
                 ? UnaryFilter.Operator.IS_NAN
                 : UnaryFilter.Operator.IS_NOT_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       } else if (Values.isNullValue(filter.getValue())) {
         unaryProto.setOp(
-            filter.getOperator() == Filter.Operator.EQUAL
+            filter.getOperator() == FieldFilter.Operator.EQUAL
                 ? UnaryFilter.Operator.IS_NULL
                 : UnaryFilter.Operator.IS_NOT_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
@@ -722,13 +722,13 @@ public final class RemoteSerializer {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NAN_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NAN_VALUE);
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NULL_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NULL_VALUE);
       case IS_NOT_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NAN_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NAN_VALUE);
       case IS_NOT_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NULL_VALUE);
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NULL_VALUE);
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());
     }

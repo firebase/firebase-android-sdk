@@ -17,8 +17,8 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;
@@ -200,8 +200,8 @@ public class TargetIndexMatcher {
       return false;
     }
     boolean isArrayOperator =
-        filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS)
-            || filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS_ANY);
+        filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
+            || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
     return segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS) == isArrayOperator;
   }
 

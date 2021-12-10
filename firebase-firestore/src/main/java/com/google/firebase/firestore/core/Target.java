@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -124,7 +125,8 @@ public final class Target {
     if (segment == null) return null;
 
     for (Filter filter : filters) {
-      if (filter.getField().equals(segment.getFieldPath())) {
+      if ((filter instanceof FieldFilter)
+          && (((FieldFilter) filter).getField()).equals(segment.getFieldPath())) {
         FieldFilter fieldFilter = (FieldFilter) filter;
         switch (fieldFilter.getOperator()) {
           case ARRAY_CONTAINS_ANY:
@@ -147,7 +149,8 @@ public final class Target {
 
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
+        if ((filter instanceof FieldFilter)
+            && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
           switch (fieldFilter.getOperator()) {
             case EQUAL:
@@ -185,7 +188,8 @@ public final class Target {
 
       // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
+        if ((filter instanceof FieldFilter)
+            && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
           Value filterValue = null;
           boolean filterInclusive = true;
@@ -270,7 +274,8 @@ public final class Target {
 
       // Process all filters to find a value for the current field segment
       for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
+        if ((filter instanceof FieldFilter)
+            && ((FieldFilter) filter).getField().equals(segment.getFieldPath())) {
           FieldFilter fieldFilter = (FieldFilter) filter;
           Value filterValue = null;
           boolean filterInclusive = true;

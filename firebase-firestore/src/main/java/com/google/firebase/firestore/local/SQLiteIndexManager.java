@@ -24,10 +24,10 @@ import static java.lang.Math.max;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
@@ -633,9 +633,10 @@ final class SQLiteIndexManager implements IndexManager {
 
   private boolean isInFilter(Target target, FieldPath fieldPath) {
     for (Filter filter : target.getFilters()) {
-      if (filter.getField().equals(fieldPath)) {
-        Filter.Operator operator = ((FieldFilter) filter).getOperator();
-        return operator.equals(Filter.Operator.IN) || operator.equals(Filter.Operator.NOT_IN);
+      if ((filter instanceof FieldFilter) && ((FieldFilter) filter).getField().equals(fieldPath)) {
+        FieldFilter.Operator operator = ((FieldFilter) filter).getOperator();
+        return operator.equals(FieldFilter.Operator.IN)
+            || operator.equals(FieldFilter.Operator.NOT_IN);
       }
     }
     return false;

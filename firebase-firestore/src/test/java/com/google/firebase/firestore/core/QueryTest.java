@@ -30,6 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
+import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
