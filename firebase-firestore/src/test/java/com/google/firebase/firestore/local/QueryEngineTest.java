@@ -98,7 +98,7 @@ public class QueryEngineTest {
 
     documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     targetCache = new MemoryTargetCache(persistence);
-    queryEngine = new DefaultQueryEngine();
+    queryEngine = new QueryEngine();
 
     remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
@@ -119,7 +119,7 @@ public class QueryEngineTest {
             return super.getDocumentsMatchingQuery(query, offset);
           }
         };
-    queryEngine.setLocalDocumentsView(localDocuments);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   /** Adds the provided documents to the query target mapping. */
@@ -408,17 +408,5 @@ public class QueryEngineTest {
                     LAST_LIMBO_FREE_SNAPSHOT,
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
-  }
-
-  @Test
-  public void doesNotIncludeDocumentsDeletedByMutation_OverlayEnabled() throws Exception {
-    boolean saved = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-
-    try {
-      doesNotIncludeDocumentsDeletedByMutation();
-    } finally {
-      Persistence.OVERLAY_SUPPORT_ENABLED = saved;
-    }
   }
 }

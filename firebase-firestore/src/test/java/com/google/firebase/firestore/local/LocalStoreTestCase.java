@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
@@ -23,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.keySet;
+import static com.google.firebase.firestore.testutil.TestUtil.keys;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.noChangeEvent;
@@ -33,12 +35,11 @@ import static com.google.firebase.firestore.testutil.TestUtil.resumeToken;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
-import static com.google.firebase.firestore.testutil.TestUtil.values;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.viewChanges;
+import static com.google.firebase.firestore.util.Util.values;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -75,16 +76,17 @@ import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -99,6 +101,7 @@ import org.junit.Test;
  */
 public abstract class LocalStoreTestCase {
   private CountingQueryEngine queryEngine;
+  private IndexBackfiller indexBackfiller;
   private Persistence localStorePersistence;
   private LocalStore localStore;
 
@@ -119,8 +122,8 @@ public abstract class LocalStoreTestCase {
     lastTargetId = 0;
 
     localStorePersistence = getPersistence();
-    queryEngine = new CountingQueryEngine(new DefaultQueryEngine());
-    IndexBackfiller indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue());
+    queryEngine = new CountingQueryEngine(new QueryEngine());
+    indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue());
     localStore =
         new LocalStore(localStorePersistence, indexBackfiller, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
@@ -143,7 +146,7 @@ public abstract class LocalStoreTestCase {
     lastChanges = result.getChanges();
   }
 
-  private void applyRemoteEvent(RemoteEvent event) {
+  protected void applyRemoteEvent(RemoteEvent event) {
     lastChanges = localStore.applyRemoteEvent(event);
   }
 
@@ -151,27 +154,35 @@ public abstract class LocalStoreTestCase {
     localStore.notifyLocalViewChanges(asList(changes));
   }
 
-  private void udpateViews(int targetId, boolean fromCache) {
+  protected void backfillIndexes() {
+    indexBackfiller.backfill();
+  }
+
+  private void updateViews(int targetId, boolean fromCache) {
     notifyLocalViewChanges(viewChanges(targetId, fromCache, asList(), asList()));
   }
 
-  private void acknowledgeMutation(long documentVersion, @Nullable Object transformResult) {
+  private void acknowledgeMutationWithTransformResults(
+      long documentVersion, Object... transformResult) {
     MutationBatch batch = batches.remove(0);
     SnapshotVersion version = version(documentVersion);
-    MutationResult mutationResult =
-        new MutationResult(
-            version,
-            transformResult != null
-                ? Collections.singletonList(TestUtil.wrap(transformResult))
-                : Collections.emptyList());
+    List<MutationResult> mutationResults =
+        Collections.singletonList(new MutationResult(version, emptyList()));
+
+    if (transformResult.length != 0) {
+      mutationResults =
+          Arrays.stream(transformResult)
+              .map(r -> new MutationResult(version, Collections.singletonList(TestUtil.wrap(r))))
+              .collect(Collectors.toList());
+    }
+
     MutationBatchResult result =
-        MutationBatchResult.create(
-            batch, version, singletonList(mutationResult), WriteStream.EMPTY_STREAM_TOKEN);
+        MutationBatchResult.create(batch, version, mutationResults, WriteStream.EMPTY_STREAM_TOKEN);
     lastChanges = localStore.acknowledgeBatch(result);
   }
 
   private void acknowledgeMutation(long documentVersion) {
-    acknowledgeMutation(documentVersion, null);
+    acknowledgeMutationWithTransformResults(documentVersion);
   }
 
   private void rejectMutation() {
@@ -188,13 +199,13 @@ public abstract class LocalStoreTestCase {
     localStore.configureFieldIndexes(fieldIndexes);
   }
 
-  private int allocateQuery(Query query) {
+  protected int allocateQuery(Query query) {
     TargetData targetData = localStore.allocateTarget(query.toTarget());
     lastTargetId = targetData.getTargetId();
     return targetData.getTargetId();
   }
 
-  private void executeQuery(Query query) {
+  protected void executeQuery(Query query) {
     resetPersistenceStats();
     lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
   }
@@ -269,13 +280,10 @@ public abstract class LocalStoreTestCase {
     assertFalse(actual.isValidDocument());
   }
 
-  private void assertQueryReturned(String... keys) {
+  protected void assertQueryReturned(String... keys) {
     assertNotNull(lastQueryResult);
     ImmutableSortedMap<DocumentKey, Document> documents = lastQueryResult.getDocuments();
-    for (String key : keys) {
-      assertTrue("Expected query to return: " + key, documents.containsKey(key(key)));
-    }
-    assertEquals(documents.size(), keys.length);
+    assertThat(keys(documents)).containsExactly(Arrays.stream(keys).map(TestUtil::key).toArray());
   }
 
   private void assertQueryDocumentMapping(int targetId, DocumentKey... keys) {
@@ -317,8 +325,9 @@ public abstract class LocalStoreTestCase {
    * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int byKey, int byQuery) {
-    assertEquals("Mutations read (by query)", byQuery, queryEngine.getMutationsReadByQuery());
+  private void assertMutationsRead(int byKey, int byCollection) {
+    assertEquals(
+        "Mutations read (by collection)", byCollection, queryEngine.getMutationsReadByCollection());
     assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
   }
 
@@ -326,9 +335,11 @@ public abstract class LocalStoreTestCase {
    * Asserts the expected numbers of documents read by the RemoteDocumentCache since the last call
    * to `resetPersistenceStats()`.
    */
-  private void assertRemoteDocumentsRead(int byKey, int byQuery) {
+  protected void assertRemoteDocumentsRead(int byKey, int byCollection) {
     assertEquals(
-        "Remote documents read (by query)", byQuery, queryEngine.getDocumentsReadByQuery());
+        "Remote documents read (by collection)",
+        byCollection,
+        queryEngine.getDocumentsReadByCollection());
     assertEquals("Remote documents read (by key)", byKey, queryEngine.getDocumentsReadByKey());
   }
 
@@ -370,7 +381,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
@@ -485,7 +496,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesDocumentThenSetMutationThenAckThenDocument() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         addedRemoteEvent(doc("foo/bar", 2, map("it", "base")), asList(targetId), emptyList()));
@@ -531,7 +542,7 @@ public abstract class LocalStoreTestCase {
     assertRemoved("foo/bar");
     assertNotContains("foo/bar");
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         addedRemoteEvent(
@@ -569,7 +580,7 @@ public abstract class LocalStoreTestCase {
       assertContains(unknownDoc("foo/bar", 1));
     }
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
@@ -595,7 +606,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesDocumentThenDeleteMutationThenAck() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
@@ -619,7 +630,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesDeleteMutationThenDocumentThenAck() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
@@ -644,7 +655,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesDocumentThenDeletedDocumentThenDocument() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
@@ -673,7 +684,7 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
@@ -785,7 +796,7 @@ public abstract class LocalStoreTestCase {
   public void testCollectsGarbageAfterChangeBatch() {
     assumeTrue(garbageCollectorIsEager());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -803,7 +814,7 @@ public abstract class LocalStoreTestCase {
   public void testCollectsGarbageAfterAcknowledgedMutation() {
     assumeTrue(garbageCollectorIsEager());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
@@ -835,7 +846,7 @@ public abstract class LocalStoreTestCase {
   public void testCollectsGarbageAfterRejectedMutation() {
     assumeTrue(garbageCollectorIsEager());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("foo", "old")), asList(targetId), emptyList()));
@@ -868,7 +879,7 @@ public abstract class LocalStoreTestCase {
   public void testPinsDocumentsInTheLocalView() {
     assumeTrue(garbageCollectorIsEager());
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -918,9 +929,8 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar"))));
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
     QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertEquals(
-        asList(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations()),
-        values(result.getDocuments()));
+    assertThat(values(result.getDocuments()))
+        .containsExactly(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -932,18 +942,17 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/baz", map("foo", "baz")),
             setMutation("foo/bar/Foo/Bar", map("Foo", "Bar")),
             setMutation("fooo/blah", map("fooo", "blah"))));
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertEquals(
-        asList(
+    assertThat(values(result.getDocuments()))
+        .containsExactly(
             doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(),
-            doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations()),
-        values(result.getDocuments()));
+            doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
   }
 
   @Test
   public void testCanExecuteMixedCollectionQueries() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -952,17 +961,16 @@ public abstract class LocalStoreTestCase {
     writeMutation(setMutation("foo/bonk", map("a", "b")));
 
     QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
-    assertEquals(
-        asList(
+    assertThat(values(result.getDocuments()))
+        .containsExactly(
             doc("foo/bar", 20, map("a", "b")),
             doc("foo/baz", 10, map("a", "b")),
-            doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations()),
-        values(result.getDocuments()));
+            doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations());
   }
 
   @Test
   public void testReadsAllDocumentsForInitialCollectionQueries() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
 
     applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map()), asList(2), emptyList()));
@@ -972,11 +980,9 @@ public abstract class LocalStoreTestCase {
     resetPersistenceStats();
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
-
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
-    if (!Persistence.OVERLAY_SUPPORT_ENABLED) {
-      assertMutationsRead(/* byKey= */ 0, /* byQuery= */ 1);
-    }
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    // No mutations are read because only overlay is needed.
+    assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 0);
   }
 
   @Test
@@ -1018,7 +1024,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testRemoteDocumentKeysForTarget() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1070,7 +1076,7 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
     assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
-    acknowledgeMutation(2, 1);
+    acknowledgeMutationWithTransformResults(2, 1);
     assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
 
@@ -1082,13 +1088,11 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testUsesTargetMappingToExecuteQueries() {
     assumeFalse(garbageCollectorIsEager());
-    assumeTrue(queryEngine.getSubject() instanceof DefaultQueryEngine);
 
     // This test verifies that once a target mapping has been written, only documents that match
     // the query are read from the RemoteDocumentCache.
 
-    Query query =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
+    Query query = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
 
     writeMutation(setMutation("foo/a", map("matches", true)));
@@ -1101,7 +1105,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query, but note that we read all existing documents from the RemoteDocumentCache
     // since we do not yet have target mapping.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
 
     // Issue a RemoteEvent to persist the target mapping.
     applyRemoteEvent(
@@ -1110,12 +1114,12 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* fromCache= */ false);
+    updateViews(targetId, /* fromCache= */ false);
 
     // Execute the query again, this time verifying that we only read the two documents that match
     // the query.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 2, /* byQuery= */ 0);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("foo/a", "foo/b");
   }
 
@@ -1124,7 +1128,7 @@ public abstract class LocalStoreTestCase {
     // This test verifies that the `lastLimboFreeSnapshot` version for TargetData is advanced when
     // we compute a limbo-free free view and that the mapping is persisted when we release a target.
 
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     Target target = query.toTarget();
     int targetId = allocateQuery(query);
 
@@ -1136,7 +1140,7 @@ public abstract class LocalStoreTestCase {
     Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
-    udpateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache=*/ false);
     cachedTargetData = localStore.getTargetData(target);
     Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
@@ -1155,15 +1159,12 @@ public abstract class LocalStoreTestCase {
 
     // This test verifies that queries that have a persisted TargetMapping include documents that
     // were modified by local edits after the target mapping was written.
-    Query query =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
+    Query query = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
 
-    applyRemoteEvent(
-        addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* fromCache= */ false);
+    updateViews(targetId, /* fromCache= */ false);
 
     // Execute the query based on the RemoteEvent.
     executeQuery(query);
@@ -1190,19 +1191,16 @@ public abstract class LocalStoreTestCase {
     // This test verifies that queries that have a persisted TargetMapping include documents that
     // were modified by other queries after the target mapping was written.
 
-    Query filteredQuery =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
+    Query filteredQuery = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(filteredQuery);
 
-    applyRemoteEvent(
-        addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache=*/ false);
     releaseTarget(targetId);
 
     // Start another query and add more matching documents to the collection.
-    Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
+    Query fullQuery = query("foo");
     targetId = allocateQuery(fullQuery);
     applyRemoteEvent(
         addedRemoteEvent(
@@ -1226,8 +1224,7 @@ public abstract class LocalStoreTestCase {
     // longer match the query filter.
 
     // Add two document results for a simple filter query
-    Query filteredQuery =
-        Query.atPath(ResourcePath.fromString("foo")).filter(filter("matches", "==", true));
+    Query filteredQuery = query("foo").filter(filter("matches", "==", true));
     int targetId = allocateQuery(filteredQuery);
 
     applyRemoteEvent(
@@ -1236,11 +1233,11 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    udpateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache=*/ false);
     releaseTarget(targetId);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.
-    Query fullQuery = Query.atPath(ResourcePath.fromString("foo"));
+    Query fullQuery = query("foo");
     targetId = allocateQuery(fullQuery);
     applyRemoteEvent(
         addedRemoteEvent(
@@ -1257,7 +1254,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSetMutationThenTransformThenRemoteEventThenTransform() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1284,20 +1281,18 @@ public abstract class LocalStoreTestCase {
     assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutation(3, 1);
+    acknowledgeMutationWithTransformResults(3, 1);
     assertChanged(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
     assertContains(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
 
-    acknowledgeMutation(4, 1339);
+    acknowledgeMutationWithTransformResults(4, 1339);
     assertChanged(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
   }
 
   @Test
-  @Ignore("Test fails in CI")
-  // TODO(Overlay): Fix me :)
-  public void testHoldsBackOnlyNonIdempotentTransforms() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+  public void testHoldsBackTransforms() {
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1333,13 +1328,18 @@ public abstract class LocalStoreTestCase {
             asList(2),
             emptyList()));
     assertChanged(
-        doc("foo/bar", 2, map("sum", 1, "array_union", asList("bar", "foo")))
-            .setHasLocalMutations());
+        doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
+
+    acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
+    assertChanged(
+        doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
+            .withReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
+            .setHasCommittedMutations());
   }
 
   @Test
   public void testHandlesMergeMutationWithTransformThenRemoteEvent() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1355,7 +1355,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesPatchMutationWithTransformThenRemoteEvent() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1383,7 +1383,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSavingBundlesDocumentsWithNewerExistingVersion() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1400,7 +1400,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSavingBundledDocumentsWithOlderExistingVersion() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1418,7 +1418,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testSavingBundledDocumentsWithSameExistingVersionShouldNotOverwrite() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1435,7 +1435,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesMergeMutationWithTransformThenBundledDocuments() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1455,7 +1455,7 @@ public abstract class LocalStoreTestCase {
   public void testHandlesPatchMutationWithTransformThenBundledDocuments() {
     // Note: see comments in testHandlesPatchMutationWithTransformThenRemoteEvent().
     // The behavior for this and remote event is the same.
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 
@@ -1479,7 +1479,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testHandlesSavingAndLoadingNamedQueries() {
-    Target target = Query.atPath(ResourcePath.fromString("foo")).toTarget();
+    Target target = query("foo").toTarget();
     NamedQuery namedQuery =
         new NamedQuery(
             "testQuery",
@@ -1522,7 +1522,7 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSavingAndLoadingLimitToLastQueries() {
     Target target =
-        Query.atPath(ResourcePath.fromString("foo"))
+        query("foo")
             .orderBy(orderBy("foo"))
             .limitToFirst(5) // Use `limitToFirst` so toTarget() does not flip ordering constraint
             .toTarget();
@@ -1554,7 +1554,7 @@ public abstract class LocalStoreTestCase {
 
   @Test
   public void testOnlyPersistsUpdatesForDocumentsWhenVersionChanges() {
-    Query query = Query.atPath(ResourcePath.fromString("foo"));
+    Query query = query("foo");
     allocateQuery(query);
     assertTargetId(2);
 

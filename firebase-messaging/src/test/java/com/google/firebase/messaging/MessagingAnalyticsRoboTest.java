@@ -868,6 +868,15 @@ public class MessagingAnalyticsRoboTest {
   }
 
   @Test
+  public void testLogToScion_noDefaultFirebaseApp_doesNotThrow() {
+    FirebaseApp.clearInstancesForTest();
+
+    MessagingAnalytics.logToScion("test_event", null);
+
+    // no exception thrown means we are handling the IllegalStateException gracefully.
+  }
+
+  @Test
   public void testLogToScion_invalidMessageTime_doesNotThrow() {
     Bundle extras = new Bundle();
     extras.putString(AnalyticsKeys.MESSAGE_TIMESTAMP, "invalid_message_time");

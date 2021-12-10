@@ -95,13 +95,15 @@ class InstallActivity extends AppCompatActivity {
     alertDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         getString(R.string.update_no_button),
-        (dialogInterface, i) -> {
-          LogWrapper.getInstance().v(TAG + "Unknown sources dialog cancelled");
-          dialogInterface.dismiss();
-          finish();
-        });
+        (dialogInterface, i) -> dismissUnknownSourcesDialogCallback());
+    alertDialog.setOnCancelListener(dialogInterface -> dismissUnknownSourcesDialogCallback());
 
     alertDialog.show();
+  }
+
+  private void dismissUnknownSourcesDialogCallback() {
+    LogWrapper.getInstance().v(TAG + "Unknown sources dialog cancelled");
+    finish();
   }
 
   private Intent getUnknownSourcesIntent() {

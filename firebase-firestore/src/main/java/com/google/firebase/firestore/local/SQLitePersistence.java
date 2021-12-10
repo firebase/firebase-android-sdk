@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -54,6 +55,10 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+  /**
+   * The maximum number of bind args for a single statement. Set to 900 instead of 999 for safety.
+   */
+  public static final int MAX_ARGS = 900;
 
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
@@ -671,23 +676,27 @@ public final class SQLitePersistence extends Persistence {
       return argsIter.hasNext();
     }
 
+    private Object[] getNextSubqueryArgs() {
+      List<Object> subqueryArgs = new ArrayList<>(argsHead);
+      for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
+        subqueryArgs.add(argsIter.next());
+      }
+      return subqueryArgs.toArray();
+    }
+
     /** Performs the next subquery and returns a {@link Query} object for method chaining. */
     Query performNextSubquery() {
       ++subqueriesPerformed;
+      Object[] subqueryArgs = getNextSubqueryArgs();
+      return db.query(head + repeatSequence("?", subqueryArgs.length, ", ") + tail)
+          .binding(subqueryArgs);
+    }
 
-      List<Object> subqueryArgs = new ArrayList<>(argsHead);
-      StringBuilder placeholdersBuilder = new StringBuilder();
-      for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
-        if (i > 0) {
-          placeholdersBuilder.append(", ");
-        }
-        placeholdersBuilder.append("?");
-
-        subqueryArgs.add(argsIter.next());
-      }
-      String placeholders = placeholdersBuilder.toString();
-
-      return db.query(head + placeholders + tail).binding(subqueryArgs.toArray());
+    /** Executes the next subquery. */
+    void executeNextSubquery() {
+      ++subqueriesPerformed;
+      Object[] subqueryArgs = getNextSubqueryArgs();
+      db.execute(head + repeatSequence("?", subqueryArgs.length, ", ") + tail, subqueryArgs);
     }
 
     /** How many subqueries were performed. */

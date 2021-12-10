@@ -18,28 +18,22 @@ import static com.google.firebase.crashlytics.internal.common.CommonUtils.getRes
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import java.io.IOException;
 
 /** Provider for the development platform info. */
 public class DevelopmentPlatformProvider {
-  public static final String UNITY_PLATFORM = "Unity";
+  private static final String UNITY_PLATFORM = "Unity";
+  private static final String FLUTTER_PLATFORM = "Flutter";
 
   private static final String UNITY_VERSION_FIELD = "com.google.firebase.crashlytics.unity_version";
+  private static final String FLUTTER_ASSETS_PATH = "flutter_assets";
 
-  @Nullable private final String developmentPlatform;
-  @Nullable private final String developmentPlatformVersion;
+  private final Context context;
+  @Nullable private DevelopmentPlatform developmentPlatform;
 
   public DevelopmentPlatformProvider(Context context) {
-    // Unity
-    int unityEditorId = getResourcesIdentifier(context, UNITY_VERSION_FIELD, "string");
-    if (unityEditorId != 0) {
-      developmentPlatform = UNITY_PLATFORM;
-      developmentPlatformVersion = context.getResources().getString(unityEditorId);
-      Logger.getLogger().v("Unity Editor version is: " + developmentPlatformVersion);
-      return;
-    }
-
+    this.context = context;
     developmentPlatform = null;
-    developmentPlatformVersion = null;
   }
 
   /**
@@ -49,7 +43,7 @@ public class DevelopmentPlatformProvider {
    */
   @Nullable
   public String getDevelopmentPlatform() {
-    return developmentPlatform;
+    return initDevelopmentPlatform().developmentPlatform;
   }
 
   /**
@@ -59,6 +53,65 @@ public class DevelopmentPlatformProvider {
    */
   @Nullable
   public String getDevelopmentPlatformVersion() {
-    return developmentPlatformVersion;
+    return initDevelopmentPlatform().developmentPlatformVersion;
+  }
+
+  /**
+   * Returns if the development platform is Unity, without initializing the rest of the
+   * DevelopmentPlatform object.
+   *
+   * <p>This is useful for the NDK to avoid an expensive file operation during start up.
+   */
+  public static boolean isUnity(Context context) {
+    return getResourcesIdentifier(context, UNITY_VERSION_FIELD, "string") != 0;
+  }
+
+  /** Quickly and safely check if the given asset path exists. */
+  private boolean assetPathExists(String path) {
+    try {
+      if (context.getAssets() == null) {
+        return false;
+      }
+      String[] list = context.getAssets().list(path);
+      return list != null && list.length > 0;
+    } catch (IOException ex) {
+      return false;
+    }
+  }
+
+  private DevelopmentPlatform initDevelopmentPlatform() {
+    if (developmentPlatform == null) {
+      developmentPlatform = new DevelopmentPlatform();
+    }
+    return developmentPlatform;
+  }
+
+  private class DevelopmentPlatform {
+    @Nullable private final String developmentPlatform;
+    @Nullable private final String developmentPlatformVersion;
+
+    private DevelopmentPlatform() {
+      // Unity
+      int unityEditorId = getResourcesIdentifier(context, UNITY_VERSION_FIELD, "string");
+      if (unityEditorId != 0) {
+        developmentPlatform = UNITY_PLATFORM;
+        developmentPlatformVersion = context.getResources().getString(unityEditorId);
+        Logger.getLogger().v("Unity Editor version is: " + developmentPlatformVersion);
+        return;
+      }
+
+      // Flutter
+      if (assetPathExists(FLUTTER_ASSETS_PATH)) {
+        developmentPlatform = FLUTTER_PLATFORM;
+        // TODO: Get the version when available - https://github.com/flutter/flutter/issues/92681
+        developmentPlatformVersion = null;
+        Logger.getLogger().v("Development platform is: " + FLUTTER_PLATFORM);
+        return;
+      }
+
+      // Unknown/no development platform
+      developmentPlatform = null;
+      developmentPlatformVersion = null;
+    }
   }
 }

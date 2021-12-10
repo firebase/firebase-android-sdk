@@ -23,10 +23,12 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.protobuf.ByteString;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -34,12 +36,12 @@ import java.util.Map;
  * A test-only QueryEngine that forwards all API calls and exposes the number of documents and
  * mutations read.
  */
-class CountingQueryEngine implements QueryEngine {
+class CountingQueryEngine extends QueryEngine {
   private final QueryEngine queryEngine;
 
-  private final int[] mutationsReadByQuery = new int[] {0};
+  private final int[] mutationsReadByCollection = new int[] {0};
   private final int[] mutationsReadByKey = new int[] {0};
-  private final int[] documentsReadByQuery = new int[] {0};
+  private final int[] documentsReadByCollection = new int[] {0};
   private final int[] documentsReadByKey = new int[] {0};
 
   CountingQueryEngine(QueryEngine queryEngine) {
@@ -47,26 +49,21 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   void resetCounts() {
-    mutationsReadByQuery[0] = 0;
+    mutationsReadByCollection[0] = 0;
     mutationsReadByKey[0] = 0;
-    documentsReadByQuery[0] = 0;
+    documentsReadByCollection[0] = 0;
     documentsReadByKey[0] = 0;
   }
 
   @Override
-  public void setLocalDocumentsView(LocalDocumentsView localDocuments) {
-    LocalDocumentsView view =
+  public void initialize(LocalDocumentsView localDocuments, IndexManager indexManager) {
+    LocalDocumentsView wrappedView =
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             wrapMutationQueue(localDocuments.getMutationQueue()),
             localDocuments.getDocumentOverlayCache(),
             localDocuments.getIndexManager());
-    queryEngine.setLocalDocumentsView(view);
-  }
-
-  @Override
-  public void setIndexManager(IndexManager indexManager) {
-    // Not implemented.
+    queryEngine.initialize(wrappedView, indexManager);
   }
 
   @Override
@@ -83,11 +80,11 @@ class CountingQueryEngine implements QueryEngine {
   }
 
   /**
-   * Returns the number of documents returned by the RemoteDocumentCache's
-   * `getDocumentsMatchingQuery()` API (since the last call to `resetCounts()`)
+   * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
+   * last call to `resetCounts()`)
    */
-  int getDocumentsReadByQuery() {
-    return documentsReadByQuery[0];
+  int getDocumentsReadByCollection() {
+    return documentsReadByCollection[0];
   }
 
   /**
@@ -102,8 +99,8 @@ class CountingQueryEngine implements QueryEngine {
    * Returns the number of mutations returned by the MutationQueue's
    * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
    */
-  int getMutationsReadByQuery() {
-    return mutationsReadByQuery[0];
+  int getMutationsReadByCollection() {
+    return mutationsReadByCollection[0];
   }
 
   /**
@@ -128,11 +125,10 @@ class CountingQueryEngine implements QueryEngine {
       }
 
       @Override
-      public void remove(DocumentKey documentKey) {
-        subject.remove(documentKey);
+      public void removeAll(Collection<DocumentKey> keys) {
+        subject.removeAll(keys);
       }
 
-      @Nullable
       @Override
       public MutableDocument get(DocumentKey documentKey) {
         MutableDocument result = subject.get(documentKey);
@@ -150,11 +146,18 @@ class CountingQueryEngine implements QueryEngine {
       }
 
       @Override
-      public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-          Query query, IndexOffset offset) {
-        ImmutableSortedMap<DocumentKey, MutableDocument> result =
-            subject.getAllDocumentsMatchingQuery(query, offset);
-        documentsReadByQuery[0] += result.size();
+      public Map<DocumentKey, MutableDocument> getAll(
+          String collectionGroup, IndexOffset offset, int limit) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, limit);
+        documentsReadByCollection[0] += result.size();
+
+        return result;
+      }
+
+      @Override
+      public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
+        documentsReadByCollection[0] += result.size();
         return result;
       }
 
@@ -242,7 +245,7 @@ class CountingQueryEngine implements QueryEngine {
       @Override
       public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
         List<MutationBatch> result = subject.getAllMutationBatchesAffectingQuery(query);
-        mutationsReadByQuery[0] += result.size();
+        mutationsReadByCollection[0] += result.size();
         return result;
       }
 

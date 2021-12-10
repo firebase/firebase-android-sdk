@@ -346,25 +346,31 @@ public class FirebaseAppDistribution {
     updateDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
-        (dialogInterface, i) -> {
-          dialogInterface.dismiss();
-          synchronized (updateIfNewReleaseTaskLock) {
-            postProgressToCachedUpdateIfNewReleaseTask(
-                UpdateProgress.builder()
-                    .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-                    .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-                    .setUpdateStatus(UpdateStatus.UPDATE_CANCELED)
-                    .build());
-            setCachedUpdateIfNewReleaseCompletionError(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
-          }
+        (dialogInterface, i) -> dismissUpdateDialogCallback());
+
+    updateDialog.setOnCancelListener(
+        dialogInterface -> {
+          dismissUpdateDialogCallback();
         });
 
     updateDialog.show();
     updateDialogShown = true;
     synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
+    }
+  }
+
+  private void dismissUpdateDialogCallback() {
+    synchronized (updateIfNewReleaseTaskLock) {
+      postProgressToCachedUpdateIfNewReleaseTask(
+          UpdateProgress.builder()
+              .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+              .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+              .setUpdateStatus(UpdateStatus.UPDATE_CANCELED)
+              .build());
+      setCachedUpdateIfNewReleaseCompletionError(
+          new FirebaseAppDistributionException(
+              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
     }
   }
 
