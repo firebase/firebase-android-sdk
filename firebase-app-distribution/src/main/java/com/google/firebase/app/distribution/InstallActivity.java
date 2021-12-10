@@ -25,7 +25,8 @@ import androidx.core.content.FileProvider;
 import java.io.File;
 
 /**
- * Activity opened during installation in {@link UpdateApkClient} after APK download is finished.
+ * Activity opened during installation in {@link FirebaseAppDistribution} after APK download is
+ * finished.
  */
 public class InstallActivity extends AppCompatActivity {
   private static final String TAG = "InstallActivity: ";
