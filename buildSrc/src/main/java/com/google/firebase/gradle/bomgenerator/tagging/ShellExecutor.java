@@ -40,8 +40,10 @@ public class ShellExecutor {
       Process p = runtime.exec(command, null, cwd);
       int code = p.waitFor();
       logger.accept("[shell] Command: \"" + command + "\" returned with code: " + code);
-      BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-      consumer.accept(CharStreams.readLines(reader));
+      BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
+      BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+      consumer.accept(CharStreams.readLines(stdout));
+      consumer.accept(CharStreams.readLines(stderr));
     } catch (IOException e) {
       throw new GradleException("Failed when executing command: " + command, e);
     } catch (InterruptedException e) {
