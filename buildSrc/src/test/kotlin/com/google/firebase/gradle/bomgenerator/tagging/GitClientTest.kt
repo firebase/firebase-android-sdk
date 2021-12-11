@@ -31,11 +31,12 @@ class GitClientTest {
     private val branch = AtomicReference<String>()
     private val commit = AtomicReference<String>()
 
+    private val executor = ShellExecutor(testGitDirectory.root, System.out::println)
+    private val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
+
     @Before
     fun setup() {
         testGitDirectory.newFile("hello.txt").writeText("hello git!")
-        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
-        val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
 
         executor.execute("git init", handler)
         executor.execute("git config user.email 'GitClientTest@example.com'", handler)
@@ -50,30 +51,27 @@ class GitClientTest {
 
     @Test
     fun `tag M release version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagReleaseVersion()
-        executor.execute("git tag --points-at HEAD", null) {
+        executor.execute("git tag --points-at HEAD", handler) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains(branch.get()) })
         }
     }
 
     @Test
     fun `tag bom version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagBomVersion("1.2.3")
-        executor.execute("git tag --points-at HEAD", null) {
+        executor.execute("git tag --points-at HEAD", handler) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains("bom@1.2.3") })
         }
     }
 
     @Test
     fun `tag product version succeeds on local file system`() {
-        val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagProductVersion("firebase-database", "1.2.3")
-        executor.execute("git tag --points-at HEAD", null) {
+        executor.execute("git tag --points-at HEAD", handler) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains("firebase-database@1.2.3") })
         }
     }
