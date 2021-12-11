@@ -31,12 +31,13 @@ class GitClientTest {
     private val branch = AtomicReference<String>()
     private val commit = AtomicReference<String>()
 
-    private val executor = ShellExecutor(testGitDirectory.root, System.out::println)
+    private lateinit var executor: ShellExecutor
     private val handler: (List<String>) -> Unit = { it.forEach(System.out::println) }
 
     @Before
     fun setup() {
         testGitDirectory.newFile("hello.txt").writeText("hello git!")
+        executor = ShellExecutor(testGitDirectory.root, System.out::println)
 
         executor.execute("git init", handler)
         executor.execute("git config user.email 'GitClientTest@example.com'", handler)
