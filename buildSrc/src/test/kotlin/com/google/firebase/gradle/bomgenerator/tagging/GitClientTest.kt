@@ -44,8 +44,8 @@ class GitClientTest {
         executor.execute("git commit -m 'init_commit'", handler)
         executor.execute("git status", handler)
 
-        executor.execute("git rev-parse --abbrev-ref HEAD") { branch.set(it[0]) }
-        executor.execute("git rev-parse HEAD") { commit.set(it[0]) }
+        executor.execute("git rev-parse --abbrev-ref HEAD", handler) { branch.set(it[0]) }
+        executor.execute("git rev-parse HEAD", handler) { commit.set(it[0]) }
     }
 
     @Test
@@ -53,7 +53,7 @@ class GitClientTest {
         val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagReleaseVersion()
-        executor.execute("git tag --points-at HEAD") {
+        executor.execute("git tag --points-at HEAD", null) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains(branch.get()) })
         }
     }
@@ -63,7 +63,7 @@ class GitClientTest {
         val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagBomVersion("1.2.3")
-        executor.execute("git tag --points-at HEAD") {
+        executor.execute("git tag --points-at HEAD", null) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains("bom@1.2.3") })
         }
     }
@@ -73,7 +73,7 @@ class GitClientTest {
         val executor = ShellExecutor(testGitDirectory.root, System.out::println)
         val git = GitClient(branch.get(), commit.get(), executor, System.out::println)
         git.tagProductVersion("firebase-database", "1.2.3")
-        executor.execute("git tag --points-at HEAD") {
+        executor.execute("git tag --points-at HEAD", null) {
             Assert.assertTrue(it.stream().anyMatch { x -> x.contains("firebase-database@1.2.3") })
         }
     }

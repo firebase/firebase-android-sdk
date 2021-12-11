@@ -35,6 +35,10 @@ public class ShellExecutor {
   }
 
   public void execute(String command, Consumer<List<String>> consumer) {
+    this.execute(command, consumer, consumer);
+  }
+
+  public void execute(String command, Consumer<List<String>> stderrConsumer, Consumer<List<String>> stdoutConsumer) {
     try {
       logger.accept("[shell] Executing: \"" + command + "\" at: " + cwd.getAbsolutePath());
       Process p = runtime.exec(command, null, cwd);
@@ -42,8 +46,8 @@ public class ShellExecutor {
       logger.accept("[shell] Command: \"" + command + "\" returned with code: " + code);
       BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
       BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-      consumer.accept(CharStreams.readLines(stdout));
-      consumer.accept(CharStreams.readLines(stderr));
+      stdoutConsumer.accept(CharStreams.readLines(stdout));
+      stderrConsumer.accept(CharStreams.readLines(stderr));
     } catch (IOException e) {
       throw new GradleException("Failed when executing command: " + command, e);
     } catch (InterruptedException e) {
