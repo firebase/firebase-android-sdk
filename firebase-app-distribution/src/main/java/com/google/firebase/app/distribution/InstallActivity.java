@@ -34,7 +34,7 @@ public class InstallActivity extends AppCompatActivity {
   private boolean installInProgress = false;
 
   @Override
-  public void onResume() {
+  protected void onResume() {
     super.onResume();
     // Since we kick-off installation with FLAG_ACTIVITY_NEW_TASK (in a new task), we won't be able
     // to figure out if installation failed or was cancelled.
