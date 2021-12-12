@@ -80,7 +80,7 @@ public class FirebaseAppDistribution {
   }
 
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull SignInStorage signInStorage,
@@ -97,7 +97,7 @@ public class FirebaseAppDistribution {
   }
 
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
     this(
