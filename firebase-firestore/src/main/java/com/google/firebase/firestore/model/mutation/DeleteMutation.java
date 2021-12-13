@@ -69,10 +69,7 @@ public final class DeleteMutation extends Mutation {
 
   @Override
   public @Nullable FieldMask applyToLocalView(
-      MutableDocument document,
-      @Nullable FieldMask previousMask,
-      int batchId,
-      Timestamp localWriteTime) {
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {

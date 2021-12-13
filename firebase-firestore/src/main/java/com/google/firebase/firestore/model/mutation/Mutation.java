@@ -156,16 +156,12 @@ public abstract class Mutation {
    *
    * @param document The document to mutate.
    * @param previousMask The fields that have been updated before applying this mutation.
-   * @param batchId The largest batch id associated with this mutation.
    * @param localWriteTime A timestamp indicating the local write time of the batch this mutation is
    *     a part of.
    * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
   public abstract @Nullable FieldMask applyToLocalView(
-      MutableDocument document,
-      @Nullable FieldMask previousMask,
-      int batchId,
-      Timestamp localWriteTime);
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime);
 
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {

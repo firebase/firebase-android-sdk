@@ -96,9 +96,7 @@ class LocalDocumentsView {
     Overlay overlay = documentOverlayCache.getOverlay(key);
     MutableDocument fromOverlay = remoteDocumentCache.get(key);
     if (overlay != null) {
-      overlay
-          .getMutation()
-          .applyToLocalView(fromOverlay, null, overlay.getLargestBatchId(), Timestamp.now());
+      overlay.getMutation().applyToLocalView(fromOverlay, null, Timestamp.now());
     }
 
     return fromOverlay;
@@ -139,9 +137,7 @@ class LocalDocumentsView {
           && (overlay == null || overlay.getMutation() instanceof PatchMutation)) {
         recalculateDocuments.put(entry.getKey(), docs.get(entry.getKey()));
       } else if (overlay != null) {
-        overlay
-            .getMutation()
-            .applyToLocalView(entry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
+        overlay.getMutation().applyToLocalView(entry.getValue(), null, Timestamp.now());
       }
     }
 
@@ -357,10 +353,7 @@ class LocalDocumentsView {
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
-        overlay
-            .getMutation()
-            .applyToLocalView(
-                docEntry.getValue(), null, overlay.getLargestBatchId(), Timestamp.now());
+        overlay.getMutation().applyToLocalView(docEntry.getValue(), null, Timestamp.now());
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
@@ -390,7 +383,7 @@ class LocalDocumentsView {
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : localDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       int batchId = overlay.getLargestBatchId();
-      overlay.getMutation().applyToLocalView(docEntry.getValue(), null, batchId, Timestamp.now());
+      overlay.getMutation().applyToLocalView(docEntry.getValue(), null, Timestamp.now());
       // Finally, insert the documents that still match the query.
       if (query.matches(docEntry.getValue())) {
         results.put(docEntry.getValue(), batchId);
