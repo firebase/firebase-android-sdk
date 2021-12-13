@@ -20,7 +20,7 @@ import com.google.firebase.FirebaseException;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
 public class FirebaseAppDistributionException extends FirebaseException {
-  public enum Status {
+  enum Status {
     /** Unknown error. */
     UNKNOWN,
 
