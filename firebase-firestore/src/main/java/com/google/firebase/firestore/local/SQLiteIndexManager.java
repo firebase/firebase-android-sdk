@@ -118,7 +118,7 @@ final class SQLiteIndexManager implements IndexManager {
               DocumentKey documentKey =
                   DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
               indexStates.put(
-                  indexId, FieldIndex.IndexState.create(sequenceNumber, readTime, documentKey));
+                  indexId, new FieldIndex.IndexState(sequenceNumber, readTime, documentKey));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -139,7 +139,7 @@ final class SQLiteIndexManager implements IndexManager {
                         ? indexStates.get(indexId)
                         : FieldIndex.INITIAL_STATE;
                 FieldIndex fieldIndex =
-                    FieldIndex.create(indexId, collectionGroup, segments, indexState);
+                    new FieldIndex(indexId, collectionGroup, segments, indexState);
 
                 // Store the index and update `memoizedMaxIndexId` and `memoizedMaxSequenceNumber`.
                 memoizeIndex(fieldIndex);
@@ -188,7 +188,7 @@ final class SQLiteIndexManager implements IndexManager {
 
     int nextIndexId = memoizedMaxIndexId + 1;
     index =
-        FieldIndex.create(
+        new FieldIndex(
             nextIndexId, index.getCollectionGroup(), index.getSegments(), index.getIndexState());
 
     db.execute(
@@ -307,7 +307,7 @@ final class SQLiteIndexManager implements IndexManager {
       if (isArray(value)) {
         for (Value arrayValue : value.getArrayValue().getValuesList()) {
           result.add(
-              IndexEntry.create(
+              new IndexEntry(
                   fieldIndex.getIndexId(),
                   document.getKey(),
                   encodeSingleElement(arrayValue),
@@ -316,7 +316,7 @@ final class SQLiteIndexManager implements IndexManager {
       }
     } else {
       result.add(
-          IndexEntry.create(
+          new IndexEntry(
               fieldIndex.getIndexId(), document.getKey(), new byte[] {}, directionalValue));
     }
 
@@ -355,7 +355,7 @@ final class SQLiteIndexManager implements IndexManager {
         .forEach(
             row ->
                 results.add(
-                    IndexEntry.create(
+                    new IndexEntry(
                         fieldIndex.getIndexId(), documentKey, row.getBlob(0), row.getBlob(1))));
     return results;
   }
@@ -652,11 +652,11 @@ final class SQLiteIndexManager implements IndexManager {
     ++memoizedMaxSequenceNumber;
     for (FieldIndex fieldIndex : getFieldIndexes(collectionGroup)) {
       FieldIndex updatedIndex =
-          FieldIndex.create(
+          new FieldIndex(
               fieldIndex.getIndexId(),
               fieldIndex.getCollectionGroup(),
               fieldIndex.getSegments(),
-              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, offset));
+              new FieldIndex.IndexState(memoizedMaxSequenceNumber, offset));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
               + "read_time_seconds, read_time_nanos, document_key) VALUES(?, ?, ?, ?, ?, ?)",

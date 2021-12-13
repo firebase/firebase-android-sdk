@@ -15,6 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id 'kotlin-android'
 }
 
 firebaseLibrary {
@@ -142,6 +143,7 @@ dependencies {
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "io.grpc:grpc-stub:$grpcVersion"
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"

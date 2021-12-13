@@ -331,17 +331,16 @@ public class FirebaseFirestore {
             JSONObject field = fields.getJSONObject(f);
             FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
             if ("CONTAINS".equals(field.optString("arrayConfig"))) {
-              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.CONTAINS));
+              segments.add(new FieldIndex.Segment(fieldPath, FieldIndex.Segment.Kind.CONTAINS));
             } else if ("ASCENDING".equals(field.optString("order"))) {
-              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.ASCENDING));
+              segments.add(new FieldIndex.Segment(fieldPath, FieldIndex.Segment.Kind.ASCENDING));
             } else {
-              segments.add(
-                  FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.DESCENDING));
+              segments.add(new FieldIndex.Segment(fieldPath, FieldIndex.Segment.Kind.DESCENDING));
             }
           }
 
           parsedIndices.add(
-              FieldIndex.create(
+              new FieldIndex(
                   FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
         }
       }

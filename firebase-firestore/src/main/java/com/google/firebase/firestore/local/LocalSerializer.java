@@ -323,7 +323,7 @@ public final class LocalSerializer {
               : (field.getOrder().equals(Index.IndexField.Order.ASCENDING)
                   ? FieldIndex.Segment.Kind.ASCENDING
                   : FieldIndex.Segment.Kind.DESCENDING);
-      result.add(FieldIndex.Segment.create(fieldPath, kind));
+      result.add(new FieldIndex.Segment(fieldPath, kind));
     }
     return result;
   }
