@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.app.distribution.internal;
 
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -28,7 +28,6 @@ public class SignInResultActivity extends AppCompatActivity {
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
     super.onCreate(savedInstanceBundle);
-    LogWrapper.getInstance().v(TAG + "The User is signing in");
     // While this does not appear to be achieving much, handling the redirect in this way
     // ensures that we can remove the browser tab from the back stack. See the documentation
     // on AuthorizationManagementActivity for more details.
