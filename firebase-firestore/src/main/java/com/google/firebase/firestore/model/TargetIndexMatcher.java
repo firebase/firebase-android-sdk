@@ -17,8 +17,8 @@ package com.google.firebase.firestore.model;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.core.FieldFilter;
+import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;

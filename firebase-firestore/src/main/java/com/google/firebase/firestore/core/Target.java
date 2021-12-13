@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.Filter;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
