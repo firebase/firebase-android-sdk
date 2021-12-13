@@ -196,7 +196,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations(0);
+    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations();
     MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
     MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
 
@@ -232,8 +232,8 @@ public class QueryListenerTest {
   public void testRaisesQueryMetadataEventsOnlyWhenHasPendingWritesOnTheQueryChanges() {
     List<ViewSnapshot> fullAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
-    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations(0);
-    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades")).setHasLocalMutations(0);
+    MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations();
+    MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades")).setHasLocalMutations();
     MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros"));
     MutableDocument doc2Prime = doc("rooms/hades", 2, map("name", "hades"));
     MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
@@ -277,7 +277,7 @@ public class QueryListenerTest {
     List<ViewSnapshot> filteredAccum = new ArrayList<>();
     Query query = Query.atPath(path("rooms"));
     MutableDocument doc1 = doc("rooms/eros", 1, map("name", "eros"));
-    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations(0);
+    MutableDocument doc1Prime = doc("rooms/eros", 1, map("name", "eros")).setHasLocalMutations();
     MutableDocument doc2 = doc("rooms/hades", 2, map("name", "hades"));
     MutableDocument doc3 = doc("rooms/other", 3, map("name", "other"));
 

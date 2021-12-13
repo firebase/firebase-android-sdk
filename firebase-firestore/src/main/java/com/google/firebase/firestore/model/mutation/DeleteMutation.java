@@ -76,7 +76,7 @@ public final class DeleteMutation extends Mutation {
     verifyKeyMatches(document);
 
     if (getPrecondition().isValidFor(document)) {
-      document.convertToNoDocument(document.getVersion()).setHasLocalMutations(batchId);
+      document.convertToNoDocument(document.getVersion()).setHasLocalMutations();
       return null;
     }
 

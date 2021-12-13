@@ -361,8 +361,8 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutation() {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(1);
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasCommittedMutations());
@@ -378,18 +378,18 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutationThenDocument() {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed")).setHasLocalMutations(0),
+            doc("foo/bar", 2, map("it", "changed")).setHasLocalMutations(),
             asList(targetId),
             emptyList()));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -400,8 +400,8 @@ public abstract class LocalStoreTestCase {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     notifyLocalViewChanges(viewChanges(2, /* fromCache= */ false, asList("foo/bar"), emptyList()));
 
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(1);
 
@@ -425,8 +425,8 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     // The last seen version is zero, so this ack must be held.
     acknowledgeMutation(1);
@@ -440,8 +440,8 @@ public abstract class LocalStoreTestCase {
     }
 
     writeMutation(setMutation("bar/baz", map("bar", "baz")));
-    assertChanged(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations(0));
-    assertContains(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations(0));
+    assertChanged(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations());
+    assertContains(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations());
 
     rejectMutation();
     assertRemoved("bar/baz");
@@ -470,8 +470,8 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     int expectedVersion = garbageCollectorIsEager() ? 0 : 2;
-    assertChanged(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(3);
@@ -487,11 +487,11 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -504,8 +504,8 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 2, map("it", "base")));
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(3);
     // We haven't seen the remote event yet.
@@ -546,11 +546,11 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         addedRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(0),
+            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
             asList(targetId),
             emptyList()));
-    assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
 
     acknowledgeMutation(2);
 
@@ -592,7 +592,7 @@ public abstract class LocalStoreTestCase {
   public void testHandlesDeleteMutationThenAck() {
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     acknowledgeMutation(1);
     assertRemoved("foo/bar");
@@ -615,7 +615,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
 
     // Remove the target so only the mutation is pinning the document.
     releaseTarget(targetId);
@@ -634,12 +634,12 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(2);
@@ -677,27 +677,27 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutationThenPatchMutationThenDocumentThenAckThenAck() {
     writeMutation(setMutation("foo/bar", map("foo", "old")));
-    assertChanged(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations());
 
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(0),
+            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
             asList(targetId),
             emptyList()));
-    assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(2); // set mutation
-    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(3); // patch mutation
     assertChanged(doc("foo/bar", 3, map("foo", "bar")).setHasCommittedMutations());
@@ -716,8 +716,8 @@ public abstract class LocalStoreTestCase {
             setMutation("foo/bar", map("foo", "old")),
             patchMutation("foo/bar", map("foo", "bar"))));
 
-    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -725,7 +725,7 @@ public abstract class LocalStoreTestCase {
     assumeTrue(garbageCollectorIsEager());
 
     writeMutation(setMutation("foo/bar", map("foo", "old")));
-    assertContains(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("foo", "old")).setHasLocalMutations());
     acknowledgeMutation(1);
     assertNotContains("foo/bar");
 
@@ -746,22 +746,22 @@ public abstract class LocalStoreTestCase {
             patchMutation("foo/bar", map("foo", "bar"))));
 
     assertChanged(
-        doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations(0),
-        doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+        doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations(),
+        doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
-    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("bar/baz", 0, map("bar", "baz")).setHasLocalMutations());
   }
 
   @Test
   public void testHandlesDeleteMutationThenPatchMutationThenAckThenAck() {
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     writeMutation(patchMutation("foo/bar", map("foo", "bar")));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     acknowledgeMutation(2); // delete mutation
     assertRemoved("foo/bar");
@@ -822,19 +822,19 @@ public abstract class LocalStoreTestCase {
     releaseTarget(targetId);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations(0));
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(3);
     assertNotContains("foo/bar");
-    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations(0));
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(4);
     assertNotContains("foo/bar");
     assertNotContains("foo/bah");
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     acknowledgeMutation(5);
     assertNotContains("foo/bar");
@@ -855,19 +855,19 @@ public abstract class LocalStoreTestCase {
     releaseTarget(targetId);
     writeMutation(setMutation("foo/bah", map("foo", "bah")));
     writeMutation(deleteMutation("foo/baz"));
-    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations(0));
-    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations(0));
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // patch mutation
     assertNotContains("foo/bar");
-    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations(0));
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(doc("foo/bah", 0, map("foo", "bah")).setHasLocalMutations());
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // set mutation
     assertNotContains("foo/bar");
     assertNotContains("foo/bah");
-    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations(0));
+    assertContains(deletedDoc("foo/baz", 0).setHasLocalMutations());
 
     rejectMutation(); // delete mutation
     assertNotContains("foo/bar");
@@ -888,7 +888,7 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("foo", "bar")), two, none));
     writeMutation(setMutation("foo/baz", map("foo", "baz")));
     assertContains(doc("foo/bar", 1, map("foo", "bar")));
-    assertContains(doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations(0));
+    assertContains(doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
 
     notifyLocalViewChanges(
         viewChanges(2, /* fromCache= */ false, asList("foo/bar", "foo/baz"), emptyList()));
@@ -930,7 +930,7 @@ public abstract class LocalStoreTestCase {
     Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
     QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertThat(values(result.getDocuments()))
-        .containsExactly(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0));
+        .containsExactly(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -946,8 +946,8 @@ public abstract class LocalStoreTestCase {
     QueryResult result = localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertThat(values(result.getDocuments()))
         .containsExactly(
-            doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(0),
-            doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations(0));
+            doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(),
+            doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
   }
 
   @Test
@@ -965,7 +965,7 @@ public abstract class LocalStoreTestCase {
         .containsExactly(
             doc("foo/bar", 20, map("a", "b")),
             doc("foo/baz", 10, map("a", "b")),
-            doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations(0));
+            doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations());
   }
 
   @Test
@@ -1045,16 +1045,16 @@ public abstract class LocalStoreTestCase {
   @Test
   public void testHandlesSetMutationThenTransformThenTransform() {
     writeMutation(setMutation("foo/bar", map("sum", 0)));
-    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
 
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
-    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
 
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
-    assertContains(doc("foo/bar", 0, map("sum", 3)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 0, map("sum", 3)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("sum", 3)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 0, map("sum", 3)).setHasLocalMutations());
   }
 
   @Test
@@ -1065,24 +1065,24 @@ public abstract class LocalStoreTestCase {
     assumeFalse(garbageCollectorIsEager());
 
     writeMutation(setMutation("foo/bar", map("sum", 0)));
-    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
 
     acknowledgeMutation(1);
     assertChanged(doc("foo/bar", 1, map("sum", 0)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 1, map("sum", 0)).setHasCommittedMutations());
 
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
     acknowledgeMutationWithTransformResults(2, 1);
     assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
     assertContains(doc("foo/bar", 2, map("sum", 1)).setHasCommittedMutations());
 
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
-    assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations(0));
-    assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations(0));
+    assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
+    assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
   }
 
   @Test
@@ -1259,8 +1259,8 @@ public abstract class LocalStoreTestCase {
     assertTargetId(2);
 
     writeMutation(setMutation("foo/bar", map("sum", 0)));
-    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("sum", 0)).setHasLocalMutations());
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 0)), asList(2), emptyList()));
     acknowledgeMutation(1);
@@ -1268,22 +1268,22 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("sum", 0)));
 
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
     // The value in this remote event gets ignored since we still have a pending transform mutation.
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 2, map("sum", 1337)), asList(2), emptyList()));
-    assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("sum", 1)).setHasLocalMutations());
 
     // Add another increment. Note that we still compute the increment based on the local value.
     writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(2))));
-    assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 2, map("sum", 3)).setHasLocalMutations());
 
     acknowledgeMutationWithTransformResults(3, 1);
-    assertChanged(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 3, map("sum", 3)).setHasLocalMutations());
 
     acknowledgeMutationWithTransformResults(4, 1339);
     assertChanged(doc("foo/bar", 4, map("sum", 1339)).setHasCommittedMutations());
@@ -1298,7 +1298,7 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(setMutation("foo/bar", map("sum", 0, "array_union", new ArrayList<>())));
     assertChanged(
-        doc("foo/bar", 0, map("sum", 0, "array_union", new ArrayList<>())).setHasLocalMutations(0));
+        doc("foo/bar", 0, map("sum", 0, "array_union", new ArrayList<>())).setHasLocalMutations());
 
     acknowledgeMutation(1);
     assertChanged(
@@ -1318,7 +1318,7 @@ public abstract class LocalStoreTestCase {
             patchMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
     assertChanged(
         doc("foo/bar", 1, map("sum", 1, "array_union", Collections.singletonList("foo")))
-            .setHasLocalMutations(0));
+            .setHasLocalMutations());
 
     // The sum transform is not idempotent and the backend's updated value is ignored. The
     // ArrayUnion transform is recomputed and includes the backend value.
@@ -1328,7 +1328,7 @@ public abstract class LocalStoreTestCase {
             asList(2),
             emptyList()));
     assertChanged(
-        doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations(0));
+        doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
 
     acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
     assertChanged(
@@ -1345,12 +1345,12 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(
         mergeMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
-    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
   }
 
   @Test
@@ -1367,8 +1367,8 @@ public abstract class LocalStoreTestCase {
     // mutation once we receive the first value from the remote event.
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/bar", 1, map("sum", 1337)), asList(2), emptyList()));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
   }
 
   @Test
@@ -1441,12 +1441,12 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(
         mergeMutation("foo/bar", map("sum", FieldValue.increment(1)), Collections.EMPTY_LIST));
-    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("sum", 1)).setHasLocalMutations());
 
     bundleDocuments(doc("foo/bar", 1, map("sum", 1337)));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
     assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
   }
@@ -1464,8 +1464,8 @@ public abstract class LocalStoreTestCase {
     assertNotContains("foo/bar");
 
     bundleDocuments(doc("foo/bar", 1, map("sum", 1337)));
-    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
-    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations(0));
+    assertChanged(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("sum", 1)).setHasLocalMutations());
 
     assertQueryDocumentMapping(/* targetId= */ 4, key("foo/bar"));
   }

@@ -417,7 +417,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Map<String, Object> values = parseMap(jsonDoc.getJSONObject("value"));
     MutableDocument doc = doc(jsonDoc.getString("key"), version, values);
     if (options.optBoolean("hasLocalMutations")) {
-      doc.setHasLocalMutations(0);
+      doc.setHasLocalMutations();
     }
     if (options.optBoolean("hasCommittedMutations")) {
       doc.setHasCommittedMutations();

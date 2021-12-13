@@ -200,7 +200,10 @@ class LocalDocumentsView {
     recalculateAndSaveOverlays(docs);
   }
 
-  /** Gets the local view of the next {@code count} documents based on their read time. */
+  /**
+   * Gets the local view of the next {@code count} documents based on their read time. The documents
+   * are ordered by read time and key.
+   */
   ImmutableSortedMap<DocumentKey, Document> getDocuments(
       String collectionGroup, IndexOffset offset, int count) {
     Map<DocumentKey, MutableDocument> docs =
@@ -277,7 +280,7 @@ class LocalDocumentsView {
    * @return A pair containing the next offset that corresponds to the next documents and a map of
    *     documents that follow the provided offset.
    */
-  public Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsAndOffset(
+  Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsAndOffset(
       String collectionGroup, IndexOffset offset, int count) {
     ImmutableSortedMap<DocumentKey, Document> documents =
         getDocuments(collectionGroup, offset, count);

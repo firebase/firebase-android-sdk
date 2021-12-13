@@ -101,9 +101,7 @@ public final class SetMutation extends Mutation {
     Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
     ObjectValue localValue = value.clone();
     localValue.setAll(transformResults);
-    document
-        .convertToFoundDocument(document.getVersion(), localValue)
-        .setHasLocalMutations(batchId);
+    document.convertToFoundDocument(document.getVersion(), localValue).setHasLocalMutations();
     // SetMutation overwrites all fields.
     return null;
   }

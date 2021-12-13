@@ -76,6 +76,7 @@ public class IndexBackfillerTest {
   private SQLitePersistence persistence;
   private SQLiteIndexManager indexManager;
   private IndexBackfiller backfiller;
+  private SQLiteMutationQueue mutationQueue;
 
   @Before
   public void setUp() {
@@ -86,10 +87,13 @@ public class IndexBackfillerTest {
     RemoteDocumentCache remoteDocumentCache = persistence.getRemoteDocumentCache();
     remoteDocumentCache.setIndexManager(indexManager);
 
+    this.mutationQueue =
+        (SQLiteMutationQueue) persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager);
+
     LocalDocumentsView localDocumentsView =
         new LocalDocumentsView(
             remoteDocumentCache,
-            persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
+            mutationQueue,
             persistence.getDocumentOverlay(User.UNAUTHENTICATED),
             indexManager);
     backfiller = new IndexBackfiller(persistence, new AsyncQueue());
@@ -345,6 +349,7 @@ public class IndexBackfillerTest {
     backfiller.setMaxDocumentsToProcess(2);
     addFieldIndex("coll1", "foo");
     addDoc("coll1/docA", "foo", version(10));
+    addSetMutationsToOverlay(1, "coll1/docA");
     addSetMutationsToOverlay(2, "coll1/docB", "coll1/docC", "coll1/docD");
     addSetMutationsToOverlay(3, "coll1/docE");
 

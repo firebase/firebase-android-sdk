@@ -146,7 +146,7 @@ public final class PatchMutation extends Mutation {
     value.setAll(transformResults);
     document
         .convertToFoundDocument(document.getVersion(), document.getData())
-        .setHasLocalMutations(batchId);
+        .setHasLocalMutations();
 
     if (previousMask == null) {
       return null;

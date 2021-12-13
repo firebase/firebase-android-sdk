@@ -70,7 +70,7 @@ public class MutationTest {
 
     Mutation set = setMutation("collection/key", map("bar", "bar-value"));
     set.applyToLocalView(setDoc, /* previousMask= */ null, 0, Timestamp.now());
-    assertEquals(doc("collection/key", 1, map("bar", "bar-value")).setHasLocalMutations(0), setDoc);
+    assertEquals(doc("collection/key", 1, map("bar", "bar-value")).setHasLocalMutations(), setDoc);
   }
 
   @Test
@@ -81,7 +81,7 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
     patch.applyToLocalView(patchDoc, /* previousMask= */ null, 0, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(0), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
@@ -92,7 +92,7 @@ public class MutationTest {
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, 0, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 2, expectedData).setHasLocalMutations(0), mergeDoc);
+    assertEquals(doc("collection/key", 2, expectedData).setHasLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -103,7 +103,7 @@ public class MutationTest {
             "collection/key", map("foo.bar", "new-bar-value"), Arrays.asList(field("foo.bar")));
     upsert.applyToLocalView(mergeDoc, /* previousMask= */ null, 0, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"));
-    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(0), mergeDoc);
+    assertEquals(doc("collection/key", 0, expectedData).setHasLocalMutations(), mergeDoc);
   }
 
   @Test
@@ -117,7 +117,7 @@ public class MutationTest {
 
     patch.applyToLocalView(patchDoc, /* previousMask= */ null, 0, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("baz", "baz-value"));
-    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(0), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
@@ -128,7 +128,7 @@ public class MutationTest {
     Mutation patch = patchMutation("collection/key", map("foo.bar", "new-bar-value"));
     patch.applyToLocalView(patchDoc, /* previousMask= */ null, 0, Timestamp.now());
     Map<String, Object> expectedData = map("foo", map("bar", "new-bar-value"), "baz", "baz-value");
-    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(0), patchDoc);
+    assertEquals(doc("collection/key", 1, expectedData).setHasLocalMutations(), patchDoc);
   }
 
   @Test
@@ -155,7 +155,7 @@ public class MutationTest {
     Value fieldValue = ServerTimestamps.valueOf(timestamp, wrap("bar-value"));
     expectedData.set(field("foo.bar"), fieldValue);
 
-    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations(0);
+    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -459,7 +459,7 @@ public class MutationTest {
       transform.applyToLocalView(transformedDoc, /* previousMask= */ null, 0, Timestamp.now());
     }
 
-    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations(0);
+    MutableDocument expectedDoc = doc("collection/key", 1, expectedData).setHasLocalMutations();
     assertEquals(expectedDoc, transformedDoc);
   }
 
@@ -532,7 +532,7 @@ public class MutationTest {
 
     Mutation delete = deleteMutation("collection/key");
     delete.applyToLocalView(deletedDoc, /* previousMask= */ null, 0, Timestamp.now());
-    assertEquals(deletedDoc("collection/key", 1).setHasLocalMutations(0), deletedDoc);
+    assertEquals(deletedDoc("collection/key", 1).setHasLocalMutations(), deletedDoc);
   }
 
   @Test
