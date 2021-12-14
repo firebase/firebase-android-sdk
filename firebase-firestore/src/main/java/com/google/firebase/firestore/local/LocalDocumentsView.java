@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.SetMutation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,12 +90,19 @@ class LocalDocumentsView {
    */
   Document getDocument(DocumentKey key) {
     Mutation overlay = documentOverlayCache.getOverlay(key);
-    MutableDocument fromOverlay = remoteDocumentCache.get(key);
-    if (overlay != null) {
-      overlay.applyToLocalView(fromOverlay, null, Timestamp.now());
+    MutableDocument document = null;
+    if (overlay == null) {
+      document = remoteDocumentCache.get(key);
+    } else {
+      if (overlay instanceof SetMutation) {
+        document = remoteDocumentCache.get(key);
+      } else {
+        document = MutableDocument.newInvalidDocument(key);
+      }
+      overlay.applyToLocalView(document, null, Timestamp.now());
     }
 
-    return fromOverlay;
+    return document;
   }
 
   /**
