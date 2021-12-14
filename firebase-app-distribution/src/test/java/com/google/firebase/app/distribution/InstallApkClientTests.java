@@ -23,6 +23,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.app.distribution.FirebaseAppDistributionTest.TestActivity;
+import com.google.firebase.app.distribution.internal.InstallActivity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +58,7 @@ public class InstallApkClientTests {
 
     assertFalse(installTask.isComplete());
     assertEquals(
-        "com.google.firebase.app.distribution.InstallActivity",
+        "com.google.firebase.app.distribution.internal.InstallActivity",
         installIntent.getComponent().getShortClassName());
     assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
   }
@@ -84,7 +85,7 @@ public class InstallApkClientTests {
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertEquals(
-        "com.google.firebase.app.distribution.InstallActivity",
+        "com.google.firebase.app.distribution.internal.InstallActivity",
         installIntent.getComponent().getShortClassName());
     assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
     assertFalse(installTask.isComplete());

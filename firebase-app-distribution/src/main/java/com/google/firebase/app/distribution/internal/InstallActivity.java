@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.app.distribution.internal;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -22,6 +22,8 @@ import android.provider.Settings;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import com.google.firebase.app.distribution.FirebaseAppDistribution;
+import com.google.firebase.app.distribution.R;
 import java.io.File;
 
 /**
