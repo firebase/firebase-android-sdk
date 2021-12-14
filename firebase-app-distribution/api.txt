@@ -48,11 +48,6 @@ package com.google.firebase.app.distribution {
     method public void onProgressUpdate(@NonNull com.google.firebase.app.distribution.UpdateProgress);
   }
 
-  public class OnUpgradeBroadcastReceiver extends android.content.BroadcastReceiver {
-    ctor public OnUpgradeBroadcastReceiver();
-    method public void onReceive(android.content.Context, android.content.Intent);
-  }
-
   public abstract class UpdateProgress {
     ctor public UpdateProgress();
     method @NonNull public abstract long getApkBytesDownloaded();
