@@ -52,6 +52,7 @@ import com.google.firebase.perf.v1.PerfMetricOrBuilder;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
+import java.text.DecimalFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -617,9 +618,9 @@ public class TransportManager implements AppStateCallback {
     long durationInUs = traceMetric.getDurationUs();
     return String.format(
         Locale.ENGLISH,
-        "trace metric: %s (duration: %.4fms)",
+        "trace metric: %s (duration: %sms)",
         traceMetric.getName(),
-        durationInUs / 1000.0);
+        new DecimalFormat("#.####").format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(NetworkRequestMetric networkRequestMetric) {
@@ -635,10 +636,10 @@ public class TransportManager implements AppStateCallback {
 
     return String.format(
         Locale.ENGLISH,
-        "network request trace: %s (responseCode: %s, responseTime: %.4fms)",
+        "network request trace: %s (responseCode: %s, responseTime: %sms)",
         networkRequestMetric.getUrl(),
         responseCode,
-        durationInUs / 1000.0);
+        new DecimalFormat("#.####").format(durationInUs / 1000.0));
   }
 
   private static String getLogcatMsg(GaugeMetric gaugeMetric) {
