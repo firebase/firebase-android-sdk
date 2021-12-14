@@ -45,15 +45,6 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="OnUpgradeBroadcastReceiver">
-
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED">
-                </action>
-            </intent-filter>
-
-        </receiver>
-
         <provider
             android:name="com.google.firebase.app.distribution.internal.FirebaseAppDistributionFileProvider"
             android:authorities="${applicationId}.FirebaseAppDistributionFileProvider"
