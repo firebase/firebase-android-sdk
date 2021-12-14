@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.app.distribution.internal.InstallActivity;
+import com.google.firebase.app.distribution.internal.LogWrapper;
 
 class InstallApkClient {
   private static final String TAG = "ApkInstallClient:";

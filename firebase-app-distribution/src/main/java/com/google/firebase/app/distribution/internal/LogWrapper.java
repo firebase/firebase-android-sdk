@@ -18,7 +18,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 /** Wrapper that handles Android logcat logging. */
-class LogWrapper {
+public class LogWrapper {
 
   private static final String LOG_TAG = "FirebaseAppDistribution";
   private static LogWrapper instance;

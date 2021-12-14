@@ -28,6 +28,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.app.distribution.internal.LogWrapper;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "NotificationsManager:";
