@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
+import java.util.List;
 
 public abstract class Filter {
   /** Returns true if a document matches the filter. */
@@ -22,4 +23,7 @@ public abstract class Filter {
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();
+
+  /** Returns a list of all field filters that are contained within this filter */
+  public abstract List<FieldFilter> getAllFieldFilters();
 }

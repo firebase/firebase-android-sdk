@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -206,22 +205,11 @@ public final class Query {
         if (fieldfilter.isInequality()) {
           return fieldfilter.getField();
         }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Checks if any of the provided filter operators are included in the query and returns the first
-   * one that is, or null if none are.
-   */
-  @Nullable
-  public Operator findFilterOperator(List<Operator> operators) {
-    for (Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        Operator filterOp = ((FieldFilter) filter).getOperator();
-        if (operators.contains(filterOp)) {
-          return filterOp;
+      } else if (filter instanceof CompositeFilter) {
+        CompositeFilter compositeFilter = (CompositeFilter) filter;
+        FieldFilter found = compositeFilter.getInequalityFilter();
+        if (found != null) {
+          return found.getField();
         }
       }
     }
@@ -239,6 +227,11 @@ public final class Query {
     FieldPath newInequalityField = null;
     if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
       newInequalityField = ((FieldFilter) filter).getField();
+    } else if (filter instanceof CompositeFilter) {
+      FieldFilter inequalityFilter = ((CompositeFilter) filter).getInequalityFilter();
+      if (inequalityFilter != null) {
+        newInequalityField = inequalityFilter.getField();
+      }
     }
 
     FieldPath queryInequalityField = inequalityField();
@@ -541,6 +534,16 @@ public final class Query {
     }
 
     return this.memoizedTarget;
+  }
+
+  /** Returns true if the query contains any composite filters (AND/OR). Returns false otherwise. */
+  public boolean containsCompositeFilters() {
+    for (Filter filter : filters) {
+      if (filter instanceof CompositeFilter) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

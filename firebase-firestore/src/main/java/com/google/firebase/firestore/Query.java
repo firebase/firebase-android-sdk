@@ -28,6 +28,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
@@ -387,15 +388,17 @@ public class Query {
   }
 
   /**
-   * Parses the given value object and creates a new {@code FieldFilter} with the given field,
-   * operator, and value. Also performs validation on the filter before retuning it.
+   * Takes a {@code FieldFilterData} object, parses the value object and returns a new {@code
+   * FieldFilter} for the field, operator, and parsed value.
    *
-   * @param fieldPath The field to compare
-   * @param op The operator
-   * @param value The value for parsing
+   * @param fieldFilterData The FieldFilterData object to parse.
    * @return The created {@code FieldFilter}.
    */
-  private FieldFilter parseFieldFilter(@NonNull FieldPath fieldPath, Operator op, Object value) {
+  @NonNull
+  private FieldFilter parseFieldFilterData(@NonNull FieldFilterData fieldFilterData) {
+    FieldPath fieldPath = fieldFilterData.getField();
+    Operator op = fieldFilterData.getOperator();
+    Object value = fieldFilterData.getValue();
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(op, "Provided op must not be null.");
     Value fieldValue;
@@ -426,15 +429,63 @@ public class Query {
               .parseQueryValue(value, op == Operator.IN || op == Operator.NOT_IN);
     }
     FieldFilter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
-    validateNewFilter(filter);
     return filter;
+  }
+
+  /**
+   * Takes a {@code CompositeFilterData} object, parses the values in each of its subfilters, and
+   * returns a new {@code CompositeFilter} that is constructed using the parsed field filters.
+   *
+   * @param compositeFilterData The CompositeFilterData object to parse.
+   * @return The created {@code CompositeFilter}.
+   */
+  @Nullable
+  private com.google.firebase.firestore.core.Filter parseCompositeFilterData(
+      @NonNull CompositeFilterData compositeFilterData) {
+    List<com.google.firebase.firestore.core.Filter> parsedFilters = new ArrayList<>();
+    for (Filter filter : compositeFilterData.getFilters()) {
+      com.google.firebase.firestore.core.Filter parsedFilter = parseFilterData(filter);
+      if (parsedFilter != null) {
+        parsedFilters.add(parsedFilter);
+      }
+    }
+    // For empty composite filters, return null.
+    // For example: and(or(), and()).
+    if (parsedFilters.isEmpty()) {
+      return null;
+    }
+    // For composite filters containing 1 filter, return the only filter.
+    // For example: AND(FieldFilter1) == FieldFilter1
+    if (parsedFilters.size() == 1) {
+      return parsedFilters.get(0);
+    }
+    return new CompositeFilter(parsedFilters, compositeFilterData.getOperator());
+  }
+
+  /**
+   * Takes a filter whose value has not been parsed, parses the value object and returns a
+   * FieldFilter or CompositeFilter with parsed values.
+   */
+  @Nullable
+  private com.google.firebase.firestore.core.Filter parseFilterData(Filter filter) {
+    hardAssert(
+        filter instanceof FieldFilterData || filter instanceof CompositeFilterData,
+        "Parsing is only supported for FieldFilterData and CompositeFilterData.");
+    if (filter instanceof FieldFilterData) {
+      return parseFieldFilterData((FieldFilterData) filter);
+    }
+    return parseCompositeFilterData((CompositeFilterData) filter);
   }
 
   // TODO(orquery): This method will become public API. Change visibility and add documentation.
   private Query where(Filter filter) {
-    return new Query(
-        query.filter(parseFieldFilter(filter.getField(), filter.getOperator(), filter.getValue())),
-        firestore);
+    com.google.firebase.firestore.core.Filter parsedFilter = parseFilterData(filter);
+    if (parsedFilter == null) {
+      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
+      return this;
+    }
+    validateAddingNewFilter(parsedFilter);
+    return new Query(query.filter(parsedFilter), firestore);
   }
 
   private void validateOrderByField(com.google.firebase.firestore.model.FieldPath field) {
@@ -553,44 +604,71 @@ public class Query {
     }
   }
 
-  private void validateNewFilter(com.google.firebase.firestore.core.Filter filter) {
-    if (filter instanceof FieldFilter) {
-      FieldFilter fieldFilter = (FieldFilter) filter;
-      Operator filterOp = fieldFilter.getOperator();
-      if (fieldFilter.isInequality()) {
-        com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
-        com.google.firebase.firestore.model.FieldPath newInequality = fieldFilter.getField();
+  /** Checks that adding the given field filter to the given query is valid */
+  private void validateAddingNewFieldFilter(
+      com.google.firebase.firestore.core.Query query,
+      com.google.firebase.firestore.core.FieldFilter fieldFilter) {
+    Operator filterOp = fieldFilter.getOperator();
+    if (fieldFilter.isInequality()) {
+      com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
+      com.google.firebase.firestore.model.FieldPath newInequality = fieldFilter.getField();
 
-        if (existingInequality != null && !existingInequality.equals(newInequality)) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "All where filters with an inequality (notEqualTo, notIn, lessThan, "
-                      + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
-                      + "same field. But you have filters on '%s' and '%s'",
-                  existingInequality.canonicalString(), newInequality.canonicalString()));
-        }
-        com.google.firebase.firestore.model.FieldPath firstOrderByField =
-            query.getFirstOrderByField();
-        if (firstOrderByField != null) {
-          validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
-        }
+      if (existingInequality != null && !existingInequality.equals(newInequality)) {
+        throw new IllegalArgumentException(
+            String.format(
+                "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+                    + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+                    + "same field. But you have filters on '%s' and '%s'",
+                existingInequality.canonicalString(), newInequality.canonicalString()));
       }
-      Operator conflictingOp = query.findFilterOperator(conflictingOps(filterOp));
-      if (conflictingOp != null) {
-        // We special case when it's a duplicate op to give a slightly clearer error message.
-        if (conflictingOp == filterOp) {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
-        } else {
-          throw new IllegalArgumentException(
-              "Invalid Query. You cannot use '"
-                  + filterOp.toString()
-                  + "' filters with '"
-                  + conflictingOp.toString()
-                  + "' filters.");
+      com.google.firebase.firestore.model.FieldPath firstOrderByField =
+          query.getFirstOrderByField();
+      if (firstOrderByField != null) {
+        validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
+      }
+    }
+    Operator conflictingOp = findFilterOperator(query.getFilters(), conflictingOps(filterOp));
+    if (conflictingOp != null) {
+      // We special case when it's a duplicate op to give a slightly clearer error message.
+      if (conflictingOp == filterOp) {
+        throw new IllegalArgumentException(
+            "Invalid Query. You cannot use more than one '" + filterOp.toString() + "' filter.");
+      } else {
+        throw new IllegalArgumentException(
+            "Invalid Query. You cannot use '"
+                + filterOp.toString()
+                + "' filters with '"
+                + conflictingOp.toString()
+                + "' filters.");
+      }
+    }
+  }
+
+  /** Checks that adding the given filter to the current query is valid */
+  private void validateAddingNewFilter(com.google.firebase.firestore.core.Filter filter) {
+    com.google.firebase.firestore.core.Query testQuery = query;
+    for (FieldFilter subfilter : filter.getAllFieldFilters()) {
+      validateAddingNewFieldFilter(testQuery, subfilter);
+      testQuery = query.filter(subfilter);
+    }
+  }
+
+  /**
+   * Checks if any of the provided filter operators are included in the given list of filters and
+   * returns the first one that is, or null if none are.
+   */
+  @Nullable
+  public Operator findFilterOperator(
+      List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
+    for (com.google.firebase.firestore.core.Filter filter : filters) {
+      if (filter instanceof FieldFilter) {
+        Operator filterOp = ((FieldFilter) filter).getOperator();
+        if (operators.contains(filterOp)) {
+          return filterOp;
         }
       }
     }
+    return null;
   }
 
   /**

@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
+import java.util.List;
 
 /** Represents a filter to be applied to query. */
 public class FieldFilter extends Filter {
@@ -156,6 +157,12 @@ public class FieldFilter extends Filter {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
     return getField().canonicalString() + getOperator().toString() + Values.canonicalId(getValue());
+  }
+
+  @Override
+  public List<FieldFilter> getAllFieldFilters() {
+    // This is already a field filter, so we return a list of size one.
+    return Arrays.asList(this);
   }
 
   @Override
