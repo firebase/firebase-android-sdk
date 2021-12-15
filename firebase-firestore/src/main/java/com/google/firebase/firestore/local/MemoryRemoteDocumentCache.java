@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /** In-memory cache of remote documents. */
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
@@ -100,7 +101,8 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+  public Map<DocumentKey, MutableDocument> getAll(
+      ResourcePath collection, IndexOffset offset, Set<DocumentKey> ignoreSet) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
@@ -110,6 +112,10 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
     while (iterator.hasNext()) {
       Map.Entry<DocumentKey, Document> entry = iterator.next();
+      if (ignoreSet.contains(entry.getKey())) {
+        continue;
+      }
+
       Document doc = entry.getValue();
 
       DocumentKey key = entry.getKey();

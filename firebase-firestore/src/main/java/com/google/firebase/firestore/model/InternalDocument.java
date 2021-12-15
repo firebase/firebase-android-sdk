@@ -1,5 +1,8 @@
 package com.google.firebase.firestore.model;
 
+/**
+ * Interface exposing underlying document information that is not visible in {@code Document}.
+ */
 public interface InternalDocument extends Document {
   /**
    * Returns the version of this document if it exists or a version at which this document was

@@ -26,10 +26,12 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.SetMutation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -261,9 +263,18 @@ class LocalDocumentsView {
   /** Queries the remote documents and overlays by doing a full collection scan. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
-    Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getAll(query.getPath(), offset);
     Map<DocumentKey, Mutation> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
+
+    // Remote document elision: avoid reading remote documents if their overlay is Set or Delete.
+    Set<DocumentKey> ignore = new HashSet<>();
+    for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
+      if (entry.getValue() instanceof SetMutation || entry.getValue() instanceof DeleteMutation) {
+        ignore.add(entry.getKey());
+      }
+    }
+
+    Map<DocumentKey, MutableDocument> remoteDocuments =
+        remoteDocumentCache.getAll(query.getPath(), offset, ignore);
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.

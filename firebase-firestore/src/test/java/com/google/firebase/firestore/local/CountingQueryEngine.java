@@ -31,6 +31,7 @@ import com.google.protobuf.ByteString;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A test-only QueryEngine that forwards all API calls and exposes the number of documents and
@@ -155,8 +156,9 @@ class CountingQueryEngine extends QueryEngine {
       }
 
       @Override
-      public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
-        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
+      public Map<DocumentKey, MutableDocument> getAll(
+          ResourcePath collection, IndexOffset offset, Set<DocumentKey> ignoreSet) {
+        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset, ignoreSet);
         documentsReadByCollection[0] += result.size();
         return result;
       }

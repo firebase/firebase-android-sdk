@@ -19,7 +19,7 @@ import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
 /**
- * Represents a document in Firestore with a key, version, data and whether the data has local
+ * Represents a document in Firestore with a key, data and whether the data has local
  * mutations applied to it.
  */
 public interface Document {
