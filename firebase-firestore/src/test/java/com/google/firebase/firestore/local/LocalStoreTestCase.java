@@ -389,7 +389,8 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -471,7 +472,8 @@ public abstract class LocalStoreTestCase {
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     int expectedVersion = garbageCollectorIsEager() ? 0 : 2;
     assertChanged(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", expectedVersion, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(3);
@@ -491,7 +493,8 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(updateRemoteEvent(deletedDoc("foo/bar", 2), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
   }
 
   @Test
@@ -505,7 +508,8 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(setMutation("foo/bar", map("foo", "bar")));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(3);
     // We haven't seen the remote event yet.
@@ -615,7 +619,8 @@ public abstract class LocalStoreTestCase {
 
     writeMutation(deleteMutation("foo/bar"));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     // Remove the target so only the mutation is pinning the document.
     releaseTarget(targetId);
@@ -639,7 +644,8 @@ public abstract class LocalStoreTestCase {
     applyRemoteEvent(
         updateRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 1).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(2);
@@ -692,12 +698,14 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     releaseTarget(targetId);
     acknowledgeMutation(2); // set mutation
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    // Version is 0 because of remote document elision
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     acknowledgeMutation(3); // patch mutation
     assertChanged(doc("foo/bar", 3, map("foo", "bar")).setHasCommittedMutations());

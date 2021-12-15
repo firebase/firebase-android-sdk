@@ -215,7 +215,11 @@ public class QueryEngine {
       return false;
     }
     return documentAtLimitEdge.hasPendingWrites()
-        || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
+        || documentAtLimitEdge
+                .getInternalReference()
+                .getVersion()
+                .compareTo(limboFreeSnapshotVersion)
+            > 0;
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {

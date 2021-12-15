@@ -150,7 +150,8 @@ public abstract class FieldIndex {
 
     /** Creates a new offset based on the provided document. */
     public static IndexOffset fromDocument(Document document) {
-      return new AutoValue_FieldIndex_IndexOffset(document.getReadTime(), document.getKey());
+      return new AutoValue_FieldIndex_IndexOffset(
+          document.getInternalReference().getReadTime(), document.getKey());
     }
 
     /**

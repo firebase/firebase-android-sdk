@@ -78,7 +78,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public MutableDocument get(DocumentKey key) {
     Document doc = docs.get(key);
-    return doc != null ? doc.mutableCopy() : MutableDocument.newInvalidDocument(key);
+    return doc != null
+        ? doc.getInternalReference().mutableCopy()
+        : MutableDocument.newInvalidDocument(key);
   }
 
   @Override
@@ -126,7 +128,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      result.put(doc.getKey(), doc.mutableCopy());
+      result.put(doc.getKey(), doc.getInternalReference().mutableCopy());
     }
 
     return result;

@@ -30,7 +30,6 @@ import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
-import com.google.firebase.firestore.model.mutation.SetMutation;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -94,7 +93,7 @@ class LocalDocumentsView {
     if (overlay == null) {
       document = remoteDocumentCache.get(key);
     } else {
-      if (overlay instanceof SetMutation) {
+      if (overlay instanceof PatchMutation) {
         document = remoteDocumentCache.get(key);
       } else {
         document = MutableDocument.newInvalidDocument(key);

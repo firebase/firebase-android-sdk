@@ -30,18 +30,6 @@ public interface Document {
   DocumentKey getKey();
 
   /**
-   * Returns the version of this document if it exists or a version at which this document was
-   * guaranteed to not exist.
-   */
-  SnapshotVersion getVersion();
-
-  /**
-   * Returns the timestamp at which this document was read from the remote server. Returns
-   * `SnapshotVersion.NONE` for documents created by the user.
-   */
-  SnapshotVersion getReadTime();
-
-  /**
    * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
    * created by a mutation or read from the backend).
    */
@@ -74,6 +62,5 @@ public interface Document {
    */
   boolean hasPendingWrites();
 
-  /** Creates a mutable copy of this document. */
-  MutableDocument mutableCopy();
+  InternalDocument getInternalReference();
 }
