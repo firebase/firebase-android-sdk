@@ -11,19 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.testing.fireperf.ui.notifications;
+package com.google.firebase.testing.fireperf.ui.fast;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class NotificationsViewModel extends ViewModel {
+public class FastViewModel extends ViewModel {
 
   private MutableLiveData<String> mText;
 
-  public NotificationsViewModel() {
+  public FastViewModel() {
     mText = new MutableLiveData<>();
-    mText.setValue("This is notifications fragment");
+    mText.setValue("This is fast fragment");
   }
 
   public LiveData<String> getText() {

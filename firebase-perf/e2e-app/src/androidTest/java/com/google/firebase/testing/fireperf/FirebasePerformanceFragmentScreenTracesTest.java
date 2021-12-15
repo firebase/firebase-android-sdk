@@ -31,9 +31,9 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
-import com.google.firebase.testing.fireperf.ui.dashboard.DashboardFragment;
+import com.google.firebase.testing.fireperf.ui.fast.FastFragment;
 import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
-import com.google.firebase.testing.fireperf.ui.notifications.NotificationsFragment;
+import com.google.firebase.testing.fireperf.ui.slow.SlowFragment;
 import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
@@ -71,12 +71,12 @@ public class FirebasePerformanceFragmentScreenTracesTest {
                       true);
             });
     scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
-    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_dashboard));
+    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_fast));
     blockUntilNavigationDone();
-    scrollRecyclerViewToEnd(DashboardFragment.NUM_LIST_ITEMS, R.id.rv_numbers_dash);
-    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_notifications));
+    scrollRecyclerViewToEnd(FastFragment.NUM_LIST_ITEMS, R.id.rv_numbers_fast);
+    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_slow));
     blockUntilNavigationDone();
-    scrollRecyclerViewToEnd(NotificationsFragment.NUM_LIST_ITEMS, R.id.rv_numbers_notif);
+    scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
     assertThat(activityRule.getScenario().getState())
         .isIn(Arrays.asList(State.CREATED, State.RESUMED));
     activityRule.getScenario().moveToState(State.CREATED);

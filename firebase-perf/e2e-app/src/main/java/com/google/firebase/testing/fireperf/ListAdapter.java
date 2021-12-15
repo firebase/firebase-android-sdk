@@ -14,7 +14,6 @@
 
 package com.google.firebase.testing.fireperf;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +24,6 @@ import org.jetbrains.annotations.NotNull;
 /** The Adapter for the ScreenTraces test ListView. */
 public class ListAdapter extends RecyclerView.Adapter<ListAdapter.NumberViewHolder> {
 
-  private static final String LOG_TAG = ListAdapter.class.getSimpleName();
   private final int numberOfItems;
 
   /**
@@ -47,16 +45,6 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.NumberViewHold
 
   @Override
   public void onBindViewHolder(@NotNull NumberViewHolder holder, int position) {
-    try {
-      if (position % 15 == 0) {
-        Thread.sleep(900);
-      } else if (position % 5 == 0) {
-        Thread.sleep(50);
-      }
-    } catch (InterruptedException e) {
-      Log.e(LOG_TAG, e.getMessage(), e);
-    }
-
     holder.bind(position);
   }
 

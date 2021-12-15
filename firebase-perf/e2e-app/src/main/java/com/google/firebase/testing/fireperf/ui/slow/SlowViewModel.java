@@ -11,19 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.testing.fireperf.ui.dashboard;
+package com.google.firebase.testing.fireperf.ui.slow;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-public class DashboardViewModel extends ViewModel {
+public class SlowViewModel extends ViewModel {
 
   private MutableLiveData<String> mText;
 
-  public DashboardViewModel() {
+  public SlowViewModel() {
     mText = new MutableLiveData<>();
-    mText.setValue("This is dashboard fragment");
+    mText.setValue("This is slow fragment");
   }
 
   public LiveData<String> getText() {

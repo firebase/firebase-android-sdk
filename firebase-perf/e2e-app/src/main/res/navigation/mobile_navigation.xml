@@ -12,14 +12,14 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
-        android:id="@+id/navigation_dashboard"
-        android:name="com.google.firebase.testing.fireperf.ui.dashboard.DashboardFragment"
-        android:label="@string/title_dashboard"
-        tools:layout="@layout/fragment_dashboard" />
+        android:id="@+id/navigation_fast"
+        android:name="com.google.firebase.testing.fireperf.ui.fast.FastFragment"
+        android:label="@string/title_fast"
+        tools:layout="@layout/fragment_fast" />
 
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="com.google.firebase.testing.fireperf.ui.notifications.NotificationsFragment"
-        android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        android:id="@+id/navigation_slow"
+        android:name="com.google.firebase.testing.fireperf.ui.slow.SlowFragment"
+        android:label="@string/title_slow"
+        tools:layout="@layout/fragment_slow" />
 </navigation>

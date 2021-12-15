@@ -3,6 +3,6 @@
 <resources>
     <string name="title_activity_fragment">FragmentActivity</string>
     <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_fast">Fast</string>
+    <string name="title_slow">Slow</string>
 </resources>

@@ -23,8 +23,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.firebase.testing.fireperf.ListAdapter;
 import com.google.firebase.testing.fireperf.R;
+import com.google.firebase.testing.fireperf.SlowListAdapter;
 
 public class HomeFragment extends Fragment {
 
@@ -44,7 +44,7 @@ public class HomeFragment extends Fragment {
     RecyclerView numbersList = root.findViewById(R.id.rv_numbers_home);
     numbersList.setLayoutManager(new LinearLayoutManager(requireContext()));
     numbersList.setHasFixedSize(true);
-    numbersList.setAdapter(new ListAdapter(NUM_LIST_ITEMS));
+    numbersList.setAdapter(new SlowListAdapter(NUM_LIST_ITEMS));
     return root;
   }
 }
