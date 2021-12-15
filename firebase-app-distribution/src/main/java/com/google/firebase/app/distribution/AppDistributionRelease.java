@@ -31,7 +31,7 @@ import com.google.auto.value.AutoValue;
 public abstract class AppDistributionRelease {
 
   @NonNull
-  public static Builder builder() {
+  static Builder builder() {
     return new com.google.firebase.app.distribution.AutoValue_AppDistributionRelease.Builder();
   }
 
@@ -53,21 +53,21 @@ public abstract class AppDistributionRelease {
 
   /** Builder for {@link AppDistributionRelease}. */
   @AutoValue.Builder
-  public abstract static class Builder {
+  abstract static class Builder {
 
     @NonNull
-    public abstract Builder setDisplayVersion(@NonNull String value);
+    abstract Builder setDisplayVersion(@NonNull String value);
 
     @NonNull
-    public abstract Builder setVersionCode(@NonNull long value);
+    abstract Builder setVersionCode(@NonNull long value);
 
     @NonNull
-    public abstract Builder setReleaseNotes(@Nullable String value);
+    abstract Builder setReleaseNotes(@Nullable String value);
 
     @NonNull
-    public abstract Builder setBinaryType(@NonNull BinaryType value);
+    abstract Builder setBinaryType(@NonNull BinaryType value);
 
     @NonNull
-    public abstract AppDistributionRelease build();
+    abstract AppDistributionRelease build();
   }
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.app.distribution.internal;
 
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -22,6 +22,8 @@ import android.provider.Settings;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import com.google.firebase.app.distribution.FirebaseAppDistribution;
+import com.google.firebase.app.distribution.R;
 import java.io.File;
 
 /**
@@ -34,7 +36,7 @@ public class InstallActivity extends AppCompatActivity {
   private boolean installInProgress = false;
 
   @Override
-  public void onResume() {
+  protected void onResume() {
     super.onResume();
     // Since we kick-off installation with FLAG_ACTIVITY_NEW_TASK (in a new task), we won't be able
     // to figure out if installation failed or was cancelled.

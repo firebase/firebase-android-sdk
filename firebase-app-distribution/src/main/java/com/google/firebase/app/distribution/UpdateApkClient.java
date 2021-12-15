@@ -25,6 +25,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.app.distribution.internal.LogWrapper;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;

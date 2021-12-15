@@ -41,6 +41,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.FirebaseAppDistributionTest.TestActivity;
+import com.google.firebase.app.distribution.internal.SignInResultActivity;
+import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.app.distribution.internal;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -25,16 +25,16 @@ public class SignInStorage {
 
   private final SharedPreferences signInSharedPreferences;
 
-  SignInStorage(Context applicationContext) {
+  public SignInStorage(Context applicationContext) {
     this.signInSharedPreferences =
         applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 
-  void setSignInStatus(boolean testerSignedIn) {
+  public void setSignInStatus(boolean testerSignedIn) {
     this.signInSharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
   }
 
-  boolean getSignInStatus() {
+  public boolean getSignInStatus() {
     return signInSharedPreferences.getBoolean(SIGNIN_TAG, false);
   }
 }
