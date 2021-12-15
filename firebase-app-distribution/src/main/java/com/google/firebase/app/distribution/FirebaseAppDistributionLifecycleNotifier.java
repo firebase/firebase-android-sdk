@@ -23,8 +23,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class FirebaseAppDistributionLifecycleNotifier
-    implements Application.ActivityLifecycleCallbacks {
+class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
@@ -50,48 +49,48 @@ public class FirebaseAppDistributionLifecycleNotifier
 
   private FirebaseAppDistributionLifecycleNotifier() {}
 
-  public static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
+  static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
     if (instance == null) {
       instance = new FirebaseAppDistributionLifecycleNotifier();
     }
     return instance;
   }
 
-  public interface OnActivityCreatedListener {
+  interface OnActivityCreatedListener {
     void onCreated(Activity activity);
   }
 
-  public interface OnActivityStartedListener {
+  interface OnActivityStartedListener {
     void onStarted(Activity activity);
   }
 
-  public interface OnActivityPausedListener {
+  interface OnActivityPausedListener {
     void onPaused(Activity activity);
   }
 
-  public interface OnActivityDestroyedListener {
+  interface OnActivityDestroyedListener {
     void onDestroyed(Activity activity);
   }
 
-  public Activity getCurrentActivity() {
+  Activity getCurrentActivity() {
     synchronized (lock) {
       return currentActivity;
     }
   }
 
-  public void addOnActivityCreatedListener(@NonNull OnActivityCreatedListener listener) {
+  void addOnActivityCreatedListener(@NonNull OnActivityCreatedListener listener) {
     synchronized (lock) {
       this.onActivityCreatedListeners.add(listener);
     }
   }
 
-  public void addOnActivityStartedListener(@NonNull OnActivityStartedListener listener) {
+  void addOnActivityStartedListener(@NonNull OnActivityStartedListener listener) {
     synchronized (lock) {
       this.onActivityStartedListeners.add(listener);
     }
   }
 
-  public void addOnActivityDestroyedListener(@NonNull OnActivityDestroyedListener listener) {
+  void addOnActivityDestroyedListener(@NonNull OnActivityDestroyedListener listener) {
     synchronized (lock) {
       this.onDestroyedListeners.add(listener);
     }

@@ -17,6 +17,7 @@ package com.google.firebase.app.distribution;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.app.distribution.internal.LogWrapper;
 
 class TaskUtils {
   private static final String TAG = "TaskUtils:";

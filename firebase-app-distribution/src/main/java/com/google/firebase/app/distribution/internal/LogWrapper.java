@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.app.distribution.internal;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
 
 /** Wrapper that handles Android logcat logging. */
-class LogWrapper {
+public class LogWrapper {
 
   private static final String LOG_TAG = "FirebaseAppDistribution";
   private static LogWrapper instance;

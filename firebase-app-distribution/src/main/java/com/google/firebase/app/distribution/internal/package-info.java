@@ -12,8 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
-
-import androidx.core.content.FileProvider;
-
-public class FirebaseAppDistributionFileProvider extends FileProvider {}
+/** @hide */
+package com.google.firebase.app.distribution.internal;

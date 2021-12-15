@@ -32,6 +32,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.app.distribution.internal.LogWrapper;
+import com.google.firebase.app.distribution.internal.SignInResultActivity;
+import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class FirebaseAppDistribution {
@@ -80,7 +83,7 @@ public class FirebaseAppDistribution {
   }
 
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull SignInStorage signInStorage,
@@ -97,7 +100,7 @@ public class FirebaseAppDistribution {
   }
 
   /** Constructor for FirebaseAppDistribution */
-  public FirebaseAppDistribution(
+  FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
     this(
