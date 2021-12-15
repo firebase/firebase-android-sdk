@@ -430,7 +430,7 @@ public class Query {
     return filter;
   }
 
-  // TODO(ehsann): This method will become public API. Change visibility and add documentation.
+  // TODO(orquery): This method will become public API. Change visibility and add documentation.
   private Query where(Filter filter) {
     return new Query(
         query.filter(parseFieldFilter(filter.getField(), filter.getOperator(), filter.getValue())),

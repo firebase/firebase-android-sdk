@@ -116,8 +116,8 @@ public final class Target {
     return endAt;
   }
 
-  /** Returns the field filters from the given list that target the given field path. */
-  private List<FieldFilter> getFieldFiltersForPath(List<Filter> filters, FieldPath path) {
+  /** Returns the field filters that target the given field path. */
+  private List<FieldFilter> getFieldFiltersForPath(FieldPath path) {
     List<FieldFilter> result = new ArrayList<>();
     for (Filter filter : filters) {
       if ((filter instanceof FieldFilter) && (((FieldFilter) filter).getField()).equals(path)) {
@@ -135,7 +135,7 @@ public final class Target {
     @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
     if (segment == null) return null;
 
-    for (FieldFilter fieldFilter : getFieldFiltersForPath(filters, segment.getFieldPath())) {
+    for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
       switch (fieldFilter.getOperator()) {
         case ARRAY_CONTAINS_ANY:
           return fieldFilter.getValue().getArrayValue().getValuesList();
@@ -155,7 +155,7 @@ public final class Target {
     List<Value> values = new ArrayList<>();
 
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      for (FieldFilter fieldFilter : getFieldFiltersForPath(filters, segment.getFieldPath())) {
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
         switch (fieldFilter.getOperator()) {
           case EQUAL:
           case IN:
@@ -190,7 +190,7 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (FieldFilter fieldFilter : getFieldFiltersForPath(filters, segment.getFieldPath())) {
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
         Value filterValue = null;
         boolean filterInclusive = true;
 
@@ -272,7 +272,7 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (FieldFilter fieldFilter : getFieldFiltersForPath(filters, segment.getFieldPath())) {
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
         Value filterValue = null;
         boolean filterInclusive = true;
 
