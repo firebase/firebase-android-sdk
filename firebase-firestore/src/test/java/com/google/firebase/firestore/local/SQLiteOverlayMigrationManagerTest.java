@@ -100,7 +100,7 @@ public class SQLiteOverlayMigrationManagerTest {
         setMutation("foo/bar", map("foo", "bar")),
         persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
     // Version is 0 because of remote document elision.
-    assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
         (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
