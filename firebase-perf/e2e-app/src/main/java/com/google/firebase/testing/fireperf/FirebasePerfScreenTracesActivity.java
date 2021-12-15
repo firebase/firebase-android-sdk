@@ -39,7 +39,7 @@ public class FirebasePerfScreenTracesActivity extends Activity {
 
     RecyclerView numbersList = findViewById(R.id.rv_numbers);
     LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-    ListAdapter listAdapter = new ListAdapter(NUM_LIST_ITEMS);
+    ListAdapter listAdapter = new SlowListAdapter(NUM_LIST_ITEMS);
 
     numbersList.setLayoutManager(layoutManager);
     numbersList.setHasFixedSize(true);
