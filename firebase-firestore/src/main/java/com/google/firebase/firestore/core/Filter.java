@@ -14,12 +14,11 @@
 
 package com.google.firebase.firestore.core;
 
-import androidx.annotation.NonNull;
 import com.google.firebase.firestore.model.Document;
 
 public abstract class Filter {
   /** Returns true if a document matches the filter. */
-  public abstract boolean matches(@NonNull Document doc);
+  public abstract boolean matches(Document doc);
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();

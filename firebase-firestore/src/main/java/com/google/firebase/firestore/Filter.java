@@ -32,14 +32,20 @@ public class Filter {
     this.value = value;
   }
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public FieldPath getField() {
     return field;
   }
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public FieldFilter.Operator getOperator() {
     return operator;
   }
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public Object getValue() {
     return value;
   }
