@@ -273,19 +273,9 @@ public final class LocalSerializerTest {
         new MutationBatch(
             42, writeTime, Collections.singletonList(baseWrite), asList(set, patch, del));
 
-    Write baseWriteProto =
-        Write.newBuilder()
-            .setUpdate(
-                com.google.firestore.v1.Document.newBuilder()
-                    .setName("projects/p/databases/d/documents/foo/bar")
-                    .putFields("a", Value.newBuilder().setStringValue("b").build()))
-            .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("a"))
-            .build();
-
     com.google.firebase.firestore.proto.WriteBatch batchProto =
         com.google.firebase.firestore.proto.WriteBatch.newBuilder()
             .setBatchId(42)
-            .addBaseWrites(baseWriteProto)
             .addAllWrites(asList(setProto, patchProto, deleteProto))
             .setLocalWriteTime(writeTimeProto)
             .build();
@@ -295,7 +285,6 @@ public final class LocalSerializerTest {
     assertEquals(model.getBatchId(), decoded.getBatchId());
     assertEquals(model.getLocalWriteTime(), decoded.getLocalWriteTime());
     assertEquals(model.getMutations(), decoded.getMutations());
-    assertEquals(model.getBaseMutations(), decoded.getBaseMutations());
     assertEquals(model.getKeys(), decoded.getKeys());
   }
 

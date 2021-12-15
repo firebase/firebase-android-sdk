@@ -153,9 +153,6 @@ public final class LocalSerializer {
 
     result.setBatchId(batch.getBatchId());
     result.setLocalWriteTime(rpcSerializer.encodeTimestamp(batch.getLocalWriteTime()));
-    for (Mutation mutation : batch.getBaseMutations()) {
-      result.addBaseWrites(rpcSerializer.encodeMutation(mutation));
-    }
     for (Mutation mutation : batch.getMutations()) {
       result.addWrites(rpcSerializer.encodeMutation(mutation));
     }
