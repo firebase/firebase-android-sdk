@@ -633,9 +633,10 @@ final class SQLiteIndexManager implements IndexManager {
 
   private boolean isInFilter(Target target, FieldPath fieldPath) {
     for (Filter filter : target.getFilters()) {
-      if (filter.getField().equals(fieldPath)) {
-        Filter.Operator operator = ((FieldFilter) filter).getOperator();
-        return operator.equals(Filter.Operator.IN) || operator.equals(Filter.Operator.NOT_IN);
+      if ((filter instanceof FieldFilter) && ((FieldFilter) filter).getField().equals(fieldPath)) {
+        FieldFilter.Operator operator = ((FieldFilter) filter).getOperator();
+        return operator.equals(FieldFilter.Operator.IN)
+            || operator.equals(FieldFilter.Operator.NOT_IN);
       }
     }
     return false;
