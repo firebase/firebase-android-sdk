@@ -200,8 +200,8 @@ public class TargetIndexMatcher {
       return false;
     }
     boolean isArrayOperator =
-        filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS)
-            || filter.getOperator().equals(Filter.Operator.ARRAY_CONTAINS_ANY);
+        filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
+            || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
     return segment.getKind().equals(FieldIndex.Segment.Kind.CONTAINS) == isArrayOperator;
   }
 

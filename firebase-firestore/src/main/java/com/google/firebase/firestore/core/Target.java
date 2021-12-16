@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.model.Values.min;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.ArrayValue;
@@ -115,6 +116,17 @@ public final class Target {
     return endAt;
   }
 
+  /** Returns the field filters that target the given field path. */
+  private List<FieldFilter> getFieldFiltersForPath(FieldPath path) {
+    List<FieldFilter> result = new ArrayList<>();
+    for (Filter filter : filters) {
+      if ((filter instanceof FieldFilter) && (((FieldFilter) filter).getField()).equals(path)) {
+        result.add((FieldFilter) filter);
+      }
+    }
+    return result;
+  }
+
   /**
    * Returns the values that are used in ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters. Returns
    * {@code null} if there are no such filters.
@@ -123,15 +135,12 @@ public final class Target {
     @Nullable FieldIndex.Segment segment = fieldIndex.getArraySegment();
     if (segment == null) return null;
 
-    for (Filter filter : filters) {
-      if (filter.getField().equals(segment.getFieldPath())) {
-        FieldFilter fieldFilter = (FieldFilter) filter;
-        switch (fieldFilter.getOperator()) {
-          case ARRAY_CONTAINS_ANY:
-            return fieldFilter.getValue().getArrayValue().getValuesList();
-          case ARRAY_CONTAINS:
-            return Collections.singletonList(fieldFilter.getValue());
-        }
+    for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+      switch (fieldFilter.getOperator()) {
+        case ARRAY_CONTAINS_ANY:
+          return fieldFilter.getValue().getArrayValue().getValuesList();
+        case ARRAY_CONTAINS:
+          return Collections.singletonList(fieldFilter.getValue());
       }
     }
 
@@ -146,22 +155,19 @@ public final class Target {
     List<Value> values = new ArrayList<>();
 
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          switch (fieldFilter.getOperator()) {
-            case EQUAL:
-            case IN:
-              // Encode equality prefix, which is encoded in the index value before the inequality
-              // (e.g. `a == 'a' && b != 'b' is encoded to 'value != ab').
-              values.add(fieldFilter.getValue());
-              break;
-            case NOT_IN:
-            case NOT_EQUAL:
-              // NotIn/NotEqual is always a suffix
-              values.add(fieldFilter.getValue());
-              return values;
-          }
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+        switch (fieldFilter.getOperator()) {
+          case EQUAL:
+          case IN:
+            // Encode equality prefix, which is encoded in the index value before the inequality
+            // (e.g. `a == 'a' && b != 'b' is encoded to 'value != ab').
+            values.add(fieldFilter.getValue());
+            break;
+          case NOT_IN:
+          case NOT_EQUAL:
+            // NotIn/NotEqual is always a suffix
+            values.add(fieldFilter.getValue());
+            return values;
         }
       }
     }
@@ -184,46 +190,43 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          Value filterValue = null;
-          boolean filterInclusive = true;
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+        Value filterValue = null;
+        boolean filterInclusive = true;
 
-          switch (fieldFilter.getOperator()) {
-            case LESS_THAN:
-            case LESS_THAN_OR_EQUAL:
-              filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
-              break;
-            case EQUAL:
-            case IN:
-            case GREATER_THAN_OR_EQUAL:
-              filterValue = fieldFilter.getValue();
-              break;
-            case GREATER_THAN:
-              filterValue = fieldFilter.getValue();
-              filterInclusive = false;
-              break;
-            case NOT_EQUAL:
-              filterValue = Values.MIN_VALUE;
-              break;
-            case NOT_IN:
-              {
-                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                  arrayValue.addValues(Values.MIN_VALUE);
-                }
-                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
-                break;
+        switch (fieldFilter.getOperator()) {
+          case LESS_THAN:
+          case LESS_THAN_OR_EQUAL:
+            filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
+            break;
+          case EQUAL:
+          case IN:
+          case GREATER_THAN_OR_EQUAL:
+            filterValue = fieldFilter.getValue();
+            break;
+          case GREATER_THAN:
+            filterValue = fieldFilter.getValue();
+            filterInclusive = false;
+            break;
+          case NOT_EQUAL:
+            filterValue = Values.MIN_VALUE;
+            break;
+          case NOT_IN:
+            {
+              ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+              for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
+                arrayValue.addValues(Values.MIN_VALUE);
               }
-            default:
-              // Remaining filters cannot be used as lower bounds.
-          }
+              filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+              break;
+            }
+          default:
+            // Remaining filters cannot be used as lower bounds.
+        }
 
-          if (max(segmentValue, filterValue) == filterValue) {
-            segmentValue = filterValue;
-            segmentInclusive = filterInclusive;
-          }
+        if (max(segmentValue, filterValue) == filterValue) {
+          segmentValue = filterValue;
+          segmentInclusive = filterInclusive;
         }
       }
 
@@ -269,47 +272,44 @@ public final class Target {
       boolean segmentInclusive = true;
 
       // Process all filters to find a value for the current field segment
-      for (Filter filter : filters) {
-        if (filter.getField().equals(segment.getFieldPath())) {
-          FieldFilter fieldFilter = (FieldFilter) filter;
-          Value filterValue = null;
-          boolean filterInclusive = true;
+      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+        Value filterValue = null;
+        boolean filterInclusive = true;
 
-          switch (fieldFilter.getOperator()) {
-            case GREATER_THAN_OR_EQUAL:
-            case GREATER_THAN:
-              filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
-              filterInclusive = false;
-              break;
-            case EQUAL:
-            case IN:
-            case LESS_THAN_OR_EQUAL:
-              filterValue = fieldFilter.getValue();
-              break;
-            case LESS_THAN:
-              filterValue = fieldFilter.getValue();
-              filterInclusive = false;
-              break;
-            case NOT_EQUAL:
-              filterValue = Values.MAX_VALUE;
-              break;
-            case NOT_IN:
-              {
-                ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-                for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                  arrayValue.addValues(Values.MAX_VALUE);
-                }
-                filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
-                break;
+        switch (fieldFilter.getOperator()) {
+          case GREATER_THAN_OR_EQUAL:
+          case GREATER_THAN:
+            filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
+            filterInclusive = false;
+            break;
+          case EQUAL:
+          case IN:
+          case LESS_THAN_OR_EQUAL:
+            filterValue = fieldFilter.getValue();
+            break;
+          case LESS_THAN:
+            filterValue = fieldFilter.getValue();
+            filterInclusive = false;
+            break;
+          case NOT_EQUAL:
+            filterValue = Values.MAX_VALUE;
+            break;
+          case NOT_IN:
+            {
+              ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
+              for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
+                arrayValue.addValues(Values.MAX_VALUE);
               }
-            default:
-              // Remaining filters cannot be used as upper bounds.
-          }
+              filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
+              break;
+            }
+          default:
+            // Remaining filters cannot be used as upper bounds.
+        }
 
-          if (min(segmentValue, filterValue) == filterValue) {
-            segmentValue = filterValue;
-            segmentInclusive = filterInclusive;
-          }
+        if (min(segmentValue, filterValue) == filterValue) {
+          segmentValue = filterValue;
+          segmentInclusive = filterInclusive;
         }
       }
 
