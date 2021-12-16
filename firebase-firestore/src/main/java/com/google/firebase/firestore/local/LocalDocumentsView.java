@@ -95,10 +95,11 @@ class LocalDocumentsView {
     if (overlay == null) {
       document = remoteDocumentCache.get(key);
     } else {
-      if (overlay instanceof PatchMutation) {
-        document = remoteDocumentCache.get(key);
-      } else {
+      // Remote document elision: avoid reading remote documents if their overlay is Set or Delete.
+      if (overlay instanceof SetMutation || overlay instanceof DeleteMutation) {
         document = MutableDocument.newInvalidDocument(key);
+      } else {
+        document = remoteDocumentCache.get(key);
       }
       overlay.applyToLocalView(document, null, Timestamp.now());
     }
