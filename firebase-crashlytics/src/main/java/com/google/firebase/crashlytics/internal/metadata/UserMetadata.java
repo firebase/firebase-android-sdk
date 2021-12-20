@@ -122,9 +122,7 @@ public class UserMetadata {
 
   /** @return defensive copy of the internal keys. */
   public Map<String, String> getInternalKeys() {
-    synchronized (internalKeys) {
-      return internalKeys.getKeys();
-    }
+    return internalKeys.getKeys();
   }
 
   /**
