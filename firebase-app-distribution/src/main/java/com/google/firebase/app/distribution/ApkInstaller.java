@@ -25,7 +25,10 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 
-class InstallApkClient {
+/**
+ * Class that handles installing APKs in {@link FirebaseAppDistribution}.
+ */
+class ApkInstaller {
   private static final String TAG = "ApkInstallClient:";
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
@@ -40,13 +43,13 @@ class InstallApkClient {
 
   private final Object installTaskLock = new Object();
 
-  InstallApkClient(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+  ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
     this.lifeCycleNotifier = lifeCycleNotifier;
     lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
-  InstallApkClient() {
+  ApkInstaller() {
     this(FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 

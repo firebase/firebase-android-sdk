@@ -42,7 +42,10 @@ import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
-class TesterSignInClient {
+/**
+ * Class that handles signing in the tester
+ */
+class TesterSignInHandler {
   private static final String TAG = "TesterSignIn:";
   private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
@@ -59,7 +62,7 @@ class TesterSignInClient {
 
   private AlertDialog alertDialog;
 
-  TesterSignInClient(
+  TesterSignInHandler(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage) {
@@ -71,7 +74,7 @@ class TesterSignInClient {
   }
 
   @VisibleForTesting
-  TesterSignInClient(
+  TesterSignInHandler(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage,

@@ -37,9 +37,9 @@ import java.util.jar.JarFile;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Client class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}.
+ * Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}.
  */
-class UpdateApkClient {
+class ApkUpdater {
   private static final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "UpdateApkClient:";
   private static final String REQUEST_METHOD = "GET";
@@ -48,27 +48,27 @@ class UpdateApkClient {
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor downloadExecutor;
   private final FirebaseApp firebaseApp;
-  private final InstallApkClient installApkClient;
+  private final ApkInstaller apkInstaller;
 
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
 
   private final Object updateTaskLock = new Object();
 
-  public UpdateApkClient(
-      @NonNull FirebaseApp firebaseApp, @NonNull InstallApkClient installApkClient) {
-    this(Executors.newSingleThreadExecutor(), firebaseApp, installApkClient);
+  public ApkUpdater(
+      @NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
+    this(Executors.newSingleThreadExecutor(), firebaseApp, apkInstaller);
   }
 
-  public UpdateApkClient(
+  public ApkUpdater(
       @NonNull Executor downloadExecutor,
       @NonNull FirebaseApp firebaseApp,
-      @NonNull InstallApkClient installApkClient) {
+      @NonNull ApkInstaller apkInstaller) {
     this.appDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
     this.downloadExecutor = downloadExecutor;
     this.firebaseApp = firebaseApp;
-    this.installApkClient = installApkClient;
+    this.apkInstaller = apkInstaller;
   }
 
   UpdateTaskImpl updateApk(
@@ -87,7 +87,7 @@ class UpdateApkClient {
         .addOnSuccessListener(
             downloadExecutor,
             file ->
-                installApkClient
+                apkInstaller
                     .installApk(file.getPath())
                     .addOnFailureListener(
                         downloadExecutor,

@@ -33,9 +33,9 @@ import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
- * Client class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}.
+ * Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}.
  */
-class UpdateAabClient {
+class AabUpdater {
   private static final String TAG = "UpdateAabClient:";
 
   private final Executor updateExecutor;
@@ -49,13 +49,13 @@ class UpdateAabClient {
 
   private final Object updateAabLock = new Object();
 
-  UpdateAabClient() {
+  AabUpdater() {
     this(
         Executors.newSingleThreadExecutor(),
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  UpdateAabClient(
+  AabUpdater(
       @NonNull Executor updateExecutor,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.updateExecutor = updateExecutor;
