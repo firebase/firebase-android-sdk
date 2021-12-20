@@ -74,7 +74,7 @@ public class UpdateAabClientTest {
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    this.updateAabClient = Mockito.spy(new UpdateAabClient(testExecutor, mockLifecycleNotifier));
+    this.updateAabClient = Mockito.spy(new UpdateAabClient(mockLifecycleNotifier));
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 

@@ -28,7 +28,6 @@ import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import java.io.IOException;
 import java.net.URL;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -38,7 +37,6 @@ import javax.net.ssl.HttpsURLConnection;
 class UpdateAabClient {
   private static final String TAG = "UpdateAabClient:";
 
-  private final Executor updateExecutor;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   @GuardedBy("updateAabLock")
@@ -50,15 +48,10 @@ class UpdateAabClient {
   private final Object updateAabLock = new Object();
 
   UpdateAabClient() {
-    this(
-        Executors.newSingleThreadExecutor(),
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
+    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  UpdateAabClient(
-      @NonNull Executor updateExecutor,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
-    this.updateExecutor = updateExecutor;
+  UpdateAabClient(@NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
   }
@@ -114,49 +107,50 @@ class UpdateAabClient {
     }
 
     // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
-    updateExecutor.execute(
-        () -> {
-          HttpsURLConnection connection;
-          String redirect;
-          try {
-            connection = openHttpsUrlConnection(downloadUrl);
+    Executors.newSingleThreadExecutor()
+        .execute( // Execute the network calls on a background thread
+            () -> {
+              HttpsURLConnection connection;
+              String redirect;
+              try {
+                connection = openHttpsUrlConnection(downloadUrl);
 
-            // To get url to play without redirect we do this connection
-            connection.setInstanceFollowRedirects(false);
-            redirect = connection.getHeaderField("Location");
-            connection.disconnect();
-            connection.getInputStream().close();
-          } catch (FirebaseAppDistributionException | IOException e) {
-            setUpdateTaskCompletionErrorWithDefault(
-                e,
-                new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.NETWORK_ERROR,
-                    FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-            return;
-          }
+                // To get url to play without redirect we do this connection
+                connection.setInstanceFollowRedirects(false);
+                redirect = connection.getHeaderField("Location");
+                connection.disconnect();
+                connection.getInputStream().close();
+              } catch (FirebaseAppDistributionException | IOException e) {
+                setUpdateTaskCompletionErrorWithDefault(
+                    e,
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.NETWORK_ERROR,
+                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+                return;
+              }
 
-          if (!redirect.isEmpty()) {
-            Intent updateIntent = new Intent(Intent.ACTION_VIEW);
-            updateIntent.setData(Uri.parse(redirect));
-            updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            LogWrapper.getInstance().v(TAG + "Redirecting to play");
+              if (!redirect.isEmpty()) {
+                Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+                updateIntent.setData(Uri.parse(redirect));
+                updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
-            synchronized (updateAabLock) {
-              lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
-              cachedUpdateTask.updateProgress(
-                  UpdateProgress.builder()
-                      .setApkBytesDownloaded(-1)
-                      .setApkFileTotalBytes(-1)
-                      .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-                      .build());
-            }
-          } else {
-            setUpdateTaskCompletionError(
-                new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.NETWORK_ERROR,
-                    FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-          }
-        });
+                synchronized (updateAabLock) {
+                  lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
+                  cachedUpdateTask.updateProgress(
+                      UpdateProgress.builder()
+                          .setApkBytesDownloaded(-1)
+                          .setApkFileTotalBytes(-1)
+                          .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+                          .build());
+                }
+              } else {
+                setUpdateTaskCompletionError(
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.NETWORK_ERROR,
+                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+              }
+            });
   }
 
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
