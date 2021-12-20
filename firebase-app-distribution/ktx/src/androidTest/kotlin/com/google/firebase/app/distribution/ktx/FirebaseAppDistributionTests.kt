@@ -70,12 +70,6 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     fun appDistribution_default_callsDefaultGetInstance() {
         Truth.assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
     }
-
-    @Test
-    fun appDistribution_withFirebaseApp_callsGetInstanceWithApp() {
-        val app = Firebase.app(EXISTING_APP)
-        Truth.assertThat(Firebase.appDistribution(app)).isSameInstanceAs(FirebaseAppDistribution.getInstance(app))
-    }
 }
 
 internal const val LIBRARY_NAME: String = "fire-app-distribution-ktx"
