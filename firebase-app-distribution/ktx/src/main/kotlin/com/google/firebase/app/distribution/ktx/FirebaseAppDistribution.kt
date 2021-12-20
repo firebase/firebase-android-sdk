@@ -27,10 +27,6 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 val Firebase.appDistribution: FirebaseAppDistribution
     get() = FirebaseAppDistribution.getInstance()
 
-/** Returns the [FirebaseAppDistribution] instance of a given [FirebaseApp]. */
-fun Firebase.appDistribution(app: FirebaseApp): FirebaseAppDistribution =
-        FirebaseAppDistribution.getInstance(app)
-
 internal const val LIBRARY_NAME: String = "fire-app-distribution-ktx"
 
 /** @suppress */

@@ -17,7 +17,6 @@ package com.google.firebase.app.distribution {
   public class FirebaseAppDistribution {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.app.distribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution getInstance();
-    method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution getInstance(@NonNull com.google.firebase.FirebaseApp);
     method public boolean isTesterSignedIn();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
