@@ -36,8 +36,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 /**
- * Class that handles fetching the latest release from App Distribution and determining if it is
- * a new release.
+ * Class that handles fetching the latest release from App Distribution and determining if it is a
+ * new release.
  */
 class CheckForNewReleaseHandler {
   private static final String TAG = "CheckForNewReleaseClient:";

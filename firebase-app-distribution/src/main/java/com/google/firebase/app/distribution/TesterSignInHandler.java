@@ -42,9 +42,7 @@ import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
-/**
- * Class that handles signing in the tester
- */
+/** Class that handles signing in the tester */
 class TesterSignInHandler {
   private static final String TAG = "TesterSignIn:";
   private static final String SIGNIN_REDIRECT_URL =

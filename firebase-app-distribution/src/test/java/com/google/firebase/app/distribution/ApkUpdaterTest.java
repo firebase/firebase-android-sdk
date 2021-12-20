@@ -94,8 +94,7 @@ public class ApkUpdaterTest {
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
-    this.apkUpdater =
-        Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
+    this.apkUpdater = Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
     doReturn(mockHttpsUrlConnection).when(apkUpdater).openHttpsUrlConnection(TEST_URL);
   }
 

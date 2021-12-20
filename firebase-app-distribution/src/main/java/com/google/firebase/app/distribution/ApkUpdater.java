@@ -36,9 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import javax.net.ssl.HttpsURLConnection;
 
-/**
- * Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}.
- */
+/** Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}. */
 class ApkUpdater {
   private static final int UPDATE_INTERVAL_MS = 250;
   private static final String TAG = "UpdateApkClient:";
@@ -55,8 +53,7 @@ class ApkUpdater {
 
   private final Object updateTaskLock = new Object();
 
-  public ApkUpdater(
-      @NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
+  public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
     this(Executors.newSingleThreadExecutor(), firebaseApp, apkInstaller);
   }
 

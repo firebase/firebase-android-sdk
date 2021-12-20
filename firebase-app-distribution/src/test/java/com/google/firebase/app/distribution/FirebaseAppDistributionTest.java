@@ -129,8 +129,7 @@ public class FirebaseAppDistributionTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    this.mockApkUpdater =
-        Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
+    this.mockApkUpdater = Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
 
     firebaseAppDistribution =
         spy(
@@ -403,7 +402,8 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockCheckForNewReleaseHandler.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    when(mockCheckForNewReleaseHandler.checkForNewRelease())
+        .thenReturn(Tasks.forResult(newRelease));
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
     when(mockAabUpdater.updateAab(newRelease)).thenReturn(mockTask);
     mockTask.updateProgress(
@@ -430,7 +430,8 @@ public class FirebaseAppDistributionTest {
   @Test
   public void taskCancelledOnScreenRotation() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockCheckForNewReleaseHandler.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    when(mockCheckForNewReleaseHandler.checkForNewRelease())
+        .thenReturn(Tasks.forResult(newRelease));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 

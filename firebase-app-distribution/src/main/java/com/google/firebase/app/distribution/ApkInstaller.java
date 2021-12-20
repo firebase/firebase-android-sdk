@@ -25,9 +25,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 
-/**
- * Class that handles installing APKs in {@link FirebaseAppDistribution}.
- */
+/** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
   private static final String TAG = "ApkInstallClient:";
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;

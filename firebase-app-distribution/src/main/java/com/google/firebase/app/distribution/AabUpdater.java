@@ -32,9 +32,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
-/**
- * Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}.
- */
+/** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
 class AabUpdater {
   private static final String TAG = "UpdateAabClient:";
 
