@@ -26,7 +26,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -113,19 +112,7 @@ public class FirebaseAppDistribution {
   /** @return a FirebaseAppDistribution instance */
   @NonNull
   public static FirebaseAppDistribution getInstance() {
-    return getInstance(FirebaseApp.getInstance());
-  }
-
-  /**
-   * Returns the {@link FirebaseAppDistribution} initialized with a custom {@link FirebaseApp}.
-   *
-   * @param app a custom {@link FirebaseApp}
-   * @return a {@link FirebaseAppDistribution} instance
-   */
-  @NonNull
-  public static FirebaseAppDistribution getInstance(@NonNull FirebaseApp app) {
-    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-    return app.get(FirebaseAppDistribution.class);
+    return FirebaseApp.getInstance().get(FirebaseAppDistribution.class);
   }
 
   /**

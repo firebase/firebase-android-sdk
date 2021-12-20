@@ -3,7 +3,6 @@ package com.google.firebase.app.distribution.ktx {
 
   public final class FirebaseAppDistributionKt {
     ctor public FirebaseAppDistributionKt();
-    method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution appDistribution(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
     method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution getAppDistribution(@NonNull com.google.firebase.ktx.Firebase);
   }
 
