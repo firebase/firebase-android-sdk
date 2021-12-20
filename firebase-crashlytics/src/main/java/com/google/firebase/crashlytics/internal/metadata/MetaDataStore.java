@@ -54,9 +54,9 @@ class MetaDataStore {
     final File f = getUserDataFileForSession(sessionId);
     Writer writer = null;
     try {
-      final String userDataString = userDataToJson(userId);
+      final String userIdJson = userIdToJson(userId);
       writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), UTF_8));
-      writer.write(userDataString);
+      writer.write(userIdJson);
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().e("Error serializing user metadata.", e);
@@ -68,6 +68,9 @@ class MetaDataStore {
   @Nullable
   public String readUserId(String sessionId) {
     final File f = getUserDataFileForSession(sessionId);
+    if (!f.exists()) {
+      return null;
+    }
 
     InputStream is = null;
     try {
@@ -145,7 +148,7 @@ class MetaDataStore {
     return valueOrNull(dataObj, KEY_USER_ID);
   }
 
-  private static String userDataToJson(String userId) throws JSONException {
+  private static String userIdToJson(String userId) throws JSONException {
     return new JSONObject() {
       {
         put(KEY_USER_ID, userId);
