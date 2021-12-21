@@ -160,7 +160,15 @@ class NewReleaseFetcher {
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
     return Long.parseLong(newRelease.getBuildVersion())
-        > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
+            > getInstalledAppVersionCode(firebaseApp.getApplicationContext())
+        || !doesAppVersionNameMatch(newRelease);
+  }
+
+  private boolean doesAppVersionNameMatch(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
+    return newRelease
+        .getDisplayVersion()
+        .equals(getInstalledAppVersionName(firebaseApp.getApplicationContext()));
   }
 
   @VisibleForTesting
@@ -193,6 +201,21 @@ class NewReleaseFetcher {
           e);
     }
     return PackageInfoCompat.getLongVersionCode(pInfo);
+  }
+
+  private String getInstalledAppVersionName(Context context)
+      throws FirebaseAppDistributionException {
+    PackageInfo pInfo;
+    try {
+      pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+    } catch (PackageManager.NameNotFoundException e) {
+      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
+      throw new FirebaseAppDistributionException(
+          Constants.ErrorMessages.UNKNOWN_ERROR,
+          FirebaseAppDistributionException.Status.UNKNOWN,
+          e);
+    }
+    return pInfo.versionName;
   }
 
   @VisibleForTesting
