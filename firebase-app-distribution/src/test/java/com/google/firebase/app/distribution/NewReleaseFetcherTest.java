@@ -118,6 +118,7 @@ public class NewReleaseFetcherTest {
             .setApplicationInfo(applicationInfo)
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
+    packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
     newReleaseFetcher =
