@@ -43,7 +43,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
 /** Class that handles signing in the tester */
-class TesterSignInHandler {
+class TesterSignInManager {
   private static final String TAG = "TesterSignIn:";
   private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
@@ -60,7 +60,7 @@ class TesterSignInHandler {
 
   private AlertDialog alertDialog;
 
-  TesterSignInHandler(
+  TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage) {
@@ -72,7 +72,7 @@ class TesterSignInHandler {
   }
 
   @VisibleForTesting
-  TesterSignInHandler(
+  TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage,

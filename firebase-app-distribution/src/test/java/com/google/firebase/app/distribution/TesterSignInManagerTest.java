@@ -57,7 +57,7 @@ import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
-public class TesterSignInHandlerTest {
+public class TesterSignInManagerTest {
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
@@ -74,7 +74,7 @@ public class TesterSignInHandlerTest {
               + "&packageName=com.google.firebase.app.distribution.test",
           TEST_APP_ID_1, TEST_FID_1);
 
-  private TesterSignInHandler testerSignInHandler;
+  private TesterSignInManager testerSignInManager;
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
@@ -127,8 +127,8 @@ public class TesterSignInHandlerTest {
     shadowActivity = shadowOf(activity);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
 
-    testerSignInHandler =
-        new TesterSignInHandler(
+    testerSignInManager =
+        new TesterSignInManager(
             firebaseApp, mockFirebaseInstallations, mockSignInStorage, mockLifecycleNotifier);
   }
 
@@ -141,7 +141,7 @@ public class TesterSignInHandlerTest {
     customTabIntent.setPackage("com.android.chrome");
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
-    testerSignInHandler.signInTester();
+    testerSignInManager.signInTester();
 
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
@@ -158,7 +158,7 @@ public class TesterSignInHandlerTest {
     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(TEST_URL));
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
-    testerSignInHandler.signInTester();
+    testerSignInManager.signInTester();
 
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
@@ -169,8 +169,8 @@ public class TesterSignInHandlerTest {
 
   @Test
   public void signInTester_whenSignInCalledMultipleTimes_returnsSameTask() {
-    Task<Void> signInTask1 = testerSignInHandler.signInTester();
-    Task<Void> signInTask2 = testerSignInHandler.signInTester();
+    Task<Void> signInTask1 = testerSignInManager.signInTester();
+    Task<Void> signInTask2 = testerSignInManager.signInTester();
 
     assertEquals(signInTask1, signInTask2);
   }
@@ -179,19 +179,19 @@ public class TesterSignInHandlerTest {
   public void signInTester_whenTesterIsSignedIn_doesNotOpenDialog() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
-    testerSignInHandler.signInTester();
+    testerSignInManager.signInTester();
 
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }
 
   @Test
   public void signInTester_whenReturnFromSignIn_taskSucceeds() {
-    Task signInTask = testerSignInHandler.signInTester();
+    Task signInTask = testerSignInManager.signInTester();
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     // Simulate re-entering app
-    testerSignInHandler.onActivityCreated(mockSignInResultActivity);
+    testerSignInManager.onActivityCreated(mockSignInResultActivity);
 
     assertTrue(signInTask.isSuccessful());
     verify(mockSignInStorage).setSignInStatus(true);
@@ -199,10 +199,10 @@ public class TesterSignInHandlerTest {
 
   @Test
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
-    Task signInTask = testerSignInHandler.signInTester();
+    Task signInTask = testerSignInManager.signInTester();
 
     // Simulate re-entering app
-    testerSignInHandler.onActivityStarted(activity);
+    testerSignInManager.onActivityStarted(activity);
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();
@@ -213,7 +213,7 @@ public class TesterSignInHandlerTest {
 
   @Test
   public void signInTester_whenDialogDismissed_taskFails() {
-    Task signInTask = testerSignInHandler.signInTester();
+    Task signInTask = testerSignInManager.signInTester();
 
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
@@ -227,7 +227,7 @@ public class TesterSignInHandlerTest {
 
   @Test
   public void signInTester_whenDialogCanceled_taskFails() {
-    Task signInTask = testerSignInHandler.signInTester();
+    Task signInTask = testerSignInManager.signInTester();
 
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.onBackPressed(); // cancel dialog

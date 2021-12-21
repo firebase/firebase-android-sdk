@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
  * Class that handles fetching the latest release from App Distribution and determining if it is a
  * new release.
  */
-class CheckForNewReleaseHandler {
+class NewReleaseFetcher {
   private static final String TAG = "CheckForNewReleaseClient:";
 
   private final FirebaseApp firebaseApp;
@@ -51,7 +51,7 @@ class CheckForNewReleaseHandler {
   Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
   private final Executor taskExecutor; // Executor to run task listeners on a background thread
 
-  CheckForNewReleaseHandler(
+  NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
@@ -61,7 +61,7 @@ class CheckForNewReleaseHandler {
     this.taskExecutor = Executors.newSingleThreadExecutor();
   }
 
-  CheckForNewReleaseHandler(
+  NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,

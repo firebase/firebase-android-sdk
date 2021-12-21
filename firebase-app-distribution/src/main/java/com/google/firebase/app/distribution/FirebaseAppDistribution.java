@@ -40,8 +40,8 @@ public class FirebaseAppDistribution {
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   private final FirebaseApp firebaseApp;
-  private final TesterSignInHandler testerSignInHandler;
-  private final CheckForNewReleaseHandler checkForNewReleaseHandler;
+  private final TesterSignInManager testerSignInManager;
+  private final NewReleaseFetcher newReleaseFetcher;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final ApkUpdater apkUpdater;
   private final AabUpdater aabUpdater;
@@ -65,15 +65,15 @@ public class FirebaseAppDistribution {
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull TesterSignInHandler testerSignInHandler,
-      @NonNull CheckForNewReleaseHandler checkForNewReleaseHandler,
+      @NonNull TesterSignInManager testerSignInManager,
+      @NonNull NewReleaseFetcher newReleaseFetcher,
       @NonNull ApkUpdater apkUpdater,
       @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
-    this.testerSignInHandler = testerSignInHandler;
-    this.checkForNewReleaseHandler = checkForNewReleaseHandler;
+    this.testerSignInManager = testerSignInManager;
+    this.newReleaseFetcher = newReleaseFetcher;
     this.apkUpdater = apkUpdater;
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
@@ -89,8 +89,8 @@ public class FirebaseAppDistribution {
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
         firebaseApp,
-        new TesterSignInHandler(firebaseApp, firebaseInstallationsApi, signInStorage),
-        new CheckForNewReleaseHandler(
+        new TesterSignInManager(firebaseApp, firebaseInstallationsApi, signInStorage),
+        new NewReleaseFetcher(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
         new ApkUpdater(firebaseApp, new ApkInstaller()),
         new AabUpdater(),
@@ -170,7 +170,7 @@ public class FirebaseAppDistribution {
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
-    return this.testerSignInHandler.signInTester();
+    return this.testerSignInManager.signInTester();
   }
 
   /**
@@ -186,7 +186,7 @@ public class FirebaseAppDistribution {
     }
     cachedCheckForNewReleaseTask =
         signInTester()
-            .onSuccessTask(unused -> this.checkForNewReleaseHandler.checkForNewRelease())
+            .onSuccessTask(unused -> this.newReleaseFetcher.checkForNewRelease())
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
                   setCachedNewRelease(appDistributionReleaseInternal);
