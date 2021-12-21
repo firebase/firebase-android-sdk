@@ -44,7 +44,7 @@ class ApkUpdater {
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
 
   private TaskCompletionSource<File> downloadTaskCompletionSource;
-  private final Executor downloadExecutor;
+  private final Executor taskExecutor; // Executor to run task listeners on a background thread
   private final FirebaseApp firebaseApp;
   private final ApkInstaller apkInstaller;
 
@@ -58,12 +58,12 @@ class ApkUpdater {
   }
 
   public ApkUpdater(
-      @NonNull Executor downloadExecutor,
+      @NonNull Executor taskExecutor,
       @NonNull FirebaseApp firebaseApp,
       @NonNull ApkInstaller apkInstaller) {
     this.appDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp);
-    this.downloadExecutor = downloadExecutor;
+    this.taskExecutor = taskExecutor;
     this.firebaseApp = firebaseApp;
     this.apkInstaller = apkInstaller;
   }
@@ -82,12 +82,12 @@ class ApkUpdater {
         // Using onSuccess task to ensure that all install errors get cascaded to the Failure
         // listener down below
         .addOnSuccessListener(
-            downloadExecutor,
+            taskExecutor,
             file ->
                 apkInstaller
                     .installApk(file.getPath())
                     .addOnFailureListener(
-                        downloadExecutor,
+                        taskExecutor,
                         e -> {
                           LogWrapper.getInstance().e(TAG + "Newest release failed to install.", e);
                           postUpdateProgress(
@@ -102,14 +102,14 @@ class ApkUpdater {
                                   FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
                         })
                     .addOnSuccessListener(
-                        downloadExecutor,
+                        taskExecutor,
                         unused -> {
                           synchronized (updateTaskLock) {
                             safeSetTaskResult(cachedUpdateTask);
                           }
                         }))
         .addOnFailureListener(
-            downloadExecutor,
+            taskExecutor,
             e -> {
               LogWrapper.getInstance()
                   .e(TAG + "Download or Installation failure for newest release.", e);
@@ -142,7 +142,7 @@ class ApkUpdater {
 
   private void makeApkDownloadRequest(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showDownloadNotificationManager) {
-    downloadExecutor.execute(
+    taskExecutor.execute(
         () -> {
           try {
             HttpsURLConnection connection = openHttpsUrlConnection(newRelease.getDownloadUrl());
@@ -163,7 +163,6 @@ class ApkUpdater {
                   connection.getInputStream(),
                   responseLength,
                   fileName,
-                  newRelease,
                   showDownloadNotificationManager);
             }
           } catch (IOException | FirebaseAppDistributionException e) {
@@ -177,11 +176,7 @@ class ApkUpdater {
   }
 
   private void downloadToDisk(
-      InputStream input,
-      long totalSize,
-      String fileName,
-      AppDistributionReleaseInternal newRelease,
-      boolean showDownloadNotificationManager) {
+      InputStream input, long totalSize, String fileName, boolean showDownloadNotificationManager) {
 
     File apkFile = getApkFileForApp(fileName);
     apkFile.delete();

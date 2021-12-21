@@ -49,7 +49,7 @@ class CheckForNewReleaseHandler {
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
 
   Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
-  private final Executor checkForNewReleaseExecutor;
+  private final Executor taskExecutor; // Executor to run task listeners on a background thread
 
   CheckForNewReleaseHandler(
       @NonNull FirebaseApp firebaseApp,
@@ -58,7 +58,7 @@ class CheckForNewReleaseHandler {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.checkForNewReleaseExecutor = Executors.newSingleThreadExecutor();
+    this.taskExecutor = Executors.newSingleThreadExecutor();
   }
 
   CheckForNewReleaseHandler(
@@ -69,7 +69,7 @@ class CheckForNewReleaseHandler {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.checkForNewReleaseExecutor = executor;
+    this.taskExecutor = executor;
   }
 
   @NonNull
@@ -87,7 +87,7 @@ class CheckForNewReleaseHandler {
     this.cachedCheckForNewRelease =
         Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
             .onSuccessTask(
-                checkForNewReleaseExecutor,
+                taskExecutor,
                 tasks -> {
                   String fid = installationIdTask.getResult();
                   InstallationTokenResult installationTokenResult =
@@ -105,7 +105,7 @@ class CheckForNewReleaseHandler {
                   }
                 })
             .continueWithTask(
-                checkForNewReleaseExecutor,
+                taskExecutor,
                 task ->
                     TaskUtils.handleTaskFailure(
                         task,
