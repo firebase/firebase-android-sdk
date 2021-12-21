@@ -166,8 +166,6 @@ public class TesterSignInManagerTest {
     assertEquals(signInTask1, signInTask2);
   }
 
-
-
   @Test
   public void signInTester_whenReturnFromSignIn_taskSucceeds() {
     Task signInTask = testerSignInManager.signInTester();

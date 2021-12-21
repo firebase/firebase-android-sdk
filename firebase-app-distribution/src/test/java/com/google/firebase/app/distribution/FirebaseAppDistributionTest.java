@@ -408,7 +408,7 @@ public class FirebaseAppDistributionTest {
                     Constants.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
-   firebaseAppDistribution.updateIfNewReleaseAvailable();
+    firebaseAppDistribution.updateIfNewReleaseAvailable();
 
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }

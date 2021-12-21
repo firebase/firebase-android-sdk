@@ -136,9 +136,6 @@ class TesterSignInManager {
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
-      // alertDialog = getSignInAlertDialog(currentActivity);
-      // alertDialog.show();
-
       firebaseInstallationsApi
           .getId()
           .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
