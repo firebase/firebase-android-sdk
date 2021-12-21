@@ -31,10 +31,8 @@ import java.net.URL;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
-/**
- * Client class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}.
- */
-class UpdateAabClient {
+/** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
+class AabUpdater {
   private static final String TAG = "UpdateAabClient:";
 
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
@@ -47,11 +45,11 @@ class UpdateAabClient {
 
   private final Object updateAabLock = new Object();
 
-  UpdateAabClient() {
+  AabUpdater() {
     this(FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  UpdateAabClient(@NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+  AabUpdater(@NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
   }

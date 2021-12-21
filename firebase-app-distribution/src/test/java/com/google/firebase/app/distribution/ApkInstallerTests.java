@@ -34,10 +34,10 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
-public class InstallApkClientTests {
+public class ApkInstallerTests {
   private TestActivity activity;
   private ShadowActivity shadowActivity;
-  private InstallApkClient installApkClient;
+  private ApkInstaller apkInstaller;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
   @Before
@@ -46,14 +46,14 @@ public class InstallApkClientTests {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    installApkClient = new InstallApkClient(mockLifecycleNotifier);
+    apkInstaller = new ApkInstaller(mockLifecycleNotifier);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @Test
   public void installApk_currentActivityNotNull_InstallIntentOnCurrentActivity() {
     String path = "path";
-    Task<Void> installTask = installApkClient.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertFalse(installTask.isComplete());
@@ -67,7 +67,7 @@ public class InstallApkClientTests {
   public void installApk_currentActivityNull_InstallNotPrompted() {
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
     String path = "path";
-    Task<Void> installTask = installApkClient.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertNull(installIntent);
@@ -77,10 +77,10 @@ public class InstallApkClientTests {
   @Test
   public void
       setCurrentActivity_appInForegroundAfterAnInstallAttempt_installIntentOnCurrentActivity() {
-    installApkClient.onActivityStarted(null);
+    apkInstaller.onActivityStarted(null);
     String path = "path123";
-    Task<Void> installTask = installApkClient.installApk(path);
-    installApkClient.onActivityStarted(activity);
+    Task<Void> installTask = apkInstaller.installApk(path);
+    apkInstaller.onActivityStarted(activity);
 
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
@@ -93,8 +93,8 @@ public class InstallApkClientTests {
 
   @Test
   public void installActivityDestroyed_setsInstallError() {
-    Task<Void> installTask = installApkClient.installApk("path");
-    installApkClient.onActivityDestroyed(new InstallActivity());
+    Task<Void> installTask = apkInstaller.installApk("path");
+    apkInstaller.onActivityDestroyed(new InstallActivity());
     Exception ex = installTask.getException();
 
     assert ex instanceof FirebaseAppDistributionException;
