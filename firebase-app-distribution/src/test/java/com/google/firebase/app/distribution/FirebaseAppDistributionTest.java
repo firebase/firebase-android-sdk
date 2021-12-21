@@ -33,6 +33,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
@@ -266,7 +267,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -281,7 +281,6 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
 
@@ -306,6 +305,9 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
+    AlertDialog signInDialog = verifySignInAlertDialog();
+    signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);
@@ -326,6 +328,9 @@ public class FirebaseAppDistributionTest {
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(progressEvents::add);
+
+    AlertDialog signInDialog = verifySignInAlertDialog();
+    signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
@@ -391,6 +396,59 @@ public class FirebaseAppDistributionTest {
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertEquals(Constants.ErrorMessages.NETWORK_ERROR, e.getMessage());
     assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, e.getErrorCode());
+  }
+
+  @Test
+  public void updateToNewRelease_whenTesterIsSignedIn_doesNotOpenDialog() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    when(mockNewReleaseFetcher.checkForNewRelease())
+        .thenReturn(
+            Tasks.forException(
+                new FirebaseAppDistributionException(
+                    Constants.ErrorMessages.NETWORK_ERROR,
+                    FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
+
+   firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    assertNull(ShadowAlertDialog.getLatestAlertDialog());
+  }
+
+  @Test
+  public void signInTester_whenDialogDismissed_taskFails() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    Task updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+
+    assertFalse(updateTask.isSuccessful());
+    Exception e = updateTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+  }
+
+  @Test
+  public void updateToNewRelease_whenSignInDialogCanceled_taskFails() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    Task signInTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    AlertDialog dialog = verifySignInAlertDialog();
+    dialog.onBackPressed(); // cancel dialog
+
+    assertFalse(signInTask.isSuccessful());
+    Exception e = signInTask.getException();
+    assertTrue(e instanceof FirebaseAppDistributionException);
+    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+  }
+
+  private AlertDialog verifySignInAlertDialog() {
+    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
+    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
+    assertTrue(dialog.isShowing());
+
+    return dialog;
   }
 
   @Test

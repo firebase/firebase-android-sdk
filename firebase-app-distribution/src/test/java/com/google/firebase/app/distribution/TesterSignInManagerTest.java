@@ -18,14 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
@@ -53,7 +51,6 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
-import org.robolectric.shadows.ShadowAlertDialog;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
@@ -133,7 +130,7 @@ public class TesterSignInManagerTest {
   }
 
   @Test
-  public void signInTester_whenDialogConfirmedAndChromeAvailable_opensCustomTab() {
+  public void signInTester_whenChromeAvailable_opensCustomTab() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
@@ -143,15 +140,12 @@ public class TesterSignInManagerTest {
 
     testerSignInManager.signInTester();
 
-    AlertDialog dialog = verifySignInAlertDialog();
-    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
-
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
   @Test
-  public void signInTester_whenDialogConfirmedAndChromeNotAvailable_opensBrowserIntent() {
+  public void signInTester_whenChromeNotAvailable_opensBrowserIntent() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
@@ -159,9 +153,6 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
     testerSignInManager.signInTester();
-
-    AlertDialog dialog = verifySignInAlertDialog();
-    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -175,20 +166,11 @@ public class TesterSignInManagerTest {
     assertEquals(signInTask1, signInTask2);
   }
 
-  @Test
-  public void signInTester_whenTesterIsSignedIn_doesNotOpenDialog() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
-    testerSignInManager.signInTester();
-
-    assertNull(ShadowAlertDialog.getLatestAlertDialog());
-  }
 
   @Test
   public void signInTester_whenReturnFromSignIn_taskSucceeds() {
     Task signInTask = testerSignInManager.signInTester();
-    AlertDialog dialog = verifySignInAlertDialog();
-    dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
     // Simulate re-entering app
     testerSignInManager.onActivityCreated(mockSignInResultActivity);
@@ -209,41 +191,5 @@ public class TesterSignInManagerTest {
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
     assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
-  }
-
-  @Test
-  public void signInTester_whenDialogDismissed_taskFails() {
-    Task signInTask = testerSignInManager.signInTester();
-
-    AlertDialog dialog = verifySignInAlertDialog();
-    dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
-
-    assertFalse(signInTask.isSuccessful());
-    Exception e = signInTask.getException();
-    assertTrue(e instanceof FirebaseAppDistributionException);
-    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
-  }
-
-  @Test
-  public void signInTester_whenDialogCanceled_taskFails() {
-    Task signInTask = testerSignInManager.signInTester();
-
-    AlertDialog dialog = verifySignInAlertDialog();
-    dialog.onBackPressed(); // cancel dialog
-
-    assertFalse(signInTask.isSuccessful());
-    Exception e = signInTask.getException();
-    assertTrue(e instanceof FirebaseAppDistributionException);
-    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
-  }
-
-  private AlertDialog verifySignInAlertDialog() {
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-    assertTrue(dialog.isShowing());
-
-    return dialog;
   }
 }

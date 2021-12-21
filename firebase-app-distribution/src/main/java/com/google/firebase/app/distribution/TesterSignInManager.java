@@ -20,7 +20,6 @@ import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskExceptio
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
@@ -58,8 +57,6 @@ class TesterSignInManager {
   @GuardedBy("signInTaskLock")
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
 
-  private AlertDialog alertDialog;
-
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
@@ -84,7 +81,6 @@ class TesterSignInManager {
 
     lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
-    lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
   @VisibleForTesting
@@ -114,10 +110,6 @@ class TesterSignInManager {
     }
   }
 
-  private void onActivityDestroyed(Activity activity) {
-    this.dismissAlertDialog();
-  }
-
   @NonNull
   public Task<Void> signInTester() {
 
@@ -132,6 +124,7 @@ class TesterSignInManager {
             .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
         return signInTaskCompletionSource.getTask();
       }
+
       Activity currentActivity = lifecycleNotifier.getCurrentActivity();
       if (currentActivity == null) {
         LogWrapper.getInstance().e(TAG + "No foreground activity found.");
@@ -143,8 +136,19 @@ class TesterSignInManager {
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
-      alertDialog = getSignInAlertDialog(currentActivity);
-      alertDialog.show();
+      // alertDialog = getSignInAlertDialog(currentActivity);
+      // alertDialog.show();
+
+      firebaseInstallationsApi
+          .getId()
+          .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
+          .addOnFailureListener(
+              e -> {
+                LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
+                setSignInTaskCompletionError(
+                    new FirebaseAppDistributionException(
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
+              });
 
       return signInTaskCompletionSource.getTask();
     }
@@ -157,51 +161,10 @@ class TesterSignInManager {
     }
   }
 
-  private AlertDialog getSignInAlertDialog(Activity currentActivity) {
-    alertDialog = new AlertDialog.Builder(currentActivity).create();
-    Context context = firebaseApp.getApplicationContext();
-    alertDialog.setTitle(context.getString(R.string.signin_dialog_title));
-    alertDialog.setMessage(context.getString(R.string.singin_dialog_message));
-    alertDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.singin_yes_button),
-        (dialogInterface, i) -> {
-          firebaseInstallationsApi
-              .getId()
-              .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
-              .addOnFailureListener(
-                  e -> {
-                    LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
-                    setSignInTaskCompletionError(
-                        new FirebaseAppDistributionException(
-                            Constants.ErrorMessages.AUTHENTICATION_ERROR,
-                            AUTHENTICATION_FAILURE,
-                            e));
-                  });
-        });
-
-    alertDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.singin_no_button),
-        (dialogInterface, i) -> dismissSignInDialogCallback());
-
-    alertDialog.setOnCancelListener(dialogInterface -> dismissSignInDialogCallback());
-
-    return alertDialog;
-  }
-
-  private void dismissSignInDialogCallback() {
-    LogWrapper.getInstance().v("Sign in has been canceled.");
-    setSignInTaskCompletionError(
-        new FirebaseAppDistributionException(
-            ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-  }
-
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
     synchronized (signInTaskLock) {
       safeSetTaskException(signInTaskCompletionSource, e);
     }
-    dismissAlertDialog();
   }
 
   private void setCanceledAuthenticationError() {
@@ -213,13 +176,6 @@ class TesterSignInManager {
   private void setSuccessfulSignInResult() {
     synchronized (signInTaskLock) {
       safeSetTaskResult(signInTaskCompletionSource, null);
-    }
-    dismissAlertDialog();
-  }
-
-  private void dismissAlertDialog() {
-    if (alertDialog != null && alertDialog.isShowing()) {
-      alertDialog.dismiss();
     }
   }
 
