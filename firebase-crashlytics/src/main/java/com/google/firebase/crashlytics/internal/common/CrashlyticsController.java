@@ -70,7 +70,7 @@ class CrashlyticsController {
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
   private final CrashlyticsFileMarker crashMarker;
-  private UserMetadata userMetadata;
+  private final UserMetadata userMetadata;
 
   private final CrashlyticsBackgroundWorker backgroundWorker;
 
@@ -531,7 +531,6 @@ class CrashlyticsController {
         startedAtSeconds,
         StaticSessionData.create(appData, osData, deviceData));
 
-    userMetadata = new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
     logFileManager.setCurrentSession(sessionIdentifier);
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
