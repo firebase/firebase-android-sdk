@@ -175,15 +175,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         sessionId, FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build());
   }
 
-  public void persistUserId(@NonNull String sessionId) {
-    final String userId = reportMetadata.getUserId();
-    if (userId == null) {
-      Logger.getLogger().v("Could not persist user ID; no user ID available");
-      return;
-    }
-    reportPersistence.persistUserIdForSession(userId, sessionId);
-  }
-
   /**
    * Creates finalized reports for all sessions besides the given session. If the given session is
    * null, all sessions will be finalized.

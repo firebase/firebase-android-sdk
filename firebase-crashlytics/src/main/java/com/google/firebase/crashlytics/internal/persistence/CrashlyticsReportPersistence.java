@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
@@ -54,7 +55,6 @@ public class CrashlyticsReportPersistence {
   private static final int MAX_OPEN_SESSIONS = 8;
 
   private static final String REPORT_FILE_NAME = "report";
-  private static final String USER_ID_FILE_NAME = "user-id";
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
@@ -138,15 +138,6 @@ public class CrashlyticsReportPersistence {
       Logger.getLogger().w("Could not persist event for session " + sessionId, e);
     }
     trimEvents(sessionId, maxEventsToKeep);
-  }
-
-  public void persistUserIdForSession(@NonNull String userId, @NonNull String sessionId) {
-    try {
-      writeTextFile(fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME), userId);
-    } catch (IOException e) {
-      // Session directory is not guaranteed to exist
-      Logger.getLogger().w("Could not persist user ID for session " + sessionId, e);
-    }
   }
 
   /**
@@ -321,15 +312,7 @@ public class CrashlyticsReportPersistence {
       return;
     }
 
-    String userId = null;
-    final File userIdFile = fileStore.getSessionFile(sessionId, USER_ID_FILE_NAME);
-    if (userIdFile.isFile()) {
-      try {
-        userId = readTextFile(userIdFile);
-      } catch (IOException e) {
-        Logger.getLogger().w("Could not read user ID file in " + sessionId, e);
-      }
-    }
+    String userId = UserMetadata.readUserId(sessionId, fileStore);
 
     final File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
     synthesizeReportFile(reportFile, events, sessionEndTime, isHighPriorityReport, userId);

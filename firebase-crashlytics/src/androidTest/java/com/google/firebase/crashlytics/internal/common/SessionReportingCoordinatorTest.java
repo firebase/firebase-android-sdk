@@ -413,20 +413,6 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {
-    final String currentSessionId = "currentSessionId";
-    final String userId = "testUserId";
-    final long timestamp = System.currentTimeMillis();
-    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
-    when(reportMetadata.getUserId()).thenReturn(userId);
-
-    reportingCoordinator.onBeginSession(currentSessionId, timestamp);
-    reportingCoordinator.persistUserId(currentSessionId);
-
-    verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
-  }
-
-  @Test
   public void testHasReportsToSend() {
     when(reportPersistence.hasFinalizedReports()).thenReturn(true);
     assertTrue(reportingCoordinator.hasReportsToSend());

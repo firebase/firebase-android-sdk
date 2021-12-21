@@ -69,13 +69,16 @@ class MetaDataStore {
   public String readUserId(String sessionId) {
     final File f = getUserDataFileForSession(sessionId);
     if (!f.exists()) {
+      Logger.getLogger().d("No userId set for session " + sessionId);
       return null;
     }
 
     InputStream is = null;
     try {
       is = new FileInputStream(f);
-      return jsonToUserId(CommonUtils.streamToString(is));
+      String userId = jsonToUserId(CommonUtils.streamToString(is));
+      Logger.getLogger().d("Loaded userId " + userId + " for session " + sessionId);
+      return userId;
     } catch (Exception e) {
       Logger.getLogger().e("Error deserializing user metadata.", e);
     } finally {

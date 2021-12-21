@@ -52,6 +52,11 @@ public class UserMetadata {
   private final SerializeableKeysMap internalKeys = new SerializeableKeysMap(true);
   private final AtomicMarkableReference<String> userId = new AtomicMarkableReference<>(null, false);
 
+  @Nullable
+  public static String readUserId(String sessionId, FileStore fileStore) {
+    return new MetaDataStore(fileStore).readUserId(sessionId);
+  }
+
   public static UserMetadata loadFromExistingSession(
       String sessionId, FileStore fileStore, CrashlyticsBackgroundWorker backgroundWorker) {
     MetaDataStore store = new MetaDataStore(fileStore);

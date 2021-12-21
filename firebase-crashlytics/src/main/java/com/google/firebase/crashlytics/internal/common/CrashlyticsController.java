@@ -684,10 +684,6 @@ class CrashlyticsController {
     return crashHandler != null && crashHandler.isHandlingException();
   }
 
-  FileStore getFileStore() {
-    return fileStore;
-  }
-
   /**
    * Send App Exception events to Firebase Analytics. FA records the event asynchronously, so this
    * method returns a Task in case the caller wants to verify that the event was recorded by FA and
