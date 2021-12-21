@@ -42,7 +42,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
-public class UpdateAabClientTest {
+public class AabUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
   private static final Executor testExecutor = Executors.newSingleThreadExecutor();
@@ -55,7 +55,7 @@ public class UpdateAabClientTest {
           .setBinaryType(BinaryType.AAB)
           .setDownloadUrl("https://test-url");
 
-  private UpdateAabClient updateAabClient;
+  private AabUpdater aabUpdater;
   private ShadowActivity shadowActivity;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -74,13 +74,13 @@ public class UpdateAabClientTest {
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    this.updateAabClient = Mockito.spy(new UpdateAabClient(mockLifecycleNotifier));
+    this.aabUpdater = Mockito.spy(new AabUpdater(mockLifecycleNotifier));
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @After
   public void tearDown() {
-    this.updateAabClient = null;
+    this.aabUpdater = null;
   }
 
   @Test
@@ -89,12 +89,12 @@ public class UpdateAabClientTest {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     List<UpdateProgress> progressEvents = new ArrayList<>();
 
-    doReturn(mockHttpsUrlConnection).when(updateAabClient).openHttpsUrlConnection(TEST_URL);
+    doReturn(mockHttpsUrlConnection).when(aabUpdater).openHttpsUrlConnection(TEST_URL);
     when(mockHttpsUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("test data".getBytes()));
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(REDIRECT_TO_PLAY);
 
-    UpdateTask updateTask = updateAabClient.updateAab(newRelease);
+    UpdateTask updateTask = aabUpdater.updateAab(newRelease);
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
 
     Thread.sleep(1000);
@@ -113,17 +113,17 @@ public class UpdateAabClientTest {
   @Test
   public void updateAppTask_onAppResume_setsUpdateCancelled()
       throws FirebaseAppDistributionException, IOException {
-    doReturn(mockHttpsUrlConnection).when(updateAabClient).openHttpsUrlConnection(TEST_URL);
+    doReturn(mockHttpsUrlConnection).when(aabUpdater).openHttpsUrlConnection(TEST_URL);
     when(mockHttpsUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("test data".getBytes()));
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(REDIRECT_TO_PLAY);
 
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateAabClient.updateAab(newRelease);
+    UpdateTask updateTask = aabUpdater.updateAab(newRelease);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    updateAabClient.onActivityStarted(activity);
+    aabUpdater.onActivityStarted(activity);
     FirebaseAppDistributionException exception =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
     assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
@@ -133,8 +133,8 @@ public class UpdateAabClientTest {
   public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
 
-    UpdateTask updateTask1 = updateAabClient.updateAab(newRelease);
-    UpdateTask updateTask2 = updateAabClient.updateAab(newRelease);
+    UpdateTask updateTask1 = aabUpdater.updateAab(newRelease);
+    UpdateTask updateTask2 = aabUpdater.updateAab(newRelease);
 
     assertEquals(updateTask1, updateTask2);
   }

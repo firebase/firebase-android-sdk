@@ -39,14 +39,14 @@ public class InstallActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     // Since we kick-off installation with FLAG_ACTIVITY_NEW_TASK (in a new task), we won't be able
-    // to figure out if installation failed or was cancelled.
+    // to figure out if installation failed or was canceled.
     // If we re-enter InstallActivity after install is already kicked off, we can assume that either
-    // installation failure or user cancelled the install.
+    // installation failure or user canceled the install.
     if (installInProgress) {
       LogWrapper.getInstance()
           .e(
               TAG
-                  + "Activity resumed when installation already in progress. Installation was either cancelled or failed");
+                  + "Activity resumed when installation was already in progress. Installation was either canceled or failed");
       finish();
       return;
     }
@@ -57,7 +57,7 @@ public class InstallActivity extends AppCompatActivity {
         LogWrapper.getInstance()
             .e(
                 TAG
-                    + "Unknown sources enablement is already in progress. It was either cancelled or failed");
+                    + "Unknown sources enablement was already in progress. It was either canceled or failed");
         finish();
         return;
       }
@@ -67,7 +67,7 @@ public class InstallActivity extends AppCompatActivity {
       return;
     }
 
-    startInstallActivity();
+    startAndroidPackageInstallerIntent();
   }
 
   private boolean isUnknownSourcesEnabled() {
@@ -102,7 +102,7 @@ public class InstallActivity extends AppCompatActivity {
   }
 
   private void dismissUnknownSourcesDialogCallback() {
-    LogWrapper.getInstance().v(TAG + "Unknown sources dialog cancelled");
+    LogWrapper.getInstance().v(TAG + "Unknown sources dialog canceled");
     finish();
   }
 
@@ -121,7 +121,7 @@ public class InstallActivity extends AppCompatActivity {
     return intent;
   }
 
-  private void startInstallActivity() {
+  private void startAndroidPackageInstallerIntent() {
     installInProgress = true;
     Intent originalIntent = getIntent();
     String path = originalIntent.getStringExtra("INSTALL_PATH");

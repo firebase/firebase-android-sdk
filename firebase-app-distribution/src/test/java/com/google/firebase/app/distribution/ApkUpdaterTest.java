@@ -49,7 +49,7 @@ import org.robolectric.shadows.ShadowNotification;
 import org.robolectric.shadows.ShadowNotificationManager;
 
 @RunWith(RobolectricTestRunner.class)
-public class UpdateApkClientTest {
+public class ApkUpdaterTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
@@ -68,10 +68,10 @@ public class UpdateApkClientTest {
           .setCodeHash(TEST_CODE_HASH)
           .build();
 
-  private UpdateApkClient updateApkClient;
+  private ApkUpdater apkUpdater;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
-  @Mock private InstallApkClient mockInstallApkClient;
+  @Mock private ApkInstaller mockApkInstaller;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -94,16 +94,15 @@ public class UpdateApkClientTest {
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
-    this.updateApkClient =
-        Mockito.spy(new UpdateApkClient(testExecutor, firebaseApp, mockInstallApkClient));
-    doReturn(mockHttpsUrlConnection).when(updateApkClient).openHttpsUrlConnection(TEST_URL);
+    this.apkUpdater = Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
+    doReturn(mockHttpsUrlConnection).when(apkUpdater).openHttpsUrlConnection(TEST_URL);
   }
 
   @Test
   public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
     // null inputStream causes download failure
     when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     // wait for error to be caught and set
     Thread.sleep(1000);
     assertFalse(updateTask.isSuccessful());
@@ -117,10 +116,10 @@ public class UpdateApkClientTest {
   @Test
   public void updateApk_whenInstallSuccessful_setsResult()
       throws InterruptedException, ExecutionException, FirebaseAppDistributionException {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
-    when(mockInstallApkClient.installApk(any())).thenReturn(Tasks.forResult(null));
+    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
+    when(mockApkInstaller.installApk(any())).thenReturn(Tasks.forResult(null));
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTaskImpl updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     onCompleteListener.await();
     assertTrue(updateTask.isSuccessful());
@@ -128,11 +127,11 @@ public class UpdateApkClientTest {
 
   @Test
   public void updateApk_whenInstallFailed_setsError() {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
+    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
     TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
-    when(mockInstallApkClient.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
+    when(mockApkInstaller.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
@@ -155,8 +154,8 @@ public class UpdateApkClientTest {
 
   @Test
   public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
-    Task<File> task1 = updateApkClient.downloadApk(TEST_RELEASE, false);
-    Task<File> task2 = updateApkClient.downloadApk(TEST_RELEASE, false);
+    Task<File> task1 = apkUpdater.downloadApk(TEST_RELEASE, false);
+    Task<File> task2 = apkUpdater.downloadApk(TEST_RELEASE, false);
     assertEquals(task1, task2);
   }
 
@@ -167,8 +166,8 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
-    updateApkClient.updateApk(TEST_RELEASE, true);
-    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, true);
+    apkUpdater.updateApk(TEST_RELEASE, true);
+    apkUpdater.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, true);
 
     assertEquals(1, shadowNotificationManager.size());
     ShadowNotification shadowNotification =
@@ -185,8 +184,8 @@ public class UpdateApkClientTest {
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from basic configuration
 
-    updateApkClient.updateApk(TEST_RELEASE, true);
-    updateApkClient.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED, true);
+    apkUpdater.updateApk(TEST_RELEASE, true);
+    apkUpdater.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED, true);
 
     assertEquals(1, shadowNotificationManager.size());
     ShadowNotification shadowNotification =
@@ -203,17 +202,17 @@ public class UpdateApkClientTest {
         (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
     ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
     // called from advanced configuration
-    updateApkClient.updateApk(TEST_RELEASE, false);
-    updateApkClient.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, false);
+    apkUpdater.updateApk(TEST_RELEASE, false);
+    apkUpdater.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, false);
     assertEquals(0, shadowNotificationManager.size());
   }
 
   @Test
   public void updateApp_whenCalledMultipleTimesWithApk_returnsSameUpdateTask() {
-    doReturn(Tasks.forResult(mockFile)).when(updateApkClient).downloadApk(TEST_RELEASE, false);
+    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
 
-    UpdateTask updateTask1 = updateApkClient.updateApk(TEST_RELEASE, false);
-    UpdateTask updateTask2 = updateApkClient.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask1 = apkUpdater.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask2 = apkUpdater.updateApk(TEST_RELEASE, false);
 
     assertEquals(updateTask1, updateTask2);
   }

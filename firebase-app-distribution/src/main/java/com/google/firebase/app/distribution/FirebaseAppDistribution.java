@@ -40,11 +40,11 @@ public class FirebaseAppDistribution {
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   private final FirebaseApp firebaseApp;
-  private final TesterSignInClient testerSignInClient;
-  private final CheckForNewReleaseClient checkForNewReleaseClient;
+  private final TesterSignInManager testerSignInManager;
+  private final NewReleaseFetcher newReleaseFetcher;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
-  private final UpdateApkClient updateApkClient;
-  private final UpdateAabClient updateAabClient;
+  private final ApkUpdater apkUpdater;
+  private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
 
   private final Object updateIfNewReleaseTaskLock = new Object();
@@ -65,17 +65,17 @@ public class FirebaseAppDistribution {
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull TesterSignInClient testerSignInClient,
-      @NonNull CheckForNewReleaseClient checkForNewReleaseClient,
-      @NonNull UpdateApkClient updateApkClient,
-      @NonNull UpdateAabClient updateAabClient,
+      @NonNull TesterSignInManager testerSignInManager,
+      @NonNull NewReleaseFetcher newReleaseFetcher,
+      @NonNull ApkUpdater apkUpdater,
+      @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
-    this.testerSignInClient = testerSignInClient;
-    this.checkForNewReleaseClient = checkForNewReleaseClient;
-    this.updateApkClient = updateApkClient;
-    this.updateAabClient = updateAabClient;
+    this.testerSignInManager = testerSignInManager;
+    this.newReleaseFetcher = newReleaseFetcher;
+    this.apkUpdater = apkUpdater;
+    this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
@@ -89,11 +89,11 @@ public class FirebaseAppDistribution {
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
         firebaseApp,
-        new TesterSignInClient(firebaseApp, firebaseInstallationsApi, signInStorage),
-        new CheckForNewReleaseClient(
+        new TesterSignInManager(firebaseApp, firebaseInstallationsApi, signInStorage),
+        new NewReleaseFetcher(
             firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
-        new UpdateApkClient(firebaseApp, new InstallApkClient()),
-        new UpdateAabClient(),
+        new ApkUpdater(firebaseApp, new ApkInstaller()),
+        new AabUpdater(),
         signInStorage,
         lifecycleNotifier);
   }
@@ -170,7 +170,7 @@ public class FirebaseAppDistribution {
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
   @NonNull
   public Task<Void> signInTester() {
-    return this.testerSignInClient.signInTester();
+    return this.testerSignInManager.signInTester();
   }
 
   /**
@@ -186,7 +186,7 @@ public class FirebaseAppDistribution {
     }
     cachedCheckForNewReleaseTask =
         signInTester()
-            .onSuccessTask(unused -> this.checkForNewReleaseClient.checkForNewRelease())
+            .onSuccessTask(unused -> this.newReleaseFetcher.checkForNewRelease())
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
                   setCachedNewRelease(appDistributionReleaseInternal);
@@ -249,9 +249,9 @@ public class FirebaseAppDistribution {
       }
 
       if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
-        return this.updateAabClient.updateAab(cachedNewRelease);
+        return this.aabUpdater.updateAab(cachedNewRelease);
       } else {
-        return this.updateApkClient.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+        return this.apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
       }
     }
   }
