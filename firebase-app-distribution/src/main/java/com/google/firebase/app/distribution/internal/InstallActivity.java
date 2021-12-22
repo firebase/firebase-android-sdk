@@ -144,8 +144,7 @@ public class InstallActivity extends AppCompatActivity {
 
     // These flags open the installation activity in a new task and to prevent earlier installation
     // tasks from causing future ones to fail we use the clear task flag
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
     LogWrapper.getInstance().v("Kicking off install as new activity");
     startActivity(intent);
   }
