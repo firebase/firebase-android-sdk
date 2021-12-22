@@ -23,14 +23,17 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.Activity;
 import android.net.Uri;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,27 +48,28 @@ import org.robolectric.shadows.ShadowActivity;
 public class AabUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
-  private static final Executor testExecutor = Executors.newSingleThreadExecutor();
+  private static final ExecutorService testExecutor = Executors.newSingleThreadExecutor();
 
-  private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
+  private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
           .setBuildVersion("3")
           .setDisplayVersion("3.0")
           .setReleaseNotes("Newer version.")
           .setBinaryType(BinaryType.AAB)
-          .setDownloadUrl("https://test-url");
+          .setDownloadUrl("https://test-url")
+          .build();
 
   private AabUpdater aabUpdater;
   private ShadowActivity shadowActivity;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
+  @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   private FirebaseAppDistributionTest.TestActivity activity;
 
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() {
-
+  public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
@@ -74,30 +78,69 @@ public class AabUpdaterTest {
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    this.aabUpdater = Mockito.spy(new AabUpdater(mockLifecycleNotifier));
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
-  }
-
-  @After
-  public void tearDown() {
-    this.aabUpdater = null;
-  }
-
-  @Test
-  public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay()
-      throws IOException, InterruptedException, FirebaseAppDistributionException {
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-
-    doReturn(mockHttpsUrlConnection).when(aabUpdater).openHttpsUrlConnection(TEST_URL);
+    when(mockHttpsUrlConnection.getResponseCode()).thenReturn(302);
     when(mockHttpsUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream("test data".getBytes()));
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(REDIRECT_TO_PLAY);
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
 
-    UpdateTask updateTask = aabUpdater.updateAab(newRelease);
+    aabUpdater = Mockito.spy(new AabUpdater(mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
+    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
+  }
+
+  @Test
+  public void updateAppTask_whenOpenConnectionFails_setsNetworkFailure()
+      throws IOException, InterruptedException {
+    IOException caughtException = new IOException("error");
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
+
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
+  }
+
+  @Test
+  public void updateAppTask_isNotRedirectResponse_setsDownloadFailure()
+      throws IOException, InterruptedException {
+    when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
+
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Expected redirect");
+  }
+
+  @Test
+  public void updateAppTask_missingLocationHeader_setsDownloadFailure()
+      throws IOException, InterruptedException {
+    when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
+
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "No Location header");
+  }
+
+  @Test
+  public void updateAppTask_emptyLocationHeader_setsDownloadFailure()
+      throws IOException, InterruptedException {
+    when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
+
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Empty Location header");
+  }
+
+  @Test
+  public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws InterruptedException {
+    List<UpdateProgress> progressEvents = new ArrayList<>();
+
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
 
-    Thread.sleep(1000);
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(REDIRECT_TO_PLAY));
     assertEquals(1, progressEvents.size());
@@ -111,31 +154,38 @@ public class AabUpdaterTest {
   }
 
   @Test
-  public void updateAppTask_onAppResume_setsUpdateCancelled()
-      throws FirebaseAppDistributionException, IOException {
-    doReturn(mockHttpsUrlConnection).when(aabUpdater).openHttpsUrlConnection(TEST_URL);
-    when(mockHttpsUrlConnection.getInputStream())
-        .thenReturn(new ByteArrayInputStream("test data".getBytes()));
-    when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(REDIRECT_TO_PLAY);
-
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+  public void updateAppTask_onAppResume_setsUpdateCancelled() throws IOException {
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = aabUpdater.updateAab(newRelease);
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
     aabUpdater.onActivityStarted(activity);
     FirebaseAppDistributionException exception =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-    assertEquals(ReleaseUtils.convertToAppDistributionRelease(newRelease), exception.getRelease());
+    assertEquals(
+        ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
+        exception.getRelease());
   }
 
   @Test
   public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-
-    UpdateTask updateTask1 = aabUpdater.updateAab(newRelease);
-    UpdateTask updateTask2 = aabUpdater.updateAab(newRelease);
+    UpdateTask updateTask1 = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    UpdateTask updateTask2 = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
     assertEquals(updateTask1, updateTask2);
+  }
+
+  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring) {
+    assertThat(updateTask.isSuccessful()).isFalse();
+    assertThat(updateTask.getException()).isInstanceOf(FirebaseAppDistributionException.class);
+    FirebaseAppDistributionException e =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertThat(e.getErrorCode()).isEqualTo(status);
+    assertThat(e).hasMessageThat().contains(messageSubstring);
+  }
+
+  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
+    assertTaskFailure(updateTask, status, messageSubstring);
+    assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
   }
 }

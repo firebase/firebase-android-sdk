@@ -14,6 +14,7 @@
 
 package com.google.firebase.app.distribution;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,12 +30,15 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,14 +71,15 @@ public class ApkUpdaterTest {
   private ApkUpdater apkUpdater;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
+  @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
 
-  Executor testExecutor = Executors.newSingleThreadExecutor();
+  // TODO: rather than use testExecutor, await a completion listener on the returned task
+  ExecutorService testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() throws FirebaseAppDistributionException {
-
+  public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
@@ -90,26 +95,44 @@ public class ApkUpdaterTest {
 
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
+    when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
 
     this.apkUpdater =
         Mockito.spy(
-            new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller, mockNotificationsManager));
-    doReturn(mockHttpsUrlConnection).when(apkUpdater).openHttpsUrlConnection(TEST_URL);
+            new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller, mockNotificationsManager, mockHttpsUrlConnectionFactory));
   }
 
   @Test
-  public void updateApk_whenDownloadFails_setsNetworkError() throws Exception {
-    // null inputStream causes download failure
-    when(mockHttpsUrlConnection.getInputStream()).thenReturn(null);
+  public void updateApk_whenOpenConnectionFails_setsNetworkFailure() throws Exception {
+    IOException caughtException = new IOException("error");
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
+
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    // wait for error to be caught and set
-    Thread.sleep(1000);
-    assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals(Constants.ErrorMessages.NETWORK_ERROR, e.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE, e.getErrorCode());
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
+  }
+
+  @Test
+  public void updateApk_whenResponseStatusIsError_setsDownloadFailure() throws Exception {
+    when(mockHttpsUrlConnection.getResponseCode()).thenReturn(400);
+
+    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "400");
+  }
+
+  @Test
+  public void updateApk_whenCannotReadInputStream_setsDownloadFailure() throws Exception {
+    IOException caughtException = new IOException("error");
+    when(mockHttpsUrlConnection.getInputStream()).thenThrow(caughtException);
+
+    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    testExecutor.awaitTermination(1, TimeUnit.SECONDS);
+
+    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Failed to download APK", caughtException);
   }
 
   @Test
@@ -198,5 +221,19 @@ public class ApkUpdaterTest {
     UpdateTask updateTask2 = apkUpdater.updateApk(TEST_RELEASE, false);
 
     assertEquals(updateTask1, updateTask2);
+  }
+
+  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring) {
+    assertThat(updateTask.isSuccessful()).isFalse();
+    assertThat(updateTask.getException()).isInstanceOf(FirebaseAppDistributionException.class);
+    FirebaseAppDistributionException e =
+        (FirebaseAppDistributionException) updateTask.getException();
+    assertThat(e.getErrorCode()).isEqualTo(status);
+    assertThat(e).hasMessageThat().contains(messageSubstring);
+  }
+
+  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
+    assertTaskFailure(updateTask, status, messageSubstring);
+    assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
   }
 }
