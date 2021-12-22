@@ -288,6 +288,31 @@ public class NewReleaseFetcherTest {
   }
 
   @Test
+  public void
+      handleNewReleaseFromClient_whenNewReleaseHasDifferentVersionNameThanInstalled_returnsRelease()
+          throws Exception {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenReturn(
+            getTestNewReleaseDifferentVersionName()
+                .setDownloadUrl("http://fake-download-url")
+                .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
+                .setBinaryType(BinaryType.AAB)
+                .build());
+
+    AppDistributionReleaseInternal result =
+        newReleaseFetcher.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    assertEquals(
+        getTestNewReleaseDifferentVersionName()
+            .setDownloadUrl("http://fake-download-url")
+            .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
+            .setBinaryType(BinaryType.AAB)
+            .build(),
+        result);
+  }
+
+  @Test
   public void handleNewReleaseFromClient_whenNewReleaseIsSameAsInstalledAab_returnsNull()
       throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
@@ -357,6 +382,16 @@ public class NewReleaseFetcherTest {
         .setCodeHash(NEW_CODEHASH)
         .setBinaryType(APK)
         .setApkHash(NEW_APK_HASH);
+  }
+
+  private AppDistributionReleaseInternal.Builder getTestNewReleaseDifferentVersionName() {
+    return AppDistributionReleaseInternal.builder()
+        .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE))
+        .setDisplayVersion("2.0")
+        .setReleaseNotes("Current version.")
+        .setCodeHash(CURRENT_CODEHASH)
+        .setBinaryType(APK)
+        .setApkHash(CURRENT_APK_HASH);
   }
 
   private AppDistributionReleaseInternal.Builder getTestInstalledRelease() {

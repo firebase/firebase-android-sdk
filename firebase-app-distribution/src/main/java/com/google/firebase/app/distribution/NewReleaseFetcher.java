@@ -135,7 +135,8 @@ class NewReleaseFetcher {
       }
 
       if (isNewerBuildVersion(retrievedNewRelease)
-          || !isSameAsInstalledRelease(retrievedNewRelease)) {
+          || !isSameAsInstalledRelease(retrievedNewRelease)
+          || hasDifferentAppVersionName(retrievedNewRelease)) {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
@@ -160,13 +161,12 @@ class NewReleaseFetcher {
   private boolean isNewerBuildVersion(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
     return Long.parseLong(newRelease.getBuildVersion())
-            > getInstalledAppVersionCode(firebaseApp.getApplicationContext())
-        || !doesAppVersionNameMatch(newRelease);
+        > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
-  private boolean doesAppVersionNameMatch(AppDistributionReleaseInternal newRelease)
+  private boolean hasDifferentAppVersionName(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
-    return newRelease
+    return !newRelease
         .getDisplayVersion()
         .equals(getInstalledAppVersionName(firebaseApp.getApplicationContext()));
   }
@@ -194,7 +194,8 @@ class NewReleaseFetcher {
     try {
       pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
+      LogWrapper.getInstance()
+          .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
@@ -205,17 +206,16 @@ class NewReleaseFetcher {
 
   private String getInstalledAppVersionName(Context context)
       throws FirebaseAppDistributionException {
-    PackageInfo pInfo;
     try {
-      pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
+      LogWrapper.getInstance()
+          .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
           e);
     }
-    return pInfo.versionName;
   }
 
   @VisibleForTesting
