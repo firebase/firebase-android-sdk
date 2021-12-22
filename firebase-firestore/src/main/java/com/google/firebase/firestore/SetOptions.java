@@ -60,7 +60,7 @@ public final class SetOptions {
   /**
    * Changes the behavior of {@code set()} calls to only replace the values specified in its data
    * argument. Fields omitted from the {@code set()} call will remain untouched. If your input sets
-   * any field to an empty map, all nested fields at this location are overwritten.
+   * any field to an empty map, all nested fields are overwritten.
    */
   @NonNull
   public static SetOptions merge() {
@@ -70,7 +70,7 @@ public final class SetOptions {
   /**
    * Changes the behavior of {@code set()} calls to only replace the given fields. Any field that is
    * not specified in {@code fields} is ignored and remains untouched. If your input sets any field
-   * to an empty map, all nested fields at this location are overwritten.
+   * to an empty map, all nested fields are overwritten.
    *
    * <p>It is an error to pass a {@code SetOptions} object to a {@code set()} call that is missing a
    * value for any of the fields specified here.
