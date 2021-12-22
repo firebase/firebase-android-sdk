@@ -326,14 +326,10 @@ public class FirebaseAppDistributionTest {
                     ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-    task.addOnProgressListener(progressEvents::add);
 
     AlertDialog signInDialog = verifySignInAlertDialog();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
-    assertEquals(1, progressEvents.size());
-    assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
     assertTrue(task.getException() instanceof FirebaseAppDistributionException);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();

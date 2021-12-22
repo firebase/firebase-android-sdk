@@ -14,8 +14,6 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.firebase.app.distribution.DialogUtils.getSignInDialog;
-import static com.google.firebase.app.distribution.DialogUtils.getUpdateDialog;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
@@ -24,11 +22,13 @@ import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.app.distribution.Constants.ErrorMessages;
@@ -39,6 +39,7 @@ import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class FirebaseAppDistribution {
+
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   private final FirebaseApp firebaseApp;
@@ -132,80 +133,91 @@ public class FirebaseAppDistribution {
       if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
         return cachedUpdateIfNewReleaseTask;
       }
-
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
     }
 
-    if (!isTesterSignedIn()) {
-      Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-      if (currentActivity == null) {
-        LogWrapper.getInstance().e("No foreground activity found.");
-        return getErrorUpdateTask(
-            new FirebaseAppDistributionException(
-                ErrorMessages.APP_BACKGROUNDED,
-                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
-      }
-
-      signInDialog =
-          getSignInDialog(
-              currentActivity,
-              firebaseApp,
-              (dialogInterface, i) ->
-                  checkForNewRelease() // check for new release will call sign in tester
-                      .onSuccessTask(this::handleNewRelease)
-                      .addOnFailureListener(this::onUpdateIfNewReleaseFailure),
-              (dialogInterface, i) -> dismissSignInDialogCallback(),
-              (dialogInterface) -> dismissSignInDialogCallback());
-      signInDialog.show();
-    } else {
-      checkForNewRelease() // check for new release will call sign in tester
-          .onSuccessTask(this::handleNewRelease)
-          .addOnFailureListener(this::onUpdateIfNewReleaseFailure);
-    }
+    showSignInDialog()
+        .onSuccessTask(unused -> signInTester())
+        .onSuccessTask(unused -> checkForNewRelease())
+        .continueWithTask(
+            checkForNewReleaseTask -> {
+              AppDistributionRelease release =
+                  checkForNewReleaseTask.getResult(); // error will propagate to on failure listener
+              if (release == null) {
+                postProgressToCachedUpdateIfNewReleaseTask(
+                    UpdateProgress.builder()
+                        .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                        .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                        .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
+                        .build());
+                setCachedUpdateIfNewReleaseResult();
+                UpdateTaskImpl updateTask = new UpdateTaskImpl();
+                updateTask.setResult();
+                return updateTask;
+              }
+              return showUpdateAlertDialog(release)
+                  .onSuccessTask(
+                      r ->
+                          updateApp(true)
+                              .addOnProgressListener(
+                                  this::postProgressToCachedUpdateIfNewReleaseTask)
+                              .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
+                              .addOnFailureListener(
+                                  this::setCachedUpdateIfNewReleaseCompletionError));
+            })
+        .addOnFailureListener(this::setCachedUpdateIfNewReleaseCompletionError);
 
     synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
   }
 
-  private UpdateTask handleNewRelease(AppDistributionRelease release) {
-    if (release == null) {
-      postProgressToCachedUpdateIfNewReleaseTask(
-          UpdateProgress.builder()
-              .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-              .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-              .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
-              .build());
-      setCachedUpdateIfNewReleaseResult();
-      UpdateTaskImpl updateTask = new UpdateTaskImpl();
-      updateTask.setResult();
-      return updateTask;
+  private Task<Void> showSignInDialog() {
+    if (isTesterSignedIn()) {
+      return Tasks.forResult(null);
     }
-    return showUpdateAlertDialog(release);
+
+    TaskCompletionSource<Void> showDialogTask = new TaskCompletionSource<>();
+
+    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
+    if (currentActivity == null) {
+      LogWrapper.getInstance().e("No foreground activity found.");
+      showDialogTask.setException(
+          new FirebaseAppDistributionException(
+              ErrorMessages.APP_BACKGROUNDED,
+              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    }
+
+    signInDialog = new AlertDialog.Builder(currentActivity).create();
+    Context context = firebaseApp.getApplicationContext();
+    signInDialog.setTitle(context.getString(R.string.signin_dialog_title));
+    signInDialog.setMessage(context.getString(R.string.singin_dialog_message));
+
+    signInDialog.setButton(
+        AlertDialog.BUTTON_POSITIVE,
+        context.getString(R.string.singin_yes_button),
+        (dialogInterface, i) -> showDialogTask.setResult(null));
+
+    signInDialog.setButton(
+        AlertDialog.BUTTON_NEGATIVE,
+        context.getString(R.string.singin_no_button),
+        (dialogInterface, i) ->
+            showDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+
+    signInDialog.setOnCancelListener(
+        dialogInterface ->
+            showDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+
+    signInDialog.show();
+    return showDialogTask.getTask();
   }
 
-  private void onUpdateIfNewReleaseFailure(Exception e) {
-    postProgressToCachedUpdateIfNewReleaseTask(
-        UpdateProgress.builder()
-            .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-            .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-            .setUpdateStatus(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
-            .build());
-    setCachedUpdateIfNewReleaseCompletionError(
-        e,
-        new FirebaseAppDistributionException(
-            Constants.ErrorMessages.NETWORK_ERROR,
-            FirebaseAppDistributionException.Status.NETWORK_FAILURE));
-  }
-
-  private void dismissSignInDialogCallback() {
-    LogWrapper.getInstance().v("Sign in has been canceled.");
-    setCachedUpdateIfNewReleaseCompletionError(
-        new FirebaseAppDistributionException(
-            ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-  }
-
-  private UpdateTaskImpl showUpdateAlertDialog(AppDistributionRelease newRelease) {
+  private Task<Void> showUpdateAlertDialog(AppDistributionRelease newRelease) {
+    TaskCompletionSource<Void> showUpdateDialogTask = new TaskCompletionSource<>();
     Activity currentActivity = lifecycleNotifier.getCurrentActivity();
     if (currentActivity == null) {
       LogWrapper.getInstance().e("No foreground activity found.");
@@ -215,42 +227,45 @@ public class FirebaseAppDistribution {
               FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
     }
 
-    updateDialog =
-        getUpdateDialog(
-            currentActivity,
-            firebaseApp,
-            newRelease,
-            ((dialogInterface, i) -> {
-              synchronized (updateIfNewReleaseTaskLock) {
-                // show download progress in notification manager
-                updateApp(true)
-                    .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask)
-                    .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
-                    .addOnFailureListener(cachedUpdateIfNewReleaseTask::setException);
-              }
-            }),
-            (dialogInterface, i) -> dismissUpdateDialogCallback(),
-            dialogInterface -> dismissUpdateDialogCallback());
+    Context context = firebaseApp.getApplicationContext();
+
+    updateDialog = new AlertDialog.Builder(currentActivity).create();
+    updateDialog.setTitle(context.getString(R.string.update_dialog_title));
+
+    StringBuilder message =
+        new StringBuilder(
+            String.format(
+                "Version %s (%s) is available.",
+                newRelease.getDisplayVersion(), newRelease.getVersionCode()));
+
+    if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
+      message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
+    }
+    updateDialog.setMessage(message);
+
+    updateDialog.setButton(
+        AlertDialog.BUTTON_POSITIVE,
+        context.getString(R.string.update_yes_button),
+        (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
+
+    updateDialog.setButton(
+        AlertDialog.BUTTON_NEGATIVE,
+        context.getString(R.string.update_no_button),
+        (dialogInterface, i) ->
+            showUpdateDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
+
+    updateDialog.setOnCancelListener(
+        dialogInterface ->
+            showUpdateDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateDialog.show();
     updateDialogShown = true;
-    synchronized (updateIfNewReleaseTaskLock) {
-      return cachedUpdateIfNewReleaseTask;
-    }
-  }
 
-  private void dismissUpdateDialogCallback() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      postProgressToCachedUpdateIfNewReleaseTask(
-          UpdateProgress.builder()
-              .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-              .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-              .setUpdateStatus(UpdateStatus.UPDATE_CANCELED)
-              .build());
-      setCachedUpdateIfNewReleaseCompletionError(
-          new FirebaseAppDistributionException(
-              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
-    }
+    return showUpdateDialogTask.getTask();
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
@@ -281,6 +296,13 @@ public class FirebaseAppDistribution {
                 })
             .addOnFailureListener(
                 e -> {
+                  postProgressToCachedUpdateIfNewReleaseTask(
+                      UpdateProgress.builder()
+                          .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                          .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                          .setUpdateStatus(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
+                          .build());
+
                   if (e instanceof FirebaseAppDistributionException
                       && ((FirebaseAppDistributionException) e).getErrorCode()
                           == AUTHENTICATION_FAILURE) {
@@ -380,25 +402,18 @@ public class FirebaseAppDistribution {
     }
   }
 
-  private void setCachedUpdateIfNewReleaseCompletionError(FirebaseAppDistributionException e) {
+  private void setCachedUpdateIfNewReleaseCompletionError(Exception e) {
     synchronized (updateIfNewReleaseTaskLock) {
       safeSetTaskException(cachedUpdateIfNewReleaseTask, e);
     }
     dismissDialogs();
   }
 
-  private void setCachedUpdateIfNewReleaseCompletionError(
-      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
-    if (e instanceof FirebaseAppDistributionException) {
-      setCachedUpdateIfNewReleaseCompletionError((FirebaseAppDistributionException) e);
-    } else {
-      setCachedUpdateIfNewReleaseCompletionError(defaultFirebaseException);
-    }
-  }
-
   private void postProgressToCachedUpdateIfNewReleaseTask(UpdateProgress progress) {
     synchronized (updateIfNewReleaseTaskLock) {
-      cachedUpdateIfNewReleaseTask.updateProgress(progress);
+      if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
+        cachedUpdateIfNewReleaseTask.updateProgress(progress);
+      }
     }
   }
 
