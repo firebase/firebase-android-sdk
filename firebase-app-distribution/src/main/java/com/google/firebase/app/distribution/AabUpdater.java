@@ -131,7 +131,8 @@ class AabUpdater {
       if (lifecycleNotifier.getCurrentActivity() == null) {
         safeSetTaskException(
             cachedUpdateTask,
-            new FirebaseAppDistributionException(ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
         return;
       }
     }
