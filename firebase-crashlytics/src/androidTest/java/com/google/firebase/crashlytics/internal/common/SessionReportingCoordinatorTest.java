@@ -31,7 +31,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
@@ -409,20 +410,6 @@ public class SessionReportingCoordinatorTest {
 
     verify(reportSender).sendReport(mockReport1);
     verify(reportSender).sendReport(mockReport2);
-  }
-
-  @Test
-  public void testPersistUserIdForCurrentSession_persistsCurrentUserIdForCurrentSessionId() {
-    final String currentSessionId = "currentSessionId";
-    final String userId = "testUserId";
-    final long timestamp = System.currentTimeMillis();
-    when(dataCapture.captureReportData(anyString(), anyLong())).thenReturn(mockReport);
-    when(reportMetadata.getUserId()).thenReturn(userId);
-
-    reportingCoordinator.onBeginSession(currentSessionId, timestamp);
-    reportingCoordinator.persistUserId(currentSessionId);
-
-    verify(reportPersistence).persistUserIdForSession(userId, currentSessionId);
   }
 
   @Test
