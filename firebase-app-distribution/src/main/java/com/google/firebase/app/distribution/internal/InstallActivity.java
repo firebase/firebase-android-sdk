@@ -143,6 +143,7 @@ public class InstallActivity extends AppCompatActivity {
     }
 
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
     LogWrapper.getInstance().v("Kicking off install as new activity");
     startActivity(intent);
   }
