@@ -267,7 +267,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testFatalEvent_addsSortedKeysToEvent() {
+  public void testFatalEvent_addsSortedCustomKeysToEvent() {
     final long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -292,12 +292,47 @@ public class SessionReportingCoordinatorTest {
         ImmutableList.from(customAttribute1, customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager, never()).clearLog();
+  }
+
+  @Test
+  public void testFatalEvent_addsSortedInternalKeysToEvent() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
+
+    final String sessionId = "testSessionId";
+
+    final String testKey1 = "testKey1";
+    final String testValue1 = "testValue1";
+    final String testKey2 = "testKey2";
+    final String testValue2 = "testValue2";
+
+    final Map<String, String> attributes = new HashMap<>();
+    attributes.put(testKey1, testValue1);
+    attributes.put(testKey2, testValue2);
+
+    final CustomAttribute customAttribute1 =
+        CustomAttribute.builder().setKey(testKey1).setValue(testValue1).build();
+    final CustomAttribute customAttribute2 =
+        CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
+
+    final ImmutableList<CustomAttribute> expectedCustomAttributes =
+        ImmutableList.from(customAttribute1, customAttribute2);
+
+    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+
     verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
     verify(mockEventBuilder).setApp(mockEventApp);
