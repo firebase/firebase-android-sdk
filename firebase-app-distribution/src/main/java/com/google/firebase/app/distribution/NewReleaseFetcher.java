@@ -190,24 +190,17 @@ class NewReleaseFetcher {
   }
 
   private long getInstalledAppVersionCode(Context context) throws FirebaseAppDistributionException {
-    PackageInfo pInfo;
-    try {
-      pInfo = getPackageInfo(context);
-    } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance()
-          .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
-      throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.UNKNOWN_ERROR,
-          FirebaseAppDistributionException.Status.UNKNOWN,
-          e);
-    }
-    return PackageInfoCompat.getLongVersionCode(pInfo);
+    return PackageInfoCompat.getLongVersionCode(getPackageInfo(context));
   }
 
   private String getInstalledAppVersionName(Context context)
       throws FirebaseAppDistributionException {
+    return getPackageInfo(context).versionName;
+  }
+
+  private PackageInfo getPackageInfo(Context context) throws FirebaseAppDistributionException {
     try {
-      return getPackageInfo(context).versionName;
+      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
       LogWrapper.getInstance()
           .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
@@ -216,10 +209,6 @@ class NewReleaseFetcher {
           FirebaseAppDistributionException.Status.UNKNOWN,
           e);
     }
-  }
-
-  private PackageInfo getPackageInfo(Context context) throws PackageManager.NameNotFoundException {
-    return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
   }
 
   @VisibleForTesting
