@@ -113,7 +113,7 @@ public class AabUpdaterTest {
 
   @Test
   public void updateAppTask_missingLocationHeader_setsDownloadFailure()
-      throws IOException, InterruptedException {
+      throws InterruptedException {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
@@ -124,7 +124,7 @@ public class AabUpdaterTest {
 
   @Test
   public void updateAppTask_emptyLocationHeader_setsDownloadFailure()
-      throws IOException, InterruptedException {
+      throws InterruptedException {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
