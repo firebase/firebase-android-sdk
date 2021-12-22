@@ -118,6 +118,7 @@ public class NewReleaseFetcherTest {
             .setApplicationInfo(applicationInfo)
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
+    packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
     newReleaseFetcher =
@@ -265,25 +266,42 @@ public class NewReleaseFetcherTest {
 
   @Test
   public void handleNewReleaseFromClient_whenNewAabIsAvailable_returnsRelease() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(
-            getTestNewRelease()
-                .setDownloadUrl("http://fake-download-url")
-                .setIasArtifactId("test-ias-artifact-id-2")
-                .setBinaryType(BinaryType.AAB)
-                .build());
-
-    AppDistributionReleaseInternal result =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    assertEquals(
+    AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
             .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
-            .build(),
-        result);
+            .build();
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenReturn(expectedRelease);
+
+    AppDistributionReleaseInternal result =
+        newReleaseFetcher.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertEquals(expectedRelease, result);
+  }
+
+  @Test
+  public void
+      handleNewReleaseFromClient_whenNewReleaseHasDifferentVersionNameThanInstalled_returnsRelease()
+          throws Exception {
+    AppDistributionReleaseInternal expectedRelease =
+        getTestNewRelease()
+            .setDownloadUrl("http://fake-download-url")
+            .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
+            .setBinaryType(BinaryType.AAB)
+            .setDisplayVersion("2.0")
+            .build();
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenReturn(expectedRelease);
+
+    AppDistributionReleaseInternal result =
+        newReleaseFetcher.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    assertEquals(expectedRelease, result);
   }
 
   @Test

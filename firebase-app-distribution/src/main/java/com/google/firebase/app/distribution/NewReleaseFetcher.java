@@ -135,7 +135,8 @@ class NewReleaseFetcher {
       }
 
       if (isNewerBuildVersion(retrievedNewRelease)
-          || !isSameAsInstalledRelease(retrievedNewRelease)) {
+          || !isSameAsInstalledRelease(retrievedNewRelease)
+          || hasDifferentAppVersionName(retrievedNewRelease)) {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
@@ -163,6 +164,13 @@ class NewReleaseFetcher {
         > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
+  private boolean hasDifferentAppVersionName(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
+    return !newRelease
+        .getDisplayVersion()
+        .equals(getInstalledAppVersionName(firebaseApp.getApplicationContext()));
+  }
+
   @VisibleForTesting
   boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
@@ -182,17 +190,25 @@ class NewReleaseFetcher {
   }
 
   private long getInstalledAppVersionCode(Context context) throws FirebaseAppDistributionException {
-    PackageInfo pInfo;
+    return PackageInfoCompat.getLongVersionCode(getPackageInfo(context));
+  }
+
+  private String getInstalledAppVersionName(Context context)
+      throws FirebaseAppDistributionException {
+    return getPackageInfo(context).versionName;
+  }
+
+  private PackageInfo getPackageInfo(Context context) throws FirebaseAppDistributionException {
     try {
-      pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
+      LogWrapper.getInstance()
+          .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
           e);
     }
-    return PackageInfoCompat.getLongVersionCode(pInfo);
   }
 
   @VisibleForTesting
