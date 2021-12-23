@@ -186,7 +186,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Determine whether messages are suppressed or not. This is honored by the UI sdk, which handles
+   * Determines whether messages are suppressed or not. This is honored by the UI sdk, which handles
    * rendering the in app message.
    *
    * @return true if messages should be suppressed
