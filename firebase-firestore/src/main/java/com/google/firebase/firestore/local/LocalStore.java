@@ -419,9 +419,11 @@ public final class LocalStore implements BundleCallback {
 
             TargetData newTargetData = oldTargetData.withSequenceNumber(sequenceNumber);
             if (remoteEvent.getTargetMismatches().contains(targetId)) {
-              newTargetData =newTargetData.withResumeToken(ByteString.EMPTY, SnapshotVersion.NONE);
-            } else if (!change.getResumeToken().isEmpty()){
-              newTargetData =newTargetData.withResumeToken(change.getResumeToken(), remoteEvent.getSnapshotVersion());
+              newTargetData = newTargetData.withResumeToken(ByteString.EMPTY, SnapshotVersion.NONE);
+            } else if (!change.getResumeToken().isEmpty()) {
+              newTargetData =
+                  newTargetData.withResumeToken(
+                      change.getResumeToken(), remoteEvent.getSnapshotVersion());
             }
 
             queryDataByTarget.put(targetId, newTargetData);
