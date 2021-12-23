@@ -24,6 +24,7 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
@@ -127,8 +128,7 @@ class AabUpdater {
       if (lifecycleNotifier.getCurrentActivity() == null) {
         safeSetTaskException(
             cachedUpdateTask,
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
+            new FirebaseAppDistributionException(ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
         return;
       }
     }
@@ -173,7 +173,7 @@ class AabUpdater {
       safeSetTaskException(
           cachedUpdateTask,
           new FirebaseAppDistributionException(
-              Constants.ErrorMessages.UPDATE_CANCELED,
+              ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
               ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }
