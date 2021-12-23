@@ -417,20 +417,19 @@ public final class LocalStore implements BundleCallback {
             targetCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
             targetCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
-            ByteString resumeToken = change.getResumeToken();
-            // Update the resume token if the change includes one.
-            if (!resumeToken.isEmpty()) {
-              TargetData newTargetData =
-                  oldTargetData
-                      .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
-                      .withSequenceNumber(sequenceNumber);
-              queryDataByTarget.put(targetId, newTargetData);
+            TargetData newTargetData = oldTargetData.withSequenceNumber(sequenceNumber);
+            if (remoteEvent.getTargetMismatches().contains(targetId)) {
+              newTargetData =newTargetData.withResumeToken(ByteString.EMPTY, SnapshotVersion.NONE);
+            } else if (!change.getResumeToken().isEmpty()){
+              newTargetData =newTargetData.withResumeToken(change.getResumeToken(), remoteEvent.getSnapshotVersion());
+            }
 
-              // Update the query data if there are target changes (or if sufficient time has
-              // passed since the last update).
-              if (shouldPersistTargetData(oldTargetData, newTargetData, change)) {
-                targetCache.updateTargetData(newTargetData);
-              }
+            queryDataByTarget.put(targetId, newTargetData);
+
+            // Update the query data if there are target changes (or if sufficient time has passed
+            // since the last update).
+            if (shouldPersistTargetData(oldTargetData, newTargetData, change)) {
+              targetCache.updateTargetData(newTargetData);
             }
           }
 
@@ -554,10 +553,6 @@ public final class LocalStore implements BundleCallback {
    */
   private static boolean shouldPersistTargetData(
       TargetData oldTargetData, TargetData newTargetData, TargetChange change) {
-    hardAssert(
-        !newTargetData.getResumeToken().isEmpty(),
-        "Attempted to persist query data with empty resume token");
-
     // Always persist query data if we don't already have a resume token.
     if (oldTargetData.getResumeToken().isEmpty()) return true;
 
