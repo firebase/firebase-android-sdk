@@ -102,7 +102,7 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Determine whether automatic data collection is enabled or not.
+   * Determines whether automatic data collection is enabled or not.
    *
    * @return true if auto initialization is required
    */
