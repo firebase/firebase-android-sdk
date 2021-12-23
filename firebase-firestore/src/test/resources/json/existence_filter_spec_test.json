@@ -1074,7 +1074,7 @@
   },
   "Existence filter mismatch invalidates index-free query": {
     "describeName": "Existence Filters:",
-    "itName": "Existence filter mismatch invalidates index-free query",
+    "itName": "Existence filter clears resume token",
     "tags": [
       "durable-persistence"
     ],
