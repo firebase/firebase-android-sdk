@@ -125,6 +125,7 @@ class TesterSignInManager {
         return signInTaskCompletionSource.getTask();
       }
 
+      // TODO(rachelprince): Change this to getCurrentNonNullActivity
       Activity currentActivity = lifecycleNotifier.getCurrentActivity();
       if (currentActivity == null) {
         LogWrapper.getInstance().e(TAG + "No foreground activity found.");

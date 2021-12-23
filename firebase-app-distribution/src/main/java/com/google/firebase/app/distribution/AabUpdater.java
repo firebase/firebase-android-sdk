@@ -94,6 +94,7 @@ class AabUpdater {
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
     synchronized (updateAabLock) {
+      // TODO(rachelprince): change this to getCurrentNonNullActivity
       if (lifecycleNotifier.getCurrentActivity() == null) {
         safeSetTaskException(
             cachedUpdateTask,
