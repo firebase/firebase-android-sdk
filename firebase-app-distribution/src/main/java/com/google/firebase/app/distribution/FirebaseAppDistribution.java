@@ -139,10 +139,8 @@ public class FirebaseAppDistribution {
     showSignInDialog()
         .onSuccessTask(unused -> signInTester())
         .onSuccessTask(unused -> checkForNewRelease())
-        .continueWithTask(
-            checkForNewReleaseTask -> {
-              AppDistributionRelease release =
-                  checkForNewReleaseTask.getResult(); // error will propagate to on failure listener
+        .onSuccessTask(
+            release -> {
               if (release == null) {
                 postProgressToCachedUpdateIfNewReleaseTask(
                     UpdateProgress.builder()
@@ -151,20 +149,16 @@ public class FirebaseAppDistribution {
                         .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
                         .build());
                 setCachedUpdateIfNewReleaseResult();
-                UpdateTaskImpl updateTask = new UpdateTaskImpl();
-                updateTask.setResult();
-                return updateTask;
+                return Tasks.forResult(null);
               }
-              return showUpdateAlertDialog(release)
-                  .onSuccessTask(
-                      r ->
-                          updateApp(true)
-                              .addOnProgressListener(
-                                  this::postProgressToCachedUpdateIfNewReleaseTask)
-                              .addOnSuccessListener(unused -> setCachedUpdateIfNewReleaseResult())
-                              .addOnFailureListener(
-                                  this::setCachedUpdateIfNewReleaseCompletionError));
-            })
+              return showUpdateAlertDialog(release);}
+              )
+        .onSuccessTask( unused ->
+            updateApp(true)
+                .addOnProgressListener(
+                    this::postProgressToCachedUpdateIfNewReleaseTask)
+                .addOnFailureListener(
+                    this::setCachedUpdateIfNewReleaseCompletionError))
         .addOnFailureListener(this::setCachedUpdateIfNewReleaseCompletionError);
 
     synchronized (updateIfNewReleaseTaskLock) {
