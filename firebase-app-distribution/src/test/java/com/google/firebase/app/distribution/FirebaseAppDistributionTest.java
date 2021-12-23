@@ -115,7 +115,7 @@ public class FirebaseAppDistributionTest {
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() {
+  public void setup() throws FirebaseAppDistributionException {
 
     MockitoAnnotations.initMocks(this);
 
@@ -165,7 +165,7 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
+    when(mockLifecycleNotifier.getNonNullCurrentActivity()).thenReturn(activity);
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 

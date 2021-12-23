@@ -62,7 +62,6 @@ public class FirebaseAppDistribution {
 
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateDialog;
-  private boolean updateDialogShown;
   private AlertDialog signInDialog;
 
   /** Constructor for FirebaseAppDistribution */
@@ -151,14 +150,13 @@ public class FirebaseAppDistribution {
                 setCachedUpdateIfNewReleaseResult();
                 return Tasks.forResult(null);
               }
-              return showUpdateAlertDialog(release);}
-              )
-        .onSuccessTask( unused ->
-            updateApp(true)
-                .addOnProgressListener(
-                    this::postProgressToCachedUpdateIfNewReleaseTask)
-                .addOnFailureListener(
-                    this::setCachedUpdateIfNewReleaseCompletionError))
+              return showUpdateAlertDialog(release);
+            })
+        .onSuccessTask(
+            unused ->
+                updateApp(true)
+                    .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask)
+                    .addOnFailureListener(this::setCachedUpdateIfNewReleaseCompletionError))
         .addOnFailureListener(this::setCachedUpdateIfNewReleaseCompletionError);
 
     synchronized (updateIfNewReleaseTaskLock) {
@@ -173,13 +171,11 @@ public class FirebaseAppDistribution {
 
     TaskCompletionSource<Void> showDialogTask = new TaskCompletionSource<>();
 
-    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-    if (currentActivity == null) {
-      LogWrapper.getInstance().e("No foreground activity found.");
-      showDialogTask.setException(
-          new FirebaseAppDistributionException(
-              ErrorMessages.APP_BACKGROUNDED,
-              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+    Activity currentActivity;
+    try {
+      currentActivity = lifecycleNotifier.getNonNullCurrentActivity();
+    } catch (FirebaseAppDistributionException e) {
+      return Tasks.forException(e);
     }
 
     signInDialog = new AlertDialog.Builder(currentActivity).create();
@@ -212,13 +208,12 @@ public class FirebaseAppDistribution {
 
   private Task<Void> showUpdateAlertDialog(AppDistributionRelease newRelease) {
     TaskCompletionSource<Void> showUpdateDialogTask = new TaskCompletionSource<>();
-    Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-    if (currentActivity == null) {
-      LogWrapper.getInstance().e("No foreground activity found.");
-      return getErrorUpdateTask(
-          new FirebaseAppDistributionException(
-              ErrorMessages.APP_BACKGROUNDED,
-              FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+
+    Activity currentActivity;
+    try {
+      currentActivity = lifecycleNotifier.getNonNullCurrentActivity();
+    } catch (FirebaseAppDistributionException e) {
+      return Tasks.forException(e);
     }
 
     Context context = firebaseApp.getApplicationContext();
@@ -257,7 +252,6 @@ public class FirebaseAppDistribution {
                     ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateDialog.show();
-    updateDialogShown = true;
 
     return showUpdateDialogTask.getTask();
   }
@@ -375,7 +369,7 @@ public class FirebaseAppDistribution {
       // SignInResult is internal to the SDK and is destroyed after creation
       return;
     }
-    if (updateDialogShown) {
+    if (updateDialog != null && updateDialog.isShowing()) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
@@ -422,9 +416,8 @@ public class FirebaseAppDistribution {
     if (signInDialog != null && signInDialog.isShowing()) {
       signInDialog.dismiss();
     }
-    if (updateDialog != null) {
+    if (updateDialog != null && updateDialog.isShowing()) {
       updateDialog.dismiss();
-      updateDialogShown = false;
     }
   }
 
