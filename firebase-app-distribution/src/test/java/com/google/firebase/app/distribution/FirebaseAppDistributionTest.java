@@ -397,12 +397,6 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToNewRelease_whenTesterIsSignedIn_doesNotOpenDialog() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
-    when(mockNewReleaseFetcher.checkForNewRelease())
-        .thenReturn(
-            Tasks.forException(
-                new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.NETWORK_ERROR,
-                    FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
