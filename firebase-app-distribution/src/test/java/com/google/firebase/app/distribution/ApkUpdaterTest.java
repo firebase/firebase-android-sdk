@@ -98,9 +98,10 @@ public class ApkUpdaterTest {
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
 
-    this.apkUpdater =
+    apkUpdater =
         Mockito.spy(
-            new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller, mockNotificationsManager, mockHttpsUrlConnectionFactory));
+            new ApkUpdater(
+                testExecutor, firebaseApp, mockApkInstaller, mockNotificationsManager, mockHttpsUrlConnectionFactory));
   }
 
   @Test
@@ -111,7 +112,8 @@ public class ApkUpdaterTest {
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     testExecutor.awaitTermination(1, TimeUnit.SECONDS);
 
-    assertTaskFailure(updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
+    assertTaskFailure(
+        updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
   }
 
   @Test
@@ -132,7 +134,8 @@ public class ApkUpdaterTest {
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     testExecutor.awaitTermination(1, TimeUnit.SECONDS);
 
-    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Failed to download APK", caughtException);
+    assertTaskFailure(
+        updateTask, Status.DOWNLOAD_FAILURE, "Failed to download APK", caughtException);
   }
 
   @Test
@@ -232,7 +235,8 @@ public class ApkUpdaterTest {
     assertThat(e).hasMessageThat().contains(messageSubstring);
   }
 
-  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
+  private void assertTaskFailure(
+      UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
     assertTaskFailure(updateTask, status, messageSubstring);
     assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
   }

@@ -61,7 +61,12 @@ class ApkUpdater {
   private final Object updateTaskLock = new Object();
 
   public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
-    this(Executors.newSingleThreadExecutor(), firebaseApp, apkInstaller, new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()), new HttpsUrlConnectionFactory());
+    this(
+        Executors.newSingleThreadExecutor(),
+        firebaseApp,
+        apkInstaller,
+        new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
+        new HttpsUrlConnectionFactory());
   }
 
   @VisibleForTesting

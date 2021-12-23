@@ -16,7 +16,6 @@ package com.google.firebase.app.distribution;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -28,8 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +81,9 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(REDIRECT_TO_PLAY);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
 
-    aabUpdater = Mockito.spy(new AabUpdater(mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
+    aabUpdater =
+        Mockito.spy(
+            new AabUpdater(mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
@@ -97,7 +96,8 @@ public class AabUpdaterTest {
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     testExecutor.awaitTermination(1, TimeUnit.SECONDS);
 
-    assertTaskFailure(updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
+    assertTaskFailure(
+        updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
   }
 
   @Test
@@ -184,7 +184,8 @@ public class AabUpdaterTest {
     assertThat(e).hasMessageThat().contains(messageSubstring);
   }
 
-  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
+  private void assertTaskFailure(
+      UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
     assertTaskFailure(updateTask, status, messageSubstring);
     assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
   }

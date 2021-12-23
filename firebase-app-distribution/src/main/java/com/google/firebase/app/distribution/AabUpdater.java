@@ -50,7 +50,10 @@ class AabUpdater {
   private final Object updateAabLock = new Object();
 
   AabUpdater() {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance(), new HttpsUrlConnectionFactory(), Executors.newSingleThreadExecutor());
+    this(
+        FirebaseAppDistributionLifecycleNotifier.getInstance(),
+        new HttpsUrlConnectionFactory(),
+        Executors.newSingleThreadExecutor());
   }
 
   AabUpdater(
@@ -134,32 +137,31 @@ class AabUpdater {
     }
 
     // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
-    executor
-        .execute( // Execute the network calls on a background thread
-            () -> {
-              String redirectUrl;
-              try {
-                redirectUrl = fetchDownloadRedirectUrl(downloadUrl);
-              } catch (FirebaseAppDistributionException e) {
-                setUpdateTaskCompletionError(e);
-                return;
-              }
+    executor.execute( // Execute the network calls on a background thread
+        () -> {
+          String redirectUrl;
+          try {
+            redirectUrl = fetchDownloadRedirectUrl(downloadUrl);
+          } catch (FirebaseAppDistributionException e) {
+            setUpdateTaskCompletionError(e);
+            return;
+          }
 
-              Intent updateIntent = new Intent(Intent.ACTION_VIEW);
-              updateIntent.setData(Uri.parse(redirectUrl));
-              updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-              LogWrapper.getInstance().v(TAG + "Redirecting to play");
+          Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+          updateIntent.setData(Uri.parse(redirectUrl));
+          updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+          LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
-              synchronized (updateAabLock) {
-                lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
-                cachedUpdateTask.updateProgress(
-                    UpdateProgress.builder()
-                        .setApkBytesDownloaded(-1)
-                        .setApkFileTotalBytes(-1)
-                        .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-                        .build());
-              }
-            });
+          synchronized (updateAabLock) {
+            lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
+            cachedUpdateTask.updateProgress(
+                UpdateProgress.builder()
+                    .setApkBytesDownloaded(-1)
+                    .setApkFileTotalBytes(-1)
+                    .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+                    .build());
+          }
+        });
   }
 
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
