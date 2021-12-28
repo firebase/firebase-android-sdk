@@ -295,8 +295,7 @@ class ApkUpdater {
     }
   }
 
-  @VisibleForTesting
-  void postUpdateProgress(
+  private void postUpdateProgress(
       long totalBytes, long downloadedBytes, UpdateStatus status, boolean showNotification) {
     synchronized (updateTaskLock) {
       cachedUpdateTask.updateProgress(
