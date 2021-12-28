@@ -67,10 +67,10 @@ class ApkUpdater {
       @NonNull FirebaseApp firebaseApp,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager) {
-    this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.taskExecutor = taskExecutor;
     this.firebaseApp = firebaseApp;
     this.apkInstaller = apkInstaller;
+    this.appDistributionNotificationsManager = appDistributionNotificationsManager;
   }
 
   UpdateTaskImpl updateApk(
