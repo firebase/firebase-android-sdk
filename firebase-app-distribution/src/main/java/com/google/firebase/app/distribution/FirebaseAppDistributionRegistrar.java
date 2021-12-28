@@ -15,6 +15,7 @@
 package com.google.firebase.app.distribution;
 
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
@@ -57,14 +58,18 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
 
-    if (firebaseApp.getApplicationContext() instanceof Application) {
-      Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
+    Context context = firebaseApp.getApplicationContext();
+    if (context instanceof Application) {
+      Application firebaseApplication = (Application) context;
       firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
       LogWrapper.getInstance()
           .e(
               TAG
-                  + "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
+                  + "Context "
+                  + context
+                  + " was not an application, can't register for lifecycle callbacks. SDK might not"
+                  + " function correctly.");
     }
 
     return appDistribution;

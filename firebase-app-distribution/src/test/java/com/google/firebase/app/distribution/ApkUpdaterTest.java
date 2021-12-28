@@ -34,7 +34,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
@@ -73,11 +73,10 @@ public class ApkUpdaterTest {
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
 
-  // TODO: rather than use testExecutor, await a completion listener on the returned task
-  ExecutorService testExecutor = Executors.newSingleThreadExecutor();
+  Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() throws IOException {
+  public void setup() throws IOException, FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
