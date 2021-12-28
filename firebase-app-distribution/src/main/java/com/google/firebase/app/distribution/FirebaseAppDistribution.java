@@ -85,14 +85,16 @@ public class FirebaseAppDistribution {
   /** Constructor for FirebaseAppDistribution */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
         firebaseApp,
-        new TesterSignInManager(firebaseApp, firebaseInstallationsApi, signInStorage),
+        new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
         new NewReleaseFetcher(
-            firebaseApp, new FirebaseAppDistributionTesterApiClient(), firebaseInstallationsApi),
+            firebaseApp,
+            new FirebaseAppDistributionTesterApiClient(),
+            firebaseInstallationsApiProvider),
         new ApkUpdater(firebaseApp, new ApkInstaller()),
         new AabUpdater(),
         signInStorage,
@@ -102,10 +104,10 @@ public class FirebaseAppDistribution {
   /** Constructor for FirebaseAppDistribution */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi) {
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
     this(
         firebaseApp,
-        firebaseInstallationsApi,
+        firebaseInstallationsApiProvider,
         new SignInStorage(firebaseApp.getApplicationContext()),
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }

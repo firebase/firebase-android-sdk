@@ -37,7 +37,6 @@ import java.util.List;
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   private static String TAG = "Registrar:";
-  // private final Provider<FirebaseInstallationsApi> firebaseInstallations;
 
   @Override
   public @NonNull List<Component<?>> getComponents() {

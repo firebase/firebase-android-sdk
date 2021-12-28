@@ -50,7 +50,7 @@ class TesterSignInManager {
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
 
   private final FirebaseApp firebaseApp;
-  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApi;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
@@ -63,11 +63,11 @@ class TesterSignInManager {
 
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage) {
     this(
         firebaseApp,
-        firebaseInstallationsApi,
+        firebaseInstallationsApiProvider,
         signInStorage,
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
@@ -75,11 +75,11 @@ class TesterSignInManager {
   @VisibleForTesting
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
 
@@ -167,7 +167,7 @@ class TesterSignInManager {
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.singin_yes_button),
         (dialogInterface, i) -> {
-          firebaseInstallationsApi
+          firebaseInstallationsApiProvider
               .get()
               .getId()
               .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
