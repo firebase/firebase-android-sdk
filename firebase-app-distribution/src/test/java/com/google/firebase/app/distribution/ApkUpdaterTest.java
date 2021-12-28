@@ -14,17 +14,15 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.firebase.app.distribution.FirebaseAppDistributionNotificationsManager.NOTIFICATION_TAG;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
-import android.app.NotificationManager;
-import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,8 +43,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.shadows.ShadowNotification;
-import org.robolectric.shadows.ShadowNotificationManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class ApkUpdaterTest {
@@ -72,6 +68,7 @@ public class ApkUpdaterTest {
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private ApkInstaller mockApkInstaller;
+  @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -94,7 +91,9 @@ public class ApkUpdaterTest {
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
 
-    this.apkUpdater = Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
+    this.apkUpdater =
+        Mockito.spy(
+            new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller, mockNotificationsManager));
     doReturn(mockHttpsUrlConnection).when(apkUpdater).openHttpsUrlConnection(TEST_URL);
   }
 
@@ -127,11 +126,14 @@ public class ApkUpdaterTest {
 
   @Test
   public void updateApk_whenInstallFailed_setsError() {
-    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
+    boolean showNotification = true;
+    doReturn(Tasks.forResult(mockFile))
+        .when(apkUpdater)
+        .downloadApk(TEST_RELEASE, showNotification);
     TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
     when(mockApkInstaller.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
@@ -150,6 +152,35 @@ public class ApkUpdaterTest {
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.INSTALL_FAILED, progressEvents.get(0).getUpdateStatus());
     assertFalse(updateTask.isSuccessful());
+    verify(mockNotificationsManager).updateNotification(1000, 1000, UpdateStatus.INSTALL_FAILED);
+  }
+
+  // TODO(lkellogg): Improve these notification related tests so they actually assert that the
+  //  correct notifications are set under various conditions.
+  @Test
+  public void updateApk_showNotificationFalse_doesNotUpdateNotificationManager() {
+    boolean showNotification = false;
+    doReturn(Tasks.forResult(mockFile))
+        .when(apkUpdater)
+        .downloadApk(TEST_RELEASE, showNotification);
+    TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
+    when(mockApkInstaller.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
+    TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    installTaskCompletionSource.setException(
+        new FirebaseAppDistributionException(
+            Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+
+    try {
+      onCompleteListener.await();
+    } catch (Exception ex) {
+      FirebaseAppDistributionException e = (FirebaseAppDistributionException) ex;
+      assertEquals(FirebaseAppDistributionException.Status.INSTALLATION_FAILURE, e.getErrorCode());
+    }
+    verifyNoInteractions(mockNotificationsManager);
   }
 
   @Test
@@ -157,54 +188,6 @@ public class ApkUpdaterTest {
     Task<File> task1 = apkUpdater.downloadApk(TEST_RELEASE, false);
     Task<File> task2 = apkUpdater.downloadApk(TEST_RELEASE, false);
     assertEquals(task1, task2);
-  }
-
-  @Test
-  public void postProgressUpdate_whenDownloading_updatesNotificationsManagerWithProgress() {
-    Context context = ApplicationProvider.getApplicationContext();
-    NotificationManager notificationManager =
-        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
-    // called from basic configuration
-    apkUpdater.updateApk(TEST_RELEASE, true);
-    apkUpdater.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, true);
-
-    assertEquals(1, shadowNotificationManager.size());
-    ShadowNotification shadowNotification =
-        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
-    assertEquals(90, shadowNotification.getProgress());
-    assertEquals("Downloading in-app update...", shadowNotification.getContentTitle().toString());
-  }
-
-  @Test
-  public void postProgressUpdate_whenErrorStatus_updatesNotificationsManagerWithError() {
-    Context context = ApplicationProvider.getApplicationContext();
-    NotificationManager notificationManager =
-        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
-    // called from basic configuration
-
-    apkUpdater.updateApk(TEST_RELEASE, true);
-    apkUpdater.postUpdateProgress(1000, 1000, UpdateStatus.DOWNLOAD_FAILED, true);
-
-    assertEquals(1, shadowNotificationManager.size());
-    ShadowNotification shadowNotification =
-        shadowOf(shadowNotificationManager.getNotification(NOTIFICATION_TAG, 0));
-    assertEquals(100, shadowNotification.getProgress());
-    assertEquals("Download failed", shadowNotification.getContentTitle().toString());
-  }
-
-  @Test
-  public void
-      postProgressUpdate_whenCalledFromAdvancedConfiguration_doesNotShowDownloadNotification() {
-    Context context = ApplicationProvider.getApplicationContext();
-    NotificationManager notificationManager =
-        (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    ShadowNotificationManager shadowNotificationManager = shadowOf(notificationManager);
-    // called from advanced configuration
-    apkUpdater.updateApk(TEST_RELEASE, false);
-    apkUpdater.postUpdateProgress(1000, 900, UpdateStatus.DOWNLOADING, false);
-    assertEquals(0, shadowNotificationManager.size());
   }
 
   @Test
