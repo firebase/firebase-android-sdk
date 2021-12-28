@@ -289,7 +289,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Configures Indexing for local query execution. Any previous index configuration is overridden.
+   * Configures indexing for local query execution. Any previous index configuration is overridden.
    * The Task resolves once the index configuration has been persisted.
    *
    * <p>The index entries themselves are created asynchronously. You can continue to use queries
@@ -307,6 +307,10 @@ public class FirebaseFirestore {
   Task<Void> setIndexConfiguration(String json) {
     ensureClientConfigured();
 
+    if (!settings.isPersistenceEnabled()) {
+      throw new IllegalStateException("Cannot enable indexes when persisted is disabled");
+    }
+
     // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
     // available.");
 
@@ -320,9 +324,9 @@ public class FirebaseFirestore {
       JSONObject jsonObject = new JSONObject(json);
 
       if (jsonObject.has("indexes")) {
-        JSONArray indices = jsonObject.getJSONArray("indexes");
-        for (int i = 0; i < indices.length(); ++i) {
-          JSONObject definition = indices.getJSONObject(i);
+        JSONArray indexes = jsonObject.getJSONArray("indexes");
+        for (int i = 0; i < indexes.length(); ++i) {
+          JSONObject definition = indexes.getJSONObject(i);
           String collectionGroup = definition.getString("collectionGroup");
           List<FieldIndex.Segment> segments = new ArrayList<>();
 
