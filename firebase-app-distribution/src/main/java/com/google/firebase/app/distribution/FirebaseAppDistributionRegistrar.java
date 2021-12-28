@@ -23,7 +23,6 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -53,10 +52,9 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    Provider<FirebaseInstallationsApi> firebaseInstallations =
-        container.getProvider(FirebaseInstallationsApi.class);
     FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistribution(firebaseApp, firebaseInstallations.get());
+        new FirebaseAppDistribution(
+            firebaseApp, container.getProvider(FirebaseInstallationsApi.class));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
 

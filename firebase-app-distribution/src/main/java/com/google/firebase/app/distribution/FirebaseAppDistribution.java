@@ -34,6 +34,7 @@ import com.google.firebase.app.distribution.FirebaseAppDistributionException.Sta
 import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import com.google.firebase.app.distribution.internal.SignInStorage;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 public class FirebaseAppDistribution {
@@ -101,10 +102,10 @@ public class FirebaseAppDistribution {
   /** Constructor for FirebaseAppDistribution */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi) {
     this(
         firebaseApp,
-        firebaseInstallationsApi,
+        firebaseInstallationsApi.get(),
         new SignInStorage(firebaseApp.getApplicationContext()),
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
