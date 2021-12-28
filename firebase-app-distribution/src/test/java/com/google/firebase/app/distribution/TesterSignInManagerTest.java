@@ -80,7 +80,8 @@ public class TesterSignInManagerTest {
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
 
-  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallations;
+  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -101,8 +102,9 @@ public class TesterSignInManagerTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    when(mockFirebaseInstallations.get().getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.get().getToken(false))
+    when(mockFirebaseInstallationsProvider.get()).thenReturn(mockFirebaseInstallations);
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
@@ -130,7 +132,10 @@ public class TesterSignInManagerTest {
 
     testerSignInManager =
         new TesterSignInManager(
-            firebaseApp, mockFirebaseInstallations, mockSignInStorage, mockLifecycleNotifier);
+            firebaseApp,
+            mockFirebaseInstallationsProvider,
+            mockSignInStorage,
+            mockLifecycleNotifier);
   }
 
   @Test
@@ -147,7 +152,7 @@ public class TesterSignInManagerTest {
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
-    verify(mockFirebaseInstallations.get(), times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
@@ -164,7 +169,7 @@ public class TesterSignInManagerTest {
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
-    verify(mockFirebaseInstallations.get(), times(1)).getId();
+    verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
