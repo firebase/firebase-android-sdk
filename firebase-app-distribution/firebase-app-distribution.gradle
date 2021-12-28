@@ -39,9 +39,9 @@ android {
 
 dependencies {
     implementation 'org.jetbrains:annotations:15.0'
-    implementation project(path: ':firebase-components')
-    implementation project(path: ':firebase-installations-interop')
-    implementation project(path: ':firebase-common')
+    implementation project(':firebase-components')
+    implementation project(':firebase-installations-interop')
+    implementation project(':firebase-common')
     runtimeOnly project(':firebase-installations')
 
     testImplementation 'junit:junit:4.13.2'
