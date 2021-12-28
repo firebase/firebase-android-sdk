@@ -39,6 +39,7 @@ import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import com.google.firebase.app.distribution.internal.SignInStorage;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
@@ -49,7 +50,7 @@ class TesterSignInManager {
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
 
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApi;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
@@ -62,7 +63,7 @@ class TesterSignInManager {
 
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage) {
     this(
         firebaseApp,
@@ -74,7 +75,7 @@ class TesterSignInManager {
   @VisibleForTesting
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
@@ -167,6 +168,7 @@ class TesterSignInManager {
         context.getString(R.string.singin_yes_button),
         (dialogInterface, i) -> {
           firebaseInstallationsApi
+              .get()
               .getId()
               .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
               .addOnFailureListener(

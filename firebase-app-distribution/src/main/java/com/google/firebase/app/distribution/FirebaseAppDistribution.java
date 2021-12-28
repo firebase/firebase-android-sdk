@@ -85,7 +85,7 @@ public class FirebaseAppDistribution {
   /** Constructor for FirebaseAppDistribution */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(
@@ -105,7 +105,7 @@ public class FirebaseAppDistribution {
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi) {
     this(
         firebaseApp,
-        firebaseInstallationsApi.get(),
+        firebaseInstallationsApi,
         new SignInStorage(firebaseApp.getApplicationContext()),
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }

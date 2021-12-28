@@ -43,6 +43,7 @@ import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import com.google.firebase.app.distribution.internal.SignInStorage;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
@@ -79,7 +80,7 @@ public class TesterSignInManagerTest {
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
 
-  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -100,8 +101,8 @@ public class TesterSignInManagerTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.getToken(false))
+    when(mockFirebaseInstallations.get().getId()).thenReturn(Tasks.forResult(TEST_FID_1));
+    when(mockFirebaseInstallations.get().getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
@@ -146,7 +147,7 @@ public class TesterSignInManagerTest {
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
-    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations.get(), times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
@@ -163,7 +164,7 @@ public class TesterSignInManagerTest {
     AlertDialog dialog = verifySignInAlertDialog();
     dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
 
-    verify(mockFirebaseInstallations, times(1)).getId();
+    verify(mockFirebaseInstallations.get(), times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 

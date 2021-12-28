@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.app.distribution.internal.LogWrapper;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
@@ -44,7 +45,7 @@ class NewReleaseFetcher {
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApi;
   // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
 
@@ -54,7 +55,7 @@ class NewReleaseFetcher {
   NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
@@ -64,7 +65,7 @@ class NewReleaseFetcher {
   NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApi,
       @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
@@ -79,10 +80,10 @@ class NewReleaseFetcher {
       return cachedCheckForNewRelease;
     }
 
-    Task<String> installationIdTask = firebaseInstallationsApi.getId();
+    Task<String> installationIdTask = firebaseInstallationsApi.get().getId();
     // forceRefresh is false to get locally cached token if available
     Task<InstallationTokenResult> installationAuthTokenTask =
-        firebaseInstallationsApi.getToken(false);
+        firebaseInstallationsApi.get().getToken(false);
 
     this.cachedCheckForNewRelease =
         Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
