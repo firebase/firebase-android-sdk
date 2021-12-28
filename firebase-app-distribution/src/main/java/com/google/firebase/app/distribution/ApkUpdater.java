@@ -67,6 +67,10 @@ class ApkUpdater {
       @NonNull FirebaseApp firebaseApp,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager) {
+<<<<<<< HEAD
+=======
+    this.appDistributionNotificationsManager = appDistributionNotificationsManager;
+>>>>>>> a7b82c4c (Refactor tests around notifications to be more focused to the classes under test)
     this.taskExecutor = taskExecutor;
     this.firebaseApp = firebaseApp;
     this.apkInstaller = apkInstaller;
