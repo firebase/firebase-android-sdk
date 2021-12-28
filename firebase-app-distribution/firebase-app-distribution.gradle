@@ -42,7 +42,7 @@ dependencies {
     implementation project(path: ':firebase-components')
     implementation project(path: ':firebase-installations-interop')
     implementation project(path: ':firebase-common')
-    implementation project(path: ':firebase-installations')
+    runtimeOnly project(':firebase-installations')
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
