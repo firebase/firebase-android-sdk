@@ -92,7 +92,6 @@ class FirebaseAppDistributionTesterApiClient {
           ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     } finally {
       if (connection != null) {
-        // TODO(lkellogg): check if we're disconnecting everywhere we should
         connection.disconnect();
       }
     }
@@ -106,12 +105,13 @@ class FirebaseAppDistributionTesterApiClient {
 
   private String readResponseBody(HttpsURLConnection connection) throws IOException {
     boolean isSuccess = isResponseSuccess(connection.getResponseCode());
-    InputStream is = isSuccess ? connection.getInputStream() : connection.getErrorStream();
-    if (!isSuccess && connection.getErrorStream() == null) {
-      // If the server returns an empty response with an error code, getErrorStream returns null
+    InputStream inputStream = isSuccess ? connection.getInputStream() : connection.getErrorStream();
+    if (inputStream == null && !isSuccess) {
+      // If the server returns a response with an error code and no response body, getErrorStream
+      // returns null. We return an empty string to reflect the empty body.
       return "";
     }
-    return convertInputStreamToString(new BufferedInputStream(is));
+    return convertInputStreamToString(new BufferedInputStream(inputStream));
   }
 
   private static boolean isResponseSuccess(int responseCode) {

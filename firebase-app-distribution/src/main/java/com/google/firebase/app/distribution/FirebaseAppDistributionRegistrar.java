@@ -68,7 +68,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
               TAG
                   + "Context "
                   + context
-                  + " was not an application, can't register for lifecycle callbacks. SDK might not"
+                  + " was not an Application, can't register for lifecycle callbacks. SDK might not"
                   + " function correctly.");
     }
 

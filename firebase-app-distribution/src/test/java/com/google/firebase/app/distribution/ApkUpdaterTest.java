@@ -73,7 +73,7 @@ public class ApkUpdaterTest {
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
 
-  Executor testExecutor = Executors.newSingleThreadExecutor();
+  private final Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
   public void setup() throws IOException, FirebaseAppDistributionException {
