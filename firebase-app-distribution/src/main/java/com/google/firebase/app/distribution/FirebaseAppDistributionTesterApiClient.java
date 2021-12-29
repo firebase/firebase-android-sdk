@@ -39,7 +39,7 @@ class FirebaseAppDistributionTesterApiClient {
 
   private static final String RELEASE_ENDPOINT_URL_FORMAT =
       "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/%s/installations/%s/releases";
-  private static final String REQUEST_METHOD = "GET";
+  private static final String REQUEST_METHOD_GET = "GET";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
@@ -185,7 +185,7 @@ class FirebaseAppDistributionTesterApiClient {
           ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     }
     try {
-      httpsURLConnection.setRequestMethod(REQUEST_METHOD);
+      httpsURLConnection.setRequestMethod(REQUEST_METHOD_GET);
     } catch (ProtocolException e) {
       throw new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN, e);
     }
