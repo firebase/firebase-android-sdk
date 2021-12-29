@@ -66,7 +66,7 @@ public class AabUpdaterTest {
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() throws IOException {
+  public void setup() throws IOException, FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
@@ -113,7 +113,7 @@ public class AabUpdaterTest {
 
   @Test
   public void updateAppTask_missingLocationHeader_setsDownloadFailure()
-      throws IOException, InterruptedException {
+      throws InterruptedException {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
@@ -123,8 +123,7 @@ public class AabUpdaterTest {
   }
 
   @Test
-  public void updateAppTask_emptyLocationHeader_setsDownloadFailure()
-      throws IOException, InterruptedException {
+  public void updateAppTask_emptyLocationHeader_setsDownloadFailure() throws InterruptedException {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
@@ -154,7 +153,7 @@ public class AabUpdaterTest {
   }
 
   @Test
-  public void updateAppTask_onAppResume_setsUpdateCancelled() throws IOException {
+  public void updateAppTask_onAppResume_setsUpdateCancelled() {
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);

@@ -15,9 +15,9 @@
 package com.google.firebase.app.distribution;
 
 import static androidx.test.InstrumentationRegistry.getContext;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -34,7 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
@@ -46,26 +45,25 @@ public class FirebaseAppDistributionTesterApiClientTest {
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_FID_1 = "cccccccccccccccccccccc";
   private static final String INVALID_RESPONSE = "InvalidResponse";
+  private static final String RELEASES_URL =
+      "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/1:123456789:android:abcdef/installations/cccccccccccccccccccccc/releases";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private Context applicationContext;
   @Mock private HttpsURLConnection mockHttpsURLConnection;
+  @Mock private HttpsUrlConnectionFactory mockHttpsURLConnectionFactory;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
 
-    // using spy allows using doReturn to specify output
-    // of a method while leaving other methods unmocked
-    firebaseAppDistributionTesterApiClient =
-        Mockito.spy(new FirebaseAppDistributionTesterApiClient());
-
     applicationContext = ApplicationProvider.getApplicationContext();
 
-    Mockito.doReturn(mockHttpsURLConnection)
-        .when(firebaseAppDistributionTesterApiClient)
-        .openHttpsUrlConnection(
-            TEST_APP_ID_1, TEST_FID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
+    when(mockHttpsURLConnectionFactory.openConnection(RELEASES_URL))
+        .thenReturn(mockHttpsURLConnection);
+
+    firebaseAppDistributionTesterApiClient =
+        new FirebaseAppDistributionTesterApiClient(mockHttpsURLConnectionFactory);
   }
 
   @Test
@@ -73,17 +71,24 @@ public class FirebaseAppDistributionTesterApiClientTest {
     JSONObject releaseJson = getTestJSON("testApkReleaseResponse.json");
     InputStream response =
         new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
     AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchNewRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
-    assertEquals(release.getBinaryType(), BinaryType.APK);
-    assertEquals(release.getBuildVersion(), "3");
-    assertEquals(release.getDisplayVersion(), "3.0");
-    assertEquals(release.getReleaseNotes(), "This is a test release.");
-    assertEquals(release.getDownloadUrl(), "http://test-url-apk");
-    assertEquals(release.getCodeHash(), "code-hash-apk-1");
-    assertEquals(release.getApkHash(), "apk-hash-1");
+    AppDistributionReleaseInternal expectedRelease =
+        AppDistributionReleaseInternal.builder()
+            .setBinaryType(BinaryType.APK)
+            .setBuildVersion("3")
+            .setDisplayVersion("3.0")
+            .setReleaseNotes("This is a test release.")
+            .setDownloadUrl("http://test-url-apk")
+            .setCodeHash("code-hash-apk-1")
+            .setApkHash("apk-hash-1")
+            .setIasArtifactId("")
+            .build();
+    assertThat(release).isEqualTo(expectedRelease);
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -91,16 +96,41 @@ public class FirebaseAppDistributionTesterApiClientTest {
     JSONObject releaseJson = getTestJSON("testAabReleaseResponse.json");
     InputStream response =
         new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
     AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchNewRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
-    assertEquals(release.getBinaryType(), BinaryType.AAB);
-    assertEquals(release.getBuildVersion(), "3");
-    assertEquals(release.getDisplayVersion(), "3.0");
-    assertEquals(release.getReleaseNotes(), "This is a test release.");
-    assertEquals(release.getDownloadUrl(), "http://test-url-aab");
-    assertEquals(release.getIasArtifactId(), "ias-artifact-id-1");
+    AppDistributionReleaseInternal expectedRelease =
+        AppDistributionReleaseInternal.builder()
+            .setBinaryType(BinaryType.AAB)
+            .setBuildVersion("3")
+            .setDisplayVersion("3.0")
+            .setReleaseNotes("This is a test release.")
+            .setDownloadUrl("http://test-url-aab")
+            .setCodeHash("")
+            .setApkHash("")
+            .setIasArtifactId("ias-artifact-id-1")
+            .build();
+    assertThat(release).isEqualTo(expectedRelease);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void fetchNewRelease_whenConnectionFails_throwsError() throws Exception {
+    IOException caughtException = new IOException("error");
+    when(mockHttpsURLConnectionFactory.openConnection(RELEASES_URL)).thenThrow(caughtException);
+
+    FirebaseAppDistributionException ex =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () ->
+                firebaseAppDistributionTesterApiClient.fetchNewRelease(
+                    TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
+
+    assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
+    assertThat(ex.getMessage()).contains("Failed to fetch releases due to unknown network error");
+    assertThat(ex.getCause()).isEqualTo(caughtException);
   }
 
   @Test
@@ -115,8 +145,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
-    assertEquals("Failed to authenticate the tester", ex.getMessage());
+    assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(ex.getMessage()).isEqualTo("Failed to authenticate the tester");
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -131,8 +162,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
-    assertEquals("Failed to authorize the tester", ex.getMessage());
+    assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(ex.getMessage()).isEqualTo("Failed to authorize the tester");
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -147,8 +179,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.AUTHENTICATION_FAILURE, ex.getErrorCode());
-    assertEquals("Tester or release not found", ex.getMessage());
+    assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(ex.getMessage()).contains("App or tester not found");
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -163,8 +196,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.NETWORK_FAILURE, ex.getErrorCode());
-    assertEquals("Failed to fetch releases due to timeout", ex.getMessage());
+    assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
+    assertThat(ex.getMessage()).isEqualTo("Failed to fetch releases due to timeout");
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -179,9 +213,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.UNKNOWN, ex.getErrorCode());
-    assertEquals("Unknown Error", ex.getMessage());
-    assertEquals(IOException.class, ex.getCause().getClass());
+    assertThat(ex.getErrorCode()).isEqualTo(Status.UNKNOWN);
+    assertThat(ex.getMessage()).contains("409");
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -189,6 +223,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     InputStream response =
         new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     FirebaseAppDistributionException ex =
         assertThrows(
             FirebaseAppDistributionException.class,
@@ -196,9 +231,10 @@ public class FirebaseAppDistributionTesterApiClientTest {
                 firebaseAppDistributionTesterApiClient.fetchNewRelease(
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
-    assertEquals(Status.UNKNOWN, ex.getErrorCode());
-    assertEquals("Error parsing service response", ex.getMessage());
-    assert (ex.getCause() instanceof JSONException);
+    assertThat(ex.getErrorCode()).isEqualTo(Status.UNKNOWN);
+    assertThat(ex.getMessage()).isEqualTo("Error parsing service response");
+    assertThat(ex.getCause()).isInstanceOf(JSONException.class);
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -207,10 +243,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
     InputStream response =
         new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     AppDistributionReleaseInternal release =
         firebaseAppDistributionTesterApiClient.fetchNewRelease(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext);
-    assertNull(release);
+    assertThat(release).isNull();
+    verify(mockHttpsURLConnection).disconnect();
   }
 
   private JSONObject getTestJSON(String fileName) throws IOException, JSONException {

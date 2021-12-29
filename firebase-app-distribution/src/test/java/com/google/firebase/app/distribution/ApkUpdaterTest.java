@@ -73,10 +73,10 @@ public class ApkUpdaterTest {
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
 
-  private Executor testExecutor = Executors.newSingleThreadExecutor();
+  private final Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() throws IOException {
+  public void setup() throws IOException, FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();

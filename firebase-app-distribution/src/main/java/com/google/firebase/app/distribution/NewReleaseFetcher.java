@@ -179,6 +179,8 @@ class NewReleaseFetcher {
       return hasSameHashAsInstalledRelease(newRelease);
     }
 
+    // TODO(lkellogg): getIasArtifactId() will likely never be null since it's set to the empty
+    //  string if not present in the response
     if (newRelease.getIasArtifactId() == null) {
       return false;
     }
