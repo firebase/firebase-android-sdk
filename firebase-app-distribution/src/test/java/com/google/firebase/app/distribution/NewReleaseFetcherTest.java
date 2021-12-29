@@ -41,6 +41,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;
@@ -74,6 +75,7 @@ public class NewReleaseFetcherTest {
   private ShadowPackageManager shadowPackageManager;
   private Context applicationContext;
 
+  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
@@ -95,6 +97,7 @@ public class NewReleaseFetcherTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
+    when(mockFirebaseInstallationsProvider.get()).thenReturn(mockFirebaseInstallations);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
@@ -126,7 +129,7 @@ public class NewReleaseFetcherTest {
             new NewReleaseFetcher(
                 firebaseApp,
                 mockFirebaseAppDistributionTesterApiClient,
-                mockFirebaseInstallations,
+                mockFirebaseInstallationsProvider,
                 testExecutor));
   }
 
