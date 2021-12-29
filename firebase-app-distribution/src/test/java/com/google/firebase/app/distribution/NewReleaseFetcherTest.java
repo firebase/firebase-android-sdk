@@ -348,8 +348,7 @@ public class NewReleaseFetcherTest {
 
   @Test
   public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash() {
-
-    try (MockedStatic mockedReleaseIdentificationUtils =
+    try (MockedStatic<ReleaseIdentificationUtils> mockedReleaseIdentificationUtils =
         mockStatic(ReleaseIdentificationUtils.class)) {
       PackageInfo packageInfo =
           shadowPackageManager.getInternalMutablePackageInfo(

@@ -78,7 +78,10 @@ public class InstallActivity extends AppCompatActivity {
         return Settings.Secure.getInt(getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS)
             == 1;
       } catch (Settings.SettingNotFoundException e) {
-        LogWrapper.getInstance().e(TAG + "Unable to determine if unknown sources is enabled.", e);
+        LogWrapper.getInstance()
+            .e(
+                TAG + "Unable to determine if unknown sources is enabled. Assuming it's enabled.",
+                e);
         return true;
       }
     }
