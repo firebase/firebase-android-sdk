@@ -152,7 +152,6 @@ class ApkUpdater {
     return downloadTaskCompletionSource.getTask();
   }
 
-  // TODO(lkellogg): The happy path in this method is not exercised by any tests right now
   private void makeApkDownloadRequest(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification)
       throws FirebaseAppDistributionException {

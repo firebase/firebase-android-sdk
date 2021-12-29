@@ -187,8 +187,6 @@ public class ApkUpdaterTest {
     verify(mockNotificationsManager).updateNotification(1000, 1000, UpdateStatus.INSTALL_FAILED);
   }
 
-  // TODO(lkellogg): Improve these notification related tests so they actually assert that the
-  //  correct notifications are set under various conditions.
   @Test
   public void updateApk_showNotificationFalse_doesNotUpdateNotificationManager() {
     boolean showNotification = false;
