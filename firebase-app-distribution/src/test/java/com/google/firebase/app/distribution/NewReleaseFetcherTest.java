@@ -14,6 +14,7 @@
 
 package com.google.firebase.app.distribution;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.app.distribution.BinaryType.APK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,6 +42,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -83,7 +86,7 @@ public class NewReleaseFetcherTest {
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
   @Before
-  public void setup() {
+  public void setup() throws FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
 
     FirebaseApp.clearInstancesForTest();
@@ -155,9 +158,6 @@ public class NewReleaseFetcherTest {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
         .thenReturn(getTestNewRelease().build());
-    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.getToken(false))
-        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
     TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
         new TestOnCompleteListener<>();
@@ -171,14 +171,9 @@ public class NewReleaseFetcherTest {
   }
 
   @Test
-  public void checkForNewRelease_nonAppDistroFailure() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(getTestInstalledRelease().build());
+  public void checkForNewRelease_fisFailure() throws Exception {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
-    when(mockFirebaseInstallations.getToken(false))
-        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
 
     TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
         new TestOnCompleteListener<>();
@@ -188,18 +183,33 @@ public class NewReleaseFetcherTest {
     FirebaseAppDistributionException actualException =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
-    assertEquals(Constants.ErrorMessages.NETWORK_ERROR, actualException.getMessage());
-    assertEquals(
-        FirebaseAppDistributionException.Status.NETWORK_FAILURE, actualException.getErrorCode());
+    assertEquals(ErrorMessages.UNKNOWN_ERROR, actualException.getMessage());
+    assertEquals(Status.UNKNOWN, actualException.getErrorCode());
     assertEquals(expectedException, actualException.getCause());
   }
 
   @Test
-  public void checkForNewRelease_appDistroFailure() throws Exception {
-    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.getToken(false))
-        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
+  public void checkForNewRelease_uncaughtExceptionFailure() throws Exception {
+    RuntimeException expectedException = new RuntimeException("error");
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenThrow(expectedException);
 
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
+
+    FirebaseAppDistributionException actualException =
+        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
+
+    assertThat(actualException.getMessage()).contains(ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
+    assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
+  }
+
+  @Test
+  public void checkForNewRelease_appDistroFailure() throws Exception {
     FirebaseAppDistributionException expectedException =
         new FirebaseAppDistributionException(
             "test", FirebaseAppDistributionException.Status.UNKNOWN);

@@ -17,15 +17,38 @@ package com.google.firebase.app.distribution;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.app.distribution.internal.LogWrapper;
+import java.util.concurrent.Executor;
 
 class TaskUtils {
   private static final String TAG = "TaskUtils:";
 
-  static <TResult> Task<TResult> handleTaskFailure(
-      Task<TResult> task,
-      String defaultErrorMessage,
-      FirebaseAppDistributionException.Status defaultErrorStatus) {
+  interface Operation<TResult> {
+    TResult run() throws FirebaseAppDistributionException;
+  }
+
+  static <TResult> Task<TResult> runAsyncInTask(Executor executor, Operation<TResult> operation) {
+    TaskCompletionSource<TResult> taskCompletionSource = new TaskCompletionSource<>();
+    executor.execute(
+        () -> {
+          try {
+            taskCompletionSource.setResult(operation.run());
+          } catch (FirebaseAppDistributionException e) {
+            taskCompletionSource.setException(e);
+          } catch (Throwable t) {
+            taskCompletionSource.setException(
+                new FirebaseAppDistributionException(
+                    String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()),
+                    Status.UNKNOWN,
+                    t));
+          }
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  static <TResult> Task<TResult> handleTaskFailure(Task<TResult> task) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
       LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
@@ -33,7 +56,7 @@ class TaskUtils {
         return task;
       }
       return Tasks.forException(
-          new FirebaseAppDistributionException(defaultErrorMessage, defaultErrorStatus, e));
+          new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN, e));
     }
     return task;
   }
