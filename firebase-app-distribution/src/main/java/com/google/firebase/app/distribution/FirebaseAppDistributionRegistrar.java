@@ -43,7 +43,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
@@ -51,9 +51,9 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
     FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
+        new FirebaseAppDistribution(
+            firebaseApp, container.getProvider(FirebaseInstallationsApi.class));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
 
