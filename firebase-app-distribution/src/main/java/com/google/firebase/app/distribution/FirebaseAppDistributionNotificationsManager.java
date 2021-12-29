@@ -14,13 +14,13 @@
 
 package com.google.firebase.app.distribution;
 
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import com.google.firebase.app.distribution.internal.LogWrapper;
@@ -48,18 +48,20 @@ class FirebaseAppDistributionNotificationsManager {
 
   void updateNotification(long totalBytes, long downloadedBytes, UpdateStatus status) {
     NotificationManager notificationManager = createNotificationManager(context);
-    Notification notification =
+    NotificationCompat.Builder notificationBuilder =
         new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setOnlyAlertOnce(true)
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
-            .setContentIntent(createPendingIntent())
             .setContentTitle(context.getString(getNotificationContentTitleId(status)))
             .setProgress(
                 100,
                 (int) (((float) downloadedBytes / (float) totalBytes) * 100),
-                /*indeterminate = */ false)
-            .build();
-    notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, notification);
+                /*indeterminate = */ false);
+    PendingIntent appLaunchIntent = createAppLaunchIntent();
+    if (appLaunchIntent != null) {
+      notificationBuilder.setContentIntent(appLaunchIntent);
+    }
+    notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, notificationBuilder.build());
   }
 
   int getNotificationContentTitleId(UpdateStatus status) {
@@ -100,11 +102,13 @@ class FirebaseAppDistributionNotificationsManager {
     }
   }
 
-  private PendingIntent createPendingIntent() {
+  @Nullable
+  private PendingIntent createAppLaunchIntent() {
     // Query the package manager for the best launch intent for the app
     Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
     if (intent == null) {
       LogWrapper.getInstance().w(TAG + "No activity found to launch app");
+      return null;
     }
     return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_ONE_SHOT);
   }
