@@ -29,6 +29,22 @@ class TaskUtils {
     TResult run() throws FirebaseAppDistributionException;
   }
 
+  /**
+   * Runs a long running operation inside a {@link Task}, wrapping any errors in {@link
+   * FirebaseAppDistributionException}.
+   *
+   * <p>This allows long running operations to be chained together using {@link Task#onSuccessTask}.
+   * If the operation throws an exception, the task will fail, and the exception will be surfaced to
+   * the user as {@code FirebaseAppDistributionException}, available via {@link Task#getException}.
+   *
+   * <p>Exceptions that are not {@code FirebaseAppDistributionException} will be wrapped in one,
+   * with {@link Status#UNKNOWN}.
+   *
+   * @param executor the executor in which to run the long running operation
+   * @param operation the long running operation
+   * @param <TResult> the type of the value returned by the operation
+   * @return the task encompassing the long running operation
+   */
   static <TResult> Task<TResult> runAsyncInTask(Executor executor, Operation<TResult> operation) {
     TaskCompletionSource<TResult> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
@@ -38,27 +54,39 @@ class TaskUtils {
           } catch (FirebaseAppDistributionException e) {
             taskCompletionSource.setException(e);
           } catch (Throwable t) {
-            taskCompletionSource.setException(
-                new FirebaseAppDistributionException(
-                    String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()),
-                    Status.UNKNOWN,
-                    t));
+            taskCompletionSource.setException(wrapException(t));
           }
         });
     return taskCompletionSource.getTask();
   }
 
+  /**
+   * Handle a {@link Task} that may fail with unexpected exceptions, wrapping them in {@link
+   * FirebaseAppDistributionException}.
+   *
+   * <p>Chain this off of a task that may fail with unexpected exceptions, using {@link
+   * Task#continueWithTask}. If the task fails, the task returned by this method will also fail,
+   * with a {@code FirebaseAppDistributionException} of {@link Status#UNKNOWN} that wraps the
+   * original exception.
+   *
+   * @param task the task that might fail with an unexpected exception
+   * @param <TResult> the type of the value returned by the task
+   * @return the new task that will fail with {@link FirebaseAppDistributionException}
+   */
   static <TResult> Task<TResult> handleTaskFailure(Task<TResult> task) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
       LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
-      if (e instanceof FirebaseAppDistributionException) {
-        return task;
-      }
-      return Tasks.forException(
-          new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN, e));
+      return e instanceof FirebaseAppDistributionException
+          ? task
+          : Tasks.forException(wrapException(e));
     }
     return task;
+  }
+
+  private static FirebaseAppDistributionException wrapException(Throwable t) {
+    return new FirebaseAppDistributionException(
+        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, t);
   }
 
   static void safeSetTaskException(TaskCompletionSource taskCompletionSource, Exception e) {

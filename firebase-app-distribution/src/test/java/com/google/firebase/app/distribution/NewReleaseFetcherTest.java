@@ -183,14 +183,15 @@ public class NewReleaseFetcherTest {
     FirebaseAppDistributionException actualException =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
-    assertEquals(ErrorMessages.UNKNOWN_ERROR, actualException.getMessage());
-    assertEquals(Status.UNKNOWN, actualException.getErrorCode());
-    assertEquals(expectedException, actualException.getCause());
+    assertThat(actualException).hasMessageThat().contains(ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException).hasMessageThat().contains("test ex");
+    assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
+    assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
   }
 
   @Test
   public void checkForNewRelease_uncaughtExceptionFailure() throws Exception {
-    RuntimeException expectedException = new RuntimeException("error");
+    RuntimeException expectedException = new RuntimeException("test ex");
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
             any(), any(), any(), any(), any()))
         .thenThrow(expectedException);
@@ -203,7 +204,8 @@ public class NewReleaseFetcherTest {
     FirebaseAppDistributionException actualException =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
-    assertThat(actualException.getMessage()).contains(ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException).hasMessageThat().contains(ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException).hasMessageThat().contains("test ex");
     assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
   }
