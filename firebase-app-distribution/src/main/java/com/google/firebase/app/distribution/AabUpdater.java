@@ -92,34 +92,41 @@ class AabUpdater {
 
   private String fetchDownloadRedirectUrl(String downloadUrl)
       throws FirebaseAppDistributionException {
-    HttpsURLConnection httpsURLConnection;
+    HttpsURLConnection connection = null;
     int responseCode;
+    String redirectUrl;
 
     try {
-      httpsURLConnection = httpsUrlConnectionFactory.openConnection(downloadUrl);
-      httpsURLConnection.setInstanceFollowRedirects(false);
-      responseCode = httpsURLConnection.getResponseCode();
+      connection = httpsUrlConnectionFactory.openConnection(downloadUrl);
+      connection.setInstanceFollowRedirects(false);
+      responseCode = connection.getResponseCode();
+      redirectUrl = connection.getHeaderField("Location");
+      // Prevents a {@link LeakedClosableViolation} in strict mode even when the connection is
+      // disconnected
+      connection.getInputStream().close();
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
           "Failed to open connection to: " + downloadUrl, NETWORK_FAILURE, e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
 
     if (!isRedirectResponse(responseCode)) {
       throw new FirebaseAppDistributionException(
           "Expected redirect response code, but got: " + responseCode, DOWNLOAD_FAILURE);
     }
-    String redirect = httpsURLConnection.getHeaderField("Location");
-    httpsURLConnection.disconnect();
 
-    if (redirect == null) {
+    if (redirectUrl == null) {
       throw new FirebaseAppDistributionException(
           "No Location header found in response from: " + downloadUrl, DOWNLOAD_FAILURE);
-    } else if (redirect.isEmpty()) {
+    } else if (redirectUrl.isEmpty()) {
       throw new FirebaseAppDistributionException(
           "Empty Location header found in response from: " + downloadUrl, DOWNLOAD_FAILURE);
     }
 
-    return redirect;
+    return redirectUrl;
   }
 
   private static boolean isRedirectResponse(int responseCode) {
