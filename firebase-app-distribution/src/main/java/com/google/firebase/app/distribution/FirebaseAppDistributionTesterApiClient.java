@@ -105,13 +105,15 @@ class FirebaseAppDistributionTesterApiClient {
 
   private String readResponseBody(HttpsURLConnection connection) throws IOException {
     boolean isSuccess = isResponseSuccess(connection.getResponseCode());
-    InputStream inputStream = isSuccess ? connection.getInputStream() : connection.getErrorStream();
-    if (inputStream == null && !isSuccess) {
-      // If the server returns a response with an error code and no response body, getErrorStream
-      // returns null. We return an empty string to reflect the empty body.
-      return "";
+    try (InputStream inputStream =
+        isSuccess ? connection.getInputStream() : connection.getErrorStream()) {
+      if (inputStream == null && !isSuccess) {
+        // If the server returns a response with an error code and no response body, getErrorStream
+        // returns null. We return an empty string to reflect the empty body.
+        return "";
+      }
+      return convertInputStreamToString(new BufferedInputStream(inputStream));
     }
-    return convertInputStreamToString(new BufferedInputStream(inputStream));
   }
 
   private static boolean isResponseSuccess(int responseCode) {
