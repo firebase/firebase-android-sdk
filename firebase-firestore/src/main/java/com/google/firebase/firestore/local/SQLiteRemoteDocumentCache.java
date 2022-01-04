@@ -166,7 +166,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit, new HashSet<>());
+      return getAll(collections, offset, limit, Collections.emptySet());
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
