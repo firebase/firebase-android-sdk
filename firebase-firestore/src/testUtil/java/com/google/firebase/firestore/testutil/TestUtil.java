@@ -71,6 +71,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
+import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -424,6 +425,20 @@ public class TestUtil {
   public static RemoteEvent addedRemoteEvent(
       MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets);
+  }
+
+  public static RemoteEvent existenceFilterEvent(int targetId, int count, int version) {
+    TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
+    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
+    testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
+
+    ExistenceFilter existenceFilter = new ExistenceFilter(count);
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+
+    WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
+        new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
+    aggregator.handleExistenceFilter(existenceFilterWatchChange);
+    return aggregator.createRemoteEvent(version(version));
   }
 
   public static RemoteEvent addedRemoteEvent(
