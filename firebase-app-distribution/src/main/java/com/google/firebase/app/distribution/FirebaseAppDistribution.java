@@ -191,6 +191,7 @@ public class FirebaseAppDistribution {
 
   private boolean notOnMainThread() {
     return Looper.myLooper() != Looper.getMainLooper();
+  }
 
   private Task<Void> showSignInDialog() {
     if (isTesterSignedIn()) {
