@@ -34,6 +34,7 @@ package com.google.firebase.app.distribution {
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status AUTHENTICATION_CANCELED;
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status AUTHENTICATION_FAILURE;
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status DOWNLOAD_FAILURE;
+    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status FOREGROUND_ACTIVITY_NOT_AVAILABLE;
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_CANCELED;
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE;
     enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE_SIGNATURE_MISMATCH;
