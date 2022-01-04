@@ -390,13 +390,11 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testLoadFinalizedReports_reportWithUserId_returnsReportWithProperUserId() {
     final String sessionId = "testSession";
     final String userId = "testUser";
-    final CrashlyticsReport testReport = makeTestReport(sessionId);
+    final CrashlyticsReport testReport = makeTestReport(sessionId, userId);
     final CrashlyticsReport.Session.Event testEvent = makeTestEvent();
 
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
-    reportPersistence.persistUserIdForSession(userId, sessionId);
-
     reportPersistence.finalizeReports("skippedSession", 0L);
 
     final List<CrashlyticsReportWithSessionId> finalizedReports =
@@ -409,21 +407,19 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void
       testLoadFinalizedReports_reportsWithUserIdInMultipleSessions_returnsReportsWithProperUserIds() {
-    final String sessionId1 = "testSession1";
-    final CrashlyticsReport testReport1 = makeTestReport(sessionId1);
-    final String sessionId2 = "testSession2";
-    final CrashlyticsReport testReport2 = makeTestReport(sessionId2);
-    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent();
-    final CrashlyticsReport.Session.Event testEvent2 = makeTestEvent();
     final String userId1 = "testUser1";
     final String userId2 = "testUser2";
+    final String sessionId1 = "testSession1";
+    final String sessionId2 = "testSession2";
+    final CrashlyticsReport testReport1 = makeTestReport(sessionId1, userId1);
+    final CrashlyticsReport testReport2 = makeTestReport(sessionId2, userId2);
+    final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent();
+    final CrashlyticsReport.Session.Event testEvent2 = makeTestEvent();
 
     reportPersistence.persistReport(testReport1);
     reportPersistence.persistReport(testReport2);
     reportPersistence.persistEvent(testEvent1, sessionId1);
     reportPersistence.persistEvent(testEvent2, sessionId2);
-    reportPersistence.persistUserIdForSession(userId1, sessionId1);
-    reportPersistence.persistUserIdForSession(userId2, sessionId2);
 
     reportPersistence.finalizeReports("skippedSession", 0L);
 
@@ -673,6 +669,10 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   private static CrashlyticsReport makeTestReport(String sessionId) {
     return makeIncompleteReport().setSession(makeTestSession(sessionId)).build();
+  }
+
+  private static CrashlyticsReport makeTestReport(String sessionId, String userId) {
+    return makeTestReport(sessionId).withSessionEndFields(0L, false, userId);
   }
 
   private static CrashlyticsReport.FilesPayload makeFilePayload() {

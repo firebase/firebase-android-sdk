@@ -78,7 +78,10 @@ public class InstallActivity extends AppCompatActivity {
         return Settings.Secure.getInt(getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS)
             == 1;
       } catch (Settings.SettingNotFoundException e) {
-        LogWrapper.getInstance().e(TAG + "Unable to determine if unknown sources is enabled.", e);
+        LogWrapper.getInstance()
+            .e(
+                TAG + "Unable to determine if unknown sources is enabled. Assuming it's enabled.",
+                e);
         return true;
       }
     }
@@ -142,7 +145,9 @@ public class InstallActivity extends AppCompatActivity {
       intent.setDataAndType(Uri.fromFile(apkFile), APK_MIME_TYPE);
     }
 
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    // These flags open the installation activity in a new task and to prevent earlier installation
+    // tasks from causing future ones to fail we use the clear task flag
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
     LogWrapper.getInstance().v("Kicking off install as new activity");
     startActivity(intent);
   }

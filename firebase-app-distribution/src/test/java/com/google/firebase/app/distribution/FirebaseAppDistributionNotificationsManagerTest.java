@@ -14,86 +14,74 @@
 
 package com.google.firebase.app.distribution;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
+import static android.content.Context.NOTIFICATION_SERVICE;
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.app.distribution.FirebaseAppDistributionNotificationsManager.NOTIFICATION_TAG;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.content.Context;
-import android.content.pm.ApplicationInfo;
-import android.os.Bundle;
+import android.app.Notification;
+import android.app.NotificationManager;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import com.google.firebase.FirebaseApp;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionNotificationsManagerTest {
 
-  @Mock private Context mockContext;
-  @Mock private FirebaseApp mockFirebaseApp;
-
-  private FirebaseAppDistributionNotificationsManager notificationsManager;
-  private ShadowPackageManager shadowPackageManager;
+  private FirebaseAppDistributionNotificationsManager firebaseAppDistributionNotificationsManager;
+  private NotificationManager notificationManager;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-
     FirebaseApp.clearInstancesForTest();
-
-    when(mockFirebaseApp.getApplicationContext()).thenReturn(mockContext);
-    shadowPackageManager =
-        shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-
-    notificationsManager = new FirebaseAppDistributionNotificationsManager(mockFirebaseApp);
+    notificationManager =
+        (NotificationManager)
+            ApplicationProvider.getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
+    firebaseAppDistributionNotificationsManager =
+        new FirebaseAppDistributionNotificationsManager(
+            ApplicationProvider.getApplicationContext());
   }
 
   @Test
-  public void getSmallIcon_whenAppIconSet_usesAppIcon() {
-    setupApplicationInfo(R.drawable.test_app_icon);
-    int iconId = notificationsManager.getSmallIcon();
-
-    assertEquals(R.drawable.test_app_icon, iconId);
+  public void updateNotification_withProgress() {
+    firebaseAppDistributionNotificationsManager.updateNotification(
+        1000, 900, UpdateStatus.DOWNLOADING);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    assertThat(shadowOf(notification).getProgress()).isEqualTo(90);
+    assertThat(shadowOf(notification).getContentTitle().toString()).contains("Downloading");
   }
 
   @Test
-  public void getSmallIcon_whenAppIconAdaptive_usesDefaultIcon() {
-    setupApplicationInfo(R.mipmap.test_adaptive_icon);
-    ApplicationInfo info = mockContext.getApplicationInfo();
-    // get correct drawable for ContextCompat.getDrawable in isAdaptiveIcon()
-    when(mockContext.getDrawable(R.mipmap.test_adaptive_icon))
-        .thenReturn(
-            ApplicationProvider.getApplicationContext().getDrawable(R.mipmap.test_adaptive_icon));
-    int iconId = notificationsManager.getSmallIcon();
-
-    assertEquals(android.R.drawable.sym_def_app_icon, iconId);
+  public void updateNotification_withError() {
+    firebaseAppDistributionNotificationsManager.updateNotification(
+        1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
+    assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download failed");
   }
 
   @Test
-  public void getSmallIcon_whenAppIconNotPresent_usesDefaultIcon() {
-    setupApplicationInfo();
-    int iconId = notificationsManager.getSmallIcon();
-
-    assertEquals(android.R.drawable.sym_def_app_icon, iconId);
+  public void updateNotification_withSuccess() {
+    firebaseAppDistributionNotificationsManager.updateNotification(
+        1000, 1000, UpdateStatus.DOWNLOADED);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
+    assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download completed");
   }
 
-  private void setupApplicationInfo() {
-    setupApplicationInfo(0);
-  }
-
-  private void setupApplicationInfo(int iconId) {
-    ApplicationInfo applicationInfo =
-        ApplicationInfoBuilder.newBuilder()
-            .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
-            .build();
-    applicationInfo.metaData = new Bundle();
-    applicationInfo.icon = iconId;
-    when(mockContext.getApplicationInfo()).thenReturn(applicationInfo);
+  @Test
+  public void updateNotification_withZeroTotalBytes_shows0Percent() {
+    firebaseAppDistributionNotificationsManager.updateNotification(0, 0, UpdateStatus.DOWNLOADING);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    assertThat(shadowOf(notification).getProgress()).isEqualTo(0);
   }
 }

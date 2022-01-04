@@ -14,6 +14,7 @@
 
 package com.google.firebase.app.distribution;
 
+import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.app.distribution.TaskUtils.safeSetTaskException;
 
@@ -23,11 +24,12 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import java.io.IOException;
-import java.net.URL;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -36,6 +38,8 @@ class AabUpdater {
   private static final String TAG = "UpdateAabClient:";
 
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+  private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
+  private final Executor executor;
 
   @GuardedBy("updateAabLock")
   private UpdateTaskImpl cachedUpdateTask;
@@ -46,12 +50,20 @@ class AabUpdater {
   private final Object updateAabLock = new Object();
 
   AabUpdater() {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
+    this(
+        FirebaseAppDistributionLifecycleNotifier.getInstance(),
+        new HttpsUrlConnectionFactory(),
+        Executors.newSingleThreadExecutor());
   }
 
-  AabUpdater(@NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+  AabUpdater(
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
+      @NonNull Executor executor) {
     this.lifecycleNotifier = lifecycleNotifier;
+    this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    this.executor = executor;
   }
 
   @VisibleForTesting
@@ -78,18 +90,47 @@ class AabUpdater {
     }
   }
 
-  HttpsURLConnection openHttpsUrlConnection(String downloadUrl)
+  private String fetchDownloadRedirectUrl(String downloadUrl)
       throws FirebaseAppDistributionException {
-    HttpsURLConnection httpsURLConnection;
+    HttpsURLConnection connection = null;
+    int responseCode;
+    String redirectUrl;
 
     try {
-      URL url = new URL(downloadUrl);
-      httpsURLConnection = (HttpsURLConnection) url.openConnection();
+      connection = httpsUrlConnectionFactory.openConnection(downloadUrl);
+      connection.setInstanceFollowRedirects(false);
+      responseCode = connection.getResponseCode();
+      redirectUrl = connection.getHeaderField("Location");
+      // Prevents a {@link LeakedClosableViolation} in strict mode even when the connection is
+      // disconnected
+      connection.getInputStream().close();
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-          Constants.ErrorMessages.NETWORK_ERROR, NETWORK_FAILURE, e);
+          "Failed to open connection to: " + downloadUrl, NETWORK_FAILURE, e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
-    return httpsURLConnection;
+
+    if (!isRedirectResponse(responseCode)) {
+      throw new FirebaseAppDistributionException(
+          "Expected redirect response code, but got: " + responseCode, DOWNLOAD_FAILURE);
+    }
+
+    if (redirectUrl == null) {
+      throw new FirebaseAppDistributionException(
+          "No Location header found in response from: " + downloadUrl, DOWNLOAD_FAILURE);
+    } else if (redirectUrl.isEmpty()) {
+      throw new FirebaseAppDistributionException(
+          "Empty Location header found in response from: " + downloadUrl, DOWNLOAD_FAILURE);
+    }
+
+    return redirectUrl;
+  }
+
+  private static boolean isRedirectResponse(int responseCode) {
+    return responseCode >= 300 && responseCode < 400;
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
@@ -98,58 +139,37 @@ class AabUpdater {
       if (lifecycleNotifier.getCurrentActivity() == null) {
         safeSetTaskException(
             cachedUpdateTask,
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.APP_BACKGROUNDED,
-                FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+            new FirebaseAppDistributionException(ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
         return;
       }
     }
 
     // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
-    Executors.newSingleThreadExecutor()
-        .execute( // Execute the network calls on a background thread
-            () -> {
-              HttpsURLConnection connection;
-              String redirect;
-              try {
-                connection = openHttpsUrlConnection(downloadUrl);
+    executor.execute( // Execute the network calls on a background thread
+        () -> {
+          String redirectUrl;
+          try {
+            redirectUrl = fetchDownloadRedirectUrl(downloadUrl);
+          } catch (FirebaseAppDistributionException e) {
+            setUpdateTaskCompletionError(e);
+            return;
+          }
 
-                // To get url to play without redirect we do this connection
-                connection.setInstanceFollowRedirects(false);
-                redirect = connection.getHeaderField("Location");
-                connection.disconnect();
-                connection.getInputStream().close();
-              } catch (FirebaseAppDistributionException | IOException e) {
-                setUpdateTaskCompletionErrorWithDefault(
-                    e,
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-                return;
-              }
+          Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+          updateIntent.setData(Uri.parse(redirectUrl));
+          updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+          LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
-              if (!redirect.isEmpty()) {
-                Intent updateIntent = new Intent(Intent.ACTION_VIEW);
-                updateIntent.setData(Uri.parse(redirect));
-                updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                LogWrapper.getInstance().v(TAG + "Redirecting to play");
-
-                synchronized (updateAabLock) {
-                  lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
-                  cachedUpdateTask.updateProgress(
-                      UpdateProgress.builder()
-                          .setApkBytesDownloaded(-1)
-                          .setApkFileTotalBytes(-1)
-                          .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-                          .build());
-                }
-              } else {
-                setUpdateTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.NETWORK_ERROR,
-                        FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-              }
-            });
+          synchronized (updateAabLock) {
+            lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
+            cachedUpdateTask.updateProgress(
+                UpdateProgress.builder()
+                    .setApkBytesDownloaded(-1)
+                    .setApkFileTotalBytes(-1)
+                    .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+                    .build());
+          }
+        });
   }
 
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
@@ -158,21 +178,12 @@ class AabUpdater {
     }
   }
 
-  private void setUpdateTaskCompletionErrorWithDefault(
-      Exception e, FirebaseAppDistributionException defaultFirebaseException) {
-    if (e instanceof FirebaseAppDistributionException) {
-      setUpdateTaskCompletionError((FirebaseAppDistributionException) e);
-    } else {
-      setUpdateTaskCompletionError(defaultFirebaseException);
-    }
-  }
-
   void tryCancelAabUpdateTask() {
     synchronized (updateAabLock) {
       safeSetTaskException(
           cachedUpdateTask,
           new FirebaseAppDistributionException(
-              Constants.ErrorMessages.UPDATE_CANCELED,
+              ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
               ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }

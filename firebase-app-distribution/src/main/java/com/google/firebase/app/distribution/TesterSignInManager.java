@@ -38,6 +38,7 @@ import com.google.firebase.app.distribution.internal.InstallActivity;
 import com.google.firebase.app.distribution.internal.LogWrapper;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import com.google.firebase.app.distribution.internal.SignInStorage;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 
@@ -48,7 +49,7 @@ class TesterSignInManager {
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s";
 
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
@@ -59,11 +60,11 @@ class TesterSignInManager {
 
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage) {
     this(
         firebaseApp,
-        firebaseInstallationsApi,
+        firebaseInstallationsApiProvider,
         signInStorage,
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
@@ -71,11 +72,11 @@ class TesterSignInManager {
   @VisibleForTesting
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this.firebaseApp = firebaseApp;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
 
@@ -137,7 +138,8 @@ class TesterSignInManager {
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
-      firebaseInstallationsApi
+      firebaseInstallationsApiProvider
+          .get()
           .getId()
           .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
           .addOnFailureListener(
@@ -145,7 +147,9 @@ class TesterSignInManager {
                 LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
                 setSignInTaskCompletionError(
                     new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR,
+                        AUTHENTICATION_FAILURE,
+                        e));
               });
 
       return signInTaskCompletionSource.getTask();

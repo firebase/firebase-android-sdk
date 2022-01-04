@@ -41,6 +41,7 @@ import com.google.firebase.app.distribution.Constants.ErrorMessages;
 import com.google.firebase.app.distribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.app.distribution.internal.SignInResultActivity;
 import com.google.firebase.app.distribution.internal.SignInStorage;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import org.junit.Before;
@@ -76,6 +77,7 @@ public class TesterSignInManagerTest {
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
 
+  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private SignInStorage mockSignInStorage;
@@ -97,6 +99,7 @@ public class TesterSignInManagerTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
+    when(mockFirebaseInstallationsProvider.get()).thenReturn(mockFirebaseInstallations);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
@@ -126,7 +129,10 @@ public class TesterSignInManagerTest {
 
     testerSignInManager =
         new TesterSignInManager(
-            firebaseApp, mockFirebaseInstallations, mockSignInStorage, mockLifecycleNotifier);
+            firebaseApp,
+            mockFirebaseInstallationsProvider,
+            mockSignInStorage,
+            mockLifecycleNotifier);
   }
 
   @Test

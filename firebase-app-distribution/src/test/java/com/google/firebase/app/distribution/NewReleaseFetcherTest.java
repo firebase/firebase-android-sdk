@@ -41,6 +41,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;
@@ -74,6 +75,7 @@ public class NewReleaseFetcherTest {
   private ShadowPackageManager shadowPackageManager;
   private Context applicationContext;
 
+  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
@@ -95,6 +97,7 @@ public class NewReleaseFetcherTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
+    when(mockFirebaseInstallationsProvider.get()).thenReturn(mockFirebaseInstallations);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
@@ -118,6 +121,7 @@ public class NewReleaseFetcherTest {
             .setApplicationInfo(applicationInfo)
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
+    packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
     newReleaseFetcher =
@@ -125,7 +129,7 @@ public class NewReleaseFetcherTest {
             new NewReleaseFetcher(
                 firebaseApp,
                 mockFirebaseAppDistributionTesterApiClient,
-                mockFirebaseInstallations,
+                mockFirebaseInstallationsProvider,
                 testExecutor));
   }
 
@@ -265,25 +269,42 @@ public class NewReleaseFetcherTest {
 
   @Test
   public void handleNewReleaseFromClient_whenNewAabIsAvailable_returnsRelease() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(
-            getTestNewRelease()
-                .setDownloadUrl("http://fake-download-url")
-                .setIasArtifactId("test-ias-artifact-id-2")
-                .setBinaryType(BinaryType.AAB)
-                .build());
-
-    AppDistributionReleaseInternal result =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    assertEquals(
+    AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
             .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
-            .build(),
-        result);
+            .build();
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenReturn(expectedRelease);
+
+    AppDistributionReleaseInternal result =
+        newReleaseFetcher.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+
+    assertEquals(expectedRelease, result);
+  }
+
+  @Test
+  public void
+      handleNewReleaseFromClient_whenNewReleaseHasDifferentVersionNameThanInstalled_returnsRelease()
+          throws Exception {
+    AppDistributionReleaseInternal expectedRelease =
+        getTestNewRelease()
+            .setDownloadUrl("http://fake-download-url")
+            .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
+            .setBinaryType(BinaryType.AAB)
+            .setDisplayVersion("2.0")
+            .build();
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
+            any(), any(), any(), any(), any()))
+        .thenReturn(expectedRelease);
+
+    AppDistributionReleaseInternal result =
+        newReleaseFetcher.getNewReleaseFromClient(
+            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    assertEquals(expectedRelease, result);
   }
 
   @Test
@@ -330,8 +351,7 @@ public class NewReleaseFetcherTest {
 
   @Test
   public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash() {
-
-    try (MockedStatic mockedReleaseIdentificationUtils =
+    try (MockedStatic<ReleaseIdentificationUtils> mockedReleaseIdentificationUtils =
         mockStatic(ReleaseIdentificationUtils.class)) {
       PackageInfo packageInfo =
           shadowPackageManager.getInternalMutablePackageInfo(

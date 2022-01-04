@@ -15,6 +15,7 @@
 package com.google.firebase.app.distribution;
 
 import android.app.Application;
+import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
@@ -43,7 +44,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
@@ -51,20 +52,24 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
     FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistribution(firebaseApp, firebaseInstallations);
+        new FirebaseAppDistribution(
+            firebaseApp, container.getProvider(FirebaseInstallationsApi.class));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
 
-    if (firebaseApp.getApplicationContext() instanceof Application) {
-      Application firebaseApplication = (Application) firebaseApp.getApplicationContext();
+    Context context = firebaseApp.getApplicationContext();
+    if (context instanceof Application) {
+      Application firebaseApplication = (Application) context;
       firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
       LogWrapper.getInstance()
           .e(
               TAG
-                  + "Error registering app to ActivityLifecycleCallbacks. SDK might not function correctly.");
+                  + "Context "
+                  + context
+                  + " was not an Application, can't register for lifecycle callbacks. SDK might not"
+                  + " function correctly.");
     }
 
     return appDistribution;

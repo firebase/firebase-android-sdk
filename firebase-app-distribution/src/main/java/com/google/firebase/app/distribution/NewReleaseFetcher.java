@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.app.distribution.internal.LogWrapper;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
@@ -44,7 +45,7 @@ class NewReleaseFetcher {
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
 
@@ -54,21 +55,21 @@ class NewReleaseFetcher {
   NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi) {
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.taskExecutor = Executors.newSingleThreadExecutor();
   }
 
   NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.taskExecutor = executor;
   }
 
@@ -79,10 +80,10 @@ class NewReleaseFetcher {
       return cachedCheckForNewRelease;
     }
 
-    Task<String> installationIdTask = firebaseInstallationsApi.getId();
+    Task<String> installationIdTask = firebaseInstallationsApiProvider.get().getId();
     // forceRefresh is false to get locally cached token if available
     Task<InstallationTokenResult> installationAuthTokenTask =
-        firebaseInstallationsApi.getToken(false);
+        firebaseInstallationsApiProvider.get().getToken(false);
 
     this.cachedCheckForNewRelease =
         Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
@@ -135,7 +136,8 @@ class NewReleaseFetcher {
       }
 
       if (isNewerBuildVersion(retrievedNewRelease)
-          || !isSameAsInstalledRelease(retrievedNewRelease)) {
+          || !isSameAsInstalledRelease(retrievedNewRelease)
+          || hasDifferentAppVersionName(retrievedNewRelease)) {
         return retrievedNewRelease;
       } else {
         // Return null if retrieved new release is older or currently installed
@@ -163,6 +165,13 @@ class NewReleaseFetcher {
         > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
   }
 
+  private boolean hasDifferentAppVersionName(AppDistributionReleaseInternal newRelease)
+      throws FirebaseAppDistributionException {
+    return !newRelease
+        .getDisplayVersion()
+        .equals(getInstalledAppVersionName(firebaseApp.getApplicationContext()));
+  }
+
   @VisibleForTesting
   boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
@@ -170,6 +179,8 @@ class NewReleaseFetcher {
       return hasSameHashAsInstalledRelease(newRelease);
     }
 
+    // TODO(lkellogg): getIasArtifactId() will likely never be null since it's set to the empty
+    //  string if not present in the response
     if (newRelease.getIasArtifactId() == null) {
       return false;
     }
@@ -182,17 +193,25 @@ class NewReleaseFetcher {
   }
 
   private long getInstalledAppVersionCode(Context context) throws FirebaseAppDistributionException {
-    PackageInfo pInfo;
+    return PackageInfoCompat.getLongVersionCode(getPackageInfo(context));
+  }
+
+  private String getInstalledAppVersionName(Context context)
+      throws FirebaseAppDistributionException {
+    return getPackageInfo(context).versionName;
+  }
+
+  private PackageInfo getPackageInfo(Context context) throws FirebaseAppDistributionException {
     try {
-      pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+      return context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance().e(TAG + "Unable to locate Firebase App.", e);
+      LogWrapper.getInstance()
+          .e(TAG + "Unable to find package with name " + context.getPackageName(), e);
       throw new FirebaseAppDistributionException(
           Constants.ErrorMessages.UNKNOWN_ERROR,
           FirebaseAppDistributionException.Status.UNKNOWN,
           e);
     }
-    return PackageInfoCompat.getLongVersionCode(pInfo);
   }
 
   @VisibleForTesting

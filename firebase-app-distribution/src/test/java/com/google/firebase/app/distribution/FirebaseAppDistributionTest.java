@@ -50,13 +50,10 @@ import com.google.firebase.app.distribution.internal.SignInStorage;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
@@ -104,13 +101,10 @@ public class FirebaseAppDistributionTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInManager mockTesterSignInManager;
   @Mock private NewReleaseFetcher mockNewReleaseFetcher;
-  @Mock private ApkInstaller mockApkInstaller;
-  private ApkUpdater mockApkUpdater;
+  @Mock private ApkUpdater mockApkUpdater;
   @Mock private AabUpdater mockAabUpdater;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
-
-  Executor testExecutor = Executors.newSingleThreadExecutor();
 
   static class TestActivity extends Activity {}
 
@@ -129,8 +123,6 @@ public class FirebaseAppDistributionTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .setApiKey(TEST_API_KEY)
                 .build());
-
-    this.mockApkUpdater = Mockito.spy(new ApkUpdater(testExecutor, firebaseApp, mockApkInstaller));
 
     firebaseAppDistribution =
         spy(

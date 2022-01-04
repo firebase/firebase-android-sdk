@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.log;
+package com.google.firebase.crashlytics.internal.metadata;
 
-import static com.google.firebase.crashlytics.internal.log.LogFileManager.MAX_LOG_SIZE;
+import static com.google.firebase.crashlytics.internal.metadata.LogFileManager.MAX_LOG_SIZE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
