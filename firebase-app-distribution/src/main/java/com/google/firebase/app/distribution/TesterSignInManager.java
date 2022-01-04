@@ -147,9 +147,7 @@ class TesterSignInManager {
                 LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
                 setSignInTaskCompletionError(
                     new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR,
-                        AUTHENTICATION_FAILURE,
-                        e));
+                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
               });
 
       return signInTaskCompletionSource.getTask();
