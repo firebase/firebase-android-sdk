@@ -14,7 +14,6 @@
 
 package com.google.firebase.app.distribution;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.app.distribution.Constants.ErrorMessages.AUTHENTICATION_ERROR;
 import static com.google.firebase.app.distribution.Constants.ErrorMessages.JSON_PARSING_ERROR;
 import static com.google.firebase.app.distribution.Constants.ErrorMessages.NETWORK_ERROR;
@@ -25,6 +24,7 @@ import static com.google.firebase.app.distribution.FirebaseAppDistributionExcept
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.app.distribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -459,13 +459,5 @@ public class FirebaseAppDistributionTest {
     assertTrue(dialog.isShowing());
 
     return dialog;
-  }
-
-  void assertTaskFailure(Task task, Status status, String messageSubstring) {
-    assertThat(task.isSuccessful()).isFalse();
-    assertThat(task.getException()).isInstanceOf(FirebaseAppDistributionException.class);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertThat(e.getErrorCode()).isEqualTo(status);
-    assertThat(e).hasMessageThat().contains(messageSubstring);
   }
 }
