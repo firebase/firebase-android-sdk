@@ -42,6 +42,10 @@ public class FirebaseAppDistributionException extends FirebaseException {
     /** Installation canceled */
     INSTALLATION_CANCELED,
 
+    /** No foreground activity available for a given intent */
+    // TODO(rachelprince): add this to API council review
+    FOREGROUND_ACTIVITY_NOT_AVAILABLE,
+
     /** Update not available for the current tester and app */
     UPDATE_NOT_AVAILABLE,
 
