@@ -196,8 +196,8 @@ public class FirebaseInAppMessaging {
   }
 
   /**
-   * Sets message display component for FIAM SDK. This is the method used by both the
-   * default FIAM display SDK or any app wanting to customize the message display.
+   * Sets message display component for FIAM SDK. This is the method used by both the default FIAM
+   * display SDK or any app wanting to customize the message display.
    */
   public void setMessageDisplayComponent(@NonNull FirebaseInAppMessagingDisplay messageDisplay) {
     Logging.logi("Setting display event component");
