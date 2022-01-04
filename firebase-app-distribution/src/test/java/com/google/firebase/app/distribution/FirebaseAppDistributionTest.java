@@ -14,9 +14,17 @@
 
 package com.google.firebase.app.distribution;
 
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.app.distribution.Constants.ErrorMessages.AUTHENTICATION_ERROR;
+import static com.google.firebase.app.distribution.Constants.ErrorMessages.JSON_PARSING_ERROR;
+import static com.google.firebase.app.distribution.Constants.ErrorMessages.NETWORK_ERROR;
+import static com.google.firebase.app.distribution.Constants.ErrorMessages.NOT_FOUND_ERROR;
+import static com.google.firebase.app.distribution.Constants.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
+import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.app.distribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -169,12 +177,7 @@ public class FirebaseAppDistributionTest {
                     ErrorMessages.JSON_PARSING_ERROR, Status.NETWORK_FAILURE)));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
-
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals(ErrorMessages.JSON_PARSING_ERROR, e.getMessage());
-    assertEquals(Status.NETWORK_FAILURE, e.getErrorCode());
-    assertNull(firebaseAppDistribution.getCachedNewRelease());
+    assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
   }
 
   @Test
@@ -216,12 +219,9 @@ public class FirebaseAppDistributionTest {
   public void updateApp_whenNotSignedIn_throwsError() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
 
-    UpdateTask task = firebaseAppDistribution.updateApp();
+    UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals(Constants.ErrorMessages.AUTHENTICATION_ERROR, e.getMessage());
-    assertEquals(AUTHENTICATION_FAILURE, e.getErrorCode());
+    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
   }
 
   @Test
@@ -296,14 +296,11 @@ public class FirebaseAppDistributionTest {
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
-    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals("Tester canceled the authentication flow", e.getMessage());
-    assertEquals(AUTHENTICATION_CANCELED, e.getErrorCode());
+    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
   }
 
   @Test
@@ -315,17 +312,14 @@ public class FirebaseAppDistributionTest {
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
 
-    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
     List<UpdateProgress> progressEvents = new ArrayList<>();
-    task.addOnProgressListener(progressEvents::add);
+    updateTask.addOnProgressListener(progressEvents::add);
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
-    verify(mockNewReleaseFetcher, never()).checkForNewRelease();
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals(Constants.ErrorMessages.AUTHENTICATION_ERROR, e.getMessage());
-    assertEquals(AUTHENTICATION_FAILURE, e.getErrorCode());
+
+    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
   }
 
   @Test
@@ -339,10 +333,7 @@ public class FirebaseAppDistributionTest {
 
     assertFalse(updateDialog.isShowing());
     assertFalse(updateTask.isSuccessful());
-    Exception e = updateTask.getException();
-    assertTrue(e instanceof FirebaseAppDistributionException);
-    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
   }
 
   @Test
@@ -356,11 +347,8 @@ public class FirebaseAppDistributionTest {
     updateDialog.onBackPressed(); // cancels the dialog
 
     assertFalse(updateDialog.isShowing());
-    assertFalse(updateTask.isSuccessful());
-    Exception e = updateTask.getException();
-    assertTrue(e instanceof FirebaseAppDistributionException);
-    assertEquals(INSTALLATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.UPDATE_CANCELED, e.getMessage());
+
+    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
   }
 
   @Test
@@ -372,17 +360,15 @@ public class FirebaseAppDistributionTest {
                     Constants.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
-    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
     List<UpdateProgress> progressEvents = new ArrayList<>();
-    task.addOnProgressListener(progressEvents::add);
+    updateTask.addOnProgressListener(progressEvents::add);
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
+
     verify(firebaseAppDistribution, never()).updateApp();
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals(Constants.ErrorMessages.NETWORK_ERROR, e.getMessage());
-    assertEquals(FirebaseAppDistributionException.Status.NETWORK_FAILURE, e.getErrorCode());
+    assertTaskFailure(updateTask, NETWORK_FAILURE, NETWORK_ERROR);
   }
 
   @Test
@@ -404,10 +390,10 @@ public class FirebaseAppDistributionTest {
             .setUpdateStatus(UpdateStatus.DOWNLOADING)
             .build());
 
-    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
-    task.addOnProgressListener(progressEvents::add);
+    updateTask.addOnProgressListener(progressEvents::add);
 
     // Clicking the update button.
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
@@ -423,15 +409,12 @@ public class FirebaseAppDistributionTest {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
 
-    UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
     // Mimic activity dying
     firebaseAppDistribution.onActivityDestroyed(activity);
 
-    assertTrue(task.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
-    assertEquals("Update canceled", e.getMessage());
-    assertEquals(INSTALLATION_CANCELED, e.getErrorCode());
+    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
   }
 
   @Test
@@ -441,12 +424,7 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    assertFalse(updateTask.isSuccessful());
-    assertTrue(updateTask.getException() instanceof FirebaseAppDistributionException);
-    FirebaseAppDistributionException ex =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertEquals(FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE, ex.getErrorCode());
-    assertEquals(Constants.ErrorMessages.NOT_FOUND_ERROR, ex.getMessage());
+    assertTaskFailure(updateTask, UPDATE_NOT_AVAILABLE, NOT_FOUND_ERROR);
   }
 
   @Test
@@ -481,5 +459,13 @@ public class FirebaseAppDistributionTest {
     assertTrue(dialog.isShowing());
 
     return dialog;
+  }
+
+  void assertTaskFailure(Task task, Status status, String messageSubstring) {
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(FirebaseAppDistributionException.class);
+    FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
+    assertThat(e.getErrorCode()).isEqualTo(status);
+    assertThat(e).hasMessageThat().contains(messageSubstring);
   }
 }
