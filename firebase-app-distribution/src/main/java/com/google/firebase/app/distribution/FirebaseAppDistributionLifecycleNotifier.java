@@ -20,6 +20,8 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.app.distribution.Constants.ErrorMessages;
+import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
@@ -74,6 +76,16 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   Activity getCurrentActivity() {
     synchronized (lock) {
+      return currentActivity;
+    }
+  }
+
+  Activity getNonNullCurrentActivity() throws FirebaseAppDistributionException {
+    synchronized (lock) {
+      if (currentActivity == null) {
+        throw new FirebaseAppDistributionException(
+            ErrorMessages.APP_BACKGROUNDED, Status.FOREGROUND_ACTIVITY_NOT_AVAILABLE);
+      }
       return currentActivity;
     }
   }
