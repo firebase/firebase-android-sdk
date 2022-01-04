@@ -139,6 +139,10 @@ public class FirebaseAppDistribution {
     }
 
     showSignInDialog()
+        // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
+        // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
+        // here both for code clarifty, and because we plan to remove the signInTester() call
+        // from checkForNewRelease() in the near future
         .onSuccessTask(unused -> signInTester())
         .onSuccessTask(unused -> checkForNewRelease())
         .continueWithTask(
