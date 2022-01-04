@@ -48,6 +48,10 @@ public class LogWrapper {
     Log.w(LOG_TAG, msg);
   }
 
+  public void w(@NonNull String msg, @NonNull Throwable tr) {
+    Log.w(LOG_TAG, msg, tr);
+  }
+
   public void e(@NonNull String msg) {
     Log.e(LOG_TAG, msg);
   }
