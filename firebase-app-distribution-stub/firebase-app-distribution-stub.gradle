@@ -43,6 +43,9 @@ dependencies {
     implementation project(':firebase-common')
     implementation 'com.google.android.gms:play-services-tasks:17.0.0'
 
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 }
