@@ -14,7 +14,7 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.app.distribution.TestUtils.assertTaskFailure;
+import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;

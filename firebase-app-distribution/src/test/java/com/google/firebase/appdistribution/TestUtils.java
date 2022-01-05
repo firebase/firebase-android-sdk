@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution;
+package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.app.distribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 
 final class TestUtils {
   private TestUtils() {}
