@@ -1,76 +1,79 @@
 // Signature format: 2.0
-package com.google.firebase.app.distribution {
+package com.google.firebase.appdistribution {
 
   public abstract class AppDistributionRelease {
     ctor public AppDistributionRelease();
-    method @NonNull public abstract com.google.firebase.app.distribution.BinaryType getBinaryType();
+    method @NonNull public abstract com.google.firebase.appdistribution.BinaryType getBinaryType();
     method @NonNull public abstract String getDisplayVersion();
     method @Nullable public abstract String getReleaseNotes();
     method @NonNull public abstract long getVersionCode();
   }
 
   public enum BinaryType {
-    enum_constant public static final com.google.firebase.app.distribution.BinaryType AAB;
-    enum_constant public static final com.google.firebase.app.distribution.BinaryType APK;
+    enum_constant public static final com.google.firebase.appdistribution.BinaryType AAB;
+    enum_constant public static final com.google.firebase.appdistribution.BinaryType APK;
   }
 
   public class FirebaseAppDistribution {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.app.distribution.AppDistributionRelease> checkForNewRelease();
-    method @NonNull public static com.google.firebase.app.distribution.FirebaseAppDistribution getInstance();
+    ctor public FirebaseAppDistribution();
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
+    method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
-    method @NonNull public com.google.firebase.app.distribution.UpdateTask updateApp();
-    method @NonNull public com.google.firebase.app.distribution.UpdateTask updateIfNewReleaseAvailable();
+    method @NonNull public com.google.firebase.appdistribution.UpdateTask updateApp();
+    method @NonNull public com.google.firebase.appdistribution.UpdateTask updateIfNewReleaseAvailable();
   }
 
   public class FirebaseAppDistributionException extends com.google.firebase.FirebaseException {
-    method @NonNull public com.google.firebase.app.distribution.FirebaseAppDistributionException.Status getErrorCode();
-    method @Nullable public com.google.firebase.app.distribution.AppDistributionRelease getRelease();
+    ctor public FirebaseAppDistributionException();
+    method @NonNull public com.google.firebase.appdistribution.FirebaseAppDistributionException.Status getErrorCode();
+    method @Nullable public com.google.firebase.appdistribution.AppDistributionRelease getRelease();
   }
 
   public enum FirebaseAppDistributionException.Status {
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status APP_RUNNING_IN_PRODUCTION;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status AUTHENTICATION_CANCELED;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status AUTHENTICATION_FAILURE;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status DOWNLOAD_FAILURE;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_CANCELED;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE_SIGNATURE_MISMATCH;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status NETWORK_FAILURE;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status RELEASE_URL_EXPIRED;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status UNKNOWN;
-    enum_constant public static final com.google.firebase.app.distribution.FirebaseAppDistributionException.Status UPDATE_NOT_AVAILABLE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status APP_RUNNING_IN_PRODUCTION;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status AUTHENTICATION_CANCELED;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status AUTHENTICATION_FAILURE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status DOWNLOAD_FAILURE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status FOREGROUND_ACTIVITY_NOT_AVAILABLE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_CANCELED;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE_SIGNATURE_MISMATCH;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status NETWORK_FAILURE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status RELEASE_URL_EXPIRED;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UNKNOWN;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UPDATE_NOT_AVAILABLE;
   }
 
   public interface OnProgressListener {
-    method public void onProgressUpdate(@NonNull com.google.firebase.app.distribution.UpdateProgress);
+    method public void onProgressUpdate(@NonNull com.google.firebase.appdistribution.UpdateProgress);
   }
 
   public abstract class UpdateProgress {
     ctor public UpdateProgress();
     method @NonNull public abstract long getApkBytesDownloaded();
     method @NonNull public abstract long getApkFileTotalBytes();
-    method @NonNull public abstract com.google.firebase.app.distribution.UpdateStatus getUpdateStatus();
+    method @NonNull public abstract com.google.firebase.appdistribution.UpdateStatus getUpdateStatus();
   }
 
   public enum UpdateStatus {
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus DOWNLOADED;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus DOWNLOADING;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus DOWNLOAD_FAILED;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus INSTALL_CANCELED;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus INSTALL_FAILED;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus NEW_RELEASE_CHECK_FAILED;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus NEW_RELEASE_NOT_AVAILABLE;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus PENDING;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus REDIRECTED_TO_PLAY;
-    enum_constant public static final com.google.firebase.app.distribution.UpdateStatus UPDATE_CANCELED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus DOWNLOADED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus DOWNLOADING;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus DOWNLOAD_FAILED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus INSTALL_CANCELED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus INSTALL_FAILED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus NEW_RELEASE_CHECK_FAILED;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus NEW_RELEASE_NOT_AVAILABLE;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus PENDING;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus REDIRECTED_TO_PLAY;
+    enum_constant public static final com.google.firebase.appdistribution.UpdateStatus UPDATE_CANCELED;
   }
 
   public abstract class UpdateTask extends com.google.android.gms.tasks.Task<java.lang.Void> {
     ctor public UpdateTask();
-    method @NonNull public abstract com.google.firebase.app.distribution.UpdateTask addOnProgressListener(@NonNull com.google.firebase.app.distribution.OnProgressListener);
-    method @NonNull public abstract com.google.firebase.app.distribution.UpdateTask addOnProgressListener(@Nullable java.util.concurrent.Executor, @NonNull com.google.firebase.app.distribution.OnProgressListener);
+    method @NonNull public abstract com.google.firebase.appdistribution.UpdateTask addOnProgressListener(@NonNull com.google.firebase.appdistribution.OnProgressListener);
+    method @NonNull public abstract com.google.firebase.appdistribution.UpdateTask addOnProgressListener(@Nullable java.util.concurrent.Executor, @NonNull com.google.firebase.appdistribution.OnProgressListener);
   }
 
 }
