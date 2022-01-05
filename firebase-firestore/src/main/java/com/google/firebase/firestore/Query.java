@@ -433,11 +433,10 @@ public class Query {
   }
 
   /**
-   * Takes a {@code CompositeFilterData} object, parses the values in each of its subfilters, and
-   * returns a new {@code CompositeFilter} that is constructed using the parsed field filters.
-   *
-   * @param compositeFilterData The CompositeFilterData object to parse.
-   * @return The created {@code CompositeFilter}.
+   * Takes a {@code CompositeFilterData} object, parses each of its subfilters, and a new {@code
+   * CompositeFilter} that is constructed using the parsed values. Returns null if the given
+   * CompositeFilterData does not contain any subfilters. Returns a {@code FieldFilter} if the given
+   * CompositeFilterData contains only one field filter.
    */
   @Nullable
   private com.google.firebase.firestore.core.Filter parseCompositeFilterData(
@@ -658,7 +657,7 @@ public class Query {
    * returns the first one that is, or null if none are.
    */
   @Nullable
-  public Operator findFilterOperator(
+  private Operator findFilterOperator(
       List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
     for (com.google.firebase.firestore.core.Filter filter : filters) {
       if (filter instanceof FieldFilter) {

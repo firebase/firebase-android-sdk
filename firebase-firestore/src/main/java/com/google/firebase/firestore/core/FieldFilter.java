@@ -166,6 +166,14 @@ public class FieldFilter extends Filter {
   }
 
   @Override
+  public FieldPath inequalityField() {
+    if (isInequality()) {
+      return getField();
+    }
+    return null;
+  }
+
+  @Override
   public String toString() {
     return field.canonicalString() + " " + operator + " " + Values.canonicalId(value);
   }

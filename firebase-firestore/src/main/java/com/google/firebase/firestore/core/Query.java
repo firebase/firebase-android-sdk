@@ -200,17 +200,9 @@ public final class Query {
   @Nullable
   public FieldPath inequalityField() {
     for (Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        FieldFilter fieldfilter = (FieldFilter) filter;
-        if (fieldfilter.isInequality()) {
-          return fieldfilter.getField();
-        }
-      } else if (filter instanceof CompositeFilter) {
-        CompositeFilter compositeFilter = (CompositeFilter) filter;
-        FieldFilter found = compositeFilter.getInequalityFilter();
-        if (found != null) {
-          return found.getField();
-        }
+      FieldPath result = filter.inequalityField();
+      if (result != null) {
+        return result;
       }
     }
     return null;
@@ -224,16 +216,7 @@ public final class Query {
    */
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
-    FieldPath newInequalityField = null;
-    if (filter instanceof FieldFilter && ((FieldFilter) filter).isInequality()) {
-      newInequalityField = ((FieldFilter) filter).getField();
-    } else if (filter instanceof CompositeFilter) {
-      FieldFilter inequalityFilter = ((CompositeFilter) filter).getInequalityFilter();
-      if (inequalityFilter != null) {
-        newInequalityField = inequalityFilter.getField();
-      }
-    }
-
+    FieldPath newInequalityField = filter.inequalityField();
     FieldPath queryInequalityField = inequalityField();
     Assert.hardAssert(
         queryInequalityField == null

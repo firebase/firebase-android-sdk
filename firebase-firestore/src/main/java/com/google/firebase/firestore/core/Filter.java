@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.FieldPath;
 import java.util.List;
 
 public abstract class Filter {
@@ -26,4 +27,7 @@ public abstract class Filter {
 
   /** Returns a list of all field filters that are contained within this filter */
   public abstract List<FieldFilter> getAllFieldFilters();
+
+  /** Returns the field of the first filter that's an inequality, or null if none. */
+  public abstract FieldPath inequalityField();
 }

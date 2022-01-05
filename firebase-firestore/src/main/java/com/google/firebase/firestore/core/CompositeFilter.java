@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter.Operator;
 import java.util.ArrayList;
@@ -47,6 +48,19 @@ public class CompositeFilter extends Filter {
     return result;
   }
 
+  /**
+   * Returns the first inequality filter contained within this composite filter. Returns null if it
+   * does not contain any inequalities.
+   */
+  @Override
+  public FieldPath inequalityField() {
+    FieldFilter found = firstFieldFilterWhere(f -> f.isInequality());
+    if (found != null) {
+      return found.getField();
+    }
+    return null;
+  }
+
   public boolean isConjunction() {
     return operator == Operator.AND;
   }
@@ -60,7 +74,7 @@ public class CompositeFilter extends Filter {
    * Performs a depth-first search to find and return the first FieldFilter in the composite filter
    * that satisfies the condition. Returns null if none of the FieldFilters satisfy the condition.
    */
-  public FieldFilter firstFieldFilterWhere(Function<FieldFilter, Boolean> condition) {
+  private FieldFilter firstFieldFilterWhere(Function<FieldFilter, Boolean> condition) {
     for (Filter filter : filters) {
       if (filter instanceof FieldFilter && condition.apply(((FieldFilter) filter))) {
         return (FieldFilter) filter;
@@ -72,14 +86,6 @@ public class CompositeFilter extends Filter {
       }
     }
     return null;
-  }
-
-  /**
-   * Returns the first inequality filter contained within this composite filter. Returns null if it
-   * does not contain any inequalities.
-   */
-  public FieldFilter getInequalityFilter() {
-    return firstFieldFilterWhere(f -> f.isInequality());
   }
 
   @Override
