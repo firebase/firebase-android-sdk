@@ -14,6 +14,7 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.app.distribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
@@ -172,20 +173,5 @@ public class AabUpdaterTest {
     UpdateTask updateTask2 = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
     assertEquals(updateTask1, updateTask2);
-  }
-
-  private void assertTaskFailure(UpdateTask updateTask, Status status, String messageSubstring) {
-    assertThat(updateTask.isSuccessful()).isFalse();
-    assertThat(updateTask.getException()).isInstanceOf(FirebaseAppDistributionException.class);
-    FirebaseAppDistributionException e =
-        (FirebaseAppDistributionException) updateTask.getException();
-    assertThat(e.getErrorCode()).isEqualTo(status);
-    assertThat(e).hasMessageThat().contains(messageSubstring);
-  }
-
-  private void assertTaskFailure(
-      UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
-    assertTaskFailure(updateTask, status, messageSubstring);
-    assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
   }
 }

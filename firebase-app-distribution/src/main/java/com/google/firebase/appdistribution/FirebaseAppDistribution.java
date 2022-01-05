@@ -23,6 +23,7 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -136,6 +137,13 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
+
+      if (isOnBackgroundThread()) {
+        LogWrapper.getInstance().e("Basic configuration cannot be called from a background thread");
+        setCachedUpdateIfNewReleaseCompletionError(
+            new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
+        return cachedUpdateIfNewReleaseTask;
+      }
     }
 
     showSignInDialog()
@@ -158,7 +166,6 @@ public class FirebaseAppDistribution {
               // if the task failed, this get() will cause the error to propogate to the handler
               // below
               AppDistributionRelease release = task.getResult();
-
               if (release == null) {
                 postProgressToCachedUpdateIfNewReleaseTask(
                     UpdateProgress.builder()
@@ -180,6 +187,10 @@ public class FirebaseAppDistribution {
     synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
+  }
+
+  private boolean isOnBackgroundThread() {
+    return Looper.myLooper() != Looper.getMainLooper();
   }
 
   private Task<Void> showSignInDialog() {
