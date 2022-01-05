@@ -140,10 +140,10 @@ public class FirebaseAppDistribution {
 
       if (isOnBackgroundThread()) {
         LogWrapper.getInstance()
-            .e("UpdateIfNewReleaseAvailable cannot be called from a background thread");
+            .e("updateIfNewReleaseAvailable cannot be called from a background thread");
         setCachedUpdateIfNewReleaseCompletionError(
             new FirebaseAppDistributionException(
-                "UpdateIfNewReleaseAvailable cannot be called from a background thread",
+                "updateIfNewReleaseAvailable cannot be called from a background thread",
                 Status.UNKNOWN));
         return cachedUpdateIfNewReleaseTask;
       }
