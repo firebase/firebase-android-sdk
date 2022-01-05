@@ -138,7 +138,7 @@ public class FirebaseAppDistribution {
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
 
-      if (notOnMainThread()) {
+      if (isOnBackgroundThread()) {
         LogWrapper.getInstance().e("Basic configuration cannot be called from a background thread");
         setCachedUpdateIfNewReleaseCompletionError(
             new FirebaseAppDistributionException(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
@@ -189,7 +189,7 @@ public class FirebaseAppDistribution {
     }
   }
 
-  private boolean notOnMainThread() {
+  private boolean isOnBackgroundThread() {
     return Looper.myLooper() != Looper.getMainLooper();
   }
 
