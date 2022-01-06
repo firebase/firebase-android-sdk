@@ -46,6 +46,8 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
+    implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation project(':firebase-app-distribution-stub')
