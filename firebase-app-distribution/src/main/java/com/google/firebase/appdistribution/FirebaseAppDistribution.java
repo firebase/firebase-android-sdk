@@ -344,6 +344,12 @@ public class FirebaseAppDistribution {
       // SignInResult is internal to the SDK and is destroyed after creation
       return;
     }
+    if (signInDialog != null && signInDialog.isShowing()) {
+      setCachedUpdateIfNewReleaseCompletionError(
+          new FirebaseAppDistributionException(
+              ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+    }
+
     if (updateDialog != null && updateDialog.isShowing()) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(

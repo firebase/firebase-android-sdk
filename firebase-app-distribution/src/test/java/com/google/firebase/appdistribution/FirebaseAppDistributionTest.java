@@ -452,7 +452,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void taskCancelledOnScreenRotation() {
+  public void taskCancelledOnScreenRotation_whenUpdateDialogShowing() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
 
@@ -462,6 +462,18 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityDestroyed(activity);
 
     assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
+  }
+
+  @Test
+  public void taskCancelledOnScreenRotation_whenSignInDialogShowing() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity dying
+    firebaseAppDistribution.onActivityDestroyed(activity);
+
+    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
   }
 
   @Test
