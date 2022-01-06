@@ -90,8 +90,8 @@ public class FirebaseAppDistribution {
 
     @NonNull
     @Override
-    public UpdateTask addOnProgressListener(@Nullable Executor executor,
-        @NonNull OnProgressListener listener) {
+    public UpdateTask addOnProgressListener(
+        @Nullable Executor executor, @NonNull OnProgressListener listener) {
       return this;
     }
 
@@ -137,15 +137,15 @@ public class FirebaseAppDistribution {
 
     @NonNull
     @Override
-    public Task<Void> addOnSuccessListener(@NonNull Executor executor,
-        @NonNull OnSuccessListener<? super Void> onSuccessListener) {
+    public Task<Void> addOnSuccessListener(
+        @NonNull Executor executor, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
       return this;
     }
 
     @NonNull
     @Override
-    public Task<Void> addOnSuccessListener(@NonNull Activity activity,
-        @NonNull OnSuccessListener<? super Void> onSuccessListener) {
+    public Task<Void> addOnSuccessListener(
+        @NonNull Activity activity, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
       return this;
     }
 
@@ -157,15 +157,15 @@ public class FirebaseAppDistribution {
 
     @NonNull
     @Override
-    public Task<Void> addOnFailureListener(@NonNull Executor executor,
-        @NonNull OnFailureListener onFailureListener) {
+    public Task<Void> addOnFailureListener(
+        @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
       return this;
     }
 
     @NonNull
     @Override
-    public Task<Void> addOnFailureListener(@NonNull Activity activity,
-        @NonNull OnFailureListener onFailureListener) {
+    public Task<Void> addOnFailureListener(
+        @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
       return this;
     }
   }
