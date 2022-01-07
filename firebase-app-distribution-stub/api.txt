@@ -15,7 +15,6 @@ package com.google.firebase.appdistribution {
   }
 
   public class FirebaseAppDistribution {
-    ctor public FirebaseAppDistribution();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
@@ -26,7 +25,6 @@ package com.google.firebase.appdistribution {
   }
 
   public class FirebaseAppDistributionException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseAppDistributionException();
     method @NonNull public com.google.firebase.appdistribution.FirebaseAppDistributionException.Status getErrorCode();
     method @Nullable public com.google.firebase.appdistribution.AppDistributionRelease getRelease();
   }

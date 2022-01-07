@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.ktx
+package com.google.firebase.appdistribution.ktx
 
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.google.common.truth.Truth

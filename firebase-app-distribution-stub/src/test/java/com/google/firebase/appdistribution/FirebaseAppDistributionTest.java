@@ -15,14 +15,18 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
+import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import junit.framework.AssertionFailedError;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.robolectric.RobolectricTestRunner;
 
-@RunWith(JUnit4.class)
+@RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionTest {
   private FirebaseAppDistribution firebaseAppDistribution;
 
@@ -32,8 +36,13 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateIfNewReleaseAvailable_returnsACompletedTask() {
-    assertThatTaskIsCompletedSuccessfully(firebaseAppDistribution.updateIfNewReleaseAvailable());
+  public void updateIfNewReleaseAvailable_failsWithStatusInProduction() {
+    assertTaskFailsWithStatusInProduction(firebaseAppDistribution.updateIfNewReleaseAvailable());
+  }
+
+  @Test
+  public void updateIfNewReleaseAvailable_doesNotUpdateProgress() {
+    assertUpdateTaskDoesNotUpdateProgress(firebaseAppDistribution.updateIfNewReleaseAvailable());
   }
 
   @Test
@@ -42,8 +51,8 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInTester_returnsACompletedTask() {
-    assertThatTaskIsCompletedSuccessfully(firebaseAppDistribution.signInTester());
+  public void signInTester_failsWithStatusInProduction() {
+    assertTaskFailsWithStatusInProduction(firebaseAppDistribution.signInTester());
   }
 
   @Test
@@ -52,20 +61,45 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForNewRelease_returnsACompletedTask() {
-    assertThatTaskIsCompletedSuccessfully(firebaseAppDistribution.checkForNewRelease());
+  public void checkForNewRelease_failsWithStatusInProduction() {
+    assertTaskFailsWithStatusInProduction(firebaseAppDistribution.checkForNewRelease());
   }
 
   @Test
-  public void updateApp_returnsACompletedTask() {
-    assertThatTaskIsCompletedSuccessfully(firebaseAppDistribution.updateApp());
+  public void updateApp_failsWithStatusInProduction() {
+    assertTaskFailsWithStatusInProduction(firebaseAppDistribution.updateApp());
   }
 
-  private void assertThatTaskIsCompletedSuccessfully(Task task) {
+  @Test
+  public void updateApp_doesNotUpdateProgress() {
+    assertUpdateTaskDoesNotUpdateProgress(firebaseAppDistribution.updateApp());
+  }
+
+  private void assertUpdateTaskDoesNotUpdateProgress(UpdateTask task) {
+    OnProgressListener onProgressListener =
+        (updateProgress) -> {
+          throw new AssertionFailedError("UpdateTask not update progress");
+        };
+    task.addOnProgressListener(onProgressListener);
+    TestOnCompleteListener onCompleteListener = new TestOnCompleteListener();
+    task.addOnCompleteListener(onCompleteListener);
+    assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+  }
+
+  private void assertTaskFailsWithStatusInProduction(Task task) {
+    TestOnCompleteListener listener = new TestOnCompleteListener();
+    task.addOnCompleteListener(listener);
+    FirebaseAppDistributionException e =
+        assertThrows(FirebaseAppDistributionException.class, () -> listener.await());
+    assertThat(e).hasMessageThat().contains("production");
+    assertThat(e.getErrorCode()).isEqualTo(Status.APP_RUNNING_IN_PRODUCTION);
+    assertThat(e.getRelease()).isNull();
     assertThat(task.isComplete()).isTrue();
-    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.isSuccessful()).isFalse();
     assertThat(task.isCanceled()).isFalse();
-    assertThat(task.getException()).isNull();
-    assertThat(task.getResult()).isNull();
+    assertThat(task.getException()).isEqualTo(e);
+    assertThat(assertThrows(RuntimeExecutionException.class, () -> task.getResult()))
+        .hasCauseThat()
+        .isEqualTo(e);
   }
 }

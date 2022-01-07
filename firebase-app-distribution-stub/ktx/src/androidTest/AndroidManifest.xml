@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.google.firebase.app.distribution.ktx">
+  package="com.google.firebase.appdistribution.ktx">
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="16" android:targetSdkVersion="23" />-->
   <uses-permission android:name="android.permission.INTERNET"/>
@@ -9,5 +9,5 @@
 
   <instrumentation
     android:name="androidx.test.runner.AndroidJUnitRunner"
-    android:targetPackage="3com.google.firebase.app.distribution.ktx" />
+    android:targetPackage="3com.google.firebase.appdistribution.ktx" />
 </manifest>
