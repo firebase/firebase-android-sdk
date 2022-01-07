@@ -45,6 +45,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'

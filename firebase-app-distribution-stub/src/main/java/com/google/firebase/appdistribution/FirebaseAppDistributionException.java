@@ -59,14 +59,23 @@ public class FirebaseAppDistributionException extends FirebaseException {
     RELEASE_URL_EXPIRED,
   }
 
+  @NonNull private final Status status;
+  @Nullable private final AppDistributionRelease release;
+
+  FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
+    super(message);
+    this.status = status;
+    this.release = null;
+  }
+
   /** Get cached release when error was thrown */
   @Nullable
   public AppDistributionRelease getRelease() {
-    return null;
+    return release;
   }
 
   @NonNull
   public Status getErrorCode() {
-    return Status.UNKNOWN;
+    return status;
   }
 }

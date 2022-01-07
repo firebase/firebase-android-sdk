@@ -17,12 +17,16 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.OnCanceledListener;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.util.concurrent.Executor;
 
+/** Stubbed version of the Firebase App Distribution API */
 public class FirebaseAppDistribution {
 
   /** @return a FirebaseAppDistribution instance */
@@ -32,56 +36,71 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * Updates the app to the newest release, if one is available. Returns the release information or
-   * null if no update is found. Performs the following actions: 1. If tester is not signed in,
-   * presents the tester with a Google sign in UI 2. Checks if a newer release is available. If so,
-   * presents the tester with a confirmation dialog to begin the download. 3. For APKs, downloads
-   * the binary and starts an installation intent. 4. For AABs, directs the tester to the Play app
-   * to complete the download and installation.
+   * Stubbed version of {@code updateIfNewReleaseAvailable()}.
+   *
+   * @return an {@link UpdateTask} that will fail with a {@link FirebaseAppDistributionException}
+   *     with status {@link Status#APP_RUNNING_IN_PRODUCTION}.
    */
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
-    return new CompletedUpdateTask();
-  }
-
-  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
-  @NonNull
-  public Task<Void> signInTester() {
-    return Tasks.forResult(null);
+    return new AppInProductionUpdateTask();
   }
 
   /**
-   * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
-   * update is found, returns null. If tester is not signed in, presents the tester with a Google
-   * sign in UI
+   * Stubbed version of {@code signInTester()}.
+   *
+   * @return a {@link Task} that will fail with a {@link FirebaseAppDistributionException} with
+   *     status {@link Status#APP_RUNNING_IN_PRODUCTION}.
+   */
+  @NonNull
+  public Task<Void> signInTester() {
+    return getAppInProductionTask();
+  }
+
+  /**
+   * Stubbed version of {@code checkForNewRelease()}.
+   *
+   * @return a {@link Task} that will fail with a {@link FirebaseAppDistributionException} with
+   *     status {@link Status#APP_RUNNING_IN_PRODUCTION}.
    */
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    return Tasks.forResult(null);
+    return getAppInProductionTask();
   }
 
   /**
-   * Updates app to the newest release. If the newest release is an APK, downloads the binary and
-   * starts an installation If the newest release is an AAB, directs the tester to the Play app to
-   * complete the download and installation.
+   * Stubbed version of {@code updateApp()}.
    *
-   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAILABLE exception if no
-   * new release is cached from checkForNewRelease
+   * @return an {@link UpdateTask} that will fail with a {@link FirebaseAppDistributionException}
+   *     with status {@link Status#APP_RUNNING_IN_PRODUCTION}.
    */
   @NonNull
   public UpdateTask updateApp() {
-    return new CompletedUpdateTask();
+    return new AppInProductionUpdateTask();
   }
 
-  /** Returns true if the App Distribution tester is signed in */
+  /**
+   * Stubbed version of {@code isTesterSignedIn()}.
+   *
+   * @return false
+   */
   public boolean isTesterSignedIn() {
     return false;
   }
 
-  /** Signs out the App Distribution tester */
+  /** Stubbed version of {@code signOutTester()}. */
   public void signOutTester() {}
 
-  private static class CompletedUpdateTask extends UpdateTask {
+  private static <TResult> Task<TResult> getAppInProductionTask() {
+    return Tasks.forException(
+        new FirebaseAppDistributionException(
+            "App is running in production. App Distribution is disabled.",
+            Status.APP_RUNNING_IN_PRODUCTION));
+  }
+
+  private static class AppInProductionUpdateTask extends UpdateTask {
+    private final Task<Void> task = getAppInProductionTask();
+
     @NonNull
     @Override
     public UpdateTask addOnProgressListener(@NonNull OnProgressListener listener) {
@@ -97,41 +116,42 @@ public class FirebaseAppDistribution {
 
     @Override
     public boolean isComplete() {
-      return true;
+      return task.isComplete();
     }
 
     @Override
     public boolean isSuccessful() {
-      return true;
+      return task.isSuccessful();
     }
 
     @Override
     public boolean isCanceled() {
-      return false;
+      return task.isCanceled();
     }
 
     @Nullable
     @Override
     public Void getResult() {
-      return null;
+      return task.getResult();
     }
 
     @Nullable
     @Override
     public <X extends Throwable> Void getResult(@NonNull Class<X> aClass) throws X {
-      return null;
+      return task.getResult(aClass);
     }
 
     @Nullable
     @Override
     public Exception getException() {
-      return null;
+      return task.getException();
     }
 
     @NonNull
     @Override
     public Task<Void> addOnSuccessListener(
         @NonNull OnSuccessListener<? super Void> onSuccessListener) {
+      task.addOnSuccessListener(onSuccessListener);
       return this;
     }
 
@@ -139,6 +159,7 @@ public class FirebaseAppDistribution {
     @Override
     public Task<Void> addOnSuccessListener(
         @NonNull Executor executor, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
+      task.addOnSuccessListener(executor, onSuccessListener);
       return this;
     }
 
@@ -146,12 +167,14 @@ public class FirebaseAppDistribution {
     @Override
     public Task<Void> addOnSuccessListener(
         @NonNull Activity activity, @NonNull OnSuccessListener<? super Void> onSuccessListener) {
+      task.addOnSuccessListener(activity, onSuccessListener);
       return this;
     }
 
     @NonNull
     @Override
     public Task<Void> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
+      task.addOnFailureListener(onFailureListener);
       return this;
     }
 
@@ -159,6 +182,7 @@ public class FirebaseAppDistribution {
     @Override
     public Task<Void> addOnFailureListener(
         @NonNull Executor executor, @NonNull OnFailureListener onFailureListener) {
+      task.addOnFailureListener(executor, onFailureListener);
       return this;
     }
 
@@ -166,7 +190,48 @@ public class FirebaseAppDistribution {
     @Override
     public Task<Void> addOnFailureListener(
         @NonNull Activity activity, @NonNull OnFailureListener onFailureListener) {
+      task.addOnFailureListener(activity, onFailureListener);
       return this;
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener<Void> onCompleteListener) {
+      return task.addOnCompleteListener(onCompleteListener);
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCompleteListener(
+        @NonNull Executor executor, @NonNull OnCompleteListener<Void> onCompleteListener) {
+      return task.addOnCompleteListener(executor, onCompleteListener);
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCompleteListener(
+        @NonNull Activity activity, @NonNull OnCompleteListener<Void> onCompleteListener) {
+      return task.addOnCompleteListener(activity, onCompleteListener);
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCanceledListener(@NonNull OnCanceledListener onCanceledListener) {
+      return task.addOnCanceledListener(onCanceledListener);
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCanceledListener(
+        @NonNull Executor executor, @NonNull OnCanceledListener onCanceledListener) {
+      return task.addOnCanceledListener(executor, onCanceledListener);
+    }
+
+    @NonNull
+    @Override
+    public Task<Void> addOnCanceledListener(
+        @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
+      return task.addOnCanceledListener(activity, onCanceledListener);
     }
   }
 }
