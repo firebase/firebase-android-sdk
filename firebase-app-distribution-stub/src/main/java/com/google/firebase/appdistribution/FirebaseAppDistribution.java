@@ -29,6 +29,8 @@ import java.util.concurrent.Executor;
 /** Stubbed version of the Firebase App Distribution API */
 public class FirebaseAppDistribution {
 
+  FirebaseAppDistribution() {}
+
   /** @return a FirebaseAppDistribution instance */
   @NonNull
   public static FirebaseAppDistribution getInstance() {
