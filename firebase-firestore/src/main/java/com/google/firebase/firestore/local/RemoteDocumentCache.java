@@ -21,7 +21,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents cached documents received from the remote backend.
@@ -82,11 +81,9 @@ interface RemoteDocumentCache {
    *
    * @param collection The collection to read.
    * @param offset The read time and document key to start scanning at (exclusive).
-   * @param ignoreSet The set of document keys to ignore from the result.
    * @return A newly created map with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getAll(
-      ResourcePath collection, IndexOffset offset, Set<DocumentKey> ignoreSet);
+  Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
 
   /** Returns the latest read time of any document in the cache. */
   SnapshotVersion getLatestReadTime();

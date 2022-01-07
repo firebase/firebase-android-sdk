@@ -37,10 +37,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
@@ -166,7 +164,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit, Collections.emptySet());
+      return getAll(collections, offset, limit);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -174,10 +172,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       for (int i = 0; i < collections.size(); i += pageSize) {
         results.putAll(
             getAll(
-                collections.subList(i, Math.min(collections.size(), i + pageSize)),
-                offset,
-                limit,
-                new HashSet<>()));
+                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, limit));
       }
       return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
@@ -187,7 +182,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
    * Returns the next {@code count} documents from the provided collections, ordered by read time.
    */
   private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections, IndexOffset offset, int count, Set<DocumentKey> ignoreSet) {
+      List<ResourcePath> collections, IndexOffset offset, int count) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
@@ -223,18 +218,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     Map<DocumentKey, MutableDocument>[] results =
         (HashMap<DocumentKey, MutableDocument>[]) (new HashMap[] {new HashMap()});
 
-    Set<String> ignoredPath = new HashSet<>();
-    for (DocumentKey key : ignoreSet) {
-      ignoredPath.add(EncodedPath.encode(key.getPath()));
-    }
     db.query(sql.toString())
         .binding(bindVars)
         .forEach(
             row -> {
-              if (ignoredPath.contains(row.getString(3))) {
-                return;
-              }
-
               // Store row values in array entries to provide the correct context inside the
               // executor.
               final byte[] rawDocument = row.getBlob(0);
@@ -264,9 +251,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(
-      ResourcePath collection, IndexOffset offset, Set<DocumentKey> ignoreSet) {
-    return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE, ignoreSet);
+  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+    return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE);
   }
 
   @Override

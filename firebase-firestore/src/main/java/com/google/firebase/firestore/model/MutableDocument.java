@@ -26,7 +26,7 @@ import com.google.firestore.v1.Value;
  * one of these states even after all mutations have been applied, {@link #isValidDocument} returns
  * false and the document should be removed from all views.
  */
-public final class MutableDocument implements InternalDocument {
+public final class MutableDocument implements Document {
 
   private enum DocumentType {
     /**
@@ -159,6 +159,7 @@ public final class MutableDocument implements InternalDocument {
 
   public MutableDocument setHasLocalMutations() {
     this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
+    this.version = SnapshotVersion.NONE;
     return this;
   }
 
@@ -195,11 +196,6 @@ public final class MutableDocument implements InternalDocument {
   @Override
   public boolean hasPendingWrites() {
     return hasLocalMutations() || hasCommittedMutations();
-  }
-
-  @Override
-  public InternalDocument getInternalReference() {
-    return (InternalDocument) this;
   }
 
   @Override

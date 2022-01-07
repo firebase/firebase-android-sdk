@@ -94,7 +94,7 @@ public final class LocalSerializer {
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
     builder.putAllFields(document.getData().getFieldsMap());
-    Timestamp updateTime = document.getInternalReference().getVersion().getTimestamp();
+    Timestamp updateTime = document.getVersion().getTimestamp();
     builder.setUpdateTime(rpcSerializer.encodeTimestamp(updateTime));
     return builder.build();
   }
@@ -115,8 +115,7 @@ public final class LocalSerializer {
     com.google.firebase.firestore.proto.NoDocument.Builder builder =
         com.google.firebase.firestore.proto.NoDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
-    builder.setReadTime(
-        rpcSerializer.encodeTimestamp(document.getInternalReference().getVersion().getTimestamp()));
+    builder.setReadTime(rpcSerializer.encodeTimestamp(document.getVersion().getTimestamp()));
     return builder.build();
   }
 
@@ -135,8 +134,7 @@ public final class LocalSerializer {
     com.google.firebase.firestore.proto.UnknownDocument.Builder builder =
         com.google.firebase.firestore.proto.UnknownDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
-    builder.setVersion(
-        rpcSerializer.encodeTimestamp(document.getInternalReference().getVersion().getTimestamp()));
+    builder.setVersion(rpcSerializer.encodeTimestamp(document.getVersion().getTimestamp()));
     return builder.build();
   }
 

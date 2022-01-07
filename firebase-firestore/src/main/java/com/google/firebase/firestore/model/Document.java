@@ -19,8 +19,8 @@ import com.google.firestore.v1.Value;
 import java.util.Comparator;
 
 /**
- * Represents a document in Firestore with a key, data and whether the data has local mutations
- * applied to it.
+ * Represents a document in Firestore with a key, version, data and whether the data has local
+ * mutations applied to it.
  */
 public interface Document {
   /** A document comparator that returns document by key and key only. */
@@ -28,6 +28,18 @@ public interface Document {
 
   /** The key for this document */
   DocumentKey getKey();
+
+  /**
+   * Returns the version of this document if it exists or a version at which this document was
+   * guaranteed to not exist.
+   */
+  SnapshotVersion getVersion();
+
+  /**
+   * Returns the timestamp at which this document was read from the remote server. Returns
+   * `SnapshotVersion.NONE` for documents created by the user.
+   */
+  SnapshotVersion getReadTime();
 
   /**
    * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
@@ -62,5 +74,6 @@ public interface Document {
    */
   boolean hasPendingWrites();
 
-  InternalDocument getInternalReference();
+  /** Creates a mutable copy of this document. */
+  MutableDocument mutableCopy();
 }

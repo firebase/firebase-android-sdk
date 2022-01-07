@@ -423,13 +423,14 @@ public class TestUtil {
 
   public static RemoteEvent addedRemoteEvent(
       MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
-    return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets);
+    return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets, null);
   }
 
   public static RemoteEvent addedRemoteEvent(
       List<MutableDocument> docs,
       List<Integer> updatedInTargets,
-      List<Integer> removedFromTargets) {
+      List<Integer> removedFromTargets,
+      @Nullable SnapshotVersion eventVersion) {
     Preconditions.checkArgument(!docs.isEmpty(), "Cannot pass empty docs array");
 
     WatchChangeAggregator aggregator =
@@ -456,11 +457,11 @@ public class TestUtil {
       version = doc.getVersion().compareTo(version) > 0 ? doc.getVersion() : version;
     }
 
-    return aggregator.createRemoteEvent(version);
+    return aggregator.createRemoteEvent(eventVersion == null ? version : eventVersion);
   }
 
   public static RemoteEvent addedRemoteEvent(MutableDocument doc, Integer targetId) {
-    return addedRemoteEvent(singletonList(doc), singletonList(targetId), emptyList());
+    return addedRemoteEvent(singletonList(doc), singletonList(targetId), emptyList(), null);
   }
 
   public static RemoteEvent updateRemoteEvent(
@@ -468,7 +469,7 @@ public class TestUtil {
     List<Integer> activeTargets = new ArrayList<>();
     activeTargets.addAll(updatedInTargets);
     activeTargets.addAll(removedFromTargets);
-    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets);
+    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets, null);
   }
 
   public static RemoteEvent updateRemoteEvent(
@@ -476,6 +477,15 @@ public class TestUtil {
       List<Integer> updatedInTargets,
       List<Integer> removedFromTargets,
       List<Integer> activeTargets) {
+    return updateRemoteEvent(doc, updatedInTargets, removedFromTargets, activeTargets, null);
+  }
+
+  public static RemoteEvent updateRemoteEvent(
+      MutableDocument doc,
+      List<Integer> updatedInTargets,
+      List<Integer> removedFromTargets,
+      List<Integer> activeTargets,
+      @Nullable SnapshotVersion eventVersion) {
     DocumentChange change =
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
@@ -494,7 +504,7 @@ public class TestUtil {
               }
             });
     aggregator.handleDocumentChange(change);
-    return aggregator.createRemoteEvent(doc.getVersion());
+    return aggregator.createRemoteEvent(eventVersion == null ? doc.getVersion() : eventVersion);
   }
 
   public static SetMutation setMutation(String path, Map<String, Object> values) {
