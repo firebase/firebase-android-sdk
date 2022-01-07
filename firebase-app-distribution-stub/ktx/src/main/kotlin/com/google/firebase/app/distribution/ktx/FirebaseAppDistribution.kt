@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.ktx
+package com.google.firebase.appdistribution.ktx
 
 import com.google.firebase.appdistribution.FirebaseAppDistribution
 import com.google.firebase.ktx.Firebase
