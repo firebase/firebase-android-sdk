@@ -21,7 +21,10 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import org.junit.Before;
@@ -43,10 +46,13 @@ public class ApkInstallerTests {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    FirebaseApp firebaseApp =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(), new FirebaseOptions.Builder().build());
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    apkInstaller = new ApkInstaller(mockLifecycleNotifier);
+    apkInstaller = new ApkInstaller(firebaseApp.getApplicationContext(), mockLifecycleNotifier);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 

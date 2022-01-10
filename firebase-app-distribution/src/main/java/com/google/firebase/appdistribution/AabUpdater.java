@@ -19,11 +19,13 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import com.google.firebase.appdistribution.internal.LogWrapper;
@@ -48,18 +50,22 @@ class AabUpdater {
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
   private final Object updateAabLock = new Object();
+  private final Context applicationContext;
 
-  AabUpdater() {
+  AabUpdater(@NonNull FirebaseApp firebaseApp) {
     this(
+        firebaseApp,
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
         new HttpsUrlConnectionFactory(),
         Executors.newSingleThreadExecutor());
   }
 
   AabUpdater(
+      @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
       @NonNull Executor executor) {
+    this.applicationContext = firebaseApp.getApplicationContext();
     this.lifecycleNotifier = lifecycleNotifier;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
@@ -161,7 +167,7 @@ class AabUpdater {
           LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
           synchronized (updateAabLock) {
-            lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
+            applicationContext.startActivity(updateIntent);
             cachedUpdateTask.updateProgress(
                 UpdateProgress.builder()
                     .setApkBytesDownloaded(-1)

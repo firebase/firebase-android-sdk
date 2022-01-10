@@ -99,8 +99,8 @@ public class FirebaseAppDistribution {
             firebaseApp,
             new FirebaseAppDistributionTesterApiClient(),
             firebaseInstallationsApiProvider),
-        new ApkUpdater(firebaseApp, new ApkInstaller()),
-        new AabUpdater(),
+        new ApkUpdater(firebaseApp, new ApkInstaller(firebaseApp.getApplicationContext())),
+        new AabUpdater(firebaseApp),
         signInStorage,
         lifecycleNotifier);
   }
@@ -148,7 +148,7 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
     }
-
+    LogWrapper.getInstance().d("DEBUGGING ABOUT TO SHOW SIGN IN DIALOG");
     showSignInDialog()
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester

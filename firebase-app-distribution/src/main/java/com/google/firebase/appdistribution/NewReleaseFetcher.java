@@ -50,6 +50,7 @@ class NewReleaseFetcher {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
+  private final Context applicationContext;
   // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
 
@@ -60,10 +61,11 @@ class NewReleaseFetcher {
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
-    this.firebaseApp = firebaseApp;
-    this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
-    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
-    this.taskExecutor = Executors.newSingleThreadExecutor();
+    this(
+        firebaseApp,
+        firebaseAppDistributionTesterApiClient,
+        firebaseInstallationsApiProvider,
+        Executors.newSingleThreadExecutor());
   }
 
   NewReleaseFetcher(
@@ -75,6 +77,7 @@ class NewReleaseFetcher {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.taskExecutor = executor;
+    this.applicationContext = firebaseApp.getApplicationContext();
   }
 
   @NonNull
@@ -151,19 +154,17 @@ class NewReleaseFetcher {
 
   private boolean isOlderBuildVersion(long newReleaseBuildVersion)
       throws FirebaseAppDistributionException {
-    return newReleaseBuildVersion < getInstalledAppVersionCode(firebaseApp.getApplicationContext());
+    return newReleaseBuildVersion < getInstalledAppVersionCode(applicationContext);
   }
 
   private boolean isNewerBuildVersion(long newReleaseBuildVersion)
       throws FirebaseAppDistributionException {
-    return newReleaseBuildVersion > getInstalledAppVersionCode(firebaseApp.getApplicationContext());
+    return newReleaseBuildVersion > getInstalledAppVersionCode(applicationContext);
   }
 
   private boolean hasDifferentAppVersionName(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
-    return !newRelease
-        .getDisplayVersion()
-        .equals(getInstalledAppVersionName(firebaseApp.getApplicationContext()));
+    return !newRelease.getDisplayVersion().equals(getInstalledAppVersionName(applicationContext));
   }
 
   @VisibleForTesting
