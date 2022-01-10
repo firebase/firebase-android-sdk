@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Copyright 2021 Google Inc. All Rights Reserved. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home_black_24dp"
+        android:title="@string/title_home" />
+
+    <item
+        android:id="@+id/navigation_fast"
+        android:icon="@drawable/ic_dashboard_black_24dp"
+        android:title="@string/title_fast" />
+
+    <item
+        android:id="@+id/navigation_slow"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/title_slow" />
+
+</menu>

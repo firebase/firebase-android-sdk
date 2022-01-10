@@ -37,6 +37,7 @@ import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEv
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
@@ -104,6 +105,12 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String value1 = "value1";
     crashlyticsCore.setCustomKey(key1, value1);
     assertEquals(value1, metadata.getCustomKeys().get(key1));
+
+    // Adding an existing key with the same value should return false
+    assertFalse(metadata.setCustomKey(key1, value1));
+    assertTrue(metadata.setCustomKey(key1, "someOtherValue"));
+    assertTrue(metadata.setCustomKey(key1, value1));
+    assertFalse(metadata.setCustomKey(key1, value1));
 
     final String longValue = longId.replaceAll("0", "x");
     final String superLongValue = longValue + "some more chars";

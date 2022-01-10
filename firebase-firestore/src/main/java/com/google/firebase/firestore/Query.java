@@ -30,8 +30,7 @@ import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
@@ -91,7 +90,7 @@ public class Query {
    */
   @NonNull
   public Query whereEqualTo(@NonNull String field, @Nullable Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.EQUAL, value);
+    return where(Filter.equalTo(field, value));
   }
 
   /**
@@ -104,7 +103,7 @@ public class Query {
    */
   @NonNull
   public Query whereEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return whereHelper(fieldPath, Operator.EQUAL, value);
+    return where(Filter.equalTo(fieldPath, value));
   }
 
   /**
@@ -120,7 +119,7 @@ public class Query {
    */
   @NonNull
   public Query whereNotEqualTo(@NonNull String field, @Nullable Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_EQUAL, value);
+    return where(Filter.notEqualTo(field, value));
   }
 
   /**
@@ -136,7 +135,7 @@ public class Query {
    */
   @NonNull
   public Query whereNotEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return whereHelper(fieldPath, Operator.NOT_EQUAL, value);
+    return where(Filter.notEqualTo(fieldPath, value));
   }
 
   /**
@@ -149,7 +148,7 @@ public class Query {
    */
   @NonNull
   public Query whereLessThan(@NonNull String field, @NonNull Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN, value);
+    return where(Filter.lessThan(field, value));
   }
 
   /**
@@ -162,7 +161,7 @@ public class Query {
    */
   @NonNull
   public Query whereLessThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
-    return whereHelper(fieldPath, Operator.LESS_THAN, value);
+    return where(Filter.lessThan(fieldPath, value));
   }
 
   /**
@@ -175,7 +174,7 @@ public class Query {
    */
   @NonNull
   public Query whereLessThanOrEqualTo(@NonNull String field, @NonNull Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.LESS_THAN_OR_EQUAL, value);
+    return where(Filter.lessThanOrEqualTo(field, value));
   }
 
   /**
@@ -188,7 +187,7 @@ public class Query {
    */
   @NonNull
   public Query whereLessThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
-    return whereHelper(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
+    return where(Filter.lessThanOrEqualTo(fieldPath, value));
   }
 
   /**
@@ -201,7 +200,7 @@ public class Query {
    */
   @NonNull
   public Query whereGreaterThan(@NonNull String field, @NonNull Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN, value);
+    return where(Filter.greaterThan(field, value));
   }
 
   /**
@@ -214,7 +213,7 @@ public class Query {
    */
   @NonNull
   public Query whereGreaterThan(@NonNull FieldPath fieldPath, @NonNull Object value) {
-    return whereHelper(fieldPath, Operator.GREATER_THAN, value);
+    return where(Filter.greaterThan(fieldPath, value));
   }
 
   /**
@@ -227,8 +226,7 @@ public class Query {
    */
   @NonNull
   public Query whereGreaterThanOrEqualTo(@NonNull String field, @NonNull Object value) {
-    return whereHelper(
-        FieldPath.fromDotSeparatedPath(field), Operator.GREATER_THAN_OR_EQUAL, value);
+    return where(Filter.greaterThanOrEqualTo(field, value));
   }
 
   /**
@@ -241,7 +239,7 @@ public class Query {
    */
   @NonNull
   public Query whereGreaterThanOrEqualTo(@NonNull FieldPath fieldPath, @NonNull Object value) {
-    return whereHelper(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
+    return where(Filter.greaterThanOrEqualTo(fieldPath, value));
   }
 
   /**
@@ -258,7 +256,7 @@ public class Query {
    */
   @NonNull
   public Query whereArrayContains(@NonNull String field, @NonNull Object value) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS, value);
+    return where(Filter.arrayContains(field, value));
   }
 
   /**
@@ -275,7 +273,7 @@ public class Query {
    */
   @NonNull
   public Query whereArrayContains(@NonNull FieldPath fieldPath, @NonNull Object value) {
-    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS, value);
+    return where(Filter.arrayContains(fieldPath, value));
   }
 
   /**
@@ -293,7 +291,7 @@ public class Query {
   @NonNull
   public Query whereArrayContainsAny(
       @NonNull String field, @NonNull List<? extends Object> values) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.ARRAY_CONTAINS_ANY, values);
+    return where(Filter.arrayContainsAny(field, values));
   }
 
   /**
@@ -311,7 +309,7 @@ public class Query {
   @NonNull
   public Query whereArrayContainsAny(
       @NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
-    return whereHelper(fieldPath, Operator.ARRAY_CONTAINS_ANY, values);
+    return where(Filter.arrayContainsAny(fieldPath, values));
   }
 
   /**
@@ -327,7 +325,7 @@ public class Query {
    */
   @NonNull
   public Query whereIn(@NonNull String field, @NonNull List<? extends Object> values) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.IN, values);
+    return where(Filter.inArray(field, values));
   }
 
   /**
@@ -343,7 +341,7 @@ public class Query {
    */
   @NonNull
   public Query whereIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
-    return whereHelper(fieldPath, Operator.IN, values);
+    return where(Filter.inArray(fieldPath, values));
   }
 
   /**
@@ -364,7 +362,7 @@ public class Query {
    */
   @NonNull
   public Query whereNotIn(@NonNull String field, @NonNull List<? extends Object> values) {
-    return whereHelper(FieldPath.fromDotSeparatedPath(field), Operator.NOT_IN, values);
+    return where(Filter.notInArray(field, values));
   }
 
   /**
@@ -385,19 +383,19 @@ public class Query {
    */
   @NonNull
   public Query whereNotIn(@NonNull FieldPath fieldPath, @NonNull List<? extends Object> values) {
-    return whereHelper(fieldPath, Operator.NOT_IN, values);
+    return where(Filter.notInArray(fieldPath, values));
   }
 
   /**
-   * Creates and returns a new {@code Query} with the additional filter that documents must contain
-   * the specified field and the value should satisfy the relation constraint provided.
+   * Parses the given value object and creates a new {@code FieldFilter} with the given field,
+   * operator, and value. Also performs validation on the filter before retuning it.
    *
    * @param fieldPath The field to compare
    * @param op The operator
-   * @param value The value for comparison
-   * @return The created {@code Query}.
+   * @param value The value for parsing
+   * @return The created {@code FieldFilter}.
    */
-  private Query whereHelper(@NonNull FieldPath fieldPath, Operator op, Object value) {
+  private FieldFilter parseFieldFilter(@NonNull FieldPath fieldPath, Operator op, Object value) {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(op, "Provided op must not be null.");
     Value fieldValue;
@@ -427,9 +425,16 @@ public class Query {
               .getUserDataReader()
               .parseQueryValue(value, op == Operator.IN || op == Operator.NOT_IN);
     }
-    Filter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
+    FieldFilter filter = FieldFilter.create(fieldPath.getInternalPath(), op, fieldValue);
     validateNewFilter(filter);
-    return new Query(query.filter(filter), firestore);
+    return filter;
+  }
+
+  // TODO(orquery): This method will become public API. Change visibility and add documentation.
+  private Query where(Filter filter) {
+    return new Query(
+        query.filter(parseFieldFilter(filter.getField(), filter.getOperator(), filter.getValue())),
+        firestore);
   }
 
   private void validateOrderByField(com.google.firebase.firestore.model.FieldPath field) {
@@ -548,13 +553,13 @@ public class Query {
     }
   }
 
-  private void validateNewFilter(Filter filter) {
+  private void validateNewFilter(com.google.firebase.firestore.core.Filter filter) {
     if (filter instanceof FieldFilter) {
       FieldFilter fieldFilter = (FieldFilter) filter;
       Operator filterOp = fieldFilter.getOperator();
       if (fieldFilter.isInequality()) {
         com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
-        com.google.firebase.firestore.model.FieldPath newInequality = filter.getField();
+        com.google.firebase.firestore.model.FieldPath newInequality = fieldFilter.getField();
 
         if (existingInequality != null && !existingInequality.equals(newInequality)) {
           throw new IllegalArgumentException(

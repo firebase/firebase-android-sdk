@@ -14,7 +14,7 @@
 <!-- limitations under the License. -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.app.distribution">
+    package="com.google.firebase.appdistribution">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -26,15 +26,15 @@
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:exported="false">
             <meta-data
-                android:name="com.google.firebase.components:com.google.firebase.app.distribution.FirebaseAppDistributionRegistrar"
+                android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
         <!-- The launch mode for Install Activity is singleTask to ensure that after the unknown sources UI
         or the installation flow is complete, the Install Activity does not get recreated which causes loss of state
          See here for more info - https://developer.android.com/guide/components/activities/tasks-and-back-stack#ManifestForTasks -->
-        <activity android:name="com.google.firebase.app.distribution.InstallActivity" android:exported="true" android:launchMode="singleTask"/>
+        <activity android:name="com.google.firebase.appdistribution.internal.InstallActivity" android:exported="true" android:launchMode="singleTask"/>
 
-        <activity android:name="com.google.firebase.app.distribution.SignInResultActivity" android:exported="true">
+        <activity android:name="com.google.firebase.appdistribution.internal.SignInResultActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
@@ -46,7 +46,7 @@
         </activity>
 
         <provider
-            android:name="com.google.firebase.app.distribution.FirebaseAppDistributionFileProvider"
+            android:name="com.google.firebase.appdistribution.internal.FirebaseAppDistributionFileProvider"
             android:authorities="${applicationId}.FirebaseAppDistributionFileProvider"
             android:exported="false"
             android:grantUriPermissions="true">

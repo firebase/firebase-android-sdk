@@ -28,7 +28,8 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
@@ -128,11 +129,13 @@ public class CrashlyticsCore {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 
+    final String sessionIdentifier = new CLSUUID(idManager).toString();
     try {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
-      final UserMetadata userMetadata = new UserMetadata();
+      final UserMetadata userMetadata =
+          new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
@@ -173,7 +176,7 @@ public class CrashlyticsCore {
       checkForPreviousCrash();
 
       controller.enableExceptionHandling(
-          Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
+          sessionIdentifier, Thread.getDefaultUncaughtExceptionHandler(), settingsProvider);
 
       if (initializeSynchronously && CommonUtils.canTryConnection(context)) {
         Logger.getLogger()

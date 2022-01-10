@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docMap;
+import static com.google.firebase.firestore.testutil.TestUtil.existenceFilterEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.keySet;
@@ -75,6 +76,7 @@ import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1127,6 +1129,38 @@ public abstract class LocalStoreTestCase {
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("foo/a", "foo/b");
+  }
+
+  @Test
+  public void testIgnoresTargetMappingAfterExistenceFilterMismatch() {
+    assumeFalse(garbageCollectorIsEager());
+
+    Query query = query("foo").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    executeQuery(query);
+
+    // Persist a mapping with a single document
+    applyRemoteEvent(
+        addedRemoteEvent(
+            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+    applyRemoteEvent(noChangeEvent(targetId, 10));
+    updateViews(targetId, /* fromCache= */ false);
+
+    TargetData cachedTargetData = localStore.getTargetData(query.toTarget());
+    Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
+
+    // Create an existence filter mismatch and verify that the last limbo free snapshot version
+    // is deleted
+    applyRemoteEvent(existenceFilterEvent(targetId, 2, 20));
+    cachedTargetData = localStore.getTargetData(query.toTarget());
+    Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
+    Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
+
+    // Re-run the query as a collection scan
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertQueryReturned("foo/a");
   }
 
   @Test

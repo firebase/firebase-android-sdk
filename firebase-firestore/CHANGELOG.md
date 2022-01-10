@@ -7,6 +7,8 @@ by opting into a release at
   updates that have not yet been synced with the backend.
 - [changed] Improved performance for queries against collections that contain
   subcollections.
+- [fixed] Fixed an issue that can result in incomplete Query snapshots when an
+  app is backgrounded during query execution.
 
 # 24.0.0
 - [feature] Added support for Firebase AppCheck.
