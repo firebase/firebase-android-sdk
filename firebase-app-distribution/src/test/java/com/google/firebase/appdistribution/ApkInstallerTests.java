@@ -38,6 +38,9 @@ import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
 public class ApkInstallerTests {
+  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
+  private static final String TEST_PROJECT_ID = "777777777777";
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ApkInstaller apkInstaller;
@@ -47,8 +50,13 @@ public class ApkInstallerTests {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp firebaseApp =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(), new FirebaseOptions.Builder().build());
+            FirebaseApp.initializeApp(
+                    ApplicationProvider.getApplicationContext(),
+                    new FirebaseOptions.Builder()
+                            .setApplicationId(TEST_APP_ID_1)
+                            .setProjectId(TEST_PROJECT_ID)
+                            .setApiKey(TEST_API_KEY)
+                            .build());
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
