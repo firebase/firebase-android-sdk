@@ -1143,7 +1143,10 @@ public abstract class LocalStoreTestCase {
     // Persist a mapping with a single document
     applyRemoteEvent(
         addedRemoteEvent(
-            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+            asList(doc("foo/a", 10, map("matches", true))),
+            asList(targetId),
+            emptyList(),
+            version(10)));
     applyRemoteEvent(noChangeEvent(targetId, 10));
     updateViews(targetId, /* fromCache= */ false);
 
