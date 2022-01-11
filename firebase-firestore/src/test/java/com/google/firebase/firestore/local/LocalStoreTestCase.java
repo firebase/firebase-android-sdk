@@ -1155,7 +1155,7 @@ public abstract class LocalStoreTestCase {
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
-    applyRemoteEvent(existenceFilterEvent(targetId, 2, 20));
+    applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
     cachedTargetData = localStore.getTargetData(query.toTarget());
     Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
     Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
