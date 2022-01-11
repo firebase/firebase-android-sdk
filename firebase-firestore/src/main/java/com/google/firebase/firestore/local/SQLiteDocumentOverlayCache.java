@@ -59,12 +59,15 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   }
 
   private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+    String group = key.getCollectionGroup();
     String collectionPath = EncodedPath.encode(key.getPath().popLast());
     String documentId = key.getPath().getLastSegment();
     db.execute(
         "INSERT OR REPLACE INTO document_overlays "
-            + "(uid, collection_path, document_id, largest_batch_id, overlay_mutation) VALUES (?, ?, ?, ?, ?)",
+            + "(uid, collection_group, collection_path, document_id, largest_batch_id, overlay_mutation) "
+            + "VALUES (?, ?, ?, ?, ?, ?)",
         uid,
+        group,
         collectionPath,
         documentId,
         largestBatchId,
