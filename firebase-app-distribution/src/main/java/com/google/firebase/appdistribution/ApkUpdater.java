@@ -51,7 +51,7 @@ class ApkUpdater {
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor taskExecutor; // Executor to run task listeners on a background thread
   private final FirebaseApp firebaseApp;
-  private final Context applicationContext;
+  private final Context context;
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
@@ -82,7 +82,7 @@ class ApkUpdater {
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
-    this.applicationContext = firebaseApp.getApplicationContext();
+    this.context = firebaseApp.getApplicationContext();
   }
 
   UpdateTaskImpl updateApk(
@@ -181,7 +181,7 @@ class ApkUpdater {
 
     long bytesDownloaded = downloadToDisk(connection, responseLength, fileName, showNotification);
 
-    File apkFile = applicationContext.getFileStreamPath(fileName);
+    File apkFile = context.getFileStreamPath(fileName);
     validateJarFile(apkFile, responseLength, showNotification, bytesDownloaded);
 
     postUpdateProgress(responseLength, bytesDownloaded, UpdateStatus.DOWNLOADED, showNotification);
@@ -195,14 +195,14 @@ class ApkUpdater {
   private long downloadToDisk(
       HttpsURLConnection connection, long totalSize, String fileName, boolean showNotification)
       throws FirebaseAppDistributionException {
-    applicationContext.deleteFile(fileName);
+    context.deleteFile(fileName);
     int fileCreationMode =
         VERSION.SDK_INT >= VERSION_CODES.N ? Context.MODE_PRIVATE : Context.MODE_WORLD_READABLE;
     long bytesDownloaded = 0;
     try (BufferedOutputStream outputStream =
             new BufferedOutputStream(
-                applicationContext.openFileOutput(fileName, fileCreationMode));
-        InputStream inputStream = connection.getInputStream()) {
+                context.openFileOutput(fileName, fileCreationMode));
+         InputStream inputStream = connection.getInputStream()) {
       byte[] data = new byte[8 * 1024];
       int readSize = inputStream.read(data);
       long lastMsUpdated = 0;
@@ -244,9 +244,9 @@ class ApkUpdater {
   private String getApkFileName() {
     try {
       String applicationName =
-          applicationContext
+          context
               .getApplicationInfo()
-              .loadLabel(applicationContext.getPackageManager())
+              .loadLabel(context.getPackageManager())
               .toString();
       return applicationName + ".apk";
     } catch (Exception e) {

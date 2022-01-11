@@ -50,7 +50,7 @@ class NewReleaseFetcher {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
-  private final Context applicationContext;
+  private final Context context;
   // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
 
@@ -77,7 +77,7 @@ class NewReleaseFetcher {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.taskExecutor = executor;
-    this.applicationContext = firebaseApp.getApplicationContext();
+    this.context = firebaseApp.getApplicationContext();
   }
 
   @NonNull
@@ -154,17 +154,17 @@ class NewReleaseFetcher {
 
   private boolean isOlderBuildVersion(long newReleaseBuildVersion)
       throws FirebaseAppDistributionException {
-    return newReleaseBuildVersion < getInstalledAppVersionCode(applicationContext);
+    return newReleaseBuildVersion < getInstalledAppVersionCode(context);
   }
 
   private boolean isNewerBuildVersion(long newReleaseBuildVersion)
       throws FirebaseAppDistributionException {
-    return newReleaseBuildVersion > getInstalledAppVersionCode(applicationContext);
+    return newReleaseBuildVersion > getInstalledAppVersionCode(context);
   }
 
   private boolean hasDifferentAppVersionName(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
-    return !newRelease.getDisplayVersion().equals(getInstalledAppVersionName(applicationContext));
+    return !newRelease.getDisplayVersion().equals(getInstalledAppVersionName(context));
   }
 
   @VisibleForTesting
