@@ -99,7 +99,10 @@ public class AabUpdaterTest {
     aabUpdater =
         Mockito.spy(
             new AabUpdater(
-                firebaseApp, mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
+                firebaseApp.getApplicationContext(),
+                mockLifecycleNotifier,
+                mockHttpsUrlConnectionFactory,
+                testExecutor));
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
