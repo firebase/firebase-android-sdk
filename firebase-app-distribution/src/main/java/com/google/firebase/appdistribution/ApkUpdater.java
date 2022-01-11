@@ -200,9 +200,8 @@ class ApkUpdater {
         VERSION.SDK_INT >= VERSION_CODES.N ? Context.MODE_PRIVATE : Context.MODE_WORLD_READABLE;
     long bytesDownloaded = 0;
     try (BufferedOutputStream outputStream =
-            new BufferedOutputStream(
-                context.openFileOutput(fileName, fileCreationMode));
-         InputStream inputStream = connection.getInputStream()) {
+            new BufferedOutputStream(context.openFileOutput(fileName, fileCreationMode));
+        InputStream inputStream = connection.getInputStream()) {
       byte[] data = new byte[8 * 1024];
       int readSize = inputStream.read(data);
       long lastMsUpdated = 0;
@@ -244,10 +243,7 @@ class ApkUpdater {
   private String getApkFileName() {
     try {
       String applicationName =
-          context
-              .getApplicationInfo()
-              .loadLabel(context.getPackageManager())
-              .toString();
+          context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
       return applicationName + ".apk";
     } catch (Exception e) {
       LogWrapper.getInstance()

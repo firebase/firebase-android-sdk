@@ -148,6 +148,7 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
     }
+
     showSignInDialog()
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
