@@ -74,6 +74,9 @@ public class AabUpdaterTest {
   @Before
   public void setup() throws IOException, FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
+
+    FirebaseApp.clearInstancesForTest();
+
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
@@ -82,8 +85,6 @@ public class AabUpdaterTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .setApiKey(TEST_API_KEY)
                 .build());
-
-    FirebaseApp.clearInstancesForTest();
 
     activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();

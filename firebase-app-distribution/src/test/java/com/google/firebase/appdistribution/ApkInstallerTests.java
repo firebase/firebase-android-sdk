@@ -21,10 +21,7 @@ import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import org.junit.Before;
@@ -38,9 +35,6 @@ import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
 public class ApkInstallerTests {
-  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ApkInstaller apkInstaller;
@@ -49,18 +43,10 @@ public class ApkInstallerTests {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    FirebaseApp firebaseApp =
-            FirebaseApp.initializeApp(
-                    ApplicationProvider.getApplicationContext(),
-                    new FirebaseOptions.Builder()
-                            .setApplicationId(TEST_APP_ID_1)
-                            .setProjectId(TEST_PROJECT_ID)
-                            .setApiKey(TEST_API_KEY)
-                            .build());
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    apkInstaller = new ApkInstaller(firebaseApp.getApplicationContext(), mockLifecycleNotifier);
+    apkInstaller = new ApkInstaller(mockLifecycleNotifier);
     when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 

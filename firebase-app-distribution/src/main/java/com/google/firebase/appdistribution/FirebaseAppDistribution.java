@@ -99,7 +99,7 @@ public class FirebaseAppDistribution {
             firebaseApp,
             new FirebaseAppDistributionTesterApiClient(),
             firebaseInstallationsApiProvider),
-        new ApkUpdater(firebaseApp, new ApkInstaller(firebaseApp.getApplicationContext())),
+        new ApkUpdater(firebaseApp, new ApkInstaller()),
         new AabUpdater(firebaseApp),
         signInStorage,
         lifecycleNotifier);

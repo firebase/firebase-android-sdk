@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
@@ -30,7 +29,6 @@ import com.google.firebase.appdistribution.internal.LogWrapper;
 class ApkInstaller {
   private static final String TAG = "ApkInstallClient:";
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
-  private final Context applicationContext;
 
   @GuardedBy("installTaskLock")
   private TaskCompletionSource<Void> installTaskCompletionSource;
@@ -43,16 +41,14 @@ class ApkInstaller {
 
   private final Object installTaskLock = new Object();
 
-  ApkInstaller(
-      Context applicationContext, FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
-    this.applicationContext = applicationContext;
+  ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
     this.lifeCycleNotifier = lifeCycleNotifier;
     lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
-  ApkInstaller(Context applicationContext) {
-    this(applicationContext, FirebaseAppDistributionLifecycleNotifier.getInstance());
+  ApkInstaller() {
+    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   void onActivityStarted(@Nullable Activity activity) {
@@ -64,7 +60,7 @@ class ApkInstaller {
       }
     }
 
-    handleAppResume();
+    handleAppResume(activity);
   }
 
   void onActivityDestroyed(@Nullable Activity activity) {
@@ -75,14 +71,14 @@ class ApkInstaller {
     }
   }
 
-  void handleAppResume() {
+  void handleAppResume(Activity activity) {
     // This ensures that if the app was backgrounded during download, installation would continue
     // after app resume
     synchronized (installTaskLock) {
       if (promptInstallOnActivityResume
           && cachedInstallApkPath != null
           && !cachedInstallApkPath.isEmpty()) {
-        startInstallActivity(cachedInstallApkPath);
+        startInstallActivity(cachedInstallApkPath, activity);
       }
     }
   }
@@ -97,7 +93,7 @@ class ApkInstaller {
         cachedInstallApkPath = path;
       } else {
         // only start the install activity if current Activity is in the foreground
-        startInstallActivity(path);
+        startInstallActivity(path, currentActivity);
       }
 
       if (this.installTaskCompletionSource == null
@@ -108,15 +104,15 @@ class ApkInstaller {
     }
   }
 
-  private void startInstallActivity(String path) {
+  private void startInstallActivity(String path, Activity currentActivity) {
     synchronized (installTaskLock) {
       promptInstallOnActivityResume = false;
       cachedInstallApkPath = "";
     }
-    Intent intent = new Intent(applicationContext, InstallActivity.class);
+    Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    applicationContext.startActivity(intent);
+    currentActivity.startActivity(intent);
     LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
   }
 

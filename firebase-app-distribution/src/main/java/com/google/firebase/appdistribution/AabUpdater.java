@@ -140,16 +140,6 @@ class AabUpdater {
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
-    synchronized (updateAabLock) {
-      // TODO(rachelprince): change this to getCurrentNonNullActivity
-      if (lifecycleNotifier.getCurrentActivity() == null) {
-        safeSetTaskException(
-            cachedUpdateTask,
-            new FirebaseAppDistributionException(ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
-        return;
-      }
-    }
-
     // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
     executor.execute( // Execute the network calls on a background thread
         () -> {
