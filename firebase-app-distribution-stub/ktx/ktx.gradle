@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-app-distribution-stub')
+    releaseWith project(':firebase-appdistribution-stub')
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
@@ -50,7 +50,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(':firebase-app-distribution-stub')
+    implementation project(':firebase-appdistribution-stub')
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
