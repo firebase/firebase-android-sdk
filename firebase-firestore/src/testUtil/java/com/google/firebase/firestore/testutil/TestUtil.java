@@ -427,12 +427,13 @@ public class TestUtil {
     return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets, null);
   }
 
-  public static RemoteEvent existenceFilterEvent(int targetId, int count, int version) {
+  public static RemoteEvent existenceFilterEvent(
+      int targetId, ImmutableSortedSet<DocumentKey> synced_keys, int remote_count, int version) {
     TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
-    testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
+    testTargetMetadataProvider.setSyncedKeys(targetData, synced_keys);
 
-    ExistenceFilter existenceFilter = new ExistenceFilter(count);
+    ExistenceFilter existenceFilter = new ExistenceFilter(remote_count);
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
 
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
