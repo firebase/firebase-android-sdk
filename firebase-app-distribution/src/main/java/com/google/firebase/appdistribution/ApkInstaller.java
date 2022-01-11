@@ -111,7 +111,6 @@ class ApkInstaller {
     }
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     currentActivity.startActivity(intent);
     LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
   }
