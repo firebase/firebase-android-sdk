@@ -694,10 +694,13 @@ class SQLiteSchema {
                   + "uid TEXT, "
                   + "collection_path TEXT, "
                   + "document_id TEXT, "
+                  + "collection_group TEXT, "
                   + "largest_batch_id INTEGER, "
                   + "overlay_mutation BLOB, "
                   + "PRIMARY KEY (uid, collection_path, document_id))");
           db.execSQL("CREATE INDEX batch_id_overlay ON document_overlays (uid, largest_batch_id)");
+          db.execSQL(
+              "CREATE INDEX collection_group_overlay ON document_overlays (uid, collection_group)");
         });
   }
 

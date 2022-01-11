@@ -24,7 +24,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPayload;
@@ -174,15 +175,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         sessionId, FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build());
   }
 
-  public void persistUserId(@NonNull String sessionId) {
-    final String userId = reportMetadata.getUserId();
-    if (userId == null) {
-      Logger.getLogger().v("Could not persist user ID; no user ID available");
-      return;
-    }
-    reportPersistence.persistUserIdForSession(userId, sessionId);
-  }
-
   /**
    * Creates finalized reports for all sessions besides the given session. If the given session is
    * null, all sessions will be finalized.
@@ -249,7 +241,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final List<CustomAttribute> sortedInternalKeys =
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
-    if (!sortedCustomAttributes.isEmpty()) {
+    if (!sortedCustomAttributes.isEmpty() || !sortedInternalKeys.isEmpty()) {
       eventBuilder.setApp(
           capturedEvent.getApp().toBuilder()
               .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))

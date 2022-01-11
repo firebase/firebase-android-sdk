@@ -33,7 +33,7 @@ import java.util.concurrent.Executor;
  * future work, and run the future work on the executor's thread, but not put it in the queue as its
  * own worker.
  */
-class CrashlyticsBackgroundWorker {
+public class CrashlyticsBackgroundWorker {
   private final Executor executor;
 
   private Task<Void> tail = Tasks.forResult(null);

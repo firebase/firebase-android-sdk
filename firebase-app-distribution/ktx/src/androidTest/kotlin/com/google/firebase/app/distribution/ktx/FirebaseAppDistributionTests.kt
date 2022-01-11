@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.app.distribution.ktx
+package com.google.firebase.appdistribution.ktx
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.google.common.truth.Truth
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.app.distribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.FirebaseAppDistribution
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -69,12 +69,6 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun appDistribution_default_callsDefaultGetInstance() {
         Truth.assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
-    }
-
-    @Test
-    fun appDistribution_withFirebaseApp_callsGetInstanceWithApp() {
-        val app = Firebase.app(EXISTING_APP)
-        Truth.assertThat(Firebase.appDistribution(app)).isSameInstanceAs(FirebaseAppDistribution.getInstance(app))
     }
 }
 

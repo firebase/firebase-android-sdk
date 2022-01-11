@@ -90,7 +90,7 @@ public class OrderedCodeWriter {
   /**
    * Writes utf8 bytes into this byte sequence, ascending.
    *
-   * <p>This is a more efficent version of writeBytesAscending(str.getBytes(UTF_8));
+   * <p>This is a more efficient version of writeBytesAscending(str.getBytes(UTF_8));
    */
   public void writeUtf8Ascending(CharSequence sequence) {
     int utf16Length = sequence.length();
@@ -120,7 +120,7 @@ public class OrderedCodeWriter {
   /**
    * Writes utf8 bytes into this byte sequence, descending.
    *
-   * <p>This is a more efficent version of writeBytesDescending(str.getBytes(UTF_8));
+   * <p>This is a more efficient version of writeBytesDescending(str.getBytes(UTF_8));
    */
   public void writeUtf8Descending(CharSequence sequence) {
     int utf16Length = sequence.length();

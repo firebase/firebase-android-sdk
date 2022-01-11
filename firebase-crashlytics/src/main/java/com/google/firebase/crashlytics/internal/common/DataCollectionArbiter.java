@@ -203,6 +203,6 @@ public class DataCollectionArbiter {
     } else {
       prefsEditor.remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
     }
-    prefsEditor.commit();
+    prefsEditor.apply();
   }
 }
