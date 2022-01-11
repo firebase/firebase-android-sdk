@@ -24,7 +24,6 @@ import android.app.Activity;
 import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -46,9 +45,6 @@ import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
 public class AabUpdaterTest {
-  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
   private static final ExecutorService testExecutor = Executors.newSingleThreadExecutor();
@@ -77,15 +73,6 @@ public class AabUpdaterTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    FirebaseApp firebaseApp =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApplicationId(TEST_APP_ID_1)
-                .setProjectId(TEST_PROJECT_ID)
-                .setApiKey(TEST_API_KEY)
-                .build());
-
     activity =
         Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
@@ -99,7 +86,7 @@ public class AabUpdaterTest {
     aabUpdater =
         Mockito.spy(
             new AabUpdater(
-                firebaseApp.getApplicationContext(),
+                ApplicationProvider.getApplicationContext(),
                 mockLifecycleNotifier,
                 mockHttpsUrlConnectionFactory,
                 testExecutor));
