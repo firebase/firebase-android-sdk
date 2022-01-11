@@ -159,6 +159,7 @@ public final class MutableDocument implements Document {
 
   public MutableDocument setHasLocalMutations() {
     this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
+    this.version = SnapshotVersion.NONE;
     return this;
   }
 

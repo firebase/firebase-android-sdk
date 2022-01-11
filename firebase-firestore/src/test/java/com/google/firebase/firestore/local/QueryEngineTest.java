@@ -146,6 +146,20 @@ public class QueryEngineTest {
         });
   }
 
+  /**
+   * Adds the provided documents to the remote document cache in a event of the given snapshot
+   * version.
+   */
+  private void addDocumentWithEventVersion(SnapshotVersion eventVersion, MutableDocument... docs) {
+    persistence.runTransaction(
+        "addDocument",
+        () -> {
+          for (MutableDocument doc : docs) {
+            remoteDocumentCache.add(doc, eventVersion);
+          }
+        });
+  }
+
   /** Adds a mutation to the mutation queue. */
   private void addMutation(Mutation mutation) {
     persistence.runTransaction(
@@ -213,7 +227,7 @@ public class QueryEngineTest {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add a mutated document that is not yet part of query's set of remote keys.
-    addDocument(PENDING_NON_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_NON_MATCHING_DOC_A);
 
     DocumentSet docs =
         expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
@@ -297,7 +311,7 @@ public class QueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocument(PENDING_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
@@ -317,7 +331,7 @@ public class QueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocument(PENDING_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
@@ -375,7 +389,8 @@ public class QueryEngineTest {
     persistQueryMapping(key("coll/a"), key("coll/b"));
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
-    addDocument(doc("coll/a", 1, map("order", 2)).setHasLocalMutations());
+    addDocumentWithEventVersion(
+        version(1), doc("coll/a", 1, map("order", 2)).setHasLocalMutations());
 
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free
