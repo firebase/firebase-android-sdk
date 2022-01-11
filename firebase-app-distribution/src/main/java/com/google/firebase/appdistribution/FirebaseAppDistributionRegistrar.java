@@ -46,6 +46,9 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)
+            // construct FirebaseAppDistribution instance on startup so we can register for
+            // activity lifecycle callbacks before the API is called
+            .alwaysEager()
             .build(),
         LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
   }
