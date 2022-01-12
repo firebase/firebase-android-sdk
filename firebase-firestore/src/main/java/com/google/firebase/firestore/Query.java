@@ -388,14 +388,14 @@ public class Query {
   }
 
   /**
-   * Takes a {@code FieldFilterData} object, parses the value object and returns a new {@code
+   * Takes a {@link Filter.FieldFilter} object, parses the value object and returns a new {@link
    * FieldFilter} for the field, operator, and parsed value.
    *
-   * @param fieldFilterData The FieldFilterData object to parse.
-   * @return The created {@code FieldFilter}.
+   * @param fieldFilterData The Filter.FieldFilter object to parse.
+   * @return The created {@link FieldFilter}.
    */
   @NonNull
-  private FieldFilter parseFieldFilterData(@NonNull FieldFilterData fieldFilterData) {
+  private FieldFilter parseFieldFilter(Filter.FieldFilter fieldFilterData) {
     FieldPath fieldPath = fieldFilterData.getField();
     Operator op = fieldFilterData.getOperator();
     Object value = fieldFilterData.getValue();
@@ -433,17 +433,17 @@ public class Query {
   }
 
   /**
-   * Takes a {@code CompositeFilterData} object, parses each of its subfilters, and a new {@code
+   * Takes a {@link Filter.CompositeFilter} object, parses each of its subfilters, and a new {@link
    * CompositeFilter} that is constructed using the parsed values. Returns null if the given
-   * CompositeFilterData does not contain any subfilters. Returns a {@code FieldFilter} if the given
-   * CompositeFilterData contains only one field filter.
+   * Filter.CompositeFilter does not contain any subfilters. Returns a {@link FieldFilter} if the
+   * given Filter.CompositeFilter contains only one field filter.
    */
   @Nullable
-  private com.google.firebase.firestore.core.Filter parseCompositeFilterData(
-      @NonNull CompositeFilterData compositeFilterData) {
+  private com.google.firebase.firestore.core.Filter parseCompositeFilter(
+      Filter.CompositeFilter compositeFilterData) {
     List<com.google.firebase.firestore.core.Filter> parsedFilters = new ArrayList<>();
     for (Filter filter : compositeFilterData.getFilters()) {
-      com.google.firebase.firestore.core.Filter parsedFilter = parseFilterData(filter);
+      com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
       if (parsedFilter != null) {
         parsedFilters.add(parsedFilter);
       }
@@ -466,24 +466,24 @@ public class Query {
    * FieldFilter or CompositeFilter with parsed values.
    */
   @Nullable
-  private com.google.firebase.firestore.core.Filter parseFilterData(Filter filter) {
+  private com.google.firebase.firestore.core.Filter parseFilter(Filter filter) {
     hardAssert(
-        filter instanceof FieldFilterData || filter instanceof CompositeFilterData,
-        "Parsing is only supported for FieldFilterData and CompositeFilterData.");
-    if (filter instanceof FieldFilterData) {
-      return parseFieldFilterData((FieldFilterData) filter);
+        filter instanceof Filter.FieldFilter || filter instanceof Filter.CompositeFilter,
+        "Parsing is only supported for Filter.FieldFilter and Filter.CompositeFilter.");
+    if (filter instanceof Filter.FieldFilter) {
+      return parseFieldFilter((Filter.FieldFilter) filter);
     }
-    return parseCompositeFilterData((CompositeFilterData) filter);
+    return parseCompositeFilter((Filter.CompositeFilter) filter);
   }
 
   // TODO(orquery): This method will become public API. Change visibility and add documentation.
   private Query where(Filter filter) {
-    com.google.firebase.firestore.core.Filter parsedFilter = parseFilterData(filter);
+    com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
     if (parsedFilter == null) {
       // Return the existing query if not adding any more filters (e.g. an empty composite filter).
       return this;
     }
-    validateAddingNewFilter(parsedFilter);
+    validateNewFilter(parsedFilter);
     return new Query(query.filter(parsedFilter), firestore);
   }
 
@@ -603,8 +603,8 @@ public class Query {
     }
   }
 
-  /** Checks that adding the given field filter to the given query is valid */
-  private void validateAddingNewFieldFilter(
+  /** Checks that adding the given field filter to the given query yields a valid query */
+  private void validateNewFieldFilter(
       com.google.firebase.firestore.core.Query query,
       com.google.firebase.firestore.core.FieldFilter fieldFilter) {
     Operator filterOp = fieldFilter.getOperator();
@@ -644,10 +644,10 @@ public class Query {
   }
 
   /** Checks that adding the given filter to the current query is valid */
-  private void validateAddingNewFilter(com.google.firebase.firestore.core.Filter filter) {
+  private void validateNewFilter(com.google.firebase.firestore.core.Filter filter) {
     com.google.firebase.firestore.core.Query testQuery = query;
-    for (FieldFilter subfilter : filter.getAllFieldFilters()) {
-      validateAddingNewFieldFilter(testQuery, subfilter);
+    for (FieldFilter subfilter : filter.getFlattenedFilters()) {
+      validateNewFieldFilter(testQuery, subfilter);
       testQuery = query.filter(subfilter);
     }
   }

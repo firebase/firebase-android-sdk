@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
@@ -40,10 +42,10 @@ public class CompositeFilter extends Filter {
   }
 
   @Override
-  public List<FieldFilter> getAllFieldFilters() {
+  public List<FieldFilter> getFlattenedFilters() {
     List<FieldFilter> result = new ArrayList<>();
     for (Filter subfilter : filters) {
-      result.addAll(subfilter.getAllFieldFilters());
+      result.addAll(subfilter.getFlattenedFilters());
     }
     return result;
   }
@@ -53,8 +55,8 @@ public class CompositeFilter extends Filter {
    * does not contain any inequalities.
    */
   @Override
-  public FieldPath inequalityField() {
-    FieldFilter found = firstFieldFilterWhere(f -> f.isInequality());
+  public FieldPath getFirstInequalityField() {
+    FieldFilter found = findFirstMatchingFilter(f -> f.isInequality());
     if (found != null) {
       return found.getField();
     }
@@ -72,14 +74,16 @@ public class CompositeFilter extends Filter {
 
   /**
    * Performs a depth-first search to find and return the first FieldFilter in the composite filter
-   * that satisfies the condition. Returns null if none of the FieldFilters satisfy the condition.
+   * that satisfies the condition. Returns {@code null} if none of the FieldFilters satisfy the
+   * condition.
    */
-  private FieldFilter firstFieldFilterWhere(Function<FieldFilter, Boolean> condition) {
+  @Nullable
+  private FieldFilter findFirstMatchingFilter(Function<FieldFilter, Boolean> condition) {
     for (Filter filter : filters) {
       if (filter instanceof FieldFilter && condition.apply(((FieldFilter) filter))) {
         return (FieldFilter) filter;
       } else if (filter instanceof CompositeFilter) {
-        FieldFilter found = ((CompositeFilter) filter).firstFieldFilterWhere(condition);
+        FieldFilter found = ((CompositeFilter) filter).findFirstMatchingFilter(condition);
         if (found != null) {
           return found;
         }
@@ -113,15 +117,11 @@ public class CompositeFilter extends Filter {
   public String getCanonicalId() {
     // TODO(orquery): Add special case for flat AND filters.
 
+    List<String> canonicalIds = new ArrayList<>();
+    for (Filter filter : filters) canonicalIds.add(filter.getCanonicalId());
     StringBuilder builder = new StringBuilder();
-    for (Filter filter : filters) {
-      if (builder.length() == 0) {
-        builder.append(isConjunction() ? "and(" : "or(");
-      } else {
-        builder.append(",");
-      }
-      builder.append(filter.getCanonicalId());
-    }
+    builder.append(isConjunction() ? "and(" : "or(");
+    TextUtils.join(",", canonicalIds);
     builder.append(")");
     return builder.toString();
   }

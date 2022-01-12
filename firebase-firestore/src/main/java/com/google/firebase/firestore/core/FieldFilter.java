@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** Represents a filter to be applied to query. */
@@ -160,13 +161,13 @@ public class FieldFilter extends Filter {
   }
 
   @Override
-  public List<FieldFilter> getAllFieldFilters() {
+  public List<FieldFilter> getFlattenedFilters() {
     // This is already a field filter, so we return a list of size one.
-    return Arrays.asList(this);
+    return Collections.singletonList(this);
   }
 
   @Override
-  public FieldPath inequalityField() {
+  public FieldPath getFirstInequalityField() {
     if (isInequality()) {
       return getField();
     }

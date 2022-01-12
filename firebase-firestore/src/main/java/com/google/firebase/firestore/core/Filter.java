@@ -26,8 +26,8 @@ public abstract class Filter {
   public abstract String getCanonicalId();
 
   /** Returns a list of all field filters that are contained within this filter */
-  public abstract List<FieldFilter> getAllFieldFilters();
+  public abstract List<FieldFilter> getFlattenedFilters();
 
   /** Returns the field of the first filter that's an inequality, or null if none. */
-  public abstract FieldPath inequalityField();
+  public abstract FieldPath getFirstInequalityField();
 }

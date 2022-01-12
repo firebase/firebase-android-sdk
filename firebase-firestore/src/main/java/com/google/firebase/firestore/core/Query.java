@@ -200,7 +200,7 @@ public final class Query {
   @Nullable
   public FieldPath inequalityField() {
     for (Filter filter : filters) {
-      FieldPath result = filter.inequalityField();
+      FieldPath result = filter.getFirstInequalityField();
       if (result != null) {
         return result;
       }
@@ -216,7 +216,7 @@ public final class Query {
    */
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
-    FieldPath newInequalityField = filter.inequalityField();
+    FieldPath newInequalityField = filter.getFirstInequalityField();
     FieldPath queryInequalityField = inequalityField();
     Assert.hardAssert(
         queryInequalityField == null
