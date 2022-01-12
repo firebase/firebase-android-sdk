@@ -84,7 +84,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final String DROP_PAYLOADS_SQL = "DROP TABLE IF EXISTS event_payloads";
 
   private static final String CREATE_LOG_EVENT_DROPPED_TABLE =
-      "CREATE TABLE IF NOT EXISTS log_event_dropped "
+      "CREATE TABLE log_event_dropped "
           + "(log_source VARCHAR(45) NOT NULL,"
           + "reason INTEGER NOT NULL,"
           + "events_dropped_count BIGINT NOT NULL,"
@@ -131,6 +131,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATION_TO_V5 =
       db -> {
+        db.execSQL(DROP_LOG_EVENT_DROPPED_SQL);
         db.execSQL(CREATE_LOG_EVENT_DROPPED_TABLE);
         db.execSQL(CREATE_GLOBAL_LOG_EVENT_STATE_TABLE);
         db.execSQL(CREATE_INITIAL_GLOBAL_LOG_EVENT_STATE_VALUE_SQL);
