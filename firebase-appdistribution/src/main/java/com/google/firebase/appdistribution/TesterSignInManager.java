@@ -141,7 +141,7 @@ class TesterSignInManager {
       firebaseInstallationsApiProvider
           .get()
           .getId()
-          .addOnSuccessListener(getFidGenerationOnSuccessListener(currentActivity))
+          .addOnSuccessListener(getFidGenerationOnSuccessListener())
           .addOnFailureListener(
               e -> {
                 LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
@@ -179,7 +179,7 @@ class TesterSignInManager {
     }
   }
 
-  private OnSuccessListener<String> getFidGenerationOnSuccessListener(Activity currentActivity) {
+  private OnSuccessListener<String> getFidGenerationOnSuccessListener() {
     return fid -> {
       Context context = firebaseApp.getApplicationContext();
       Uri uri =
@@ -190,7 +190,7 @@ class TesterSignInManager {
                   fid,
                   getApplicationName(context),
                   context.getPackageName()));
-      openSignInFlowInBrowser(currentActivity, uri);
+      openSignInFlowInBrowser(context, uri);
     };
   }
 
@@ -203,22 +203,22 @@ class TesterSignInManager {
     }
   }
 
-  private void openSignInFlowInBrowser(Activity currentActivity, Uri uri) {
+  private void openSignInFlowInBrowser(Context applicationContext, Uri uri) {
     LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser at " + uri);
-    if (supportsCustomTabs(firebaseApp.getApplicationContext())) {
+    if (supportsCustomTabs(applicationContext)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
       intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      customTabsIntent.launchUrl(currentActivity, uri);
+      customTabsIntent.launchUrl(applicationContext, uri);
 
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      currentActivity.startActivity(browserIntent);
+      applicationContext.startActivity(browserIntent);
     }
   }
 
