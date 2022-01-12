@@ -93,13 +93,17 @@ class LocalDocumentsView {
    *     for it.
    */
   Document getDocument(DocumentKey key) {
-    Overlay overlay = documentOverlayCache.getOverlay(key);
-    MutableDocument fromOverlay = remoteDocumentCache.get(key);
+    Mutation overlay = documentOverlayCache.getOverlay(key);
+    // Only read from remote document cache if overlay is a patch.
+    MutableDocument document =
+        (overlay == null || overlay instanceof PatchMutation)
+            ? remoteDocumentCache.get(key)
+            : MutableDocument.newInvalidDocument(key);
     if (overlay != null) {
-      overlay.getMutation().applyToLocalView(fromOverlay, null, Timestamp.now());
+      overlay.applyToLocalView(document, null, Timestamp.now());
     }
 
-    return fromOverlay;
+    return document;
   }
 
   /**

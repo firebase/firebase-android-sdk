@@ -386,10 +386,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        updateRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
@@ -547,10 +544,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        addedRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
 
@@ -690,9 +684,7 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+            doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList(), asList(targetId)));
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
 
@@ -1146,7 +1138,7 @@ public abstract class LocalStoreTestCase {
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
-    applyRemoteEvent(existenceFilterEvent(targetId, 2, 20));
+    applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
     cachedTargetData = localStore.getTargetData(query.toTarget());
     Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
     Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
