@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.GuardedBy;
@@ -48,18 +49,22 @@ class AabUpdater {
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
   private final Object updateAabLock = new Object();
+  private final Context context;
 
-  AabUpdater() {
+  AabUpdater(@NonNull Context context) {
     this(
+        context,
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
         new HttpsUrlConnectionFactory(),
         Executors.newSingleThreadExecutor());
   }
 
   AabUpdater(
+      @NonNull Context context,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
       @NonNull Executor executor) {
+    this.context = context;
     this.lifecycleNotifier = lifecycleNotifier;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
@@ -134,16 +139,6 @@ class AabUpdater {
   }
 
   private void redirectToPlayForAabUpdate(String downloadUrl) {
-    synchronized (updateAabLock) {
-      // TODO(rachelprince): change this to getCurrentNonNullActivity
-      if (lifecycleNotifier.getCurrentActivity() == null) {
-        safeSetTaskException(
-            cachedUpdateTask,
-            new FirebaseAppDistributionException(ErrorMessages.APP_BACKGROUNDED, DOWNLOAD_FAILURE));
-        return;
-      }
-    }
-
     // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
     executor.execute( // Execute the network calls on a background thread
         () -> {
@@ -161,7 +156,7 @@ class AabUpdater {
           LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
           synchronized (updateAabLock) {
-            lifecycleNotifier.getCurrentActivity().startActivity(updateIntent);
+            context.startActivity(updateIntent);
             cachedUpdateTask.updateProgress(
                 UpdateProgress.builder()
                     .setApkBytesDownloaded(-1)
