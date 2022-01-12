@@ -394,7 +394,6 @@ public class Query {
    * @param fieldFilterData The Filter.FieldFilter object to parse.
    * @return The created {@link FieldFilter}.
    */
-  @NonNull
   private FieldFilter parseFieldFilter(Filter.FieldFilter fieldFilterData) {
     FieldPath fieldPath = fieldFilterData.getField();
     Operator op = fieldFilterData.getOperator();
@@ -438,21 +437,16 @@ public class Query {
    * Filter.CompositeFilter does not contain any subfilters. Returns a {@link FieldFilter} if the
    * given Filter.CompositeFilter contains only one field filter.
    */
-  @Nullable
   private com.google.firebase.firestore.core.Filter parseCompositeFilter(
       Filter.CompositeFilter compositeFilterData) {
     List<com.google.firebase.firestore.core.Filter> parsedFilters = new ArrayList<>();
     for (Filter filter : compositeFilterData.getFilters()) {
       com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
-      if (parsedFilter != null) {
+      if (!parsedFilter.getFlattenedFilters().isEmpty()) {
         parsedFilters.add(parsedFilter);
       }
     }
-    // For empty composite filters, return null.
-    // For example: and(or(), and()).
-    if (parsedFilters.isEmpty()) {
-      return null;
-    }
+
     // For composite filters containing 1 filter, return the only filter.
     // For example: AND(FieldFilter1) == FieldFilter1
     if (parsedFilters.size() == 1) {
@@ -465,7 +459,6 @@ public class Query {
    * Takes a filter whose value has not been parsed, parses the value object and returns a
    * FieldFilter or CompositeFilter with parsed values.
    */
-  @Nullable
   private com.google.firebase.firestore.core.Filter parseFilter(Filter filter) {
     hardAssert(
         filter instanceof Filter.FieldFilter || filter instanceof Filter.CompositeFilter,
@@ -479,7 +472,7 @@ public class Query {
   // TODO(orquery): This method will become public API. Change visibility and add documentation.
   private Query where(Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
-    if (parsedFilter == null) {
+    if (parsedFilter.getFlattenedFilters().isEmpty()) {
       // Return the existing query if not adding any more filters (e.g. an empty composite filter).
       return this;
     }
