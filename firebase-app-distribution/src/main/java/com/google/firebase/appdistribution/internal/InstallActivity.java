@@ -14,15 +14,25 @@
 
 package com.google.firebase.appdistribution.internal;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
+
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+
+
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.R;
 import java.io.File;
 
@@ -34,6 +44,13 @@ public class InstallActivity extends AppCompatActivity {
   private static final String TAG = "InstallActivity: ";
   private boolean unknownSourceEnablementInProgress = false;
   private boolean installInProgress = false;
+  private AlertDialog alertDialog;
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    alertDialog = new AlertDialog.Builder(this).create();
+  }
 
   @Override
   protected void onResume() {
@@ -58,6 +75,10 @@ public class InstallActivity extends AppCompatActivity {
             .e(
                 TAG
                     + "Unknown sources enablement was already in progress. It was either canceled or failed");
+        if (alertDialog.isShowing()){
+          LogWrapper.getInstance().d(TAG + "Closing alert Dialog");
+          alertDialog.dismiss();
+        }
         finish();
         return;
       }
@@ -87,8 +108,7 @@ public class InstallActivity extends AppCompatActivity {
     }
   }
 
-  private void showUnknownSourcesUi() {
-    AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+  private void showUnknownSourcesUi() { ;
     alertDialog.setTitle(getString(R.string.unknown_sources_dialog_title));
     alertDialog.setMessage(getString(R.string.unknown_sources_dialog_description));
     alertDialog.setButton(

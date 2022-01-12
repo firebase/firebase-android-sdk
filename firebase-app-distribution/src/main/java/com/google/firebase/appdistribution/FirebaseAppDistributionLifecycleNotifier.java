@@ -20,6 +20,9 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.util.ArrayDeque;
@@ -40,6 +43,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   /** A queue of listeners that trigger when the activity is foregrounded */
   @GuardedBy("lock")
   private final Queue<OnActivityStartedListener> onActivityStartedListeners = new ArrayDeque<>();
+
+  /** A queue of listeners that trigger when the activity is resumed */
+  @GuardedBy("lock")
+  private final Queue<OnActivityResumedListener> onActivityResumedListeners = new ArrayDeque<>();
 
   /** A queue of listeners that trigger when the activity is backgrounded */
   @GuardedBy("lock")
@@ -66,6 +73,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     void onStarted(Activity activity);
   }
 
+  interface OnActivityResumedListener {
+    void onResumed(Activity activity);
+  }
+
   interface OnActivityPausedListener {
     void onPaused(Activity activity);
   }
@@ -78,6 +89,25 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     synchronized (lock) {
       return currentActivity;
     }
+  }
+
+  // TODO (mannyjimenez) Put a lock on this in the future.
+  Task<Activity> getForegroundActivity() {
+    if (currentActivity != null) {
+      return Tasks.forResult(currentActivity);
+    }
+    TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+
+    addOnActivityResumedListener(
+        new OnActivityResumedListener() {
+          @Override
+          public void onResumed(Activity activity) {
+            task.setResult(activity);
+            removeOnActivityResumedListener(this);
+          }
+        });
+
+    return task.getTask();
   }
 
   Activity getNonNullCurrentActivity() throws FirebaseAppDistributionException {
@@ -108,6 +138,18 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     }
   }
 
+  void addOnActivityResumedListener(@NonNull OnActivityResumedListener listener) {
+    synchronized (lock) {
+      this.onActivityResumedListeners.add(listener);
+    }
+  }
+
+  void removeOnActivityResumedListener(@NonNull OnActivityResumedListener listener) {
+    synchronized (lock) {
+      this.onActivityResumedListeners.remove(listener);
+    }
+  }
+
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
     synchronized (lock) {
@@ -129,7 +171,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   @Override
-  public void onActivityResumed(@NonNull Activity activity) {}
+  public void onActivityResumed(@NonNull Activity activity) {
+    synchronized (lock) {
+      currentActivity = activity;
+      for (OnActivityResumedListener listener : onActivityResumedListeners) {
+        listener.onResumed(activity);
+      }
+    }
+  }
 
   @Override
   public void onActivityPaused(@NonNull Activity activity) {

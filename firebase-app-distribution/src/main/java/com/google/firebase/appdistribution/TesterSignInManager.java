@@ -112,6 +112,39 @@ class TesterSignInManager {
   }
 
   @NonNull
+  public Task<Void> signInTester(boolean showSignIn) {
+
+    if (signInStorage.getSignInStatus()) {
+      LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
+      return Tasks.forResult(null);
+    }
+
+    synchronized (signInTaskLock) {
+      if (this.isCurrentlySigningIn()) {
+        LogWrapper.getInstance()
+            .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
+        return signInTaskCompletionSource.getTask();
+      }
+
+      // TODO(rachelprince): Change this to getCurrentNonNullActivity
+      Activity currentActivity = lifecycleNotifier.getCurrentActivity();
+      if (currentActivity == null) {
+        LogWrapper.getInstance().e(TAG + "No foreground activity found.");
+        return Tasks.forException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.APP_BACKGROUNDED,
+                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
+      }
+
+      signInTaskCompletionSource = new TaskCompletionSource<>();
+
+      openSignInBrowser();
+
+      return signInTaskCompletionSource.getTask();
+    }
+  }
+
+  @NonNull
   public Task<Void> signInTester() {
 
     if (signInStorage.getSignInStatus()) {
@@ -138,20 +171,24 @@ class TesterSignInManager {
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
-      firebaseInstallationsApiProvider
-          .get()
-          .getId()
-          .addOnSuccessListener(getFidGenerationOnSuccessListener())
-          .addOnFailureListener(
-              e -> {
-                LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
-                setSignInTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
-              });
+      openSignInBrowser();
 
       return signInTaskCompletionSource.getTask();
     }
+  }
+
+  public void openSignInBrowser() {
+    firebaseInstallationsApiProvider
+        .get()
+        .getId()
+        .addOnSuccessListener(getFidGenerationOnSuccessListener())
+        .addOnFailureListener(
+            e -> {
+              LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
+              setSignInTaskCompletionError(
+                  new FirebaseAppDistributionException(
+                      ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
+            });
   }
 
   private boolean isCurrentlySigningIn() {
