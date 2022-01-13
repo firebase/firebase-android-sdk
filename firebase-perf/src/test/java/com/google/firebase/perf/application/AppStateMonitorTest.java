@@ -367,7 +367,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
-      monitor.onPostPausedStopped(activity);
+      monitor.onActivityPostPaused(activity);
       Assert.assertEquals(0, monitor.getActivity2ScreenTrace().size());
     }
   }
