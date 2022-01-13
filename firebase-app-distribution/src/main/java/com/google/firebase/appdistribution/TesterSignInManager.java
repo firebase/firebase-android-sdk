@@ -127,14 +127,7 @@ class TesterSignInManager {
       }
 
       // TODO(rachelprince): Change this to getCurrentNonNullActivity
-      Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-      if (currentActivity == null) {
-        LogWrapper.getInstance().e(TAG + "No foreground activity found.");
-        return Tasks.forException(
-            new FirebaseAppDistributionException(
-                ErrorMessages.APP_BACKGROUNDED,
-                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
-      }
+      Activity currentActivity = lifecycleNotifier.getForegroundActivity().getResult();
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
 

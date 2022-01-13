@@ -23,8 +23,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
@@ -93,30 +91,22 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   // TODO (mannyjimenez) Put a lock on this in the future.
   Task<Activity> getForegroundActivity() {
-    if (currentActivity != null) {
-      return Tasks.forResult(currentActivity);
-    }
-    TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
-
-    addOnActivityResumedListener(
-        new OnActivityResumedListener() {
-          @Override
-          public void onResumed(Activity activity) {
-            task.setResult(activity);
-            removeOnActivityResumedListener(this);
-          }
-        });
-
-    return task.getTask();
-  }
-
-  Activity getNonNullCurrentActivity() throws FirebaseAppDistributionException {
     synchronized (lock) {
-      if (currentActivity == null) {
-        throw new FirebaseAppDistributionException(
-            ErrorMessages.APP_BACKGROUNDED, Status.FOREGROUND_ACTIVITY_NOT_AVAILABLE);
+      if (currentActivity != null) {
+        return Tasks.forResult(currentActivity);
       }
-      return currentActivity;
+      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+
+      addOnActivityResumedListener(
+          new OnActivityResumedListener() {
+            @Override
+            public void onResumed(Activity activity) {
+              task.setResult(activity);
+              removeOnActivityResumedListener(this);
+            }
+          });
+
+      return task.getTask();
     }
   }
 

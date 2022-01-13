@@ -23,7 +23,6 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -174,7 +173,6 @@ public class FirebaseAppDistribution {
               return lifecycleNotifier
                   .getForegroundActivity()
                   .onSuccessTask((activity) -> showUpdateAlertDialog(activity, release));
-              // return showUpdateAlertDialog(release);
             })
         .onSuccessTask(
             unused ->
@@ -185,10 +183,6 @@ public class FirebaseAppDistribution {
     synchronized (updateIfNewReleaseTaskLock) {
       return cachedUpdateIfNewReleaseTask;
     }
-  }
-
-  private boolean isOnBackgroundThread() {
-    return Looper.myLooper() != Looper.getMainLooper();
   }
 
   private Task<Void> showSignInConfirmationDialog(Activity hostActivity) {
