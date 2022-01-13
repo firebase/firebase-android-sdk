@@ -232,11 +232,6 @@ public class FirebaseAppDistribution {
     return this.testerSignInManager.signInTester();
   }
 
-  @NonNull
-  public Task<Void> signInTester(boolean showDialog) {
-    return this.testerSignInManager.signInTester(showDialog);
-  }
-
   /**
    * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
    * update is found, returns null. If tester is not signed in, presents the tester with a Google
