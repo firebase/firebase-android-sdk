@@ -285,9 +285,12 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
-  /** Stops screen trace in onPause because of b/210055697 */
   @Override
-  public void onActivityPaused(Activity activity) {
+  public void onActivityPaused(Activity activity) {}
+
+  /** Stops screen trace right after onPause because of b/210055697 */
+  @Override
+  public void onActivityPostPaused(@NonNull Activity activity) {
     if (isScreenTraceSupported(activity)) {
       sendScreenTrace(activity);
     }
