@@ -163,10 +163,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public synchronized void onActivityStopped(Activity activity) {
-    if (isScreenTraceSupported(activity)) {
-      sendScreenTrace(activity);
-    }
-
     // Last activity has its onActivityStopped called, the app goes to background.
     if (activityToResumedMap.containsKey(activity)) {
       activityToResumedMap.remove(activity);
@@ -289,8 +285,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
+  /** Stops screen trace in onPause because of b/210055697 */
   @Override
-  public void onActivityPaused(Activity activity) {}
+  public void onActivityPaused(Activity activity) {
+    if (isScreenTraceSupported(activity)) {
+      sendScreenTrace(activity);
+    }
+  }
 
   /**
    * Send screen trace. If hardware acceleration is not enabled, all frame metrics will be zero and
@@ -318,6 +319,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
      * FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
      * disabled activities.
      */
+    try {
+      frameMetricsAggregator.remove(activity);
+    } catch (IllegalArgumentException ignored) {}
     SparseIntArray[] arr = frameMetricsAggregator.reset();
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
