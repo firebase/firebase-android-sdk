@@ -126,9 +126,6 @@ class TesterSignInManager {
         return signInTaskCompletionSource.getTask();
       }
 
-      // TODO(rachelprince): Change this to getCurrentNonNullActivity
-      Activity currentActivity = lifecycleNotifier.getForegroundActivity().getResult();
-
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
       firebaseInstallationsApiProvider

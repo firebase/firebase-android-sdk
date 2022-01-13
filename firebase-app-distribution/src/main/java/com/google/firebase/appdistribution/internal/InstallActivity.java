@@ -33,7 +33,6 @@ import java.io.File;
  */
 public class InstallActivity extends AppCompatActivity {
   private static final String TAG = "InstallActivity: ";
-  private boolean unknownSourceEnablementInProgress = false;
   private boolean installInProgress = false;
   private AlertDialog alertDialog;
 

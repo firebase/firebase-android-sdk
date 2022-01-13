@@ -125,7 +125,7 @@ public class TesterSignInManagerTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(activity);
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
 
     testerSignInManager =
         new TesterSignInManager(

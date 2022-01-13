@@ -100,7 +100,7 @@ public class ApkUpdaterTest {
         Mockito.spy(
             new ApkUpdater(
                 testExecutor,
-                firebaseApp,
+                ApplicationProvider.getApplicationContext(),
                 mockApkInstaller,
                 mockNotificationsManager,
                 mockHttpsUrlConnectionFactory));

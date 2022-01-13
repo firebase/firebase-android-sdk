@@ -50,7 +50,6 @@ class ApkUpdater {
 
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor taskExecutor; // Executor to run task listeners on a background thread
-  private final FirebaseApp firebaseApp;
   private final Context context;
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
@@ -64,7 +63,7 @@ class ApkUpdater {
   public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
     this(
         Executors.newSingleThreadExecutor(),
-        firebaseApp,
+        firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
         new HttpsUrlConnectionFactory());
@@ -73,16 +72,15 @@ class ApkUpdater {
   @VisibleForTesting
   public ApkUpdater(
       @NonNull Executor taskExecutor,
-      @NonNull FirebaseApp firebaseApp,
+      @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
     this.taskExecutor = taskExecutor;
-    this.firebaseApp = firebaseApp;
+    this.context = context;
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
-    this.context = firebaseApp.getApplicationContext();
   }
 
   UpdateTaskImpl updateApk(
