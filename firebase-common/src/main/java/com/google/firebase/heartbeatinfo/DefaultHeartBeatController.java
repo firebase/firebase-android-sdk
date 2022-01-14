@@ -26,6 +26,9 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -33,6 +36,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -99,7 +104,11 @@ public class DefaultHeartBeatController implements HeartBeatController {
             JSONObject output = new JSONObject();
             output.put("heartbeats", array);
             output.put("version", "2");
-            return Base64.encodeToString(output.toString().getBytes(), Base64.DEFAULT);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            GZIPOutputStream gzip = new GZIPOutputStream(out);
+            gzip.write(output.toString().getBytes());
+            gzip.close();
+            return Base64.encodeToString(out.toString("UTF-8").getBytes(), Base64.URL_SAFE);
           }
         });
   }
