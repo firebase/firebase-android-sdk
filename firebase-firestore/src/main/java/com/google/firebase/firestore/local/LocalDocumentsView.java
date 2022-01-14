@@ -21,7 +21,6 @@ import android.util.Pair;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.database.collection.StandardComparator;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -267,9 +266,10 @@ class LocalDocumentsView {
    * Given a collection group, returns the next documents that follow the provided offset, along
    * with an updated offset.
    *
-   * <p>This method returns documents in order of read time from the provided offset, followed by
-   * documents with mutations in order of batch id from the offset. Since all documents in a batch
-   * are returned together, the total number of documents returned can exceed {@code count}.
+   * <p>The documents returned by this method are ordered by remote version from the provided
+   * offset. If there are no more remote documents after the provided offset, documents with
+   * mutations in order of batch id from the offset are returned. Since all documents in a batch are
+   * returned together, the total number of documents returned can exceed {@code count}.
    *
    * <p>If no documents are found, returns an empty map and an offset with the latest read time in
    * the remote document cache.
@@ -282,60 +282,81 @@ class LocalDocumentsView {
    */
   Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getNextDocumentsAndOffset(
       String collectionGroup, IndexOffset offset, int count) {
-    ImmutableSortedMap<DocumentKey, Document> documents =
+    // First backfill based on offset read time.
+    ImmutableSortedMap<DocumentKey, Document> returnedDocuments =
         getDocuments(collectionGroup, offset, count);
+    IndexOffset newOffset = getNewOffset(returnedDocuments, offset);
 
-    // TODO(indexing): Store largest batch id on Document class so we can avoid fetching documents
-    // a second time.
-    ImmutableSortedMap<Integer, List<Document>> batchIdToDocuments =
-        getDocumentsBatchIdsMatchingCollectionGroupQuery(collectionGroup, offset);
-    IndexOffset newOffset = getNewOffset(documents, offset);
+    // Backfill based on offset batch id if there is still count remaining.
+    // TODO: combine the read time and batch id fetches into single method
+    if (returnedDocuments.size() < count) {
+      int countRemaining = count - returnedDocuments.size();
+      Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> pair =
+          getDocumentsFromOverlay(collectionGroup, newOffset, returnedDocuments, countRemaining);
+      newOffset = pair.first;
 
-    // Start updating by mutation batch id if under limit.
-    while (documents.size() < count && !batchIdToDocuments.isEmpty()) {
-      int lowestBatchId = batchIdToDocuments.getMinKey();
-      List<Document> documentsInBatch = batchIdToDocuments.get(lowestBatchId);
-
-      for (Document document : documentsInBatch) {
-        documents = documents.insert(document.getKey(), document);
+      for (Map.Entry<DocumentKey, Document> entry : pair.second) {
+        returnedDocuments = returnedDocuments.insert(entry.getKey(), entry.getValue());
       }
-      newOffset =
-          IndexOffset.create(newOffset.getReadTime(), newOffset.getDocumentKey(), lowestBatchId);
-      batchIdToDocuments = batchIdToDocuments.remove(lowestBatchId);
     }
 
-    return new Pair<>(newOffset, documents);
+    return new Pair<>(newOffset, returnedDocuments);
   }
 
   /**
-   * Returns a mapping of batch id to documents that match the provided query sorted by batch id
-   * ascending order.
+   * Returns the next documents that follows the provided offset's largest batch id, along with an
+   * updated offset.
+   *
+   * @param collectionGroup The collectino group for the documents.
+   * @param offset The offset to index info.
+   * @param processedDocuments Already processed documents that should not be returned again by this
+   *     method.
+   * @param count The number of documents to return.
+   * @return A pair containing the next offset that corresponds to the next documents and a map of
+   *     documents that follow the provided offset's batch id.
    */
-  // TODO(indexing): Support adding local mutations to collection group table.
-  public ImmutableSortedMap<Integer, List<Document>>
-      getDocumentsBatchIdsMatchingCollectionGroupQuery(String collectionGroup, IndexOffset offset) {
-    ImmutableSortedMap<Integer, List<Document>> results =
-        ImmutableSortedMap.Builder.emptyMap(StandardComparator.getComparator(Integer.class));
-    List<ResourcePath> parents = indexManager.getCollectionParents(collectionGroup);
+  private Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> getDocumentsFromOverlay(
+      String collectionGroup,
+      IndexOffset offset,
+      ImmutableSortedMap<DocumentKey, Document> processedDocuments,
+      int count) {
+    SQLiteDocumentOverlayCache cache = (SQLiteDocumentOverlayCache) documentOverlayCache;
+    ImmutableSortedMap<DocumentKey, Document> returnedDocuments = emptyDocumentMap();
+    IndexOffset newOffset = offset;
+    int newLargestBatchId = offset.getLargestBatchId();
+    int documentCount = 0;
 
-    // Perform a collection query against each parent that contains the collectionId and
-    // aggregate the results.
-    for (ResourcePath parent : parents) {
-      ResourcePath collectionId = parent.append(collectionGroup);
-      Query collectionQuery = Query.atPath(collectionId);
-      Map<Document, Integer> documentToBatchIds =
-          getDocumentsInOverlayCacheByBatchId(collectionQuery, offset);
-      for (Document document : documentToBatchIds.keySet()) {
-        int batchId = documentToBatchIds.get(document);
-        List<Document> entry = results.get(batchId);
-        if (entry == null) {
-          entry = new ArrayList<>();
-          results = results.insert(batchId, entry);
+    while (documentCount < count) {
+      Map<DocumentKey, Overlay> overlays =
+          cache.getNextOverlays(collectionGroup, newLargestBatchId);
+      if (overlays.isEmpty()) {
+        break;
+      }
+
+      // Prune documents that are already in processedDocuments.
+      List<DocumentKey> documentsToFetch = new ArrayList<>();
+      for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
+        if (!processedDocuments.containsKey(entry.getKey())) {
+          documentsToFetch.add(entry.getKey());
+          documentCount++;
         }
-        entry.add(document);
+        newLargestBatchId = entry.getValue().getLargestBatchId();
+      }
+      newOffset =
+          IndexOffset.create(
+              newOffset.getReadTime(), newOffset.getDocumentKey(), newLargestBatchId);
+
+      // Fetch the remote documents and apply the mutations before adding them to the results map.
+      Map<DocumentKey, MutableDocument> remoteDocuments =
+          remoteDocumentCache.getAll(documentsToFetch);
+      for (Map.Entry<DocumentKey, MutableDocument> entry : remoteDocuments.entrySet()) {
+        Overlay overlay = overlays.get(entry.getKey());
+        overlay.getMutation().applyToLocalView(entry.getValue(), null, Timestamp.now());
+
+        returnedDocuments = returnedDocuments.insert(entry.getKey(), entry.getValue());
       }
     }
-    return results;
+    return new Pair<>(newOffset, returnedDocuments);
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
@@ -368,40 +389,15 @@ class LocalDocumentsView {
   }
 
   /**
-   * Returns a mapping of documents to their largest batch ids based on the earliest batch id in the
-   * provided offset.
+   * Returns the offset for the index based on the newly indexed documents.
+   *
+   * <p>If there are no documents, returns an offset with the latest remote version.
    */
-  public Map<Document, Integer> getDocumentsInOverlayCacheByBatchId(
-      Query query, IndexOffset offset) {
-    Map<DocumentKey, MutableDocument> localDocuments = new HashMap<>();
-    Map<DocumentKey, Overlay> overlays =
-        documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
-
-    // Apply overlays to empty mutable document map to generate base.
-    for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
-      localDocuments.put(entry.getKey(), MutableDocument.newInvalidDocument(entry.getKey()));
-    }
-
-    // Apply the overlays and match against the query.
-    Map<Document, Integer> results = new HashMap<>();
-    for (Map.Entry<DocumentKey, MutableDocument> docEntry : localDocuments.entrySet()) {
-      Overlay overlay = overlays.get(docEntry.getKey());
-      int batchId = overlay.getLargestBatchId();
-      overlay.getMutation().applyToLocalView(docEntry.getValue(), null, Timestamp.now());
-      // Finally, insert the documents that still match the query.
-      if (query.matches(docEntry.getValue())) {
-        results.put(docEntry.getValue(), batchId);
-      }
-    }
-
-    return results;
-  }
-
-  /** Returns the offset for the index based on the newly indexed documents. */
   private IndexOffset getNewOffset(
       ImmutableSortedMap<DocumentKey, Document> documents, IndexOffset currentOffset) {
     if (documents.isEmpty()) {
-      return IndexOffset.create(remoteDocumentCache.getLatestReadTime());
+      return IndexOffset.create(
+          remoteDocumentCache.getLatestReadTime(), currentOffset.getLargestBatchId());
     } else {
       IndexOffset latestOffset = currentOffset;
       Iterator<Map.Entry<DocumentKey, Document>> it = documents.iterator();

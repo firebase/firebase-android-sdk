@@ -98,7 +98,10 @@ public class SQLiteOverlayMigrationManagerTest {
 
     assertEquals(
         setMutation("foo/bar", map("foo", "bar")),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")).getMutation());
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     // Version is 0 because of remote document elision.
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
@@ -122,7 +125,10 @@ public class SQLiteOverlayMigrationManagerTest {
 
     assertEquals(
         deleteMutation("foo/bar"),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")).getMutation());
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     // Version is 0 because of remote document elision.
     assertContains(deletedDoc("foo/bar", 2).setHasLocalMutations());
 

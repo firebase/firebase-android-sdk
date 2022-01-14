@@ -136,7 +136,6 @@ public class IndexBackfiller {
     IndexOffset existingOffset = getExistingOffset(fieldIndexes);
 
     // Represents documents and the updated offset post-update.
-    // TODO(mrschmidt): Add mutation batch id to the document, so we don't have to return the offset
     Pair<IndexOffset, ImmutableSortedMap<DocumentKey, Document>> pair =
         localDocumentsView.getNextDocumentsAndOffset(
             collectionGroup, existingOffset, documentsRemainingUnderCap);

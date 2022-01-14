@@ -142,6 +142,13 @@ public abstract class FieldIndex {
      * Creates an offset that matches all documents with a read time higher than {@code readTime}.
      */
     public static IndexOffset create(SnapshotVersion readTime) {
+      return create(readTime, INITIAL_LARGEST_BATCH_ID);
+    }
+
+    /**
+     * Creates an offset that matches all documents with a read time higher than {@code readTime}.
+     */
+    public static IndexOffset create(SnapshotVersion readTime, int largestBatchId) {
       // We want to create an offset that matches all documents with a read time greater than
       // the provided read time. To do so, we technically need to create an offset for
       // `(readTime, MAX_DOCUMENT_KEY)`. While we could use Unicode codepoints to generate
@@ -154,8 +161,7 @@ public abstract class FieldIndex {
               successorNanos == 1e9
                   ? new Timestamp(successorSeconds + 1, 0)
                   : new Timestamp(successorSeconds, successorNanos));
-      return new AutoValue_FieldIndex_IndexOffset(
-          successor, DocumentKey.empty(), INITIAL_LARGEST_BATCH_ID);
+      return new AutoValue_FieldIndex_IndexOffset(successor, DocumentKey.empty(), largestBatchId);
     }
 
     /** Creates a new offset based on the provided document. */

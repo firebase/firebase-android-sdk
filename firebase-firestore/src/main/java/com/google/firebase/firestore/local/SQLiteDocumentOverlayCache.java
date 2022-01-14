@@ -119,4 +119,48 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
     return result;
   }
+
+  /**
+   * Returns the overlays at the next largest batch id for the provided collection group. Returns an
+   * empty map if there are no overlays with a largest batch id greater than provided batch id.
+   */
+  public Map<DocumentKey, Overlay> getNextOverlays(String collectionGroup, int sinceBatchId) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+
+    Integer nextBatchId =
+        db.query(
+                "SELECT largest_batch_id FROM document_overlays "
+                    + "WHERE largest_batch_id > ? ORDER BY largest_batch_id LIMIT 1")
+            .binding(sinceBatchId)
+            .firstValue(row -> row.getInt(0));
+
+    if (nextBatchId == null) {
+      return new HashMap<>();
+    }
+
+    db.query(
+            "SELECT collection_path, document_id, overlay_mutation, largest_batch_id FROM document_overlays "
+                + "WHERE uid = ? AND collection_group = ? AND largest_batch_id == ?")
+        .binding(uid, collectionGroup, nextBatchId)
+        .forEach(
+            row -> {
+              try {
+                String collectionPath = row.getString(0);
+                String documentId = row.getString(1);
+                Write write = Write.parseFrom(row.getBlob(2));
+                int largestBatchId = row.getInt(3);
+                Mutation mutation = serializer.decodeMutation(write);
+
+                ResourcePath resourcePath =
+                    EncodedPath.decodeResourcePath(collectionPath).append(documentId);
+                result.put(
+                    DocumentKey.fromPath(resourcePath), Overlay.create(largestBatchId, mutation));
+
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Overlay failed to parse: %s", e);
+              }
+            });
+
+    return result;
+  }
 }
