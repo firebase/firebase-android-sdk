@@ -275,7 +275,6 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 

@@ -22,6 +22,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import org.junit.Before;
@@ -47,7 +48,7 @@ public class ApkInstallerTests {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
     apkInstaller = new ApkInstaller(mockLifecycleNotifier);
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
   }
 
   @Test
@@ -65,7 +66,7 @@ public class ApkInstallerTests {
 
   @Test
   public void installApk_currentActivityNull_InstallNotPrompted() {
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(null));
     String path = "path";
     Task<Void> installTask = apkInstaller.installApk(path);
     Intent installIntent = shadowActivity.getNextStartedActivity();

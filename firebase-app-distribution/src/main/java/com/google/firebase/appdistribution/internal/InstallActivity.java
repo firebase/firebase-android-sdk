@@ -82,7 +82,6 @@ public class InstallActivity extends AppCompatActivity {
       alertDialog.dismiss();
       LogWrapper.getInstance()
           .e(TAG + "Unknown sources enablement canceled. Activity was destroyed");
-      finish();
     }
   }
 
@@ -116,7 +115,9 @@ public class InstallActivity extends AppCompatActivity {
         (dialogInterface, i) -> dismissUnknownSourcesDialogCallback());
     alertDialog.setOnCancelListener(dialogInterface -> dismissUnknownSourcesDialogCallback());
 
-    alertDialog.show();
+    if (!alertDialog.isShowing()) {
+      alertDialog.show();
+    }
   }
 
   private void dismissUnknownSourcesDialogCallback() {

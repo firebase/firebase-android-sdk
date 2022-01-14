@@ -85,7 +85,7 @@ class ApkInstaller {
 
   Task<Void> installApk(String path) {
     synchronized (installTaskLock) {
-      Activity currentActivity = lifeCycleNotifier.getCurrentActivity();
+      Activity currentActivity = lifeCycleNotifier.getForegroundActivity().getResult();
       // This ensures that we save the state of the install if the app is backgrounded during
       // APK download
       if (currentActivity == null) {

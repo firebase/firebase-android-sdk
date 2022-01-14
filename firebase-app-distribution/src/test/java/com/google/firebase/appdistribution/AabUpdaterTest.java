@@ -23,6 +23,7 @@ import static org.robolectric.Shadows.shadowOf;
 import android.app.Activity;
 import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
@@ -90,7 +91,7 @@ public class AabUpdaterTest {
                 mockLifecycleNotifier,
                 mockHttpsUrlConnectionFactory,
                 testExecutor));
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
   }
 
   @Test
