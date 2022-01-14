@@ -69,11 +69,22 @@ public class InstallActivity extends AppCompatActivity {
         finish();
         return;
       }
+      LogWrapper.getInstance().d("SHOWING UNKNOWN SOURCES ");
       showUnknownSourcesUi();
       return;
     }
 
     startAndroidPackageInstallerIntent();
+  }
+
+  protected void onDestroy() {
+    super.onDestroy();
+    if (alertDialog.isShowing()) {
+      alertDialog.dismiss();
+      LogWrapper.getInstance()
+          .e(TAG + "Unknown sources enablement canceled. Activity was destroyed");
+      finish();
+    }
   }
 
   private boolean isUnknownSourcesEnabled() {
