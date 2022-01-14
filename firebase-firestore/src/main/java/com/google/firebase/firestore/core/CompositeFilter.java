@@ -33,6 +33,7 @@ public class CompositeFilter extends Filter {
     this.operator = operator;
   }
 
+  @Override
   public List<Filter> getFilters() {
     return filters;
   }

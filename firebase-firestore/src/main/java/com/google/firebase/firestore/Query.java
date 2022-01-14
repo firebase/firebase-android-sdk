@@ -432,17 +432,15 @@ public class Query {
   }
 
   /**
-   * Takes a {@link Filter.CompositeFilter} object, parses each of its subfilters, and a new {@link
-   * CompositeFilter} that is constructed using the parsed values. Returns null if the given
-   * Filter.CompositeFilter does not contain any subfilters. Returns a {@link FieldFilter} if the
-   * given Filter.CompositeFilter contains only one field filter.
+   * Takes a {@link Filter.CompositeFilter} object, parses each of its subfilters, and returns a new
+   * {@link Filter} that is constructed using the parsed values.
    */
   private com.google.firebase.firestore.core.Filter parseCompositeFilter(
       Filter.CompositeFilter compositeFilterData) {
     List<com.google.firebase.firestore.core.Filter> parsedFilters = new ArrayList<>();
     for (Filter filter : compositeFilterData.getFilters()) {
       com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
-      if (!parsedFilter.getFlattenedFilters().isEmpty()) {
+      if (!parsedFilter.getFilters().isEmpty()) {
         parsedFilters.add(parsedFilter);
       }
     }
@@ -472,7 +470,7 @@ public class Query {
   // TODO(orquery): This method will become public API. Change visibility and add documentation.
   private Query where(Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
-    if (parsedFilter.getFlattenedFilters().isEmpty()) {
+    if (parsedFilter.getFilters().isEmpty()) {
       // Return the existing query if not adding any more filters (e.g. an empty composite filter).
       return this;
     }
@@ -619,7 +617,7 @@ public class Query {
         validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
       }
     }
-    Operator conflictingOp = findFilterOperator(query.getFilters(), conflictingOps(filterOp));
+    Operator conflictingOp = findFilterWithOperator(query.getFilters(), conflictingOps(filterOp));
     if (conflictingOp != null) {
       // We special case when it's a duplicate op to give a slightly clearer error message.
       if (conflictingOp == filterOp) {
@@ -650,7 +648,7 @@ public class Query {
    * returns the first one that is, or null if none are.
    */
   @Nullable
-  private Operator findFilterOperator(
+  private Operator findFilterWithOperator(
       List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
     for (com.google.firebase.firestore.core.Filter filter : filters) {
       if (filter instanceof FieldFilter) {

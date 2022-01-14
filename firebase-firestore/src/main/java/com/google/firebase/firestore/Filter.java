@@ -25,8 +25,6 @@ import java.util.List;
 /** @hide */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Filter {
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   static class FieldFilter extends Filter {
     private final FieldPath field;
     private final Operator operator;
@@ -52,8 +50,6 @@ public class Filter {
     }
   }
 
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   static class CompositeFilter extends Filter {
     private final List<Filter> filters;
     private final StructuredQuery.CompositeFilter.Operator operator;

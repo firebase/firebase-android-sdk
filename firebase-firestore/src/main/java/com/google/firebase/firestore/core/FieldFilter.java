@@ -167,6 +167,12 @@ public class FieldFilter extends Filter {
   }
 
   @Override
+  public List<Filter> getFilters() {
+    // This is the only filter within this object, so we return a list of size one.
+    return Collections.singletonList(this);
+  }
+
+  @Override
   public FieldPath getFirstInequalityField() {
     if (isInequality()) {
       return getField();

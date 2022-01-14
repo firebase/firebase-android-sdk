@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import java.util.List;
@@ -28,6 +29,10 @@ public abstract class Filter {
   /** Returns a list of all field filters that are contained within this filter */
   public abstract List<FieldFilter> getFlattenedFilters();
 
+  /** Returns a list of all filters that are contained within this filter */
+  public abstract List<Filter> getFilters();
+
   /** Returns the field of the first filter that's an inequality, or null if none. */
+  @Nullable
   public abstract FieldPath getFirstInequalityField();
 }
