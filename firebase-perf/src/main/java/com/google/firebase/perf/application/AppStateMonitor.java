@@ -324,7 +324,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
      */
     try {
       frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException ignored) {}
+    } catch (IllegalArgumentException ignored) {
+      logger.debug("View not hardware accelerated. Unable to collect screen trace.");
+    }
     SparseIntArray[] arr = frameMetricsAggregator.reset();
     if (arr != null) {
       SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
