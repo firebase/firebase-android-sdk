@@ -69,7 +69,6 @@ public class InstallActivity extends AppCompatActivity {
         finish();
         return;
       }
-      LogWrapper.getInstance().d("SHOWING UNKNOWN SOURCES ");
       showUnknownSourcesUi();
       return;
     }
