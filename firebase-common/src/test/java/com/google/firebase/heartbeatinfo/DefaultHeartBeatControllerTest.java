@@ -23,6 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.platforminfo.UserAgentPublisher;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -33,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,7 +79,7 @@ public class DefaultHeartBeatControllerTest {
 
   @Test
   public void generateHeartBeat_oneHeartBeat()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(
         HeartBeatResult.create(
@@ -91,16 +94,17 @@ public class DefaultHeartBeatControllerTest {
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
-        Base64.getEncoder()
+        Base64.getUrlEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-02-03\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}"
+                compress(
+                        "{\"heartbeats\":[{\"date\":[\"2015-02-03\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}")
                     .getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }
 
   @Test
   public void generateHeartBeat_twoHeartBeatsSameUserAgent()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     ArrayList<String> dateList = new ArrayList<>();
     dateList.add("2015-03-02");
@@ -120,16 +124,25 @@ public class DefaultHeartBeatControllerTest {
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
-        Base64.getEncoder()
+        Base64.getUrlEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-03-02\",\"2015-03-01\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}"
+                compress(
+                        "{\"heartbeats\":[{\"date\":[\"2015-03-02\",\"2015-03-01\"],\"agent\":\"test-agent\"}],\"version\":\"2\"}")
                     .getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }
 
+  private String compress(String str) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    GZIPOutputStream gzip = new GZIPOutputStream(out);
+    gzip.write(str.toString().getBytes());
+    gzip.close();
+    return out.toString("UTF-8");
+  }
+
   @Test
   public void generateHeartBeat_twoHeartBeatstwoUserAgents()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(
         HeartBeatResult.create(
@@ -151,9 +164,10 @@ public class DefaultHeartBeatControllerTest {
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
-        Base64.getEncoder()
+        Base64.getUrlEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"date\":[\"2015-03-02\"],\"agent\":\"test-agent\"},{\"date\":[\"2015-03-03\"],\"agent\":\"test-agent-1\"}],\"version\":\"2\"}"
+                compress(
+                        "{\"heartbeats\":[{\"date\":[\"2015-03-02\"],\"agent\":\"test-agent\"},{\"date\":[\"2015-03-03\"],\"agent\":\"test-agent-1\"}],\"version\":\"2\"}")
                     .getBytes());
     assertThat(getOnCompleteListener.await()).isEqualTo(expected);
   }

@@ -26,9 +26,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
-
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -37,7 +35,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
