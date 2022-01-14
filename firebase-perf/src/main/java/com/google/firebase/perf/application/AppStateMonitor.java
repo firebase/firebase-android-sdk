@@ -463,6 +463,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   @VisibleForTesting
+  void setStopTime(Timer timer) {
+    stopTime = timer;
+  }
+
+  @VisibleForTesting
   Timer getResumeTime() {
     return resumeTime;
   }
