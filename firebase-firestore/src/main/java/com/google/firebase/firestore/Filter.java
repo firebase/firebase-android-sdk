@@ -25,12 +25,12 @@ import java.util.List;
 /** @hide */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Filter {
-  static class FieldFilter extends Filter {
+  static class UnaryFilter extends Filter {
     private final FieldPath field;
     private final Operator operator;
     private final Object value;
 
-    public FieldFilter(FieldPath field, Operator operator, @Nullable Object value) {
+    public UnaryFilter(FieldPath field, Operator operator, @Nullable Object value) {
       this.field = field;
       this.operator = operator;
       this.value = value;
@@ -76,7 +76,7 @@ public class Filter {
 
   @NonNull
   public static Filter equalTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.EQUAL, value);
   }
 
   @NonNull
@@ -86,7 +86,7 @@ public class Filter {
 
   @NonNull
   public static Filter notEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.NOT_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.NOT_EQUAL, value);
   }
 
   @NonNull
@@ -96,7 +96,7 @@ public class Filter {
 
   @NonNull
   public static Filter greaterThan(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.GREATER_THAN, value);
+    return new UnaryFilter(fieldPath, Operator.GREATER_THAN, value);
   }
 
   @NonNull
@@ -106,7 +106,7 @@ public class Filter {
 
   @NonNull
   public static Filter greaterThanOrEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
   }
 
   @NonNull
@@ -116,7 +116,7 @@ public class Filter {
 
   @NonNull
   public static Filter lessThan(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.LESS_THAN, value);
+    return new UnaryFilter(fieldPath, Operator.LESS_THAN, value);
   }
 
   @NonNull
@@ -126,7 +126,7 @@ public class Filter {
 
   @NonNull
   public static Filter lessThanOrEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
   }
 
   @NonNull
@@ -136,7 +136,7 @@ public class Filter {
 
   @NonNull
   public static Filter arrayContains(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.ARRAY_CONTAINS, value);
+    return new UnaryFilter(fieldPath, Operator.ARRAY_CONTAINS, value);
   }
 
   @NonNull
@@ -146,7 +146,7 @@ public class Filter {
 
   @NonNull
   public static Filter arrayContainsAny(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
+    return new UnaryFilter(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
   }
 
   @NonNull
@@ -156,7 +156,7 @@ public class Filter {
 
   @NonNull
   public static Filter inArray(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.IN, value);
+    return new UnaryFilter(fieldPath, Operator.IN, value);
   }
 
   @NonNull
@@ -166,7 +166,7 @@ public class Filter {
 
   @NonNull
   public static Filter notInArray(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new FieldFilter(fieldPath, Operator.NOT_IN, value);
+    return new UnaryFilter(fieldPath, Operator.NOT_IN, value);
   }
 
   @NonNull

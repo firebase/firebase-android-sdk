@@ -388,13 +388,13 @@ public class Query {
   }
 
   /**
-   * Takes a {@link Filter.FieldFilter} object, parses the value object and returns a new {@link
+   * Takes a {@link Filter.UnaryFilter} object, parses the value object and returns a new {@link
    * FieldFilter} for the field, operator, and parsed value.
    *
-   * @param fieldFilterData The Filter.FieldFilter object to parse.
+   * @param fieldFilterData The Filter.UnaryFilter object to parse.
    * @return The created {@link FieldFilter}.
    */
-  private FieldFilter parseFieldFilter(Filter.FieldFilter fieldFilterData) {
+  private FieldFilter parseFieldFilter(Filter.UnaryFilter fieldFilterData) {
     FieldPath fieldPath = fieldFilterData.getField();
     Operator op = fieldFilterData.getOperator();
     Object value = fieldFilterData.getValue();
@@ -459,10 +459,10 @@ public class Query {
    */
   private com.google.firebase.firestore.core.Filter parseFilter(Filter filter) {
     hardAssert(
-        filter instanceof Filter.FieldFilter || filter instanceof Filter.CompositeFilter,
-        "Parsing is only supported for Filter.FieldFilter and Filter.CompositeFilter.");
-    if (filter instanceof Filter.FieldFilter) {
-      return parseFieldFilter((Filter.FieldFilter) filter);
+        filter instanceof Filter.UnaryFilter || filter instanceof Filter.CompositeFilter,
+        "Parsing is only supported for Filter.UnaryFilter and Filter.CompositeFilter.");
+    if (filter instanceof Filter.UnaryFilter) {
+      return parseFieldFilter((Filter.UnaryFilter) filter);
     }
     return parseCompositeFilter((Filter.CompositeFilter) filter);
   }
