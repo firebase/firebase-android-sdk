@@ -175,15 +175,16 @@ public class ApkUpdaterTest {
     doReturn(Tasks.forResult(mockFile))
         .when(apkUpdater)
         .downloadApk(TEST_RELEASE, showNotification);
-    TaskCompletionSource<Activity> getForegroundActivityTaskCompletionSource = new TaskCompletionSource<>();
+    TaskCompletionSource<Activity> getForegroundActivityCompletionSource =
+        new TaskCompletionSource<>();
     when(mockLifecycleNotifier.getForegroundActivity())
-        .thenReturn(getForegroundActivityTaskCompletionSource.getTask());
+        .thenReturn(getForegroundActivityCompletionSource.getTask());
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
 
-    getForegroundActivityTaskCompletionSource.setException(
+    getForegroundActivityCompletionSource.setException(
         new FirebaseAppDistributionException(
             Constants.ErrorMessages.APK_INSTALLATION_FAILED,
             FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
