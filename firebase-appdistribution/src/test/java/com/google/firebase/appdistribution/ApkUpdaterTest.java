@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -43,6 +44,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
@@ -54,6 +56,7 @@ public class ApkUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String TEST_CODE_HASH = "abcdefghijklmnopqrstuvwxyz";
   private static final long TEST_FILE_LENGTH = 1000;
+  private TestActivity activity;
 
   private static final AppDistributionReleaseInternal TEST_RELEASE =
       AppDistributionReleaseInternal.builder()
@@ -72,8 +75,11 @@ public class ApkUpdaterTest {
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
   private final Executor testExecutor = Executors.newSingleThreadExecutor();
+
+  static class TestActivity extends Activity {}
 
   @Before
   public void setup() throws IOException, FirebaseAppDistributionException {
@@ -90,12 +96,15 @@ public class ApkUpdaterTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
+    activity = Robolectric.buildActivity(TestActivity.class).create().get();
+
     when(mockFile.getPath()).thenReturn(TEST_URL);
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
-
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
     onCompleteListener = new TestOnCompleteListener<>();
+
     apkUpdater =
         Mockito.spy(
             new ApkUpdater(
@@ -103,7 +112,8 @@ public class ApkUpdaterTest {
                 ApplicationProvider.getApplicationContext(),
                 mockApkInstaller,
                 mockNotificationsManager,
-                mockHttpsUrlConnectionFactory));
+                mockHttpsUrlConnectionFactory,
+                mockLifecycleNotifier));
   }
 
   @Test
@@ -152,7 +162,7 @@ public class ApkUpdaterTest {
   @Test
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
     doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
-    when(mockApkInstaller.installApk(any())).thenReturn(Tasks.forResult(null));
+    when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     onCompleteListener.await();
@@ -166,7 +176,8 @@ public class ApkUpdaterTest {
         .when(apkUpdater)
         .downloadApk(TEST_RELEASE, showNotification);
     TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
-    when(mockApkInstaller.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
+    when(mockApkInstaller.installApk(any(), any()))
+        .thenReturn(installTaskCompletionSource.getTask());
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
@@ -194,7 +205,8 @@ public class ApkUpdaterTest {
         .when(apkUpdater)
         .downloadApk(TEST_RELEASE, showNotification);
     TaskCompletionSource<Void> installTaskCompletionSource = new TaskCompletionSource<>();
-    when(mockApkInstaller.installApk(any())).thenReturn(installTaskCompletionSource.getTask());
+    when(mockApkInstaller.installApk(any(), any()))
+        .thenReturn(installTaskCompletionSource.getTask());
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 

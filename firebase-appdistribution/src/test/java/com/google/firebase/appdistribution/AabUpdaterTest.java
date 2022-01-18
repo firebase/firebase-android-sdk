@@ -64,7 +64,7 @@ public class AabUpdaterTest {
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
-  private FirebaseAppDistributionTest.TestActivity activity;
+  private TestActivity activity;
 
   static class TestActivity extends Activity {}
 
@@ -74,8 +74,7 @@ public class AabUpdaterTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    activity =
-        Robolectric.buildActivity(FirebaseAppDistributionTest.TestActivity.class).create().get();
+    activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(302);

@@ -34,12 +34,12 @@ import java.io.File;
 public class InstallActivity extends AppCompatActivity {
   private static final String TAG = "InstallActivity: ";
   private boolean installInProgress = false;
-  private AlertDialog alertDialog;
+  private AlertDialog enableUnknownSourcesDialog;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    alertDialog = new AlertDialog.Builder(this).create();
+    enableUnknownSourcesDialog = new AlertDialog.Builder(this).create();
   }
 
   @Override
@@ -60,12 +60,12 @@ public class InstallActivity extends AppCompatActivity {
 
     if (!isUnknownSourcesEnabled()) {
       // See comment about install progress above. Same applies to unknown sources UI.
-      if (alertDialog.isShowing()) {
+      if (enableUnknownSourcesDialog.isShowing()) {
         LogWrapper.getInstance()
             .e(
                 TAG
                     + "Unknown sources enablement was already in progress. It was either canceled or failed");
-        alertDialog.dismiss();
+        enableUnknownSourcesDialog.dismiss();
         finish();
         return;
       }
@@ -78,8 +78,8 @@ public class InstallActivity extends AppCompatActivity {
 
   protected void onDestroy() {
     super.onDestroy();
-    if (alertDialog.isShowing()) {
-      alertDialog.dismiss();
+    if (enableUnknownSourcesDialog.isShowing()) {
+      enableUnknownSourcesDialog.dismiss();
       LogWrapper.getInstance()
           .e(TAG + "Unknown sources enablement canceled. Activity was destroyed");
     }
@@ -103,20 +103,21 @@ public class InstallActivity extends AppCompatActivity {
   }
 
   private void showUnknownSourcesUi() {
-    alertDialog.setTitle(getString(R.string.unknown_sources_dialog_title));
-    alertDialog.setMessage(getString(R.string.unknown_sources_dialog_description));
-    alertDialog.setButton(
+    enableUnknownSourcesDialog.setTitle(getString(R.string.unknown_sources_dialog_title));
+    enableUnknownSourcesDialog.setMessage(getString(R.string.unknown_sources_dialog_description));
+    enableUnknownSourcesDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         getString(R.string.unknown_sources_yes_button),
         (dialogInterface, i) -> startActivity(getUnknownSourcesIntent()));
-    alertDialog.setButton(
+    enableUnknownSourcesDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         getString(R.string.update_no_button),
         (dialogInterface, i) -> dismissUnknownSourcesDialogCallback());
-    alertDialog.setOnCancelListener(dialogInterface -> dismissUnknownSourcesDialogCallback());
+    enableUnknownSourcesDialog.setOnCancelListener(
+        dialogInterface -> dismissUnknownSourcesDialogCallback());
 
-    if (!alertDialog.isShowing()) {
-      alertDialog.show();
+    if (!enableUnknownSourcesDialog.isShowing()) {
+      enableUnknownSourcesDialog.show();
     }
   }
 

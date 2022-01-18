@@ -54,6 +54,7 @@ class ApkUpdater {
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
+  private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
@@ -66,7 +67,8 @@ class ApkUpdater {
         firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
-        new HttpsUrlConnectionFactory());
+        new HttpsUrlConnectionFactory(),
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   @VisibleForTesting
@@ -75,12 +77,14 @@ class ApkUpdater {
       @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
-      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
+      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
     this.taskExecutor = taskExecutor;
     this.context = context;
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
+    this.lifeCycleNotifier = lifeCycleNotifier;
   }
 
   UpdateTaskImpl updateApk(
@@ -108,26 +112,33 @@ class ApkUpdater {
   }
 
   private void installApk(File file, boolean showDownloadNotificationManager) {
-    apkInstaller
-        .installApk(file.getPath())
-        .addOnSuccessListener(
+    lifeCycleNotifier
+        .getForegroundActivity()
+        .onSuccessTask(
             taskExecutor,
-            unused -> {
-              synchronized (updateTaskLock) {
-                safeSetTaskResult(cachedUpdateTask);
-              }
-            })
-        .addOnFailureListener(
-            taskExecutor,
-            e -> {
-              postUpdateProgress(
-                  file.length(),
-                  file.length(),
-                  UpdateStatus.INSTALL_FAILED,
-                  showDownloadNotificationManager);
-              setUpdateTaskCompletionErrorWithDefault(
-                  e, ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
-            });
+            activity ->
+                apkInstaller
+                    .installApk(file.getPath(), activity)
+                    .addOnSuccessListener(
+                        taskExecutor,
+                        unused -> {
+                          synchronized (updateTaskLock) {
+                            safeSetTaskResult(cachedUpdateTask);
+                          }
+                        })
+                    .addOnFailureListener(
+                        taskExecutor,
+                        e -> {
+                          postUpdateProgress(
+                              file.length(),
+                              file.length(),
+                              UpdateStatus.INSTALL_FAILED,
+                              showDownloadNotificationManager);
+                          setUpdateTaskCompletionErrorWithDefault(
+                              e,
+                              ErrorMessages.APK_INSTALLATION_FAILED,
+                              Status.INSTALLATION_FAILURE);
+                        }));
   }
 
   @VisibleForTesting

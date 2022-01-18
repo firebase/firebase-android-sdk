@@ -48,13 +48,12 @@ public class ApkInstallerTests {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
     apkInstaller = new ApkInstaller(mockLifecycleNotifier);
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
   }
 
   @Test
   public void installApk_currentActivityNotNull_InstallIntentOnCurrentActivity() {
     String path = "path";
-    Task<Void> installTask = apkInstaller.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path, activity);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertFalse(installTask.isComplete());
@@ -68,7 +67,7 @@ public class ApkInstallerTests {
   public void installApk_currentActivityNull_InstallNotPrompted() {
     when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(null));
     String path = "path";
-    Task<Void> installTask = apkInstaller.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path, null);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertNull(installIntent);
@@ -80,7 +79,7 @@ public class ApkInstallerTests {
       setCurrentActivity_appInForegroundAfterAnInstallAttempt_installIntentOnCurrentActivity() {
     apkInstaller.onActivityStarted(null);
     String path = "path123";
-    Task<Void> installTask = apkInstaller.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path, activity);
     apkInstaller.onActivityStarted(activity);
 
     Intent installIntent = shadowActivity.getNextStartedActivity();
@@ -94,7 +93,7 @@ public class ApkInstallerTests {
 
   @Test
   public void installActivityDestroyed_setsInstallError() {
-    Task<Void> installTask = apkInstaller.installApk("path");
+    Task<Void> installTask = apkInstaller.installApk("path", activity);
     apkInstaller.onActivityDestroyed(new InstallActivity());
     Exception ex = installTask.getException();
 
