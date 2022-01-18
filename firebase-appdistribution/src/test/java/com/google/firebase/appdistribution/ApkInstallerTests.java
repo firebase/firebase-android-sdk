@@ -16,13 +16,10 @@ package com.google.firebase.appdistribution;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import org.junit.Before;
@@ -61,17 +58,6 @@ public class ApkInstallerTests {
         "com.google.firebase.appdistribution.internal.InstallActivity",
         installIntent.getComponent().getShortClassName());
     assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
-  }
-
-  @Test
-  public void installApk_currentActivityNull_InstallNotPrompted() {
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(null));
-    String path = "path";
-    Task<Void> installTask = apkInstaller.installApk(path, null);
-    Intent installIntent = shadowActivity.getNextStartedActivity();
-
-    assertNull(installIntent);
-    assertFalse(installTask.isComplete());
   }
 
   @Test

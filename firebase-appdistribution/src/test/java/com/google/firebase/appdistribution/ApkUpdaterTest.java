@@ -170,6 +170,35 @@ public class ApkUpdaterTest {
   }
 
   @Test
+  public void updateApk_getForeGroundActivityFails_setsError() {
+    boolean showNotification = true;
+    doReturn(Tasks.forResult(mockFile))
+        .when(apkUpdater)
+        .downloadApk(TEST_RELEASE, showNotification);
+    TaskCompletionSource<Activity> installTaskCompletionSource = new TaskCompletionSource<>();
+    when(mockLifecycleNotifier.getForegroundActivity())
+        .thenReturn(installTaskCompletionSource.getTask());
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    List<UpdateProgress> progressEvents = new ArrayList<>();
+    updateTask.addOnProgressListener(testExecutor, progressEvents::add);
+
+    installTaskCompletionSource.setException(
+        new FirebaseAppDistributionException(
+            Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+
+    assertThat(updateTask.isComplete()).isFalse();
+    FirebaseAppDistributionException e =
+        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+    assertThat(e.getErrorCode()).isEqualTo(Status.INSTALLATION_FAILURE);
+    assertThat(progressEvents).hasSize(1);
+    assertThat(progressEvents.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.INSTALL_FAILED);
+    assertThat(updateTask.isSuccessful()).isFalse();
+    verify(mockNotificationsManager).updateNotification(1000, 1000, UpdateStatus.INSTALL_FAILED);
+  }
+
+  @Test
   public void updateApk_whenInstallFailed_setsError() {
     boolean showNotification = true;
     doReturn(Tasks.forResult(mockFile))

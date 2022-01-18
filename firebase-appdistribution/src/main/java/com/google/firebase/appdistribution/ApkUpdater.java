@@ -114,31 +114,25 @@ class ApkUpdater {
   private void installApk(File file, boolean showDownloadNotificationManager) {
     lifeCycleNotifier
         .getForegroundActivity()
-        .onSuccessTask(
+        .onSuccessTask(taskExecutor, activity -> apkInstaller.installApk(file.getPath(), activity))
+        .addOnSuccessListener(
             taskExecutor,
-            activity ->
-                apkInstaller
-                    .installApk(file.getPath(), activity)
-                    .addOnSuccessListener(
-                        taskExecutor,
-                        unused -> {
-                          synchronized (updateTaskLock) {
-                            safeSetTaskResult(cachedUpdateTask);
-                          }
-                        })
-                    .addOnFailureListener(
-                        taskExecutor,
-                        e -> {
-                          postUpdateProgress(
-                              file.length(),
-                              file.length(),
-                              UpdateStatus.INSTALL_FAILED,
-                              showDownloadNotificationManager);
-                          setUpdateTaskCompletionErrorWithDefault(
-                              e,
-                              ErrorMessages.APK_INSTALLATION_FAILED,
-                              Status.INSTALLATION_FAILURE);
-                        }));
+            unused -> {
+              synchronized (updateTaskLock) {
+                safeSetTaskResult(cachedUpdateTask);
+              }
+            })
+        .addOnFailureListener(
+            taskExecutor,
+            e -> {
+              postUpdateProgress(
+                  file.length(),
+                  file.length(),
+                  UpdateStatus.INSTALL_FAILED,
+                  showDownloadNotificationManager);
+              setUpdateTaskCompletionErrorWithDefault(
+                  e, ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
+            });
   }
 
   @VisibleForTesting
