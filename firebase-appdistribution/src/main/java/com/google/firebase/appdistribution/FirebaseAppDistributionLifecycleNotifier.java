@@ -83,12 +83,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     void onDestroyed(Activity activity);
   }
 
-  Activity getCurrentActivity() {
-    synchronized (lock) {
-      return currentActivity;
-    }
-  }
-
   Task<Activity> getForegroundActivity() {
     synchronized (lock) {
       if (currentActivity != null) {
