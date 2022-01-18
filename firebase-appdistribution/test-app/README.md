@@ -17,10 +17,10 @@ the [applicationId](https://developer.android.com/studio/build/application-id.ht
 
 ## Build & Install
 
-### Build with HEAD version of `firebase-app-distribution` SDK.
+### Build with HEAD version of `firebase-appdistribution` SDK.
 
 ```
-firebase-android-sdk$ ./gradlew :clean :firebase-app-distribution:test-app:build
+firebase-android-sdk$ ./gradlew :clean :firebase-appdistribution:test-app:build
 ```
 
 After the build is successful, [bring up emulator/physical device](https://developer.android.com/studio/run/emulator)
