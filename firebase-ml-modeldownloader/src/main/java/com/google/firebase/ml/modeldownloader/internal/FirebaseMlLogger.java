@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.components.Preconditions;
 import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.DeleteModelLogEvent;
@@ -91,6 +92,12 @@ public class FirebaseMlLogger {
   @NonNull
   public static FirebaseMlLogger getInstance() {
     return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
+  }
+
+  @NonNull
+  public static FirebaseMlLogger getInstance(FirebaseApp app) {
+    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    return (FirebaseMlLogger)FirebaseApp.getInstance(app.getName()).get(FirebaseMlLogger.class);
   }
 
   void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {

@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.components.Preconditions;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
@@ -60,6 +61,12 @@ public class ModelFileManager {
   @NonNull
   public static ModelFileManager getInstance() {
     return FirebaseApp.getInstance().get(ModelFileManager.class);
+  }
+
+  @NonNull
+  public static ModelFileManager getInstance(FirebaseApp app) {
+    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+    return (ModelFileManager)FirebaseApp.getInstance(app.getName()).get(ModelFileManager.class);
   }
 
   void deleteNonLatestCustomModels() throws FirebaseMlException {
