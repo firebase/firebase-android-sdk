@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
@@ -95,6 +96,37 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
 
       if (overlay.getLargestBatchId() > sinceBatchId) {
         result.put(overlay.getKey(), overlay);
+      }
+    }
+
+    return result;
+  }
+
+  @Override
+  public Map<DocumentKey, Overlay> getOverlays(
+      String collectionGroup, int sinceBatchId, int count) {
+    SortedMap<Integer, Map<DocumentKey, Overlay>> batchIdToOverlays = new TreeMap<>();
+
+    for (Overlay overlay : overlays.values()) {
+      DocumentKey key = overlay.getKey();
+      if (!key.getCollectionGroup().equals(collectionGroup)) {
+        continue;
+      }
+      if (overlay.getLargestBatchId() > sinceBatchId) {
+        Map<DocumentKey, Overlay> overlays = batchIdToOverlays.get(overlay.getLargestBatchId());
+        if (overlays == null) {
+          overlays = new HashMap<>();
+          batchIdToOverlays.put(overlay.getLargestBatchId(), overlays);
+        }
+        overlays.put(overlay.getKey(), overlay);
+      }
+    }
+
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+    for (Map<DocumentKey, Overlay> overlays : batchIdToOverlays.values()) {
+      result.putAll(overlays);
+      if (result.size() >= count) {
+        break;
       }
     }
 

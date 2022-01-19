@@ -56,4 +56,16 @@ public interface DocumentOverlayCache {
    * @return Mapping of each document key in the collection to its overlay.
    */
   Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
+
+  /**
+   * Returns {@code count} overlays with a batch ID higher than {@code sinceBatchId} for the
+   * provided collection group, processed by ascending batch ID. The method always returns all
+   * overlays for a batch even if a batch contains more documents than the remaining limit.
+   *
+   * @param collectionGroup The collection group to get the overlays for.
+   * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
+   *     change past `sinceBatchId` are returned.
+   * @return Mapping of each document key in the collection group to its overlay.
+   */
+  Map<DocumentKey, Overlay> getOverlays(String collectionGroup, int sinceBatchId, int count);
 }
