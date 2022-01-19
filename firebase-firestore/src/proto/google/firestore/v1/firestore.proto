@@ -107,8 +107,6 @@ service Firestore {
         body: "*"
       }
     };
-    option legacy_server_initial_tokens = 3145728;  // 3MB
-    option legacy_token_unit = BYTE;
   }
 
   // Updates or inserts a document.
@@ -635,8 +633,34 @@ message ListenResponse {
     // Returned when documents may have been removed from the given target, but
     // the exact documents are unknown.
     ExistenceFilter filter = 5;
+
+    // An [AggregationResult][] has changed.
+    AggregationChange aggregation_change = 7;
+
+    // An [AggregationResult][] has been deleted.
+    AggregationDelete aggregation_delete = 8;
   }
 }
+
+
+// A real-time listen target based on an aggregation query.
+message AggregationTarget {
+  // The parent resource name.
+  //
+  // In the format:
+  // `projects/{project_id}/databases/{database_id}/documents` or
+  // `projects/{project_id}/databases/{database_id}/documents/{document_path}`.
+  string parent = 1;
+
+  // The query input format.
+  oneof query_type {
+    // An aggregation query.
+    StructuredAggregationQuery structured_aggregation_query = 2;
+
+    // (-- Reserved for future SQL-Like query input format. --)
+  }
+}
+
 
 // A specification of a set of documents to listen to.
 message Target {
@@ -673,6 +697,9 @@ message Target {
 
     // A target specified by a set of document names.
     DocumentsTarget documents = 3;
+
+    // A target specified by an aggregation query.
+    AggregationTarget aggregation = 7;
   }
 
   // When to start listening.
@@ -795,4 +822,70 @@ message ListCollectionIdsResponse {
 
   // A page token that may be used to continue the list.
   string next_page_token = 2;
+}
+
+
+// The request for [Firestore.AggregateQuery][].
+message AggregateQueryRequest {
+  // The parent resource name. In the format:
+  // `projects/{project_id}/databases/{database_id}/documents` or
+  // `projects/{project_id}/databases/{database_id}/documents/{document_path}`.
+  // For example:
+  // `projects/my-project/databases/my-database/documents` or
+  // `projects/my-project/databases/my-database/documents/chatrooms/my-chatroom`
+  // (-- NOTE: Namespaced root documents are listed using a parent with the
+  // format: `projects/{project_id}/databases/{database_id}/documents@*`. --)
+  string parent = 1;
+
+  // The query to run.
+  oneof query_type {
+    // An aggregation query.
+    StructuredAggregationQuery structured_aggregation_query = 2;
+
+    // (-- Reserved for future SQL-Like query input format. --)
+  }
+
+  // (-- TODO(b/36531204): Support resume tokens. --)
+  reserved 3;
+
+  // The consistency mode for the query, defaults to strong consistency.
+  oneof consistency_selector {
+    // Reads documents in the given transaction.
+    bytes transaction = 4;
+
+    // Starts a new transaction as part of the query, defaulting to read-only.
+    //
+    // The new transaction ID will be returned as the first response in the
+    // stream.
+    TransactionOptions new_transaction = 5;
+
+    // Executes the query at the given timestamp.
+    //
+    // Requires:
+    //
+    // * Cannot be more than 270 seconds in the past.
+    //
+    google.protobuf.Timestamp read_time = 6;
+  }
+}
+
+// The response for [Firestore.AggregateQuery][].
+message AggregateQueryResponse {
+  // An single aggregation result.
+  //
+  // Not present when reporting partial progress or when the query produced
+  // zero results.
+  AggregationResult result = 1;
+
+  // The transaction that was started as part of this request.
+  //
+  // Only present on the first response when the request requested to start
+  // a new transaction.
+  bytes transaction = 2;
+
+  // The time at which the document was read.
+  google.protobuf.Timestamp read_time = 3;
+
+  // (-- TODO(b/36531204): Support resume tokens. --)
+  reserved 4;
 }
