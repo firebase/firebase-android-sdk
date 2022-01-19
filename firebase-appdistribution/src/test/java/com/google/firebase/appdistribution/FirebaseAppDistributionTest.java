@@ -105,6 +105,7 @@ public class FirebaseAppDistributionTest {
 
   private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
+  private FirebaseApp firebaseApp;
 
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInManager mockTesterSignInManager;
@@ -123,7 +124,7 @@ public class FirebaseAppDistributionTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    FirebaseApp firebaseApp =
+    firebaseApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
@@ -165,7 +166,7 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
-    when(mockLifecycleNotifier.getNonNullCurrentActivity()).thenReturn(activity);
+    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 
@@ -274,7 +275,6 @@ public class FirebaseAppDistributionTest {
   @Test
   public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
