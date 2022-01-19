@@ -232,7 +232,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(11), key("b/b")));
+        remoteDocumentCache.getAll(collection, IndexOffset.create(version(11), key("b/b"), -1));
     assertThat(results.values()).containsExactly(doc("b/c", 3, DOC_DATA), doc("b/d", 4, DOC_DATA));
   }
 

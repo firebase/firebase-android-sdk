@@ -582,19 +582,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testUpdateTime() {
-    indexManager.addFieldIndex(
-        fieldIndex(
-            "coll1",
-            1,
-            IndexState.create(-1, version(20), DocumentKey.empty()),
-            "value",
-            Kind.ASCENDING));
+  public void testPersistsIndexOffset() {
+    indexManager.addFieldIndex(fieldIndex("coll1", "value", Kind.ASCENDING));
+    indexManager.updateCollectionGroup(
+        "coll1", IndexOffset.create(version(20), key("coll/doc"), 42));
+
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
 
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.iterator().next();
-    assertEquals(index.getIndexState().getOffset().getReadTime(), version(20));
+    assertEquals(
+        IndexOffset.create(version(20), key("coll/doc"), 42), index.getIndexState().getOffset());
   }
 
   @Test
@@ -638,19 +638,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testDeleteFieldIndexRemovesEntryFromCollectionGroup() {
     indexManager.addFieldIndex(
-        fieldIndex(
-            "coll1",
-            1,
-            IndexState.create(1, version(30), DocumentKey.empty()),
-            "value",
-            Kind.ASCENDING));
+        fieldIndex("coll1", 1, IndexState.create(1, IndexOffset.NONE), "value", Kind.ASCENDING));
     indexManager.addFieldIndex(
-        fieldIndex(
-            "coll2",
-            2,
-            IndexState.create(2, version(0), DocumentKey.empty()),
-            "value",
-            Kind.CONTAINS));
+        fieldIndex("coll2", 2, IndexState.create(2, IndexOffset.NONE), "value", Kind.CONTAINS));
     String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
