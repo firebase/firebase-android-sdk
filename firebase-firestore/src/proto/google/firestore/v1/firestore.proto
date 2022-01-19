@@ -18,6 +18,7 @@ syntax = "proto3";
 package google.firestore.v1;
 
 import "google/api/annotations.proto";
+import "google/firestore/v1/aggregation_result.proto";
 import "google/firestore/v1/common.proto";
 import "google/firestore/v1/document.proto";
 import "google/firestore/v1/query.proto";
@@ -72,6 +73,42 @@ service Firestore {
       post: "/v1/{parent=projects/*/databases/*/documents/**}/{collection_id}"
       body: "document"
     };
+  }
+  
+  // Runs an aggregation query.
+  //
+  // Rather than producing [Document][] results like [Firestore.RunQuery], this
+  // API allows running an aggregation to produce a series of
+  // [AggregationResult][] server-side.
+  //
+  // High-Level Examples:
+  //
+  // ```
+  // -- Return the number of documents in table given a filter
+  // AGGREGATE COUNT(*) OVER (SELECT * FROM k where a = true );
+  //
+  // -- Return all distinct values of fields `a` and `b`.
+  // AGGREGATE a, b OVER ( SELECT * FROM k );
+  //
+  // -- Return count of each distinct value of field `a`.
+  // AGGREGATE a, COUNT(*) OVER ( SELECT * FROM k );
+  // ```
+  //
+  // (== suppress_warning http-rest-shadowed ==)
+  // (-- api-linter: core::0136::http-parent-variable=disabled
+  //     aip.dev/not-precedent: Not associated with a particular resource. --)
+  rpc AggregateQuery(AggregateQueryRequest)
+      returns (stream AggregateQueryResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/databases/*/documents}:aggregateQuery"
+      body: "*"
+      additional_bindings {
+        post: "/v1beta1/{parent=projects/*/databases/*/documents/*/**}:aggregateQuery"
+        body: "*"
+      }
+    };
+    option legacy_server_initial_tokens = 3145728;  // 3MB
+    option legacy_token_unit = BYTE;
   }
 
   // Updates or inserts a document.

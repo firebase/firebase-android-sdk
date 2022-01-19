@@ -17,6 +17,7 @@ syntax = "proto3";
 
 package google.firestore.v1;
 
+import "google/api/field_behavior.proto";
 import "google/api/annotations.proto";
 import "google/firestore/v1/document.proto";
 import "google/protobuf/wrappers.proto";
@@ -286,6 +287,199 @@ message StructuredQuery {
   // Applies after all other constraints.
   // Must be >= 0 if specified.
   google.protobuf.Int32Value limit = 5;
+}
+
+
+
+// Firestore query for running an aggregation over a `StructuredQuery`.
+message StructuredAggregationQuery {
+  // The base query to aggregate over.
+  oneof query_type {
+    // Nested structure query.
+    StructuredQuery structured_query = 1;
+  }
+
+  // The fields of the documents returned by `structured_query` to aggregate on.
+  //
+  // Every unique, existing combination of field values yield a single
+  // aggregation result. When empty, the query is aggregated to a single result.
+  //
+  // Requires:
+  //
+  // * Duplicate fields are not allowed.
+  // * Cannot be empty if `aggregations` is also empty.
+  // * The `order_by` is optional, but when given, the `group_by` fields must
+  //   be a strict prefix of the `order_by` fields.
+  //
+  // ```
+  // -- Valid since the `order_by` is optional.
+  // AGGREGATE a, COUNT(*) OVER ( SELECT * FROM k );
+  //
+  // -- Valid since the `order_by` is a prefix of the `group_by`.
+  // AGGREGATE a, COUNT(*) OVER ( SELECT * FROM k ORDER BY a ASC, b ASC );
+  //
+  // -- Invalid since the `group_by` is not a prefix of the `order_by`.
+  // AGGREGATE a, COUNT(*) OVER ( SELECT * FROM k ORDER BY b ASC, a ASC );
+  // ```
+  //
+  repeated StructuredQuery.FieldReference group_by = 2
+  [(google.api.field_behavior) = OPTIONAL];
+
+  // Series of aggregations to apply on top of the `structured_query`.
+  //
+  // An aggregation query with `group_by` fields but without any `aggregations`
+  // is a `DISTINCT` operator by itself.
+  //
+  // Requires:
+  //
+  // * Cannot be empty if `group_by` is also empty.
+  // * Cannot aggregate over a field that is also in the `group_by`.
+  //
+  repeated Aggregation aggregations = 3
+  [(google.api.field_behavior) = OPTIONAL];
+
+  // An optional starting point for the resulting aggregation buckets.
+  //
+  // Requires:
+  //
+  // * Cannot be provided when `group_by` is empty.
+  // * Cannot have more values than fields in the `group_by`.
+  //
+  Cursor start_group = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // An optional end point for the resulting aggregation buckets.
+  //
+  // Requires:
+  //
+  // * Cannot be provided when `group_by` is empty.
+  // * Cannot have more values than fields in the `group_by`.
+  //
+  Cursor end_group = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // The number of initial aggregation results to skip.
+  //
+  // Applies before `max_groups` but after all other constraints.
+  //
+  // Requires:
+  //
+  // * Cannot be negative.
+  // * Cannot be provided when `group_by` is empty.
+  //
+  int32 group_offset = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // The optional number of aggregation results to return.
+  //
+  // Applies after all other constraints.
+  //
+  // Requires:
+  //
+  // * Cannot be negative.
+  // * Cannot be provided when `group_by` is empty.
+  //
+  google.protobuf.Int32Value max_groups = 7
+  [(google.api.field_behavior) = OPTIONAL];
+
+  // Defines an aggregation of a single field.
+  message Aggregation {
+    // Count of documents that match the `group_by`.
+    //
+    // The `COUNT(*)` aggregation function operates on the entire document
+    // so does not require a field reference.
+    message Count {
+      // Optional constraint on the maximum number of documents to count.
+      //
+      // This provides a way to set an upper bound on the number of documents
+      // to inspect, limiting latency.
+      //
+      // ```
+      // -- Identify values of `a` that appear over 100 times.
+      // AGGREGATE a, COUNT(100) OVER ( SELECT * FROM k );
+      // ```
+      //
+      // When there is no `group_by`, this is the same as a limit on the
+      // underlying query.
+      //
+      // ```
+      // -- The following two queries are logically equivalent.
+      // AGGREGATE COUNT(100) OVER ( SELECT * FROM k );
+      // AGGREGATE COUNT(*) OVER ( SELECT * FROM k LIMIT 100 );
+      // ```
+      //
+      // Requires:
+      //
+      // * Must be greater than zero when present.
+      //
+      int32 max_value = 1 [(google.api.field_behavior) = OPTIONAL];
+    }
+
+    // Returns the first value of a given field for each group.
+    //
+    // The first value is determined by the underlying query's `order_by`
+    // clause.
+    //
+    // ```
+    // -- Each group of `a` will return the smallest value of `b`.
+    // AGGREGATE a, FIRST(b) OVER ( SELECT * FROM k ORDER BY a ASC, b ASC );
+    //
+    // -- Changing the ordering causes each group to return the largest value.
+    // AGGREGATE a, FIRST(b) OVER ( SELECT * FROM k ORDER BY a ASC, b DESC );
+    // ```
+    //
+    // Requires:
+    //
+    // * The `field` cannot be in the `group_by`.
+    // * The underlying `order_by` must the `group_by` followed by `field`.
+    //
+    message First {
+      // The field to return.
+      StructuredQuery.FieldReference field = 6
+      [(google.api.field_behavior) = REQUIRED];
+    }
+
+    // Returns the last value of a given field for each group.
+    //
+    // This is the inverse of the `FIRST` aggregator, which should be used with
+    // a reverse ordering to get the last value when required.
+    //
+    // Requires:
+    //
+    // * The `field` cannot be in the `group_by`.
+    // * The underlying `order_by` must the `group_by` followed by `field`.
+    // * Not allowed to be used with the `COUNT_UP_TO` or `FIRST` aggregators.
+    //
+    message Last {
+      // The field to return.
+      StructuredQuery.FieldReference field = 6
+      [(google.api.field_behavior) = REQUIRED];
+    }
+
+    // The type of aggregation to perform, required.
+    oneof operator {
+      // Count aggregator.
+      Count count = 1;
+
+      // First aggregator.
+      First first = 2;
+
+      // Last aggregator.
+      Last last = 3;
+    }
+
+    // The name of the field to store the result of the aggregation into.
+    //
+    // This is required and required to be unique across all other aggregation
+    // functions as well as the `GROUP_BY` clause. The alias name must confirm
+    // with existing field name limitations:
+    // http://cloud/firestore/quotas#collections_documents_and_fields
+    //
+    // (--
+    // While required the SDKs defaults to to using an alias that matches the
+    // function name, i.e. `COUNT(*)` => `COUNT(*) AS count`. This makes the
+    // simple case for customers easy, but they can always pick their own, for
+    // example in cases where the same aggregation is used multiple times.
+    // --)
+    string alias = 7 [(google.api.field_behavior) = REQUIRED];
+  }
 }
 
 // A position in a query result set.

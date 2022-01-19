@@ -18,6 +18,7 @@ syntax = "proto3";
 package google.firestore.v1;
 
 import "google/api/annotations.proto";
+import "google/firestore/v1/aggregation_result.proto";
 import "google/firestore/v1/common.proto";
 import "google/firestore/v1/document.proto";
 import "google/protobuf/timestamp.proto";
@@ -248,6 +249,44 @@ message DocumentRemove {
   // The read timestamp at which the remove was observed.
   //
   // Greater or equal to the `commit_time` of the change/delete/remove.
+  google.protobuf.Timestamp read_time = 4;
+}
+
+// An [AggregationResult][] has changed in an active streaming query.
+message AggregationChange {
+  // The latest state of the [AggregationResult][].
+  AggregationResult aggregation_result = 1;
+
+  // The target that the result is a part of.
+  //
+  // An [AggregationResult][] is scoped to the context of a single query so
+  // it cannot belong to multiple targets, unlike how a [Document][] can belong
+  // to multiple queries today.
+  int32 target_id = 2;
+
+  // The timestamp at which the [AggregationResult][] is valid for.
+  //
+  // This guarantees that the value of `aggregation_result` is the result of an
+  // aggregation of all writes that have occurred before `read_time`.
+  google.protobuf.Timestamp read_time = 4;
+}
+
+// An [AggregationResult][] has been removed from a streaming query.
+//
+// This only occurs for `GROUP BY` aggregation queries since queries without
+// a `GROUP BY` produce a single result, which will always be present.
+message AggregationDelete {
+  // The unique values of the aggregation bucket that was deleted.
+  map<string, Value> unique_values = 1;
+
+  // The target that the result is a part of.
+  //
+  // An [AggregationResult][] is scoped to the context of a single query so
+  // it cannot belong to multiple targets, unlike how a [Document][] can belong
+  // to multiple queries today.
+  int32 target_id = 2;
+
+  // The timestamp at which the [AggregationResult][] has been removed.
   google.protobuf.Timestamp read_time = 4;
 }
 

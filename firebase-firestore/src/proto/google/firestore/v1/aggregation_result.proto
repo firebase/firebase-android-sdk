@@ -1,0 +1,30 @@
+
+// Specification of a Firestore aggregation query result.
+syntax = "proto3";
+package google.firestore.v1beta1;
+import "google/firestore/v1beta1/document.proto";
+option csharp_namespace = "Google.Cloud.Firestore.V1Beta1";
+option php_namespace = "Google\\Cloud\\Firestore\\V1beta1";
+option ruby_package = "Google::Cloud::Firestore::V1beta1";
+option java_multiple_files = true;
+option java_package = "com.google.firestore.v1beta1";
+option java_outer_classname = "AggregationResultProto";
+option objc_class_prefix = "GCFS";
+// The result of a single bucket from an Firestore aggregation query.
+//
+// For a single aggregation query, all results reference the same fields in both
+// `unique_values` and `results`.
+message AggregationResult {
+  // The distinct fields per the aggregation result.
+  //
+  // These are the fields specified in the `GROUP BY` and acts as the unique
+  // identifier within the scope of a single listen query. This is an empty map
+  // for queries without a `GROUP BY` clause since the query produces only a
+  // single result.
+  map<string, Value> group_fields = 1;
+  // The result of the aggregation functions, ex: `COUNT(*)`.
+  //
+  // The key is the alias assigned to the aggregation function on input and the
+  // size of this map equals the number of aggregation functions in the query.
+  map<string, Value> aggregate_fields = 2;
+}
