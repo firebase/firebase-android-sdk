@@ -44,7 +44,7 @@ import javax.net.ssl.HttpsURLConnection;
 class ApkUpdater {
 
   private static final int UPDATE_INTERVAL_MS = 250;
-  private static final String TAG = "UpdateApkClient:";
+  private static final String TAG = "ApkUpdater:";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String DEFAULT_APK_FILE_NAME = "downloaded_release.apk";
 
