@@ -99,6 +99,51 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     return result;
   }
 
+  @Override
+  public Map<DocumentKey, Overlay> getOverlays(
+      String collectionGroup, int sinceBatchId, int count) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+    Overlay[] lastOverlay = new Overlay[] {null};
+
+    db.query(
+            "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
+                + "WHERE uid = ? AND collection_group = ? AND largest_batch_id > ? "
+                + "ORDER BY largest_batch_id, collection_path, document_id LIMIT ?")
+        .binding(uid, collectionGroup, sinceBatchId, count)
+        .forEach(
+            row -> {
+              lastOverlay[0] = decodeOverlay(row);
+              result.put(lastOverlay[0].getKey(), lastOverlay[0]);
+            });
+
+    if (lastOverlay[0] == null) {
+      return result;
+    }
+
+    // Finish batch
+    DocumentKey key = lastOverlay[0].getKey();
+    String encodedCollectionPath = EncodedPath.encode(key.getCollectionPath());
+    db.query(
+            "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
+                + "WHERE uid = ? AND collection_group = ? "
+                + "AND (collection_path > ? OR (collection_path = ? AND document_id > ?)) "
+                + "AND largest_batch_id = ?")
+        .binding(
+            uid,
+            collectionGroup,
+            encodedCollectionPath,
+            encodedCollectionPath,
+            key.getDocumentId(),
+            lastOverlay[0].getLargestBatchId())
+        .forEach(
+            row -> {
+              Overlay overlay = decodeOverlay(row);
+              result.put(overlay.getKey(), overlay);
+            });
+
+    return result;
+  }
+
   private Overlay decodeOverlay(android.database.Cursor row) {
     try {
       Write write = Write.parseFrom(row.getBlob(0));

@@ -153,6 +153,44 @@ public abstract class DocumentOverlayCacheTestCase {
     verifyOverlayContains(overlays, "coll/doc3", "coll/doc4");
   }
 
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesCollectionGroup() {
+    saveOverlays(2, "coll1/doc1", "coll2/doc1");
+    saveOverlays(3, "coll1/doc2");
+    saveOverlays(4, "coll2/doc2");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll1", -1, 50);
+    verifyOverlayContains(overlays, "coll1/doc1", "coll1/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesBatchId() {
+    saveOverlays(2, "coll/doc1");
+    saveOverlays(3, "coll/doc2");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", 2, 50);
+    verifyOverlayContains(overlays, "coll/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesLimit() {
+    saveOverlays(1, "coll/doc1");
+    saveOverlays(2, "coll/doc2");
+    saveOverlays(3, "coll/doc3");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", -1, 2);
+    verifyOverlayContains(overlays, "coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupWithLimitIncludesFullBatches() {
+    saveOverlays(1, "coll/doc1");
+    saveOverlays(2, "coll/doc2", "coll/doc3");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", -1, 2);
+    verifyOverlayContains(overlays, "coll/doc1", "coll/doc2", "coll/doc3");
+  }
+
   void verifyOverlayContains(Map<DocumentKey, Overlay> overlays, String... keys) {
     Set<DocumentKey> expected = Arrays.stream(keys).map(TestUtil::key).collect(Collectors.toSet());
     assertThat(overlays.keySet()).containsExactlyElementsIn(expected);
