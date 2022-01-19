@@ -93,17 +93,16 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   /**
-   * Returns the number of mutations returned by the OVelrayCaches's
-   * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
+   * Returns the number of mutations returned by the OverlayCache's `getOverlays()` API (since the
+   * last call to `resetCounts()`)
    */
   int getOverlaysReadByCollection() {
     return overlaysReadByCollection[0];
   }
 
   /**
-   * Returns the number of mutations returned by the MutationQueue's
-   * `getAllMutationBatchesAffectingDocumentKey()` and
-   * `getAllMutationBatchesAffectingDocumentKeys()` APIs (since the last call to `resetCounts()`)
+   * Returns the number of mutations returned by the OverlayCache's `getOverlay()` API (since the
+   * last call to `resetCounts()`)
    */
   int getOverlaysReadByKey() {
     return overlaysReadByKey[0];
@@ -170,7 +169,7 @@ class CountingQueryEngine extends QueryEngine {
       @Nullable
       @Override
       public Overlay getOverlay(DocumentKey key) {
-        overlaysReadByKey[0] += 1;
+        ++overlaysReadByKey[0];
         return subject.getOverlay(key);
       }
 
