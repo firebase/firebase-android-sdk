@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ public interface DocumentOverlayCache {
    * for that key.
    */
   @Nullable
-  Mutation getOverlay(DocumentKey key);
+  Overlay getOverlay(DocumentKey key);
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
@@ -52,6 +53,7 @@ public interface DocumentOverlayCache {
    * @param collection The collection path to get the overlays for.
    * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
    *     change past `sinceBatchId` are returned.
+   * @return Mapping of each document key in the collection to its overlay.
    */
-  Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId);
+  Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
 }
