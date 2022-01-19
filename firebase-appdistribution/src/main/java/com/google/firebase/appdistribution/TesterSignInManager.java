@@ -126,16 +126,6 @@ class TesterSignInManager {
         return signInTaskCompletionSource.getTask();
       }
 
-      // TODO(rachelprince): Change this to getCurrentNonNullActivity
-      Activity currentActivity = lifecycleNotifier.getCurrentActivity();
-      if (currentActivity == null) {
-        LogWrapper.getInstance().e(TAG + "No foreground activity found.");
-        return Tasks.forException(
-            new FirebaseAppDistributionException(
-                ErrorMessages.APP_BACKGROUNDED,
-                FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE));
-      }
-
       signInTaskCompletionSource = new TaskCompletionSource<>();
 
       firebaseInstallationsApiProvider
@@ -147,7 +137,7 @@ class TesterSignInManager {
                 LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
                 setSignInTaskCompletionError(
                     new FirebaseAppDistributionException(
-                        Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
+                        ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
               });
 
       return signInTaskCompletionSource.getTask();

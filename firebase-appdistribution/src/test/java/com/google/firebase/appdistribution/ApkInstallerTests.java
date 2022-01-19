@@ -16,8 +16,6 @@ package com.google.firebase.appdistribution;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Intent;
@@ -47,13 +45,12 @@ public class ApkInstallerTests {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
     apkInstaller = new ApkInstaller(mockLifecycleNotifier);
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(activity);
   }
 
   @Test
   public void installApk_currentActivityNotNull_InstallIntentOnCurrentActivity() {
     String path = "path";
-    Task<Void> installTask = apkInstaller.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path, activity);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertFalse(installTask.isComplete());
@@ -64,22 +61,11 @@ public class ApkInstallerTests {
   }
 
   @Test
-  public void installApk_currentActivityNull_InstallNotPrompted() {
-    when(mockLifecycleNotifier.getCurrentActivity()).thenReturn(null);
-    String path = "path";
-    Task<Void> installTask = apkInstaller.installApk(path);
-    Intent installIntent = shadowActivity.getNextStartedActivity();
-
-    assertNull(installIntent);
-    assertFalse(installTask.isComplete());
-  }
-
-  @Test
   public void
       setCurrentActivity_appInForegroundAfterAnInstallAttempt_installIntentOnCurrentActivity() {
     apkInstaller.onActivityStarted(null);
     String path = "path123";
-    Task<Void> installTask = apkInstaller.installApk(path);
+    Task<Void> installTask = apkInstaller.installApk(path, activity);
     apkInstaller.onActivityStarted(activity);
 
     Intent installIntent = shadowActivity.getNextStartedActivity();
@@ -93,7 +79,7 @@ public class ApkInstallerTests {
 
   @Test
   public void installActivityDestroyed_setsInstallError() {
-    Task<Void> installTask = apkInstaller.installApk("path");
+    Task<Void> installTask = apkInstaller.installApk("path", activity);
     apkInstaller.onActivityDestroyed(new InstallActivity());
     Exception ex = installTask.getException();
 

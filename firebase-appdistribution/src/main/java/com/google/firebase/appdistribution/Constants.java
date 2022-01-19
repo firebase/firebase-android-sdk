@@ -37,8 +37,6 @@ class Constants {
 
     public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found";
 
-    public static final String APP_BACKGROUNDED = "No foreground activity available";
-
     public static final String APK_INSTALLATION_FAILED =
         "The APK failed to install or installation was cancelled";
   }

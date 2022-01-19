@@ -23,7 +23,6 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -64,7 +63,7 @@ public class FirebaseAppDistribution {
 
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateDialog;
-  private AlertDialog signInDialog;
+  private AlertDialog signInConfirmationDialog;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -137,19 +136,11 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
-
-      if (isOnBackgroundThread()) {
-        LogWrapper.getInstance()
-            .e("updateIfNewReleaseAvailable cannot be called from a background thread");
-        setCachedUpdateIfNewReleaseCompletionError(
-            new FirebaseAppDistributionException(
-                "updateIfNewReleaseAvailable cannot be called from a background thread",
-                Status.UNKNOWN));
-        return cachedUpdateIfNewReleaseTask;
-      }
     }
 
-    showSignInDialog()
+    lifecycleNotifier
+        .getForegroundActivity()
+        .onSuccessTask(this::showSignInConfirmationDialog)
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
         // here both for code clarifty, and because we plan to remove the signInTester() call
@@ -179,7 +170,9 @@ public class FirebaseAppDistribution {
                 setCachedUpdateIfNewReleaseResult();
                 return Tasks.forResult(null);
               }
-              return showUpdateAlertDialog(release);
+              return lifecycleNotifier
+                  .getForegroundActivity()
+                  .onSuccessTask((activity) -> showUpdateAlertDialog(activity, release));
             })
         .onSuccessTask(
             unused ->
@@ -192,35 +185,24 @@ public class FirebaseAppDistribution {
     }
   }
 
-  private boolean isOnBackgroundThread() {
-    return Looper.myLooper() != Looper.getMainLooper();
-  }
-
-  private Task<Void> showSignInDialog() {
+  private Task<Void> showSignInConfirmationDialog(Activity hostActivity) {
     if (isTesterSignedIn()) {
       return Tasks.forResult(null);
     }
 
     TaskCompletionSource<Void> showDialogTask = new TaskCompletionSource<>();
 
-    Activity currentActivity;
-    try {
-      currentActivity = lifecycleNotifier.getNonNullCurrentActivity();
-    } catch (FirebaseAppDistributionException e) {
-      return Tasks.forException(e);
-    }
-
-    signInDialog = new AlertDialog.Builder(currentActivity).create();
+    signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     Context context = firebaseApp.getApplicationContext();
-    signInDialog.setTitle(context.getString(R.string.signin_dialog_title));
-    signInDialog.setMessage(context.getString(R.string.singin_dialog_message));
+    signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
+    signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
 
-    signInDialog.setButton(
+    signInConfirmationDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.singin_yes_button),
         (dialogInterface, i) -> showDialogTask.setResult(null));
 
-    signInDialog.setButton(
+    signInConfirmationDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.singin_no_button),
         (dialogInterface, i) ->
@@ -228,13 +210,13 @@ public class FirebaseAppDistribution {
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
-    signInDialog.setOnCancelListener(
+    signInConfirmationDialog.setOnCancelListener(
         dialogInterface ->
             showDialogTask.setException(
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
-    signInDialog.show();
+    signInConfirmationDialog.show();
     return showDialogTask.getTask();
   }
 
@@ -344,7 +326,7 @@ public class FirebaseAppDistribution {
       // SignInResult is internal to the SDK and is destroyed after creation
       return;
     }
-    if (signInDialog != null && signInDialog.isShowing()) {
+    if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
@@ -371,19 +353,13 @@ public class FirebaseAppDistribution {
     }
   }
 
-  private Task<Void> showUpdateAlertDialog(AppDistributionRelease newRelease) {
+  private Task<Void> showUpdateAlertDialog(
+      Activity hostActivity, AppDistributionRelease newRelease) {
     TaskCompletionSource<Void> showUpdateDialogTask = new TaskCompletionSource<>();
-
-    Activity currentActivity;
-    try {
-      currentActivity = lifecycleNotifier.getNonNullCurrentActivity();
-    } catch (FirebaseAppDistributionException e) {
-      return Tasks.forException(e);
-    }
 
     Context context = firebaseApp.getApplicationContext();
 
-    updateDialog = new AlertDialog.Builder(currentActivity).create();
+    updateDialog = new AlertDialog.Builder(hostActivity).create();
     updateDialog.setTitle(context.getString(R.string.update_dialog_title));
 
     StringBuilder message =
@@ -444,8 +420,8 @@ public class FirebaseAppDistribution {
   }
 
   private void dismissDialogs() {
-    if (signInDialog != null && signInDialog.isShowing()) {
-      signInDialog.dismiss();
+    if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
+      signInConfirmationDialog.dismiss();
     }
     if (updateDialog != null && updateDialog.isShowing()) {
       updateDialog.dismiss();
