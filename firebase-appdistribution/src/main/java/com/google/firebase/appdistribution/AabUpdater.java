@@ -36,7 +36,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
 class AabUpdater {
-  private static final String TAG = "UpdateAabClient:";
+  private static final String TAG = "AabUpdater:";
 
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
