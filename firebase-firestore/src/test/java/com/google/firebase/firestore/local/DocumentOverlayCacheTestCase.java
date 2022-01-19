@@ -153,6 +153,7 @@ public abstract class DocumentOverlayCacheTestCase {
     verifyOverlayContains(overlays, "coll/doc3", "coll/doc4");
   }
 
+<<<<<<< HEAD
   @Test
   public void testGetAllOverlaysFromCollectionGroupEnforcesCollectionGroup() {
     saveOverlays(2, "coll1/doc1", "coll2/doc1");
@@ -191,6 +192,8 @@ public abstract class DocumentOverlayCacheTestCase {
     verifyOverlayContains(overlays, "coll/doc1", "coll/doc2", "coll/doc3");
   }
 
+=======
+>>>>>>> @{-1}
   void verifyOverlayContains(Map<DocumentKey, Overlay> overlays, String... keys) {
     Set<DocumentKey> expected = Arrays.stream(keys).map(TestUtil::key).collect(Collectors.toSet());
     assertThat(overlays.keySet()).containsExactlyElementsIn(expected);
