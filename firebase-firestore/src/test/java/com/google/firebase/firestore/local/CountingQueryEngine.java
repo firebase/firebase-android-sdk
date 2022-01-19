@@ -59,7 +59,7 @@ class CountingQueryEngine extends QueryEngine {
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             localDocuments.getMutationQueue(),
             wrapOverlayCache(localDocuments.getDocumentOverlayCache()),
-            localDocuments.getIndexManager());
+            indexManager);
     queryEngine.initialize(wrappedView, indexManager);
   }
 
