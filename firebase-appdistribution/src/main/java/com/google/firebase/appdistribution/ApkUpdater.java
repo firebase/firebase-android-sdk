@@ -50,11 +50,11 @@ class ApkUpdater {
 
   private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor taskExecutor; // Executor to run task listeners on a background thread
-  private final FirebaseApp firebaseApp;
   private final Context context;
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
+  private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("updateTaskLock")
   private UpdateTaskImpl cachedUpdateTask;
@@ -64,25 +64,27 @@ class ApkUpdater {
   public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
     this(
         Executors.newSingleThreadExecutor(),
-        firebaseApp,
+        firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
-        new HttpsUrlConnectionFactory());
+        new HttpsUrlConnectionFactory(),
+        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   @VisibleForTesting
   public ApkUpdater(
       @NonNull Executor taskExecutor,
-      @NonNull FirebaseApp firebaseApp,
+      @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
-      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
+      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
     this.taskExecutor = taskExecutor;
-    this.firebaseApp = firebaseApp;
+    this.context = context;
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
-    this.context = firebaseApp.getApplicationContext();
+    this.lifeCycleNotifier = lifeCycleNotifier;
   }
 
   UpdateTaskImpl updateApk(
@@ -110,8 +112,9 @@ class ApkUpdater {
   }
 
   private void installApk(File file, boolean showDownloadNotificationManager) {
-    apkInstaller
-        .installApk(file.getPath())
+    lifeCycleNotifier
+        .getForegroundActivity()
+        .onSuccessTask(taskExecutor, activity -> apkInstaller.installApk(file.getPath(), activity))
         .addOnSuccessListener(
             taskExecutor,
             unused -> {

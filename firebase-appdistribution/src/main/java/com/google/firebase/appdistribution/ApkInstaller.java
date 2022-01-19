@@ -33,12 +33,6 @@ class ApkInstaller {
   @GuardedBy("installTaskLock")
   private TaskCompletionSource<Void> installTaskCompletionSource;
 
-  @GuardedBy("installTaskLock")
-  private boolean promptInstallOnActivityResume = false;
-
-  @GuardedBy("installTaskLock")
-  private String cachedInstallApkPath = "";
-
   private final Object installTaskLock = new Object();
 
   ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
@@ -59,8 +53,6 @@ class ApkInstaller {
         return;
       }
     }
-
-    handleAppResume(activity);
   }
 
   void onActivityDestroyed(@Nullable Activity activity) {
@@ -71,30 +63,9 @@ class ApkInstaller {
     }
   }
 
-  void handleAppResume(Activity activity) {
-    // This ensures that if the app was backgrounded during download, installation would continue
-    // after app resume
+  Task<Void> installApk(String path, Activity currentActivity) {
     synchronized (installTaskLock) {
-      if (promptInstallOnActivityResume
-          && cachedInstallApkPath != null
-          && !cachedInstallApkPath.isEmpty()) {
-        startInstallActivity(cachedInstallApkPath, activity);
-      }
-    }
-  }
-
-  Task<Void> installApk(String path) {
-    synchronized (installTaskLock) {
-      Activity currentActivity = lifeCycleNotifier.getCurrentActivity();
-      // This ensures that we save the state of the install if the app is backgrounded during
-      // APK download
-      if (currentActivity == null) {
-        promptInstallOnActivityResume = true;
-        cachedInstallApkPath = path;
-      } else {
-        // only start the install activity if current Activity is in the foreground
-        startInstallActivity(path, currentActivity);
-      }
+      startInstallActivity(path, currentActivity);
 
       if (this.installTaskCompletionSource == null
           || this.installTaskCompletionSource.getTask().isComplete()) {
@@ -105,10 +76,6 @@ class ApkInstaller {
   }
 
   private void startInstallActivity(String path, Activity currentActivity) {
-    synchronized (installTaskLock) {
-      promptInstallOnActivityResume = false;
-      cachedInstallApkPath = "";
-    }
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
