@@ -66,7 +66,7 @@ public class ModelFileManager {
   @NonNull
   public static ModelFileManager getInstance(FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-    return (ModelFileManager)FirebaseApp.getInstance(app.getName()).get(ModelFileManager.class);
+    return FirebaseApp.getInstance(app.getName()).get(ModelFileManager.class);
   }
 
   void deleteNonLatestCustomModels() throws FirebaseMlException {

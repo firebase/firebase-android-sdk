@@ -97,7 +97,7 @@ public class FirebaseMlLogger {
   @NonNull
   public static FirebaseMlLogger getInstance(FirebaseApp app) {
     Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
-    return (FirebaseMlLogger)FirebaseApp.getInstance(app.getName()).get(FirebaseMlLogger.class);
+    return FirebaseApp.getInstance(app.getName()).get(FirebaseMlLogger.class);
   }
 
   void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {
