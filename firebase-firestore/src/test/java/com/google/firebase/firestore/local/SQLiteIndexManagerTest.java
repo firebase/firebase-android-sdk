@@ -584,8 +584,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testPersistsIndexOffset() {
     indexManager.addFieldIndex(fieldIndex("coll1", "value", Kind.ASCENDING));
-    indexManager.updateCollectionGroup(
-        "coll1", IndexOffset.create(version(20), key("coll/doc"), 42));
+    IndexOffset offset = IndexOffset.create(version(20), key("coll/doc"), 42);
+    indexManager.updateCollectionGroup("coll1", offset);
 
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     indexManager.start();
@@ -593,8 +593,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.iterator().next();
-    assertEquals(
-        IndexOffset.create(version(20), key("coll/doc"), 42), index.getIndexState().getOffset());
+    assertEquals(offset, index.getIndexState().getOffset());
   }
 
   @Test
