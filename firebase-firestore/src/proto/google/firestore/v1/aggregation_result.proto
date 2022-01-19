@@ -15,8 +15,8 @@
 
 // Specification of a Firestore aggregation query result.
 syntax = "proto3";
-package google.firestore.v1beta1;
-import "google/firestore/v1beta1/document.proto";
+package google.firestore.v1;
+import "google/firestore/v1/document.proto";
 option csharp_namespace = "Google.Cloud.Firestore.V1Beta1";
 option php_namespace = "Google\\Cloud\\Firestore\\V1beta1";
 option ruby_package = "Google::Cloud::Firestore::V1beta1";
