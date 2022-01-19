@@ -392,11 +392,11 @@ public class Util {
     if (data.size() <= n) {
       return data;
     } else {
-      List<Map.Entry<K, V>> sortedVlaues = new ArrayList<>(data.entrySet());
-      Collections.sort(sortedVlaues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
+      List<Map.Entry<K, V>> sortedValues = new ArrayList<>(data.entrySet());
+      Collections.sort(sortedValues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
       Map<K, V> result = new HashMap<>();
       for (int i = 0; i < n; ++i) {
-        result.put(sortedVlaues.get(i).getKey(), sortedVlaues.get(i).getValue());
+        result.put(sortedValues.get(i).getKey(), sortedValues.get(i).getValue());
       }
       return result;
     }

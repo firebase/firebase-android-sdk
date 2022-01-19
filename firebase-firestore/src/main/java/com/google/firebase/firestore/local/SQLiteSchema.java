@@ -297,7 +297,7 @@ class SQLiteSchema {
     mutationDeleter.bindString(1, uid);
     mutationDeleter.bindLong(2, batchId);
     int deleted = mutationDeleter.executeUpdateDelete();
-    hardAssert(deleted != 0, "Mutatiohn batch (%s, %d) did not exist", uid, batchId);
+    hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batchId);
 
     // Delete all index entries for this batch
     db.execSQL(
