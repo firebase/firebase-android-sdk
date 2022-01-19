@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
-import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -26,10 +25,8 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.protobuf.ByteString;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -39,8 +36,8 @@ import java.util.Map;
 class CountingQueryEngine extends QueryEngine {
   private final QueryEngine queryEngine;
 
-  private final int[] mutationsReadByCollection = new int[] {0};
-  private final int[] mutationsReadByKey = new int[] {0};
+  private final int[] overlaysReadByCollection = new int[] {0};
+  private final int[] overlaysReadByKey = new int[] {0};
   private final int[] documentsReadByCollection = new int[] {0};
   private final int[] documentsReadByKey = new int[] {0};
 
@@ -49,8 +46,8 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   void resetCounts() {
-    mutationsReadByCollection[0] = 0;
-    mutationsReadByKey[0] = 0;
+    overlaysReadByCollection[0] = 0;
+    overlaysReadByKey[0] = 0;
     documentsReadByCollection[0] = 0;
     documentsReadByKey[0] = 0;
   }
@@ -60,8 +57,8 @@ class CountingQueryEngine extends QueryEngine {
     LocalDocumentsView wrappedView =
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
-            wrapMutationQueue(localDocuments.getMutationQueue()),
-            localDocuments.getDocumentOverlayCache(),
+            localDocuments.getMutationQueue(),
+            wrapOverlayCache(localDocuments.getDocumentOverlayCache()),
             localDocuments.getIndexManager());
     queryEngine.initialize(wrappedView, indexManager);
   }
@@ -96,11 +93,11 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   /**
-   * Returns the number of mutations returned by the MutationQueue's
+   * Returns the number of mutations returned by the OVelrayCaches's
    * `getAllMutationBatchesAffectingQuery()` API (since the last call to `resetCounts()`)
    */
-  int getMutationsReadByCollection() {
-    return mutationsReadByCollection[0];
+  int getOverlaysReadByCollection() {
+    return overlaysReadByCollection[0];
   }
 
   /**
@@ -108,8 +105,8 @@ class CountingQueryEngine extends QueryEngine {
    * `getAllMutationBatchesAffectingDocumentKey()` and
    * `getAllMutationBatchesAffectingDocumentKeys()` APIs (since the last call to `resetCounts()`)
    */
-  int getMutationsReadByKey() {
-    return mutationsReadByKey[0];
+  int getOverlaysReadByKey() {
+    return overlaysReadByKey[0];
   }
 
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
@@ -168,95 +165,39 @@ class CountingQueryEngine extends QueryEngine {
     };
   }
 
-  private MutationQueue wrapMutationQueue(MutationQueue subject) {
-    return new MutationQueue() {
-      @Override
-      public void start() {
-        subject.start();
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return subject.isEmpty();
-      }
-
-      @Override
-      public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
-        subject.acknowledgeBatch(batch, streamToken);
-      }
-
-      @Override
-      public ByteString getLastStreamToken() {
-        return subject.getLastStreamToken();
-      }
-
-      @Override
-      public void setLastStreamToken(ByteString streamToken) {
-        subject.setLastStreamToken(streamToken);
-      }
-
-      @Override
-      public MutationBatch addMutationBatch(
-          Timestamp localWriteTime, List<Mutation> baseMutations, List<Mutation> mutations) {
-        return subject.addMutationBatch(localWriteTime, baseMutations, mutations);
-      }
-
+  private DocumentOverlayCache wrapOverlayCache(DocumentOverlayCache subject) {
+    return new DocumentOverlayCache() {
       @Nullable
       @Override
-      public MutationBatch lookupMutationBatch(int batchId) {
-        return subject.lookupMutationBatch(batchId);
-      }
-
-      @Nullable
-      @Override
-      public MutationBatch getNextMutationBatchAfterBatchId(int batchId) {
-        return subject.getNextMutationBatchAfterBatchId(batchId);
+      public Overlay getOverlay(DocumentKey key) {
+        overlaysReadByKey[0] += 1;
+        return subject.getOverlay(key);
       }
 
       @Override
-      public int getHighestUnacknowledgedBatchId() {
-        return subject.getHighestUnacknowledgedBatchId();
+      public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
+        subject.saveOverlays(largestBatchId, overlays);
       }
 
       @Override
-      public List<MutationBatch> getAllMutationBatches() {
-        List<MutationBatch> result = subject.getAllMutationBatches();
-        mutationsReadByKey[0] += result.size();
+      public void removeOverlaysForBatchId(int batchId) {
+        subject.removeOverlaysForBatchId(batchId);
+      }
+
+      @Override
+      public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
+        Map<DocumentKey, Overlay> result = subject.getOverlays(collection, sinceBatchId);
+        overlaysReadByCollection[0] += result.size();
         return result;
       }
 
       @Override
-      public List<MutationBatch> getAllMutationBatchesAffectingDocumentKey(
-          DocumentKey documentKey) {
-        List<MutationBatch> result = subject.getAllMutationBatchesAffectingDocumentKey(documentKey);
-        mutationsReadByKey[0] += result.size();
+      public Map<DocumentKey, Overlay> getOverlays(
+          String collectionGroup, int sinceBatchId, int count) {
+        Map<DocumentKey, Overlay> result =
+            subject.getOverlays(collectionGroup, sinceBatchId, count);
+        overlaysReadByCollection[0] += result.size();
         return result;
-      }
-
-      @Override
-      public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
-          Iterable<DocumentKey> documentKeys) {
-        List<MutationBatch> result =
-            subject.getAllMutationBatchesAffectingDocumentKeys(documentKeys);
-        mutationsReadByKey[0] += result.size();
-        return result;
-      }
-
-      @Override
-      public List<MutationBatch> getAllMutationBatchesAffectingQuery(Query query) {
-        List<MutationBatch> result = subject.getAllMutationBatchesAffectingQuery(query);
-        mutationsReadByCollection[0] += result.size();
-        return result;
-      }
-
-      @Override
-      public void removeMutationBatch(MutationBatch batch) {
-        subject.removeMutationBatch(batch);
-      }
-
-      @Override
-      public void performConsistencyCheck() {
-        subject.performConsistencyCheck();
       }
     };
   }

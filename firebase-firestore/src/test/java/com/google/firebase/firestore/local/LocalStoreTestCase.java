@@ -324,13 +324,13 @@ public abstract class LocalStoreTestCase {
   }
 
   /**
-   * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
+   * Asserts the expected numbers of mutations read by the OverlayQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int byKey, int byCollection) {
+  private void assertOverlaysRead(int byKey, int byCollection) {
+    assertEquals("Overlays read (by key)", byKey, queryEngine.getOverlaysReadByKey());
     assertEquals(
-        "Mutations read (by collection)", byCollection, queryEngine.getMutationsReadByCollection());
-    assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
+        "Overlays read (by collection)", byCollection, queryEngine.getOverlaysReadByCollection());
   }
 
   /**
@@ -975,8 +975,7 @@ public abstract class LocalStoreTestCase {
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    // No mutations are read because only overlay is needed.
-    assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
   }
 
   @Test
