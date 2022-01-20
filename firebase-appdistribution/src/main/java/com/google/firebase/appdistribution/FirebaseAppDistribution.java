@@ -43,8 +43,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 public class FirebaseAppDistribution {
 
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
-  private static final String SIGN_IN_CONFIRMATION_DIALOG_KEY = "signInConfirmationDialog";
-  private static final String UPDATE_DIALOG_KEY = "updateDialog";
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInManager testerSignInManager;
@@ -67,6 +65,8 @@ public class FirebaseAppDistribution {
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateDialog;
   private AlertDialog signInConfirmationDialog;
+  private boolean remakeUpdateDialog = false;
+  private boolean remakeSignInConfirmationDialog = false;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -87,7 +87,6 @@ public class FirebaseAppDistribution {
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
-    lifecycleNotifier.addOnActivitySaveInstanceListener(this::onSaveInstanceState);
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -327,12 +326,20 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    if (activity instanceof SignInResultActivity || activity.isChangingConfigurations()) {
+    if (activity instanceof SignInResultActivity) {
       // SignInResult is internal to the SDK and is destroyed after creation
       // Rotating also destroys the activity while changing configurations
       dismissDialogs();
       return;
     }
+    if (activity.isChangingConfigurations()) {
+      remakeSignInConfirmationDialog =
+          signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+      remakeUpdateDialog = (updateDialog != null && updateDialog.isShowing());
+      dismissDialogs();
+      return;
+    }
+
     if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
@@ -347,21 +354,12 @@ public class FirebaseAppDistribution {
   }
 
   void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-    if (savedInstanceState != null) {
-      if (savedInstanceState.containsKey(SIGN_IN_CONFIRMATION_DIALOG_KEY)) {
-        signInConfirmationDialog.show();
-      } else if (savedInstanceState.containsKey(UPDATE_DIALOG_KEY)) {
-        updateDialog.show();
-      }
-    }
-  }
-
-  void onSaveInstanceState(Activity activity, Bundle outState) {
-    if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
-      outState.putBoolean(SIGN_IN_CONFIRMATION_DIALOG_KEY, true);
-    }
-    if (updateDialog != null && updateDialog.isShowing()) {
-      outState.putBoolean(UPDATE_DIALOG_KEY, true);
+    if (remakeSignInConfirmationDialog) {
+      remakeSignInConfirmationDialog = false;
+      signInConfirmationDialog.show();
+    } else if (remakeUpdateDialog) {
+      remakeUpdateDialog = false;
+      updateDialog.show();
     }
   }
 
