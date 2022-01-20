@@ -308,13 +308,13 @@ public class FirebaseFirestore {
     ensureClientConfigured();
 
     if (!settings.isPersistenceEnabled()) {
-      throw new IllegalStateException("Cannot enable indexes when persisted is disabled");
+      throw new IllegalStateException("Cannot enable indexes when persistence is disabled");
     }
 
     // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
     // available.");
 
-    List<FieldIndex> parsedIndices = new ArrayList<>();
+    List<FieldIndex> parsedIndexes = new ArrayList<>();
 
     // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
     // format of the index definition. Unlike the backend, the SDK does not distinguish between
@@ -344,7 +344,7 @@ public class FirebaseFirestore {
             }
           }
 
-          parsedIndices.add(
+          parsedIndexes.add(
               FieldIndex.create(
                   FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
         }
@@ -353,7 +353,7 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return client.configureFieldIndexes(parsedIndices);
+    return client.configureFieldIndexes(parsedIndexes);
   }
 
   /**
