@@ -26,7 +26,7 @@ import java.util.List;
  * An index definition for field indices in Firestore.
  *
  * <p>Every index is associated with a collection. The definition contains a list of fields and
- * their indexkind (which can be {@link Segment.Kind#ASCENDING}, {@link Segment.Kind#DESCENDING} or
+ * their index kind (which can be {@link Segment.Kind#ASCENDING}, {@link Segment.Kind#DESCENDING} or
  * {@link Segment.Kind#CONTAINS}) for ArrayContains/ArrayContainsAny queries.
  *
  * <p>Unlike the backend, the SDK does not differentiate between collection or collection
