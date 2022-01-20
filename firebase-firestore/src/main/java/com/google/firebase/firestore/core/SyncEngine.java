@@ -32,9 +32,9 @@ import com.google.firebase.firestore.bundle.BundleLoader;
 import com.google.firebase.firestore.bundle.BundleMetadata;
 import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
+import com.google.firebase.firestore.local.LocalDocumentsResult;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LocalViewChanges;
-import com.google.firebase.firestore.local.LocalWriteResult;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.QueryResult;
 import com.google.firebase.firestore.local.ReferenceSet;
@@ -274,10 +274,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   public void writeMutations(List<Mutation> mutations, TaskCompletionSource<Void> userTask) {
     assertCallback("writeMutations");
 
-    LocalWriteResult result = localStore.writeLocally(mutations);
-    addUserCallback(result.getBatchId(), userTask);
+    LocalDocumentsResult result = localStore.writeLocally(mutations);
+    addUserCallback(result.getLargestBatchId(), userTask);
 
-    emitNewSnapsAndNotifyLocalStore(result.getChanges(), /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /*remoteEvent=*/ null);
     remoteStore.fillWritePipeline();
   }
 

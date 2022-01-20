@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -110,12 +109,11 @@ public class IndexBackfiller {
   public int backfill() {
     hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
     hardAssert(indexManager != null, "setIndexManager() not called");
-    return persistence.runTransaction(
-        "Backfill Indexes", () -> writeIndexEntries(localDocumentsView));
+    return persistence.runTransaction("Backfill Indexes", this::writeIndexEntries);
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
-  private int writeIndexEntries(LocalDocumentsView localDocumentsView) {
+  private int writeIndexEntries() {
     Set<String> processedCollectionGroups = new HashSet<>();
     int documentsRemaining = maxDocumentsToProcess;
     while (documentsRemaining > 0) {
@@ -124,58 +122,65 @@ public class IndexBackfiller {
         break;
       }
       Logger.debug(LOG_TAG, "Processing collection: %s", collectionGroup);
-      documentsRemaining -=
-          writeEntriesForCollectionGroup(localDocumentsView, collectionGroup, documentsRemaining);
+      documentsRemaining -= writeEntriesForCollectionGroup(collectionGroup, documentsRemaining);
       processedCollectionGroups.add(collectionGroup);
     }
     return maxDocumentsToProcess - documentsRemaining;
   }
 
-  /** Writes entries for the fetched field indexes. */
+  /**
+   * Writes entries for the provided collection group. Returns the number of documents processed.
+   */
   private int writeEntriesForCollectionGroup(
-      LocalDocumentsView localDocumentsView, String collectionGroup, int entriesRemainingUnderCap) {
-    // TODO(indexing): Support mutation batch Ids when sorting and writing indexes.
-
+      String collectionGroup, int documentsRemainingUnderCap) {
     // Use the earliest offset of all field indexes to query the local cache.
-    IndexOffset existingOffset = getExistingOffset(indexManager.getFieldIndexes(collectionGroup));
-    ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocuments(collectionGroup, existingOffset, entriesRemainingUnderCap);
-    indexManager.updateIndexEntries(documents);
+    Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
+    IndexOffset existingOffset = getExistingOffset(fieldIndexes);
 
-    IndexOffset newOffset = getNewOffset(documents, existingOffset);
+    LocalDocumentsResult nextBatch =
+        localDocumentsView.getNextDocuments(
+            collectionGroup, existingOffset, documentsRemainingUnderCap);
+    indexManager.updateIndexEntries(nextBatch.getDocuments());
+
+    IndexOffset newOffset = getNewOffset(existingOffset, nextBatch);
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
 
-    return documents.size();
+    return nextBatch.getDocuments().size();
+  }
+
+  /** Returns the next offset based on the provided documents. */
+  private IndexOffset getNewOffset(IndexOffset existingOffset, LocalDocumentsResult lookupResult) {
+    IndexOffset maxOffset = existingOffset;
+    for (Map.Entry<DocumentKey, Document> entry : lookupResult.getDocuments()) {
+      IndexOffset newOffset = IndexOffset.fromDocument(entry.getValue());
+      if (newOffset.compareTo(maxOffset) > 0) {
+        maxOffset = newOffset;
+      }
+    }
+    return IndexOffset.create(
+        maxOffset.getReadTime(),
+        maxOffset.getDocumentKey(),
+        Math.max(lookupResult.getLargestBatchId(), existingOffset.getLargestBatchId()));
   }
 
   /** Returns the lowest offset for the provided index group. */
   private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
-    IndexOffset lowestOffset = null;
-    for (FieldIndex fieldIndex : fieldIndexes) {
-      if (lowestOffset == null
-          || fieldIndex.getIndexState().getOffset().compareTo(lowestOffset) < 0) {
-        lowestOffset = fieldIndex.getIndexState().getOffset();
-      }
+    if (fieldIndexes.isEmpty()) {
+      return IndexOffset.NONE;
     }
-    return lowestOffset == null ? IndexOffset.NONE : lowestOffset;
-  }
 
-  /** Returns the offset for the index based on the newly indexed documents. */
-  private IndexOffset getNewOffset(
-      ImmutableSortedMap<DocumentKey, Document> documents, IndexOffset currentOffset) {
-    if (documents.isEmpty()) {
-      return IndexOffset.create(remoteDocumentCache.getLatestReadTime());
-    } else {
-      IndexOffset latestOffset = currentOffset;
-      Iterator<Map.Entry<DocumentKey, Document>> it = documents.iterator();
-      while (it.hasNext()) {
-        IndexOffset newOffset = IndexOffset.fromDocument(it.next().getValue());
-        if (newOffset.compareTo(latestOffset) > 0) {
-          latestOffset = newOffset;
-        }
+    Iterator<FieldIndex> it = fieldIndexes.iterator();
+    IndexOffset minOffset = it.next().getIndexState().getOffset();
+    int minBatchId = minOffset.getLargestBatchId();
+    while (it.hasNext()) {
+      IndexOffset newOffset = it.next().getIndexState().getOffset();
+      if (newOffset.compareTo(minOffset) < 0) {
+        minOffset = newOffset;
       }
-      return latestOffset;
+      minBatchId = Math.max(newOffset.getLargestBatchId(), minBatchId);
     }
+
+    return IndexOffset.create(minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
   }
 
   @VisibleForTesting

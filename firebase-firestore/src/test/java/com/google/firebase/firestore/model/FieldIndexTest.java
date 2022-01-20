@@ -96,9 +96,9 @@ public class FieldIndexTest {
   public void indexOffsetComparator() {
     IndexOffset docAOffset = IndexOffset.create(version(1), key("foo/a"), -1);
     IndexOffset docBOffset = IndexOffset.create(version(1), key("foo/b"), -1);
-    IndexOffset version1Offset = IndexOffset.create(version(1));
+    IndexOffset version1Offset = IndexOffset.create(version(1), -1);
     IndexOffset docCOffset = IndexOffset.create(version(2), key("foo/c"), -1);
-    IndexOffset version2Offset = IndexOffset.create(version(2));
+    IndexOffset version2Offset = IndexOffset.create(version(2), -1);
 
     assertEquals(-1, docAOffset.compareTo(docBOffset));
     assertEquals(-1, docAOffset.compareTo(version1Offset));
@@ -109,7 +109,7 @@ public class FieldIndexTest {
 
   @Test
   public void indexOffsetAdvancesSeconds() {
-    IndexOffset actualSuccessor = IndexOffset.create(version(1, (int) 1e9 - 1));
+    IndexOffset actualSuccessor = IndexOffset.create(version(1, (int) 1e9 - 1), -1);
     IndexOffset expectedSuccessor = IndexOffset.create(version(2, 0), DocumentKey.empty(), -1);
     assertEquals(expectedSuccessor, actualSuccessor);
   }

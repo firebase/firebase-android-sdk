@@ -316,7 +316,12 @@ public class Util {
    */
   public static <T extends Comparable<T>> void diffCollections(
       SortedSet<T> before, SortedSet<T> after, Consumer<T> onAdd, Consumer<T> onRemove) {
-    diffCollections(before.iterator(), after.iterator(), before.comparator(), onAdd, onRemove);
+    diffCollections(
+        before.iterator(),
+        after.iterator(),
+        before.comparator() != null ? before.comparator() : (l, r) -> l.compareTo(r),
+        onAdd,
+        onRemove);
   }
 
   private static <T> void diffCollections(

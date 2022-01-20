@@ -207,7 +207,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(12)));
+        remoteDocumentCache.getAll(collection, IndexOffset.create(version(12), -1));
     assertThat(results.values()).containsExactly(doc("b/new", 3, DOC_DATA));
   }
 
@@ -219,7 +219,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1, 2)));
+        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1, 2), -1));
     assertThat(results.values()).containsExactly(doc("b/new", 1, DOC_DATA));
   }
 
@@ -243,26 +243,8 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1)));
+        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1), -1));
     assertThat(results.values()).containsExactly(doc("b/old", 1, DOC_DATA));
-  }
-
-  @Test
-  public void testLatestReadTime() {
-    SnapshotVersion latestReadTime = remoteDocumentCache.getLatestReadTime();
-    assertEquals(SnapshotVersion.NONE, latestReadTime);
-
-    addTestDocumentAtPath("coll/a", /* updateTime= */ 0, /* readTime= */ 1);
-    latestReadTime = remoteDocumentCache.getLatestReadTime();
-    assertEquals(version(1), latestReadTime);
-
-    addTestDocumentAtPath("coll/b", /* updateTime= */ 0, /* readTime= */ 3);
-    latestReadTime = remoteDocumentCache.getLatestReadTime();
-    assertEquals(version(3), latestReadTime);
-
-    addTestDocumentAtPath("coll/c", /* updateTime= */ 0, /* readTime= */ 2);
-    latestReadTime = remoteDocumentCache.getLatestReadTime();
-    assertEquals(version(3), latestReadTime);
   }
 
   protected MutableDocument addTestDocumentAtPath(String path) {

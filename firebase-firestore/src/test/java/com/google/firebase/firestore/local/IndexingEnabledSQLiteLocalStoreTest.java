@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
+import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -87,7 +88,7 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
   }
 
   @Test
-  public void testUsesPartialIndexesWhenAvailable() {
+  public void testUsesPartialIndexedRemoteDocumentsWhenAvailable() {
     FieldIndex index = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "matches", Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
 
@@ -101,6 +102,22 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 1);
+    assertQueryReturned("coll/a", "coll/b");
+  }
+
+  @Test
+  public void testUsesPartialIndexedOverlaysWhenAvailable() {
+    FieldIndex index = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "matches", Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/a", map("matches", true)));
+    backfillIndexes();
+
+    writeMutation(setMutation("coll/b", map("matches", true)));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/b");
   }
 

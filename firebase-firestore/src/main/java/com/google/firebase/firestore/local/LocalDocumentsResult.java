@@ -18,22 +18,21 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 
-/** The result of a write to the local store. */
-public final class LocalWriteResult {
-  private final int batchId;
+/** The result of a applying local mutations. */
+public final class LocalDocumentsResult {
+  private final int largestBatchId;
+  private final ImmutableSortedMap<DocumentKey, Document> documents;
 
-  private final ImmutableSortedMap<DocumentKey, Document> changes;
-
-  LocalWriteResult(int batchId, ImmutableSortedMap<DocumentKey, Document> changes) {
-    this.batchId = batchId;
-    this.changes = changes;
+  LocalDocumentsResult(int largestBatchId, ImmutableSortedMap<DocumentKey, Document> documents) {
+    this.largestBatchId = largestBatchId;
+    this.documents = documents;
   }
 
-  public int getBatchId() {
-    return batchId;
+  public int getLargestBatchId() {
+    return largestBatchId;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getChanges() {
-    return changes;
+  public ImmutableSortedMap<DocumentKey, Document> getDocuments() {
+    return documents;
   }
 }
