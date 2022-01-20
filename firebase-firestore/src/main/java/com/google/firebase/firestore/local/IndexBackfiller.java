@@ -44,7 +44,6 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private final RemoteDocumentCache remoteDocumentCache;
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
@@ -52,7 +51,6 @@ public class IndexBackfiller {
   public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
     this.persistence = persistence;
     this.scheduler = new Scheduler(asyncQueue);
-    this.remoteDocumentCache = persistence.getRemoteDocumentCache();
   }
 
   public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
