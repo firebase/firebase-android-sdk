@@ -328,8 +328,6 @@ public class FirebaseAppDistribution {
   void onActivityDestroyed(@NonNull Activity activity) {
     if (activity instanceof SignInResultActivity) {
       // SignInResult is internal to the SDK and is destroyed after creation
-      // Rotating also destroys the activity while changing configurations
-      dismissDialogs();
       return;
     }
     if (activity.isChangingConfigurations()) {
