@@ -289,7 +289,7 @@ public class IndexBackfillerTest {
         fieldIndex(
             collectionGroup,
             FieldIndex.UNKNOWN_ID,
-            FieldIndex.IndexState.create(0, version, DocumentKey.empty()),
+            FieldIndex.IndexState.create(0, version, DocumentKey.empty(), -1),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
@@ -300,7 +300,7 @@ public class IndexBackfillerTest {
         fieldIndex(
             collectionGroup,
             FieldIndex.UNKNOWN_ID,
-            FieldIndex.IndexState.create(sequenceNumber, SnapshotVersion.NONE, DocumentKey.empty()),
+            FieldIndex.IndexState.create(sequenceNumber, IndexOffset.NONE),
             fieldName,
             FieldIndex.Segment.Kind.ASCENDING);
     indexManager.addFieldIndex(fieldIndex);
