@@ -131,7 +131,8 @@ public class QueryEngine {
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
-    if (query.matchesAllDocuments()) {
+    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
+    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
