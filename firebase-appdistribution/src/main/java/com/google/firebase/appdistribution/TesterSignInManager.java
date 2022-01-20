@@ -24,6 +24,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -85,7 +86,7 @@ class TesterSignInManager {
   }
 
   @VisibleForTesting
-  void onActivityCreated(Activity activity) {
+  void onActivityCreated(Activity activity, Bundle bundle) {
     // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
     // result
     // of the signIn Task in the onActivityCreated callback

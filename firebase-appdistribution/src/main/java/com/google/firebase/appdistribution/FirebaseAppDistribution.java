@@ -23,6 +23,7 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,6 +43,8 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 public class FirebaseAppDistribution {
 
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
+  private static final String SIGN_IN_CONFIRMATION_DIALOG_KEY = "signInConfirmationDialog";
+  private static final String UPDATE_DIALOG_KEY = "updateDialog";
 
   private final FirebaseApp firebaseApp;
   private final TesterSignInManager testerSignInManager;
@@ -83,6 +86,8 @@ public class FirebaseAppDistribution {
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
+    lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
+    lifecycleNotifier.addOnActivitySaveInstanceListener(this::onSaveInstanceState);
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -322,8 +327,10 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    if (activity instanceof SignInResultActivity) {
+    if (activity instanceof SignInResultActivity || activity.isChangingConfigurations()) {
       // SignInResult is internal to the SDK and is destroyed after creation
+      // We do not want to cancel the task on configuration changes
+      dismissDialogs();
       return;
     }
     if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
@@ -336,6 +343,25 @@ public class FirebaseAppDistribution {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    }
+  }
+
+  void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    if (savedInstanceState != null) {
+      if (savedInstanceState.containsKey(SIGN_IN_CONFIRMATION_DIALOG_KEY)) {
+        signInConfirmationDialog.show();
+      } else if (savedInstanceState.containsKey(UPDATE_DIALOG_KEY)) {
+        updateDialog.show();
+      }
+    }
+  }
+
+  void onSaveInstanceState(Activity activity, Bundle outState) {
+    if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
+      outState.putBoolean(SIGN_IN_CONFIRMATION_DIALOG_KEY, true);
+    }
+    if (updateDialog != null && updateDialog.isShowing()) {
+      outState.putBoolean(UPDATE_DIALOG_KEY, true);
     }
   }
 

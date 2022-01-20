@@ -83,6 +83,7 @@ public class TesterSignInManagerTest {
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private SignInResultActivity mockSignInResultActivity;
+  @Mock private Bundle bundle;
 
   @Before
   public void setUp() {
@@ -177,7 +178,7 @@ public class TesterSignInManagerTest {
     Task signInTask = testerSignInManager.signInTester();
 
     // Simulate re-entering app
-    testerSignInManager.onActivityCreated(mockSignInResultActivity);
+    testerSignInManager.onActivityCreated(mockSignInResultActivity, bundle);
 
     assertTrue(signInTask.isSuccessful());
     verify(mockSignInStorage).setSignInStatus(true);

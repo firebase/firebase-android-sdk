@@ -54,6 +54,11 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
+  /** A queue of listeners that trigger when the activity is destroyed */
+  @GuardedBy("lock")
+  private final Queue<OnActivitySaveInstanceListener> onActivitySaveInstanceListeners =
+      new ArrayDeque<>();
+
   private FirebaseAppDistributionLifecycleNotifier() {}
 
   static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
@@ -64,7 +69,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   interface OnActivityCreatedListener {
-    void onCreated(Activity activity);
+    void onCreated(Activity activity, Bundle bundle);
   }
 
   interface OnActivityStartedListener {
@@ -81,6 +86,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   interface OnActivityDestroyedListener {
     void onDestroyed(Activity activity);
+  }
+
+  interface OnActivitySaveInstanceListener {
+    void onActivitySaveInstance(Activity activity, Bundle bundle);
   }
 
   Task<Activity> getForegroundActivity() {
@@ -121,6 +130,12 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     }
   }
 
+  void addOnActivitySaveInstanceListener(@NonNull OnActivitySaveInstanceListener listener) {
+    synchronized (lock) {
+      this.onActivitySaveInstanceListeners.add(listener);
+    }
+  }
+
   void addOnActivityResumedListener(@NonNull OnActivityResumedListener listener) {
     synchronized (lock) {
       this.onActivityResumedListeners.add(listener);
@@ -138,7 +153,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     synchronized (lock) {
       currentActivity = activity;
       for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
-        listener.onCreated(activity);
+        listener.onCreated(activity, bundle);
       }
     }
   }
@@ -179,7 +194,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   public void onActivityStopped(@NonNull Activity activity) {}
 
   @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
+    synchronized (lock) {
+      currentActivity = activity;
+      for (OnActivitySaveInstanceListener listener : onActivitySaveInstanceListeners) {
+        listener.onActivitySaveInstance(activity, bundle);
+      }
+    }
+  }
 
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
