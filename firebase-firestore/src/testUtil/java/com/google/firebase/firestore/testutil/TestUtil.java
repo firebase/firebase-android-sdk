@@ -42,7 +42,7 @@ import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.UserDataWriter;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
-import com.google.firebase.firestore.core.Filter.Operator;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -71,6 +71,7 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
+import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
@@ -424,6 +425,21 @@ public class TestUtil {
   public static RemoteEvent addedRemoteEvent(
       MutableDocument doc, List<Integer> updatedInTargets, List<Integer> removedFromTargets) {
     return addedRemoteEvent(singletonList(doc), updatedInTargets, removedFromTargets);
+  }
+
+  public static RemoteEvent existenceFilterEvent(
+      int targetId, ImmutableSortedSet<DocumentKey> syncedKeys, int remoteCount, int version) {
+    TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
+    TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
+    testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
+
+    ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+
+    WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
+        new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
+    aggregator.handleExistenceFilter(existenceFilterWatchChange);
+    return aggregator.createRemoteEvent(version(version));
   }
 
   public static RemoteEvent addedRemoteEvent(

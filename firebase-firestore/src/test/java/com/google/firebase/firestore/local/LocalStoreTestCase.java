@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docMap;
+import static com.google.firebase.firestore.testutil.TestUtil.existenceFilterEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.keySet;
@@ -75,6 +76,7 @@ import com.google.firebase.firestore.remote.WatchStream;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -322,13 +324,13 @@ public abstract class LocalStoreTestCase {
   }
 
   /**
-   * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
+   * Asserts the expected numbers of mutations read by the OverlayQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int byKey, int byCollection) {
+  private void assertOverlaysRead(int byKey, int byCollection) {
+    assertEquals("Overlays read (by key)", byKey, queryEngine.getOverlaysReadByKey());
     assertEquals(
-        "Mutations read (by collection)", byCollection, queryEngine.getMutationsReadByCollection());
-    assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
+        "Overlays read (by collection)", byCollection, queryEngine.getOverlaysReadByCollection());
   }
 
   /**
@@ -384,10 +386,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        updateRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
@@ -545,10 +544,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        addedRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
 
@@ -688,9 +684,7 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+            doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList(), asList(targetId)));
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
 
@@ -981,8 +975,7 @@ public abstract class LocalStoreTestCase {
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    // No mutations are read because only overlay is needed.
-    assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
   }
 
   @Test
@@ -1121,6 +1114,38 @@ public abstract class LocalStoreTestCase {
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("foo/a", "foo/b");
+  }
+
+  @Test
+  public void testIgnoresTargetMappingAfterExistenceFilterMismatch() {
+    assumeFalse(garbageCollectorIsEager());
+
+    Query query = query("foo").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    executeQuery(query);
+
+    // Persist a mapping with a single document
+    applyRemoteEvent(
+        addedRemoteEvent(
+            asList(doc("foo/a", 10, map("matches", true))), asList(targetId), emptyList()));
+    applyRemoteEvent(noChangeEvent(targetId, 10));
+    updateViews(targetId, /* fromCache= */ false);
+
+    TargetData cachedTargetData = localStore.getTargetData(query.toTarget());
+    Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
+
+    // Create an existence filter mismatch and verify that the last limbo free snapshot version
+    // is deleted
+    applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
+    cachedTargetData = localStore.getTargetData(query.toTarget());
+    Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
+    Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
+
+    // Re-run the query as a collection scan
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertQueryReturned("foo/a");
   }
 
   @Test

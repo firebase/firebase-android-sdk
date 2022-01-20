@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Copyright 2021 Google Inc. All Rights Reserved. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.google.firebase.testing.fireperf.ui.home.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/navigation_fast"
+        android:name="com.google.firebase.testing.fireperf.ui.fast.FastFragment"
+        android:label="@string/title_fast"
+        tools:layout="@layout/fragment_fast" />
+
+    <fragment
+        android:id="@+id/navigation_slow"
+        android:name="com.google.firebase.testing.fireperf.ui.slow.SlowFragment"
+        android:label="@string/title_slow"
+        tools:layout="@layout/fragment_slow" />
+</navigation>

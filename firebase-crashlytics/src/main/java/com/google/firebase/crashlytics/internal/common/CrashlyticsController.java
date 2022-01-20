@@ -31,7 +31,8 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
@@ -136,11 +137,13 @@ class CrashlyticsController {
   // region Exception handling
 
   void enableExceptionHandling(
-      Thread.UncaughtExceptionHandler defaultHandler, SettingsDataProvider settingsProvider) {
+      String sessionIdentifier,
+      Thread.UncaughtExceptionHandler defaultHandler,
+      SettingsDataProvider settingsProvider) {
     // This must be called before installing the controller with
     // Thread.setDefaultUncaughtExceptionHandler to ensure that we are ready to handle
     // any crashes we catch.
-    openSession();
+    openSession(sessionIdentifier);
     final CrashlyticsUncaughtExceptionHandler.CrashListener crashListener =
         new CrashlyticsUncaughtExceptionHandler.CrashListener() {
           @Override
@@ -191,7 +194,7 @@ class CrashlyticsController {
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsDataProvider);
-                doOpenSession();
+                doOpenSession(new CLSUUID(idManager).toString());
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
@@ -418,7 +421,6 @@ class CrashlyticsController {
 
   void setUserId(String identifier) {
     userMetadata.setUserId(identifier);
-    cacheUserData(userMetadata);
   }
 
   void setCustomKey(String key, String value) {
@@ -429,17 +431,12 @@ class CrashlyticsController {
         throw ex;
       } else {
         Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-        return;
       }
     }
-    cacheKeyData(userMetadata.getCustomKeys(), false);
   }
 
   void setCustomKeys(Map<String, String> keysAndValues) {
-    // Write all the key/value pairs before doing anything computationally expensive.
     userMetadata.setCustomKeys(keysAndValues);
-    // Once all the key/value pairs are added, update the cache.
-    cacheKeyData(userMetadata.getCustomKeys(), false);
   }
 
   void setInternalKey(String key, String value) {
@@ -450,53 +447,8 @@ class CrashlyticsController {
         throw ex;
       } else {
         Logger.getLogger().e("Attempting to set custom attribute with null key, ignoring.");
-        return;
       }
     }
-    cacheKeyData(userMetadata.getInternalKeys(), true);
-  }
-
-  /**
-   * Cache user metadata asynchronously in case of a non-graceful process exit. Can be reloaded and
-   * sent with the previous crash data on app restart. NOTE: Because this is asynchronous, it is
-   * performant in critical code paths, but susceptible to losing data if a crash happens
-   * immediately after setting a value. If this becomes a problem, we can investigate writing
-   * synchronously, or potentially add an explicit user-facing API for synchronous writes.
-   */
-  private void cacheUserData(final UserMetadata userMetaData) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            final String currentSessionId = getCurrentSessionId();
-            if (currentSessionId == null) {
-              Logger.getLogger().d("Tried to cache user data while no session was open.");
-              return null;
-            }
-            reportingCoordinator.persistUserId(currentSessionId);
-            new MetaDataStore(fileStore).writeUserData(currentSessionId, userMetaData);
-            return null;
-          }
-        });
-  }
-
-  /**
-   * Cache custom key metadata asynchronously in case of a non-graceful process exit. Can be
-   * reloaded and sent with the previous crash data on app restart. NOTE: Because this is
-   * asynchronous, it is performant in critical code paths, but susceptible to losing data if a
-   * crash happens immediately after setting a value. If this becomes a problem, we can investigate
-   * writing synchronously, or potentially add an explicit user-facing API for synchronous writes.
-   */
-  private void cacheKeyData(final Map<String, String> keyData, boolean isInternal) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            final String currentSessionId = getCurrentSessionId();
-            new MetaDataStore(fileStore).writeKeyData(currentSessionId, keyData, isInternal);
-            return null;
-          }
-        });
   }
 
   // endregion
@@ -504,12 +456,12 @@ class CrashlyticsController {
   // region Session Management
 
   /** Open a new session on the single-threaded executor. */
-  void openSession() {
+  void openSession(String sessionIdentifier) {
     backgroundWorker.submit(
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            doOpenSession();
+            doOpenSession(sessionIdentifier);
             return null;
           }
         });
@@ -561,9 +513,8 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doOpenSession() {
+  private void doOpenSession(String sessionIdentifier) {
     final long startedAtSeconds = getCurrentTimestampSeconds();
-    final String sessionIdentifier = new CLSUUID(idManager).toString();
 
     Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
 
@@ -732,10 +683,6 @@ class CrashlyticsController {
     return crashHandler != null && crashHandler.isHandlingException();
   }
 
-  FileStore getFileStore() {
-    return fileStore;
-  }
-
   /**
    * Send App Exception events to Firebase Analytics. FA records the event asynchronously, so this
    * method returns a Task in case the caller wants to verify that the event was recorded by FA and
@@ -805,9 +752,10 @@ class CrashlyticsController {
       FileStore fileStore,
       byte[] logBytes) {
 
-    final MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    final File userFile = metaDataStore.getUserDataFileForSession(previousSessionId);
-    final File keysFile = metaDataStore.getKeysFileForSession(previousSessionId);
+    final File userFile =
+        fileStore.getSessionFile(previousSessionId, UserMetadata.USERDATA_FILENAME);
+    final File keysFile =
+        fileStore.getSessionFile(previousSessionId, UserMetadata.KEYDATA_FILENAME);
 
     List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
     nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
@@ -849,8 +797,8 @@ class CrashlyticsController {
       // happened during the session.
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
-        final UserMetadata relevantUserMetadata = new UserMetadata();
-        relevantUserMetadata.setCustomKeys(new MetaDataStore(fileStore).readKeyData(sessionId));
+        final UserMetadata relevantUserMetadata =
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

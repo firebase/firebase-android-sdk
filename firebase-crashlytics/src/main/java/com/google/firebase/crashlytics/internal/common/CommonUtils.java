@@ -32,6 +32,7 @@ import android.os.Debug;
 import android.os.StatFs;
 import android.provider.Settings.Secure;
 import android.text.TextUtils;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -631,5 +632,14 @@ public class CommonUtils {
     } else {
       return true;
     }
+  }
+
+  /** @return true if s1.equals(s2), or if both are null. */
+  public static boolean nullSafeEquals(@Nullable String s1, @Nullable String s2) {
+    // :TODO: replace calls to this method with Objects.equals(...) when minSdkVersion is 19+
+    if (s1 == null) {
+      return s2 == null;
+    }
+    return s1.equals(s2);
   }
 }
