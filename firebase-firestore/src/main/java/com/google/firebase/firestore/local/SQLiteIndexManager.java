@@ -106,8 +106,8 @@ final class SQLiteIndexManager implements IndexManager {
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
     db.query(
-            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key "
-                + "FROM index_state WHERE uid = ?")
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key, "
+                + "largest_batch_id FROM index_state WHERE uid = ?")
         .binding(uid)
         .forEach(
             row -> {
@@ -117,8 +117,11 @@ final class SQLiteIndexManager implements IndexManager {
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
               DocumentKey documentKey =
                   DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
+              int largestBatchId = row.getInt(5);
               indexStates.put(
-                  indexId, FieldIndex.IndexState.create(sequenceNumber, readTime, documentKey));
+                  indexId,
+                  FieldIndex.IndexState.create(
+                      sequenceNumber, readTime, documentKey, largestBatchId));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -660,13 +663,15 @@ final class SQLiteIndexManager implements IndexManager {
               FieldIndex.IndexState.create(memoizedMaxSequenceNumber, offset));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
-              + "read_time_seconds, read_time_nanos, document_key) VALUES(?, ?, ?, ?, ?, ?)",
+              + "read_time_seconds, read_time_nanos, document_key, largest_batch_id) "
+              + "VALUES(?, ?, ?, ?, ?, ?, ?)",
           fieldIndex.getIndexId(),
           uid,
           memoizedMaxSequenceNumber,
           offset.getReadTime().getTimestamp().getSeconds(),
           offset.getReadTime().getTimestamp().getNanoseconds(),
-          EncodedPath.encode(offset.getDocumentKey().getPath()));
+          EncodedPath.encode(offset.getDocumentKey().getPath()),
+          offset.getLargestBatchId());
       memoizeIndex(updatedIndex);
     }
   }

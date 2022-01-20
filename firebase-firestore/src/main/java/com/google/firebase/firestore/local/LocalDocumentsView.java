@@ -260,7 +260,8 @@ class LocalDocumentsView {
       Query query, IndexOffset offset) {
     Map<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAll(query.getPath(), offset);
-    Map<DocumentKey, Overlay> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
+    Map<DocumentKey, Overlay> overlays =
+        documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.
