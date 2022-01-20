@@ -54,7 +54,7 @@ public class FieldIndexTest {
     FieldIndex indexOriginal = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
     FieldIndex indexSame = fieldIndex("collA", 1, FieldIndex.INITIAL_STATE);
     FieldIndex indexDifferent =
-        fieldIndex("collA", 1, IndexState.create(1, version(2), DocumentKey.empty()));
+        fieldIndex("collA", 1, IndexState.create(1, version(2), DocumentKey.empty(), -1));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexSame));
     assertEquals(0, SEMANTIC_COMPARATOR.compare(indexOriginal, indexDifferent));
   }
@@ -94,10 +94,10 @@ public class FieldIndexTest {
 
   @Test
   public void indexOffsetComparator() {
-    IndexOffset docAOffset = IndexOffset.create(version(1), key("foo/a"));
-    IndexOffset docBOffset = IndexOffset.create(version(1), key("foo/b"));
+    IndexOffset docAOffset = IndexOffset.create(version(1), key("foo/a"), -1);
+    IndexOffset docBOffset = IndexOffset.create(version(1), key("foo/b"), -1);
     IndexOffset version1Offset = IndexOffset.create(version(1));
-    IndexOffset docCOffset = IndexOffset.create(version(2), key("foo/c"));
+    IndexOffset docCOffset = IndexOffset.create(version(2), key("foo/c"), -1);
     IndexOffset version2Offset = IndexOffset.create(version(2));
 
     assertEquals(-1, docAOffset.compareTo(docBOffset));
@@ -110,7 +110,7 @@ public class FieldIndexTest {
   @Test
   public void indexOffsetAdvancesSeconds() {
     IndexOffset actualSuccessor = IndexOffset.create(version(1, (int) 1e9 - 1));
-    IndexOffset expectedSuccessor = IndexOffset.create(version(2, 0), DocumentKey.empty());
+    IndexOffset expectedSuccessor = IndexOffset.create(version(2, 0), DocumentKey.empty(), -1);
     assertEquals(expectedSuccessor, actualSuccessor);
   }
 }
