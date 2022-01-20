@@ -50,7 +50,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
-        LibraryVersionComponent.create("fire-app-distribution", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {

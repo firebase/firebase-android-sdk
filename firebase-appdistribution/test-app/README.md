@@ -27,5 +27,5 @@ After the build is successful, [bring up emulator/physical device](https://devel
 and install the apk:
 
 ```
-firebase-android-sdk$ adb install firebase-app-distribution/test-app/build/outputs/apk/release/test-app-release.apk
+firebase-android-sdk$ adb install firebase-appdistribution/test-app/build/outputs/apk/release/test-app-release.apk
 ```
