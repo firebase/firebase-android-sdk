@@ -114,14 +114,14 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
       Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
-    return computeView(docs, Collections.emptyMap(), existenceStateChanged);
+    return computeViews(docs, Collections.emptyMap(), existenceStateChanged);
   }
 
   /**
    * Computes the local view for doc, applying overlays from both {@code memoizedOverlays} and the
    * overlay cache.
    */
-  private ImmutableSortedMap<DocumentKey, Document> computeView(
+  private ImmutableSortedMap<DocumentKey, Document> computeViews(
       Map<DocumentKey, MutableDocument> docs,
       Map<DocumentKey, Overlay> memoizedOverlays,
       Set<DocumentKey> existenceStateChanged) {
@@ -286,7 +286,7 @@ class LocalDocumentsView {
     }
 
     ImmutableSortedMap<DocumentKey, Document> localDocs =
-        computeView(docs, overlays, Collections.emptySet());
+        computeViews(docs, overlays, Collections.emptySet());
     return new LocalDocumentsResult(largestBatchId, localDocs);
   }
 
