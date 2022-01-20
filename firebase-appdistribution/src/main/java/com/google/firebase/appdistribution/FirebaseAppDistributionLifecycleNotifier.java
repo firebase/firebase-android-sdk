@@ -64,7 +64,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   interface OnActivityCreatedListener {
-    void onCreated(Activity activity, Bundle bundle);
+    void onCreated(Activity activity);
   }
 
   interface OnActivityStartedListener {
@@ -138,7 +138,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     synchronized (lock) {
       currentActivity = activity;
       for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
-        listener.onCreated(activity, bundle);
+        listener.onCreated(activity);
       }
     }
   }

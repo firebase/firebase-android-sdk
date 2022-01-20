@@ -23,7 +23,6 @@ import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -351,7 +350,7 @@ public class FirebaseAppDistribution {
     }
   }
 
-  void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+  void onActivityCreated(Activity activity) {
     if (remakeSignInConfirmationDialog) {
       remakeSignInConfirmationDialog = false;
       signInConfirmationDialog.show();
