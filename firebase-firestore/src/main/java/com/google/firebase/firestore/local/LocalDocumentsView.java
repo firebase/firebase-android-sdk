@@ -76,11 +76,6 @@ class LocalDocumentsView {
     return documentOverlayCache;
   }
 
-  @VisibleForTesting
-  IndexManager getIndexManager() {
-    return indexManager;
-  }
-
   /**
    * Returns the the local view of the document identified by {@code key}.
    *
