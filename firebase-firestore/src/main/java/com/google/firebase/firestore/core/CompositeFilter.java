@@ -44,6 +44,7 @@ public class CompositeFilter extends Filter {
 
   @Override
   public List<FieldFilter> getFlattenedFilters() {
+    // TODO(orquery): memoize this result if this method is used more than once.
     List<FieldFilter> result = new ArrayList<>();
     for (Filter subfilter : filters) {
       result.addAll(subfilter.getFlattenedFilters());
@@ -52,8 +53,8 @@ public class CompositeFilter extends Filter {
   }
 
   /**
-   * Returns the first inequality filter contained within this composite filter. Returns null if it
-   * does not contain any inequalities.
+   * Returns the first inequality filter contained within this composite filter. Returns {@code
+   * null} if it does not contain any inequalities.
    */
   @Override
   public FieldPath getFirstInequalityField() {
