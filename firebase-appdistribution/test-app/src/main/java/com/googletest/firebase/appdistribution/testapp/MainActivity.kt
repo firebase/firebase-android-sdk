@@ -1,6 +1,8 @@
 package com.googletest.firebase.appdistribution.testapp
 
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
@@ -9,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.FirebaseAppDistribution
-import com.google.firebase.appdistribution.FirebaseAppDistributionException
+import com.google.firebase.appdistribution.FirebaseAppDistributionException as FirebaseAppDistributionException1
 
 class MainActivity : AppCompatActivity() {
     var firebaseAppDistribution: FirebaseAppDistribution = FirebaseAppDistribution.getInstance()
@@ -21,7 +23,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        findViewById<TextView>(R.id.app_name).text = "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+        findViewById<TextView>(R.id.app_name).text =
+            "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
         setupUI(isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
 
         /** Basic Configuration */
@@ -32,10 +35,15 @@ class MainActivity : AppCompatActivity() {
         firebaseAppDistribution.updateIfNewReleaseAvailable()
             .addOnSuccessListener {
                 firebaseAppDistribution.updateIfNewReleaseAvailable().addOnFailureListener {
-                    val ex = it as FirebaseAppDistributionException
+                    val ex = it as FirebaseAppDistributionException1
                     Log.d("FirebaseAppDistribution", "MAINACTIVITY:ERROR ERROR. CODE: " + it.errorCode)
                 }
             }
+
+        // Start the second activity
+//        Handler().postDelayed(Runnable {
+//            startSecondActivity()
+//        }, 5000)
 
         /** Advanced Configuration */
 //        val signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
@@ -45,7 +53,10 @@ class MainActivity : AppCompatActivity() {
 //
 //        signOutButton.setOnClickListener {
 //            firebaseAppDistribution.signOutTester()
-//            setupUI(isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
+//            setupUI(
+//                isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+//                isUpdateAvailable = false
+//            )
 //        }
 //
 //        signInButton.setOnClickListener {
@@ -68,14 +79,23 @@ class MainActivity : AppCompatActivity() {
 //            progressBar.isIndeterminate = false
 //            firebaseAppDistribution.updateApp().addOnProgressListener {
 //                progressBar.isIndeterminate = false
-//                val percentage = ((it.apkBytesDownloaded * 100)/ it.apkFileTotalBytes).toInt()
-//                progressBar.setProgress(percentage, true)
+//                val percentage = ((it.apkBytesDownloaded * 100) / it.apkFileTotalBytes).toInt()
+//               progressBar.setProgress(percentage, true)
 //                progressPercent.text = "$percentage %"
 //            }
 //        }
     }
 
-    private fun setupUI(isSignedIn: Boolean, isUpdateAvailable: Boolean, release: AppDistributionRelease? = null) {
+    fun startSecondActivity() {
+        val intent = Intent(this, SecondActivity::class.java)
+        startActivity(intent)
+    }
+
+    private fun setupUI(
+        isSignedIn: Boolean,
+        isUpdateAvailable: Boolean,
+        release: AppDistributionRelease? = null
+    ) {
         val signInStatus = findViewById<TextView>(R.id.sign_in_status)
         val signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
         val checkForUpdateButton = findViewById<AppCompatButton>(R.id.check_for_update)
@@ -103,7 +123,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        signInStatus.text = "Release available - ${release?.displayVersion} (${release?.versionCode})"
+        signInStatus.text =
+            "Release available - ${release?.displayVersion} (${release?.versionCode})"
         signInButton.visibility = View.GONE
         checkForUpdateButton.visibility = View.GONE
         updateAppButton.visibility = View.VISIBLE
