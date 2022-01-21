@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.TaskUtils.combineWithResultOf;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
 
@@ -28,7 +29,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -54,6 +54,9 @@ class TesterSignInManager {
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   private final Object signInTaskLock = new Object();
+
+  @GuardedBy("signInTaskLock")
+  private boolean hasBeenSentToBrowserForCurrentTask = false;
 
   @GuardedBy("signInTaskLock")
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
@@ -104,9 +107,13 @@ class TesterSignInManager {
       return;
     } else {
       // Throw error if app reentered during sign in
-      if (this.isCurrentlySigningIn()) {
-        LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
-        this.setCanceledAuthenticationError();
+      synchronized (signInTaskLock) {
+        if (awaitingResultFromBrowser()) {
+          LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+          setSignInTaskCompletionError(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+        }
       }
     }
   }
@@ -120,18 +127,27 @@ class TesterSignInManager {
     }
 
     synchronized (signInTaskLock) {
-      if (this.isCurrentlySigningIn()) {
+      if (signInTaskCompletionSource != null
+          && !signInTaskCompletionSource.getTask().isComplete()) {
         LogWrapper.getInstance()
             .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
         return signInTaskCompletionSource.getTask();
       }
 
       signInTaskCompletionSource = new TaskCompletionSource<>();
+      hasBeenSentToBrowserForCurrentTask = false;
 
       firebaseInstallationsApiProvider
           .get()
           .getId()
-          .addOnSuccessListener(getFidGenerationOnSuccessListener())
+          .onSuccessTask(combineWithResultOf(lifecycleNotifier.getForegroundActivity()))
+          .addOnSuccessListener(
+              fidAndActivity -> {
+                synchronized (signInTaskLock) {
+                  openSignInFlowInBrowser(fidAndActivity.first(), fidAndActivity.second());
+                  hasBeenSentToBrowserForCurrentTask = true;
+                }
+              })
           .addOnFailureListener(
               e -> {
                 LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
@@ -144,23 +160,12 @@ class TesterSignInManager {
     }
   }
 
-  private boolean isCurrentlySigningIn() {
+  private boolean awaitingResultFromBrowser() {
     synchronized (signInTaskLock) {
       return signInTaskCompletionSource != null
-          && !signInTaskCompletionSource.getTask().isComplete();
+          && !signInTaskCompletionSource.getTask().isComplete()
+          && hasBeenSentToBrowserForCurrentTask;
     }
-  }
-
-  private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    synchronized (signInTaskLock) {
-      safeSetTaskException(signInTaskCompletionSource, e);
-    }
-  }
-
-  private void setCanceledAuthenticationError() {
-    setSignInTaskCompletionError(
-        new FirebaseAppDistributionException(
-            Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
   }
 
   private void setSuccessfulSignInResult() {
@@ -169,19 +174,10 @@ class TesterSignInManager {
     }
   }
 
-  private OnSuccessListener<String> getFidGenerationOnSuccessListener() {
-    return fid -> {
-      Context context = firebaseApp.getApplicationContext();
-      Uri uri =
-          Uri.parse(
-              String.format(
-                  SIGNIN_REDIRECT_URL,
-                  firebaseApp.getOptions().getApplicationId(),
-                  fid,
-                  getApplicationName(context),
-                  context.getPackageName()));
-      openSignInFlowInBrowser(context, uri);
-    };
+  private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
+    synchronized (signInTaskLock) {
+      safeSetTaskException(signInTaskCompletionSource, e);
+    }
   }
 
   private static String getApplicationName(Context context) {
@@ -193,22 +189,31 @@ class TesterSignInManager {
     }
   }
 
-  private void openSignInFlowInBrowser(Context applicationContext, Uri uri) {
+  private void openSignInFlowInBrowser(String fid, Activity activity) {
+    Context context = firebaseApp.getApplicationContext();
+    Uri uri =
+        Uri.parse(
+            String.format(
+                SIGNIN_REDIRECT_URL,
+                firebaseApp.getOptions().getApplicationId(),
+                fid,
+                getApplicationName(context),
+                context.getPackageName()));
     LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser at " + uri);
-    if (supportsCustomTabs(applicationContext)) {
+    if (supportsCustomTabs(context)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
       intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      customTabsIntent.launchUrl(applicationContext, uri);
+      customTabsIntent.launchUrl(activity, uri);
 
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      applicationContext.startActivity(browserIntent);
+      activity.startActivity(browserIntent);
     }
   }
 
