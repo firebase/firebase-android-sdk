@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
-import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.TaskUtils.combineWithResultOf;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskResult;
@@ -29,11 +28,13 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.appdistribution.internal.SignInResultActivity;
@@ -107,20 +108,17 @@ class TesterSignInManager {
       return;
     } else {
       // Throw error if app reentered during sign in
-      synchronized (signInTaskLock) {
-        if (awaitingResultFromBrowser()) {
-          LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
-          setSignInTaskCompletionError(
-              new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-        }
+      if (awaitingResultFromBrowser()) {
+        LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+        setSignInTaskCompletionError(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
       }
     }
   }
 
   @NonNull
   public Task<Void> signInTester() {
-
     if (signInStorage.getSignInStatus()) {
       LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
       return Tasks.forResult(null);
@@ -140,6 +138,7 @@ class TesterSignInManager {
       firebaseInstallationsApiProvider
           .get()
           .getId()
+          .addOnFailureListener(handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
           .onSuccessTask(combineWithResultOf(lifecycleNotifier.getForegroundActivity()))
           .addOnSuccessListener(
               fidAndActivity -> {
@@ -148,16 +147,20 @@ class TesterSignInManager {
                   hasBeenSentToBrowserForCurrentTask = true;
                 }
               })
-          .addOnFailureListener(
-              e -> {
-                LogWrapper.getInstance().e(TAG + "Fid retrieval failed.", e);
-                setSignInTaskCompletionError(
-                    new FirebaseAppDistributionException(
-                        ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE, e));
-              });
+          // No failures expected here, since getForegroundActivity() will wait indefinitely for a
+          // foreground activity, but catch any unexpected failures to be safe.
+          .addOnFailureListener(handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
 
       return signInTaskCompletionSource.getTask();
     }
+  }
+
+  private OnFailureListener handleTaskFailure(String message, Status status) {
+    return e -> {
+      LogWrapper.getInstance().e(TAG + message, e);
+      setSignInTaskCompletionError(
+          new FirebaseAppDistributionException(message, status, e));
+    };
   }
 
   private boolean awaitingResultFromBrowser() {
@@ -168,15 +171,15 @@ class TesterSignInManager {
     }
   }
 
-  private void setSuccessfulSignInResult() {
-    synchronized (signInTaskLock) {
-      safeSetTaskResult(signInTaskCompletionSource, null);
-    }
-  }
-
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
     synchronized (signInTaskLock) {
       safeSetTaskException(signInTaskCompletionSource, e);
+    }
+  }
+
+  private void setSuccessfulSignInResult() {
+    synchronized (signInTaskLock) {
+      safeSetTaskResult(signInTaskCompletionSource, null);
     }
   }
 
@@ -207,7 +210,6 @@ class TesterSignInManager {
       intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       customTabsIntent.launchUrl(activity, uri);
-
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
