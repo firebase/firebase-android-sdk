@@ -31,8 +31,8 @@ final class TestUtils {
   }
 
   static void assertTaskFailure(
-      UpdateTask updateTask, Status status, String messageSubstring, Throwable cause) {
-    assertTaskFailure(updateTask, status, messageSubstring);
-    assertThat(updateTask.getException()).hasCauseThat().isEqualTo(cause);
+      Task task, Status status, String messageSubstring, Throwable cause) {
+    assertTaskFailure(task, status, messageSubstring);
+    assertThat(task.getException()).hasCauseThat().isEqualTo(cause);
   }
 }

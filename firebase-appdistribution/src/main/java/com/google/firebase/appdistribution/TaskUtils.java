@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution;
 
-import android.app.Activity;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -88,15 +87,18 @@ class TaskUtils {
   }
 
   /**
-   * An @{link AutoValue} class to hold the result of two Tasks, combined using {@link #combineWithResultOf}.
-
+   * An @{link AutoValue} class to hold the result of two Tasks, combined using {@link
+   * #combineWithResultOf}.
+   *
    * @param <T1> The result type of the first task
    * @param <T2> The result type of the second task
    */
   @AutoValue
-  static abstract class CombinedTaskResults<T1, T2> {
+  abstract static class CombinedTaskResults<T1, T2> {
     abstract T1 first();
+
     abstract T2 second();
+
     static <T1, T2> CombinedTaskResults<T1, T2> create(T1 first, T2 second) {
       return new AutoValue_TaskUtils_CombinedTaskResults(first, second);
     }
@@ -111,18 +113,20 @@ class TaskUtils {
    * of its variations.
    *
    * <p>Usage:
+   *
    * <pre>{@code
-   *   runFirstAsyncTask()
-   *     .onSuccessTask(combineWithResultOf(runSecondAsyncTask())
-   *     .addOnSuccessListener(
-   *         results ->
-   *             doSomethingWithBothResults(results.result1(), results.result2()));
+   * runFirstAsyncTask()
+   *   .onSuccessTask(combineWithResultOf(runSecondAsyncTask())
+   *   .addOnSuccessListener(
+   *       results ->
+   *           doSomethingWithBothResults(results.result1(), results.result2()));
    * }</pre>
    *
    * @param secondTask The next task to run
    * @param <T1> The result type of the first task
    * @param <T2> The result type of the second task
-   * @return A {@link SuccessContinuation} that will return a new task with result type {@link CombinedTaskResults}, combining the results of both tasks
+   * @return A {@link SuccessContinuation} that will return a new task with result type {@link
+   *     CombinedTaskResults}, combining the results of both tasks
    */
   static <T1, T2> SuccessContinuation<T1, CombinedTaskResults<T1, T2>> combineWithResultOf(
       Task<T2> secondTask) {

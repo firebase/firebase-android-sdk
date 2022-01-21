@@ -91,8 +91,7 @@ class TesterSignInManager {
   @VisibleForTesting
   void onActivityCreated(Activity activity) {
     // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
-    // result
-    // of the signIn Task in the onActivityCreated callback
+    // result of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
       LogWrapper.getInstance().v("Sign in completed");
       this.setSuccessfulSignInResult();
@@ -138,7 +137,8 @@ class TesterSignInManager {
       firebaseInstallationsApiProvider
           .get()
           .getId()
-          .addOnFailureListener(handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
+          .addOnFailureListener(
+              handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
           .onSuccessTask(combineWithResultOf(lifecycleNotifier.getForegroundActivity()))
           .addOnSuccessListener(
               fidAndActivity -> {
@@ -158,8 +158,7 @@ class TesterSignInManager {
   private OnFailureListener handleTaskFailure(String message, Status status) {
     return e -> {
       LogWrapper.getInstance().e(TAG + message, e);
-      setSignInTaskCompletionError(
-          new FirebaseAppDistributionException(message, status, e));
+      setSignInTaskCompletionError(new FirebaseAppDistributionException(message, status, e));
     };
   }
 
