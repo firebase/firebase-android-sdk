@@ -332,7 +332,7 @@ public class FirebaseAppDistribution {
     if (activity.isChangingConfigurations()) {
       remakeSignInConfirmationDialog =
           signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
-      remakeUpdateDialog = (updateDialog != null && updateDialog.isShowing());
+      remakeUpdateDialog = updateDialog != null && updateDialog.isShowing();
       dismissDialogs();
       return;
     }
@@ -353,10 +353,11 @@ public class FirebaseAppDistribution {
   void onActivityCreated(Activity activity) {
     if (remakeSignInConfirmationDialog) {
       remakeSignInConfirmationDialog = false;
-      signInConfirmationDialog.show();
+        showSignInConfirmationDialog(activity);
     } else if (remakeUpdateDialog) {
       remakeUpdateDialog = false;
-      updateDialog.show();
+      showUpdateAlertDialog(
+              activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
     }
   }
 
