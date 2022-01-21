@@ -78,7 +78,7 @@ public class FieldIndexTest {
   }
 
   @Test
-  public void comparatorIncludesSegmentsLength() {
+  public void comparatorIncludesSegmentLength() {
     FieldIndex indexOriginal = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexSame = fieldIndex("collA", "a", FieldIndex.Segment.Kind.ASCENDING);
     FieldIndex indexDifferent =
