@@ -75,6 +75,17 @@ public class CompositeFilter extends Filter {
   }
 
   /**
+   * Returns true if this filter is a conjunction of field filters only. Returns false otherwise.
+   */
+  public boolean isFlatConjunction() {
+    if (operator != Operator.AND) return false;
+    for (Filter filter : filters) {
+      if (filter instanceof CompositeFilter) return false;
+    }
+    return true;
+  }
+
+  /**
    * Performs a depth-first search to find and return the first FieldFilter in the composite filter
    * that satisfies the condition. Returns {@code null} if none of the FieldFilters satisfy the
    * condition.
