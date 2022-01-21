@@ -27,7 +27,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 val Firebase.appDistribution: FirebaseAppDistribution
     get() = FirebaseAppDistribution.getInstance()
 
-internal const val LIBRARY_NAME: String = "fire-app-distribution-ktx"
+internal const val LIBRARY_NAME: String = "fire-appdistribution-ktx"
 
 /** @suppress */
 @Keep
