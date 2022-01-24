@@ -158,14 +158,12 @@ public class IndexBackfiller {
     return IndexOffset.create(
         maxOffset.getReadTime(),
         maxOffset.getDocumentKey(),
-        Math.max(lookupResult.getLargestBatchId(), existingOffset.getLargestBatchId()));
+        Math.max(lookupResult.getBatchId(), existingOffset.getLargestBatchId()));
   }
 
   /** Returns the lowest offset for the provided index group. */
   private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
-    if (fieldIndexes.isEmpty()) {
-      return IndexOffset.NONE;
-    }
+    hardAssert(!fieldIndexes.isEmpty(), "Updating collection without indexes");
 
     Iterator<FieldIndex> it = fieldIndexes.iterator();
     IndexOffset minOffset = it.next().getIndexState().getOffset();

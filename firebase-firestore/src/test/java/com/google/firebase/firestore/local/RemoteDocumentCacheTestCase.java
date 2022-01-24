@@ -207,7 +207,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(12), -1));
+        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(12), -1));
     assertThat(results.values()).containsExactly(doc("b/new", 3, DOC_DATA));
   }
 
@@ -219,7 +219,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1, 2), -1));
+        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(1, 2), -1));
     assertThat(results.values()).containsExactly(doc("b/new", 1, DOC_DATA));
   }
 
@@ -243,7 +243,7 @@ abstract class RemoteDocumentCacheTestCase {
 
     ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(1), -1));
+        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(1), -1));
     assertThat(results.values()).containsExactly(doc("b/old", 1, DOC_DATA));
   }
 

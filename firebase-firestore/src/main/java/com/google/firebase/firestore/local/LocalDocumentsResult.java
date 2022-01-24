@@ -18,18 +18,23 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 
-/** The result of a applying local mutations. */
+/**
+ * Represents a set of document along with their mutation batch ID.
+ *
+ * <p>This class is used when applying mutations to the local store and to propagate document
+ * updates to the indexing table.
+ */
 public final class LocalDocumentsResult {
-  private final int largestBatchId;
+  private final int batchId;
   private final ImmutableSortedMap<DocumentKey, Document> documents;
 
-  LocalDocumentsResult(int largestBatchId, ImmutableSortedMap<DocumentKey, Document> documents) {
-    this.largestBatchId = largestBatchId;
+  LocalDocumentsResult(int batchId, ImmutableSortedMap<DocumentKey, Document> documents) {
+    this.batchId = batchId;
     this.documents = documents;
   }
 
-  public int getLargestBatchId() {
-    return largestBatchId;
+  public int getBatchId() {
+    return batchId;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocuments() {

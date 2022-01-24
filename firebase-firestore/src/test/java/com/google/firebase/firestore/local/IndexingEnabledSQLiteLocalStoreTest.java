@@ -20,10 +20,12 @@ import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
+import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -55,7 +57,7 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
   }
 
   @Test
-  public void testConfiguresIndexes() {
+  public void testAddsIndexes() {
     FieldIndex indexA = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "a", Kind.ASCENDING);
     FieldIndex indexB = fieldIndex("coll", 1, FieldIndex.INITIAL_STATE, "b", Kind.DESCENDING);
     FieldIndex indexC =
@@ -68,6 +70,50 @@ public class IndexingEnabledSQLiteLocalStoreTest extends SQLiteLocalStoreTest {
     configureFieldIndexes(Arrays.asList(indexA, indexC));
     fieldIndexes = getFieldIndexes();
     assertThat(fieldIndexes).containsExactly(indexA, indexC);
+  }
+
+  @Test
+  public void testRemovesIndexes() {
+    FieldIndex indexA = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "a", Kind.ASCENDING);
+    FieldIndex indexB = fieldIndex("coll", 1, FieldIndex.INITIAL_STATE, "b", Kind.DESCENDING);
+
+    configureFieldIndexes(Arrays.asList(indexA, indexB));
+    Collection<FieldIndex> fieldIndexes = getFieldIndexes();
+    assertThat(fieldIndexes).containsExactly(indexA, indexB);
+
+    configureFieldIndexes(singletonList(indexA));
+    fieldIndexes = getFieldIndexes();
+    assertThat(fieldIndexes).containsExactly(indexA);
+  }
+
+  @Test
+  public void testDoesNotResetIndexWhenSameIndexIsAdded() {
+    FieldIndex indexA = fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "a", Kind.ASCENDING);
+
+    configureFieldIndexes(singletonList(indexA));
+    Collection<FieldIndex> fieldIndexes = getFieldIndexes();
+    assertThat(fieldIndexes).containsExactly(indexA);
+
+    Query query = query("coll").filter(filter("a", "==", 1));
+    int targetId = allocateQuery(query);
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("a", 1)), targetId));
+
+    backfillIndexes();
+    FieldIndex updatedIndexA =
+        fieldIndex(
+            "coll",
+            0,
+            FieldIndex.IndexState.create(1, version(10), key("coll/a"), -1),
+            "a",
+            Kind.ASCENDING);
+
+    fieldIndexes = getFieldIndexes();
+    assertThat(fieldIndexes).containsExactly(updatedIndexA);
+
+    // Re-add the same index. We do not reset the index to its initial state.
+    configureFieldIndexes(singletonList(indexA));
+    fieldIndexes = getFieldIndexes();
+    assertThat(fieldIndexes).containsExactly(updatedIndexA);
   }
 
   @Test

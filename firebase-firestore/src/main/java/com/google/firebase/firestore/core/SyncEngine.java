@@ -275,7 +275,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     assertCallback("writeMutations");
 
     LocalDocumentsResult result = localStore.writeLocally(mutations);
-    addUserCallback(result.getLargestBatchId(), userTask);
+    addUserCallback(result.getBatchId(), userTask);
 
     emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /*remoteEvent=*/ null);
     remoteStore.fillWritePipeline();

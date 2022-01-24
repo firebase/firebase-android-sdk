@@ -450,7 +450,7 @@ public class SQLiteSchemaTest {
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
-    results = remoteDocumentCache.getAll(path("coll"), IndexOffset.create(version(2), -1));
+    results = remoteDocumentCache.getAll(path("coll"), IndexOffset.createSuccessor(version(2), -1));
     assertResultsContain(results, "coll/new");
   }
 

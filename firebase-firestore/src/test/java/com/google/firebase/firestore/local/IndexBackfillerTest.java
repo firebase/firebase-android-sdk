@@ -30,6 +30,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -365,58 +366,38 @@ public class IndexBackfillerTest {
 
   @Test
   public void testBackfillUpdatesExistingDocToNewValue() {
-    backfiller.setMaxDocumentsToProcess(1);
-    addFieldIndex("coll1", "foo");
-    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+    Query queryA = query("coll").filter(filter("foo", "==", 2));
+    addFieldIndex("coll", "foo");
 
-    addDoc("coll1/docA", version(10), "foo", 1);
+    addDoc("coll/doc", version(10), "foo", 1);
+
     int documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    Target target = query("coll1").filter(filter("foo", "==", 2)).toTarget();
-    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
-    assertEquals(0, matching.size());
+    verifyQueryResults(queryA);
 
     // Update doc to new remote version with new value.
-    addDoc("coll1/docA", version(40), "foo", 2);
+    addDoc("coll/doc", version(40), "foo", 2);
     documentsProcessed = backfiller.backfill();
-    assertEquals(1, documentsProcessed);
-    matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
-    assertEquals(1, matching.size());
+
+    verifyQueryResults(queryA, "coll/doc");
   }
 
   @Test
   public void testBackfillUpdatesDocsThatNoLongerMatch() {
-    backfiller.setMaxDocumentsToProcess(1);
-    addFieldIndex("coll1", "foo");
-    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll1").iterator().next();
+    Query queryA = query("coll").filter(filter("foo", ">", 0));
+    addFieldIndex("coll", "foo");
+    addDoc("coll/doc", version(10), "foo", 1);
 
-    addDoc("coll1/docA", version(10), "foo", 1);
     int documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    Target target = query("coll1").filter(filter("foo", ">", 0)).toTarget();
-    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
-    assertEquals(1, matching.size());
+    verifyQueryResults(queryA, "coll/doc");
 
     // Update doc to new remote version with new value that doesn't match field index.
-    addDoc("coll1/docA", version(40), "foo", -1);
+    addDoc("coll/doc", version(40), "foo", -1);
+
     documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
-    matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
-    assertTrue(matching.isEmpty());
-  }
-
-  @Test
-  public void testBackfillUpdatesToLatestReadTimeInCollection() {
-    // check that offset is set to rdc latest read time if no docs match current coll
-    addFieldIndex("coll1", "foo");
-    addDoc("coll1/doc", version(5), "foo", 1);
-
-    int documentsProcessed = backfiller.backfill();
-    assertEquals(1, documentsProcessed);
-
-    // Offset should be set to latest read time in the cache if no documents were indexed.
-    Iterator<FieldIndex> it = indexManager.getFieldIndexes("coll1").iterator();
-    assertEquals(version(5), it.next().getIndexState().getOffset().getReadTime());
+    verifyQueryResults(queryA);
   }
 
   @Test
@@ -434,7 +415,7 @@ public class IndexBackfillerTest {
   }
 
   @Test
-  public void testBackfillAppliesOverlayToRemoteDoc() {
+  public void testBackfillAppliesSetToRemoteDoc() {
     addFieldIndex("coll", "foo");
     addDoc("coll/doc", version(5), "boo", 1);
 
@@ -446,14 +427,35 @@ public class IndexBackfillerTest {
     documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
 
-    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll").iterator().next();
-    Target target = query("coll").filter(filter("foo", "==", 1)).toTarget();
-    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
-    assertEquals(1, matching.size());
+    verifyQueryResults("coll", "coll/doc");
   }
 
   @Test
-  public void testBackfillAppliesDeleteMutationOnRemoteDoc() {
+  public void testBackfillAppliesPatchToRemoteDoc() {
+    Query queryA = query("coll").orderBy(orderBy("a"));
+    Query queryB = query("coll").orderBy(orderBy("b"));
+
+    addFieldIndex("coll", "a");
+    addFieldIndex("coll", "b");
+    addDoc("coll/doc", version(5), "a", 1);
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+
+    verifyQueryResults(queryA, "coll/doc");
+    verifyQueryResults(queryB);
+
+    Mutation patch = patchMutation("coll/doc", map("b", 1));
+    addMutationToOverlay("coll/doc", patch);
+    documentsProcessed = backfiller.backfill();
+    assertEquals(1, documentsProcessed);
+
+    verifyQueryResults(queryA, "coll/doc");
+    verifyQueryResults(queryB, "coll/doc");
+  }
+
+  @Test
+  public void testBackfillAppliesDeleteToRemoteDoc() {
     addFieldIndex("coll", "foo");
     addDoc("coll/doc", version(5), "foo", 1);
 
@@ -469,6 +471,28 @@ public class IndexBackfillerTest {
     Target target = query("coll").filter(filter("foo", "==", 2)).toTarget();
     Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
     assertTrue(matching.isEmpty());
+  }
+
+  @Test
+  public void testReindexesDocumentsWhenNewIndexIsAdded() {
+    Query queryA = query("coll").orderBy(orderBy("a"));
+    Query queryB = query("coll").orderBy(orderBy("b"));
+
+    addFieldIndex("coll", "a");
+    addDoc("coll/doc1", version(1), "a", 1);
+    addDoc("coll/doc2", version(1), "b", 1);
+
+    int documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+    verifyQueryResults(queryA, "coll/doc1");
+    verifyQueryResults(queryB);
+
+    addFieldIndex("coll", "b");
+    documentsProcessed = backfiller.backfill();
+    assertEquals(2, documentsProcessed);
+
+    verifyQueryResults(queryA, "coll/doc1");
+    verifyQueryResults(queryB, "coll/doc2");
   }
 
   private void addFieldIndex(String collectionGroup, String fieldName) {
@@ -499,12 +523,20 @@ public class IndexBackfillerTest {
     indexManager.addFieldIndex(fieldIndex);
   }
 
-  private void verifyQueryResults(String collectionGroup, String... expectedKeys) {
-    Target target = query(collectionGroup).orderBy(orderBy("foo")).toTarget();
+  private void verifyQueryResults(Query query, String... expectedKeys) {
+    Target target = query.toTarget();
     FieldIndex persistedIndex = indexManager.getFieldIndex(target);
-    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
-    assertThat(actualKeys)
-        .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
+    if (persistedIndex != null) {
+      Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
+      assertThat(actualKeys)
+          .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
+    } else {
+      assertEquals(0, expectedKeys.length);
+    }
+  }
+
+  private void verifyQueryResults(String collectionGroup, String... expectedKeys) {
+    verifyQueryResults(query(collectionGroup).orderBy(orderBy("foo")), expectedKeys);
   }
 
   /** Creates a document and adds it to the RemoteDocumentCache. */

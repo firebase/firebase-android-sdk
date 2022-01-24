@@ -24,6 +24,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -86,7 +87,7 @@ class LocalDocumentsView {
    */
   Document getDocument(DocumentKey key) {
     Overlay overlay = documentOverlayCache.getOverlay(key);
-    MutableDocument document = createBaseDocument(key, overlay);
+    MutableDocument document = getBaseDocument(key, overlay);
     if (overlay != null) {
       overlay.getMutation().applyToLocalView(document, null, Timestamp.now());
     }
@@ -265,7 +266,7 @@ class LocalDocumentsView {
    * @param collectionGroup The collection group for the documents.
    * @param offset The offset to index into.
    * @param count The number of documents to return
-   * @return A LocalDocumentsRResult with the documents that follow the provided offset and the last
+   * @return A LocalDocumentsResult with the documents that follow the provided offset and the last
    *     processed batch id.
    */
   LocalDocumentsResult getNextDocuments(String collectionGroup, IndexOffset offset, int count) {
@@ -277,11 +278,15 @@ class LocalDocumentsView {
                 collectionGroup, offset.getLargestBatchId(), count - docs.size())
             : Collections.emptyMap();
 
-    int largestBatchId = -1;
+    int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
     for (Overlay overlay : overlays.values()) {
       if (!docs.containsKey(overlay.getKey())) {
-        docs.put(overlay.getKey(), createBaseDocument(overlay.getKey(), overlay));
+        docs.put(overlay.getKey(), getBaseDocument(overlay.getKey(), overlay));
       }
+      // The callsite will use the largest batch ID together with the latest read time to create
+      // a new index offset. Since we only process batch IDs if all remote documents have been read,
+      // no overlay will increase the overall read time. This is why we only need to special case
+      // the batch id.
       largestBatchId = Math.max(largestBatchId, overlay.getLargestBatchId());
     }
 
@@ -322,7 +327,7 @@ class LocalDocumentsView {
   }
 
   /** Returns a base document that can be used to apply `overlay`. */
-  private MutableDocument createBaseDocument(DocumentKey key, @Nullable Overlay overlay) {
+  private MutableDocument getBaseDocument(DocumentKey key, @Nullable Overlay overlay) {
     return (overlay == null || overlay.getMutation() instanceof PatchMutation)
         ? remoteDocumentCache.get(key)
         : MutableDocument.newInvalidDocument(key);

@@ -144,7 +144,7 @@ public abstract class LocalStoreTestCase {
     LocalDocumentsResult result = localStore.writeLocally(mutations);
     batches.add(
         new MutationBatch(
-            result.getLargestBatchId(), Timestamp.now(), Collections.emptyList(), mutations));
+            result.getBatchId(), Timestamp.now(), Collections.emptyList(), mutations));
     lastChanges = result.getDocuments();
   }
 

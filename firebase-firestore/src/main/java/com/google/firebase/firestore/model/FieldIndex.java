@@ -141,7 +141,7 @@ public abstract class FieldIndex {
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime}.
      */
-    public static IndexOffset create(SnapshotVersion readTime, int largestBatchId) {
+    public static IndexOffset createSuccessor(SnapshotVersion readTime, int largestBatchId) {
       // We want to create an offset that matches all documents with a read time greater than
       // the provided read time. To do so, we technically need to create an offset for
       // `(readTime, MAX_DOCUMENT_KEY)`. While we could use Unicode codepoints to generate
