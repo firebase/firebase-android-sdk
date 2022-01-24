@@ -124,45 +124,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
-  public void testUsesIndexes() {
-    FieldIndex index =
-        fieldIndex(
-            "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
-    configureFieldIndexes(singletonList(index));
-
-    Query query = query("coll").filter(filter("matches", "==", true));
-    int targetId = allocateQuery(query);
-
-    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
-
-    backfillIndexes();
-
-    executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 0);
-    assertQueryReturned("coll/a");
-  }
-
-  @Test
-  public void testUsesPartialIndexesWhenAvailable() {
-    FieldIndex index =
-        fieldIndex(
-            "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
-    configureFieldIndexes(singletonList(index));
-
-    Query query = query("coll").filter(filter("matches", "==", true));
-    int targetId = allocateQuery(query);
-
-    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
-    backfillIndexes();
-
-    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 20, map("matches", true)), targetId));
-
-    executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 1);
-    assertQueryReturned("coll/a", "coll/b");
-  }
-
-  @Test
   public void testDeletedDocumentRemovesIndex() {
     FieldIndex index =
         fieldIndex(
@@ -188,6 +149,25 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 0);
     assertQueryReturned();
+  }
+
+  @Test
+  public void testUsesIndexes() {
+    FieldIndex index =
+            fieldIndex(
+                    "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 0);
+    assertQueryReturned("coll/a");
   }
 
   @Test
