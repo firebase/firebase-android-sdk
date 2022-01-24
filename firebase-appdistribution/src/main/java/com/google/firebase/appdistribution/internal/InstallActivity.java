@@ -76,6 +76,7 @@ public class InstallActivity extends AppCompatActivity {
     startAndroidPackageInstallerIntent();
   }
 
+  @Override
   protected void onDestroy() {
     super.onDestroy();
     if (enableUnknownSourcesDialog.isShowing()) {
