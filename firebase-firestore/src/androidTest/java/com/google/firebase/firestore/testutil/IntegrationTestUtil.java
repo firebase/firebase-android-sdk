@@ -38,7 +38,6 @@ import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -254,8 +253,6 @@ public class IntegrationTestUtil {
       String persistenceKey) {
     // This unfortunately is a global setting that affects existing Firestore clients.
     Logger.setLogLevel(logLevel);
-
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
 
     Context context = ApplicationProvider.getApplicationContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);

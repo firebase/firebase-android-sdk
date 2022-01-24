@@ -72,13 +72,11 @@ public class IndexBackfiller {
 
     @Override
     public void start() {
-      hardAssert(Persistence.INDEXING_SUPPORT_ENABLED, "Indexing support not enabled");
       scheduleBackfill();
     }
 
     @Override
     public void stop() {
-      hardAssert(Persistence.INDEXING_SUPPORT_ENABLED, "Indexing support not enabled");
       if (backfillTask != null) {
         backfillTask.cancel();
       }

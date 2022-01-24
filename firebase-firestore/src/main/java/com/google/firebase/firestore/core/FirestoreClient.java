@@ -74,9 +74,9 @@ public final class FirestoreClient {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private IndexBackfiller indexBackfiller;
 
   // LRU-related
+  @Nullable private Scheduler indexBackfillScheduler;
   @Nullable private Scheduler gcScheduler;
 
   public FirestoreClient(
@@ -155,9 +155,8 @@ public final class FirestoreClient {
           if (gcScheduler != null) {
             gcScheduler.stop();
           }
-
-          if (Persistence.INDEXING_SUPPORT_ENABLED) {
-            indexBackfiller.getScheduler().stop();
+          if (indexBackfillScheduler != null) {
+            indexBackfillScheduler.stop();
           }
         });
   }
@@ -277,14 +276,15 @@ public final class FirestoreClient {
     remoteStore = provider.getRemoteStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
-    indexBackfiller = provider.getIndexBackfiller();
+    IndexBackfiller indexBackfiller = provider.getIndexBackfiller();
 
     if (gcScheduler != null) {
       gcScheduler.start();
     }
 
-    if (Persistence.INDEXING_SUPPORT_ENABLED && settings.isPersistenceEnabled()) {
-      indexBackfiller.getScheduler().start();
+    if (indexBackfiller != null) {
+      indexBackfillScheduler = indexBackfiller.getScheduler();
+      indexBackfillScheduler.start();
     }
   }
 

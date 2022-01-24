@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
-import com.google.firebase.firestore.util.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,10 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 15;
-
-  // TODO(indexing): Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
+  static final int VERSION = 16;
 
   /**
    * The batch size for data migrations.
@@ -77,11 +73,7 @@ class SQLiteSchema {
   }
 
   void runSchemaUpgrades(int fromVersion) {
-    int toVersion = VERSION;
-    if (Persistence.INDEXING_SUPPORT_ENABLED) {
-      toVersion = INDEXING_SUPPORT_VERSION;
-    }
-    runSchemaUpgrades(fromVersion, toVersion);
+    runSchemaUpgrades(fromVersion, VERSION);
   }
 
   /**
@@ -183,6 +175,10 @@ class SQLiteSchema {
       ensureReadTime();
     }
 
+    if (fromVersion < 16 && toVersion >= 16) {
+      createFieldIndex();
+    }
+
     /*
      * Adding a new schema upgrade? READ THIS FIRST!
      *
@@ -195,11 +191,6 @@ class SQLiteSchema {
      *    maintained invariants from later versions, so migrations that update values cannot assume
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
-
-    if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
-      Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createFieldIndex();
-    }
 
     Logger.debug(
         "SQLiteSchema",
