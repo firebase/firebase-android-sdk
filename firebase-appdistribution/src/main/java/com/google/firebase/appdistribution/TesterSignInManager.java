@@ -107,11 +107,13 @@ class TesterSignInManager {
       return;
     } else {
       // Throw error if app reentered during sign in
-      if (awaitingResultFromBrowser()) {
-        LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
-        setSignInTaskCompletionError(
-            new FirebaseAppDistributionException(
-                Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+      synchronized (signInTaskLock) {
+        if (awaitingResultFromBrowser()) {
+          LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+          setSignInTaskCompletionError(
+              new FirebaseAppDistributionException(
+                  Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+        }
       }
     }
   }
@@ -139,7 +141,7 @@ class TesterSignInManager {
           .getId()
           .addOnFailureListener(
               handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
-          .onSuccessTask(combineWithResultOf(lifecycleNotifier.getForegroundActivity()))
+          .onSuccessTask(combineWithResultOf(() -> lifecycleNotifier.getForegroundActivity()))
           .addOnSuccessListener(
               fidAndActivity -> {
                 synchronized (signInTaskLock) {

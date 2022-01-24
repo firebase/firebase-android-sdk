@@ -19,7 +19,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.util.concurrent.Executor;
@@ -27,8 +26,17 @@ import java.util.concurrent.Executor;
 class TaskUtils {
   private static final String TAG = "TaskUtils:";
 
+  /**
+   * A functional interface to wrap a function that returns some result of a possibly long-running
+   * operation, and could potentially throw a {@link FirebaseAppDistributionException}.
+   */
   interface Operation<TResult> {
     TResult run() throws FirebaseAppDistributionException;
+  }
+
+  /** A functional interface to wrap a function that produces a {@link Task}. */
+  interface TaskSource<TResult> {
+    Task<TResult> get();
   }
 
   /**
@@ -53,10 +61,8 @@ class TaskUtils {
         () -> {
           try {
             taskCompletionSource.setResult(operation.run());
-          } catch (FirebaseAppDistributionException e) {
-            taskCompletionSource.setException(e);
           } catch (Throwable t) {
-            taskCompletionSource.setException(wrapException(t));
+            taskCompletionSource.setException(FirebaseAppDistributionException.wrap(t));
           }
         });
     return taskCompletionSource.getTask();
@@ -81,7 +87,7 @@ class TaskUtils {
       LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
       return e instanceof FirebaseAppDistributionException
           ? task
-          : Tasks.forException(wrapException(e));
+          : Tasks.forException(FirebaseAppDistributionException.wrap(e));
     }
     return task;
   }
@@ -116,28 +122,26 @@ class TaskUtils {
    *
    * <pre>{@code
    * runFirstAsyncTask()
-   *   .onSuccessTask(combineWithResultOf(runSecondAsyncTask())
+   *   .onSuccessTask(combineWithResultOf(() -> startSecondAsyncTask())
    *   .addOnSuccessListener(
    *       results ->
    *           doSomethingWithBothResults(results.result1(), results.result2()));
    * }</pre>
    *
-   * @param secondTask The next task to run
+   * @param secondTaskSource A {@link TaskSource} providing the next task to run
    * @param <T1> The result type of the first task
    * @param <T2> The result type of the second task
    * @return A {@link SuccessContinuation} that will return a new task with result type {@link
    *     CombinedTaskResults}, combining the results of both tasks
    */
   static <T1, T2> SuccessContinuation<T1, CombinedTaskResults<T1, T2>> combineWithResultOf(
-      Task<T2> secondTask) {
+      TaskSource<T2> secondTaskSource) {
     return firstResult ->
-        secondTask.onSuccessTask(
-            secondResult -> Tasks.forResult(CombinedTaskResults.create(firstResult, secondResult)));
-  }
-
-  private static FirebaseAppDistributionException wrapException(Throwable t) {
-    return new FirebaseAppDistributionException(
-        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, t);
+        secondTaskSource
+            .get()
+            .onSuccessTask(
+                secondResult ->
+                    Tasks.forResult(CombinedTaskResults.create(firstResult, secondResult)));
   }
 
   static void safeSetTaskException(TaskCompletionSource taskCompletionSource, Exception e) {
