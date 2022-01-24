@@ -114,6 +114,7 @@ public class FirebaseAppDistributionTest {
   @Mock private AabUpdater mockAabUpdater;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  private TestActivity mockedActivity;
 
   static class TestActivity extends Activity {}
 
@@ -165,7 +166,7 @@ public class FirebaseAppDistributionTest {
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
 
-    activity = Robolectric.buildActivity(TestActivity.class).create().get();
+    activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
@@ -449,6 +450,35 @@ public class FirebaseAppDistributionTest {
     // Update flow
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.DOWNLOADING, progressEvents.get(0).getUpdateStatus());
+  }
+
+  @Test
+  public void signInConfirmationDialogReappears_whenScreenRotates_whenSignInDialogShowing() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    when(activity.isChangingConfigurations()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity dying
+    firebaseAppDistribution.onActivityDestroyed(activity);
+    firebaseAppDistribution.onActivityCreated(activity);
+
+    assertAlertDialogShown();
+  }
+
+  @Test
+  public void updateDialogReappears_whenScreenRotates_whenSignInDialogShowing() {
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    when(activity.isChangingConfigurations()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity dying
+    firebaseAppDistribution.onActivityDestroyed(activity);
+    firebaseAppDistribution.onActivityCreated(activity);
+
+    assertAlertDialogShown();
   }
 
   @Test
