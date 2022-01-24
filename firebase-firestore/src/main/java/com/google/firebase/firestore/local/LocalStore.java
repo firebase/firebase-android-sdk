@@ -175,17 +175,16 @@ public final class LocalStore implements BundleCallback {
   }
 
   private void initializeUserComponents(User user) {
+    // TODO(indexing): Add spec tests that test these components change after a user change
     indexManager = persistence.getIndexManager(user);
     mutationQueue = persistence.getMutationQueue(user, indexManager);
     documentOverlayCache = persistence.getDocumentOverlay(user);
-
-    // Recreate our LocalDocumentsView using the new MutationQueue.
     localDocuments =
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
+
+    remoteDocuments.setIndexManager(indexManager);
     queryEngine.initialize(localDocuments, indexManager);
 
-    // TODO(indexing): Add spec tests that test these components change after a user change
-    remoteDocuments.setIndexManager(indexManager);
     if (indexBackfiller != null) {
       indexBackfiller.setIndexManager(indexManager);
       indexBackfiller.setLocalDocumentsView(localDocuments);
