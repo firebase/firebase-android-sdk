@@ -154,8 +154,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   @Test
   public void testUsesIndexes() {
     FieldIndex index =
-            fieldIndex(
-                    "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
+        fieldIndex(
+            "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
 
     Query query = query("coll").filter(filter("matches", "==", true));
