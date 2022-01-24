@@ -64,6 +64,8 @@ public class FirebaseAppDistribution {
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateDialog;
   private AlertDialog signInConfirmationDialog;
+  private boolean remakeUpdateDialog = false;
+  private boolean remakeSignInConfirmationDialog = false;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -83,6 +85,7 @@ public class FirebaseAppDistribution {
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
+    lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
   }
 
   /** Constructor for FirebaseAppDistribution */
@@ -326,6 +329,14 @@ public class FirebaseAppDistribution {
       // SignInResult is internal to the SDK and is destroyed after creation
       return;
     }
+    if (activity.isChangingConfigurations()) {
+      remakeSignInConfirmationDialog =
+          signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+      remakeUpdateDialog = updateDialog != null && updateDialog.isShowing();
+      dismissDialogs();
+      return;
+    }
+
     if (signInConfirmationDialog != null && signInConfirmationDialog.isShowing()) {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
@@ -336,6 +347,19 @@ public class FirebaseAppDistribution {
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    }
+  }
+
+  void onActivityCreated(Activity activity) {
+    if (remakeSignInConfirmationDialog) {
+      remakeSignInConfirmationDialog = false;
+      showSignInConfirmationDialog(activity);
+    } else if (remakeUpdateDialog) {
+      remakeUpdateDialog = false;
+      synchronized (cachedNewReleaseLock) {
+        showUpdateAlertDialog(
+            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      }
     }
   }
 
