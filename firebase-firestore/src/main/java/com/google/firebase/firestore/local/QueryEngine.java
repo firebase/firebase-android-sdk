@@ -162,7 +162,10 @@ public class QueryEngine {
     }
 
     return appendRemainingResults(
-        previousResults, query, IndexOffset.create(lastLimboFreeSnapshotVersion));
+        previousResults,
+        query,
+        IndexOffset.createSuccessor(
+            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID));
   }
 
   /** Applies the query filter and sorting to the provided documents. */

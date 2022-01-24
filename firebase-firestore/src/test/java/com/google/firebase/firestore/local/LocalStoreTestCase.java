@@ -136,16 +136,16 @@ public abstract class LocalStoreTestCase {
     localStorePersistence.shutdown();
   }
 
-  private void writeMutation(Mutation mutation) {
+  protected void writeMutation(Mutation mutation) {
     writeMutations(asList(mutation));
   }
 
   private void writeMutations(List<Mutation> mutations) {
-    LocalWriteResult result = localStore.writeLocally(mutations);
+    LocalDocumentsResult result = localStore.writeLocally(mutations);
     batches.add(
         new MutationBatch(
             result.getBatchId(), Timestamp.now(), Collections.emptyList(), mutations));
-    lastChanges = result.getChanges();
+    lastChanges = result.getDocuments();
   }
 
   protected void applyRemoteEvent(RemoteEvent event) {
@@ -327,7 +327,7 @@ public abstract class LocalStoreTestCase {
    * Asserts the expected numbers of mutations read by the OverlayQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertOverlaysRead(int byKey, int byCollection) {
+  protected void assertOverlaysRead(int byKey, int byCollection) {
     assertEquals("Overlays read (by key)", byKey, queryEngine.getOverlaysReadByKey());
     assertEquals(
         "Overlays read (by collection)", byCollection, queryEngine.getOverlaysReadByCollection());

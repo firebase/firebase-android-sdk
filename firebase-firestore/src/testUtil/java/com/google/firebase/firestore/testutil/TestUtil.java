@@ -631,9 +631,9 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(
-      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex fieldIndex =
-        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldAndKind);
+        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldsAndKind);
     return fieldIndex;
   }
 

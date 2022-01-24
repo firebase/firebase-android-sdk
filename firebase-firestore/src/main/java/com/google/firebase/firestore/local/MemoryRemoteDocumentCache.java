@@ -37,12 +37,9 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   private ImmutableSortedMap<DocumentKey, Document> docs;
   /** Manages the collection group index. */
   private IndexManager indexManager;
-  /** The latest read time of any document in the cache. */
-  private SnapshotVersion latestReadTime;
 
   MemoryRemoteDocumentCache() {
     docs = emptyDocumentMap();
-    latestReadTime = SnapshotVersion.NONE;
   }
 
   @Override
@@ -57,7 +54,6 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
     docs = docs.insert(document.getKey(), document.mutableCopy().withReadTime(readTime));
-    latestReadTime = readTime.compareTo(latestReadTime) > 0 ? readTime : latestReadTime;
 
     indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
@@ -130,11 +126,6 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     return result;
-  }
-
-  @Override
-  public SnapshotVersion getLatestReadTime() {
-    return latestReadTime;
   }
 
   Iterable<Document> getDocuments() {
