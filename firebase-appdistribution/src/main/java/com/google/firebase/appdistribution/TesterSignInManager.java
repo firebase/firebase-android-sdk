@@ -144,8 +144,14 @@ class TesterSignInManager {
           .onSuccessTask(combineWithResultOf(() -> lifecycleNotifier.getForegroundActivity()))
           .addOnSuccessListener(
               fidAndActivity -> {
+                // Launch the intent outside of the synchronized block because we don't need to wait
+                // for the lock, and we don't want to risk the activity leaving the foreground in
+                // the meantime.
+                openSignInFlowInBrowser(fidAndActivity.first(), fidAndActivity.second());
+                // This synchronized block is required by the @GuardedBy annotation, but is not
+                // practically required in this case because the only reads of this variable are on
+                // the main thread, which this callback is also running on.
                 synchronized (signInTaskLock) {
-                  openSignInFlowInBrowser(fidAndActivity.first(), fidAndActivity.second());
                   hasBeenSentToBrowserForCurrentTask = true;
                 }
               })
