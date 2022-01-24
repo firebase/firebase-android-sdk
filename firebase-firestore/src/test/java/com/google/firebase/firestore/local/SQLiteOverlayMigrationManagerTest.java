@@ -74,7 +74,7 @@ public class SQLiteOverlayMigrationManagerTest {
   }
 
   private void writeMutations(List<Mutation> mutations) {
-    LocalWriteResult result = localStore.writeLocally(mutations);
+    localStore.writeLocally(mutations);
   }
 
   /** Asserts that the given local store contains the given document. */

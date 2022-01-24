@@ -65,14 +65,14 @@ public final class SQLiteRemoteDocumentCacheTest extends RemoteDocumentCacheTest
     addTestDocumentAtPath("a/3", /* updateTime= */ 3, /*  readTime= = */ 13);
 
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll("a", FieldIndex.IndexOffset.create(version(11)), 2);
+        remoteDocumentCache.getAll("a", FieldIndex.IndexOffset.createSuccessor(version(11), -1), 2);
     assertThat(results.keySet()).containsExactly(key("b/2/a/2"), key("a/3"));
   }
 
   @Test
   public void testNextDocumentsFromNonExistingCollectionGroup() {
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll("a", FieldIndex.IndexOffset.create(version(11)), 2);
+        remoteDocumentCache.getAll("a", FieldIndex.IndexOffset.createSuccessor(version(11), -1), 2);
     assertThat(results).isEmpty();
   }
 

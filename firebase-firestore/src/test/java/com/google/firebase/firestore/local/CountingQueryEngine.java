@@ -156,11 +156,6 @@ class CountingQueryEngine extends QueryEngine {
         documentsReadByCollection[0] += result.size();
         return result;
       }
-
-      @Override
-      public SnapshotVersion getLatestReadTime() {
-        return subject.getLatestReadTime();
-      }
     };
   }
 
