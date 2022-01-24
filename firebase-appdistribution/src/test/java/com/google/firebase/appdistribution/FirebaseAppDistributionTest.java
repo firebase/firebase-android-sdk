@@ -58,7 +58,6 @@ import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -450,37 +449,6 @@ public class FirebaseAppDistributionTest {
     // Update flow
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.DOWNLOADING, progressEvents.get(0).getUpdateStatus());
-  }
-
-  @Test
-  public void dialogReappearsOnScreenRotation_whenUpdateDialogShowing() {
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    firebaseAppDistribution.updateIfNewReleaseAvailable();
-
-    // In order to call onDestroy with a changing configuration flag we call recreate
-    // On destroy must be called after because the dialogs are null when recreate calls onDestroy
-    activity.recreate();
-
-    firebaseAppDistribution.onActivityDestroyed(activity);
-    firebaseAppDistribution.onActivityCreated(activity);
-    assertAlertDialogShown();
-  }
-
-  @Test
-  public void dialogReappearsOnScreenRotation_whenSignInDialogShowing() {
-    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
-    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-
-    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-
-    // In order to call onDestroy with a changing configuration flag we call recreate
-    // On destroy must be called after because the dialogs are null when recreate calls onDestroy
-    activity.recreate();
-
-    firebaseAppDistribution.onActivityDestroyed(activity);
-    firebaseAppDistribution.onActivityCreated(activity);
-    assertAlertDialogShown();
   }
 
   @Test

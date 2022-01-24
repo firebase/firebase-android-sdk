@@ -353,11 +353,13 @@ public class FirebaseAppDistribution {
   void onActivityCreated(Activity activity) {
     if (remakeSignInConfirmationDialog) {
       remakeSignInConfirmationDialog = false;
-        showSignInConfirmationDialog(activity);
+      showSignInConfirmationDialog(activity);
     } else if (remakeUpdateDialog) {
       remakeUpdateDialog = false;
-      showUpdateAlertDialog(
-              activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      synchronized (cachedNewReleaseLock) {
+        showUpdateAlertDialog(
+            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      }
     }
   }
 
