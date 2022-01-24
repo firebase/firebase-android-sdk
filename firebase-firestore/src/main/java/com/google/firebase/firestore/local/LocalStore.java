@@ -115,7 +115,7 @@ public final class LocalStore implements BundleCallback {
   private IndexManager indexManager;
 
   /** Manages field index backfill. */
-  private @Nullable IndexBackfiller indexBackfiller;
+  private final @Nullable IndexBackfiller indexBackfiller;
 
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
