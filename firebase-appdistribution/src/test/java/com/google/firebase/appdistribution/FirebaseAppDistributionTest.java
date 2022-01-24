@@ -453,32 +453,34 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void signInConfirmationDialogReappears_whenScreenRotates_whenSignInDialogShowing() {
+  public void updateIfNewReleaseAvailable_whenScreenRotates_signInConfirmationDialogReappears() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(activity.isChangingConfigurations()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Mimic activity dying
+    // Mimic activity recreation due to a configuration change
     firebaseAppDistribution.onActivityDestroyed(activity);
     firebaseAppDistribution.onActivityCreated(activity);
 
     assertAlertDialogShown();
+    assertFalse(updateTask.isComplete());
   }
 
   @Test
-  public void updateDialogReappears_whenScreenRotates_whenSignInDialogShowing() {
+  public void updateIfNewReleaseAvailable_whenScreenRotates_updateDialogReappears() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     when(activity.isChangingConfigurations()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Mimic activity dying
+    // Mimic activity recreation due to a configuration change
     firebaseAppDistribution.onActivityDestroyed(activity);
     firebaseAppDistribution.onActivityCreated(activity);
 
     assertAlertDialogShown();
+    assertFalse(updateTask.isComplete());
   }
 
   @Test
