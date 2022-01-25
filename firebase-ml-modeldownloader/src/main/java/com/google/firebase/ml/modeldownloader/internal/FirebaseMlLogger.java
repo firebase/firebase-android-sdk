@@ -95,7 +95,7 @@ public class FirebaseMlLogger {
 
   @NonNull
   public static FirebaseMlLogger getInstance(@NonNull FirebaseApp app) {
-    return FirebaseApp.getInstance(app.getName()).get(FirebaseMlLogger.class);
+    return app.get(FirebaseMlLogger.class);
   }
 
   void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {

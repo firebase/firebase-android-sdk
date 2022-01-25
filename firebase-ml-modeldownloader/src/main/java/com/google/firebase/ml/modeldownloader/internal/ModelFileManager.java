@@ -64,7 +64,7 @@ public class ModelFileManager {
 
   @NonNull
   public static ModelFileManager getInstance(@NonNull FirebaseApp app) {
-    return FirebaseApp.getInstance(app.getName()).get(ModelFileManager.class);
+    return app.get(ModelFileManager.class);
   }
 
   void deleteNonLatestCustomModels() throws FirebaseMlException {
