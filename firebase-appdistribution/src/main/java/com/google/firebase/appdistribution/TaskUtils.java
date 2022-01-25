@@ -122,17 +122,34 @@ class TaskUtils {
    *
    * <pre>{@code
    * runFirstAsyncTask()
-   *   .onSuccessTask(combineWithResultOf(() -> startSecondAsyncTask())
+   *   .onSuccessTask(executor, combineWithResultOf(executor, () -> startSecondAsyncTask())
    *   .addOnSuccessListener(
+   *       executor,
    *       results ->
    *           doSomethingWithBothResults(results.result1(), results.result2()));
    * }</pre>
    *
+   * @param executor The {@link Executor} to use to call the listener that combines the results
    * @param secondTaskSource A {@link TaskSource} providing the next task to run
    * @param <T1> The result type of the first task
    * @param <T2> The result type of the second task
    * @return A {@link SuccessContinuation} that will return a new task with result type {@link
    *     CombinedTaskResults}, combining the results of both tasks
+   */
+  static <T1, T2> SuccessContinuation<T1, CombinedTaskResults<T1, T2>> combineWithResultOf(
+      Executor executor, TaskSource<T2> secondTaskSource) {
+    return firstResult ->
+        secondTaskSource
+            .get()
+            .onSuccessTask(
+                executor,
+                secondResult ->
+                    Tasks.forResult(CombinedTaskResults.create(firstResult, secondResult)));
+  }
+
+  /**
+   * A version of #combineWithResultsOf that runs the listener that combines the results on the main
+   * thread.
    */
   static <T1, T2> SuccessContinuation<T1, CombinedTaskResults<T1, T2>> combineWithResultOf(
       TaskSource<T2> secondTaskSource) {

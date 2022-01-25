@@ -22,12 +22,14 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 final class TestUtils {
   private TestUtils() {}
 
-  static void assertTaskFailure(Task task, Status status, String messageSubstring) {
+  static FirebaseAppDistributionException assertTaskFailure(
+      Task task, Status status, String messageSubstring) {
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(FirebaseAppDistributionException.class);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertThat(e.getErrorCode()).isEqualTo(status);
     assertThat(e).hasMessageThat().contains(messageSubstring);
+    return e;
   }
 
   static void assertTaskFailure(

@@ -16,10 +16,11 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.appdistribution.TaskUtils.combineWithResultOf;
+import static com.google.firebase.appdistribution.TaskUtils.runAsyncInTask;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.GuardedBy;
@@ -42,29 +43,28 @@ class AabUpdater {
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
   private final Executor executor;
 
+  private final Object updateAabLock = new Object();
+
   @GuardedBy("updateAabLock")
   private UpdateTaskImpl cachedUpdateTask;
 
   @GuardedBy("updateAabLock")
   private AppDistributionReleaseInternal aabReleaseInProgress;
 
-  private final Object updateAabLock = new Object();
-  private final Context context;
+  @GuardedBy("updateAabLock")
+  private boolean hasBeenSentToPlayForCurrentTask = false;
 
-  AabUpdater(@NonNull Context context) {
+  AabUpdater() {
     this(
-        context,
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
         new HttpsUrlConnectionFactory(),
         Executors.newSingleThreadExecutor());
   }
 
   AabUpdater(
-      @NonNull Context context,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
       @NonNull Executor executor) {
-    this.context = context;
     this.lifecycleNotifier = lifecycleNotifier;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
@@ -76,9 +76,13 @@ class AabUpdater {
     if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
       return;
     }
-    // If app resumes and aab update task is in progress, assume that installation didn't happen so
-    // cancel the task
-    this.tryCancelAabUpdateTask();
+    // If app resumes and update is in progress, assume that installation didn't happen and cancel
+    // the task
+    synchronized (updateAabLock) {
+      if (awaitingUpdateFromPlay()) {
+        this.tryCancelAabUpdateTask();
+      }
+    }
   }
 
   UpdateTaskImpl updateAab(@NonNull AppDistributionReleaseInternal newRelease) {
@@ -89,7 +93,18 @@ class AabUpdater {
 
       cachedUpdateTask = new UpdateTaskImpl();
       aabReleaseInProgress = newRelease;
-      redirectToPlayForAabUpdate(newRelease.getDownloadUrl());
+      hasBeenSentToPlayForCurrentTask = false;
+
+      // On a background thread, fetch the redirect URL and open it in the Play app
+      runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
+          .onSuccessTask(
+              executor,
+              combineWithResultOf(executor, () -> lifecycleNotifier.getForegroundActivity()))
+          .addOnSuccessListener(
+              executor,
+              urlAndActivity ->
+                  openRedirectUrlInPlay(urlAndActivity.first(), urlAndActivity.second()))
+          .addOnFailureListener(executor, this::setUpdateTaskCompletionError);
 
       return cachedUpdateTask;
     }
@@ -138,38 +153,30 @@ class AabUpdater {
     return responseCode >= 300 && responseCode < 400;
   }
 
-  private void redirectToPlayForAabUpdate(String downloadUrl) {
-    // The 302 redirect is obtained here to open the play store directly and avoid opening chrome
-    executor.execute( // Execute the network calls on a background thread
-        () -> {
-          String redirectUrl;
-          try {
-            redirectUrl = fetchDownloadRedirectUrl(downloadUrl);
-          } catch (FirebaseAppDistributionException e) {
-            setUpdateTaskCompletionError(e);
-            return;
-          }
+  private void openRedirectUrlInPlay(String redirectUrl, Activity hostActivity) {
+    Intent updateIntent = new Intent(Intent.ACTION_VIEW);
+    updateIntent.setData(Uri.parse(redirectUrl));
+    updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
-          Intent updateIntent = new Intent(Intent.ACTION_VIEW);
-          updateIntent.setData(Uri.parse(redirectUrl));
-          updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-          LogWrapper.getInstance().v(TAG + "Redirecting to play");
+    // Launch the intent outside of the synchronized block because we don't want to risk the
+    // activity leaving the foreground while we wait for the lock.
+    hostActivity.startActivity(updateIntent);
 
-          synchronized (updateAabLock) {
-            context.startActivity(updateIntent);
-            cachedUpdateTask.updateProgress(
-                UpdateProgress.builder()
-                    .setApkBytesDownloaded(-1)
-                    .setApkFileTotalBytes(-1)
-                    .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
-                    .build());
-          }
-        });
+    synchronized (updateAabLock) {
+      cachedUpdateTask.updateProgress(
+          UpdateProgress.builder()
+              .setApkBytesDownloaded(-1)
+              .setApkFileTotalBytes(-1)
+              .setUpdateStatus(UpdateStatus.REDIRECTED_TO_PLAY)
+              .build());
+      hasBeenSentToPlayForCurrentTask = true;
+    }
   }
 
-  private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
+  private void setUpdateTaskCompletionError(Exception e) {
     synchronized (updateAabLock) {
-      safeSetTaskException(cachedUpdateTask, e);
+      safeSetTaskException(cachedUpdateTask, FirebaseAppDistributionException.wrap(e));
     }
   }
 
@@ -181,6 +188,14 @@ class AabUpdater {
               ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
               ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
+    }
+  }
+
+  private boolean awaitingUpdateFromPlay() {
+    synchronized (updateAabLock) {
+      return cachedUpdateTask != null
+          && !cachedUpdateTask.isComplete()
+          && hasBeenSentToPlayForCurrentTask;
     }
   }
 }
