@@ -64,8 +64,7 @@ public class ModelFileManager {
   }
 
   @NonNull
-  public static ModelFileManager getInstance(FirebaseApp app) {
-    Preconditions.checkArgument(app != null, "Null is not a valid value of FirebaseApp.");
+  public static ModelFileManager getInstance(@NonNull FirebaseApp app) {
     return FirebaseApp.getInstance(app.getName()).get(ModelFileManager.class);
   }
 
