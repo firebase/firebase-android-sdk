@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.updateRemoteEvent;
@@ -29,6 +30,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.FieldIndex;
 import java.util.Arrays;
@@ -206,5 +208,20 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/b");
+  }
+
+  @Test
+  public void testIndexesServerTimestamps() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "time", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/a", map("time", FieldValue.serverTimestamp())));
+    backfillIndexes();
+
+    Query query = query("coll").orderBy(orderBy("time", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertQueryReturned("coll/a");
   }
 }
