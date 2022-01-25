@@ -15,9 +15,11 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
+import static com.google.firebase.appdistribution.TestUtils.awaitAsyncOperations;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
+import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -31,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +42,11 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowActivity;
 
 @RunWith(RobolectricTestRunner.class)
+@LooperMode(PAUSED)
 public class AabUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
@@ -95,7 +98,7 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(
         updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
@@ -107,7 +110,7 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Expected redirect");
   }
@@ -118,7 +121,7 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "No Location header");
   }
@@ -128,7 +131,7 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Empty Location header");
   }
@@ -139,7 +142,7 @@ public class AabUpdaterTest {
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
 
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(REDIRECT_TO_PLAY));
@@ -156,12 +159,11 @@ public class AabUpdaterTest {
   @Test
   public void updateAppTask_onAppResume_setsUpdateCancelled() throws InterruptedException {
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitAsyncOperations(testExecutor);
     aabUpdater.onActivityStarted(activity);
 
     FirebaseAppDistributionException exception =
         assertTaskFailure(updateTask, Status.INSTALLATION_CANCELED, ErrorMessages.UPDATE_CANCELED);
-
     assertEquals(
         ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
         exception.getRelease());

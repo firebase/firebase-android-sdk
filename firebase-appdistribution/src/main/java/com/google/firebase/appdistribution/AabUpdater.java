@@ -97,14 +97,11 @@ class AabUpdater {
 
       // On a background thread, fetch the redirect URL and open it in the Play app
       runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
-          .onSuccessTask(
-              executor,
-              combineWithResultOf(executor, () -> lifecycleNotifier.getForegroundActivity()))
+          .onSuccessTask(combineWithResultOf(() -> lifecycleNotifier.getForegroundActivity()))
           .addOnSuccessListener(
-              executor,
               urlAndActivity ->
                   openRedirectUrlInPlay(urlAndActivity.first(), urlAndActivity.second()))
-          .addOnFailureListener(executor, this::setUpdateTaskCompletionError);
+          .addOnFailureListener(this::setUpdateTaskCompletionError);
 
       return cachedUpdateTask;
     }
@@ -159,8 +156,8 @@ class AabUpdater {
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     LogWrapper.getInstance().v(TAG + "Redirecting to play");
 
-    // Launch the intent outside of the synchronized block because we don't want to risk the
-    // activity leaving the foreground while we wait for the lock.
+    // Launch the intent before the synchronized block to avoid failing to update in the rare
+    // scenario where the activity moves to the background while we're awaiting the lock.
     hostActivity.startActivity(updateIntent);
 
     synchronized (updateAabLock) {
