@@ -46,7 +46,7 @@ ext {
     playServicesVersion = '16.0.1'
     supportAnnotationsVersion = '28.0.0'
     googleTruthVersion = '0.45'
-    grpcVersion = '1.30.0'
+    grpcVersion = '1.31.0'
     robolectricVersion = '4.3.1'
     protocVersion = '3.14.0'
     javaliteVersion = '3.14.0'
