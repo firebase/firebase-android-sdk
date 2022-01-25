@@ -15,19 +15,10 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
-import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
-import android.app.Activity;
-import androidx.fragment.app.FragmentActivity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.rule.ActivityTestRule;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
-import java.util.concurrent.Semaphore;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,46 +30,7 @@ public class ListenerRegistrationTest {
     IntegrationTestUtil.tearDown();
   }
 
-  @Test
-  public void canBeRemoved() {
-    CollectionReference collectionReference = testCollection();
-    DocumentReference documentReference = collectionReference.document();
-
-    Semaphore events = new Semaphore(0);
-    ListenerRegistration one =
-        collectionReference.addSnapshotListener(
-            (value, error) -> {
-              assertNull(error);
-              events.release();
-            });
-    ListenerRegistration two =
-        documentReference.addSnapshotListener(
-            (value, error) -> {
-              assertNull(error);
-              events.release();
-            });
-
-    // Initial events
-    waitFor(events, 2);
-
-    // Trigger new events
-    waitFor(documentReference.set(map("foo", "bar")));
-
-    // Write events should have triggered
-    waitFor(events, 2);
-
-    // No more events should occur
-    one.remove();
-    two.remove();
-
-    waitFor(documentReference.set(map("foo", "new-bar")));
-
-    // Assert no events actually occurred
-    assertEquals(0, events.availablePermits());
-  }
-
-  @Test
-  public void canBeRemovedTwice() {
+  void test() {
     CollectionReference reference = testCollection();
     ListenerRegistration one = reference.addSnapshotListener((value, error) -> {});
     ListenerRegistration two = reference.document().addSnapshotListener((value, error) -> {});
@@ -91,136 +43,152 @@ public class ListenerRegistrationTest {
   }
 
   @Test
-  public void canBeRemovedIndependently() {
-    CollectionReference collectionReference = testCollection();
-
-    Semaphore eventsOne = new Semaphore(0);
-    Semaphore eventsTwo = new Semaphore(0);
-    ListenerRegistration one =
-        collectionReference.addSnapshotListener(
-            (value, error) -> {
-              assertNull(error);
-              eventsOne.release();
-            });
-    ListenerRegistration two =
-        collectionReference.addSnapshotListener(
-            (value, error) -> {
-              assertNull(error);
-              eventsTwo.release();
-            });
-
-    // Initial events
-    waitFor(eventsOne);
-    waitFor(eventsTwo);
-
-    // Trigger new events
-    waitFor(collectionReference.add(map("foo", "bar")));
-
-    waitFor(eventsOne);
-    waitFor(eventsTwo);
-
-    // Should leave "two" unaffected
-    one.remove();
-
-    waitFor(collectionReference.add(map("foo", "new-bar")));
-
-    // Assert only events for "two" actually occurred
-    assertEquals(0, eventsOne.availablePermits());
-    assertEquals(1, eventsTwo.availablePermits());
-
-    // No more events should occur
-    two.remove();
+  public void test1() {
+    test();
   }
-
-  public static class TestActivity extends Activity {
-    private Semaphore stopped = new Semaphore(0);
-
-    @Override
-    protected void onStop() {
-      super.onStop();
-      stopped.release();
-    }
-
-    public void waitForStop() {
-      waitFor(stopped, 1);
-    }
-  }
-
-  public static class TestFragmentActivity extends FragmentActivity {
-    private Semaphore stopped = new Semaphore(0);
-
-    @Override
-    protected void onStop() {
-      super.onStop();
-      stopped.release();
-    }
-
-    public void waitForStop() {
-      waitFor(stopped, 1);
-    }
-  }
-
-  private void activityScopedListenerStopsListeningWhenActivityStops(Activity activity) {
-    CollectionReference collectionReference = testCollection();
-    DocumentReference documentReference = collectionReference.document();
-
-    Semaphore events = new Semaphore(0);
-    collectionReference.addSnapshotListener(
-        activity,
-        (value, error) -> {
-          assertNull(error);
-          events.release();
-        });
-
-    // Initial events
-    waitFor(events, 1);
-
-    // We have a listener, so this should generate events.
-    waitFor(documentReference.set(map("foo", "bar")));
-    assertEquals(1, events.availablePermits());
-    waitFor(events, 1);
-
-    // Since we created an activity-scoped listener, finishing the activity should cause the
-    // listener to be automatically unregistered.
-    activity.finish();
-    waitForActivityToStop(activity);
-
-    // No listeners, therefore, there should be no events.
-    waitFor(documentReference.set(map("foo", "new-bar")));
-    assertEquals(0, events.availablePermits());
-  }
-
-  /** @param activity Must be a TestActivity or a TestFragmentActivity */
-  private void waitForActivityToStop(Activity activity) {
-    if (activity instanceof TestActivity) {
-      ((TestActivity) activity).waitForStop();
-    } else if (activity instanceof TestFragmentActivity) {
-      ((TestFragmentActivity) activity).waitForStop();
-    } else {
-      throw new IllegalArgumentException(
-          "activity must be a TestActivity or a TestFragmentActivity");
-    }
-  }
-
-  @Rule
-  public ActivityTestRule<TestActivity> activityTestRule =
-      new ActivityTestRule<>(
-          TestActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
 
   @Test
-  public void activityScopedListenerStopsListeningWhenRawActivityStops() {
-    TestActivity activity = activityTestRule.launchActivity(/*intent=*/ null);
-    activityScopedListenerStopsListeningWhenActivityStops(activity);
+  public void test2() {
+    test();
   }
 
-  @Rule
-  public ActivityTestRule<TestFragmentActivity> activityTestFragmentRule =
-      new ActivityTestRule<>(
-          TestFragmentActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+  @Test
+  public void test34() {
+    test();
+  }
 
   @Test
-  public void activityScopedListenerStopsListeningWhenFragmentActivityStops() {
-    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
-    activityScopedListenerStopsListeningWhenActivityStops(activity);
+  public void test4() {
+    test();
+  }
+
+  @Test
+  public void test5() {
+    test();
+  }
+
+  @Test
+  public void test6() {
+    test();
+  }
+
+  @Test
+  public void test7() {
+    test();
+  }
+
+  @Test
+  public void test8() {
+    test();
+  }
+
+  @Test
+  public void test9() {
+    test();
+  }
+
+  @Test
+  public void test10() {
+    test();
+  }
+
+  @Test
+  public void test11() {
+    test();
+  }
+
+  @Test
+  public void test12() {
+    test();
+  }
+
+  @Test
+  public void test13() {
+    test();
+  }
+
+  @Test
+  public void test14() {
+    test();
+  }
+
+  @Test
+  public void test15() {
+    test();
+  }
+
+  @Test
+  public void test16() {
+    test();
+  }
+
+  @Test
+  public void test17() {
+    test();
+  }
+
+  @Test
+  public void test18() {
+    test();
+  }
+
+  @Test
+  public void test19() {
+    test();
+  }
+
+  @Test
+  public void test20() {
+    test();
+  }
+
+  @Test
+  public void test21() {
+    test();
+  }
+
+  @Test
+  public void test22() {
+    test();
+  }
+
+  @Test
+  public void test23() {
+    test();
+  }
+
+  @Test
+  public void test24() {
+    test();
+  }
+
+  @Test
+  public void test25() {
+    test();
+  }
+
+  @Test
+  public void test26() {
+    test();
+  }
+
+  @Test
+  public void test27() {
+    test();
+  }
+
+  @Test
+  public void test28() {
+    test();
+  }
+
+  @Test
+  public void test29() {
+    test();
+  }
+
+  @Test
+  public void test30() {
+    test();
   }
 }
