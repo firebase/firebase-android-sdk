@@ -27,23 +27,10 @@ import java.util.List;
 public class CompositeFilter extends Filter {
   private final List<Filter> filters;
   private final Operator operator;
-  private boolean isFlatConjunction;
 
   public CompositeFilter(List<Filter> filters, Operator operator) {
     this.filters = filters;
     this.operator = operator;
-
-    // Memoize whether this is a flat conjunction filter.
-    isFlatConjunction = true;
-    if (operator != Operator.AND) {
-      isFlatConjunction = false;
-    } else {
-      for (Filter filter : filters) {
-        if (filter instanceof CompositeFilter) {
-          isFlatConjunction = false;
-        }
-      }
-    }
   }
 
   @Override
@@ -85,13 +72,6 @@ public class CompositeFilter extends Filter {
   public boolean isDisjunction() {
     // TODO(orquery): Replace with Operator.OR.
     return operator == Operator.OPERATOR_UNSPECIFIED;
-  }
-
-  /**
-   * Returns true if this filter is a conjunction of field filters only. Returns false otherwise.
-   */
-  public boolean isFlatConjunction() {
-    return isFlatConjunction;
   }
 
   /**

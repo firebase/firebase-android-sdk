@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.diffCollections;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
+import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.common.collect.ObjectArrays;
 import com.google.firebase.Timestamp;
@@ -28,9 +29,9 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
-import com.google.firebase.firestore.core.DnfTransform;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
+import com.google.firebase.firestore.core.LogicUtils;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
@@ -323,7 +324,7 @@ final class SQLiteIndexManager implements IndexManager {
     } else {
       // There is an implicit AND operation between all the filters stored in the target.
       List<Filter> dnf =
-          DnfTransform.get(
+          LogicUtils.DnfTransform(
               new CompositeFilter(
                   target.getFilters(), StructuredQuery.CompositeFilter.Operator.AND));
       for (Filter term : dnf) {
@@ -478,20 +479,16 @@ final class SQLiteIndexManager implements IndexManager {
       bindings.addAll(Arrays.asList(subQueryAndBindings).subList(1, subQueryAndBindings.length));
     }
 
-    // Construct "subQuery1 UNION subQuery2 UNION ... LIMIT N"
-    // If there's only one subQuery, just execute the one subQuery.
-    StringBuilder queryStatement = new StringBuilder();
-    for (int i = 0; i < subQueries.size(); ++i) {
-      if (i > 0) {
-        queryStatement.append(" UNION ");
-      }
-      queryStatement.append(subQueries.get(i));
-    }
-    if (subQueries.size() > 1) {
-      queryStatement.append("LIMIT ").append(target.getLimit());
-    }
+    String queryString =
+        subQueries.size() == 1
+            ?
+            // If there's only one subQuery, just execute the one subQuery.
+            subQueries.get(0)
+            :
+            // Construct "subQuery1 UNION subQuery2 UNION ... LIMIT N"
+            TextUtils.join(" UNION ", subQueries) + " LIMIT " + target.getLimit();
 
-    SQLitePersistence.Query query = db.query(queryStatement.toString()).binding(bindings.toArray());
+    SQLitePersistence.Query query = db.query(queryString).binding(bindings.toArray());
 
     Set<DocumentKey> result = new HashSet<>();
     query.forEach(

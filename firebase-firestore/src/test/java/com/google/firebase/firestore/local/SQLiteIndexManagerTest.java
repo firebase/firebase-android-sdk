@@ -31,7 +31,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
