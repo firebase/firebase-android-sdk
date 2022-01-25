@@ -1,5 +1,7 @@
-package com.google.firebase.firestore.core;
+package com.google.firebase.firestore.util;
 
+import com.google.firebase.firestore.core.CompositeFilter;
+import com.google.firebase.firestore.core.Filter;
 import java.util.Collections;
 import java.util.List;
 
