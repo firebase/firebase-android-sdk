@@ -31,7 +31,7 @@ import org.json.JSONObject;
  * @hide
  */
 public class PersistedInstallation {
-  private final File dataFile;
+  private File dataFile;
   @NonNull private final FirebaseApp firebaseApp;
 
   // Registration Status of each persisted fid entry
@@ -77,13 +77,25 @@ public class PersistedInstallation {
   private static final String FIS_ERROR_KEY = "FisError";
 
   public PersistedInstallation(@NonNull FirebaseApp firebaseApp) {
-    // Different FirebaseApp in the same Android application should have the same application
-    // context and same dir path
-    dataFile =
-        new File(
-            firebaseApp.getApplicationContext().getFilesDir(),
-            SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
     this.firebaseApp = firebaseApp;
+  }
+
+  private File getDataFile() {
+
+    if (dataFile == null) {
+      synchronized (this) {
+        if (dataFile == null) {
+          // Different FirebaseApp in the same Android application should have the same application
+          // context and same dir path
+          dataFile =
+              new File(
+                  firebaseApp.getApplicationContext().getFilesDir(),
+                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+        }
+      }
+    }
+
+    return dataFile;
   }
 
   @NonNull
@@ -114,7 +126,7 @@ public class PersistedInstallation {
   private JSONObject readJSONFromFile() {
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     final byte[] tmpBuf = new byte[16 * 1024];
-    try (FileInputStream fis = new FileInputStream(dataFile)) {
+    try (FileInputStream fis = new FileInputStream(getDataFile())) {
       while (true) {
         int numRead = fis.read(tmpBuf, 0, tmpBuf.length);
         if (numRead < 0) {
@@ -156,7 +168,7 @@ public class PersistedInstallation {
       fos.close();
 
       // Snapshot the temp file to the actual file
-      if (!tmpFile.renameTo(dataFile)) {
+      if (!tmpFile.renameTo(getDataFile())) {
         throw new IOException("unable to rename the tmpfile to " + SETTINGS_FILE_NAME_PREFIX);
       }
     } catch (JSONException | IOException e) {
@@ -173,6 +185,6 @@ public class PersistedInstallation {
 
   /** Sets the state to ATTEMPT_MIGRATION. */
   public void clearForTesting() {
-    dataFile.delete();
+    getDataFile().delete();
   }
 }
