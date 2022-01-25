@@ -17,9 +17,11 @@ package com.google.firebase.appdistribution;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
+import static com.google.firebase.appdistribution.TestUtils.getForegroundActivityAnswer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -127,7 +129,9 @@ public class TesterSignInManagerTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
+
+    when(mockLifecycleNotifier.getForegroundActivity(any()))
+        .thenAnswer(getForegroundActivityAnswer(activity));
 
     testerSignInManager =
         new TesterSignInManager(
@@ -151,10 +155,9 @@ public class TesterSignInManagerTest {
   @Test
   public void signInTester_whenUnexpectedFailureInTask_failsWithUnknownError() {
     Exception unexpectedException = new Exception("unexpected exception");
-    // We never expect getForegroundActivity to fail, only hang, so this represents an unexpected
-    // failure during sign in
-    when(mockLifecycleNotifier.getForegroundActivity())
-        .thenReturn(Tasks.forException(unexpectedException));
+    // Raise an unexpected exception in our handler passed to getForegroundActivity
+    when(mockLifecycleNotifier.getForegroundActivity(any()))
+        .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();
 

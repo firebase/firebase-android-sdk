@@ -20,13 +20,18 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
+
+  /** A functional interface for a function that takes an activity and does something with it. */
+  interface ActivityConsumer {
+    void consume(Activity activity) throws FirebaseAppDistributionException;
+  }
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
@@ -54,7 +59,8 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
-  private FirebaseAppDistributionLifecycleNotifier() {}
+  @VisibleForTesting
+  FirebaseAppDistributionLifecycleNotifier() {}
 
   static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
     if (instance == null) {
@@ -91,22 +97,44 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * activity comes to the foreground.
    */
   Task<Activity> getForegroundActivity() {
-    synchronized (lock) {
-      if (currentActivity != null) {
-        return Tasks.forResult(currentActivity);
-      }
-      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+    return getForegroundActivity(activity -> {});
+  }
 
-      addOnActivityResumedListener(
-          new OnActivityResumedListener() {
-            @Override
-            public void onResumed(Activity activity) {
-              task.setResult(activity);
-              removeOnActivityResumedListener(this);
-            }
-          });
+  /**
+   * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
+   * when one is available, after passing the activity to an {@link ActivityConsumer}.
+   *
+   * <p>The returned task will fail with a {@link FirebaseAppDistributionException} if the consumer
+   * throws. Otherwise it will never fail, and will wait indefinitely for a foreground activity
+   * before applying the consumer.
+   */
+  Task<Activity> getForegroundActivity(ActivityConsumer consumer) {
+    synchronized (lock) {
+      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+      if (currentActivity != null) {
+        consumeActivityAndCompleteTask(task, currentActivity, consumer);
+      } else {
+        addOnActivityResumedListener(
+            new OnActivityResumedListener() {
+              @Override
+              public void onResumed(Activity activity) {
+                consumeActivityAndCompleteTask(task, activity, consumer);
+                removeOnActivityResumedListener(this);
+              }
+            });
+      }
 
       return task.getTask();
+    }
+  }
+
+  void consumeActivityAndCompleteTask(
+      TaskCompletionSource task, Activity activity, ActivityConsumer consumer) {
+    try {
+      consumer.consume(activity);
+      task.setResult(activity);
+    } catch (Throwable t) {
+      task.setException(FirebaseAppDistributionException.wrap(t));
     }
   }
 
