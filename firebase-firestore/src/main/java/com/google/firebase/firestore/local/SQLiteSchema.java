@@ -398,6 +398,7 @@ class SQLiteSchema {
                   + "read_time_seconds INTEGER, " // Read time of last processed document
                   + "read_time_nanos INTEGER, "
                   + "document_key TEXT, " // Key of the last processed document
+                  + "largest_batch_id INTEGER, " // Largest mutation batch id that was processed
                   + "PRIMARY KEY (index_id, uid))");
 
           // The index entry table stores the encoded entries for all fields.

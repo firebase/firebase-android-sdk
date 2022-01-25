@@ -20,7 +20,7 @@ plugins {
 firebaseLibrary {
     testLab {
         enabled = true
-        device 'model=flame,version=30'
+        device 'model=redfin,version=30'
     }
 }
 

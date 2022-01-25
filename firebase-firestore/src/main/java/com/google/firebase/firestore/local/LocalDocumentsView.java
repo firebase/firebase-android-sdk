@@ -17,12 +17,14 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -31,6 +33,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,11 +79,6 @@ class LocalDocumentsView {
     return documentOverlayCache;
   }
 
-  @VisibleForTesting
-  IndexManager getIndexManager() {
-    return indexManager;
-  }
-
   /**
    * Returns the the local view of the document identified by {@code key}.
    *
@@ -89,15 +87,10 @@ class LocalDocumentsView {
    */
   Document getDocument(DocumentKey key) {
     Overlay overlay = documentOverlayCache.getOverlay(key);
-    // Only read from remote document cache if overlay is a patch.
-    MutableDocument document =
-        (overlay == null || overlay.getMutation() instanceof PatchMutation)
-            ? remoteDocumentCache.get(key)
-            : MutableDocument.newInvalidDocument(key);
+    MutableDocument document = getBaseDocument(key, overlay);
     if (overlay != null) {
       overlay.getMutation().applyToLocalView(document, null, Timestamp.now());
     }
-
     return document;
   }
 
@@ -122,21 +115,35 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
       Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
+    return computeViews(docs, Collections.emptyMap(), existenceStateChanged);
+  }
+
+  /**
+   * Computes the local view for doc, applying overlays from both {@code memoizedOverlays} and the
+   * overlay cache.
+   */
+  private ImmutableSortedMap<DocumentKey, Document> computeViews(
+      Map<DocumentKey, MutableDocument> docs,
+      Map<DocumentKey, Overlay> memoizedOverlays,
+      Set<DocumentKey> existenceStateChanged) {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
-    for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
-      Overlay overlay = documentOverlayCache.getOverlay(entry.getKey());
+    for (MutableDocument doc : docs.values()) {
+      Overlay overlay =
+          memoizedOverlays.containsKey(doc.getKey())
+              ? memoizedOverlays.get(doc.getKey())
+              : documentOverlayCache.getOverlay(doc.getKey());
       // Recalculate an overlay if the document's existence state is changed due to a remote
       // event *and* the overlay is a PatchMutation. This is because document existence state
       // can change if some patch mutation's preconditions are met.
       // NOTE: we recalculate when `overlay` is null as well, because there might be a patch
       // mutation whose precondition does not match before the change (hence overlay==null),
       // but would now match.
-      if (existenceStateChanged.contains(entry.getKey())
+      if (existenceStateChanged.contains(doc.getKey())
           && (overlay == null || overlay.getMutation() instanceof PatchMutation)) {
-        recalculateDocuments.put(entry.getKey(), docs.get(entry.getKey()));
+        recalculateDocuments.put(doc.getKey(), doc);
       } else if (overlay != null) {
-        overlay.getMutation().applyToLocalView(entry.getValue(), null, Timestamp.now());
+        overlay.getMutation().applyToLocalView(doc, null, Timestamp.now());
       }
     }
 
@@ -195,14 +202,6 @@ class LocalDocumentsView {
     recalculateAndSaveOverlays(docs);
   }
 
-  /** Gets the local view of the next {@code count} documents based on their read time. */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(
-      String collectionGroup, IndexOffset offset, int count) {
-    Map<DocumentKey, MutableDocument> docs =
-        remoteDocumentCache.getAll(collectionGroup, offset, count);
-    return getLocalViewOfDocuments(docs, new HashSet<>());
-  }
-
   /**
    * Performs a query against the local view of all documents.
    *
@@ -255,12 +254,53 @@ class LocalDocumentsView {
     return results;
   }
 
-  /** Queries the remote documents and overlays by doing a full collection scan. */
+  /**
+   * Given a collection group, returns the next documents that follow the provided offset, along
+   * with an updated batch ID.
+   *
+   * <p>The documents returned by this method are ordered by remote version from the provided
+   * offset. If there are no more remote documents after the provided offset, documents with
+   * mutations in order of batch id from the offset are returned. Since all documents in a batch are
+   * returned together, the total number of documents returned can exceed {@code count}.
+   *
+   * @param collectionGroup The collection group for the documents.
+   * @param offset The offset to index into.
+   * @param count The number of documents to return
+   * @return A LocalDocumentsResult with the documents that follow the provided offset and the last
+   *     processed batch id.
+   */
+  LocalDocumentsResult getNextDocuments(String collectionGroup, IndexOffset offset, int count) {
+    Map<DocumentKey, MutableDocument> docs =
+        remoteDocumentCache.getAll(collectionGroup, offset, count);
+    Map<DocumentKey, Overlay> overlays =
+        count - docs.size() > 0
+            ? documentOverlayCache.getOverlays(
+                collectionGroup, offset.getLargestBatchId(), count - docs.size())
+            : Collections.emptyMap();
+
+    int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
+    for (Overlay overlay : overlays.values()) {
+      if (!docs.containsKey(overlay.getKey())) {
+        docs.put(overlay.getKey(), getBaseDocument(overlay.getKey(), overlay));
+      }
+      // The callsite will use the largest batch ID together with the latest read time to create
+      // a new index offset. Since we only process batch IDs if all remote documents have been read,
+      // no overlay will increase the overall read time. This is why we only need to special case
+      // the batch id.
+      largestBatchId = Math.max(largestBatchId, overlay.getLargestBatchId());
+    }
+
+    ImmutableSortedMap<DocumentKey, Document> localDocs =
+        computeViews(docs, overlays, Collections.emptySet());
+    return new LocalDocumentsResult(largestBatchId, localDocs);
+  }
+
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
       Query query, IndexOffset offset) {
     Map<DocumentKey, MutableDocument> remoteDocuments =
         remoteDocumentCache.getAll(query.getPath(), offset);
-    Map<DocumentKey, Overlay> overlays = documentOverlayCache.getOverlays(query.getPath(), -1);
+    Map<DocumentKey, Overlay> overlays =
+        documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.
@@ -284,5 +324,12 @@ class LocalDocumentsView {
     }
 
     return results;
+  }
+
+  /** Returns a base document that can be used to apply `overlay`. */
+  private MutableDocument getBaseDocument(DocumentKey key, @Nullable Overlay overlay) {
+    return (overlay == null || overlay.getMutation() instanceof PatchMutation)
+        ? remoteDocumentCache.get(key)
+        : MutableDocument.newInvalidDocument(key);
   }
 }

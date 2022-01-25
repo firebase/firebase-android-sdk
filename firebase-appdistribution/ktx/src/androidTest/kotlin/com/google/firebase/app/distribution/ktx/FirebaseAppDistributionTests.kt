@@ -72,7 +72,7 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     }
 }
 
-internal const val LIBRARY_NAME: String = "fire-app-distribution-ktx"
+internal const val LIBRARY_NAME: String = "fire-appdistribution-ktx"
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LibraryVersionTest : BaseTestCase() {

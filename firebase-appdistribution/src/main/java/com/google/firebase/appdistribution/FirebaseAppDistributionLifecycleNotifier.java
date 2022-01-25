@@ -23,7 +23,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
@@ -84,6 +83,13 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     void onDestroyed(Activity activity);
   }
 
+  /**
+   * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
+   * when one is available.
+   *
+   * <p>The returned task will never fail. It will instead remain pending indefinitely until some
+   * activity comes to the foreground.
+   */
   Task<Activity> getForegroundActivity() {
     synchronized (lock) {
       if (currentActivity != null) {
@@ -142,8 +148,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity created: %s", activity.getClass().getName()));
     synchronized (lock) {
       currentActivity = activity;
       for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
@@ -154,9 +158,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity started: %s", activity.getClass().getName()));
-
     synchronized (lock) {
       currentActivity = activity;
       for (OnActivityStartedListener listener : onActivityStartedListeners) {
@@ -167,9 +168,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity resumed: %s", activity.getClass().getName()));
-
     synchronized (lock) {
       currentActivity = activity;
       for (OnActivityResumedListener listener : onActivityResumedListeners) {
@@ -180,8 +178,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   @Override
   public void onActivityPaused(@NonNull Activity activity) {
-    LogWrapper.getInstance().w(String.format("Activity paused: %s", activity.getClass().getName()));
-
     synchronized (lock) {
       if (this.currentActivity == activity) {
         this.currentActivity = null;
@@ -193,22 +189,13 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   @Override
-  public void onActivityStopped(@NonNull Activity activity) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity stopped: %s", activity.getClass().getName()));
-  }
+  public void onActivityStopped(@NonNull Activity activity) {}
 
   @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity save instance state: %s", activity.getClass().getName()));
-  }
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
 
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
-    LogWrapper.getInstance()
-        .w(String.format("Activity destroyed: %s", activity.getClass().getName()));
-
     synchronized (lock) {
       if (this.currentActivity == activity) {
         this.currentActivity = null;

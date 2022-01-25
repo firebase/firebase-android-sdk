@@ -17,37 +17,56 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.firestore.core.FieldFilter;
+import com.google.firebase.firestore.core.FieldFilter.Operator;
+import com.google.firestore.v1.StructuredQuery;
+import java.util.Arrays;
+import java.util.List;
 
 /** @hide */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class Filter {
-  private final FieldPath field;
-  private final FieldFilter.Operator operator;
-  private final Object value;
+  static class UnaryFilter extends Filter {
+    private final FieldPath field;
+    private final Operator operator;
+    private final Object value;
 
-  private Filter(@NonNull FieldPath field, FieldFilter.Operator operator, Object value) {
-    this.field = field;
-    this.operator = operator;
-    this.value = value;
+    public UnaryFilter(FieldPath field, Operator operator, @Nullable Object value) {
+      this.field = field;
+      this.operator = operator;
+      this.value = value;
+    }
+
+    public FieldPath getField() {
+      return field;
+    }
+
+    public Operator getOperator() {
+      return operator;
+    }
+
+    @Nullable
+    public Object getValue() {
+      return value;
+    }
   }
 
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public FieldPath getField() {
-    return field;
-  }
+  static class CompositeFilter extends Filter {
+    private final List<Filter> filters;
+    private final StructuredQuery.CompositeFilter.Operator operator;
 
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public FieldFilter.Operator getOperator() {
-    return operator;
-  }
+    public CompositeFilter(
+        @NonNull List<Filter> filters, StructuredQuery.CompositeFilter.Operator operator) {
+      this.filters = filters;
+      this.operator = operator;
+    }
 
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public Object getValue() {
-    return value;
+    public List<Filter> getFilters() {
+      return filters;
+    }
+
+    public StructuredQuery.CompositeFilter.Operator getOperator() {
+      return operator;
+    }
   }
 
   @NonNull
@@ -57,7 +76,7 @@ public class Filter {
 
   @NonNull
   public static Filter equalTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.EQUAL, value);
   }
 
   @NonNull
@@ -67,7 +86,7 @@ public class Filter {
 
   @NonNull
   public static Filter notEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.NOT_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.NOT_EQUAL, value);
   }
 
   @NonNull
@@ -77,7 +96,7 @@ public class Filter {
 
   @NonNull
   public static Filter greaterThan(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.GREATER_THAN, value);
+    return new UnaryFilter(fieldPath, Operator.GREATER_THAN, value);
   }
 
   @NonNull
@@ -87,7 +106,7 @@ public class Filter {
 
   @NonNull
   public static Filter greaterThanOrEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.GREATER_THAN_OR_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.GREATER_THAN_OR_EQUAL, value);
   }
 
   @NonNull
@@ -97,7 +116,7 @@ public class Filter {
 
   @NonNull
   public static Filter lessThan(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.LESS_THAN, value);
+    return new UnaryFilter(fieldPath, Operator.LESS_THAN, value);
   }
 
   @NonNull
@@ -107,7 +126,7 @@ public class Filter {
 
   @NonNull
   public static Filter lessThanOrEqualTo(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.LESS_THAN_OR_EQUAL, value);
+    return new UnaryFilter(fieldPath, Operator.LESS_THAN_OR_EQUAL, value);
   }
 
   @NonNull
@@ -117,7 +136,7 @@ public class Filter {
 
   @NonNull
   public static Filter arrayContains(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.ARRAY_CONTAINS, value);
+    return new UnaryFilter(fieldPath, Operator.ARRAY_CONTAINS, value);
   }
 
   @NonNull
@@ -127,7 +146,7 @@ public class Filter {
 
   @NonNull
   public static Filter arrayContainsAny(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.ARRAY_CONTAINS_ANY, value);
+    return new UnaryFilter(fieldPath, Operator.ARRAY_CONTAINS_ANY, value);
   }
 
   @NonNull
@@ -137,7 +156,7 @@ public class Filter {
 
   @NonNull
   public static Filter inArray(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.IN, value);
+    return new UnaryFilter(fieldPath, Operator.IN, value);
   }
 
   @NonNull
@@ -147,6 +166,19 @@ public class Filter {
 
   @NonNull
   public static Filter notInArray(@NonNull FieldPath fieldPath, @Nullable Object value) {
-    return new Filter(fieldPath, FieldFilter.Operator.NOT_IN, value);
+    return new UnaryFilter(fieldPath, Operator.NOT_IN, value);
+  }
+
+  @NonNull
+  public static Filter or(Filter... filters) {
+    // TODO(orquery): Change this to Operator.OR once it is available.
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
+  }
+
+  @NonNull
+  public static Filter and(Filter... filters) {
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
   }
 }

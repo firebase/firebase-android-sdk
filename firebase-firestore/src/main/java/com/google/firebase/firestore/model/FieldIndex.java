@@ -26,7 +26,7 @@ import java.util.List;
  * An index definition for field indices in Firestore.
  *
  * <p>Every index is associated with a collection. The definition contains a list of fields and
- * their indexkind (which can be {@link Segment.Kind#ASCENDING}, {@link Segment.Kind#DESCENDING} or
+ * their index kind (which can be {@link Segment.Kind#ASCENDING}, {@link Segment.Kind#DESCENDING} or
  * {@link Segment.Kind#CONTAINS}) for ArrayContains/ArrayContainsAny queries.
  *
  * <p>Unlike the backend, the SDK does not differentiate between collection or collection
@@ -39,12 +39,15 @@ public abstract class FieldIndex {
   /** An ID for an index that has not yet been added to persistence. */
   public static final int UNKNOWN_ID = -1;
 
+  /** The initial mutation batch id for each index. Gets updated during index backfill. */
+  public static final int INITIAL_LARGEST_BATCH_ID = -1;
+
   /** The initial sequence number for each index. Gets updated during index backfill. */
   public static final int INITIAL_SEQUENCE_NUMBER = 0;
 
   /** The state of an index that has not yet been backfilled. */
   public static IndexState INITIAL_STATE =
-      IndexState.create(INITIAL_SEQUENCE_NUMBER, SnapshotVersion.NONE, DocumentKey.empty());
+      IndexState.create(INITIAL_SEQUENCE_NUMBER, IndexOffset.NONE);
 
   /** Compares indexes by collection group and segments. Ignores update time and index ID. */
   public static final Comparator<FieldIndex> SEMANTIC_COMPARATOR =
@@ -100,8 +103,11 @@ public abstract class FieldIndex {
     }
 
     public static IndexState create(
-        long sequenceNumber, SnapshotVersion readTime, DocumentKey documentKey) {
-      return create(sequenceNumber, IndexOffset.create(readTime, documentKey));
+        long sequenceNumber,
+        SnapshotVersion readTime,
+        DocumentKey documentKey,
+        int largestBatchId) {
+      return create(sequenceNumber, IndexOffset.create(readTime, documentKey, largestBatchId));
     }
 
     /**
@@ -116,23 +122,26 @@ public abstract class FieldIndex {
   /** Stores the latest read time and document that were processed for an index. */
   @AutoValue
   public abstract static class IndexOffset implements Comparable<IndexOffset> {
+    public static final IndexOffset NONE =
+        create(SnapshotVersion.NONE, DocumentKey.empty(), INITIAL_LARGEST_BATCH_ID);
+
     public static final Comparator<MutableDocument> DOCUMENT_COMPARATOR =
         (l, r) -> IndexOffset.fromDocument(l).compareTo(IndexOffset.fromDocument(r));
 
-    public static final IndexOffset NONE = create(SnapshotVersion.NONE, DocumentKey.empty());
-
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime} or
-     * with a key higher than {@code documentKey} for equal read times.
+     * with a key higher than {@code documentKey} for equal read times. The largest batch ID is used
+     * as a final tie breaker.
      */
-    public static IndexOffset create(SnapshotVersion readTime, DocumentKey documentKey) {
-      return new AutoValue_FieldIndex_IndexOffset(readTime, documentKey);
+    public static IndexOffset create(
+        SnapshotVersion readTime, DocumentKey key, int largestBatchId) {
+      return new AutoValue_FieldIndex_IndexOffset(readTime, key, largestBatchId);
     }
 
     /**
      * Creates an offset that matches all documents with a read time higher than {@code readTime}.
      */
-    public static IndexOffset create(SnapshotVersion readTime) {
+    public static IndexOffset createSuccessor(SnapshotVersion readTime, int largestBatchId) {
       // We want to create an offset that matches all documents with a read time greater than
       // the provided read time. To do so, we technically need to create an offset for
       // `(readTime, MAX_DOCUMENT_KEY)`. While we could use Unicode codepoints to generate
@@ -145,12 +154,12 @@ public abstract class FieldIndex {
               successorNanos == 1e9
                   ? new Timestamp(successorSeconds + 1, 0)
                   : new Timestamp(successorSeconds, successorNanos));
-      return new AutoValue_FieldIndex_IndexOffset(successor, DocumentKey.empty());
+      return create(successor, DocumentKey.empty(), largestBatchId);
     }
 
     /** Creates a new offset based on the provided document. */
     public static IndexOffset fromDocument(Document document) {
-      return new AutoValue_FieldIndex_IndexOffset(document.getReadTime(), document.getKey());
+      return create(document.getReadTime(), document.getKey(), INITIAL_LARGEST_BATCH_ID);
     }
 
     /**
@@ -164,10 +173,17 @@ public abstract class FieldIndex {
      */
     public abstract DocumentKey getDocumentKey();
 
+    /*
+     * Returns the largest mutation batch id that's been processed by Firestore.
+     */
+    public abstract int getLargestBatchId();
+
     public int compareTo(IndexOffset other) {
       int cmp = getReadTime().compareTo(other.getReadTime());
       if (cmp != 0) return cmp;
-      return getDocumentKey().compareTo(other.getDocumentKey());
+      cmp = getDocumentKey().compareTo(other.getDocumentKey());
+      if (cmp != 0) return cmp;
+      return Integer.compare(getLargestBatchId(), other.getLargestBatchId());
     }
   }
 

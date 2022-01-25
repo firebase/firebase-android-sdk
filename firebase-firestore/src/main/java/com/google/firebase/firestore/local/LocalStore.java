@@ -236,7 +236,7 @@ public final class LocalStore implements BundleCallback {
   }
 
   /** Accepts locally generated Mutations and commits them to storage. */
-  public LocalWriteResult writeLocally(List<Mutation> mutations) {
+  public LocalDocumentsResult writeLocally(List<Mutation> mutations) {
     Timestamp localWriteTime = Timestamp.now();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -277,7 +277,7 @@ public final class LocalStore implements BundleCallback {
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
           Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
           documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
-          return new LocalWriteResult(batch.getBatchId(), documents);
+          return new LocalDocumentsResult(batch.getBatchId(), documents);
         });
   }
 

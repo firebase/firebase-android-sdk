@@ -39,7 +39,6 @@ import com.google.firebase.appdistribution.internal.SignInResultActivity;
 import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class FirebaseAppDistribution {
 
@@ -58,7 +57,10 @@ public class FirebaseAppDistribution {
   @GuardedBy("updateIfNewReleaseTaskLock")
   private UpdateTaskImpl cachedUpdateIfNewReleaseTask;
 
-  AtomicReference<AppDistributionReleaseInternal> cachedNewRelease = new AtomicReference();
+  private final Object cachedNewReleaseLock = new Object();
+
+  @GuardedBy("cachedNewReleaseLock")
+  private AppDistributionReleaseInternal cachedNewRelease;
 
   private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
   private AlertDialog updateConfirmationDialog;
@@ -295,31 +297,33 @@ public class FirebaseAppDistribution {
    * basic configuration and false for advanced configuration.
    */
   private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
-    if (!isTesterSignedIn()) {
-      UpdateTaskImpl updateTask = new UpdateTaskImpl();
-      updateTask.setException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
-      return updateTask;
-    }
-    if (cachedNewRelease.get() == null) {
-      LogWrapper.getInstance().v("New release not found.");
-      return getErrorUpdateTask(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-    }
-    if (cachedNewRelease.get().getDownloadUrl() == null) {
-      LogWrapper.getInstance().v("Download failed to execute");
-      return getErrorUpdateTask(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
-              FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-    }
+    synchronized (cachedNewReleaseLock) {
+      if (!isTesterSignedIn()) {
+        UpdateTaskImpl updateTask = new UpdateTaskImpl();
+        updateTask.setException(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+        return updateTask;
+      }
+      if (cachedNewRelease == null) {
+        LogWrapper.getInstance().v("New release not found.");
+        return getErrorUpdateTask(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+      }
+      if (cachedNewRelease.getDownloadUrl() == null) {
+        LogWrapper.getInstance().v("Download failed to execute");
+        return getErrorUpdateTask(
+            new FirebaseAppDistributionException(
+                Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+      }
 
-    if (cachedNewRelease.get().getBinaryType() == BinaryType.AAB) {
-      return this.aabUpdater.updateAab(cachedNewRelease.get());
-    } else {
-      return this.apkUpdater.updateApk(cachedNewRelease.get(), showDownloadInNotificationManager);
+      if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
+        return this.aabUpdater.updateAab(cachedNewRelease);
+      } else {
+        return this.apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+      }
     }
   }
 
@@ -334,12 +338,27 @@ public class FirebaseAppDistribution {
     this.signInStorage.setSignInStatus(false);
   }
 
-  private void onActivityResumed(Activity activity) {
+  @VisibleForTesting
+  void onActivityResumed(Activity activity) {
+    if (awaitingSignInDialogConfirmation()) {
+      atSignInConfirmationDialogStage = false;
+      showSignInConfirmationDialog(activity);
+    } else if (awaitingUpdateDialogConfirmation()) {
+      atUpdateConfirmationDialogStage = false;
+      synchronized (cachedNewReleaseLock) {
+        showUpdateConfirmationDialog(
+            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      }
+      return;
+    }
+
     if (awaitingSignInDialogConfirmation() && dialogHostActivityIsResumed(activity)) {
       showSignInConfirmationDialog(activity);
     } else if (awaitingUpdateDialogConfirmation() && dialogHostActivityIsResumed(activity)) {
-      showUpdateConfirmationDialog(
-          activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease.get()));
+      synchronized (cachedNewReleaseLock) {
+        showUpdateConfirmationDialog(
+            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      }
     } else if (awaitingSignInDialogConfirmation() || awaitingUpdateDialogConfirmation()) {
       // if we are waiting on confirmation dialog & the new activity is not the same as the
       // previous host dialog, cancel the task
@@ -354,13 +373,21 @@ public class FirebaseAppDistribution {
   }
 
   private void onActivityPaused(Activity activity) {
-    dismissDialogs();
+    // dismissDialogs();
   }
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
     if (activity instanceof SignInResultActivity) {
       // SignInResult is internal to the SDK and is destroyed after creation
+      return;
+    }
+    if (activity.isChangingConfigurations()) {
+      atSignInConfirmationDialogStage =
+          signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+      atUpdateConfirmationDialogStage =
+          updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
+      dismissDialogs();
       return;
     }
     if (updateIfNewReleaseAvailableIsTaskInProgress() && !isTesterSignedIn()) {
@@ -376,12 +403,16 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void setCachedNewRelease(@Nullable AppDistributionReleaseInternal newRelease) {
-    this.cachedNewRelease.getAndSet(newRelease);
+    synchronized (cachedNewReleaseLock) {
+      this.cachedNewRelease = newRelease;
+    }
   }
 
   @VisibleForTesting
   AppDistributionReleaseInternal getCachedNewRelease() {
-    return cachedNewRelease.get();
+    synchronized (cachedNewReleaseLock) {
+      return this.cachedNewRelease;
+    }
   }
 
   private Task<Void> showUpdateConfirmationDialog(
