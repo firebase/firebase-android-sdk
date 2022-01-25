@@ -109,6 +109,11 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
+  public FieldIndex.IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes) {
+    return FieldIndex.IndexOffset.NONE;
+  }
+
+  @Override
   public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     // Field indices are not supported with memory persistence.
   }
