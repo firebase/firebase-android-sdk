@@ -341,10 +341,14 @@ public class FirebaseAppDistribution {
   @VisibleForTesting
   void onActivityResumed(Activity activity) {
     if (awaitingSignInDialogConfirmation()) {
-      atSignInConfirmationDialogStage = false;
+      synchronized (updateIfNewReleaseTaskLock) {
+        atSignInConfirmationDialogStage = false;
+      }
       showSignInConfirmationDialog(activity);
     } else if (awaitingUpdateDialogConfirmation()) {
-      atUpdateConfirmationDialogStage = false;
+      synchronized (updateIfNewReleaseTaskLock) {
+        atUpdateConfirmationDialogStage = false;
+      }
       synchronized (cachedNewReleaseLock) {
         showUpdateConfirmationDialog(
             activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
@@ -383,10 +387,12 @@ public class FirebaseAppDistribution {
       return;
     }
     if (activity.isChangingConfigurations()) {
-      atSignInConfirmationDialogStage =
-          signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
-      atUpdateConfirmationDialogStage =
-          updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
+      synchronized (updateIfNewReleaseTaskLock) {
+        atSignInConfirmationDialogStage =
+            signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+        atUpdateConfirmationDialogStage =
+            updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
+      }
       dismissDialogs();
       return;
     }
@@ -458,7 +464,9 @@ public class FirebaseAppDistribution {
   }
 
   private void updateConfirmationDialogClosedCallback(TaskCompletionSource showUpdateDialogTask) {
-    atUpdateConfirmationDialogStage = false;
+    synchronized (updateIfNewReleaseTaskLock) {
+      atUpdateConfirmationDialogStage = false;
+    }
     showUpdateDialogTask.setException(
         new FirebaseAppDistributionException(
             ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
@@ -502,14 +510,20 @@ public class FirebaseAppDistribution {
   }
 
   private boolean updateIfNewReleaseAvailableIsTaskInProgress() {
-    return cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete();
+    synchronized (updateIfNewReleaseTaskLock) {
+      return cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete();
+    }
   }
 
   private boolean awaitingSignInDialogConfirmation() {
-    return (updateIfNewReleaseAvailableIsTaskInProgress() && atSignInConfirmationDialogStage);
+    synchronized (updateIfNewReleaseTaskLock) {
+      return (updateIfNewReleaseAvailableIsTaskInProgress() && atSignInConfirmationDialogStage);
+    }
   }
 
   private boolean awaitingUpdateDialogConfirmation() {
-    return (updateIfNewReleaseAvailableIsTaskInProgress() && atUpdateConfirmationDialogStage);
+    synchronized (updateIfNewReleaseTaskLock) {
+      return (updateIfNewReleaseAvailableIsTaskInProgress() && atUpdateConfirmationDialogStage);
+    }
   }
 }
