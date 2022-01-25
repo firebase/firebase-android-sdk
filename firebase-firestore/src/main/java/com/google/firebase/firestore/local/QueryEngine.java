@@ -23,7 +23,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Logger;
@@ -105,22 +104,21 @@ public class QueryEngine {
    */
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, Target target) {
-    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
-    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
+    if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
 
-    FieldIndex fieldIndex = indexManager.getFieldIndex(query.toTarget());
-    if (fieldIndex == null) {
+    if (!indexManager.canServeFromIndex(target)) {
       return null;
     }
 
-    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
+
     return appendRemainingResults(
-        values(indexedDocuments), query, fieldIndex.getIndexState().getOffset());
+        values(indexedDocuments), query, indexManager.getLeastRecentIndexOffset(target));
   }
 
   /**
@@ -131,8 +129,7 @@ public class QueryEngine {
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
-    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
-    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
+    if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
@@ -240,7 +237,11 @@ public class QueryEngine {
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
     for (Document entry : indexedResults) {
-      remainingResults = remainingResults.insert(entry.getKey(), entry);
+      // For OR queries, it is possible that a document that's been indexed also shows up in
+      // "remaining results" since we use the least recent IndexOffset of all DNF terms.
+      if (!remainingResults.containsKey(entry.getKey())) {
+        remainingResults = remainingResults.insert(entry.getKey(), entry);
+      }
     }
     return remainingResults;
   }

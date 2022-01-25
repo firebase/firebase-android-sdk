@@ -708,7 +708,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     Target target = query.toTarget();
     FieldIndex fieldIndex = indexManager.getFieldIndex(target);
     assertNotNull("Target not found", fieldIndex);
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }

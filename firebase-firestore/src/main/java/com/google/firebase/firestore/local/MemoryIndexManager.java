@@ -69,7 +69,7 @@ class MemoryIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
+  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.
     return Collections.emptySet();
   }
@@ -96,6 +96,16 @@ class MemoryIndexManager implements IndexManager {
   public Collection<FieldIndex> getFieldIndexes() {
     // Field indices are not supported with memory persistence.
     return Collections.emptyList();
+  }
+
+  @Override
+  public boolean canServeFromIndex(Target target) {
+    return false;
+  }
+
+  @Override
+  public FieldIndex.IndexOffset getLeastRecentIndexOffset(Target target) {
+    return FieldIndex.IndexOffset.NONE;
   }
 
   @Override
