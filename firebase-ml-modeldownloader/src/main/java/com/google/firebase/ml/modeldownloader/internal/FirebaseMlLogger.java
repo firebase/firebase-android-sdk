@@ -23,7 +23,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.components.Preconditions;
 import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.DeleteModelLogEvent;
