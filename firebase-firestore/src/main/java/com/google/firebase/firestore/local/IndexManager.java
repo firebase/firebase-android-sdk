@@ -79,9 +79,12 @@ public interface IndexManager {
 
   /**
    * Iterates over all field indexes that are used to serve the given target, and returns the least
-   * recent offset of them all.
+   * recent offset of them all. Asserts that the target can be served from index.
    */
   FieldIndex.IndexOffset getLeastRecentIndexOffset(Target target);
+
+  /** Returns the lowest offset for the provided index group. */
+  FieldIndex.IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes);
 
   /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no

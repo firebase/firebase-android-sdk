@@ -296,22 +296,37 @@ final class SQLiteIndexManager implements IndexManager {
     return true;
   }
 
-  // TODO(orquery): This looks awfully like `getExistingOffset` in IndexBackfillter. Refactor.
+  @Override
+  public FieldIndex.IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes) {
+    hardAssert(
+        !fieldIndexes.isEmpty(),
+        "Found empty index group when looking for least recent index offset.");
+
+    Iterator<FieldIndex> it = fieldIndexes.iterator();
+    FieldIndex.IndexOffset minOffset = it.next().getIndexState().getOffset();
+    int minBatchId = minOffset.getLargestBatchId();
+    while (it.hasNext()) {
+      FieldIndex.IndexOffset newOffset = it.next().getIndexState().getOffset();
+      if (newOffset.compareTo(minOffset) < 0) {
+        minOffset = newOffset;
+      }
+      minBatchId = Math.max(newOffset.getLargestBatchId(), minBatchId);
+    }
+
+    return FieldIndex.IndexOffset.create(
+        minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
+  }
+
   @Override
   public FieldIndex.IndexOffset getLeastRecentIndexOffset(Target target) {
-    FieldIndex.IndexOffset min = null;
+    hardAssert(
+        canServeFromIndex(target),
+        "Cannot find least recent index offset if target cannot be served from index.");
+    List<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
-      FieldIndex index = getFieldIndex(subTarget);
-      if (index == null) {
-        // If any of this target's sub-queries does not have a field index, return NONE.
-        return FieldIndex.IndexOffset.NONE;
-      }
-      FieldIndex.IndexOffset candidate = index.getIndexState().getOffset();
-      if (min == null || candidate.compareTo(min) < 0) {
-        min = candidate;
-      }
+      fieldIndexes.add(getFieldIndex(subTarget));
     }
-    return min == null ? FieldIndex.IndexOffset.NONE : min;
+    return getLeastRecentIndexOffset(fieldIndexes);
   }
 
   private List<Target> getSubTargets(Target target) {

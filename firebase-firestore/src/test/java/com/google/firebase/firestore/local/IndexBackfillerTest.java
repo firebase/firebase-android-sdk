@@ -527,7 +527,7 @@ public class IndexBackfillerTest {
     if (indexManager.canServeFromIndex(target)) {
       Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
       assertThat(actualKeys)
-              .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
+          .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
     } else {
       assertEquals(0, expectedKeys.length);
     }

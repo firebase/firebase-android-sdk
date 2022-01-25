@@ -26,7 +26,6 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -133,7 +132,8 @@ public class IndexBackfiller {
       String collectionGroup, int documentsRemainingUnderCap) {
     // Use the earliest offset of all field indexes to query the local cache.
     Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
-    IndexOffset existingOffset = getExistingOffset(fieldIndexes);
+    hardAssert(!fieldIndexes.isEmpty(), "Updating collection without indexes");
+    IndexOffset existingOffset = indexManager.getLeastRecentIndexOffset(fieldIndexes);
 
     LocalDocumentsResult nextBatch =
         localDocumentsView.getNextDocuments(
@@ -159,24 +159,6 @@ public class IndexBackfiller {
         maxOffset.getReadTime(),
         maxOffset.getDocumentKey(),
         Math.max(lookupResult.getBatchId(), existingOffset.getLargestBatchId()));
-  }
-
-  /** Returns the lowest offset for the provided index group. */
-  private IndexOffset getExistingOffset(Collection<FieldIndex> fieldIndexes) {
-    hardAssert(!fieldIndexes.isEmpty(), "Updating collection without indexes");
-
-    Iterator<FieldIndex> it = fieldIndexes.iterator();
-    IndexOffset minOffset = it.next().getIndexState().getOffset();
-    int minBatchId = minOffset.getLargestBatchId();
-    while (it.hasNext()) {
-      IndexOffset newOffset = it.next().getIndexState().getOffset();
-      if (newOffset.compareTo(minOffset) < 0) {
-        minOffset = newOffset;
-      }
-      minBatchId = Math.max(newOffset.getLargestBatchId(), minBatchId);
-    }
-
-    return IndexOffset.create(minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
   }
 
   @VisibleForTesting
