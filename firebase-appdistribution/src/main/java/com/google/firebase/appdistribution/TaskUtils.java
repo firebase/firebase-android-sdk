@@ -122,7 +122,7 @@ class TaskUtils {
    *
    * <pre>{@code
    * runFirstAsyncTask()
-   *   .onSuccessTask(combineWithResultOf(() -> startSecondAsyncTask())
+   *   .onSuccessTask(combineWithResultOf(executor, () -> startSecondAsyncTask())
    *   .addOnSuccessListener(
    *       results ->
    *           doSomethingWithBothResults(results.result1(), results.result2()));

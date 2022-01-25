@@ -14,25 +14,40 @@
 
 package com.google.firebase.appdistribution;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
+import static org.robolectric.Shadows.shadowOf;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 final class TestUtils {
   private TestUtils() {}
 
-  static void assertTaskFailure(Task task, Status status, String messageSubstring) {
+  static FirebaseAppDistributionException assertTaskFailure(
+      Task task, Status status, String messageSubstring) {
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(FirebaseAppDistributionException.class);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();
     assertThat(e.getErrorCode()).isEqualTo(status);
     assertThat(e).hasMessageThat().contains(messageSubstring);
+    return e;
   }
 
   static void assertTaskFailure(
       Task task, Status status, String messageSubstring, Throwable cause) {
     assertTaskFailure(task, status, messageSubstring);
     assertThat(task.getException()).hasCauseThat().isEqualTo(cause);
+  }
+
+  static void awaitAsyncOperations(ExecutorService executorService) throws InterruptedException {
+    // Await anything enqueued to the executor
+    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+
+    // Idle the main looper, which is also running these tests, so any Task or lifecycle callbacks
+    // can be handled. See http://robolectric.org/blog/2019/06/04/paused-looper/ for more info.
+    shadowOf(getMainLooper()).idle();
   }
 }
