@@ -102,7 +102,7 @@ public class DocumentSnapshot {
   /** @return The id of the document. */
   @NonNull
   public String getId() {
-    return key.getPath().getLastSegment();
+    return key.getDocumentId();
   }
 
   /** @return The metadata for this document snapshot. */

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -26,14 +27,16 @@ import static org.junit.Assert.assertNull;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Overlay;
+import com.google.firebase.firestore.testutil.TestUtil;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestName;
 
 /**
  * These are tests for any implementation of the DocumentOverlayCache interface.
@@ -46,27 +49,13 @@ import org.junit.rules.TestName;
  * </ol>
  */
 public abstract class DocumentOverlayCacheTestCase {
-  @Rule public TestName name = new TestName();
-
   private Persistence persistence;
-  private DocumentOverlayCache overlays;
-  private static boolean overlayEnabled = false;
-
-  @BeforeClass
-  public static void beforeClass() {
-    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-  }
+  private DocumentOverlayCache cache;
 
   @Before
   public void setUp() {
     persistence = getPersistence();
-    overlays = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    cache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
   }
 
   @After
@@ -76,23 +65,33 @@ public abstract class DocumentOverlayCacheTestCase {
 
   abstract Persistence getPersistence();
 
-  void saveOverlay(int largestBatch, DocumentKey key, Mutation overlay) {
+  void saveOverlays(int largestBatch, Mutation... mutations) {
     Map<DocumentKey, Mutation> data = new HashMap<>();
-    data.put(key, overlay);
-    overlays.saveOverlays(largestBatch, data);
+    for (Mutation mutation : mutations) {
+      data.put(mutation.getKey(), mutation);
+    }
+    cache.saveOverlays(largestBatch, data);
+  }
+
+  void saveOverlays(int largestBatch, String... keys) {
+    Map<DocumentKey, Mutation> data = new HashMap<>();
+    for (String key : keys) {
+      data.put(key(key), setMutation(key, map()));
+    }
+    cache.saveOverlays(largestBatch, data);
   }
 
   @Test
   public void testReturnsNullWhenOverlayIsNotFound() {
-    assertNull(overlays.getOverlay(key("coll/doc1")));
+    assertNull(cache.getOverlay(key("coll/doc1")));
   }
 
   @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    saveOverlay(2, key("coll/doc1"), m);
+    saveOverlays(2, m);
 
-    assertEquals(m, overlays.getOverlay(key("coll/doc1")));
+    assertEquals(m, cache.getOverlay(key("coll/doc1")).getMutation());
   }
 
   @Test
@@ -100,38 +99,34 @@ public abstract class DocumentOverlayCacheTestCase {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
     Mutation m3 = deleteMutation("coll/doc3");
-    Map<DocumentKey, Mutation> m = new HashMap<>();
-    m.put(key("coll/doc1"), m1);
-    m.put(key("coll/doc2"), m2);
-    m.put(key("coll/doc3"), m3);
-    overlays.saveOverlays(3, m);
+    saveOverlays(3, m1, m2, m3);
 
-    assertEquals(m1, overlays.getOverlay(key("coll/doc1")));
-    assertEquals(m2, overlays.getOverlay(key("coll/doc2")));
-    assertEquals(m3, overlays.getOverlay(key("coll/doc3")));
+    assertEquals(m1, cache.getOverlay(key("coll/doc1")).getMutation());
+    assertEquals(m2, cache.getOverlay(key("coll/doc2")).getMutation());
+    assertEquals(m3, cache.getOverlay(key("coll/doc3")).getMutation());
   }
 
   @Test
   public void testSavingOverlayOverwrites() {
     Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
     Mutation m2 = setMutation("coll/doc1", map("foo", "set", "bar", 42));
-    saveOverlay(2, key("coll/doc1"), m1);
-    saveOverlay(2, key("coll/doc1"), m2);
+    saveOverlays(2, m1);
+    saveOverlays(2, m2);
 
-    assertEquals(m2, overlays.getOverlay(key("coll/doc1")));
+    assertEquals(m2, cache.getOverlay(key("coll/doc1")).getMutation());
   }
 
   @Test
   public void testDeleteRepeatedlyWorks() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
-    saveOverlay(2, key("coll/doc1"), m);
+    saveOverlays(2, m);
 
-    overlays.removeOverlaysForBatchId(2);
-    assertNull(overlays.getOverlay(key("coll/doc1")));
+    cache.removeOverlaysForBatchId(2);
+    assertNull(cache.getOverlay(key("coll/doc1")));
 
     // Repeat
-    overlays.removeOverlaysForBatchId(2);
-    assertNull(overlays.getOverlay(key("coll/doc1")));
+    cache.removeOverlaysForBatchId(2);
+    assertNull(cache.getOverlay(key("coll/doc1")));
   }
 
   @Test
@@ -142,41 +137,62 @@ public abstract class DocumentOverlayCacheTestCase {
     // m4 and m5 are not under "coll"
     Mutation m4 = setMutation("coll/doc1/sub/sub_doc", map("foo", "bar"));
     Mutation m5 = setMutation("other/doc1", map("foo", "bar"));
-    Map<DocumentKey, Mutation> m = new HashMap<>();
-    m.put(key("coll/doc1"), m1);
-    m.put(key("coll/doc2"), m2);
-    m.put(key("coll/doc3"), m3);
-    m.put(key("coll/doc1/sub/sub_doc"), m4);
-    m.put(key("other/doc1"), m5);
-    overlays.saveOverlays(3, m);
+    saveOverlays(3, m1, m2, m3, m4, m5);
 
-    m.remove(key("coll/doc1/sub/sub_doc"));
-    m.remove(key("other/doc1"));
-    assertEquals(m, overlays.getOverlays(path("coll"), -1));
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays(path("coll"), -1);
+    verifyOverlayContains(overlays, "coll/doc1", "coll/doc2", "coll/doc3");
   }
 
   @Test
   public void testGetAllOverlaysSinceBatchId() {
-    Mutation m1 = patchMutation("coll/doc1", map("foo", "bar"));
-    Mutation m2 = setMutation("coll/doc2", map("foo", "bar"));
-    Map<DocumentKey, Mutation> m = new HashMap<>();
-    m.put(key("coll/doc1"), m1);
-    m.put(key("coll/doc2"), m2);
-    overlays.saveOverlays(2, m);
+    saveOverlays(2, "coll/doc1", "coll/doc2");
+    saveOverlays(3, "coll/doc3");
+    saveOverlays(4, "coll/doc4");
 
-    Mutation m3 = deleteMutation("coll/doc3");
-    m = new HashMap<>();
-    m.put(key("coll/doc3"), m3);
-    overlays.saveOverlays(3, m);
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays(path("coll"), 2);
+    verifyOverlayContains(overlays, "coll/doc3", "coll/doc4");
+  }
 
-    Mutation m4 = deleteMutation("coll/doc4");
-    m = new HashMap<>();
-    m.put(key("coll/doc4"), m4);
-    overlays.saveOverlays(4, m);
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesCollectionGroup() {
+    saveOverlays(2, "coll1/doc1", "coll2/doc1");
+    saveOverlays(3, "coll1/doc2");
+    saveOverlays(4, "coll2/doc2");
 
-    Map<DocumentKey, Mutation> expected = new HashMap<>();
-    expected.put(key("coll/doc3"), m3);
-    expected.put(key("coll/doc4"), m4);
-    assertEquals(expected, overlays.getOverlays(path("coll"), 2));
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll1", -1, 50);
+    verifyOverlayContains(overlays, "coll1/doc1", "coll1/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesBatchId() {
+    saveOverlays(2, "coll/doc1");
+    saveOverlays(3, "coll/doc2");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", 2, 50);
+    verifyOverlayContains(overlays, "coll/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupEnforcesLimit() {
+    saveOverlays(1, "coll/doc1");
+    saveOverlays(2, "coll/doc2");
+    saveOverlays(3, "coll/doc3");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", -1, 2);
+    verifyOverlayContains(overlays, "coll/doc1", "coll/doc2");
+  }
+
+  @Test
+  public void testGetAllOverlaysFromCollectionGroupWithLimitIncludesFullBatches() {
+    saveOverlays(1, "coll/doc1");
+    saveOverlays(2, "coll/doc2", "coll/doc3");
+
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays("coll", -1, 2);
+    verifyOverlayContains(overlays, "coll/doc1", "coll/doc2", "coll/doc3");
+  }
+
+  void verifyOverlayContains(Map<DocumentKey, Overlay> overlays, String... keys) {
+    Set<DocumentKey> expected = Arrays.stream(keys).map(TestUtil::key).collect(Collectors.toSet());
+    assertThat(overlays.keySet()).containsExactlyElementsIn(expected);
   }
 }

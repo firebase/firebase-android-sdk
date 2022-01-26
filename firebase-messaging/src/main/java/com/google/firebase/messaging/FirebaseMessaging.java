@@ -332,7 +332,7 @@ public class FirebaseMessaging {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(enable);
   }
 
-  /*
+  /**
    * Returns whether notification delegation is enabled or not.
    *
    * @return true if enabled, false otherwise.

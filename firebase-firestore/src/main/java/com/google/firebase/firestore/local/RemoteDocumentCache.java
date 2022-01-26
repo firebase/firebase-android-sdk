@@ -14,11 +14,12 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -44,8 +45,8 @@ interface RemoteDocumentCache {
    */
   void add(MutableDocument document, SnapshotVersion readTime);
 
-  /** Removes the cached entry for the given key (no-op if no entry exists). */
-  void remove(DocumentKey documentKey);
+  /** Removes the cached entries for the given keys (no-op if no entry exists). */
+  void removeAll(Collection<DocumentKey> keys);
 
   /**
    * Looks up an entry in the cache.
@@ -65,21 +66,22 @@ interface RemoteDocumentCache {
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   /**
-   * Executes a query against the cached Document entries
+   * Looks up the next {@code limit} documents for a collection group based on the provided offset.
+   * The ordering is based on the document's read time and key.
    *
-   * <p>Implementations may return extra documents if convenient. The results should be re-filtered
-   * by the consumer before presenting them to the user.
-   *
-   * <p>Cached entries for non-existing documents have no bearing on query results.
-   *
-   * @param query The query to match documents against.
-   * @param sinceReadTime If not set to SnapshotVersion.MIN, return only documents that have been
-   *     read since this snapshot version (exclusive).
-   * @return The set of matching documents.
+   * @param collectionGroup The collection group to scan.
+   * @param offset The offset to start the scan at.
+   * @param limit The maximum number of results to return.
+   * @return A newly created map with next set of documents.
    */
-  ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime);
+  Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
 
-  /** Returns the latest read time of any document in the cache. */
-  SnapshotVersion getLatestReadTime();
+  /**
+   * Returns the documents from the provided collection.
+   *
+   * @param collection The collection to read.
+   * @param offset The read time and document key to start scanning at (exclusive).
+   * @return A newly created map with the set of documents in the collection.
+   */
+  Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
 }

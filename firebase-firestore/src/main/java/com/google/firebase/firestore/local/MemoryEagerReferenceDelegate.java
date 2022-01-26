@@ -16,7 +16,9 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.firestore.core.ListenSequence;
 import com.google.firebase.firestore.model.DocumentKey;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /** Provides eager garbage collection for MemoryPersistence. */
@@ -72,11 +74,13 @@ class MemoryEagerReferenceDelegate implements ReferenceDelegate {
   @Override
   public void onTransactionCommitted() {
     MemoryRemoteDocumentCache remoteDocuments = persistence.getRemoteDocumentCache();
+    List<DocumentKey> docsToRemove = new ArrayList<>();
     for (DocumentKey key : orphanedDocuments) {
       if (!isReferenced(key)) {
-        remoteDocuments.remove(key);
+        docsToRemove.add(key);
       }
     }
+    remoteDocuments.removeAll(docsToRemove);
     orphanedDocuments = null;
   }
 

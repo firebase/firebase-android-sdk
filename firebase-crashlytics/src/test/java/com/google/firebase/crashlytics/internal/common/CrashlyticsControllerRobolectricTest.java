@@ -30,8 +30,10 @@ import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.log.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
@@ -50,6 +52,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class CrashlyticsControllerRobolectricTest {
   private static final String GOOGLE_APP_ID = "google:app:id";
+  private static final String SESSION_ID = "session_id";
 
   private Context testContext;
   @Mock private IdManager idManager;
@@ -143,8 +146,7 @@ public class CrashlyticsControllerRobolectricTest {
             "packageName",
             "versionCode",
             "versionName",
-            /*developmentPlatform=*/ null,
-            /*developmentPlatformVersion=*/ null);
+            mock(DevelopmentPlatformProvider.class));
 
     final CrashlyticsController controller =
         new CrashlyticsController(
@@ -160,7 +162,7 @@ public class CrashlyticsControllerRobolectricTest {
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class));
-    controller.openSession();
+    controller.openSession(SESSION_ID);
     return controller;
   }
 

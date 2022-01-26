@@ -534,7 +534,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       }
     }
 
-    // Re-establish listens for the targets that have been invalidated by  existence filter
+    // Re-establish listens for the targets that have been invalidated by existence filter
     // mismatches.
     for (int targetId : remoteEvent.getTargetMismatches()) {
       TargetData targetData = this.listenTargets.get(targetId);

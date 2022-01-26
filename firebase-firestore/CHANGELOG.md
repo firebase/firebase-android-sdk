@@ -2,7 +2,20 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# Unreleased
+# 24.0.2
+- [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
+working and receive a "Permission Denied" error. This issue only occurred for
+AppCheck users that set their expiration time to under an hour.
+
+# 24.0.1
+- [changed] Improved performance for databases that contain many document
+  updates that have not yet been synced with the backend.
+- [changed] Improved performance for queries against collections that contain
+  subcollections.
+- [fixed] Fixed an issue that can result in incomplete Query snapshots when an
+  app is backgrounded during query execution.
+
+# 24.0.0
 - [feature] Added support for Firebase AppCheck.
 
 # 23.0.4

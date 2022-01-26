@@ -26,7 +26,7 @@ import com.google.firestore.v1.Value;
  * one of these states even after all mutations have been applied, {@link #isValidDocument} returns
  * false and the document should be removed from all views.
  */
-public final class MutableDocument implements Document, Cloneable {
+public final class MutableDocument implements Document {
 
   private enum DocumentType {
     /**
@@ -62,22 +62,25 @@ public final class MutableDocument implements Document, Cloneable {
   private final DocumentKey key;
   private DocumentType documentType;
   private SnapshotVersion version;
-  private SnapshotVersion readTime = SnapshotVersion.NONE;
+  private SnapshotVersion readTime;
   private ObjectValue value;
   private DocumentState documentState;
 
   private MutableDocument(DocumentKey key) {
     this.key = key;
+    this.readTime = SnapshotVersion.NONE;
   }
 
   private MutableDocument(
       DocumentKey key,
       DocumentType documentType,
       SnapshotVersion version,
+      SnapshotVersion readTime,
       ObjectValue value,
       DocumentState documentState) {
     this.key = key;
     this.version = version;
+    this.readTime = readTime;
     this.documentType = documentType;
     this.documentState = documentState;
     this.value = value;
@@ -91,6 +94,7 @@ public final class MutableDocument implements Document, Cloneable {
     return new MutableDocument(
         documentKey,
         DocumentType.INVALID,
+        SnapshotVersion.NONE,
         SnapshotVersion.NONE,
         new ObjectValue(),
         DocumentState.SYNCED);
@@ -155,6 +159,7 @@ public final class MutableDocument implements Document, Cloneable {
 
   public MutableDocument setHasLocalMutations() {
     this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
+    this.version = SnapshotVersion.NONE;
     return this;
   }
 
@@ -225,8 +230,8 @@ public final class MutableDocument implements Document, Cloneable {
 
   @Override
   @NonNull
-  public MutableDocument clone() {
-    return new MutableDocument(key, documentType, version, value.clone(), documentState);
+  public MutableDocument mutableCopy() {
+    return new MutableDocument(key, documentType, version, readTime, value.clone(), documentState);
   }
 
   @Override
@@ -238,6 +243,8 @@ public final class MutableDocument implements Document, Cloneable {
 
     if (!key.equals(document.key)) return false;
     if (!version.equals(document.version)) return false;
+    // TODO(mrschmidt): Include readTime (requires a lot of test updates)
+    // if (!readTime.equals(document.readTime)) return false;
     if (!documentType.equals(document.documentType)) return false;
     if (!documentState.equals(document.documentState)) return false;
     return value.equals(document.value);

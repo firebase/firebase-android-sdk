@@ -23,6 +23,7 @@ import static java.lang.Math.max;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -95,18 +96,13 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void start() {
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
-      started = true;
-      return;
-    }
-
     Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
 
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
     db.query(
-            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos "
-                + "FROM index_state WHERE uid = ?")
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key, "
+                + "largest_batch_id FROM index_state WHERE uid = ?")
         .binding(uid)
         .forEach(
             row -> {
@@ -114,7 +110,13 @@ final class SQLiteIndexManager implements IndexManager {
               long sequenceNumber = row.getLong(1);
               SnapshotVersion readTime =
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
-              indexStates.put(indexId, FieldIndex.IndexState.create(sequenceNumber, readTime));
+              DocumentKey documentKey =
+                  DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
+              int largestBatchId = row.getInt(5);
+              indexStates.put(
+                  indexId,
+                  FieldIndex.IndexState.create(
+                      sequenceNumber, readTime, documentKey, largestBatchId));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -219,16 +221,16 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(Collection<Document> documents) {
+  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    for (Document document : documents) {
-      Collection<FieldIndex> fieldIndexes = getFieldIndexes(document.getKey().getCollectionGroup());
+
+    for (Map.Entry<DocumentKey, Document> entry : documents) {
+      Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
       for (FieldIndex fieldIndex : fieldIndexes) {
-        SortedSet<IndexEntry> existingEntries =
-            getExistingIndexEntries(document.getKey(), fieldIndex);
-        SortedSet<IndexEntry> newEntries = computeIndexEntries(document, fieldIndex);
+        SortedSet<IndexEntry> existingEntries = getExistingIndexEntries(entry.getKey(), fieldIndex);
+        SortedSet<IndexEntry> newEntries = computeIndexEntries(entry.getValue(), fieldIndex);
         if (!existingEntries.equals(newEntries)) {
-          updateEntries(document, existingEntries, newEntries);
+          updateEntries(entry.getValue(), existingEntries, newEntries);
         }
       }
     }
@@ -624,9 +626,10 @@ final class SQLiteIndexManager implements IndexManager {
 
   private boolean isInFilter(Target target, FieldPath fieldPath) {
     for (Filter filter : target.getFilters()) {
-      if (filter.getField().equals(fieldPath)) {
-        Filter.Operator operator = ((FieldFilter) filter).getOperator();
-        return operator.equals(Filter.Operator.IN) || operator.equals(Filter.Operator.NOT_IN);
+      if ((filter instanceof FieldFilter) && ((FieldFilter) filter).getField().equals(fieldPath)) {
+        FieldFilter.Operator operator = ((FieldFilter) filter).getOperator();
+        return operator.equals(FieldFilter.Operator.IN)
+            || operator.equals(FieldFilter.Operator.NOT_IN);
       }
     }
     return false;
@@ -637,7 +640,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
     hardAssert(started, "IndexManager not started");
 
     ++memoizedMaxSequenceNumber;
@@ -647,15 +650,18 @@ final class SQLiteIndexManager implements IndexManager {
               fieldIndex.getIndexId(),
               fieldIndex.getCollectionGroup(),
               fieldIndex.getSegments(),
-              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, readTime));
+              FieldIndex.IndexState.create(memoizedMaxSequenceNumber, offset));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
-              + "read_time_seconds, read_time_nanos) VALUES(?, ?, ?, ?, ?)",
+              + "read_time_seconds, read_time_nanos, document_key, largest_batch_id) "
+              + "VALUES(?, ?, ?, ?, ?, ?, ?)",
           fieldIndex.getIndexId(),
           uid,
           memoizedMaxSequenceNumber,
-          readTime.getTimestamp().getSeconds(),
-          readTime.getTimestamp().getNanoseconds());
+          offset.getReadTime().getTimestamp().getSeconds(),
+          offset.getReadTime().getTimestamp().getNanoseconds(),
+          EncodedPath.encode(offset.getDocumentKey().getPath()),
+          offset.getLargestBatchId());
       memoizeIndex(updatedIndex);
     }
   }

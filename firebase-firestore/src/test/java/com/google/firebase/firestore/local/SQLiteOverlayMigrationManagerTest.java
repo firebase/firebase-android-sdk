@@ -35,9 +35,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import java.util.Collections;
 import java.util.List;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -46,31 +44,17 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteOverlayMigrationManagerTest {
-  private static boolean overlayEnabled;
-
   private Persistence persistence;
   private LocalStore localStore;
 
-  @BeforeClass
-  public static void beforeClass() {
-    overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    Persistence.OVERLAY_SUPPORT_ENABLED = true;
-  }
-
-  @AfterClass
-  public static void afterClass() {
-    Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-  }
-
   @Before
   public void setUp() {
+    // Setup persistence to version 12, which is before Overlay.
     persistence =
-        PersistenceTestHelpers.createSQLitePersistenceForVersion(
-            "test-data-migration", SQLiteSchema.OVERLAY_SUPPORT_VERSION - 1);
+        PersistenceTestHelpers.createSQLitePersistenceForVersion("test-data-migration", 12);
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
   }
 
@@ -90,7 +74,7 @@ public class SQLiteOverlayMigrationManagerTest {
   }
 
   private void writeMutations(List<Mutation> mutations) {
-    LocalWriteResult result = localStore.writeLocally(mutations);
+    localStore.writeLocally(mutations);
   }
 
   /** Asserts that the given local store contains the given document. */
@@ -109,13 +93,16 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
         setMutation("foo/bar", map("foo", "bar")),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
+    // Version is 0 because of remote document elision.
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
@@ -133,13 +120,16 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
         deleteMutation("foo/bar"),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
+    // Version is 0 because of remote document elision.
     assertContains(deletedDoc("foo/bar", 2).setHasLocalMutations());
 
     SQLiteOverlayMigrationManager migrationManager =
@@ -162,17 +152,16 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     DocumentOverlayCache overlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     assertEquals(
         mergeMutation("foo/bar", map("it", 2), Collections.emptyList()),
-        overlay.getOverlay(key("foo/bar")));
+        overlay.getOverlay(key("foo/bar")).getMutation());
     assertEquals(
         mergeMutation("foo/newBar", map("it", asList(1)), Collections.emptyList()),
-        overlay.getOverlay(key("foo/newBar")));
+        overlay.getOverlay(key("foo/newBar")).getMutation());
 
     assertContains(doc("foo/bar", 2, map("it", 2)).setHasLocalMutations());
     assertContains(doc("foo/newBar", 0, map("it", asList(1))).setHasLocalMutations());
@@ -190,8 +179,7 @@ public class SQLiteOverlayMigrationManagerTest {
     // Switch to a different user
     IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), new User("another_user"));
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), new User("another_user"));
     localStore.start();
     writeMutation(setMutation("foo/bar", map("foo", "set-by-another_user")));
 
@@ -200,16 +188,21 @@ public class SQLiteOverlayMigrationManagerTest {
     persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
     indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     localStore =
-        new LocalStore(
-            persistence, indexBackfiller, new DefaultQueryEngine(), User.UNAUTHENTICATED);
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-unauthenticated")),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-another_user")),
-        persistence.getDocumentOverlay(new User("another_user")).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(new User("another_user"))
+            .getOverlay(key("foo/bar"))
+            .getMutation());
 
     SQLiteOverlayMigrationManager migrationManager =
         (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();

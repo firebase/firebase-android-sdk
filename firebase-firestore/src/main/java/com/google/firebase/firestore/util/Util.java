@@ -31,8 +31,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.SortedSet;
 
@@ -314,7 +316,12 @@ public class Util {
    */
   public static <T extends Comparable<T>> void diffCollections(
       SortedSet<T> before, SortedSet<T> after, Consumer<T> onAdd, Consumer<T> onRemove) {
-    diffCollections(before.iterator(), after.iterator(), before.comparator(), onAdd, onRemove);
+    diffCollections(
+        before.iterator(),
+        after.iterator(),
+        before.comparator() != null ? before.comparator() : (l, r) -> l.compareTo(r),
+        onAdd,
+        onRemove);
   }
 
   private static <T> void diffCollections(
@@ -365,5 +372,38 @@ public class Util {
   @Nullable
   private static <T> T advanceIterator(Iterator<T> it) {
     return it.hasNext() ? it.next() : null;
+  }
+
+  /** Returns an iterable that iterates over the values in a map. */
+  public static <K, V> Iterable<V> values(Iterable<Map.Entry<K, V>> map) {
+    return () -> {
+      Iterator<Map.Entry<K, V>> iterator = map.iterator();
+      return new Iterator<V>() {
+        @Override
+        public boolean hasNext() {
+          return iterator.hasNext();
+        }
+
+        @Override
+        public V next() {
+          return iterator.next().getValue();
+        }
+      };
+    };
+  }
+
+  /** Returns a map with the first {#code n} elements of {#code data} when sorted by comp. */
+  public static <K, V> Map<K, V> firstNEntries(Map<K, V> data, int n, Comparator<V> comp) {
+    if (data.size() <= n) {
+      return data;
+    } else {
+      List<Map.Entry<K, V>> sortedValues = new ArrayList<>(data.entrySet());
+      Collections.sort(sortedValues, (l, r) -> comp.compare(l.getValue(), r.getValue()));
+      Map<K, V> result = new HashMap<>();
+      for (int i = 0; i < n; ++i) {
+        result.put(sortedValues.get(i).getKey(), sortedValues.get(i).getValue());
+      }
+      return result;
+    }
   }
 }

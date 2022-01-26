@@ -14,17 +14,18 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.util.Pair;
 import androidx.annotation.NonNull;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -33,15 +34,12 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, Pair<MutableDocument, SnapshotVersion>> docs;
+  private ImmutableSortedMap<DocumentKey, Document> docs;
   /** Manages the collection group index. */
   private IndexManager indexManager;
-  /** The latest read time of any document in the cache. */
-  private SnapshotVersion latestReadTime;
 
   MemoryRemoteDocumentCache() {
-    docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    latestReadTime = SnapshotVersion.NONE;
+    docs = emptyDocumentMap();
   }
 
   @Override
@@ -55,21 +53,28 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
-    docs = docs.insert(document.getKey(), new Pair<>(document.clone(), readTime));
-    latestReadTime = readTime.compareTo(latestReadTime) > 0 ? readTime : latestReadTime;
+    docs = docs.insert(document.getKey(), document.mutableCopy().withReadTime(readTime));
 
-    indexManager.addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
 
   @Override
-  public void remove(DocumentKey key) {
-    docs = docs.remove(key);
+  public void removeAll(Collection<DocumentKey> keys) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
+
+    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
+    for (DocumentKey key : keys) {
+      docs = docs.remove(key);
+      deletedDocs =
+          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+    indexManager.updateIndexEntries(deletedDocs);
   }
 
   @Override
   public MutableDocument get(DocumentKey key) {
-    Pair<MutableDocument, SnapshotVersion> entry = docs.get(key);
-    return entry != null ? entry.first.clone() : MutableDocument.newInvalidDocument(key);
+    Document doc = docs.get(key);
+    return doc != null ? doc.mutableCopy() : MutableDocument.newInvalidDocument(key);
   }
 
   @Override
@@ -82,60 +87,54 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, MutableDocument> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime) {
-    hardAssert(
-        !query.isCollectionGroupQuery(),
-        "CollectionGroup queries should be handled in LocalDocumentsView");
-    ImmutableSortedMap<DocumentKey, MutableDocument> result = emptyMutableDocumentMap();
+  public Map<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int limit) {
+    // This method should only be called from the IndexBackfiller if SQLite is enabled.
+    throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+    Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
-    ResourcePath queryPath = query.getPath();
-    DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
-    Iterator<Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>>> iterator =
-        docs.iteratorFrom(prefix);
+    DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
+    Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>> entry = iterator.next();
+      Map.Entry<DocumentKey, Document> entry = iterator.next();
+      Document doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
-      if (!queryPath.isPrefixOf(key.getPath())) {
+      if (!collection.isPrefixOf(key.getPath())) {
+        // We are now scanning the next collection. Abort.
         break;
       }
 
-      MutableDocument doc = entry.getValue().first;
-      if (!doc.isFoundDocument()) {
+      if (key.getPath().length() > collection.length() + 1) {
+        // Exclude entries from subcollections.
         continue;
       }
 
-      SnapshotVersion readTime = entry.getValue().second;
-      if (readTime.compareTo(sinceReadTime) <= 0) {
+      if (IndexOffset.fromDocument(doc).compareTo(offset) <= 0) {
+        // The document sorts before the offset.
         continue;
       }
 
-      if (!query.matches(doc)) {
-        continue;
-      }
-
-      result = result.insert(doc.getKey(), doc.clone());
+      result.put(doc.getKey(), doc.mutableCopy());
     }
 
     return result;
   }
 
-  @Override
-  public SnapshotVersion getLatestReadTime() {
-    return latestReadTime;
-  }
-
-  Iterable<MutableDocument> getDocuments() {
+  Iterable<Document> getDocuments() {
     return new DocumentIterable();
   }
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MutableDocument doc : new DocumentIterable()) {
+    for (Document doc : new DocumentIterable()) {
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
@@ -144,21 +143,21 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
    */
-  private class DocumentIterable implements Iterable<MutableDocument> {
+  private class DocumentIterable implements Iterable<Document> {
     @NonNull
     @Override
-    public Iterator<MutableDocument> iterator() {
-      Iterator<Map.Entry<DocumentKey, Pair<MutableDocument, SnapshotVersion>>> iterator =
+    public Iterator<Document> iterator() {
+      Iterator<Map.Entry<DocumentKey, Document>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
-      return new Iterator<MutableDocument>() {
+      return new Iterator<Document>() {
         @Override
         public boolean hasNext() {
           return iterator.hasNext();
         }
 
         @Override
-        public MutableDocument next() {
-          return iterator.next().getValue().first;
+        public Document next() {
+          return iterator.next().getValue();
         }
       };
     }

@@ -15,6 +15,7 @@
 package com.google.firebase.gradle.bomgenerator.tagging;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.function.Consumer;
@@ -38,7 +39,8 @@ public class GitClient {
 
     this.newTags = new ArrayList<>();
     this.handler = this.deriveGitCommandOutputHandlerFromLogger(logger);
-    this.configureSshCommand();
+    this.showVersion();
+    this.configureRemoteRepo("FirebasePrivate/firebase-android-sdk");
   }
 
   public void tagReleaseVersion() {
@@ -60,8 +62,10 @@ public class GitClient {
       return;
     }
 
+    List<String> copy = new ArrayList<>(newTags);
+    Collections.reverse(copy); // GitHub list tags in the reverse chronological order
     StringJoiner joiner = new StringJoiner(" ");
-    newTags.forEach(joiner::add);
+    copy.stream().map(x -> "refs/tags/" + x).forEach(joiner::add);
     String tags = joiner.toString();
 
     logger.accept("Tags to be pushed: " + tags);
@@ -86,20 +90,12 @@ public class GitClient {
     executor.execute(command, handler);
   }
 
-  private void configureSshCommand() {
-    if (!this.onProw()) {
-      return;
-    }
-    // TODO(yifany):
-    //   - Change to use environment variables according to the Git doc:
-    //       https://git-scm.com/docs/git-config#Documentation/git-config.txt-coresshCommand
-    //   - Call of `git config core.sshCommand` in prow/config.yaml will become redundant as well
-    String ssh =
-        "ssh -i /etc/github-ssh-key/github-ssh"
-            + " -o IdentitiesOnly=yes"
-            + " -o UserKnownHostsFile=/dev/null"
-            + " -o StrictHostKeyChecking=no";
-    String command = String.format("git config core.sshCommand %s", ssh);
+  private void showVersion() {
+    executor.execute("git --version", handler);
+  }
+
+  private void configureRemoteRepo(String repo) {
+    String command = String.format("git remote add origin git@github.com:%s.git", repo);
     executor.execute(command, handler);
   }
 }

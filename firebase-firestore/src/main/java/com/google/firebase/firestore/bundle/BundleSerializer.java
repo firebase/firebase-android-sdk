@@ -432,16 +432,17 @@ public class BundleSerializer {
 
     switch (operator) {
       case "IS_NAN":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NAN_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NAN_VALUE));
         break;
       case "IS_NULL":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.EQUAL, Values.NULL_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NULL_VALUE));
         break;
       case "IS_NOT_NAN":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NAN_VALUE));
+        result.add(FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NAN_VALUE));
         break;
       case "IS_NOT_NULL":
-        result.add(FieldFilter.create(fieldPath, Filter.Operator.NOT_EQUAL, Values.NULL_VALUE));
+        result.add(
+            FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NULL_VALUE));
         break;
       default:
         throw new IllegalArgumentException("Unexpected unary filter: " + operator);

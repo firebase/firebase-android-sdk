@@ -52,6 +52,7 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import com.google.firebase.firestore.util.Preconditions;
 import com.google.firebase.inject.Deferred;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -289,7 +290,7 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Configures Indexing for local query execution. Any previous index configuration is overridden.
+   * Configures indexing for local query execution. Any previous index configuration is overridden.
    * The Task resolves once the index configuration has been persisted.
    *
    * <p>The index entries themselves are created asynchronously. You can continue to use queries
@@ -297,19 +298,19 @@ public class FirebaseFirestore {
    * automatically start using the index once the index entries have been written.
    *
    * <p>The method accepts the JSON format exported by the Firebase CLI (`firebase
-   * firestore:indexes`). If the JSON format is invalid, this method rejects the returned task.
+   * firestore:indexes`). If the JSON format is invalid, this method throws an exception.
    *
    * @param json The JSON format exported by the Firebase CLI.
    * @return A task that resolves once all indices are successfully configured.
+   * @throws IllegalArgumentException if the JSON format is invalid
    */
   @VisibleForTesting
-  Task<Void> configureIndices(String json) {
+  Task<Void> setIndexConfiguration(String json) {
     ensureClientConfigured();
+    Preconditions.checkState(
+        settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
 
-    // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
-    // available.");
-
-    List<FieldIndex> parsedIndices = new ArrayList<>();
+    List<FieldIndex> parsedIndexes = new ArrayList<>();
 
     // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
     // format of the index definition. Unlike the backend, the SDK does not distinguish between
@@ -319,9 +320,9 @@ public class FirebaseFirestore {
       JSONObject jsonObject = new JSONObject(json);
 
       if (jsonObject.has("indexes")) {
-        JSONArray indices = jsonObject.getJSONArray("indexes");
-        for (int i = 0; i < indices.length(); ++i) {
-          JSONObject definition = indices.getJSONObject(i);
+        JSONArray indexes = jsonObject.getJSONArray("indexes");
+        for (int i = 0; i < indexes.length(); ++i) {
+          JSONObject definition = indexes.getJSONObject(i);
           String collectionGroup = definition.getString("collectionGroup");
           List<FieldIndex.Segment> segments = new ArrayList<>();
 
@@ -339,7 +340,7 @@ public class FirebaseFirestore {
             }
           }
 
-          parsedIndices.add(
+          parsedIndexes.add(
               FieldIndex.create(
                   FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
         }
@@ -348,7 +349,7 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return client.configureFieldIndexes(parsedIndices);
+    return client.configureFieldIndexes(parsedIndexes);
   }
 
   /**

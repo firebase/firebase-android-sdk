@@ -16,12 +16,12 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -82,7 +82,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, SnapshotVersion readTime) {
+  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
     // Field indices are not supported with memory persistence.
   }
 
@@ -99,7 +99,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateIndexEntries(Collection<Document> documents) {
+  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     // Field indices are not supported with memory persistence.
   }
 

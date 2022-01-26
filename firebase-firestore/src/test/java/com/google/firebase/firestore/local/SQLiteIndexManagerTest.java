@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
@@ -39,6 +40,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.Values;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -57,18 +58,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteIndexManagerTest extends IndexManagerTestCase {
-  /** Current state of indexing support. Used for restoring after test run. */
-  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
-
-  @BeforeClass
-  public static void beforeClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
 
   private void setUpSingleValueFilter() {
     indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
@@ -580,14 +569,18 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testUpdateTime() {
-    indexManager.addFieldIndex(
-        fieldIndex("coll1", 1, IndexState.create(-1, version(20)), "value", Kind.ASCENDING));
+  public void testPersistsIndexOffset() {
+    indexManager.addFieldIndex(fieldIndex("coll1", "value", Kind.ASCENDING));
+    IndexOffset offset = IndexOffset.create(version(20), key("coll/doc"), 42);
+    indexManager.updateCollectionGroup("coll1", offset);
+
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
 
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.iterator().next();
-    assertEquals(index.getIndexState().getReadTime(), version(20));
+    assertEquals(offset, index.getIndexState().getOffset());
   }
 
   @Test
@@ -598,11 +591,11 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
-    indexManager.updateCollectionGroup("coll1", version(0));
+    indexManager.updateCollectionGroup("coll1", IndexOffset.NONE);
     collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll2", collectionGroup);
 
-    indexManager.updateCollectionGroup("coll2", version(0));
+    indexManager.updateCollectionGroup("coll2", IndexOffset.NONE);
     collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
   }
@@ -631,9 +624,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testDeleteFieldIndexRemovesEntryFromCollectionGroup() {
     indexManager.addFieldIndex(
-        fieldIndex("coll1", 1, IndexState.create(1, version(30)), "value", Kind.ASCENDING));
+        fieldIndex("coll1", 1, IndexState.create(1, IndexOffset.NONE), "value", Kind.ASCENDING));
     indexManager.addFieldIndex(
-        fieldIndex("coll2", 2, IndexState.create(2, version(0)), "value", Kind.CONTAINS));
+        fieldIndex("coll2", 2, IndexState.create(2, IndexOffset.NONE), "value", Kind.CONTAINS));
     String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 
@@ -651,7 +644,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(fieldIndex("coll1", 1, FieldIndex.INITIAL_STATE));
     indexManager.addFieldIndex(fieldIndex("coll2", 2, FieldIndex.INITIAL_STATE));
 
-    indexManager.updateCollectionGroup("coll2", version(1));
+    indexManager.updateCollectionGroup("coll2", IndexOffset.NONE);
 
     verifySequenceNumber(indexManager, "coll1", 0);
     verifySequenceNumber(indexManager, "coll2", 1);
@@ -663,7 +656,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     // Add a new index and mark it as updated.
     indexManager.addFieldIndex(fieldIndex("coll3", 2, FieldIndex.INITIAL_STATE));
-    indexManager.updateCollectionGroup("coll3", version(2));
+    indexManager.updateCollectionGroup("coll3", IndexOffset.NONE);
 
     verifySequenceNumber(indexManager, "coll1", 0);
     verifySequenceNumber(indexManager, "coll2", 0);
@@ -691,7 +684,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   private void addDocs(Document... docs) {
-    indexManager.updateIndexEntries(Arrays.asList(docs));
+    indexManager.updateIndexEntries(docMap(docs));
   }
 
   private void addDoc(String key, Map<String, Object> data) {

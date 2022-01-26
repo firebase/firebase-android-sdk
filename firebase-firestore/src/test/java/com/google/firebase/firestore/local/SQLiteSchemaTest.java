@@ -14,10 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.local.EncodedPath.decodeResourcePath;
 import static com.google.firebase.firestore.local.EncodedPath.encode;
+import static com.google.firebase.firestore.local.SQLiteSchema.VERSION;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
-import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -33,21 +34,23 @@ import static org.junit.Assert.assertTrue;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.MaybeDocument;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firestore.v1.Document;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -144,7 +147,7 @@ public class SQLiteSchemaTest {
     // deletes an existing table or column, which would be very likely to break old versions of the
     // SDK relying on that table or column.
     Map<String, Set<String>> tables = new HashMap<>();
-    for (int toVersion = 1; toVersion <= SQLiteSchema.VERSION; toVersion++) {
+    for (int toVersion = 1; toVersion <= VERSION; toVersion++) {
       schema.runSchemaUpgrades(toVersion - 1, toVersion);
       Map<String, Set<String>> newTables = getCurrentSchema();
       assertNoRemovals(tables, newTables, toVersion);
@@ -154,10 +157,10 @@ public class SQLiteSchemaTest {
 
   @Test
   public void canRecoverFromDowngrades() {
-    for (int downgradeVersion = 0; downgradeVersion < SQLiteSchema.VERSION; downgradeVersion++) {
+    for (int downgradeVersion = 0; downgradeVersion < VERSION; downgradeVersion++) {
       // Upgrade schema to current, then upgrade from `downgradeVersion` to current
       schema.runSchemaUpgrades();
-      schema.runSchemaUpgrades(downgradeVersion, SQLiteSchema.VERSION);
+      schema.runSchemaUpgrades(downgradeVersion, VERSION);
     }
   }
 
@@ -424,7 +427,7 @@ public class SQLiteSchemaTest {
         new Object[] {encode(path("coll/existing")), createDummyDocument("coll/existing")});
 
     // Run the index-free migration.
-    schema.runSchemaUpgrades(8, 10);
+    schema.runSchemaUpgrades(8, 14);
     db.execSQL(
         "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
         new Object[] {encode(path("coll/old")), 0, 1000, createDummyDocument("coll/old")});
@@ -437,15 +440,17 @@ public class SQLiteSchemaTest {
 
     SQLiteRemoteDocumentCache remoteDocumentCache = createRemoteDocumentCache();
 
+    schema.runSchemaUpgrades(10, VERSION);
+
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
-    ImmutableSortedMap<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(0));
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getAll(path("coll"), IndexOffset.NONE);
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
-    results = remoteDocumentCache.getAllDocumentsMatchingQuery(query("coll"), version(2));
+    results = remoteDocumentCache.getAll(path("coll"), IndexOffset.createSuccessor(version(2), -1));
     assertResultsContain(results, "coll/new");
   }
 
@@ -548,7 +553,7 @@ public class SQLiteSchemaTest {
             QueryPurpose.LISTEN);
 
     db.execSQL(
-        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (?,?, ?)",
+        "INSERT INTO targets (target_id, canonical_id, target_proto) VALUES (? ,?, ?)",
         new Object[] {
           2, "invalid_canonical_id", serializer.encodeTargetData(initialTargetData).toByteArray()
         });
@@ -569,6 +574,53 @@ public class SQLiteSchemaTest {
                 fail("Failed to decode Target data");
               }
             });
+  }
+
+  @Test
+  public void addPathLengths() {
+    schema.runSchemaUpgrades(0, 12);
+
+    ResourcePath paths[] = new ResourcePath[] {path("collA/doc"), path("collA/doc/collB/doc")};
+
+    for (ResourcePath path : paths) {
+      db.execSQL(
+          "INSERT INTO remote_documents (path, read_time_seconds, read_time_nanos, contents) VALUES (?, ?, ?, ?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
+
+    schema.runSchemaUpgrades(12, 13);
+
+    int[] current = new int[] {0};
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER BY path")
+        .forEach(
+            cursor -> {
+              assertEquals(paths[current[0]].length(), cursor.getInt(0));
+              ++current[0];
+            });
+    assertEquals(2, current[0]);
+  }
+
+  @Test
+  public void usesMultipleBatchesToAddPathLengths() {
+    schema.runSchemaUpgrades(0, 12);
+
+    for (int i = 0; i < SQLiteSchema.MIGRATION_BATCH_SIZE + 1; ++i) {
+      ResourcePath path = path(String.format("coll/doc%03d", i));
+      db.execSQL(
+          "INSERT INTO remote_documents (path) VALUES (?)",
+          new Object[] {EncodedPath.encode(path)});
+    }
+
+    schema.runSchemaUpgrades(12, 13);
+
+    int[] current = new int[] {0};
+    new SQLitePersistence.Query(db, "SELECT path_length FROM remote_documents ORDER by path")
+        .forEach(
+            cursor -> {
+              assertEquals(2, cursor.getInt(0));
+              ++current[0];
+            });
+    assertEquals(SQLiteSchema.MIGRATION_BATCH_SIZE + 1, current[0]);
   }
 
   @Test
@@ -622,37 +674,23 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsIndexingTables() {
-    boolean indexingEnabled = Persistence.INDEXING_SUPPORT_ENABLED;
-    try {
-      Persistence.INDEXING_SUPPORT_ENABLED = true;
-
-      schema.runSchemaUpgrades(0, SQLiteSchema.INDEXING_SUPPORT_VERSION);
-
-      assertTableExists("index_configuration");
-      assertTableExists("index_entries");
-      assertTableExists("index_state");
-    } finally {
-      Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
-    }
+    schema.runSchemaUpgrades(0, 16);
+    assertTableExists("index_configuration");
+    assertTableExists("index_entries");
+    assertTableExists("index_state");
   }
 
   @Test
   public void createsOverlaysAndMigrationTable() {
-    boolean overlayEnabled = Persistence.OVERLAY_SUPPORT_ENABLED;
-    try {
-      Persistence.OVERLAY_SUPPORT_ENABLED = true;
+    // 14 is the version we enable Overlay
+    schema.runSchemaUpgrades(0, 14);
+    assertTableExists("document_overlays");
+    assertTableExists("data_migrations");
 
-      schema.runSchemaUpgrades(0, SQLiteSchema.OVERLAY_SUPPORT_VERSION);
-      assertTableExists("document_overlays");
-      assertTableExists("data_migrations");
-
-      Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
-      assertTrue(cursor.moveToFirst());
-      String migrationName = cursor.getString(0);
-      assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
-    } finally {
-      Persistence.OVERLAY_SUPPORT_ENABLED = overlayEnabled;
-    }
+    Cursor cursor = db.rawQuery("SELECT * FROM data_migrations", new String[] {});
+    assertTrue(cursor.moveToFirst());
+    String migrationName = cursor.getString(0);
+    assertEquals(Persistence.DATA_MIGRATION_BUILD_OVERLAYS, migrationName);
   }
 
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
@@ -680,11 +718,9 @@ public class SQLiteSchemaTest {
   }
 
   private void assertResultsContain(
-      ImmutableSortedMap<DocumentKey, MutableDocument> actualResults, String... docs) {
-    for (String doc : docs) {
-      assertTrue("Expected result for " + doc, actualResults.containsKey(key(doc)));
-    }
-    assertEquals("Results contain unexpected entries", docs.length, actualResults.size());
+      Map<DocumentKey, MutableDocument> actualResults, String... docs) {
+    assertThat(actualResults.keySet())
+        .containsExactly(Arrays.stream(docs).map(TestUtil::key).toArray());
   }
 
   private void assertTableExists(String tableName) {

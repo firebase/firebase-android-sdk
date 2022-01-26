@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Map;
 
 /**
@@ -35,7 +36,7 @@ public interface DocumentOverlayCache {
    * for that key.
    */
   @Nullable
-  Mutation getOverlay(DocumentKey key);
+  Overlay getOverlay(DocumentKey key);
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
@@ -52,6 +53,21 @@ public interface DocumentOverlayCache {
    * @param collection The collection path to get the overlays for.
    * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
    *     change past `sinceBatchId` are returned.
+   * @return Mapping of each document key in the collection to its overlay.
    */
-  Map<DocumentKey, Mutation> getOverlays(ResourcePath collection, int sinceBatchId);
+  Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId);
+
+  /**
+   * Returns {@code count} overlays with a batch ID higher than {@code sinceBatchId} for the
+   * provided collection group, processed by ascending batch ID. The method always returns all
+   * overlays for a batch even if the last batch contains more documents than the remaining limit.
+   *
+   * @param collectionGroup The collection group to get the overlays for.
+   * @param sinceBatchId The minimum batch ID to filter by (exclusive). Only overlays that contain a
+   *     change past `sinceBatchId` are returned.
+   * @param count The number of overlays to return. Can be exceeded if the last batch contains more
+   *     entries.
+   * @return Mapping of each document key in the collection group to its overlay.
+   */
+  Map<DocumentKey, Overlay> getOverlays(String collectionGroup, int sinceBatchId, int count);
 }

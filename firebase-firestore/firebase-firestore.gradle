@@ -105,20 +105,6 @@ android.libraryVariants.all { variant ->
     file("local.properties").withInputStream { localProps.load(it) }
     } catch (FileNotFoundException e) {
     }
-
-    // TODO(Indexing): Delete below once indexing is shipped.
-    if (localProps['firestoreEnableIndexing']) {
-        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
-    } else {
-        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
-    }
-
-    // TODO(Overlay): Delete below once overlay is shipped.
-    if (localProps['firestoreEnableOverlay']) {
-        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "true")
-    } else {
-        variant.buildConfigField("boolean", "ENABLE_OVERLAY", "false")
-    }
 }
 
 configurations.all {
