@@ -500,9 +500,7 @@ public class Values {
     }
   }
 
-  /**
-   * Returns the largest value for the given value type (exclusive).
-   */
+  /** Returns the largest value for the given value type (exclusive). */
   public static Value getUpperBound(Value.ValueTypeCase valueTypeCase) {
     switch (valueTypeCase) {
       case NULL_VALUE:
