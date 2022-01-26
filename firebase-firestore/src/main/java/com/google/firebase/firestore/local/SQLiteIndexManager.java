@@ -96,11 +96,6 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void start() {
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
-      started = true;
-      return;
-    }
-
     Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
 
     // Fetch all index states if persisted for the user. These states contain per user information
@@ -228,7 +223,6 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) return;
 
     for (Map.Entry<DocumentKey, Document> entry : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
@@ -508,10 +502,6 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
-
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
-      return null;
-    }
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =

@@ -50,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -59,18 +58,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteIndexManagerTest extends IndexManagerTestCase {
-  /** Current state of indexing support. Used for restoring after test run. */
-  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
-
-  @BeforeClass
-  public static void beforeClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
 
   private void setUpSingleValueFilter() {
     indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));

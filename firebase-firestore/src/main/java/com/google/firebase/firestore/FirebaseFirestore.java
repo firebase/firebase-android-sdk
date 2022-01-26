@@ -52,6 +52,7 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import com.google.firebase.firestore.util.Preconditions;
 import com.google.firebase.inject.Deferred;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -306,13 +307,8 @@ public class FirebaseFirestore {
   @VisibleForTesting
   Task<Void> setIndexConfiguration(String json) {
     ensureClientConfigured();
-
-    if (!settings.isPersistenceEnabled()) {
-      throw new IllegalStateException("Cannot enable indexes when persistence is disabled");
-    }
-
-    // Preconditions.checkState(BuildConfig.ENABLE_INDEXING, "Indexing support is not yet
-    // available.");
+    Preconditions.checkState(
+        settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
 
     List<FieldIndex> parsedIndexes = new ArrayList<>();
 

@@ -47,9 +47,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -60,18 +58,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class IndexBackfillerTest {
-  /** Current state of indexing support. Used for restoring after test run. */
-  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
-
-  @BeforeClass
-  public static void beforeClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-  }
-
-  @AfterClass
-  public static void afterClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
 
   @Rule public TestName name = new TestName();
 
