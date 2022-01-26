@@ -272,7 +272,8 @@ public class FirebaseAppTest {
       int modifiers = method.getModifiers();
       if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
         try {
-          if (!allowedToCallAfterDelete.contains(method.getName())) {
+          if (!allowedToCallAfterDelete.contains(method.getName())
+              && !(method.getName().contains("$"))) {
             invokePublicInstanceMethodWithDefaultValues(firebaseApp, method);
             fail("Method expected to throw, but didn't " + method.getName());
           }
