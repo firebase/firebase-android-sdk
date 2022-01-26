@@ -16,7 +16,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.googletest.firebase.appdistribution.testapp.SecondActivity" />
+        <activity android:name="com.googletest.firebase.appdistribution.testapp.SecondActivity" >
+        </activity>
     </application>
 
 </manifest>

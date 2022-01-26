@@ -68,10 +68,10 @@ public class FirebaseAppDistribution {
   @Nullable private Activity dialogHostActivity = null;
 
   @GuardedBy("updateIfNewReleaseTaskLock")
-  private boolean atSignInConfirmationDialogStage = false;
+  private boolean remakeSignInConfirmationDialog = false;
 
   @GuardedBy("updateIfNewReleaseTaskLock")
-  private boolean atUpdateConfirmationDialogStage = false;
+  private boolean remakeUpdateConfirmationDialog = false;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -146,8 +146,8 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
-      atSignInConfirmationDialogStage = false;
-      atUpdateConfirmationDialogStage = false;
+      remakeSignInConfirmationDialog = false;
+      remakeUpdateConfirmationDialog = false;
       dialogHostActivity = null;
     }
 
@@ -233,7 +233,7 @@ public class FirebaseAppDistribution {
 
     synchronized (updateIfNewReleaseTaskLock) {
       signInConfirmationDialog.show();
-      atSignInConfirmationDialogStage = true;
+      remakeSignInConfirmationDialog = true;
     }
     return showDialogTask.getTask();
   }
@@ -341,66 +341,58 @@ public class FirebaseAppDistribution {
   @VisibleForTesting
   void onActivityResumed(Activity activity) {
     if (awaitingSignInDialogConfirmation()) {
-      synchronized (updateIfNewReleaseTaskLock) {
-        atSignInConfirmationDialogStage = false;
+      if (dialogHostActivityHasChanged(activity)) {
+        setUpdateIfNewReleaseWithHostError();
+      } else {
+        signInConfirmationDialog.show();
       }
-      showSignInConfirmationDialog(activity);
-    } else if (awaitingUpdateDialogConfirmation()) {
-      synchronized (updateIfNewReleaseTaskLock) {
-        atUpdateConfirmationDialogStage = false;
-      }
-      synchronized (cachedNewReleaseLock) {
-        showUpdateConfirmationDialog(
-            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
-      }
-      return;
     }
-
-    if (awaitingSignInDialogConfirmation() && dialogHostActivityIsResumed(activity)) {
-      showSignInConfirmationDialog(activity);
-    } else if (awaitingUpdateDialogConfirmation() && dialogHostActivityIsResumed(activity)) {
-      synchronized (cachedNewReleaseLock) {
-        showUpdateConfirmationDialog(
-            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+    if (awaitingUpdateDialogConfirmation()) {
+      if (dialogHostActivityHasChanged(activity)) {
+        setUpdateIfNewReleaseWithHostError();
+      } else {
+        updateConfirmationDialog.show();
       }
-    } else if (awaitingSignInDialogConfirmation() || awaitingUpdateDialogConfirmation()) {
-      // if we are waiting on confirmation dialog & the new activity is not the same as the
-      // previous host dialog, cancel the task
-      setCachedUpdateIfNewReleaseCompletionError(
-          new FirebaseAppDistributionException(
-              ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
     }
   }
 
-  private boolean dialogHostActivityIsResumed(Activity resumedActivity) {
-    return dialogHostActivity != null && resumedActivity.equals(dialogHostActivity);
+  private boolean dialogHostActivityHasChanged(Activity resumedActivity) {
+    return dialogHostActivity != null && !resumedActivity.equals(dialogHostActivity);
+  }
+
+  private void setUpdateIfNewReleaseWithHostError() {
+    setCachedUpdateIfNewReleaseCompletionError(
+        new FirebaseAppDistributionException(
+            ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
   }
 
   private void onActivityPaused(Activity activity) {
-    // dismissDialogs();
+    if (activity.isChangingConfigurations()) {
+      synchronized (updateIfNewReleaseTaskLock) {
+        remakeSignInConfirmationDialog =
+            signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+        remakeUpdateConfirmationDialog =
+            updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
+      }
+      dialogHostActivity = null;
+    }
+    dismissDialogs();
   }
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    if (activity instanceof SignInResultActivity) {
+    if (activity instanceof SignInResultActivity || activity.isChangingConfigurations()) {
       // SignInResult is internal to the SDK and is destroyed after creation
-      return;
-    }
-    if (activity.isChangingConfigurations()) {
-      synchronized (updateIfNewReleaseTaskLock) {
-        atSignInConfirmationDialogStage =
-            signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
-        atUpdateConfirmationDialogStage =
-            updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
-      }
-      dismissDialogs();
+      // We don't want to cancel the task the activity is rotating
       return;
     }
     if (updateIfNewReleaseAvailableIsTaskInProgress() && !isTesterSignedIn()) {
+      setRemakeDialogsToFalse();
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
     } else if (updateIfNewReleaseAvailableIsTaskInProgress()) {
+      setRemakeDialogsToFalse();
       setCachedUpdateIfNewReleaseCompletionError(
           new FirebaseAppDistributionException(
               ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
@@ -457,15 +449,20 @@ public class FirebaseAppDistribution {
 
     synchronized (updateIfNewReleaseTaskLock) {
       updateConfirmationDialog.show();
-      atUpdateConfirmationDialogStage = true;
+      remakeUpdateConfirmationDialog = true;
     }
 
     return showUpdateDialogTask.getTask();
   }
 
+  private void setRemakeDialogsToFalse() {
+    remakeSignInConfirmationDialog = false;
+    remakeUpdateConfirmationDialog = false;
+  }
+
   private void updateConfirmationDialogClosedCallback(TaskCompletionSource showUpdateDialogTask) {
     synchronized (updateIfNewReleaseTaskLock) {
-      atUpdateConfirmationDialogStage = false;
+      remakeUpdateConfirmationDialog = false;
     }
     showUpdateDialogTask.setException(
         new FirebaseAppDistributionException(
@@ -517,13 +514,13 @@ public class FirebaseAppDistribution {
 
   private boolean awaitingSignInDialogConfirmation() {
     synchronized (updateIfNewReleaseTaskLock) {
-      return (updateIfNewReleaseAvailableIsTaskInProgress() && atSignInConfirmationDialogStage);
+      return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeSignInConfirmationDialog);
     }
   }
 
   private boolean awaitingUpdateDialogConfirmation() {
     synchronized (updateIfNewReleaseTaskLock) {
-      return (updateIfNewReleaseAvailableIsTaskInProgress() && atUpdateConfirmationDialogStage);
+      return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeUpdateConfirmationDialog);
     }
   }
 }
