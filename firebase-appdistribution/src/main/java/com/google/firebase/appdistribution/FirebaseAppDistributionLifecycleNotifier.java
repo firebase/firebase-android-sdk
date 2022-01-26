@@ -23,14 +23,20 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
 
-  /** A functional interface for a function that takes an activity and does something with it. */
-  interface ActivityConsumer {
-    void consume(Activity activity) throws FirebaseAppDistributionException;
+  /** A functional interface for a function that takes an activity and returns a value. */
+  interface ActivityFunction<T> {
+    T apply(Activity activity) throws FirebaseAppDistributionException;
+  }
+
+  /** A functional interface for a function that takes an activity and returns a {@link Task}. */
+  interface ActivityChainingFunction<T> {
+    Task<T> apply(Activity activity) throws FirebaseAppDistributionException;
   }
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
@@ -97,46 +103,115 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * activity comes to the foreground.
    */
   Task<Activity> getForegroundActivity() {
-    return getForegroundActivity(activity -> {});
-  }
-
-  /**
-   * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
-   * when one is available, after passing the activity to an {@link ActivityConsumer}.
-   *
-   * <p>The returned task will fail with a {@link FirebaseAppDistributionException} if the consumer
-   * throws. Otherwise it will never fail, and will wait indefinitely for a foreground activity
-   * before applying the consumer.
-   */
-  Task<Activity> getForegroundActivity(ActivityConsumer consumer) {
     synchronized (lock) {
-      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
       if (currentActivity != null) {
-        consumeActivityAndCompleteTask(task, currentActivity, consumer);
-      } else {
-        addOnActivityResumedListener(
-            new OnActivityResumedListener() {
-              @Override
-              public void onResumed(Activity activity) {
-                consumeActivityAndCompleteTask(task, activity, consumer);
-                removeOnActivityResumedListener(this);
-              }
-            });
+        return Tasks.forResult(currentActivity);
       }
+      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+
+      addOnActivityResumedListener(
+          new OnActivityResumedListener() {
+            @Override
+            public void onResumed(Activity activity) {
+              task.setResult(activity);
+              removeOnActivityResumedListener(this);
+            }
+          });
 
       return task.getTask();
     }
   }
 
-  void consumeActivityAndCompleteTask(
-      TaskCompletionSource task, Activity activity, ActivityConsumer consumer) {
-    try {
-      consumer.consume(activity);
-      task.setResult(activity);
-    } catch (Throwable t) {
-      task.setException(FirebaseAppDistributionException.wrap(t));
-    }
-  }
+  // /**
+  //  * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
+  //  * when one is available.
+  //  *
+  //  * <p>The returned task will never fail. It will instead remain pending indefinitely until some
+  //  * activity comes to the foreground.
+  //  */
+  // Task<Activity> getForegroundActivity() {
+  //   return getForegroundActivity(activity -> {});
+  // }
+
+  // /**
+  //  * Get a {@link Task} that results from applying a {@link ActivityFunction} applied to the app's
+  //  * foregrounded {@link Activity}, when one is available.
+  //  *
+  //  * <p>The returned task will fail if the {@link ActivityFunction} throws, or the task it returns
+  //  * fails. Otherwise it will never fail, and will wait indefinitely for a foreground activity
+  //  * before applying the function.
+  //  */
+  // <T> Task<T> applyToForegroundActivityChaining(ActivityFunction<Task<T>> function) {
+  //   synchronized (lock) {
+  //     TaskCompletionSource<T> task = new TaskCompletionSource<>();
+  //     if (currentActivity != null) {
+  //       chainToActivity(task, currentActivity, function);
+  //     } else {
+  //       addOnActivityResumedListener(
+  //           new OnActivityResumedListener() {
+  //             @Override
+  //             public void onResumed(Activity activity) {
+  //               chainToActivity(task, activity, function);
+  //               removeOnActivityResumedListener(this);
+  //             }
+  //           });
+  //     }
+  //
+  //     return task.getTask();
+  //   }
+  // }
+  //
+  // <T> Task<T> chainToActivity(
+  //     TaskCompletionSource<T> task, Activity activity, ActivityFunction<Task<T>> function) {
+  //   MoreExecutors
+  //   try {
+  //     function.apply(activity)
+  //         .addOnSuccessListener(task::setResult)
+  //         .addOnFailureListener(task::setException)
+  //         .addOnCanceledListener(task::canc)
+  //     continuation.on
+  //     task.setResult(function.apply(activity));
+  //   } catch (Throwable t) {
+  //     task.setException(FirebaseAppDistributionException.wrap(t));
+  //   }
+  // }
+  //
+  // /**
+  //  * Get a {@link Task} that will succeed with a result of applying an {@link ActivityFunction} to
+  //  * the app's foregrounded {@link Activity}, when one is available.
+  //  *
+  //  * <p>The returned task will fail with a {@link FirebaseAppDistributionException} if the {@link
+  //  * ActivityFunction} throws. Otherwise it will never fail, and will wait indefinitely for a
+  //  * foreground activity before applying the function.
+  //  */
+  // <T> Task<T> applyToForegroundActivity(ActivityFunction<T> function) {
+  //   synchronized (lock) {
+  //     TaskCompletionSource<T> task = new TaskCompletionSource<>();
+  //     if (currentActivity != null) {
+  //       applyToActivityAndCompleteTask(task, currentActivity, function);
+  //     } else {
+  //       addOnActivityResumedListener(
+  //           new OnActivityResumedListener() {
+  //             @Override
+  //             public void onResumed(Activity activity) {
+  //               applyToActivityAndCompleteTask(task, activity, function);
+  //               removeOnActivityResumedListener(this);
+  //             }
+  //           });
+  //     }
+  //
+  //     return task.getTask();
+  //   }
+  // }
+  //
+  // <T> void applyToActivityAndCompleteTask(
+  //     TaskCompletionSource<T> task, Activity activity, ActivityFunction<T> function) {
+  //   try {
+  //     task.setResult(function.apply(activity));
+  //   } catch (Throwable t) {
+  //     task.setException(FirebaseAppDistributionException.wrap(t));
+  //   }
+  // }
 
   void addOnActivityCreatedListener(@NonNull OnActivityCreatedListener listener) {
     synchronized (lock) {

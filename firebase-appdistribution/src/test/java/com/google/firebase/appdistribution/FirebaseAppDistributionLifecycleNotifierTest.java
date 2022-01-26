@@ -20,7 +20,7 @@ import static org.mockito.Mockito.verify;
 
 import android.app.Activity;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,7 +69,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   @Test
   public void getForegroundActivity_withConsumer_succeedsAndCallsConsumer()
       throws FirebaseAppDistributionException {
-    ActivityConsumer consumer = spy(ActivityConsumer.class);
+    ActivityFunction consumer = spy(ActivityFunction.class);
     Task<Activity> task = lifecycleNotifier.getForegroundActivity(consumer);
 
     // Simulate an activity resuming
@@ -78,7 +78,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
     assertThat(task.getResult()).isEqualTo(activity);
-    verify(consumer).consume(activity);
+    verify(consumer).apply(activity);
   }
 
   @Test
@@ -88,12 +88,12 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // getForegroundActivity is called
     lifecycleNotifier.onActivityResumed(activity);
 
-    ActivityConsumer consumer = spy(ActivityConsumer.class);
+    ActivityFunction consumer = spy(ActivityFunction.class);
     Task<Activity> task = lifecycleNotifier.getForegroundActivity(consumer);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
     assertThat(task.getResult()).isEqualTo(activity);
-    verify(consumer).consume(activity);
+    verify(consumer).apply(activity);
   }
 }

@@ -22,7 +22,7 @@ import android.app.Activity;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.mockito.stubbing.Answer;
@@ -57,11 +57,11 @@ final class TestUtils {
 
   static Answer<Task<Activity>> getForegroundActivityAnswer(Activity activity) {
     return invocationOnMock -> {
-      ActivityConsumer consumer = (ActivityConsumer) invocationOnMock.getArgument(0);
+      ActivityFunction consumer = (ActivityFunction) invocationOnMock.getArgument(0);
       if (consumer == null) {
         return Tasks.forException(new IllegalStateException("ActivityConsumer was null"));
       }
-      consumer.consume(activity);
+      consumer.apply(activity);
       return Tasks.forResult(activity);
     };
   }
