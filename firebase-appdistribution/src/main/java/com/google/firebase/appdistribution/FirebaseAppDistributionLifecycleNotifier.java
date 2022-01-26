@@ -83,6 +83,13 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     void onDestroyed(Activity activity);
   }
 
+  /**
+   * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
+   * when one is available.
+   *
+   * <p>The returned task will never fail. It will instead remain pending indefinitely until some
+   * activity comes to the foreground.
+   */
   Task<Activity> getForegroundActivity() {
     synchronized (lock) {
       if (currentActivity != null) {

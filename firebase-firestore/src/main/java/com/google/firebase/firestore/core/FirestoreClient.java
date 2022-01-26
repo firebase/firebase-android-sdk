@@ -129,8 +129,13 @@ public final class FirestoreClient {
 
     appCheckProvider.setChangeListener(
         (String appCheckToken) -> {
-          // Register an empty credentials change listener to activate token
-          // refresh.
+          // This will ensure that once a new App Check token is retrieved, streams are
+          // re-established using the new token.
+          asyncQueue.enqueueAndForget(
+              () -> {
+                Logger.debug(LOG_TAG, "App Check token changed.");
+                remoteStore.handleCredentialChange();
+              });
         });
   }
 

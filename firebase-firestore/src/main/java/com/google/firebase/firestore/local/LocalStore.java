@@ -184,7 +184,6 @@ public final class LocalStore implements BundleCallback {
 
     remoteDocuments.setIndexManager(indexManager);
     queryEngine.initialize(localDocuments, indexManager);
-
     if (indexBackfiller != null) {
       indexBackfiller.setIndexManager(indexManager);
       indexBackfiller.setLocalDocumentsView(localDocuments);
