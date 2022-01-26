@@ -15,6 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id "com.github.johnrengelman.shadow" version "5.2.0"
 }
 
 firebaseLibrary {
