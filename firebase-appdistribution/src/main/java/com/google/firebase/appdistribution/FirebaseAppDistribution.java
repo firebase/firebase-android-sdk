@@ -456,8 +456,10 @@ public class FirebaseAppDistribution {
   }
 
   private void setRemakeDialogsToFalse() {
-    remakeSignInConfirmationDialog = false;
-    remakeUpdateConfirmationDialog = false;
+    synchronized (updateIfNewReleaseTaskLock) {
+      remakeSignInConfirmationDialog = false;
+      remakeUpdateConfirmationDialog = false;
+    }
   }
 
   private void updateConfirmationDialogClosedCallback(TaskCompletionSource showUpdateDialogTask) {
