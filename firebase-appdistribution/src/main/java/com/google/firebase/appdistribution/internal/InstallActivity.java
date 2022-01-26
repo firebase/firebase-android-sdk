@@ -20,7 +20,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
-import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -168,10 +167,5 @@ public class InstallActivity extends AppCompatActivity {
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
     LogWrapper.getInstance().v("Kicking off install as new activity");
     startActivity(intent);
-  }
-
-  @VisibleForTesting
-  FirebaseAppDistribution getFirebaseAppDistributionInstance() {
-    return FirebaseAppDistribution.getInstance();
   }
 }
