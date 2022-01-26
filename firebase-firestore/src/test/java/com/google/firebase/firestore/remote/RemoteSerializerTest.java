@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.model.Values.refValue;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -24,6 +25,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -659,6 +661,85 @@ public final class RemoteSerializerTest {
                                             .setOp(Operator.ARRAY_CONTAINS)
                                             .setValue(
                                                 Value.newBuilder().setStringValue("pending"))))))
+            .addOrderBy(
+                Order.newBuilder()
+                    .setField(FieldReference.newBuilder().setFieldPath("prop"))
+                    .setDirection(Direction.ASCENDING))
+            .addOrderBy(defaultKeyOrder());
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents/rooms/1/messages/10")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setResumeToken(ByteString.EMPTY)
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+  }
+
+  @Test
+  public void testEncodesCompositeFiltersOnDeeperCollections() {
+    // (prop < 42) || (author == "dimond" && tags array-contains "pending")
+    Query q =
+        Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
+            .filter(
+                orFilter(
+                    filter("prop", "<", 42),
+                    andFilter(
+                        filter("author", "==", "dimond"),
+                        filter("tags", "array-contains", "pending"))));
+    Target actual = serializer.encodeTarget(wrapTargetData(q));
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("attachments"))
+            .setWhere(
+                Filter.newBuilder()
+                    .setCompositeFilter(
+                        StructuredQuery.CompositeFilter.newBuilder()
+                            // TODO(orquery): Replace with Operator.OR once it's available.
+                            .setOp(CompositeFilter.Operator.OPERATOR_UNSPECIFIED)
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setFieldFilter(
+                                        StructuredQuery.FieldFilter.newBuilder()
+                                            .setField(
+                                                FieldReference.newBuilder().setFieldPath("prop"))
+                                            .setOp(Operator.LESS_THAN)
+                                            .setValue(Value.newBuilder().setIntegerValue(42))))
+                            .addFilters(
+                                Filter.newBuilder()
+                                    .setCompositeFilter(
+                                        StructuredQuery.CompositeFilter.newBuilder()
+                                            .setOp(CompositeFilter.Operator.AND)
+                                            .addFilters(
+                                                Filter.newBuilder()
+                                                    .setFieldFilter(
+                                                        StructuredQuery.FieldFilter.newBuilder()
+                                                            .setField(
+                                                                FieldReference.newBuilder()
+                                                                    .setFieldPath("author"))
+                                                            .setOp(Operator.EQUAL)
+                                                            .setValue(
+                                                                Value.newBuilder()
+                                                                    .setStringValue("dimond"))))
+                                            .addFilters(
+                                                Filter.newBuilder()
+                                                    .setFieldFilter(
+                                                        StructuredQuery.FieldFilter.newBuilder()
+                                                            .setField(
+                                                                FieldReference.newBuilder()
+                                                                    .setFieldPath("tags"))
+                                                            .setOp(Operator.ARRAY_CONTAINS)
+                                                            .setValue(
+                                                                Value.newBuilder()
+                                                                    .setStringValue(
+                                                                        "pending"))))))))
             .addOrderBy(
                 Order.newBuilder()
                     .setField(FieldReference.newBuilder().setFieldPath("prop"))

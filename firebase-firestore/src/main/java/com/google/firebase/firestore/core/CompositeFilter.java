@@ -80,7 +80,9 @@ public class CompositeFilter extends Filter {
   public boolean isFlatConjunction() {
     if (operator != Operator.AND) return false;
     for (Filter filter : filters) {
-      if (filter instanceof CompositeFilter) return false;
+      if (filter instanceof CompositeFilter) {
+        return false;
+      }
     }
     return true;
   }
@@ -142,5 +144,27 @@ public class CompositeFilter extends Filter {
   @Override
   public String toString() {
     return getCanonicalId();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof CompositeFilter)) {
+      return false;
+    }
+    CompositeFilter other = (CompositeFilter) o;
+    // Note: This comparison requires order of filters in the list to be the same, and it does not
+    // remove duplicate subfilters from each composite filter. It is therefore way less expensive.
+    // TODO(orquery): Consider removing duplicates and ignoring order of filters in the list.
+    return operator == other.operator && filters.equals(other.filters);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 37;
+    result += 31 * operator.hashCode();
+    for (Filter filter : filters) {
+      result += 31 * filter.hashCode();
+    }
+    return result;
   }
 }
