@@ -148,8 +148,8 @@ class TesterSignInManager {
     }
   }
 
-  private Task<Activity> getForegroundActivityAndOpenSignInFlow(String fid) {
-    return lifecycleNotifier.getForegroundActivity(
+  private Task<Void> getForegroundActivityAndOpenSignInFlow(String fid) {
+    return lifecycleNotifier.applyToForegroundActivity(
         activity -> {
           // Launch the intent outside of the synchronized block because we don't need to wait
           // for the lock, and we don't want to risk the activity leaving the foreground in

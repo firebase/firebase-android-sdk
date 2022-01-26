@@ -113,8 +113,8 @@ class ApkUpdater {
 
   private void installApk(File file, boolean showDownloadNotificationManager) {
     lifeCycleNotifier
-        .getForegroundActivity()
-        .onSuccessTask(taskExecutor, activity -> apkInstaller.installApk(file.getPath(), activity))
+        .applyToForegroundActivityTask(
+            activity -> apkInstaller.installApk(file.getPath(), activity))
         .addOnSuccessListener(
             taskExecutor,
             unused -> {

@@ -22,7 +22,8 @@ import android.app.Activity;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
+import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityContinuation;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.mockito.stubbing.Answer;
@@ -55,14 +56,25 @@ final class TestUtils {
     shadowOf(getMainLooper()).idle();
   }
 
-  static Answer<Task<Activity>> getForegroundActivityAnswer(Activity activity) {
+  static Answer<Task<Void>> applyToForegroundActivityAnswer(Activity activity) {
     return invocationOnMock -> {
-      ActivityFunction consumer = (ActivityFunction) invocationOnMock.getArgument(0);
+      ActivityConsumer consumer = (ActivityConsumer) invocationOnMock.getArgument(0);
       if (consumer == null) {
         return Tasks.forException(new IllegalStateException("ActivityConsumer was null"));
       }
-      consumer.apply(activity);
-      return Tasks.forResult(activity);
+      consumer.consume(activity);
+      return Tasks.forResult(null);
+    };
+  }
+
+  static <T> Answer<Task<T>> applyToForegroundActivityTaskAnswer(Activity activity) {
+    return invocationOnMock -> {
+      ActivityContinuation<T> continuation =
+          (ActivityContinuation<T>) invocationOnMock.getArgument(0);
+      if (continuation == null) {
+        return Tasks.forException(new IllegalStateException("ActivityContinuation was null"));
+      }
+      return continuation.then(activity);
     };
   }
 }
