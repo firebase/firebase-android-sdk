@@ -34,11 +34,6 @@ public class SQLiteSpecTest extends SpecTestCase {
   }
 
   @Override
-  protected void specTearDown() throws Exception {
-    super.specTearDown();
-  }
-
-  @Override
   protected SQLiteComponentProvider initializeComponentProvider(
       ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
     SQLiteComponentProvider provider = new SQLiteComponentProvider();

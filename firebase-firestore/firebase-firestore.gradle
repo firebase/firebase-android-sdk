@@ -105,13 +105,6 @@ android.libraryVariants.all { variant ->
     file("local.properties").withInputStream { localProps.load(it) }
     } catch (FileNotFoundException e) {
     }
-
-    // TODO(Indexing): Delete below once indexing is shipped.
-    if (localProps['firestoreEnableIndexing']) {
-        variant.buildConfigField("boolean", "ENABLE_INDEXING", "true")
-    } else {
-        variant.buildConfigField("boolean", "ENABLE_INDEXING", "false")
-    }
 }
 
 configurations.all {
