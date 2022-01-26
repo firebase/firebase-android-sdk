@@ -27,6 +27,8 @@ import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.platforminfo.UserAgentPublisher;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -37,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -96,7 +99,7 @@ public class DefaultHeartBeatControllerTest {
 
   @Test
   public void generateHeartBeat_oneHeartBeat()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(
         HeartBeatResult.create(
@@ -111,9 +114,10 @@ public class DefaultHeartBeatControllerTest {
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
-        Base64.getEncoder()
+        Base64.getUrlEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-02-03]\"}],\"version\":\"2\"}"
+                compress(
+                        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-02-03]\"}],\"version\":\"2\"}")
                     .getBytes());
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
@@ -142,7 +146,7 @@ public class DefaultHeartBeatControllerTest {
 
   @Test
   public void firstOldThenNew_synchronizedCorrectly()
-      throws ExecutionException, InterruptedException {
+      throws ExecutionException, InterruptedException, IOException {
     Context context = ApplicationProvider.getApplicationContext();
     SharedPreferences heartBeatSharedPreferences =
         context.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
@@ -152,7 +156,8 @@ public class DefaultHeartBeatControllerTest {
         new DefaultHeartBeatController(
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
     String emptyString =
-        Base64.getEncoder().encodeToString("{\"heartbeats\":[],\"version\":\"2\"}".getBytes());
+        Base64.getUrlEncoder()
+            .encodeToString(compress("{\"heartbeats\":[],\"version\":\"2\"}").getBytes());
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     int heartBeatCode = controller.getHeartBeatCode("test").getCode();
@@ -169,7 +174,7 @@ public class DefaultHeartBeatControllerTest {
 
   @Test
   public void generateHeartBeat_twoHeartBeatsSameUserAgent()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     ArrayList<String> dateList = new ArrayList<>();
     dateList.add("2015-03-02");
@@ -191,19 +196,26 @@ public class DefaultHeartBeatControllerTest {
     JSONObject output = new JSONObject();
     JSONArray array = new JSONArray();
     JSONObject obj = new JSONObject();
-    ;
     obj.put("agent", "test-agent");
     obj.put("date", dateList);
     array.put(obj);
     output.put("heartbeats", array);
     output.put("version", "2");
-    String expected = Base64.getEncoder().encodeToString(output.toString().getBytes());
+    String expected = Base64.getUrlEncoder().encodeToString(compress(output.toString()).getBytes());
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
+  }
+
+  private String compress(String str) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    GZIPOutputStream gzip = new GZIPOutputStream(out);
+    gzip.write(str.toString().getBytes());
+    gzip.close();
+    return out.toString("UTF-8");
   }
 
   @Test
   public void generateHeartBeat_twoHeartBeatstwoUserAgents()
-      throws ExecutionException, InterruptedException, JSONException {
+      throws ExecutionException, InterruptedException, JSONException, IOException {
     ArrayList<HeartBeatResult> returnResults = new ArrayList<>();
     returnResults.add(
         HeartBeatResult.create(
@@ -225,9 +237,10 @@ public class DefaultHeartBeatControllerTest {
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
-        Base64.getEncoder()
+        Base64.getUrlEncoder()
             .encodeToString(
-                "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-03-02]\"},{\"agent\":\"test-agent-1\",\"date\":\"[2015-03-03]\"}],\"version\":\"2\"}"
+                compress(
+                        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-03-02]\"},{\"agent\":\"test-agent-1\",\"date\":\"[2015-03-03]\"}],\"version\":\"2\"}")
                     .getBytes());
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
