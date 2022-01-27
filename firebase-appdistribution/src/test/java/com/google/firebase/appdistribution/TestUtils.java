@@ -19,11 +19,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
-import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityContinuation;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.mockito.stubbing.Answer;
@@ -69,10 +69,10 @@ final class TestUtils {
 
   static <T> Answer<Task<T>> applyToForegroundActivityTaskAnswer(Activity activity) {
     return invocationOnMock -> {
-      ActivityContinuation<T> continuation =
-          (ActivityContinuation<T>) invocationOnMock.getArgument(0);
+      SuccessContinuation<Activity, T> continuation =
+          (SuccessContinuation<Activity, T>) invocationOnMock.getArgument(0);
       if (continuation == null) {
-        return Tasks.forException(new IllegalStateException("ActivityContinuation was null"));
+        return Tasks.forException(new IllegalStateException("Success was null"));
       }
       return continuation.then(activity);
     };

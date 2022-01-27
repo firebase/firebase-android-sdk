@@ -39,9 +39,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     void consume(Activity activity);
   }
 
-  /** A {@link SuccessContinuation} that takes an activity and returns a new {@link Task}. */
-  interface ActivityContinuation<T> extends SuccessContinuation<Activity, T> {}
-
   private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
 
@@ -121,7 +118,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete with the result of the Task returned by that function.
    */
-  <T> Task<T> applyToForegroundActivityTask(ActivityContinuation<T> continuation) {
+  <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
