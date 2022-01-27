@@ -69,11 +69,11 @@ public class FirebaseAppDistribution {
   @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeSignInConfirmationDialog = false;
 
-  private TaskCompletionSource<Void> showSignInDialogTask = null;
-  private TaskCompletionSource<Void> showUpdateDialogTask = null;
-
   @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeUpdateConfirmationDialog = false;
+
+  private TaskCompletionSource<Void> showSignInDialogTask = null;
+  private TaskCompletionSource<Void> showUpdateDialogTask = null;
 
   /** Constructor for FirebaseAppDistribution */
   @VisibleForTesting
@@ -341,18 +341,30 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityResumed(Activity activity) {
-    if (awaitingSignInDialogConfirmation()
-        && (dialogHostActivity == null || dialogHostActivity == activity)) {
-      showSignInConfirmationDialog(activity);
+    if (awaitingSignInDialogConfirmation()) {
+      if (dialogHostActivity != null && dialogHostActivity != activity) {
+        showSignInDialogTask.setException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+      } else {
+        showSignInConfirmationDialog(activity);
+      }
     }
-    if (awaitingUpdateDialogConfirmation()
-        && (dialogHostActivity == null || dialogHostActivity == activity)) {
-      showUpdateConfirmationDialog(
-          activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+
+    if (awaitingUpdateDialogConfirmation()) {
+      if (dialogHostActivity != null && dialogHostActivity != activity) {
+        showUpdateDialogTask.setException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+      } else {
+        showUpdateConfirmationDialog(
+            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+      }
     }
   }
 
-  private void onActivityPaused(Activity activity) {
+  @VisibleForTesting
+  void onActivityPaused(Activity activity) {
     if (activity == dialogHostActivity) {
       synchronized (updateIfNewReleaseTaskLock) {
         remakeSignInConfirmationDialog =
@@ -366,21 +378,8 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    if (activity != dialogHostActivity) {
-      return;
-    }
-    dialogHostActivity = null;
-    if (!activity.isChangingConfigurations()) {
-      if (awaitingSignInDialogConfirmation()) {
-        showSignInDialogTask.setException(
-            new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
-      }
-      if (awaitingUpdateDialogConfirmation()) {
-        showUpdateDialogTask.setException(
-            new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
-      }
+    if (activity == dialogHostActivity) {
+      dialogHostActivity = null;
     }
   }
 

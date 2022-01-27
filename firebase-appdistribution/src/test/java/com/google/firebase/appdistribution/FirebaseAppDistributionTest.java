@@ -21,6 +21,7 @@ import static com.google.firebase.appdistribution.Constants.ErrorMessages.NOT_FO
 import static com.google.firebase.appdistribution.Constants.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
@@ -484,15 +485,36 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void taskCancelledOnDestroy_whenSignInDialogShowing() {
+  public void
+      updateIfNewReleaseAvailable_signInTaskCancelled_whenSignInDialogShowingAndNewActivityStarts() {
+    TestActivity testActivity2 = new TestActivity();
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Mimic activity dying
-    firebaseAppDistribution.onActivityDestroyed(activity);
+    // Mimic different activity getting resumed
+    firebaseAppDistribution.onActivityPaused(activity);
+    firebaseAppDistribution.onActivityResumed(testActivity2);
 
-    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
+    assertTaskFailure(
+        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+  }
+
+  @Test
+  public void
+      updateIfNewReleaseAvailable_updateTaskCancelled_whenUpdateDialogShowingAndNewActivityStarts() {
+    TestActivity testActivity2 = new TestActivity();
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic different activity getting resumed
+    firebaseAppDistribution.onActivityPaused(activity);
+    firebaseAppDistribution.onActivityResumed(testActivity2);
+
+    assertTaskFailure(
+        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
