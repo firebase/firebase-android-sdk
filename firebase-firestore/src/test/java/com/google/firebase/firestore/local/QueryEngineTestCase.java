@@ -37,13 +37,15 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
+import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import javax.annotation.Nullable;
@@ -55,7 +57,7 @@ import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class QueryEngineTest {
+public abstract class QueryEngineTestCase {
 
   private static final int TEST_TARGET_ID = 1;
 
@@ -63,26 +65,25 @@ public class QueryEngineTest {
       doc("coll/a", 1, map("matches", true, "order", 1));
   private static final MutableDocument NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
-  private static final MutableDocument PENDING_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", true, "order", 1)).setHasLocalMutations();
-  private static final MutableDocument PENDING_NON_MATCHING_DOC_A =
-      doc("coll/a", 1, map("matches", false, "order", 1)).setHasLocalMutations();
   private static final MutableDocument UPDATED_DOC_A =
       doc("coll/a", 11, map("matches", true, "order", 1));
   private static final MutableDocument MATCHING_DOC_B =
       doc("coll/b", 1, map("matches", true, "order", 2));
   private static final MutableDocument UPDATED_MATCHING_DOC_B =
       doc("coll/b", 11, map("matches", true, "order", 2));
+  private static final PatchMutation DOC_A_EMPTY_PATCH =
+      new PatchMutation(key("coll/a"), new ObjectValue(), FieldMask.EMPTY, Precondition.NONE);
 
-  private SnapshotVersion LAST_LIMBO_FREE_SNAPSHOT = version(10);
-  private SnapshotVersion MISSING_LAST_LIMBO_FREE_SNAPSHOT = SnapshotVersion.NONE;
+  private final SnapshotVersion LAST_LIMBO_FREE_SNAPSHOT = version(10);
+  private final SnapshotVersion MISSING_LAST_LIMBO_FREE_SNAPSHOT = SnapshotVersion.NONE;
 
-  private MemoryPersistence persistence;
-  private MemoryRemoteDocumentCache remoteDocumentCache;
+  private Persistence persistence;
+  private RemoteDocumentCache remoteDocumentCache;
   private MutationQueue mutationQueue;
   private DocumentOverlayCache documentOverlayCache;
   private TargetCache targetCache;
-  private QueryEngine queryEngine;
+  protected IndexManager indexManager;
+  protected QueryEngine queryEngine;
 
   private @Nullable Boolean expectFullCollectionScan;
 
@@ -90,25 +91,23 @@ public class QueryEngineTest {
   public void setUp() {
     expectFullCollectionScan = null;
 
-    persistence = MemoryPersistence.createEagerGcMemoryPersistence();
+    persistence = getPersistence();
 
-    IndexManager indexManager = new MemoryIndexManager();
-    indexManager.start();
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager);
-
     documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
-    targetCache = new MemoryTargetCache(persistence);
+    remoteDocumentCache = persistence.getRemoteDocumentCache();
+    targetCache = persistence.getTargetCache();
     queryEngine = new QueryEngine();
 
-    remoteDocumentCache = persistence.getRemoteDocumentCache();
+    indexManager.start();
+    mutationQueue.start();
+
     remoteDocumentCache.setIndexManager(indexManager);
 
     LocalDocumentsView localDocuments =
         new LocalDocumentsView(
-            remoteDocumentCache,
-            persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
-            persistence.getDocumentOverlay(User.UNAUTHENTICATED),
-            indexManager) {
+            remoteDocumentCache, mutationQueue, documentOverlayCache, indexManager) {
           @Override
           public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
               Query query, IndexOffset offset) {
@@ -121,6 +120,8 @@ public class QueryEngineTest {
         };
     queryEngine.initialize(localDocuments, indexManager);
   }
+
+  abstract Persistence getPersistence();
 
   /** Adds the provided documents to the query target mapping. */
   private void persistQueryMapping(DocumentKey... documentKeys) {
@@ -136,7 +137,7 @@ public class QueryEngineTest {
   }
 
   /** Adds the provided documents to the remote document cache. */
-  private void addDocument(MutableDocument... docs) {
+  protected void addDocument(MutableDocument... docs) {
     persistence.runTransaction(
         "addDocument",
         () -> {
@@ -161,20 +162,20 @@ public class QueryEngineTest {
   }
 
   /** Adds a mutation to the mutation queue. */
-  private void addMutation(Mutation mutation) {
+  protected void addMutation(Mutation mutation) {
     persistence.runTransaction(
         "addMutation",
         () -> {
           MutationBatch batch =
               mutationQueue.addMutationBatch(
                   Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
-          Map<DocumentKey, Mutation> overlayMap = new HashMap<>();
-          overlayMap.put(mutation.getKey(), mutation);
+          Map<DocumentKey, Mutation> overlayMap =
+              Collections.singletonMap(mutation.getKey(), mutation);
           documentOverlayCache.saveOverlays(batch.getBatchId(), overlayMap);
         });
   }
 
-  private <T> T expectOptimizedCollectionScan(Callable<T> c) throws Exception {
+  protected <T> T expectOptimizedCollectionScan(Callable<T> c) throws Exception {
     try {
       expectFullCollectionScan = false;
       return c.call();
@@ -227,7 +228,7 @@ public class QueryEngineTest {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add a mutated document that is not yet part of query's set of remote keys.
-    addDocumentWithEventVersion(version(1), PENDING_NON_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), NON_MATCHING_DOC_A);
 
     DocumentSet docs =
         expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
@@ -311,8 +312,9 @@ public class QueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
-    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
+    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addMutation(DOC_A_EMPTY_PATCH);
+    persistQueryMapping(MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -331,8 +333,9 @@ public class QueryEngineTest {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
-    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
+    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addMutation(DOC_A_EMPTY_PATCH);
+    persistQueryMapping(MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -389,8 +392,8 @@ public class QueryEngineTest {
     persistQueryMapping(key("coll/a"), key("coll/b"));
 
     // Update "coll/a" but make sure it still sorts before "coll/b"
-    addDocumentWithEventVersion(
-        version(1), doc("coll/a", 1, map("order", 2)).setHasLocalMutations());
+    addDocumentWithEventVersion(version(1), doc("coll/a", 1, map("order", 2)));
+    addMutation(DOC_A_EMPTY_PATCH);
 
     // Since the last document in the limit didn't change (and hence we know that all documents
     // written prior to query execution still sort after "coll/b"), we should use an Index-Free

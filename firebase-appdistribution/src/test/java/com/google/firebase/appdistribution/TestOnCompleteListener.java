@@ -26,6 +26,9 @@ import java.util.concurrent.TimeUnit;
  * Helper listener that works around a limitation of the Tasks API where await() cannot be called on
  * the main thread. This listener works around it by running itself on a different thread, thus
  * allowing the main thread to be woken up when the Tasks complete.
+ *
+ * <p>Note: Calling {@link #await()} from a Robolectric test does block the main thread, since those
+ * tests are executed on the main thread.
  */
 public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResult> {
   private static final long TIMEOUT_MS = 5000;

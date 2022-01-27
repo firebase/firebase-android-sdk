@@ -674,18 +674,10 @@ public class SQLiteSchemaTest {
 
   @Test
   public void createsIndexingTables() {
-    boolean indexingEnabled = Persistence.INDEXING_SUPPORT_ENABLED;
-    try {
-      Persistence.INDEXING_SUPPORT_ENABLED = true;
-
-      schema.runSchemaUpgrades(0, SQLiteSchema.INDEXING_SUPPORT_VERSION);
-
-      assertTableExists("index_configuration");
-      assertTableExists("index_entries");
-      assertTableExists("index_state");
-    } finally {
-      Persistence.INDEXING_SUPPORT_ENABLED = indexingEnabled;
-    }
+    schema.runSchemaUpgrades(0, 16);
+    assertTableExists("index_configuration");
+    assertTableExists("index_entries");
+    assertTableExists("index_state");
   }
 
   @Test

@@ -42,8 +42,9 @@ public class MemoryComponentProvider extends ComponentProvider {
   }
 
   @Override
+  @Nullable
   protected IndexBackfiller createIndexBackfiller(Configuration configuration) {
-    return new IndexBackfiller(getPersistence(), configuration.getAsyncQueue());
+    return null;
   }
 
   @Override

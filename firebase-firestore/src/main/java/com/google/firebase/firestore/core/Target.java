@@ -160,7 +160,7 @@ public final class Target {
           case EQUAL:
           case IN:
             // Encode equality prefix, which is encoded in the index value before the inequality
-            // (e.g. `a == 'a' && b != 'b' is encoded to 'value != ab').
+            // (e.g. `a == 'a' && b != 'b'` is encoded to `value != 'ab'`).
             values.add(fieldFilter.getValue());
             break;
           case NOT_IN:
@@ -336,10 +336,6 @@ public final class Target {
 
       values.add(segmentValue);
       inclusive &= segmentInclusive;
-    }
-
-    if (values.isEmpty()) {
-      return null;
     }
 
     return new Bound(values, inclusive);

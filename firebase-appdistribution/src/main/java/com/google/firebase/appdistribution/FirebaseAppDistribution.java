@@ -111,7 +111,7 @@ public class FirebaseAppDistribution {
             new FirebaseAppDistributionTesterApiClient(),
             firebaseInstallationsApiProvider),
         new ApkUpdater(firebaseApp, new ApkInstaller()),
-        new AabUpdater(firebaseApp.getApplicationContext()),
+        new AabUpdater(),
         signInStorage,
         lifecycleNotifier);
   }
@@ -153,8 +153,7 @@ public class FirebaseAppDistribution {
     }
 
     lifecycleNotifier
-        .getForegroundActivity()
-        .onSuccessTask(activity -> showSignInConfirmationDialog(activity))
+        .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
         // here for code clarity, and because we plan to remove the signInTester() call
@@ -184,9 +183,8 @@ public class FirebaseAppDistribution {
                 setCachedUpdateIfNewReleaseResult();
                 return Tasks.forResult(null);
               }
-              return lifecycleNotifier
-                  .getForegroundActivity()
-                  .onSuccessTask((activity) -> showUpdateConfirmationDialog(activity, release));
+              return lifecycleNotifier.applyToForegroundActivityTask(
+                  activity -> showUpdateAlertDialog(activity, release));
             })
         .onSuccessTask(
             unused ->
