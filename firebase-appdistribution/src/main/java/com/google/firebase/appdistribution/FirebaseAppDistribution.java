@@ -182,7 +182,7 @@ public class FirebaseAppDistribution {
                 return Tasks.forResult(null);
               }
               return lifecycleNotifier.applyToForegroundActivityTask(
-                  activity -> showUpdateAlertDialog(activity, release));
+                  activity -> showUpdateConfirmationDialog(activity, release));
             })
         .onSuccessTask(
             unused ->
