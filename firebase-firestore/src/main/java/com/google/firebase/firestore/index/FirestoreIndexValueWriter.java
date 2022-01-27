@@ -52,15 +52,6 @@ public class FirestoreIndexValueWriter {
 
   private FirestoreIndexValueWriter() {}
 
-  // The write methods below short-circuit writing terminators for values containing a (terminating)
-  // truncated value.
-  //
-  // As an example, consider the resulting encoding for:
-  //
-  // ["bar", [2, "foo"]] -> (STRING, "bar", TERM, ARRAY, NUMBER, 2, STRING, "foo", TERM, TERM, TERM)
-  // ["bar", [2, truncated("foo")]] -> (STRING, "bar", TERM, ARRAY, NUMBER, 2, STRING, "foo", TRUNC)
-  // ["bar", truncated(["foo"])] -> (STRING, "bar", TERM, ARRAY. STRING, "foo", TERM, TRUNC)
-
   /** Writes an index value. */
   public void writeIndexValue(Value value, DirectionalIndexByteEncoder encoder) {
     writeIndexValueAux(value, encoder);

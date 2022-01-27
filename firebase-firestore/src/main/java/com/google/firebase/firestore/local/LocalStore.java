@@ -115,7 +115,7 @@ public final class LocalStore implements BundleCallback {
   private IndexManager indexManager;
 
   /** Manages field index backfill. */
-  private final IndexBackfiller indexBackfiller;
+  private final @Nullable IndexBackfiller indexBackfiller;
 
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
@@ -152,34 +152,42 @@ public final class LocalStore implements BundleCallback {
 
   public LocalStore(
       Persistence persistence,
-      IndexBackfiller indexBackfiller,
+      @Nullable IndexBackfiller indexBackfiller,
       QueryEngine queryEngine,
       User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
+    this.queryEngine = queryEngine;
+    this.indexBackfiller = indexBackfiller;
+
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
-    indexManager = persistence.getIndexManager(initialUser);
-    mutationQueue = persistence.getMutationQueue(initialUser, indexManager);
-    documentOverlayCache = persistence.getDocumentOverlay(initialUser);
     remoteDocuments = persistence.getRemoteDocumentCache();
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
-    this.queryEngine = queryEngine;
-    this.indexBackfiller = indexBackfiller;
-    queryEngine.initialize(localDocuments, indexManager);
-
     localViewReferences = new ReferenceSet();
-    persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
-
-    remoteDocuments.setIndexManager(indexManager);
-    indexBackfiller.setIndexManager(indexManager);
-    indexBackfiller.setLocalDocumentsView(localDocuments);
-
     queryDataByTarget = new SparseArray<>();
     targetIdByTarget = new HashMap<>();
+
+    persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
+
+    initializeUserComponents(initialUser);
+  }
+
+  private void initializeUserComponents(User user) {
+    // TODO(indexing): Add spec tests that test these components change after a user change
+    indexManager = persistence.getIndexManager(user);
+    mutationQueue = persistence.getMutationQueue(user, indexManager);
+    documentOverlayCache = persistence.getDocumentOverlay(user);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
+
+    remoteDocuments.setIndexManager(indexManager);
+    queryEngine.initialize(localDocuments, indexManager);
+    if (indexBackfiller != null) {
+      indexBackfiller.setIndexManager(indexManager);
+      indexBackfiller.setLocalDocumentsView(localDocuments);
+    }
   }
 
   public void start() {
@@ -202,24 +210,11 @@ public final class LocalStore implements BundleCallback {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
-    indexManager = persistence.getIndexManager(user);
-    mutationQueue = persistence.getMutationQueue(user, indexManager);
-    documentOverlayCache = persistence.getDocumentOverlay(user);
-
+    initializeUserComponents(user);
     startIndexManager();
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
-
-    // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
-    queryEngine.initialize(localDocuments, indexManager);
-
-    // TODO(indexing): Add spec tests that test these components change after a user change
-    remoteDocuments.setIndexManager(indexManager);
-    indexBackfiller.setIndexManager(indexManager);
-    indexBackfiller.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();

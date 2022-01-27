@@ -19,29 +19,15 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFir
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.testutil.Assert;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class IndexingTest {
-  /** Current state of indexing support. Used for restoring after test run. */
-  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
-
-  @BeforeClass
-  public static void beforeClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
 
   @After
   public void tearDown() {
@@ -115,6 +101,4 @@ public class IndexingTest {
                     + "  \"fieldOverrides\": []\n"
                     + "}"));
   }
-
-  // TODO(indexing): Add tests that validate that indices are active
 }

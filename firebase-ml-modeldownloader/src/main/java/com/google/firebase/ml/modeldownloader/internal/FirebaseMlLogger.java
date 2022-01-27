@@ -93,6 +93,11 @@ public class FirebaseMlLogger {
     return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
   }
 
+  @NonNull
+  public static FirebaseMlLogger getInstance(@NonNull FirebaseApp app) {
+    return app.get(FirebaseMlLogger.class);
+  }
+
   void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {
     logModelInfoRetrieverFailure(model, errorCode, NO_FAILURE_VALUE);
   }

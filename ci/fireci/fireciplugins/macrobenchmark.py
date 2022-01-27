@@ -184,7 +184,7 @@ class MacrobenchmarkTest:
     args += ['--type', 'instrumentation']
     args += ['--app', app_apk_path]
     args += ['--test', test_apk_path]
-    args += ['--device', 'model=flame,version=30,locale=en,orientation=portrait']
+    args += ['--device', 'model=redfin,version=30,locale=en,orientation=portrait']
     args += ['--directories-to-pull', '/sdcard/Download']
     args += ['--results-bucket', f'gs://{self.test_results_bucket}']
     args += ['--results-dir', self.test_results_dir]

@@ -25,12 +25,14 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -168,7 +170,8 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
+    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
+        .thenAnswer(applyToForegroundActivityTaskAnswer(activity));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 

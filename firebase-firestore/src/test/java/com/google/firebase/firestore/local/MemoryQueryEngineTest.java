@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.heartbeatinfo;
+package com.google.firebase.firestore.local;
 
-import com.google.auto.value.AutoValue;
-import java.util.List;
+public class MemoryQueryEngineTest extends QueryEngineTestCase {
 
-/**
- * Stores the information about when the sdk was used and what kind of heartbeat needs to be sent
- * for the same.
- */
-@AutoValue
-public abstract class HeartBeatResult {
-  public abstract String getUserAgent();
-
-  public abstract List<String> getUsedDates();
-
-  public static HeartBeatResult create(String userAgent, List<String> dateList) {
-    return new AutoValue_HeartBeatResult(userAgent, dateList);
+  @Override
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
   }
 }

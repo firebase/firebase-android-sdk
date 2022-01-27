@@ -22,7 +22,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 
 /**
- * OrderedCodeWriter is a minimal-allocation implmentation of the writing behavior defined by the
+ * OrderedCodeWriter is a minimal-allocation implementation of the writing behavior defined by the
  * backend.
  */
 public class OrderedCodeWriter {
