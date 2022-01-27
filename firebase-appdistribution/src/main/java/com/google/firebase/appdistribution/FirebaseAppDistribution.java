@@ -66,10 +66,7 @@ public class FirebaseAppDistribution {
   private AlertDialog signInConfirmationDialog;
   @Nullable private Activity dialogHostActivity = null;
 
-  @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeSignInConfirmationDialog = false;
-
-  @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeUpdateConfirmationDialog = false;
 
   private TaskCompletionSource<Void> showSignInDialogTask = null;
@@ -148,7 +145,8 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
-      setRemakeDialogsToFalse();
+      remakeSignInConfirmationDialog = false;
+      remakeUpdateConfirmationDialog = false;
       dialogHostActivity = null;
     }
 
@@ -368,18 +366,18 @@ public class FirebaseAppDistribution {
   @VisibleForTesting
   void onActivityPaused(Activity activity) {
     if (activity == dialogHostActivity) {
-      synchronized (updateIfNewReleaseTaskLock) {
-        remakeSignInConfirmationDialog =
-            signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
-        remakeUpdateConfirmationDialog =
-            updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
-      }
+      remakeSignInConfirmationDialog =
+          signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
+      remakeUpdateConfirmationDialog =
+          updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
       dismissDialogs();
     }
   }
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
+    // If the dialogHostActivity is being destroyed it is set to null. This is to ensure that
+    // onResume shows the dialog on a configuration change and not check the activity reference
     if (activity == dialogHostActivity) {
       dialogHostActivity = null;
     }
@@ -431,30 +429,20 @@ public class FirebaseAppDistribution {
     updateConfirmationDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.update_no_button),
-        (dialogInterface, i) -> updateConfirmationDialogClosedCallback(showUpdateDialogTask));
+        (dialogInterface, i) ->
+            showUpdateDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateConfirmationDialog.setOnCancelListener(
-        dialogInterface -> updateConfirmationDialogClosedCallback(showUpdateDialogTask));
+        dialogInterface ->
+            showUpdateDialogTask.setException(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateConfirmationDialog.show();
 
     return showUpdateDialogTask.getTask();
-  }
-
-  private void setRemakeDialogsToFalse() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      remakeSignInConfirmationDialog = false;
-      remakeUpdateConfirmationDialog = false;
-    }
-  }
-
-  private void updateConfirmationDialogClosedCallback(TaskCompletionSource showUpdateDialogTask) {
-    synchronized (updateIfNewReleaseTaskLock) {
-      remakeUpdateConfirmationDialog = false;
-    }
-    showUpdateDialogTask.setException(
-        new FirebaseAppDistributionException(
-            ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
   }
 
   private void setCachedUpdateIfNewReleaseCompletionError(Exception e) {
@@ -501,14 +489,10 @@ public class FirebaseAppDistribution {
   }
 
   private boolean awaitingSignInDialogConfirmation() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeSignInConfirmationDialog);
-    }
+    return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeSignInConfirmationDialog);
   }
 
   private boolean awaitingUpdateDialogConfirmation() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeUpdateConfirmationDialog);
-    }
+    return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeUpdateConfirmationDialog);
   }
 }
