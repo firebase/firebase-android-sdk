@@ -157,7 +157,7 @@ public class FirebaseAppDistribution {
         .onSuccessTask(activity -> showSignInConfirmationDialog(activity))
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
-        // here both for code clarify, and because we plan to remove the signInTester() call
+        // here for code clarity, and because we plan to remove the signInTester() call
         // from checkForNewRelease() in the near future
         .onSuccessTask(unused -> signInTester())
         .onSuccessTask(unused -> checkForNewRelease())
@@ -357,8 +357,10 @@ public class FirebaseAppDistribution {
             new FirebaseAppDistributionException(
                 ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
-        showUpdateConfirmationDialog(
-            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+        synchronized (cachedNewReleaseLock) {
+          showUpdateConfirmationDialog(
+              activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
+        }
       }
     }
   }
