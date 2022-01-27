@@ -20,13 +20,24 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.Executor;
 
 class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
+
+  /** An {@link Executor} that runs tasks on the current thread. */
+  private static final Executor DIRECT_EXECUTOR = Runnable::run;
+
+  /** A functional interface for a function that takes an activity and does something with it. */
+  interface ActivityConsumer<T> {
+    void consume(Activity activity);
+  }
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
@@ -54,7 +65,8 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
-  private FirebaseAppDistributionLifecycleNotifier() {}
+  @VisibleForTesting
+  FirebaseAppDistributionLifecycleNotifier() {}
 
   static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
     if (instance == null) {
@@ -84,13 +96,43 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   /**
-   * Get a {@link Task} that will succeed with a result of the app's foregrounded {@link Activity},
-   * when one is available.
-   *
-   * <p>The returned task will never fail. It will instead remain pending indefinitely until some
-   * activity comes to the foreground.
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete immediately after the function is applied.
    */
-  Task<Activity> getForegroundActivity() {
+  Task<Void> applyToForegroundActivity(ActivityConsumer consumer) {
+    return getForegroundActivity()
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            DIRECT_EXECUTOR,
+            activity -> {
+              try {
+                consumer.consume(activity);
+                return Tasks.forResult(null);
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionException.wrap(t));
+              }
+            });
+  }
+
+  /**
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete with the result of the Task returned by that function.
+   */
+  <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
+    return getForegroundActivity()
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            DIRECT_EXECUTOR,
+            activity -> {
+              try {
+                return continuation.then(activity);
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionException.wrap(t));
+              }
+            });
+  }
+
+  private Task<Activity> getForegroundActivity() {
     synchronized (lock) {
       if (currentActivity != null) {
         return Tasks.forResult(currentActivity);

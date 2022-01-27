@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-import static com.google.firebase.appdistribution.TaskUtils.combineWithResultOf;
 import static com.google.firebase.appdistribution.TaskUtils.runAsyncInTask;
 import static com.google.firebase.appdistribution.TaskUtils.safeSetTaskException;
 
@@ -97,10 +96,10 @@ class AabUpdater {
 
       // On a background thread, fetch the redirect URL and open it in the Play app
       runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
-          .onSuccessTask(combineWithResultOf(() -> lifecycleNotifier.getForegroundActivity()))
-          .addOnSuccessListener(
-              urlAndActivity ->
-                  openRedirectUrlInPlay(urlAndActivity.first(), urlAndActivity.second()))
+          .onSuccessTask(
+              redirectUrl ->
+                  lifecycleNotifier.applyToForegroundActivity(
+                      activity -> openRedirectUrlInPlay(redirectUrl, activity)))
           .addOnFailureListener(this::setUpdateTaskCompletionError);
 
       return cachedUpdateTask;

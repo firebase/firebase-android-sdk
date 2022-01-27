@@ -14,11 +14,9 @@
 
 package com.google.firebase.appdistribution;
 
-import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.auto.value.AutoValue;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.util.concurrent.Executor;
@@ -32,11 +30,6 @@ class TaskUtils {
    */
   interface Operation<TResult> {
     TResult run() throws FirebaseAppDistributionException;
-  }
-
-  /** A functional interface to wrap a function that produces a {@link Task}. */
-  interface TaskSource<TResult> {
-    Task<TResult> get();
   }
 
   /**
@@ -90,58 +83,6 @@ class TaskUtils {
           : Tasks.forException(FirebaseAppDistributionException.wrap(e));
     }
     return task;
-  }
-
-  /**
-   * An @{link AutoValue} class to hold the result of two Tasks, combined using {@link
-   * #combineWithResultOf}.
-   *
-   * @param <T1> The result type of the first task
-   * @param <T2> The result type of the second task
-   */
-  @AutoValue
-  abstract static class CombinedTaskResults<T1, T2> {
-    abstract T1 first();
-
-    abstract T2 second();
-
-    static <T1, T2> CombinedTaskResults<T1, T2> create(T1 first, T2 second) {
-      return new AutoValue_TaskUtils_CombinedTaskResults(first, second);
-    }
-  }
-
-  /**
-   * Returns a {@link SuccessContinuation} to be chained off of a {@link Task}, that will run
-   * another task in sequence and combine both results together.
-   *
-   * <p>This is useful when you want to run two tasks and use the results of each, but those tasks
-   * need to be run sequentially. If they can be run in parallel, use {@link Tasks#whenAll} or one
-   * of its variations.
-   *
-   * <p>Usage:
-   *
-   * <pre>{@code
-   * runFirstAsyncTask()
-   *   .onSuccessTask(combineWithResultOf(executor, () -> startSecondAsyncTask())
-   *   .addOnSuccessListener(
-   *       results ->
-   *           doSomethingWithBothResults(results.result1(), results.result2()));
-   * }</pre>
-   *
-   * @param secondTaskSource A {@link TaskSource} providing the next task to run
-   * @param <T1> The result type of the first task
-   * @param <T2> The result type of the second task
-   * @return A {@link SuccessContinuation} that will return a new task with result type {@link
-   *     CombinedTaskResults}, combining the results of both tasks
-   */
-  static <T1, T2> SuccessContinuation<T1, CombinedTaskResults<T1, T2>> combineWithResultOf(
-      TaskSource<T2> secondTaskSource) {
-    return firstResult ->
-        secondTaskSource
-            .get()
-            .onSuccessTask(
-                secondResult ->
-                    Tasks.forResult(CombinedTaskResults.create(firstResult, secondResult)));
   }
 
   static void safeSetTaskException(TaskCompletionSource taskCompletionSource, Exception e) {
