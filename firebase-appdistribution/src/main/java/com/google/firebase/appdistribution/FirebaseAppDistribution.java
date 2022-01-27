@@ -35,7 +35,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
-import com.google.firebase.appdistribution.internal.SignInResultActivity;
 import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -69,6 +68,9 @@ public class FirebaseAppDistribution {
 
   @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeSignInConfirmationDialog = false;
+
+  private TaskCompletionSource<Void> showSignInDialogTask = null;
+  private TaskCompletionSource<Void> showUpdateDialogTask = null;
 
   @GuardedBy("updateIfNewReleaseTaskLock")
   private boolean remakeUpdateConfirmationDialog = false;
@@ -146,14 +148,13 @@ public class FirebaseAppDistribution {
         return cachedUpdateIfNewReleaseTask;
       }
       cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
-      remakeSignInConfirmationDialog = false;
-      remakeUpdateConfirmationDialog = false;
+      setRemakeDialogsToFalse();
       dialogHostActivity = null;
     }
 
     lifecycleNotifier
         .getForegroundActivity()
-        .onSuccessTask(this::showSignInConfirmationDialog)
+        .onSuccessTask(activity -> showSignInConfirmationDialog(activity))
         // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
         // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
         // here both for code clarify, and because we plan to remove the signInTester() call
@@ -203,7 +204,9 @@ public class FirebaseAppDistribution {
       return Tasks.forResult(null);
     }
 
-    TaskCompletionSource<Void> showDialogTask = new TaskCompletionSource<>();
+    if (showSignInDialogTask == null || showSignInDialogTask.getTask().isComplete()) {
+      showSignInDialogTask = new TaskCompletionSource<>();
+    }
 
     signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     dialogHostActivity = hostActivity;
@@ -215,27 +218,25 @@ public class FirebaseAppDistribution {
     signInConfirmationDialog.setButton(
         AlertDialog.BUTTON_POSITIVE,
         context.getString(R.string.singin_yes_button),
-        (dialogInterface, i) -> showDialogTask.setResult(null));
+        (dialogInterface, i) -> showSignInDialogTask.setResult(null));
 
     signInConfirmationDialog.setButton(
         AlertDialog.BUTTON_NEGATIVE,
         context.getString(R.string.singin_no_button),
         (dialogInterface, i) ->
-            showDialogTask.setException(
+            showSignInDialogTask.setException(
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
     signInConfirmationDialog.setOnCancelListener(
         dialogInterface ->
-            showDialogTask.setException(
+            showSignInDialogTask.setException(
                 new FirebaseAppDistributionException(
                     ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
-    synchronized (updateIfNewReleaseTaskLock) {
-      signInConfirmationDialog.show();
-      remakeSignInConfirmationDialog = true;
-    }
-    return showDialogTask.getTask();
+    signInConfirmationDialog.show();
+
+    return showSignInDialogTask.getTask();
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
@@ -340,62 +341,46 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityResumed(Activity activity) {
-    if (awaitingSignInDialogConfirmation()) {
-      if (dialogHostActivityHasChanged(activity)) {
-        setUpdateIfNewReleaseWithHostError();
-      } else {
-        signInConfirmationDialog.show();
-      }
+    if (awaitingSignInDialogConfirmation()
+        && (dialogHostActivity == null || dialogHostActivity == activity)) {
+      showSignInConfirmationDialog(activity);
     }
-    if (awaitingUpdateDialogConfirmation()) {
-      if (dialogHostActivityHasChanged(activity)) {
-        setUpdateIfNewReleaseWithHostError();
-      } else {
-        updateConfirmationDialog.show();
-      }
+    if (awaitingUpdateDialogConfirmation()
+        && (dialogHostActivity == null || dialogHostActivity == activity)) {
+      showUpdateConfirmationDialog(
+          activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
     }
-  }
-
-  private boolean dialogHostActivityHasChanged(Activity resumedActivity) {
-    return dialogHostActivity != null && !resumedActivity.equals(dialogHostActivity);
-  }
-
-  private void setUpdateIfNewReleaseWithHostError() {
-    setCachedUpdateIfNewReleaseCompletionError(
-        new FirebaseAppDistributionException(
-            ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
   }
 
   private void onActivityPaused(Activity activity) {
-    if (activity.isChangingConfigurations()) {
+    if (activity == dialogHostActivity) {
       synchronized (updateIfNewReleaseTaskLock) {
         remakeSignInConfirmationDialog =
             signInConfirmationDialog != null && signInConfirmationDialog.isShowing();
         remakeUpdateConfirmationDialog =
             updateConfirmationDialog != null && updateConfirmationDialog.isShowing();
       }
-      dialogHostActivity = null;
+      dismissDialogs();
     }
-    dismissDialogs();
   }
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    if (activity instanceof SignInResultActivity || activity.isChangingConfigurations()) {
-      // SignInResult is internal to the SDK and is destroyed after creation
-      // We don't want to cancel the task the activity is rotating
+    if (activity != dialogHostActivity) {
       return;
     }
-    if (updateIfNewReleaseAvailableIsTaskInProgress() && !isTesterSignedIn()) {
-      setRemakeDialogsToFalse();
-      setCachedUpdateIfNewReleaseCompletionError(
-          new FirebaseAppDistributionException(
-              ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-    } else if (updateIfNewReleaseAvailableIsTaskInProgress()) {
-      setRemakeDialogsToFalse();
-      setCachedUpdateIfNewReleaseCompletionError(
-          new FirebaseAppDistributionException(
-              ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED));
+    dialogHostActivity = null;
+    if (!activity.isChangingConfigurations()) {
+      if (awaitingSignInDialogConfirmation()) {
+        showSignInDialogTask.setException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+      }
+      if (awaitingUpdateDialogConfirmation()) {
+        showUpdateDialogTask.setException(
+            new FirebaseAppDistributionException(
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+      }
     }
   }
 
@@ -415,7 +400,10 @@ public class FirebaseAppDistribution {
 
   private Task<Void> showUpdateConfirmationDialog(
       Activity hostActivity, AppDistributionRelease newRelease) {
-    TaskCompletionSource<Void> showUpdateDialogTask = new TaskCompletionSource<>();
+
+    if (showUpdateDialogTask == null || showUpdateDialogTask.getTask().isComplete()) {
+      showUpdateDialogTask = new TaskCompletionSource<>();
+    }
 
     Context context = firebaseApp.getApplicationContext();
 
@@ -447,10 +435,7 @@ public class FirebaseAppDistribution {
     updateConfirmationDialog.setOnCancelListener(
         dialogInterface -> updateConfirmationDialogClosedCallback(showUpdateDialogTask));
 
-    synchronized (updateIfNewReleaseTaskLock) {
-      updateConfirmationDialog.show();
-      remakeUpdateConfirmationDialog = true;
-    }
+    updateConfirmationDialog.show();
 
     return showUpdateDialogTask.getTask();
   }
