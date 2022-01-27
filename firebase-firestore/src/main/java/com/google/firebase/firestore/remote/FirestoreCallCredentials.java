@@ -19,6 +19,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import io.grpc.CallCredentials;
@@ -53,22 +54,32 @@ final class FirestoreCallCredentials extends CallCredentials {
   @Override
   public void applyRequestMetadata(
       RequestInfo requestInfo, Executor executor, final MetadataApplier metadataApplier) {
+    System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 1");
     Task<String> authTask = authProvider.getToken();
     Task<String> appCheckTask = appCheckProvider.getToken();
 
     Tasks.whenAll(authTask, appCheckTask)
         .addOnCompleteListener(
-            executor,
+            // We previously used the executor that is passed to us by the callee of the method
+            // (which
+            // happens to be the AsyncQueue). This sometimes led to deadlocks during shutdown, as
+            // Firestore's shutdown() runs on the AsyncQueue, which would then invoke GRPC's
+            // shutdown(),
+            // which would then block until this callback gets schedule on the AsyncQueue.
+            Executors.DIRECT_EXECUTOR,
             unused -> {
+              System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 2");
               Metadata metadata = new Metadata();
 
               if (authTask.isSuccessful()) {
+                System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 3");
                 String token = authTask.getResult();
                 Logger.debug(LOG_TAG, "Successfully fetched auth token.");
                 if (token != null) {
                   metadata.put(AUTHORIZATION_HEADER, "Bearer " + token);
                 }
               } else {
+                System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 4");
                 Exception exception = authTask.getException();
                 if (exception instanceof FirebaseApiNotAvailableException) {
                   Logger.debug(
@@ -76,6 +87,8 @@ final class FirestoreCallCredentials extends CallCredentials {
                 } else if (exception instanceof FirebaseNoSignedInUserException) {
                   Logger.debug(LOG_TAG, "No user signed in, not using authentication.");
                 } else {
+                  System.out.println(
+                      "MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 5");
                   Logger.warn(LOG_TAG, "Failed to get auth token: %s.", exception);
                   metadataApplier.fail(Status.UNAUTHENTICATED.withCause(exception));
                   return;
@@ -83,22 +96,27 @@ final class FirestoreCallCredentials extends CallCredentials {
               }
 
               if (appCheckTask.isSuccessful()) {
+                System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 6");
                 String token = appCheckTask.getResult();
                 if (token != null && !token.isEmpty()) {
                   Logger.debug(LOG_TAG, "Successfully fetched AppCheck token.");
                   metadata.put(X_FIREBASE_APPCHECK, token);
                 }
               } else {
+                System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 7");
                 Exception exception = appCheckTask.getException();
                 if (exception instanceof FirebaseApiNotAvailableException) {
                   Logger.debug(LOG_TAG, "Firebase AppCheck API not available.");
                 } else {
                   Logger.warn(LOG_TAG, "Failed to get AppCheck token: %s.", exception);
                   metadataApplier.fail(Status.UNAUTHENTICATED.withCause(exception));
+                  System.out.println(
+                      "MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 8");
                   return;
                 }
               }
 
+              System.out.println("MRSCHMIDT - FirestoreCallCredentials.applyRequestMetadata() 9");
               metadataApplier.apply(metadata);
             });
   }
