@@ -62,6 +62,11 @@ public class ModelFileManager {
     return FirebaseApp.getInstance().get(ModelFileManager.class);
   }
 
+  @NonNull
+  public static ModelFileManager getInstance(@NonNull FirebaseApp app) {
+    return app.get(ModelFileManager.class);
+  }
+
   void deleteNonLatestCustomModels() throws FirebaseMlException {
     File root = getDirImpl("");
 
