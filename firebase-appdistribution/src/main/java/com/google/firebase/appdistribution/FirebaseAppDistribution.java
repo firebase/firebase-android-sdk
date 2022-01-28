@@ -494,7 +494,7 @@ public class FirebaseAppDistribution {
 
   private boolean awaitingUpdateDialogConfirmation() {
     return (showUpdateDialogTask != null
-        && showUpdateDialogTask.getTask().isComplete()
+        && !showUpdateDialogTask.getTask().isComplete()
         && remakeUpdateConfirmationDialog);
   }
 }
