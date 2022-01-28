@@ -374,8 +374,8 @@ public class FirebaseAppDistribution {
 
   @VisibleForTesting
   void onActivityDestroyed(@NonNull Activity activity) {
-    // If the dialogHostActivity is being destroyed it is set to null. This is to ensure that
-    // onResume shows the dialog on a configuration change and not check the activity reference
+    // If the dialogHostActivity is being destroyed it is set to null. This is to ensure onResume
+    // shows the dialog on a configuration change and does not check the activity reference.
     if (activity == dialogHostActivity) {
       dialogHostActivity = null;
     }
@@ -487,10 +487,14 @@ public class FirebaseAppDistribution {
   }
 
   private boolean awaitingSignInDialogConfirmation() {
-    return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeSignInConfirmationDialog);
+    return (showSignInDialogTask != null
+        && !showSignInDialogTask.getTask().isComplete()
+        && remakeSignInConfirmationDialog);
   }
 
   private boolean awaitingUpdateDialogConfirmation() {
-    return (updateIfNewReleaseAvailableIsTaskInProgress() && remakeUpdateConfirmationDialog);
+    return (showUpdateDialogTask != null
+        && showUpdateDialogTask.getTask().isComplete()
+        && remakeUpdateConfirmationDialog);
   }
 }

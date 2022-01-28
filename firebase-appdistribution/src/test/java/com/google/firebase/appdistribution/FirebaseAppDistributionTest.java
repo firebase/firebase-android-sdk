@@ -489,7 +489,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void
-      updateIfNewReleaseAvailable_signInTaskCancelled_whenSignInDialogShowingAndNewActivityStarts() {
+      updateIfNewReleaseAvailable_whenSignInDialogShowingAndNewActivityStarts_signInTaskCancelled() {
     TestActivity testActivity2 = new TestActivity();
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
 
@@ -505,7 +505,7 @@ public class FirebaseAppDistributionTest {
 
   @Test
   public void
-      updateIfNewReleaseAvailable_updateTaskCancelled_whenUpdateDialogShowingAndNewActivityStarts() {
+      updateIfNewReleaseAvailable_whenUpdateDialogShowingAndNewActivityStarts_updateTaskCancelled() {
     TestActivity testActivity2 = new TestActivity();
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
