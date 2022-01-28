@@ -19,6 +19,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import io.grpc.CallCredentials;
@@ -58,7 +59,12 @@ final class FirestoreCallCredentials extends CallCredentials {
 
     Tasks.whenAll(authTask, appCheckTask)
         .addOnCompleteListener(
-            executor,
+            // We previously used the executor that is passed to us by the callee of the method
+            // (which happens to be the AsyncQueue). This sometimes led to deadlocks during
+            // shutdown, as Firestore's termiante() runs on the AsyncQueue, which would then invoke
+            // GRPC's shutdown(), which would then wait for this callback to be scheduled on the
+            // AsyncQueue.
+            Executors.DIRECT_EXECUTOR,
             unused -> {
               Metadata metadata = new Metadata();
 

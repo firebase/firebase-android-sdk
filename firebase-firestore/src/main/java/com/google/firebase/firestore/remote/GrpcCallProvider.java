@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.remote;
 
 import android.content.Context;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.security.ProviderInstaller;
@@ -63,19 +62,6 @@ public class GrpcCallProvider {
   private final Context context;
   private final DatabaseInfo databaseInfo;
   private final CallCredentials firestoreHeaders;
-
-  /**
-   * Helper function to globally override the channel that RPCs use. Useful for testing when you
-   * want to bypass SSL certificate checking.
-   *
-   * @param channelBuilderSupplier The supplier for a channel builder that is used to create gRPC
-   *     channels.
-   */
-  @VisibleForTesting
-  public static void overrideChannelBuilder(
-      Supplier<ManagedChannelBuilder<?>> channelBuilderSupplier) {
-    overrideChannelBuilderSupplier = channelBuilderSupplier;
-  }
 
   GrpcCallProvider(
       AsyncQueue asyncQueue,
@@ -142,7 +128,7 @@ public class GrpcCallProvider {
   void shutdown() {
     // Handling shutdown synchronously to avoid re-enqueuing on the AsyncQueue after shutdown has
     // started.
-    ManagedChannel channel = null;
+    ManagedChannel channel;
     try {
       channel = Tasks.await(channelTask);
     } catch (ExecutionException e) {
