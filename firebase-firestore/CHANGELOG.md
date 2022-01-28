@@ -4,8 +4,10 @@ by opting into a release at
 
 # 24.0.2
 - [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
-working and receive a "Permission Denied" error. This issue only occurred for
-AppCheck users that set their expiration time to under an hour.
+  working and receive a "Permission Denied" error. This issue only occurred for
+  AppCheck users that set their expiration time to under an hour.
+- [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
+  the shutdown from proceeding if a network connection was opened right before.
 
 # 24.0.1
 - [changed] Improved performance for databases that contain many document
