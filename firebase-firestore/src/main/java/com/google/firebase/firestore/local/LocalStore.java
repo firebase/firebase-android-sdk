@@ -442,8 +442,7 @@ public final class LocalStore implements BundleCallback {
             }
           }
 
-          DocumentChangeResult result =
-              populateDocumentChanges(documentUpdates, null, remoteEvent.getSnapshotVersion());
+          DocumentChangeResult result = populateDocumentChanges(documentUpdates);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
 
           // HACK: The only reason we allow snapshot version NONE is so that we can synthesize
@@ -483,15 +482,9 @@ public final class LocalStore implements BundleCallback {
    * resorts to `globalVersion`.
    *
    * @param documents Documents to be applied.
-   * @param documentVersions A DocumentKey-to-SnapshotVersion map if documents have their own read
-   *     time.
-   * @param globalVersion A SnapshotVersion representing the read time if all documents have the
-   *     same read time.
    */
   private DocumentChangeResult populateDocumentChanges(
-      Map<DocumentKey, MutableDocument> documents,
-      @Nullable Map<DocumentKey, SnapshotVersion> documentVersions,
-      SnapshotVersion globalVersion) {
+      Map<DocumentKey, MutableDocument> documents) {
     Map<DocumentKey, MutableDocument> changedDocs = new HashMap<>();
     List<DocumentKey> removedDocs = new ArrayList<>();
     Set<DocumentKey> conditionChanged = new HashSet<>();
@@ -504,8 +497,6 @@ public final class LocalStore implements BundleCallback {
       DocumentKey key = entry.getKey();
       MutableDocument doc = entry.getValue();
       MutableDocument existingDoc = existingDocs.get(key);
-      SnapshotVersion readTime =
-          documentVersions != null ? documentVersions.get(key) : globalVersion;
       // Check if see if there is a existence state change for this document.
       if (doc.isFoundDocument() != existingDoc.isFoundDocument()) {
         conditionChanged.add(key);
@@ -524,9 +515,9 @@ public final class LocalStore implements BundleCallback {
           || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
               && existingDoc.hasPendingWrites())) {
         hardAssert(
-            !SnapshotVersion.NONE.equals(readTime),
+            !SnapshotVersion.NONE.equals(doc.getReadTime()),
             "Cannot add a document when the remote version is zero");
-        remoteDocuments.add(doc, readTime);
+        remoteDocuments.add(doc, doc.getReadTime());
         changedDocs.put(key, doc);
       } else {
         Logger.debug(
@@ -713,7 +704,6 @@ public final class LocalStore implements BundleCallback {
         () -> {
           ImmutableSortedSet<DocumentKey> documentKeys = DocumentKey.emptyKeySet();
           Map<DocumentKey, MutableDocument> documentMap = new HashMap<>();
-          Map<DocumentKey, SnapshotVersion> versionMap = new HashMap<>();
 
           for (Entry<DocumentKey, MutableDocument> entry : documents) {
             DocumentKey documentKey = entry.getKey();
@@ -723,14 +713,12 @@ public final class LocalStore implements BundleCallback {
               documentKeys = documentKeys.insert(documentKey);
             }
             documentMap.put(documentKey, document);
-            versionMap.put(documentKey, document.getVersion());
           }
 
           targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
           targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
 
-          DocumentChangeResult result =
-              populateDocumentChanges(documentMap, versionMap, SnapshotVersion.NONE);
+          DocumentChangeResult result = populateDocumentChanges(documentMap);
           Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
           return localDocuments.getLocalViewOfDocuments(changedDocs, result.existenceChangedKeys);
         });

@@ -215,11 +215,12 @@ public class TestUtil {
   }
 
   public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
-    return MutableDocument.newFoundDocument(key, version(version), data);
+    return MutableDocument.newFoundDocument(key, version(version), data)
+        .setReadTime(version(version));
   }
 
   public static MutableDocument deletedDoc(String key, long version) {
-    return MutableDocument.newNoDocument(key(key), version(version));
+    return MutableDocument.newNoDocument(key(key), version(version)).setReadTime(version(version));
   }
 
   public static MutableDocument unknownDoc(String key, long version) {

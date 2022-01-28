@@ -163,7 +163,7 @@ public final class MutableDocument implements Document {
     return this;
   }
 
-  public MutableDocument withReadTime(SnapshotVersion readTime) {
+  public MutableDocument setReadTime(SnapshotVersion readTime) {
     this.readTime = readTime;
     return this;
   }
