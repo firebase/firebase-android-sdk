@@ -182,6 +182,12 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     }
   }
 
+  void addOnActivityPausedListener(@NonNull OnActivityPausedListener listener) {
+    synchronized (lock) {
+      this.onActivityPausedListeners.add(listener);
+    }
+  }
+
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
     synchronized (lock) {

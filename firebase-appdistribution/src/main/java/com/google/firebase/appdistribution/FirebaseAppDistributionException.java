@@ -54,6 +54,9 @@ public class FirebaseAppDistributionException extends FirebaseException {
 
     /** Download URL for release expired */
     RELEASE_URL_EXPIRED,
+
+    /** Host activity for confirmation dialog destroyed or pushed to the backstack */
+    HOST_ACTIVITY_INTERRUPTED,
   }
 
   @NonNull private final Status status;
