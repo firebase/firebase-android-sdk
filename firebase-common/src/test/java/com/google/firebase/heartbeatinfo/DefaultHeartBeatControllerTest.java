@@ -115,6 +115,7 @@ public class DefaultHeartBeatControllerTest {
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
         Base64.getUrlEncoder()
+            .withoutPadding()
             .encodeToString(
                 compress(
                         "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-02-03]\"}],\"version\":\"2\"}")
@@ -134,7 +135,9 @@ public class DefaultHeartBeatControllerTest {
         new DefaultHeartBeatController(
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
     String emptyString =
-        Base64.getEncoder().encodeToString("{\"heartbeats\":[],\"version\":\"2\"}".getBytes());
+        Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString("{\"heartbeats\":[],\"version\":\"2\"}".getBytes());
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     controller.getHeartBeatsHeader().addOnCompleteListener(executor, getOnCompleteListener);
@@ -157,6 +160,7 @@ public class DefaultHeartBeatControllerTest {
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
     String emptyString =
         Base64.getUrlEncoder()
+            .withoutPadding()
             .encodeToString(compress("{\"heartbeats\":[],\"version\":\"2\"}").getBytes());
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
@@ -201,7 +205,10 @@ public class DefaultHeartBeatControllerTest {
     array.put(obj);
     output.put("heartbeats", array);
     output.put("version", "2");
-    String expected = Base64.getUrlEncoder().encodeToString(compress(output.toString()).getBytes());
+    String expected =
+        Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(compress(output.toString()).getBytes());
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
@@ -238,6 +245,7 @@ public class DefaultHeartBeatControllerTest {
         .addOnCompleteListener(executor, getOnCompleteListener);
     String expected =
         Base64.getUrlEncoder()
+            .withoutPadding()
             .encodeToString(
                 compress(
                         "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-03-02]\"},{\"agent\":\"test-agent-1\",\"date\":\"[2015-03-03]\"}],\"version\":\"2\"}")
