@@ -65,7 +65,7 @@ public class SQLiteOverlayMigrationManagerTest {
 
   private void writeRemoteDocument(MutableDocument document) {
     // Set read time to update time.
-    document = document.withReadTime(document.getVersion());
+    document.setReadTime(document.getVersion());
     persistence.getRemoteDocumentCache().add(document, document.getReadTime());
   }
 

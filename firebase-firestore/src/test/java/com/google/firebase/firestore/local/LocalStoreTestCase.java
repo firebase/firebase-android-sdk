@@ -1358,7 +1358,7 @@ public abstract class LocalStoreTestCase {
     acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
     assertChanged(
         doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
-            .withReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
+            .setReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
             .setHasCommittedMutations());
   }
 
