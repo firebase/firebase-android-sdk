@@ -400,8 +400,8 @@ class SQLiteSchema {
                   + "uid TEXT, "
                   + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
                   + "directional_value BLOB, " // index values for equality and inequalities
-                  + "document_name TEXT, "
-                  + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_name))");
+                  + "document_key TEXT, "
+                  + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_key))");
 
           db.execSQL(
               "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");

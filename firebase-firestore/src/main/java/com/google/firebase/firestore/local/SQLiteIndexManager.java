@@ -322,7 +322,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   private void addIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
-        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
+        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_key) "
             + "VALUES(?, ?, ?, ?, ?)",
         indexEntry.getIndexId(),
         uid,
@@ -334,7 +334,7 @@ final class SQLiteIndexManager implements IndexManager {
   private void deleteIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
         "DELETE FROM index_entries WHERE index_id = ? AND uid = ? AND array_value = ? "
-            + "AND directional_value = ? AND document_name = ?",
+            + "AND directional_value = ? AND document_key = ?",
         indexEntry.getIndexId(),
         uid,
         indexEntry.getArrayValue(),
@@ -347,7 +347,7 @@ final class SQLiteIndexManager implements IndexManager {
     SortedSet<IndexEntry> results = new TreeSet<>();
     db.query(
             "SELECT array_value, directional_value FROM index_entries "
-                + "WHERE index_id = ? AND document_name = ? AND uid = ?")
+                + "WHERE index_id = ? AND document_key = ? AND uid = ?")
         .binding(fieldIndex.getIndexId(), documentKey.toString(), uid)
         .forEach(
             row ->
@@ -424,7 +424,7 @@ final class SQLiteIndexManager implements IndexManager {
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
-    statement.append("SELECT document_name, directional_value FROM index_entries ");
+    statement.append("SELECT document_key, directional_value FROM index_entries ");
     statement.append("WHERE index_id = ? AND uid = ? ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
@@ -439,14 +439,14 @@ final class SQLiteIndexManager implements IndexManager {
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
-    sql.append(" ORDER BY directional_value, document_name ");
+    sql.append(" ORDER BY directional_value, document_key ");
     if (target.getLimit() != -1) {
       sql.append("LIMIT ").append(target.getLimit()).append(" ");
     }
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
-      sql = new StringBuilder("SELECT document_name, directional_value FROM (").append(sql);
+      sql = new StringBuilder("SELECT document_key, directional_value FROM (").append(sql);
       sql.append(") WHERE directional_value NOT IN (");
       sql.append(repeatSequence("?", notIn.length, ", "));
       sql.append(")");
