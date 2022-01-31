@@ -260,7 +260,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     try {
       return serializer
           .decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes))
-          .withReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
+          .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
     } catch (InvalidProtocolBufferException e) {
       throw fail("MaybeDocument failed to parse: %s", e);
     }

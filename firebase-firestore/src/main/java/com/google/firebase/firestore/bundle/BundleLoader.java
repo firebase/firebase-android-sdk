@@ -41,7 +41,7 @@ public class BundleLoader {
 
   private ImmutableSortedMap<DocumentKey, MutableDocument> documents;
   private long bytesLoaded;
-  @Nullable private DocumentKey currentDocument;
+  @Nullable private BundledDocumentMetadata currentMetadata;
 
   public BundleLoader(BundleCallback bundleCallback, BundleMetadata bundleMetadata) {
     this.bundleCallback = bundleCallback;
@@ -68,23 +68,27 @@ public class BundleLoader {
     } else if (bundleElement instanceof BundledDocumentMetadata) {
       BundledDocumentMetadata bundledDocumentMetadata = (BundledDocumentMetadata) bundleElement;
       documentsMetadata.put(bundledDocumentMetadata.getKey(), bundledDocumentMetadata);
-      currentDocument = bundledDocumentMetadata.getKey();
+      currentMetadata = bundledDocumentMetadata;
       if (!((BundledDocumentMetadata) bundleElement).exists()) {
         documents =
             documents.insert(
                 bundledDocumentMetadata.getKey(),
                 MutableDocument.newNoDocument(
-                    bundledDocumentMetadata.getKey(), bundledDocumentMetadata.getReadTime()));
-        currentDocument = null;
+                        bundledDocumentMetadata.getKey(), bundledDocumentMetadata.getReadTime())
+                    .setReadTime(bundledDocumentMetadata.getReadTime()));
+        currentMetadata = null;
       }
     } else if (bundleElement instanceof BundleDocument) {
       BundleDocument bundleDocument = (BundleDocument) bundleElement;
-      if (!bundleDocument.getKey().equals(currentDocument)) {
+      if (currentMetadata == null || !bundleDocument.getKey().equals(currentMetadata.getKey())) {
         throw new IllegalArgumentException(
             "The document being added does not match the stored metadata.");
       }
-      documents = documents.insert(bundleDocument.getKey(), bundleDocument.getDocument());
-      currentDocument = null;
+      documents =
+          documents.insert(
+              bundleDocument.getKey(),
+              bundleDocument.getDocument().setReadTime(currentMetadata.getReadTime()));
+      currentMetadata = null;
     }
 
     bytesLoaded += byteSize;
@@ -103,7 +107,7 @@ public class BundleLoader {
   /** Applies the loaded documents and queries to local store. Returns the document view changes. */
   public ImmutableSortedMap<DocumentKey, Document> applyChanges() {
     Preconditions.checkArgument(
-        currentDocument == null,
+        currentMetadata == null,
         "Bundled documents end with a document metadata element instead of a document.");
     Preconditions.checkArgument(bundleMetadata.getBundleId() != null, "Bundle ID must be set");
     Preconditions.checkArgument(
