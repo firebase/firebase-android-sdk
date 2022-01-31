@@ -105,7 +105,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
             GZIPOutputStream gzip = new GZIPOutputStream(out);
             gzip.write(output.toString().getBytes());
             gzip.close();
-            return Base64.encodeToString(out.toString("UTF-8").getBytes(), Base64.URL_SAFE);
+            return Base64.encodeToString(out.toString("UTF-8").getBytes(), Base64.URL_SAFE | Base64.NO_WRAP);
           }
         });
   }
