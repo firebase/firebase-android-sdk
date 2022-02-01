@@ -22,6 +22,8 @@ dependencies:
   * `firebase-inappmessaging-ktx`
   * `firebase-inappmessaging-display`
   * `firebase-inappmessaging-display-ktx`
+  * `firebase-messaging`
+  * `firebase-messaging-directboot`
   * `firebase-perf`
   * `firebase-perf-ktx`
   * `firebase-remote-config`
