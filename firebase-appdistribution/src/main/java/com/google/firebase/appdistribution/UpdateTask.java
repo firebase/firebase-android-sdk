@@ -19,6 +19,10 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import java.util.concurrent.Executor;
 
+/**
+ * Represents an asynchronous operation to update an app. This task also receives progress and other
+ * state change notifications.
+ */
 public abstract class UpdateTask extends Task<Void> {
   /**
    * Adds a listener that is called periodically while the UpdateTask executes.
@@ -28,6 +32,12 @@ public abstract class UpdateTask extends Task<Void> {
   @NonNull
   public abstract UpdateTask addOnProgressListener(@NonNull OnProgressListener listener);
 
+  /**
+   * Adds a listener that is called periodically while the UpdateTask executes.
+   *
+   * @param executor the executor to use to call the listener
+   * @return this Task
+   */
   @NonNull
   public abstract UpdateTask addOnProgressListener(
       @Nullable Executor executor, @NonNull OnProgressListener listener);

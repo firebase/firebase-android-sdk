@@ -19,13 +19,8 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
- * This class represents the AppDistributionRelease object returned by checkForUpdate() and
- * updateToLatestRelease()
- *
- * <p>It is an immutable value class implemented by AutoValue.
- *
- * @see <a
- *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
+ * The release information returned by {@link checkForNewRelease} when a new version is available
+ * for the signed in tester.
  */
 @AutoValue
 public abstract class AppDistributionRelease {
@@ -35,19 +30,19 @@ public abstract class AppDistributionRelease {
     return new com.google.firebase.appdistribution.AutoValue_AppDistributionRelease.Builder();
   }
 
-  /** The short bundle version of this build (example 1.0.0) */
+  /** The short bundle version of this build (example 1.0.0). */
   @NonNull
   public abstract String getDisplayVersion();
 
-  /** The version code of this build (example: 123) */
+  /** The version code of this build (example: 123). */
   @NonNull
   public abstract long getVersionCode();
 
-  /** The release notes for this build */
+  /** The release notes for this build. */
   @Nullable
   public abstract String getReleaseNotes();
 
-  /** The binary type for this build */
+  /** The binary type for this build. */
   @NonNull
   public abstract BinaryType getBinaryType();
 

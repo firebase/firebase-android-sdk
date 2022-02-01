@@ -39,6 +39,15 @@ import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
+/**
+ * The Firebase App Distribution API provides methods to update the app to the most recent
+ * pre-release build.
+ *
+ * <p>By default, Firebase App Distribution is automatically initialized.
+ *
+ * <p>Call {@link FirebaseAppDistribution#getInstance()} to get the singleton instance of
+ * FirebaseAppDistribution.
+ */
 public class FirebaseAppDistribution {
 
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
@@ -124,7 +133,7 @@ public class FirebaseAppDistribution {
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  /** @return a FirebaseAppDistribution instance */
+  /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
   public static FirebaseAppDistribution getInstance() {
     return FirebaseApp.getInstance().get(FirebaseAppDistribution.class);
@@ -132,11 +141,15 @@ public class FirebaseAppDistribution {
 
   /**
    * Updates the app to the newest release, if one is available. Returns the release information or
-   * null if no update is found. Performs the following actions: 1. If tester is not signed in,
-   * presents the tester with a Google sign in UI 2. Checks if a newer release is available. If so,
-   * presents the tester with a confirmation dialog to begin the download. 3. For APKs, downloads
-   * the binary and starts an installation intent. 4. For AABs, directs the tester to the Play app
-   * to complete the download and installation.
+   * null if no update is found. Performs the following actions:
+   *
+   * <ol>
+   *   <li>1. If tester is not signed in, presents the tester with a Google sign in UI
+   *   <li>2. Checks if a newer release is available. If so, presents the tester with a confirmation
+   *       dialog to begin the download.
+   *   <li>3. For APKs, downloads the binary and starts an installation intent.
+   *   <li>4. For AABs, directs the tester to the Play appto complete the download and installation.
+   * </ol>
    */
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
@@ -242,9 +255,8 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * Returns an AppDistributionRelease if one is available for the current signed in tester. If no
-   * update is found, returns null. If tester is not signed in, presents the tester with a Google
-   * sign in UI
+   * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
+   * tester. If no update is found, returns null.
    */
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
@@ -277,12 +289,13 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * Updates app to the newest release. If the newest release is an APK, downloads the binary and
-   * starts an installation If the newest release is an AAB, directs the tester to the Play app to
-   * complete the download and installation.
+   * 1:24 PM Updates app to the {@link AppDistributionRelease} returned by {@link
+   * #checkForNewRelease}. If the newest release is an APK, downloads the binary and starts an
+   * installation. If the newest release is an AAB, directs the tester to the Play app to complete
+   * the download and installation.
    *
-   * <p>cancels task with FirebaseAppDistributionException with UPDATE_NOT_AVAILABLE exception if no
-   * new release is cached from checkForNewRelease
+   * <p>Cancels task with {@link FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE} if no
+   * new release is cached from {@link checkForNewRelease}.
    */
   @NonNull
   public UpdateTask updateApp() {
@@ -324,7 +337,7 @@ public class FirebaseAppDistribution {
     }
   }
 
-  /** Returns true if the App Distribution tester is signed in */
+  /** Returns {@code true} if the App Distribution tester is signed in */
   public boolean isTesterSignedIn() {
     return this.signInStorage.getSignInStatus();
   }
