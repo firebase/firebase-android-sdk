@@ -76,10 +76,7 @@ public class RemoteConfigComponent {
   private static final Random DEFAULT_RANDOM = new Random();
 
   @GuardedBy("this")
-  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
-
-  @GuardedBy("this")
-  private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground = new HashMap<>();
+  private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   private final Context context;
   private final ExecutorService executorService;
@@ -128,7 +125,6 @@ public class RemoteConfigComponent {
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
-
     GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
 
     // When the component is first loaded, it will use a cached executor.
@@ -212,7 +208,6 @@ public class RemoteConfigComponent {
                   getRealtimeClient(fetchHandler));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
-      frcNamespaceInstancesBackground.put(namespace, in);
     }
     return frcNamespaceInstances.get(namespace);
   }
@@ -261,7 +256,7 @@ public class RemoteConfigComponent {
 
   @VisibleForTesting
   synchronized ConfigRealtimeHTTPClient getRealtimeClient(ConfigFetchHandler configFetchHandler) {
-    return new ConfigRealtimeHTTPClient(this.firebaseApp, this.firebaseInstallations, configFetchHandler, this.context, this.executorService);
+    return new ConfigRealtimeHTTPClient(configFetchHandler);
   }
 
   private ConfigGetParameterHandler getGetHandler(
@@ -332,7 +327,7 @@ public class RemoteConfigComponent {
 
     @Override
     public void onBackgroundStateChanged(boolean b) {
-      for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
+      for (FirebaseRemoteConfig frc : frcNamespaceInstances.values()) {
         frc.handleAutomaticRealtime(b);
       }
     }
