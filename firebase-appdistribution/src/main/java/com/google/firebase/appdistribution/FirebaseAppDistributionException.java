@@ -46,14 +46,8 @@ public class FirebaseAppDistributionException extends FirebaseException {
     /** Update not available for the current tester and app */
     UPDATE_NOT_AVAILABLE,
 
-    /** Installation failed due to signature mismatch */
-    INSTALLATION_FAILURE_SIGNATURE_MISMATCH,
-
     /** App is in production */
     APP_RUNNING_IN_PRODUCTION,
-
-    /** Download URL for release expired */
-    RELEASE_URL_EXPIRED,
 
     /** Host activity for confirmation dialog destroyed or pushed to the backstack */
     HOST_ACTIVITY_INTERRUPTED,
