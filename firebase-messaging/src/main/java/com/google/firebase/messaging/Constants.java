@@ -107,7 +107,7 @@ public final class Constants {
     /**
      * Prefix "google.c" for keys that are reserved for the client library. While all the other
      * "google." are removed at GmsCore level, google.c keys are preserved in the intent extras, and
-     * should be removed by the Gcm Client Library, before passing the user data to the app.
+     * should be removed by the FCM Client Library, before passing the user data to the app.
      */
     public static final String RESERVED_CLIENT_LIB_PREFIX = RESERVED_PREFIX + "c.";
 

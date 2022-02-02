@@ -116,7 +116,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
    * Gets the message destination.
    *
    * <ul>
-   *   <li>For upstream messages, this will be of the form {@code SENDER_ID@gcm.googleapis.com}.
+   *   <li>For upstream messages, this will be of the form {@code SENDER_ID@fcm.googleapis.com}.
    *   <li>For downstream messages, this will be the Firebase installations ID (FID).
    * </ul>
    */
@@ -298,7 +298,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
      * Sets the destination of the message.
      *
      * @param to The destination of the message in the format of {@code
-     *     SENDER_ID@gcm.googleapis.com}. The {@code SENDER_ID} should be the FirebaseApp gcm sender
+     *     SENDER_ID@fcm.googleapis.com}. The {@code SENDER_ID} should be the FirebaseApp gcm sender
      *     id.
      */
     public Builder(@NonNull String to) {
