@@ -16,10 +16,6 @@ package com.google.firebase.remoteconfig;
 
 import android.app.Application;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -689,43 +685,6 @@ public class FirebaseRemoteConfig {
 
   public void addRealtimeListener(ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
     this.configRealtimeHTTPClient.putRealTimeEventListener("l", realTimeEventListener);
-  }
-
-  public void reconnectWhenNetworkIsAvailable() {
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-      NetworkRequest networkRequest = new NetworkRequest.Builder()
-              .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-              .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-              .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-              .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
-              .build();
-
-      ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
-        @Override
-        public void onAvailable(@NonNull Network network) {
-          startRealtime();
-        }
-
-        @Override
-        public void onLost(@NonNull Network network) {
-          super.onLost(network);
-        }
-
-        @Override
-        public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
-          super.onCapabilitiesChanged(network, networkCapabilities);
-          boolean hasCellular = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR);
-          boolean hasWifi = networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
-          if (hasCellular || hasWifi) {
-            startRealtime();
-          }
-        }
-      };
-
-      ConnectivityManager connectivityManager =
-                this.context.getSystemService(ConnectivityManager.class);
-      connectivityManager.requestNetwork(networkRequest, networkCallback);
-    }
   }
 
   /**
