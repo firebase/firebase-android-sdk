@@ -14,12 +14,15 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.app.Application;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
+
+import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -33,6 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHTTPClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -143,6 +149,8 @@ public class FirebaseRemoteConfig {
    */
   @Nullable private final FirebaseABTesting firebaseAbt;
 
+  private boolean automaticRealtimeHandling;
+
   private final Executor executor;
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigCacheClient activatedConfigsCache;
@@ -151,6 +159,7 @@ public class FirebaseRemoteConfig {
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
   private final FirebaseInstallationsApi firebaseInstallations;
+  private final ConfigRealtimeHTTPClient configRealtimeHTTPClient;
 
   /**
    * Firebase Remote Config constructor.
@@ -168,7 +177,8 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata) {
+      ConfigMetadataClient frcMetadata,
+      ConfigRealtimeHTTPClient configRealtimeHTTPClient) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
@@ -180,6 +190,9 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
+
+    this.automaticRealtimeHandling = false;
+    this.configRealtimeHTTPClient = configRealtimeHTTPClient;
   }
 
   /**
@@ -660,5 +673,43 @@ public class FirebaseRemoteConfig {
   private static boolean isFetchedFresh(
       ConfigContainer fetched, @Nullable ConfigContainer activated) {
     return activated == null || !fetched.getFetchTime().equals(activated.getFetchTime());
+  }
+
+  public void startRealtime() {
+    this.configRealtimeHTTPClient.startRealtimeConnection();
+  }
+
+  public void pauseRealtime() {
+    this.configRealtimeHTTPClient.pauseRealtimeConnection();
+  }
+
+  public void addRealtimeListener(ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
+    this.configRealtimeHTTPClient.putRealTimeEventListener("l", realTimeEventListener);
+  }
+
+  /**
+   * Starts automatic realtime handling.
+   * */
+  public void startAutomaticStreamHandling() {
+    this.automaticRealtimeHandling = true;
+  }
+
+  /**
+   * Stops automatic realtime handling.
+   * */
+  public void stopAutomaticStreamHandling() {
+    this.automaticRealtimeHandling = false;
+  }
+
+  public void handleAutomaticRealtime(boolean background) {
+    if (this.automaticRealtimeHandling) {
+      if (background) {
+        Log.i(this.TAG, "App is in background");
+        pauseRealtime();
+      } else {
+        Log.i(this.TAG, "App is in foreground");
+        startRealtime();
+      }
+    }
   }
 }
