@@ -37,9 +37,7 @@ package com.google.firebase.appdistribution {
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status HOST_ACTIVITY_INTERRUPTED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_CANCELED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE;
-    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE_SIGNATURE_MISMATCH;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status NETWORK_FAILURE;
-    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status RELEASE_URL_EXPIRED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UNKNOWN;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UPDATE_NOT_AVAILABLE;
   }
