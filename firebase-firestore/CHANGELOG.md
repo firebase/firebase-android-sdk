@@ -2,7 +2,14 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# 24.1.0
+# 24.0.2
+- [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
+  working and receive a "Permission Denied" error. This issue only occurred for
+  AppCheck users that set their expiration time to under an hour.
+- [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
+  the shutdown from proceeding if a network connection was opened right before.
+
+# 24.0.1
 - [changed] Improved performance for databases that contain many document
   updates that have not yet been synced with the backend.
 - [changed] Improved performance for queries against collections that contain

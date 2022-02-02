@@ -49,7 +49,7 @@ public class TargetTest {
     verifyBound(lowerBound, true);
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true);
   }
 
   @Test
@@ -65,7 +65,7 @@ public class TargetTest {
   }
 
   @Test
-  public void lowerThanQueryBound() {
+  public void lessThanQueryBound() {
     Target target = query("c").filter(filter("foo", "<", "bar")).toTarget();
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.DESCENDING);
 
@@ -77,7 +77,7 @@ public class TargetTest {
   }
 
   @Test
-  public void lowerThanOrEqualsQueryBound() {
+  public void lessThanOrEqualsQueryBound() {
     Target target = query("c").filter(filter("foo", "<=", "bar")).toTarget();
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.ASCENDING);
 
@@ -124,7 +124,7 @@ public class TargetTest {
     verifyBound(lowerBound, true);
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true);
   }
 
   @Test
@@ -142,7 +142,7 @@ public class TargetTest {
     verifyBound(lowerBound, true);
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    verifyBound(upperBound, true);
   }
 
   @Test

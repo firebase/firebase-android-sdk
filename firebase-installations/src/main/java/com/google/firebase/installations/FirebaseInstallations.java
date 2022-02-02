@@ -25,7 +25,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListener;
@@ -36,7 +36,6 @@ import com.google.firebase.installations.local.PersistedInstallationEntry;
 import com.google.firebase.installations.remote.FirebaseInstallationServiceClient;
 import com.google.firebase.installations.remote.InstallationResponse;
 import com.google.firebase.installations.remote.TokenResult;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -124,9 +123,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /** package private constructor. */
   FirebaseInstallations(
-      FirebaseApp firebaseApp,
-      @NonNull Provider<UserAgentPublisher> publisher,
-      @NonNull Provider<HeartBeatInfo> heartbeatInfo) {
+      FirebaseApp firebaseApp, @NonNull Provider<HeartBeatController> heartBeatProvider) {
     this(
         new ThreadPoolExecutor(
             CORE_POOL_SIZE,
@@ -137,7 +134,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             THREAD_FACTORY),
         firebaseApp,
         new FirebaseInstallationServiceClient(
-            firebaseApp.getApplicationContext(), publisher, heartbeatInfo),
+            firebaseApp.getApplicationContext(), heartBeatProvider),
         new PersistedInstallation(firebaseApp),
         Utils.getInstance(),
         new IidStore(firebaseApp),

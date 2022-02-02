@@ -255,23 +255,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE);
   }
 
-  @Override
-  public SnapshotVersion getLatestReadTime() {
-    SnapshotVersion latestReadTime =
-        db.query(
-                "SELECT read_time_seconds, read_time_nanos "
-                    + "FROM remote_documents ORDER BY read_time_seconds DESC, read_time_nanos DESC "
-                    + "LIMIT 1")
-            .firstValue(row -> new SnapshotVersion(new Timestamp(row.getLong(0), row.getInt(1))));
-    return latestReadTime != null ? latestReadTime : SnapshotVersion.NONE;
-  }
-
   private MutableDocument decodeMaybeDocument(
       byte[] bytes, int readTimeSeconds, int readTimeNanos) {
     try {
       return serializer
           .decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument.parseFrom(bytes))
-          .withReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
+          .setReadTime(new SnapshotVersion(new Timestamp(readTimeSeconds, readTimeNanos)));
     } catch (InvalidProtocolBufferException e) {
       throw fail("MaybeDocument failed to parse: %s", e);
     }

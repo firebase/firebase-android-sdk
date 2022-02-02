@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.appdistribution.Constants.ErrorMessages;
 
 /** Possible exceptions thrown in FirebaseAppDistribution */
 public class FirebaseAppDistributionException extends FirebaseException {
@@ -47,6 +48,9 @@ public class FirebaseAppDistributionException extends FirebaseException {
 
     /** App is in production */
     APP_RUNNING_IN_PRODUCTION,
+
+    /** Host activity for confirmation dialog destroyed or pushed to the backstack */
+    HOST_ACTIVITY_INTERRUPTED,
   }
 
   @NonNull private final Status status;
@@ -91,5 +95,14 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull
   public Status getErrorCode() {
     return status;
+  }
+
+  static FirebaseAppDistributionException wrap(Throwable t) {
+    // We never want to wrap a FirebaseAppDistributionException
+    if (t instanceof FirebaseAppDistributionException) {
+      return (FirebaseAppDistributionException) t;
+    }
+    return new FirebaseAppDistributionException(
+        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, t);
   }
 }

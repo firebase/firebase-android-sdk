@@ -254,7 +254,7 @@ public class ValuesTest {
   }
 
   @Test
-  public void testNextValue() {
+  public void testUpperBound() {
     new ComparatorTester()
         // null first
         .addEqualityGroup(wrap((Object) null))

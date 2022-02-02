@@ -37,6 +37,9 @@ class Constants {
 
     public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found";
 
+    public static final String HOST_ACTIVITY_INTERRUPTED =
+        "Host activity interrupted while dialog was showing";
+
     public static final String APK_INSTALLATION_FAILED =
         "The APK failed to install or installation was cancelled";
   }

@@ -65,7 +65,7 @@ public class SQLiteOverlayMigrationManagerTest {
 
   private void writeRemoteDocument(MutableDocument document) {
     // Set read time to update time.
-    document = document.withReadTime(document.getVersion());
+    document.setReadTime(document.getVersion());
     persistence.getRemoteDocumentCache().add(document, document.getReadTime());
   }
 
@@ -74,7 +74,7 @@ public class SQLiteOverlayMigrationManagerTest {
   }
 
   private void writeMutations(List<Mutation> mutations) {
-    LocalWriteResult result = localStore.writeLocally(mutations);
+    localStore.writeLocally(mutations);
   }
 
   /** Asserts that the given local store contains the given document. */
@@ -98,7 +98,10 @@ public class SQLiteOverlayMigrationManagerTest {
 
     assertEquals(
         setMutation("foo/bar", map("foo", "bar")),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     // Version is 0 because of remote document elision.
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
 
@@ -122,7 +125,10 @@ public class SQLiteOverlayMigrationManagerTest {
 
     assertEquals(
         deleteMutation("foo/bar"),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     // Version is 0 because of remote document elision.
     assertContains(deletedDoc("foo/bar", 2).setHasLocalMutations());
 
@@ -152,10 +158,10 @@ public class SQLiteOverlayMigrationManagerTest {
     DocumentOverlayCache overlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
     assertEquals(
         mergeMutation("foo/bar", map("it", 2), Collections.emptyList()),
-        overlay.getOverlay(key("foo/bar")));
+        overlay.getOverlay(key("foo/bar")).getMutation());
     assertEquals(
         mergeMutation("foo/newBar", map("it", asList(1)), Collections.emptyList()),
-        overlay.getOverlay(key("foo/newBar")));
+        overlay.getOverlay(key("foo/newBar")).getMutation());
 
     assertContains(doc("foo/bar", 2, map("it", 2)).setHasLocalMutations());
     assertContains(doc("foo/newBar", 0, map("it", asList(1))).setHasLocalMutations());
@@ -187,10 +193,16 @@ public class SQLiteOverlayMigrationManagerTest {
 
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-unauthenticated")),
-        persistence.getDocumentOverlay(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-another_user")),
-        persistence.getDocumentOverlay(new User("another_user")).getOverlay(key("foo/bar")));
+        persistence
+            .getDocumentOverlay(new User("another_user"))
+            .getOverlay(key("foo/bar"))
+            .getMutation());
 
     SQLiteOverlayMigrationManager migrationManager =
         (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();

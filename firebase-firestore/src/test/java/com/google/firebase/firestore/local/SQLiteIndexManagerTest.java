@@ -50,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -59,18 +58,6 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class SQLiteIndexManagerTest extends IndexManagerTestCase {
-  /** Current state of indexing support. Used for restoring after test run. */
-  private static final boolean supportsIndexing = Persistence.INDEXING_SUPPORT_ENABLED;
-
-  @BeforeClass
-  public static void beforeClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-  }
-
-  @BeforeClass
-  public static void afterClass() {
-    Persistence.INDEXING_SUPPORT_ENABLED = supportsIndexing;
-  }
 
   private void setUpSingleValueFilter() {
     indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
@@ -122,6 +109,22 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "!=", 2));
     verifyResults(query, "coll/val1", "coll/val3");
+  }
+
+  @Test
+  public void testEqualsWithNotEqualsFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING, "b", Kind.ASCENDING));
+    addDoc("coll/val1", map("a", 1, "b", 1));
+    addDoc("coll/val2", map("a", 1, "b", 2));
+    addDoc("coll/val3", map("a", 2, "b", 1));
+    addDoc("coll/val4", map("a", 2, "b", 2));
+
+    // Verifies that we apply the filter in the order of the field index
+    Query query = query("coll").filter(filter("a", "==", 1)).filter(filter("b", "!=", 1));
+    verifyResults(query, "coll/val2");
+
+    query = query("coll").filter(filter("b", "!=", 1)).filter(filter("a", "==", 1));
+    verifyResults(query, "coll/val2");
   }
 
   @Test
@@ -582,19 +585,18 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testUpdateTime() {
-    indexManager.addFieldIndex(
-        fieldIndex(
-            "coll1",
-            1,
-            IndexState.create(-1, version(20), DocumentKey.empty()),
-            "value",
-            Kind.ASCENDING));
+  public void testPersistsIndexOffset() {
+    indexManager.addFieldIndex(fieldIndex("coll1", "value", Kind.ASCENDING));
+    IndexOffset offset = IndexOffset.create(version(20), key("coll/doc"), 42);
+    indexManager.updateCollectionGroup("coll1", offset);
+
+    indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
 
     Collection<FieldIndex> indexes = indexManager.getFieldIndexes("coll1");
     assertEquals(indexes.size(), 1);
     FieldIndex index = indexes.iterator().next();
-    assertEquals(index.getIndexState().getOffset().getReadTime(), version(20));
+    assertEquals(offset, index.getIndexState().getOffset());
   }
 
   @Test
@@ -638,19 +640,9 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testDeleteFieldIndexRemovesEntryFromCollectionGroup() {
     indexManager.addFieldIndex(
-        fieldIndex(
-            "coll1",
-            1,
-            IndexState.create(1, version(30), DocumentKey.empty()),
-            "value",
-            Kind.ASCENDING));
+        fieldIndex("coll1", 1, IndexState.create(1, IndexOffset.NONE), "value", Kind.ASCENDING));
     indexManager.addFieldIndex(
-        fieldIndex(
-            "coll2",
-            2,
-            IndexState.create(2, version(0), DocumentKey.empty()),
-            "value",
-            Kind.CONTAINS));
+        fieldIndex("coll2", 2, IndexState.create(2, IndexOffset.NONE), "value", Kind.CONTAINS));
     String collectionGroup = indexManager.getNextCollectionGroupToUpdate();
     assertEquals("coll1", collectionGroup);
 

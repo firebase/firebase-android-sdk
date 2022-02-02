@@ -40,7 +40,7 @@ public abstract class ComponentProvider {
   private RemoteStore remoteStore;
   private EventManager eventManager;
   private ConnectivityMonitor connectivityMonitor;
-  private IndexBackfiller indexBackfiller;
+  @Nullable private IndexBackfiller indexBackfiller;
   @Nullable private Scheduler garbageCollectionScheduler;
 
   /** Configuration options for the component provider. */
@@ -109,6 +109,7 @@ public abstract class ComponentProvider {
     return garbageCollectionScheduler;
   }
 
+  @Nullable
   public IndexBackfiller getIndexBackfiller() {
     return indexBackfiller;
   }

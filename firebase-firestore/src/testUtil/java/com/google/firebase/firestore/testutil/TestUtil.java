@@ -215,11 +215,12 @@ public class TestUtil {
   }
 
   public static MutableDocument doc(DocumentKey key, long version, ObjectValue data) {
-    return MutableDocument.newFoundDocument(key, version(version), data);
+    return MutableDocument.newFoundDocument(key, version(version), data)
+        .setReadTime(version(version));
   }
 
   public static MutableDocument deletedDoc(String key, long version) {
-    return MutableDocument.newNoDocument(key(key), version(version));
+    return MutableDocument.newNoDocument(key(key), version(version)).setReadTime(version(version));
   }
 
   public static MutableDocument unknownDoc(String key, long version) {
@@ -631,9 +632,9 @@ public class TestUtil {
   }
 
   public static FieldIndex fieldIndex(
-      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldAndKind) {
+      String collectionGroup, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex fieldIndex =
-        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldAndKind);
+        fieldIndex(collectionGroup, -1, FieldIndex.INITIAL_STATE, field, kind, fieldsAndKind);
     return fieldIndex;
   }
 

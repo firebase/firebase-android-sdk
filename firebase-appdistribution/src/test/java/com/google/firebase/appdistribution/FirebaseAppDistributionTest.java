@@ -21,15 +21,18 @@ import static com.google.firebase.appdistribution.Constants.ErrorMessages.NOT_FO
 import static com.google.firebase.appdistribution.Constants.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -114,6 +117,7 @@ public class FirebaseAppDistributionTest {
   @Mock private AabUpdater mockAabUpdater;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  private TestActivity mockedActivity;
 
   static class TestActivity extends Activity {}
 
@@ -165,8 +169,9 @@ public class FirebaseAppDistributionTest {
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
 
-    activity = Robolectric.buildActivity(TestActivity.class).create().get();
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
+    activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
+    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
+        .thenAnswer(applyToForegroundActivityTaskAnswer(activity));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 
@@ -233,7 +238,7 @@ public class FirebaseAppDistributionTest {
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog dialog = verifyUpdateAlertDialog();
+    AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
         String.format(
             "Version %s (%s) is available.\n\nRelease notes: %s",
@@ -250,7 +255,7 @@ public class FirebaseAppDistributionTest {
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog dialog = verifyUpdateAlertDialog();
+    AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
         String.format(
             "Version %s (%s) is available.",
@@ -297,7 +302,7 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog signInDialog = verifySignInAlertDialog();
+    AlertDialog signInDialog = assertAlertDialogShown();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
     verify(mockTesterSignInManager, times(1)).signInTester();
@@ -316,7 +321,7 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog signInDialog = verifySignInAlertDialog();
+    AlertDialog signInDialog = assertAlertDialogShown();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
     assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
@@ -328,7 +333,7 @@ public class FirebaseAppDistributionTest {
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
 
     assertFalse(updateDialog.isShowing());
@@ -343,7 +348,7 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog updateDialog = verifyUpdateAlertDialog();
+    AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.onBackPressed(); // cancels the dialog
 
     assertFalse(updateDialog.isShowing());
@@ -385,7 +390,7 @@ public class FirebaseAppDistributionTest {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     Task updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog dialog = verifySignInAlertDialog();
+    AlertDialog dialog = assertAlertDialogShown();
     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
 
     assertFalse(updateTask.isSuccessful());
@@ -400,7 +405,7 @@ public class FirebaseAppDistributionTest {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     Task signInTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    AlertDialog dialog = verifySignInAlertDialog();
+    AlertDialog dialog = assertAlertDialogShown();
     dialog.onBackPressed(); // cancel dialog
 
     assertFalse(signInTask.isSuccessful());
@@ -410,7 +415,7 @@ public class FirebaseAppDistributionTest {
     assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
-  private AlertDialog verifySignInAlertDialog() {
+  private AlertDialog assertAlertDialogShown() {
     assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
     AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     assertTrue(dialog.isShowing());
@@ -452,28 +457,67 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void taskCancelledOnScreenRotation_whenUpdateDialogShowing() {
+  public void updateIfNewReleaseAvailable_whenScreenRotates_signInConfirmationDialogReappears() {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    when(activity.isChangingConfigurations()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity recreation due to a configuration change
+    firebaseAppDistribution.onActivityDestroyed(activity);
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    assertAlertDialogShown();
+    assertFalse(updateTask.isComplete());
+  }
+
+  @Test
+  public void updateIfNewReleaseAvailable_whenScreenRotates_updateDialogReappears() {
+    AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
+    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
+    when(activity.isChangingConfigurations()).thenReturn(true);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic activity recreation due to a configuration change
+    firebaseAppDistribution.onActivityDestroyed(activity);
+    firebaseAppDistribution.onActivityResumed(activity);
+
+    assertAlertDialogShown();
+    assertFalse(updateTask.isComplete());
+  }
+
+  @Test
+  public void
+      updateIfNewReleaseAvailable_whenSignInDialogShowingAndNewActivityStarts_signInTaskCancelled() {
+    TestActivity testActivity2 = new TestActivity();
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+
+    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+
+    // Mimic different activity getting resumed
+    firebaseAppDistribution.onActivityPaused(activity);
+    firebaseAppDistribution.onActivityResumed(testActivity2);
+
+    assertTaskFailure(
+        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+  }
+
+  @Test
+  public void
+      updateIfNewReleaseAvailable_whenUpdateDialogShowingAndNewActivityStarts_updateTaskCancelled() {
+    TestActivity testActivity2 = new TestActivity();
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    // Mimic activity dying
-    firebaseAppDistribution.onActivityDestroyed(activity);
+    // Mimic different activity getting resumed
+    firebaseAppDistribution.onActivityPaused(activity);
+    firebaseAppDistribution.onActivityResumed(testActivity2);
 
-    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
-  }
-
-  @Test
-  public void taskCancelledOnScreenRotation_whenSignInDialogShowing() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
-
-    UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-
-    // Mimic activity dying
-    firebaseAppDistribution.onActivityDestroyed(activity);
-
-    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
+    assertTaskFailure(
+        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
@@ -510,13 +554,5 @@ public class FirebaseAppDistributionTest {
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertEquals(updateTask, updateTaskToReturn);
-  }
-
-  private AlertDialog verifyUpdateAlertDialog() {
-    assertTrue(ShadowAlertDialog.getLatestDialog() instanceof AlertDialog);
-    AlertDialog dialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
-    assertTrue(dialog.isShowing());
-
-    return dialog;
   }
 }

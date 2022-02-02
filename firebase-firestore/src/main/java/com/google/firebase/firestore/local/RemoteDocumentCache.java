@@ -84,7 +84,4 @@ interface RemoteDocumentCache {
    * @return A newly created map with the set of documents in the collection.
    */
   Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
-
-  /** Returns the latest read time of any document in the cache. */
-  SnapshotVersion getLatestReadTime();
 }

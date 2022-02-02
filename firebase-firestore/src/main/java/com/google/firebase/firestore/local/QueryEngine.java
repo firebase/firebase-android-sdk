@@ -105,7 +105,8 @@ public class QueryEngine {
    */
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, Target target) {
-    if (query.matchesAllDocuments()) {
+    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
+    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
@@ -130,7 +131,8 @@ public class QueryEngine {
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
-    if (query.matchesAllDocuments()) {
+    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
+    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
@@ -160,7 +162,10 @@ public class QueryEngine {
     }
 
     return appendRemainingResults(
-        previousResults, query, IndexOffset.create(lastLimboFreeSnapshotVersion));
+        previousResults,
+        query,
+        IndexOffset.createSuccessor(
+            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID));
   }
 
   /** Applies the query filter and sorting to the provided documents. */

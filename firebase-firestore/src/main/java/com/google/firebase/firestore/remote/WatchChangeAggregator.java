@@ -264,6 +264,10 @@ public class WatchChangeAggregator {
       }
     }
 
+    for (MutableDocument document : pendingDocumentUpdates.values()) {
+      document.setReadTime(snapshotVersion);
+    }
+
     RemoteEvent remoteEvent =
         new RemoteEvent(
             snapshotVersion,

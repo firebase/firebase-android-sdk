@@ -27,7 +27,7 @@ import com.google.firebase.appdistribution.internal.LogWrapper;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
-  private static final String TAG = "ApkInstallClient:";
+  private static final String TAG = "ApkInstaller:";
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("installTaskLock")

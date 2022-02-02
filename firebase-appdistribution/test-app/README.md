@@ -13,7 +13,7 @@ current directory.
 > **Note:** The [Package name](https://firebase.google.com/docs/android/setup#register-app) for your
 app created on the Firebase Console (for which the `google-services.json` is downloaded) must match
 the [applicationId](https://developer.android.com/studio/build/application-id.html) declared in the
-`dev-app/dev-app.gradle` for the app to link to Firebase.
+`test-app/test-app.gradle` for the app to link to Firebase.
 
 ## Build & Install
 
@@ -27,5 +27,5 @@ After the build is successful, [bring up emulator/physical device](https://devel
 and install the apk:
 
 ```
-firebase-android-sdk$ adb install firebase-app-distribution/test-app/build/outputs/apk/release/test-app-release.apk
+firebase-android-sdk$ adb install firebase-appdistribution/test-app/build/outputs/apk/release/test-app-release.apk
 ```

@@ -16,9 +16,12 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
+import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityAnswer;
+import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +41,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.FirebaseAppDistributionTest.TestActivity;
 import com.google.firebase.appdistribution.internal.SignInResultActivity;
 import com.google.firebase.appdistribution.internal.SignInStorage;
@@ -125,7 +129,9 @@ public class TesterSignInManagerTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    when(mockLifecycleNotifier.getForegroundActivity()).thenReturn(Tasks.forResult(activity));
+
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(applyToForegroundActivityAnswer(activity));
 
     testerSignInManager =
         new TesterSignInManager(
@@ -133,6 +139,29 @@ public class TesterSignInManagerTest {
             mockFirebaseInstallationsProvider,
             mockSignInStorage,
             mockLifecycleNotifier);
+  }
+
+  @Test
+  public void signInTester_whenCantGetFid_failsWithAuthenticationFailure() {
+    Exception fisException = new Exception("fis exception");
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(fisException));
+
+    Task signInTask = testerSignInManager.signInTester();
+
+    assertTaskFailure(
+        signInTask, Status.AUTHENTICATION_FAILURE, "Failed to authenticate", fisException);
+  }
+
+  @Test
+  public void signInTester_whenUnexpectedFailureInTask_failsWithUnknownError() {
+    Exception unexpectedException = new Exception("unexpected exception");
+    // Raise an unexpected exception in our handler passed to applyToForegroundActivity
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(unused -> Tasks.forException(unexpectedException));
+
+    Task signInTask = testerSignInManager.signInTester();
+
+    assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
   }
 
   @Test
@@ -176,7 +205,7 @@ public class TesterSignInManagerTest {
   public void signInTester_whenReturnFromSignIn_taskSucceeds() {
     Task signInTask = testerSignInManager.signInTester();
 
-    // Simulate re-entering app
+    // Simulate re-entering app after successful sign in, via SignInResultActivity
     testerSignInManager.onActivityCreated(mockSignInResultActivity);
 
     assertTrue(signInTask.isSuccessful());
@@ -187,7 +216,7 @@ public class TesterSignInManagerTest {
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
     Task signInTask = testerSignInManager.signInTester();
 
-    // Simulate re-entering app
+    // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityStarted(activity);
 
     assertFalse(signInTask.isSuccessful());

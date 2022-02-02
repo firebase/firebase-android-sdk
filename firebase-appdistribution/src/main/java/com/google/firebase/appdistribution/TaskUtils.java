@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.util.concurrent.Executor;
@@ -25,6 +24,10 @@ import java.util.concurrent.Executor;
 class TaskUtils {
   private static final String TAG = "TaskUtils:";
 
+  /**
+   * A functional interface to wrap a function that returns some result of a possibly long-running
+   * operation, and could potentially throw a {@link FirebaseAppDistributionException}.
+   */
   interface Operation<TResult> {
     TResult run() throws FirebaseAppDistributionException;
   }
@@ -51,10 +54,8 @@ class TaskUtils {
         () -> {
           try {
             taskCompletionSource.setResult(operation.run());
-          } catch (FirebaseAppDistributionException e) {
-            taskCompletionSource.setException(e);
           } catch (Throwable t) {
-            taskCompletionSource.setException(wrapException(t));
+            taskCompletionSource.setException(FirebaseAppDistributionException.wrap(t));
           }
         });
     return taskCompletionSource.getTask();
@@ -79,14 +80,9 @@ class TaskUtils {
       LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
       return e instanceof FirebaseAppDistributionException
           ? task
-          : Tasks.forException(wrapException(e));
+          : Tasks.forException(FirebaseAppDistributionException.wrap(e));
     }
     return task;
-  }
-
-  private static FirebaseAppDistributionException wrapException(Throwable t) {
-    return new FirebaseAppDistributionException(
-        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, t);
   }
 
   static void safeSetTaskException(TaskCompletionSource taskCompletionSource, Exception e) {

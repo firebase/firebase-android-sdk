@@ -20,7 +20,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,106 +30,147 @@ import org.junit.runner.RunWith;
 public class HeartBeatInfoStorageTest {
   private final String testSdk = "testSdk";
   private final String GLOBAL = "fire-global";
+  private static final int HEART_BEAT_COUNT_LIMIT = 30;
   private static Context applicationContext = ApplicationProvider.getApplicationContext();
-  private static SharedPreferences sharedPreferences =
-      applicationContext.getSharedPreferences("test", Context.MODE_PRIVATE);
   private static SharedPreferences heartBeatSharedPreferences =
       applicationContext.getSharedPreferences("testHeartBeat", Context.MODE_PRIVATE);
   private HeartBeatInfoStorage heartBeatInfoStorage =
-      new HeartBeatInfoStorage(sharedPreferences, heartBeatSharedPreferences);
+      new HeartBeatInfoStorage(heartBeatSharedPreferences);
 
   @After
   public void tearDown() {
-    sharedPreferences.edit().clear().apply();
     heartBeatSharedPreferences.edit().clear().apply();
   }
 
   @Test
   public void shouldSendSdkHeartBeat_answerIsNo() {
-    sharedPreferences.edit().putLong(testSdk, 1).apply();
+    heartBeatSharedPreferences.edit().putLong(testSdk, 1).apply();
     assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isFalse();
+  }
+
+  @Test
+  public void storeOneHeartbeat_storesProperly() {
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    heartBeatInfoStorage.storeHeartBeat(0, "test-agent");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    ArrayList<HeartBeatResult> results =
+        (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    assertThat(results.get(0).getUserAgent()).isEqualTo("test-agent");
+    assertThat(results.get(0).getUsedDates())
+        .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
+    heartBeatInfoStorage.storeHeartBeat(10, "test-agent");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    heartBeatInfoStorage.storeHeartBeat(100, "test-agent-1");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    heartBeatInfoStorage.deleteAllHeartBeats();
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void storeTwoHeartbeat_storesProperly() {
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    heartBeatInfoStorage.storeHeartBeat(0, "test-agent");
+    heartBeatInfoStorage.storeHeartBeat(86400001, "test-agent-1");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(2);
+    ArrayList<HeartBeatResult> results =
+        (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(2);
+    assertThat(results.get(0).getUserAgent()).isEqualTo("test-agent");
+    assertThat(results.get(0).getUsedDates())
+        .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
+    assertThat(results.get(1).getUserAgent()).isEqualTo("test-agent-1");
+    assertThat(results.get(1).getUsedDates())
+        .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-02")));
+    heartBeatInfoStorage.deleteAllHeartBeats();
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void storeExcessHeartBeats_cleanUpProperly() {
+    for (int i = 0; i < HEART_BEAT_COUNT_LIMIT - 1; i++) {
+      heartBeatInfoStorage.storeHeartBeat(i * (86400001L), "test-agent");
+    }
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 1);
+    ArrayList<HeartBeatResult> results =
+        (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    assertThat(results.get(0).getUsedDates().size()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 1);
+    assertThat(results.get(0).getUsedDates()).contains("1970-01-01");
+    assertThat(results.get(0).getUsedDates()).contains("1970-01-02");
+
+    heartBeatInfoStorage.storeHeartBeat((HEART_BEAT_COUNT_LIMIT - 1) * (86400001L), "test-agent");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 1);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    assertThat(results.get(0).getUsedDates().size()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 1);
+    assertThat(results.get(0).getUsedDates()).doesNotContain("1970-01-01");
+    assertThat(results.get(0).getUsedDates()).contains("1970-01-02");
+
+    heartBeatInfoStorage.storeHeartBeat((HEART_BEAT_COUNT_LIMIT) * (86400001L), "test-agent-1");
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(2);
+    assertThat(results.get(0).getUsedDates().size()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 2);
+    assertThat(results.get(0).getUsedDates()).doesNotContain("1970-01-01");
+    assertThat(results.get(0).getUsedDates()).doesNotContain("1970-01-02");
+
+    heartBeatInfoStorage.deleteAllHeartBeats();
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(0);
   }
 
   @Test
   public void shouldSendSdkHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
     assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isTrue();
-    assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
+    assertThat(heartBeatSharedPreferences.getLong(testSdk, -1)).isEqualTo(1);
     assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, currentTime)).isTrue();
-    assertThat(sharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
+    assertThat(heartBeatSharedPreferences.getLong(testSdk, -1)).isEqualTo(currentTime);
   }
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsNo() {
-    sharedPreferences.edit().putLong(GLOBAL, 1).apply();
+    heartBeatSharedPreferences.edit().putLong(GLOBAL, 1).apply();
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isFalse();
   }
 
   @Test
-  public void getLastGlobalHeartBeat_returnsCorrectly() {
-    sharedPreferences.edit().putLong(GLOBAL, 1).apply();
-    assertThat(heartBeatInfoStorage.getLastGlobalHeartBeat()).isEqualTo(1);
-  }
-
-  @Test
-  public void whenHeartBeatStorageExcess_cleanUpHeartBeat() {
-    for (int i = 0; i < 202; i++) {
-      heartBeatInfoStorage.storeHeartBeatInformation(testSdk, i + 1);
-    }
-    // HeartBeat size went to 201 halved and then 1 more was added.
-    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(101);
-    assertThat(heartBeatSharedPreferences.getAll().entrySet().size()).isEqualTo(101);
+  public void postHeartBeatCleanUp_worksCorrectly() {
+    long millis = System.currentTimeMillis();
+    // Store using new method
+    heartBeatInfoStorage.storeHeartBeat(millis, "test-agent");
+    // Get global heartbeat using old method
+    assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(millis)).isTrue();
+    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(1);
+    heartBeatInfoStorage.postHeartBeatCleanUp();
+    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
+    // Try storing using new method again.
+    heartBeatInfoStorage.storeHeartBeat(millis, "test-agent-1");
+    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
   }
 
   @Test
   public void isSameDate_returnsCorrectly() {
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 1000000000)).isTrue();
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(0, 0)).isFalse();
-    assertThat(HeartBeatInfoStorage.isSameDateUtc(1000000000, 1000001000)).isFalse();
-  }
-
-  @Test
-  public void storeHeartBeatInformation_storesProperly() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
-    assertThat(heartBeatSharedPreferences.getString("200", "-1")).isEqualTo(testSdk);
-  }
-
-  @Test
-  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_noClear() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199);
-    List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(false);
-    assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198));
-    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199));
-    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
-    result = heartBeatInfoStorage.getStoredHeartBeats(false);
-    assertThat(result.size()).isEqualTo(3);
-    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(3);
-  }
-
-  @Test
-  public void getStoredHeartBeat_returnsThreeStoredHeartBeats_withClear() {
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 200);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 198);
-    heartBeatInfoStorage.storeHeartBeatInformation(testSdk, 199);
-    List<SdkHeartBeatResult> result = heartBeatInfoStorage.getStoredHeartBeats(true);
-    assertThat(result.size()).isEqualTo(3);
-    assertThat(result.get(0)).isEqualTo(SdkHeartBeatResult.create(testSdk, 198));
-    assertThat(result.get(1)).isEqualTo(SdkHeartBeatResult.create(testSdk, 199));
-    assertThat(result.get(2)).isEqualTo(SdkHeartBeatResult.create(testSdk, 200));
-    result = heartBeatInfoStorage.getStoredHeartBeats(false);
-    assertThat(result.size()).isEqualTo(0);
-    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    assertThat(heartBeatInfoStorage.isSameDateUtc(0, 1000000000)).isFalse();
+    assertThat(heartBeatInfoStorage.isSameDateUtc(0, 0)).isTrue();
+    assertThat(heartBeatInfoStorage.isSameDateUtc(1000000000, 1000001000)).isTrue();
   }
 
   @Test
   public void shouldSendGlobalHeartBeat_answerIsYes() {
     long currentTime = System.currentTimeMillis();
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(1)).isTrue();
-    assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
+    assertThat(heartBeatSharedPreferences.getLong(GLOBAL, -1)).isEqualTo(1);
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(currentTime)).isTrue();
-    assertThat(sharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
+    assertThat(heartBeatSharedPreferences.getLong(GLOBAL, -1)).isEqualTo(currentTime);
   }
 }
