@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = false
+    releaseWith project(':firebase-messaging')
 }
 
 android {

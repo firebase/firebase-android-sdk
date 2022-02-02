@@ -89,7 +89,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
     when(mockConfigResolver.isPerformanceMonitoringEnabled()).thenReturn(true);
     mockInstallationsGetId(FAKE_FIREBASE_INSTALLATIONS_ID);
-    when(mockRateLimiter.check(ArgumentMatchers.any())).thenReturn(true);
+    when(mockRateLimiter.isEventSampled(ArgumentMatchers.any())).thenReturn(true);
+    when(mockRateLimiter.isEventRateLimited(ArgumentMatchers.any())).thenReturn(false);
 
     fakeExecutorService = new FakeScheduledExecutorService();
     initializeTransport(true);
@@ -738,7 +739,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void validTraceMetric_rateLimited_notLogged() {
-    when(mockRateLimiter.check(ArgumentMatchers.nullable(PerfMetric.class))).thenReturn(false);
+    when(mockRateLimiter.isEventRateLimited(ArgumentMatchers.nullable(PerfMetric.class)))
+        .thenReturn(true);
 
     testTransportManager.log(createValidTraceMetric());
     fakeExecutorService.runAll();
@@ -750,7 +752,34 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void validNetworkMetric_rateLimited_notLogged() {
-    when(mockRateLimiter.check(ArgumentMatchers.nullable(PerfMetric.class))).thenReturn(false);
+    when(mockRateLimiter.isEventRateLimited(ArgumentMatchers.nullable(PerfMetric.class)))
+        .thenReturn(true);
+
+    testTransportManager.log(createValidNetworkRequestMetric());
+    fakeExecutorService.runAll();
+
+    assertThat(getLastLoggedEvent(never())).isNull();
+    verify(mockAppStateMonitor)
+        .incrementCount(CounterNames.NETWORK_TRACE_EVENT_RATE_LIMITED.toString(), 1);
+  }
+
+  @Test
+  public void validTraceMetric_notSampled_notLogged() {
+    when(mockRateLimiter.isEventSampled(ArgumentMatchers.nullable(PerfMetric.class)))
+        .thenReturn(false);
+
+    testTransportManager.log(createValidTraceMetric());
+    fakeExecutorService.runAll();
+
+    assertThat(getLastLoggedEvent(never())).isNull();
+    verify(mockAppStateMonitor)
+        .incrementCount(Constants.CounterNames.TRACE_EVENT_RATE_LIMITED.toString(), 1);
+  }
+
+  @Test
+  public void validNetworkMetric_notSampled_notLogged() {
+    when(mockRateLimiter.isEventSampled(ArgumentMatchers.nullable(PerfMetric.class)))
+        .thenReturn(false);
 
     testTransportManager.log(createValidNetworkRequestMetric());
     fakeExecutorService.runAll();

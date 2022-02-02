@@ -407,7 +407,8 @@ public class TransportManager implements AppStateCallback {
     }
 
     logger.debug(
-        "%s is not allowed to cache. Cache exhausted the limit (availableTracesForCaching: %d, availableNetworkRequestsForCaching: %d, availableGaugesForCaching: %d).",
+        "%s is not allowed to cache. Cache exhausted the limit (availableTracesForCaching: %d,"
+            + " availableNetworkRequestsForCaching: %d, availableGaugesForCaching: %d).",
         getLogcatMsg(perfMetricOrBuilder),
         availableTracesForCaching,
         availableNetworkRequestsForCaching,
@@ -441,16 +442,15 @@ public class TransportManager implements AppStateCallback {
       return false;
     }
 
-    if (!rateLimiter.check(perfMetric)) {
+    if (!rateLimiter.isEventSampled(perfMetric)) {
       incrementDropCount(perfMetric);
+      logger.info("Event dropped due to device sampling - %s", getLogcatMsg(perfMetric));
+      return false;
+    }
 
-      if (perfMetric.hasTraceMetric()) {
-        logger.info("Rate Limited - %s", getLogcatMsg(perfMetric.getTraceMetric()));
-
-      } else if (perfMetric.hasNetworkRequestMetric()) {
-        logger.info("Rate Limited - %s", getLogcatMsg(perfMetric.getNetworkRequestMetric()));
-      }
-
+    if (rateLimiter.isEventRateLimited(perfMetric)) {
+      incrementDropCount(perfMetric);
+      logger.info("Rate limited (per device) - %s", getLogcatMsg(perfMetric));
       return false;
     }
 
