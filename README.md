@@ -5,6 +5,7 @@ currently includes the following Firebase libraries, and some of their
 dependencies:
 
   * `firebase-abt`
+  * `firebase-appdistribution`
   * `firebase-common`
   * `firebase-common-ktx`
   * `firebase-crashlytics`
