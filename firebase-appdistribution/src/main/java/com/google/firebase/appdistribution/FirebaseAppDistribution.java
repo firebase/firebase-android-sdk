@@ -258,7 +258,7 @@ public class FirebaseAppDistribution {
 
   /**
    * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
-   * tester or {@code null} otherwise.
+   * tester, or {@code null} otherwise.
    */
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
@@ -291,9 +291,10 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}. If
-   * the newest release is an APK, downloads the binary and starts an installation. If the newest
-   * release is an AAB, directs the tester to the Play app to complete the download and
+   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}.
+   *
+   * <p>If the newest release is an APK, downloads the binary and starts an installation. If the
+   * newest release is an AAB, directs the tester to the Play app to complete the download and
    * installation.
    *
    * <p>Cancels task with {@link Status#UPDATE_NOT_AVAILABLE} if no new release is cached from

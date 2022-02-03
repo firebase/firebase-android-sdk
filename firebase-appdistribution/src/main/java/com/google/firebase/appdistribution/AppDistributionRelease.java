@@ -19,8 +19,8 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
- * The release information returned by {@link checkForNewRelease} when a new version is available
- * for the signed in tester.
+ * The release information returned by {@link FirebaseAppDistribution#checkForNewRelease} when a new
+ * version is available for the signed in tester.
  */
 @AutoValue
 public abstract class AppDistributionRelease {
