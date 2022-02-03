@@ -20,8 +20,9 @@ import com.google.android.gms.tasks.Task;
 import java.util.concurrent.Executor;
 
 /**
- * Represents an asynchronous operation to update an app. This task also receives progress and other
- * state change notifications.
+ * Represents an asynchronous operation to update an app.
+ *
+ * <p>This task also receives progress and other state change notifications.
  */
 public abstract class UpdateTask extends Task<Void> {
   /**

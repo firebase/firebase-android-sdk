@@ -28,19 +28,19 @@ public enum UpdateStatus {
   /** The new release failed to download. */
   DOWNLOAD_FAILED,
 
-  /** The new release installation was canceled */
+  /** The new release installation was canceled. */
   INSTALL_CANCELED,
 
-  /** The new release installation failed */
+  /** The new release installation failed. */
   INSTALL_FAILED,
 
-  /** The tester was redirected to Play to download an {@link BinaryType.AAB} file. */
+  /** The tester was redirected to Play to download an {@link BinaryType#AAB} file. */
   REDIRECTED_TO_PLAY,
 
   /** The tester is currently on the latest release they have access to for the current app. */
   NEW_RELEASE_NOT_AVAILABLE,
 
-  /** The call to {@link checkForNewRelease} failed. */
+  /** The call to {@link FirebaseAppDistribution#checkForNewRelease} failed. */
   NEW_RELEASE_CHECK_FAILED,
 
   /** The tester canceled the update. */

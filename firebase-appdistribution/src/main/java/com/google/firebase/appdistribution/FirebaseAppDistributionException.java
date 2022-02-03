@@ -21,6 +21,7 @@ import com.google.firebase.appdistribution.Constants.ErrorMessages;
 
 /** The class for all Exceptions thrown by {@link FirebaseAppDistribution}. */
 public class FirebaseAppDistributionException extends FirebaseException {
+  /** Enum for potential error statuses that caused the {@link FirebaseAppDistributionException}. */
   public enum Status {
     /** Unknown error. */
     UNKNOWN,

@@ -140,15 +140,17 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * Updates the app to the newest release, if one is available. Returns the release information or
-   * null if no update is found. Performs the following actions:
+   * Updates the app to the newest release, if one is available.
+   *
+   * <p>Returns the release information or null if no update is found. Performs the following
+   * actions:
    *
    * <ol>
-   *   <li>1. If tester is not signed in, presents the tester with a Google sign in UI
-   *   <li>2. Checks if a newer release is available. If so, presents the tester with a confirmation
+   *   <li>If tester is not signed in, presents the tester with a Google sign in UI.
+   *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
    *       dialog to begin the download.
-   *   <li>3. For APKs, downloads the binary and starts an installation intent.
-   *   <li>4. For AABs, directs the tester to the Play appto complete the download and installation.
+   *   <li>For APKs, downloads the binary and starts an installation intent. For AABs, directs the
+   *       tester to the Play app to complete the download and installation.
    * </ol>
    */
   @NonNull
@@ -256,7 +258,7 @@ public class FirebaseAppDistribution {
 
   /**
    * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
-   * tester. If no update is found, returns null.
+   * tester or {@code null} otherwise.
    */
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
@@ -289,13 +291,13 @@ public class FirebaseAppDistribution {
   }
 
   /**
-   * 1:24 PM Updates app to the {@link AppDistributionRelease} returned by {@link
-   * #checkForNewRelease}. If the newest release is an APK, downloads the binary and starts an
-   * installation. If the newest release is an AAB, directs the tester to the Play app to complete
-   * the download and installation.
+   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}. If
+   * the newest release is an APK, downloads the binary and starts an installation. If the newest
+   * release is an AAB, directs the tester to the Play app to complete the download and
+   * installation.
    *
-   * <p>Cancels task with {@link FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE} if no
-   * new release is cached from {@link checkForNewRelease}.
+   * <p>Cancels task with {@link Status#UPDATE_NOT_AVAILABLE} if no new release is cached from
+   * {@link #checkForNewRelease}.
    */
   @NonNull
   public UpdateTask updateApp() {
@@ -337,7 +339,7 @@ public class FirebaseAppDistribution {
     }
   }
 
-  /** Returns {@code true} if the App Distribution tester is signed in */
+  /** Returns {@code true} if the App Distribution tester is signed in. */
   public boolean isTesterSignedIn() {
     return this.signInStorage.getSignInStatus();
   }

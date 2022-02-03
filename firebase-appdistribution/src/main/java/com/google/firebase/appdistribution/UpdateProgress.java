@@ -28,20 +28,22 @@ public abstract class UpdateProgress {
   }
 
   /**
-   * The number of bytes downloaded so far for an APK. Returns -1 if called when updating to an AAB
-   * or if no new release is available.
+   * The number of bytes downloaded so far for an APK.
+   *
+   * @returns -1 if called when updating to an AAB or if no new release is available.
    */
   @NonNull
   public abstract long getApkBytesDownloaded();
 
   /**
-   * The file size of the APK file to download in bytes. Returns -1 if called when updating to an
-   * AAB or if no new release is available.
+   * The file size of the APK file to download in bytes.
+   *
+   * @returns -1 if called when updating to an AAB or if no new release is available.
    */
   @NonNull
   public abstract long getApkFileTotalBytes();
 
-  /** Returns the current {@link UpdateStatus} of the update */
+  /** Returns the current {@link UpdateStatus} of the update. */
   @NonNull
   public abstract UpdateStatus getUpdateStatus();
 
