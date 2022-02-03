@@ -159,10 +159,11 @@ public final class MutableDocument implements Document {
 
   public MutableDocument setHasLocalMutations() {
     this.documentState = DocumentState.HAS_LOCAL_MUTATIONS;
+    this.version = SnapshotVersion.NONE;
     return this;
   }
 
-  public MutableDocument withReadTime(SnapshotVersion readTime) {
+  public MutableDocument setReadTime(SnapshotVersion readTime) {
     this.readTime = readTime;
     return this;
   }

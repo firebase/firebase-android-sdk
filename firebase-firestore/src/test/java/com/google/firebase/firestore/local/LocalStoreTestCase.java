@@ -136,16 +136,16 @@ public abstract class LocalStoreTestCase {
     localStorePersistence.shutdown();
   }
 
-  private void writeMutation(Mutation mutation) {
+  protected void writeMutation(Mutation mutation) {
     writeMutations(asList(mutation));
   }
 
   private void writeMutations(List<Mutation> mutations) {
-    LocalWriteResult result = localStore.writeLocally(mutations);
+    LocalDocumentsResult result = localStore.writeLocally(mutations);
     batches.add(
         new MutationBatch(
             result.getBatchId(), Timestamp.now(), Collections.emptyList(), mutations));
-    lastChanges = result.getChanges();
+    lastChanges = result.getDocuments();
   }
 
   protected void applyRemoteEvent(RemoteEvent event) {
@@ -324,13 +324,13 @@ public abstract class LocalStoreTestCase {
   }
 
   /**
-   * Asserts the expected numbers of mutations read by the MutationQueue since the last call to
+   * Asserts the expected numbers of mutations read by the OverlayQueue since the last call to
    * `resetPersistenceStats()`.
    */
-  private void assertMutationsRead(int byKey, int byCollection) {
+  protected void assertOverlaysRead(int byKey, int byCollection) {
+    assertEquals("Overlays read (by key)", byKey, queryEngine.getOverlaysReadByKey());
     assertEquals(
-        "Mutations read (by collection)", byCollection, queryEngine.getMutationsReadByCollection());
-    assertEquals("Mutations read (by key)", byKey, queryEngine.getMutationsReadByKey());
+        "Overlays read (by collection)", byCollection, queryEngine.getOverlaysReadByCollection());
   }
 
   /**
@@ -386,10 +386,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        updateRemoteEvent(
-            doc("foo/bar", 2, map("it", "changed")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        updateRemoteEvent(doc("foo/bar", 2, map("it", "changed")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 2, map("foo", "bar")).setHasLocalMutations());
   }
@@ -547,10 +544,7 @@ public abstract class LocalStoreTestCase {
     Query query = query("foo");
     int targetId = allocateQuery(query);
     applyRemoteEvent(
-        addedRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+        addedRemoteEvent(doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList()));
     assertChanged(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar", "it", "base")).setHasLocalMutations());
 
@@ -690,9 +684,7 @@ public abstract class LocalStoreTestCase {
     int targetId = allocateQuery(query);
     applyRemoteEvent(
         updateRemoteEvent(
-            doc("foo/bar", 1, map("it", "base")).setHasLocalMutations(),
-            asList(targetId),
-            emptyList()));
+            doc("foo/bar", 1, map("it", "base")), asList(targetId), emptyList(), asList(targetId)));
     assertChanged(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
     assertContains(doc("foo/bar", 1, map("foo", "bar")).setHasLocalMutations());
 
@@ -983,8 +975,7 @@ public abstract class LocalStoreTestCase {
 
     localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
-    // No mutations are read because only overlay is needed.
-    assertMutationsRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
   }
 
   @Test
@@ -1146,7 +1137,7 @@ public abstract class LocalStoreTestCase {
 
     // Create an existence filter mismatch and verify that the last limbo free snapshot version
     // is deleted
-    applyRemoteEvent(existenceFilterEvent(targetId, 2, 20));
+    applyRemoteEvent(existenceFilterEvent(targetId, keySet(key("foo/a")), 2, 20));
     cachedTargetData = localStore.getTargetData(query.toTarget());
     Assert.assertEquals(version(0), cachedTargetData.getLastLimboFreeSnapshotVersion());
     Assert.assertEquals(ByteString.EMPTY, cachedTargetData.getResumeToken());
@@ -1367,7 +1358,7 @@ public abstract class LocalStoreTestCase {
     acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
     assertChanged(
         doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
-            .withReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
+            .setReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
             .setHasCommittedMutations());
   }
 

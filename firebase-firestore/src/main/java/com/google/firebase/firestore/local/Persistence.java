@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.util.Supplier;
 
@@ -52,10 +51,6 @@ public abstract class Persistence {
 
   /** Constant string to indicate a data migration is required to support overlays. */
   public static String DATA_MIGRATION_BUILD_OVERLAYS = "BUILD_OVERLAYS";
-
-  /** Temporary setting for enabling indexing-specific code paths while in development. */
-  // TODO(Indexing): Remove this.
-  public static boolean INDEXING_SUPPORT_ENABLED = BuildConfig.ENABLE_INDEXING;
 
   // Local subclasses only, please.
   Persistence() {}

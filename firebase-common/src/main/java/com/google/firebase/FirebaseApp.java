@@ -47,6 +47,7 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import java.nio.charset.Charset;
@@ -114,7 +115,7 @@ public class FirebaseApp {
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
   private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
-
+  private final Provider<DefaultHeartBeatController> defaultHeartBeatController;
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
@@ -200,6 +201,7 @@ public class FirebaseApp {
     synchronized (LOCK) {
       FirebaseApp firebaseApp = INSTANCES.get(normalize(name));
       if (firebaseApp != null) {
+        firebaseApp.defaultHeartBeatController.get().registerHeartBeat();
         return firebaseApp;
       }
 
@@ -433,6 +435,14 @@ public class FirebaseApp {
                     applicationContext,
                     getPersistenceKey(),
                     componentRuntime.get(Publisher.class)));
+    defaultHeartBeatController = componentRuntime.getProvider(DefaultHeartBeatController.class);
+
+    addBackgroundStateChangeListener(
+        background -> {
+          if (!background) {
+            defaultHeartBeatController.get().registerHeartBeat();
+          }
+        });
   }
 
   private void checkNotDeleted() {
@@ -582,6 +592,7 @@ public class FirebaseApp {
     } else {
       Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
       componentRuntime.initializeEagerComponents(isDefaultApp());
+      defaultHeartBeatController.get().registerHeartBeat();
     }
   }
 

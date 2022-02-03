@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
-// import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import com.google.firebase.perf.FirebasePerformance;
 import org.junit.Test;
@@ -41,10 +41,10 @@ public final class BuildOnlyTest {
     assertThat(FirebaseInAppMessaging.getInstance()).isNotNull();
   }
 
-//  @Test
-//  public void messaging_IsNotNull() {
-//    assertThat(FirebaseMessaging.getInstance()).isNotNull();
-//  }
+ @Test
+ public void messaging_IsNotNull() {
+   assertThat(FirebaseMessaging.getInstance()).isNotNull();
+ }
 
   @Test
   public void modelDownloader_IsNotNull() {

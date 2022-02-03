@@ -55,7 +55,7 @@ public class FirebaseModelDownloader {
       FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.eventLogger = FirebaseMlLogger.getInstance();
+    this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);

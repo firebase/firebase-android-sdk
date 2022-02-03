@@ -42,7 +42,7 @@ def fireperf_e2e_test(target_environment, plugin_repo_dir):
 
   _logger.info('Building fireperf plugin ...')
   with chdir(plugin_repo_dir):
-    build_plugin_task = ':firebase-performance:performance-gradle:publishToMavenLocal'
+    build_plugin_task = ':firebase-performance:perf-plugin:publishToMavenLocal'
     gradle.run(build_plugin_task, gradle.P('publishMode', 'SNAPSHOT'))
 
   version = _find_fireperf_plugin_version()

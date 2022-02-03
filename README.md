@@ -5,6 +5,7 @@ currently includes the following Firebase libraries, and some of their
 dependencies:
 
   * `firebase-abt`
+  * `firebase-appdistribution`
   * `firebase-common`
   * `firebase-common-ktx`
   * `firebase-crashlytics`
@@ -22,6 +23,8 @@ dependencies:
   * `firebase-inappmessaging-ktx`
   * `firebase-inappmessaging-display`
   * `firebase-inappmessaging-display-ktx`
+  * `firebase-messaging`
+  * `firebase-messaging-directboot`
   * `firebase-perf`
   * `firebase-perf-ktx`
   * `firebase-remote-config`

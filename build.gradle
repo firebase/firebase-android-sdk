@@ -18,7 +18,6 @@ buildscript {
     ext.kotlinVersion = '1.3.72'
     repositories {
         google()
-        jcenter()
         mavenCentral()
         maven {
             url "https://plugins.gradle.org/m2/"
@@ -26,6 +25,7 @@ buildscript {
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
         }
+        jcenter()
     }
 
     dependencies {
@@ -70,11 +70,11 @@ if(JavaVersion.current() != JavaVersion.VERSION_11){
 configure(subprojects) {
     repositories {
         google()
-        jcenter()
         mavenLocal()
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
         }
+        jcenter()
     }
 
     apply plugin: "org.jlleitschuh.gradle.ktlint"

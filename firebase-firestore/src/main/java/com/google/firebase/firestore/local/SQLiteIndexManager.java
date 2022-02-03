@@ -96,18 +96,13 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Override
   public void start() {
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
-      started = true;
-      return;
-    }
-
     Map<Integer, FieldIndex.IndexState> indexStates = new HashMap<>();
 
     // Fetch all index states if persisted for the user. These states contain per user information
     // on how up to date the index is.
     db.query(
-            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key "
-                + "FROM index_state WHERE uid = ?")
+            "SELECT index_id, sequence_number, read_time_seconds, read_time_nanos, document_key, "
+                + "largest_batch_id FROM index_state WHERE uid = ?")
         .binding(uid)
         .forEach(
             row -> {
@@ -117,8 +112,11 @@ final class SQLiteIndexManager implements IndexManager {
                   new SnapshotVersion(new Timestamp(row.getLong(2), row.getInt(3)));
               DocumentKey documentKey =
                   DocumentKey.fromPath(EncodedPath.decodeResourcePath(row.getString(4)));
+              int largestBatchId = row.getInt(5);
               indexStates.put(
-                  indexId, FieldIndex.IndexState.create(sequenceNumber, readTime, documentKey));
+                  indexId,
+                  FieldIndex.IndexState.create(
+                      sequenceNumber, readTime, documentKey, largestBatchId));
             });
 
     // Fetch all indices and combine with user's index state if available.
@@ -225,7 +223,6 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
     hardAssert(started, "IndexManager not started");
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) return;
 
     for (Map.Entry<DocumentKey, Document> entry : documents) {
       Collection<FieldIndex> fieldIndexes = getFieldIndexes(entry.getKey().getCollectionGroup());
@@ -325,7 +322,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   private void addIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
-        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_name) "
+        "INSERT INTO index_entries (index_id, uid, array_value, directional_value, document_key) "
             + "VALUES(?, ?, ?, ?, ?)",
         indexEntry.getIndexId(),
         uid,
@@ -337,7 +334,7 @@ final class SQLiteIndexManager implements IndexManager {
   private void deleteIndexEntry(Document document, IndexEntry indexEntry) {
     db.execute(
         "DELETE FROM index_entries WHERE index_id = ? AND uid = ? AND array_value = ? "
-            + "AND directional_value = ? AND document_name = ?",
+            + "AND directional_value = ? AND document_key = ?",
         indexEntry.getIndexId(),
         uid,
         indexEntry.getArrayValue(),
@@ -350,7 +347,7 @@ final class SQLiteIndexManager implements IndexManager {
     SortedSet<IndexEntry> results = new TreeSet<>();
     db.query(
             "SELECT array_value, directional_value FROM index_entries "
-                + "WHERE index_id = ? AND document_name = ? AND uid = ?")
+                + "WHERE index_id = ? AND document_key = ? AND uid = ?")
         .binding(fieldIndex.getIndexId(), documentKey.toString(), uid)
         .forEach(
             row ->
@@ -427,7 +424,7 @@ final class SQLiteIndexManager implements IndexManager {
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
     StringBuilder statement = new StringBuilder();
-    statement.append("SELECT document_name, directional_value FROM index_entries ");
+    statement.append("SELECT document_key, directional_value FROM index_entries ");
     statement.append("WHERE index_id = ? AND uid = ? ");
     if (arrayValues != null) {
       statement.append("AND array_value = ? ");
@@ -442,14 +439,14 @@ final class SQLiteIndexManager implements IndexManager {
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
-    sql.append(" ORDER BY directional_value, document_name ");
+    sql.append(" ORDER BY directional_value, document_key ");
     if (target.getLimit() != -1) {
       sql.append("LIMIT ").append(target.getLimit()).append(" ");
     }
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
-      sql = new StringBuilder("SELECT document_name, directional_value FROM (").append(sql);
+      sql = new StringBuilder("SELECT document_key, directional_value FROM (").append(sql);
       sql.append(") WHERE directional_value NOT IN (");
       sql.append(repeatSequence("?", notIn.length, ", "));
       sql.append(")");
@@ -505,10 +502,6 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
-
-    if (!Persistence.INDEXING_SUPPORT_ENABLED) {
-      return null;
-    }
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     String collectionGroup =
@@ -660,13 +653,15 @@ final class SQLiteIndexManager implements IndexManager {
               FieldIndex.IndexState.create(memoizedMaxSequenceNumber, offset));
       db.execute(
           "REPLACE INTO index_state (index_id, uid,  sequence_number, "
-              + "read_time_seconds, read_time_nanos, document_key) VALUES(?, ?, ?, ?, ?, ?)",
+              + "read_time_seconds, read_time_nanos, document_key, largest_batch_id) "
+              + "VALUES(?, ?, ?, ?, ?, ?, ?)",
           fieldIndex.getIndexId(),
           uid,
           memoizedMaxSequenceNumber,
           offset.getReadTime().getTimestamp().getSeconds(),
           offset.getReadTime().getTimestamp().getNanoseconds(),
-          EncodedPath.encode(offset.getDocumentKey().getPath()));
+          EncodedPath.encode(offset.getDocumentKey().getPath()),
+          offset.getLargestBatchId());
       memoizeIndex(updatedIndex);
     }
   }
