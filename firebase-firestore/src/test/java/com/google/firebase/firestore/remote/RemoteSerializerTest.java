@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.model.Values.refValue;
-import static com.google.firebase.firestore.testutil.TestUtil.andFilter;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -25,7 +25,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.mergeMutation;
-import static com.google.firebase.firestore.testutil.TestUtil.orFilter;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -684,14 +684,14 @@ public final class RemoteSerializerTest {
 
   @Test
   public void testEncodesCompositeFiltersOnDeeperCollections() {
-    // (prop < 42) || (author == "dimond" && tags array-contains "pending")
+    // (prop < 42) || (author == "ehsann" && tags array-contains "pending")
     Query q =
         Query.atPath(ResourcePath.fromString("rooms/1/messages/10/attachments"))
             .filter(
-                orFilter(
+                orFilters(
                     filter("prop", "<", 42),
-                    andFilter(
-                        filter("author", "==", "dimond"),
+                    andFilters(
+                        filter("author", "==", "ehsann"),
                         filter("tags", "array-contains", "pending"))));
     Target actual = serializer.encodeTarget(wrapTargetData(q));
 
@@ -727,7 +727,7 @@ public final class RemoteSerializerTest {
                                                             .setOp(Operator.EQUAL)
                                                             .setValue(
                                                                 Value.newBuilder()
-                                                                    .setStringValue("dimond"))))
+                                                                    .setStringValue("ehsann"))))
                                             .addFilters(
                                                 Filter.newBuilder()
                                                     .setFieldFilter(
@@ -757,8 +757,9 @@ public final class RemoteSerializerTest {
             .build();
 
     assertEquals(expected, actual);
-    assertEquals(
-        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+    com.google.firebase.firestore.core.Target roundTripped =
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget()));
+    assertEquals(roundTripped, q.toTarget());
   }
 
   @Test

@@ -258,22 +258,22 @@ public class TestUtil {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
   }
 
-  public static CompositeFilter andFilter(List<Filter> filters) {
+  public static CompositeFilter andFilters(List<Filter> filters) {
     return new CompositeFilter(filters, StructuredQuery.CompositeFilter.Operator.AND);
   }
 
-  public static CompositeFilter andFilter(Filter... filters) {
+  public static CompositeFilter andFilters(Filter... filters) {
     return new CompositeFilter(
         Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
   }
 
-  public static CompositeFilter orFilter(Filter... filters) {
+  public static CompositeFilter orFilters(Filter... filters) {
     // TODO(orquery): Replace this with Operator.OR once it is available.
     return new CompositeFilter(
         Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
   }
 
-  public static CompositeFilter orFilter(List<Filter> filters) {
+  public static CompositeFilter orFilters(List<Filter> filters) {
     // TODO(orquery): Replace this with Operator.OR once it is available.
     return new CompositeFilter(
         filters, StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);

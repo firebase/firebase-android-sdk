@@ -642,8 +642,8 @@ public final class RemoteSerializer {
   private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
     Filter result = decodeFilter(proto);
 
-    // Instead of a singletonList containing AND(F1, F2, ...), we can return
-    // a list containing F1, F2, ...
+    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list containing F1,
+    // F2, ...
     // TODO(orquery): Once proper support for composite filters has been completed, we can remove
     // this flattening from here.
     if (result instanceof com.google.firebase.firestore.core.CompositeFilter) {

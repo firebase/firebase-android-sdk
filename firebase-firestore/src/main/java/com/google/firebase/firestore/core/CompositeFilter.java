@@ -78,7 +78,9 @@ public class CompositeFilter extends Filter {
    * Returns true if this filter is a conjunction of field filters only. Returns false otherwise.
    */
   public boolean isFlatConjunction() {
-    if (operator != Operator.AND) return false;
+    if (operator != Operator.AND) {
+      return false;
+    }
     for (Filter filter : filters) {
       if (filter instanceof CompositeFilter) {
         return false;
@@ -161,10 +163,8 @@ public class CompositeFilter extends Filter {
   @Override
   public int hashCode() {
     int result = 37;
-    result += 31 * operator.hashCode();
-    for (Filter filter : filters) {
-      result += 31 * filter.hashCode();
-    }
+    result = 31 * result + operator.hashCode();
+    result = 31 * result + filters.hashCode();
     return result;
   }
 }
