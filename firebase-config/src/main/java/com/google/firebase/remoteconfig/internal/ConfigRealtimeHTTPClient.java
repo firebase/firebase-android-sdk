@@ -1,13 +1,5 @@
 package com.google.firebase.remoteconfig.internal;
 
-import android.os.AsyncTask;
-import android.os.Build;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class ConfigRealtimeHTTPClient {
@@ -43,34 +34,44 @@ public class ConfigRealtimeHTTPClient {
         } catch (MalformedURLException ex) {
             logger.info("This is not a valid URL");
         }
-        this.httpURLConnection = null;
         this.configFetchHandler = configFetchHandler;
         this.eventListeners = new HashMap<>();
 
-        // Retry parameter initialization
+        // Retry parameters
         this.random = new Random();
         this.timer = new Timer();
     }
 
+    // Open HTTP connection and listen for messages asyncly
     public void startRealtimeConnection() {
         logger.info("Realtime connecting...");
         this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
         this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
 
-        try {
-            if (this.httpURLConnection == null) {
-                this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
+        if (!this.eventListeners.isEmpty()) {
+            try {
+                if (this.httpURLConnection == null) {
+                    this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
+                }
+                logger.info("Realtime connection started.");
+
+                RealTimeEventListener retryCallback = new RealTimeEventListener() {
+                    @Override
+                    public void onEvent() {
+                        retryHTTPConnection();
+                    }
+                };
+                new ConfigAsyncAutoFetch(this.httpURLConnection, this.configFetchHandler, this.eventListeners, retryCallback).execute();
+            } catch (Exception ex) {
+                logger.info("Can't start http connection");
+                this.retryHTTPConnection();
             }
-            logger.info("Realtime connection started.");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                CompletableFuture.supplyAsync(this::listenForNotifications);
-            }
-        } catch (Exception ex) {
-            logger.info("Can't start http connection");
-            this.retryHTTPConnection();
+        } else {
+            logger.info("Add a listener before starting Realtime!");
         }
     }
 
+    // Close HTTP connection.
     public void pauseRealtimeConnection() {
         if (this.httpURLConnection != null) {
             this.httpURLConnection.disconnect();
@@ -79,9 +80,12 @@ public class ConfigRealtimeHTTPClient {
         }
     }
 
+    // Try to reopen HTTP connection after a random amount of time
     private void retryHTTPConnection() {
         if (this.RETRIES_REMAINING > 0) {
             RETRIES_REMAINING--;
+            this.httpURLConnection = null;
+            logger.info("Retrying in " + (this.RETRY_TIME * this.RETRY_MULTIPLIER) + " seconds");
             this.timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -92,45 +96,6 @@ public class ConfigRealtimeHTTPClient {
         } else {
             logger.info("No retries remaining. Restart app.");
         }
-    }
-
-    private Object listenForNotifications() {
-        if (this.httpURLConnection != null) {
-            try {
-                int responseCode = httpURLConnection.getResponseCode();
-                if (responseCode == 200) {
-                    InputStream inputStream = httpURLConnection.getInputStream();
-                    handleNotifications(inputStream);
-                } else {
-                    logger.info("Can't open Realtime stream");
-                    this.pauseRealtimeConnection();
-                    retryHTTPConnection();
-                }
-
-            } catch (IOException ex) {
-                logger.info("Error handling messages.");
-            }
-        }
-        logger.info("No more messages to receive.");
-        return new Object();
-    }
-
-    private void handleNotifications(InputStream inputStream) throws IOException {
-        BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream)));
-        while (reader.readLine() != null) {
-            Task<ConfigFetchHandler.FetchResponse> fetchTask = this.configFetchHandler.fetch(0L);
-            fetchTask.onSuccessTask((unusedFetchResponse) ->
-                    {
-                        logger.info("Finished Fetching new updates.");
-                        // Execute callbacks for listeners.
-                        for (RealTimeEventListener listener : eventListeners.values()) {
-                            listener.onEvent();
-                        }
-                        return Tasks.forResult(null);
-                    }
-            );
-        }
-        reader.close();
     }
 
     // Event Listener interface to be used by developers.
