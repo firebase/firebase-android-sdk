@@ -252,9 +252,15 @@ public class FirebaseAppDistribution {
       LogWrapper.getInstance().v("Response in progress");
       return cachedCheckForNewReleaseTask;
     }
+    if (!isTesterSignedIn()) {
+      return Tasks.forException(
+          new FirebaseAppDistributionException(
+              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+    }
+
     cachedCheckForNewReleaseTask =
-        signInTester()
-            .onSuccessTask(unused -> this.newReleaseFetcher.checkForNewRelease())
+        this.newReleaseFetcher
+            .checkForNewRelease()
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
                   setCachedNewRelease(appDistributionReleaseInternal);
