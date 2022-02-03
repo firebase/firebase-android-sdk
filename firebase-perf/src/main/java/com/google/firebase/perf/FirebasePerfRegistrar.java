@@ -30,7 +30,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.monitoring.Tracer;
 import com.google.firebase.perf.application.AppStateMonitor;
-import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
@@ -89,7 +88,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
     Provider<StartupTime> startupTimeProvider = container.getProvider(StartupTime.class);
 
     // Initialize ConfigResolver early for accessing device caching layer.
-    ConfigResolver.getInstance().setApplicationContext(appContext);
+    // ConfigResolver.getInstance().setApplicationContext(appContext);
 
     AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
     appStateMonitor.registerActivityLifecycleCallbacks(appContext);
