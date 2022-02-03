@@ -188,13 +188,12 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void checkForNewRelease_callsSignInTester() {
-    when(mockNewReleaseFetcher.checkForNewRelease())
-        .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
+  public void checkForNewRelease_testerIsNotSignedIn_taskFails() {
+    when(firebaseAppDistribution.isTesterSignedIn()).thenReturn(false);
 
-    firebaseAppDistribution.checkForNewRelease();
+    Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
 
-    verify(mockTesterSignInManager, times(1)).signInTester();
+    assertTaskFailure(task, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
   }
 
   @Test
