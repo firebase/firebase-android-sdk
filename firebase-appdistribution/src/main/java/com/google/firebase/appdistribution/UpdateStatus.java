@@ -14,35 +14,35 @@
 
 package com.google.firebase.appdistribution;
 
-/** Enum for possible states during Update, used in UpdateProgress. */
+/** Enum for possible states during Update, used in {@link UpdateProgress}. */
 public enum UpdateStatus {
-  /** Update queued but not started */
+  /** The update is queued but not started. */
   PENDING,
 
-  /** Download in progress */
+  /** The new release download is in progress. */
   DOWNLOADING,
 
-  /** Download completed */
+  /** The new release was downloaded successfully. */
   DOWNLOADED,
 
-  /** Download failed */
+  /** The new release failed to download. */
   DOWNLOAD_FAILED,
 
-  /** Installation canceled */
+  /** The new release installation was canceled. */
   INSTALL_CANCELED,
 
-  /** Installation failed */
+  /** The new release installation failed. */
   INSTALL_FAILED,
 
-  /** AAB flow (directed to Play) */
+  /** The tester was redirected to Play to download an {@link BinaryType#AAB} file. */
   REDIRECTED_TO_PLAY,
 
-  /** Currently on the latest release */
+  /** The tester is currently on the latest release they have access to for the current app. */
   NEW_RELEASE_NOT_AVAILABLE,
 
-  /** Release check failed before download started */
+  /** The call to {@link FirebaseAppDistribution#checkForNewRelease} failed. */
   NEW_RELEASE_CHECK_FAILED,
 
-  /** Customer canceled the update */
+  /** The tester canceled the update. */
   UPDATE_CANCELED,
 }
