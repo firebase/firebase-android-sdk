@@ -41,8 +41,10 @@ import com.google.firebase.firestore.TestAccessHelper;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.UserDataWriter;
 import com.google.firebase.firestore.core.Bound;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
+import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
@@ -77,6 +79,7 @@ import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
+import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -254,6 +257,27 @@ public class TestUtil {
 
   public static FieldFilter filter(String key, String operator, Object value) {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
+  }
+
+  public static CompositeFilter andFilters(List<Filter> filters) {
+    return new CompositeFilter(filters, StructuredQuery.CompositeFilter.Operator.AND);
+  }
+
+  public static CompositeFilter andFilters(Filter... filters) {
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
+  }
+
+  public static CompositeFilter orFilters(Filter... filters) {
+    // TODO(orquery): Replace this with Operator.OR once it is available.
+    return new CompositeFilter(
+        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
+  }
+
+  public static CompositeFilter orFilters(List<Filter> filters) {
+    // TODO(orquery): Replace this with Operator.OR once it is available.
+    return new CompositeFilter(
+        filters, StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
   }
 
   public static Operator operatorFromString(String s) {
