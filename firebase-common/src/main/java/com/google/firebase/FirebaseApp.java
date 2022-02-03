@@ -54,7 +54,6 @@ import com.google.firebase.monitoring.DelegatingTracer;
 import com.google.firebase.monitoring.ExtendedTracer;
 import com.google.firebase.time.Instant;
 import com.google.firebase.time.StartupTime;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -436,7 +435,8 @@ public class FirebaseApp {
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class));
     if (options.startupTime.isValid()) {
-      runtimeBuilder.addComponent(Component.of(StartupTime.create(options.startupTime), StartupTime.class));
+      runtimeBuilder.addComponent(
+          Component.of(StartupTime.create(options.startupTime), StartupTime.class));
     }
     if (tracingEnabled) {
       runtimeBuilder.setProcessor(new ComponentMonitoring(tracer));

@@ -18,9 +18,9 @@ import com.google.auto.value.AutoValue;
 
 @AutoValue
 public abstract class StartupTime {
-    public abstract Instant getInstant();
+  public abstract Instant getInstant();
 
-    public static StartupTime create(Instant instant) {
-        return new AutoValue_StartupTime(instant);
-    }
+  public static StartupTime create(Instant instant) {
+    return new AutoValue_StartupTime(instant);
+  }
 }
