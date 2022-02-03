@@ -152,10 +152,6 @@ public class FirebaseAppDistribution {
 
     lifecycleNotifier
         .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
-        // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
-        // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
-        // here for code clarity, and because we plan to remove the signInTester() call
-        // from checkForNewRelease() in the near future
         .onSuccessTask(unused -> signInTester())
         .onSuccessTask(unused -> checkForNewRelease())
         .continueWithTask(
