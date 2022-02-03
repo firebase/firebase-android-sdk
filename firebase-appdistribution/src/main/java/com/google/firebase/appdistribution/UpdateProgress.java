@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
-/** Data class to get download progress for APKs and the status of the update. Used in updateApp. */
+/** Represents a progress update or a final state from updating an app. */
 @AutoValue
 public abstract class UpdateProgress {
 
@@ -28,21 +28,25 @@ public abstract class UpdateProgress {
   }
 
   /**
-   * The number of bytes downloaded so far for the APK. Returns -1 if called on an AAB or if no new
-   * release is available.
+   * The number of bytes downloaded so far for an APK.
+   *
+   * @returns the number of bytes downloaded, or -1 if called when updating to an AAB or if no new
+   *     release is available.
    */
   @NonNull
   public abstract long getApkBytesDownloaded();
 
   /**
-   * The file size of the APK file to download in bytes. Returns -1 if called on an AAB or if no new
-   * release is available.
+   * The file size of the APK file to download in bytes.
+   *
+   * @returns the file size in bytes, or -1 if called when updating to an AAB or if no new release
+   *     is available.
    */
   @NonNull
   public abstract long getApkFileTotalBytes();
 
+  /** Returns the current {@link UpdateStatus} of the update. */
   @NonNull
-  /** returns the current state of the update */
   public abstract UpdateStatus getUpdateStatus();
 
   /** Builder for {@link UpdateProgress}. */

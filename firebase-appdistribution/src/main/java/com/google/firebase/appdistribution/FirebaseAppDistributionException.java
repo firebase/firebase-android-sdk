@@ -19,37 +19,38 @@ import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appdistribution.Constants.ErrorMessages;
 
-/** Possible exceptions thrown in FirebaseAppDistribution */
+/** The class for all Exceptions thrown by {@link FirebaseAppDistribution}. */
 public class FirebaseAppDistributionException extends FirebaseException {
+  /** Enum for potential error statuses that caused the {@link FirebaseAppDistributionException}. */
   public enum Status {
     /** Unknown error. */
     UNKNOWN,
 
-    /** Authentication failed */
+    /** The authentication process failed. */
     AUTHENTICATION_FAILURE,
 
-    /** Authentication canceled */
+    /** The authentication process was canceled. */
     AUTHENTICATION_CANCELED,
 
-    /** No Network available to make requests or the request timed out */
+    /** No network is available to make requests or the request timed out. */
     NETWORK_FAILURE,
 
-    /** Download failed */
+    /** The new release failed to download. */
     DOWNLOAD_FAILURE,
 
-    /** Installation failed */
+    /** The new release failed to install. */
     INSTALLATION_FAILURE,
 
-    /** Installation canceled */
+    /** The installation was canceled. */
     INSTALLATION_CANCELED,
 
-    /** Update not available for the current tester and app */
+    /** An update is not available for the current tester and app. */
     UPDATE_NOT_AVAILABLE,
 
-    /** App is in production */
+    /** The app is running in production. */
     APP_RUNNING_IN_PRODUCTION,
 
-    /** Host activity for confirmation dialog destroyed or pushed to the backstack */
+    /** The host activity for a confirmation dialog was destroyed or pushed to the backstack. */
     HOST_ACTIVITY_INTERRUPTED,
   }
 
@@ -86,12 +87,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     this.release = release;
   }
 
-  /** Get cached release when error was thrown */
+  /** Returns the release that was ready to be installed when the error was thrown. */
   @Nullable
   public AppDistributionRelease getRelease() {
     return release;
   }
 
+  /** Returns the {@link FirebaseAppDistributionException.Status} that caused the exception. */
   @NonNull
   public Status getErrorCode() {
     return status;

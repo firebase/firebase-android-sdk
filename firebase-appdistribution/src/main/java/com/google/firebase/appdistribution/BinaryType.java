@@ -14,8 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
-/** Enum of Android App Binary types, used in AppDistributionRelease */
+/** Enum of Android app binary types, used in {@link AppDistributionRelease} */
 public enum BinaryType {
+  /** Android App Bundle. */
   AAB,
+
+  /** Android Application Package. */
   APK
 }
