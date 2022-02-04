@@ -120,7 +120,10 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
       return result;
     }
 
-    // Finish batch
+    // This function should not return partial batch overlays, even if the number of overlays in the
+    // result set exceeds the given `count` argument. Since the `LIMIT` in the above query might
+    // result in a partial batch, the following query appends any remaining overlays for the last
+    // batch.
     DocumentKey key = lastOverlay[0].getKey();
     String encodedCollectionPath = EncodedPath.encode(key.getCollectionPath());
     db.query(
