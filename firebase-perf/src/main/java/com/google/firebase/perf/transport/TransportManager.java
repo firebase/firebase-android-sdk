@@ -502,7 +502,7 @@ public class TransportManager implements AppStateCallback {
     ApplicationInfo.Builder appInfoBuilder =
         applicationInfoBuilder.setApplicationProcessState(appState);
 
-    if (perfMetricBuilder.hasTraceMetric()) {
+    if (perfMetricBuilder.hasTraceMetric() || perfMetricBuilder.hasNetworkRequestMetric()) {
       appInfoBuilder =
           appInfoBuilder
               .clone() // Needed so that we don't add global custom attributes everywhere
