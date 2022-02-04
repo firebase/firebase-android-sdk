@@ -1119,7 +1119,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void logNetworkMetric_globalCustomAttributesAreNotAdded() {
+  public void logNetworkMetric_globalCustomAttributesAreAdded() {
     FirebasePerformance.getInstance().putAttribute("test_key1", "test_value1");
     FirebasePerformance.getInstance().putAttribute("test_key2", "test_value2");
     NetworkRequestMetric validNetworkRequest = createValidNetworkRequestMetric();
@@ -1131,7 +1131,12 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     assertThat(loggedPerfMetric.getNetworkRequestMetric()).isEqualTo(validNetworkRequest);
     validateApplicationInfo(
         loggedPerfMetric, ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN);
-    assertThat(loggedPerfMetric.getApplicationInfo().getCustomAttributesCount()).isEqualTo(0);
+
+    Map<String, String> globalCustomAttributes =
+        loggedPerfMetric.getApplicationInfo().getCustomAttributesMap();
+    assertThat(globalCustomAttributes).hasSize(2);
+    assertThat(globalCustomAttributes).containsEntry("test_key1", "test_value1");
+    assertThat(globalCustomAttributes).containsEntry("test_key2", "test_value2");
   }
 
   @Test
