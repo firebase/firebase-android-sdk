@@ -61,6 +61,8 @@ public class CrashlyticsCore {
 
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
 
+  private static final String ON_DEMAND_KEY = "com.crashlytics.on-demand.recorded-exceptions";
+
   // If this marker sticks around, the app is crashing before we finished initializing
   private static final String INITIALIZATION_MARKER_FILE_NAME = "initialization_marker";
   static final String CRASH_MARKER_FILE_NAME = "crash_marker";
@@ -74,6 +76,7 @@ public class CrashlyticsCore {
   private CrashlyticsFileMarker initializationMarker;
   private CrashlyticsFileMarker crashMarker;
   private boolean didCrashOnPreviousExecution;
+  private int recordedOnDemandExceptions = 0;
 
   private CrashlyticsController controller;
   private final IdManager idManager;
@@ -370,8 +373,10 @@ public class CrashlyticsCore {
 
   /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
   public void logFatalException(Throwable throwable) {
-    controller.setInternalKey("com.crashlytics.on-demand.recorded-exceptions", "0");
+    // TODO(mrober): Put this count somewhere?
+    controller.setInternalKey(ON_DEMAND_KEY, Integer.toString(recordedOnDemandExceptions));
     controller.logFatalException(Thread.currentThread(), throwable);
+    recordedOnDemandExceptions++;
   }
 
   // endregion
