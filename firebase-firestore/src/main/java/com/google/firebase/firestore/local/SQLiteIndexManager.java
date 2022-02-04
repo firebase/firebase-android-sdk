@@ -297,7 +297,7 @@ final class SQLiteIndexManager implements IndexManager {
     return true;
   }
 
-  private IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes) {
+  private IndexOffset getMinOffset(Collection<FieldIndex> fieldIndexes) {
     hardAssert(
         !fieldIndexes.isEmpty(),
         "Found empty index group when looking for least recent index offset.");
@@ -317,14 +317,14 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public IndexOffset minOffset(String collectionGroup) {
+  public IndexOffset getMinOffset(String collectionGroup) {
     Collection<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
     hardAssert(!fieldIndexes.isEmpty(), "minOffset was called for collection without indexes");
-    return getLeastRecentIndexOffset(fieldIndexes);
+    return getMinOffset(fieldIndexes);
   }
 
   @Override
-  public IndexOffset minOffset(Target target) {
+  public IndexOffset getMinOffset(Target target) {
     hardAssert(
         canServeFromIndex(target),
         "Cannot find least recent index offset if target cannot be served from index.");
@@ -332,7 +332,7 @@ final class SQLiteIndexManager implements IndexManager {
     for (Target subTarget : getSubTargets(target)) {
       fieldIndexes.add(getFieldIndex(subTarget));
     }
-    return getLeastRecentIndexOffset(fieldIndexes);
+    return getMinOffset(fieldIndexes);
   }
 
   private List<Target> getSubTargets(Target target) {

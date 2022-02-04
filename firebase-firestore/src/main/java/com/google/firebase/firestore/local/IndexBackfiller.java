@@ -129,7 +129,7 @@ public class IndexBackfiller {
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
     // Use the earliest offset of all field indexes to query the local cache.
-    IndexOffset existingOffset = indexManager.minOffset(collectionGroup);
+    IndexOffset existingOffset = indexManager.getMinOffset(collectionGroup);
 
     LocalDocumentsResult nextBatch =
         localDocumentsView.getNextDocuments(

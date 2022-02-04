@@ -105,12 +105,12 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public IndexOffset minOffset(Target target) {
+  public IndexOffset getMinOffset(Target target) {
     return IndexOffset.NONE;
   }
 
   @Override
-  public IndexOffset minOffset(String collectionGroup) {
+  public IndexOffset getMinOffset(String collectionGroup) {
     return IndexOffset.NONE;
   }
 

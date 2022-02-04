@@ -79,13 +79,13 @@ public interface IndexManager {
   boolean canServeFromIndex(Target target);
 
   /**
-   * Iterates over all field indexes that are used to serve the given target, and returns the least
-   * recent offset of them all. Asserts that the target can be served from index.
+   * Iterates over all field indexes that are used to serve the given target, and returns the
+   * minimum offset of them all. Asserts that the target can be served from index.
    */
-  IndexOffset minOffset(Target target);
+  IndexOffset getMinOffset(Target target);
 
-  /** Returns the lowest offset for the given collection group. */
-  IndexOffset minOffset(String collectionGroup);
+  /** Returns the minimum offset for the given collection group. */
+  IndexOffset getMinOffset(String collectionGroup);
 
   /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no

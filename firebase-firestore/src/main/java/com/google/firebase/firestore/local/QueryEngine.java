@@ -118,7 +118,8 @@ public class QueryEngine {
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
 
-    return appendRemainingResults(values(indexedDocuments), query, indexManager.minOffset(target));
+    return appendRemainingResults(
+        values(indexedDocuments), query, indexManager.getMinOffset(target));
   }
 
   /**
