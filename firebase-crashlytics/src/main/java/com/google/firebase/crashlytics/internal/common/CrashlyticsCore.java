@@ -348,6 +348,10 @@ public class CrashlyticsCore {
     controller.setCustomKeys(keysAndValues);
   }
 
+  // endregion
+
+  // region Internal API
+
   /**
    * Set a value to be associated with a given key for your crash data. The key/value pairs will be
    * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
@@ -362,6 +366,12 @@ public class CrashlyticsCore {
    */
   public void setInternalKey(String key, String value) {
     controller.setInternalKey(key, value);
+  }
+
+  /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
+  public void logFatalException(Throwable throwable) {
+    controller.setInternalKey("com.crashlytics.on-demand.recorded-exceptions", "0");
+    controller.logFatalException(Thread.currentThread(), throwable);
   }
 
   // endregion

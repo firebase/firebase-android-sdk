@@ -85,6 +85,7 @@ class CrashlyticsController {
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
+  private SettingsDataProvider settingsProvider = null;
 
   // A promise that will be resolved when unsent reports are found on the device, and
   // send/deleteUnsentReports can be called to decide how to deal with them.
@@ -140,6 +141,7 @@ class CrashlyticsController {
       String sessionIdentifier,
       Thread.UncaughtExceptionHandler defaultHandler,
       SettingsDataProvider settingsProvider) {
+    this.settingsProvider = settingsProvider;
     // This must be called before installing the controller with
     // Thread.setDefaultUncaughtExceptionHandler to ensure that we are ready to handle
     // any crashes we catch.
@@ -417,6 +419,14 @@ class CrashlyticsController {
             }
           }
         });
+  }
+
+  void logFatalException(Thread thread, Throwable ex) {
+    if (settingsProvider == null) {
+      Logger.getLogger().w("settingsProvider not set");
+      return;
+    }
+    handleUncaughtException(settingsProvider, thread, ex);
   }
 
   void setUserId(String identifier) {
