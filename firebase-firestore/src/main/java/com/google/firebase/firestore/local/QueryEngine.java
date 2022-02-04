@@ -118,8 +118,7 @@ public class QueryEngine {
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
 
-    return appendRemainingResults(
-        values(indexedDocuments), query, indexManager.getLeastRecentIndexOffset(target));
+    return appendRemainingResults(values(indexedDocuments), query, indexManager.minOffset(target));
   }
 
   /**
@@ -238,11 +237,7 @@ public class QueryEngine {
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
     for (Document entry : indexedResults) {
-      // For OR queries, it is possible that a document that's been indexed also shows up in
-      // "remaining results" since we use the least recent IndexOffset of all DNF terms.
-      if (!remainingResults.containsKey(entry.getKey())) {
-        remainingResults = remainingResults.insert(entry.getKey(), entry);
-      }
+      remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
     return remainingResults;
   }

@@ -23,7 +23,6 @@ import static java.lang.Math.max;
 
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
-import com.google.common.collect.ObjectArrays;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.auth.User;
@@ -39,6 +38,7 @@ import com.google.firebase.firestore.index.IndexEntry;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -76,6 +76,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Maps from a target to its equivalent list of sub-targets. Each sub-target contains only one
    * term from the target's disjunctive normal form (DNF).
    */
+  // TODO(orquery): Find a way for the GC algorithm to remove the mapping once we remove a target.
   private final Map<Target, List<Target>> targetToDnfSubTargets = new HashMap<>();
 
   /**
@@ -296,29 +297,34 @@ final class SQLiteIndexManager implements IndexManager {
     return true;
   }
 
-  @Override
-  public FieldIndex.IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes) {
+  private IndexOffset getLeastRecentIndexOffset(Collection<FieldIndex> fieldIndexes) {
     hardAssert(
         !fieldIndexes.isEmpty(),
         "Found empty index group when looking for least recent index offset.");
 
     Iterator<FieldIndex> it = fieldIndexes.iterator();
-    FieldIndex.IndexOffset minOffset = it.next().getIndexState().getOffset();
+    IndexOffset minOffset = it.next().getIndexState().getOffset();
     int minBatchId = minOffset.getLargestBatchId();
     while (it.hasNext()) {
-      FieldIndex.IndexOffset newOffset = it.next().getIndexState().getOffset();
+      IndexOffset newOffset = it.next().getIndexState().getOffset();
       if (newOffset.compareTo(minOffset) < 0) {
         minOffset = newOffset;
       }
       minBatchId = Math.max(newOffset.getLargestBatchId(), minBatchId);
     }
 
-    return FieldIndex.IndexOffset.create(
-        minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
+    return IndexOffset.create(minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
   }
 
   @Override
-  public FieldIndex.IndexOffset getLeastRecentIndexOffset(Target target) {
+  public IndexOffset minOffset(String collectionGroup) {
+    Collection<FieldIndex> fieldIndexes = getFieldIndexes(collectionGroup);
+    hardAssert(!fieldIndexes.isEmpty(), "minOffset was called for collection without indexes");
+    return getLeastRecentIndexOffset(fieldIndexes);
+  }
+
+  @Override
+  public IndexOffset minOffset(Target target) {
     hardAssert(
         canServeFromIndex(target),
         "Cannot find least recent index offset if target cannot be served from index.");
@@ -494,14 +500,19 @@ final class SQLiteIndexManager implements IndexManager {
       bindings.addAll(Arrays.asList(subQueryAndBindings).subList(1, subQueryAndBindings.length));
     }
 
-    String queryString =
-        subQueries.size() == 1
-            ?
-            // If there's only one subQuery, just execute the one subQuery.
-            subQueries.get(0)
-            :
-            // Construct "subQuery1 UNION subQuery2 UNION ... LIMIT N"
-            TextUtils.join(" UNION ", subQueries) + " LIMIT " + target.getLimit();
+    String queryString;
+    if (subQueries.size() == 1) {
+      // If there's only one subQuery, just execute the one subQuery.
+      queryString = subQueries.get(0);
+    } else {
+      // Construct "SELECT * FROM (subQuery1 UNION subQuery2 UNION ...) LIMIT N"
+      queryString = "SELECT * FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
+      if (target.getLimit() != -1) {
+        queryString = queryString + " LIMIT " + target.getLimit();
+      }
+    }
+
+    hardAssert(bindings.size() < 1000, "Cannot perform query with more than 999 bind elements");
 
     SQLitePersistence.Query query = db.query(queryString).binding(bindings.toArray());
 
@@ -569,7 +580,11 @@ final class SQLiteIndexManager implements IndexManager {
     // Fill in the bind ("question marks") variables.
     Object[] bindArgs =
         fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notIn);
-    return ObjectArrays.concat(sql.toString(), bindArgs);
+
+    List<Object> result = new ArrayList<Object>();
+    result.add(sql.toString());
+    result.addAll(Arrays.asList(bindArgs));
+    return result.toArray();
   }
 
   /** Returns the bind arguments for all {@code statementCount} statements. */
@@ -758,7 +773,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
+  public void updateCollectionGroup(String collectionGroup, IndexOffset offset) {
     hardAssert(started, "IndexManager not started");
 
     ++memoizedMaxSequenceNumber;

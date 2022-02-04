@@ -20,11 +20,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -131,9 +129,7 @@ public class IndexBackfiller {
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
     // Use the earliest offset of all field indexes to query the local cache.
-    Collection<FieldIndex> fieldIndexes = indexManager.getFieldIndexes(collectionGroup);
-    hardAssert(!fieldIndexes.isEmpty(), "Updating collection without indexes");
-    IndexOffset existingOffset = indexManager.getLeastRecentIndexOffset(fieldIndexes);
+    IndexOffset existingOffset = indexManager.minOffset(collectionGroup);
 
     LocalDocumentsResult nextBatch =
         localDocumentsView.getNextDocuments(

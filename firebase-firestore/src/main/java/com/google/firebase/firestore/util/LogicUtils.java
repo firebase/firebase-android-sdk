@@ -27,17 +27,10 @@ public class LogicUtils {
   /**
    * Given a composite filter, returns the list of terms in its disjunctive normal form.
    *
-   * <p>Each element in the return value is one term of the resulting DNF.
-   *
-   * <p>For instance, for the input: (A || B) && C
-   *
-   * <p>The DNF form is: (A && C) || (B && C)
-   *
-   * <p>The return value is a list with two elements:
-   *
-   * <p>The first element is a composite filter that performs (A && C).
-   *
-   * <p>The second element is a composite filter that performs (B && C).
+   * <p>Each element in the return value is one term of the resulting DNF. For instance: For the
+   * input: (A || B) && C, the DNF form is: (A && C) || (B && C), and the return value is a list
+   * with two elements: a composite filter that performs (A && C), and a composite filter that
+   * performs (B && C).
    *
    * @param filter the composite filter to calculate DNF transform for.
    * @return the terms in the DNF transform.
