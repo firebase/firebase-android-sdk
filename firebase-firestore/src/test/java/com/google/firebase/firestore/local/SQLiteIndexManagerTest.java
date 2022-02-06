@@ -31,8 +31,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -709,9 +709,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    FieldIndex fieldIndex = indexManager.getFieldIndex(target);
-    assertNotNull("Target not found", fieldIndex);
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    assertTrue("Target cannot be served from index.", indexManager.canServeFromIndex(target));
+    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }
