@@ -21,6 +21,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +70,7 @@ class MemoryIndexManager implements IndexManager {
 
   @Override
   @Nullable
-  public Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target) {
+  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.
     return Collections.emptySet();
   }
@@ -82,7 +83,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void updateCollectionGroup(String collectionGroup, FieldIndex.IndexOffset offset) {
+  public void updateCollectionGroup(String collectionGroup, IndexOffset offset) {
     // Field indices are not supported with memory persistence.
   }
 
@@ -96,6 +97,21 @@ class MemoryIndexManager implements IndexManager {
   public Collection<FieldIndex> getFieldIndexes() {
     // Field indices are not supported with memory persistence.
     return Collections.emptyList();
+  }
+
+  @Override
+  public boolean canServeFromIndex(Target target) {
+    return false;
+  }
+
+  @Override
+  public IndexOffset getMinOffset(Target target) {
+    return IndexOffset.NONE;
+  }
+
+  @Override
+  public IndexOffset getMinOffset(String collectionGroup) {
+    return IndexOffset.NONE;
   }
 
   @Override

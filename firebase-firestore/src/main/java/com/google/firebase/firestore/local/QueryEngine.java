@@ -105,22 +105,21 @@ public class QueryEngine {
    */
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, Target target) {
-    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
-    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
+    if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
 
-    FieldIndex fieldIndex = indexManager.getFieldIndex(query.toTarget());
-    if (fieldIndex == null) {
+    if (!indexManager.canServeFromIndex(target)) {
       return null;
     }
 
-    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
+
     return appendRemainingResults(
-        values(indexedDocuments), query, fieldIndex.getIndexState().getOffset());
+        values(indexedDocuments), query, indexManager.getMinOffset(target));
   }
 
   /**
@@ -131,8 +130,7 @@ public class QueryEngine {
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
-    // TODO(orquery): Update this condition when we are able to serve or queries from the index.
-    if (query.matchesAllDocuments() || query.containsCompositeFilters()) {
+    if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
