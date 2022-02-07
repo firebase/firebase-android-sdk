@@ -68,7 +68,7 @@ public class FirebaseInstallationServiceClient {
       TRAFFIC_STATS_FIREBASE_INSTALLATIONS_TAG | 0x3;
 
   private static final String FIREBASE_INSTALLATIONS_API_DOMAIN =
-      "firebaseinstallations.googleapis.com";
+      "autopush-firebaseinstallations.sandbox.googleapis.com";
   private static final String CREATE_REQUEST_RESOURCE_NAME_FORMAT = "projects/%s/installations";
   private static final String GENERATE_AUTH_TOKEN_REQUEST_RESOURCE_NAME_FORMAT =
       "projects/%s/installations/%s/authTokens:generate";
