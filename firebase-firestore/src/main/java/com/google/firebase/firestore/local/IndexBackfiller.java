@@ -139,6 +139,7 @@ public class IndexBackfiller {
     indexManager.updateIndexEntries(nextBatch.getDocuments());
 
     IndexOffset newOffset = getNewOffset(existingOffset, nextBatch);
+    Logger.debug(LOG_TAG, "Updating offset: %s", newOffset);
     indexManager.updateCollectionGroup(collectionGroup, newOffset);
 
     return nextBatch.getDocuments().size();
