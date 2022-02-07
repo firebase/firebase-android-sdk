@@ -23,8 +23,10 @@ import androidx.test.runner.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatInfoStorageTest {
@@ -37,17 +39,17 @@ public class HeartBeatInfoStorageTest {
   private HeartBeatInfoStorage heartBeatInfoStorage =
       new HeartBeatInfoStorage(heartBeatSharedPreferences);
 
+  @Before
+  public void setUp() {
+    heartBeatSharedPreferences.edit().clear().apply();
+  }
+
   @After
   public void tearDown() {
     heartBeatSharedPreferences.edit().clear().apply();
   }
 
-  @Test
-  public void shouldSendSdkHeartBeat_answerIsNo() {
-    heartBeatSharedPreferences.edit().putLong(testSdk, 1).apply();
-    assertThat(heartBeatInfoStorage.shouldSendSdkHeartBeat(testSdk, 1)).isFalse();
-  }
-
+  @Config(sdk = 29)
   @Test
   public void storeOneHeartbeat_storesProperly() {
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
@@ -73,6 +75,7 @@ public class HeartBeatInfoStorageTest {
     assertThat(results.size()).isEqualTo(0);
   }
 
+  @Config(sdk = 29)
   @Test
   public void storeTwoHeartbeat_storesProperly() {
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
@@ -82,11 +85,16 @@ public class HeartBeatInfoStorageTest {
     ArrayList<HeartBeatResult> results =
         (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
     assertThat(results.size()).isEqualTo(2);
-    assertThat(results.get(0).getUserAgent()).isEqualTo("test-agent");
-    assertThat(results.get(0).getUsedDates())
+    int userAgentTest = 0, userAgentTest1 = 1;
+    if (results.get(0).getUserAgent().contains("-1")) {
+      userAgentTest = 1;
+      userAgentTest1 = 0;
+    }
+    assertThat(results.get(userAgentTest).getUserAgent()).isEqualTo("test-agent");
+    assertThat(results.get(userAgentTest).getUsedDates())
         .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
-    assertThat(results.get(1).getUserAgent()).isEqualTo("test-agent-1");
-    assertThat(results.get(1).getUsedDates())
+    assertThat(results.get(userAgentTest1).getUserAgent()).isEqualTo("test-agent-1");
+    assertThat(results.get(userAgentTest1).getUsedDates())
         .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-02")));
     heartBeatInfoStorage.deleteAllHeartBeats();
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
@@ -94,6 +102,7 @@ public class HeartBeatInfoStorageTest {
     assertThat(results.size()).isEqualTo(0);
   }
 
+  @Config(sdk = 29)
   @Test
   public void storeExcessHeartBeats_cleanUpProperly() {
     for (int i = 0; i < HEART_BEAT_COUNT_LIMIT - 1; i++) {
@@ -118,9 +127,14 @@ public class HeartBeatInfoStorageTest {
     heartBeatInfoStorage.storeHeartBeat((HEART_BEAT_COUNT_LIMIT) * (86400001L), "test-agent-1");
     results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
     assertThat(results.size()).isEqualTo(2);
-    assertThat(results.get(0).getUsedDates().size()).isEqualTo(HEART_BEAT_COUNT_LIMIT - 2);
-    assertThat(results.get(0).getUsedDates()).doesNotContain("1970-01-01");
-    assertThat(results.get(0).getUsedDates()).doesNotContain("1970-01-02");
+    int testAgentIndex = 0;
+    if (results.get(1).getUserAgent().equals("test-agent")) {
+      testAgentIndex = 1;
+    }
+    assertThat(results.get(testAgentIndex).getUsedDates().size())
+        .isEqualTo(HEART_BEAT_COUNT_LIMIT - 2);
+    assertThat(results.get(testAgentIndex).getUsedDates()).doesNotContain("1970-01-01");
+    assertThat(results.get(testAgentIndex).getUsedDates()).doesNotContain("1970-01-02");
 
     heartBeatInfoStorage.deleteAllHeartBeats();
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
