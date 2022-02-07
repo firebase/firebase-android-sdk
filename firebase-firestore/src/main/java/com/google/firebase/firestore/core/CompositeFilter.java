@@ -75,6 +75,21 @@ public class CompositeFilter extends Filter {
   }
 
   /**
+   * Returns true if this filter is a conjunction of field filters only. Returns false otherwise.
+   */
+  public boolean isFlatConjunction() {
+    if (operator != Operator.AND) {
+      return false;
+    }
+    for (Filter filter : filters) {
+      if (filter instanceof CompositeFilter) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Performs a depth-first search to find and return the first FieldFilter in the composite filter
    * that satisfies the condition. Returns {@code null} if none of the FieldFilters satisfy the
    * condition.
@@ -131,5 +146,25 @@ public class CompositeFilter extends Filter {
   @Override
   public String toString() {
     return getCanonicalId();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || !(o instanceof CompositeFilter)) {
+      return false;
+    }
+    CompositeFilter other = (CompositeFilter) o;
+    // Note: This comparison requires order of filters in the list to be the same, and it does not
+    // remove duplicate subfilters from each composite filter. It is therefore way less expensive.
+    // TODO(orquery): Consider removing duplicates and ignoring order of filters in the list.
+    return operator == other.operator && filters.equals(other.filters);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 37;
+    result = 31 * result + operator.hashCode();
+    result = 31 * result + filters.hashCode();
+    return result;
   }
 }

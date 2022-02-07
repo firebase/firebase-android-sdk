@@ -105,10 +105,10 @@ public class TargetIndexMatcherTest {
 
   @Test
   public void equalitiesWithAscendingOrder() {
-    Stream<Query> queriesWithEqualitiesAndDescendingOrder =
+    Stream<Query> queriesWithEqualitiesAndAscendingOrder =
         queriesWithEqualities.stream().map(q -> q.orderBy(orderBy("a", "asc")));
 
-    queriesWithEqualitiesAndDescendingOrder.forEach(
+    queriesWithEqualitiesAndAscendingOrder.forEach(
         query -> {
           validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);
@@ -140,10 +140,10 @@ public class TargetIndexMatcherTest {
 
   @Test
   public void inequalitiesWithAscendingOrder() {
-    Stream<Query> queriesWithInequalitiesAndDescendingOrder =
+    Stream<Query> queriesWithInequalitiesAndAscendingOrder =
         queriesWithInequalities.stream().map(q -> q.orderBy(orderBy("a", "asc")));
 
-    queriesWithInequalitiesAndDescendingOrder.forEach(
+    queriesWithInequalitiesAndAscendingOrder.forEach(
         query -> {
           validateServesTarget(query, "a", FieldIndex.Segment.Kind.ASCENDING);
           validateDoesNotServeTarget(query, "b", FieldIndex.Segment.Kind.ASCENDING);

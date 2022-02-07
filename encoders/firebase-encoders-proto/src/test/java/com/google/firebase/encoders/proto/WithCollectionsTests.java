@@ -51,7 +51,7 @@ public class WithCollectionsTests {
                     .put("noValue", new Fixed())
                     .put("value", new Fixed(1, 2, 3, 4))
                     .put("", new Fixed())
-                    .build(),
+                    .buildOrThrow(),
                 ImmutableList.of(
                     new OtherTypes("hello", new byte[0], false, true),
                     new OtherTypes("", new byte[] {42}, true, false),

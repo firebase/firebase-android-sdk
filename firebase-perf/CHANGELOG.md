@@ -20,6 +20,8 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 > **Note:** Refer go/firebase-android-release for `MXX` info.
 
 ## Unreleased
+*   {{feature}} Enable global custom attributes on Network Requests
+*   {{fixed}} Update log statement to differentiate event drop because of rate limiting and sampling.
 
 ## Released
 
