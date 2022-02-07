@@ -46,6 +46,7 @@ import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.robolectric.annotation.Config;
 
 @RunWith(AndroidJUnit4.class)
 public class DefaultHeartBeatControllerTest {
@@ -97,6 +98,7 @@ public class DefaultHeartBeatControllerTest {
     assertThat(heartBeatController.getHeartBeatCode("fire-iid").getCode()).isEqualTo(0);
   }
 
+  @Config(sdk = 29)
   @Test
   public void generateHeartBeat_oneHeartBeat()
       throws ExecutionException, InterruptedException, JSONException, IOException {
@@ -123,6 +125,7 @@ public class DefaultHeartBeatControllerTest {
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
+  @Config(sdk = 29)
   @Test
   public void firstNewThenOld_synchronizedCorrectly()
       throws ExecutionException, InterruptedException {
@@ -147,6 +150,7 @@ public class DefaultHeartBeatControllerTest {
     assertThat(heartBeatCode).isEqualTo(0);
   }
 
+  @Config(sdk = 29)
   @Test
   public void firstOldThenNew_synchronizedCorrectly()
       throws ExecutionException, InterruptedException, IOException {
@@ -176,6 +180,7 @@ public class DefaultHeartBeatControllerTest {
     assertThat(output.replace("\n", "")).isEqualTo(emptyString);
   }
 
+  @Config(sdk = 29)
   @Test
   public void generateHeartBeat_twoHeartBeatsSameUserAgent()
       throws ExecutionException, InterruptedException, JSONException, IOException {
@@ -220,6 +225,7 @@ public class DefaultHeartBeatControllerTest {
     return out.toString("UTF-8");
   }
 
+  @Config(sdk = 29)
   @Test
   public void generateHeartBeat_twoHeartBeatstwoUserAgents()
       throws ExecutionException, InterruptedException, JSONException, IOException {
@@ -239,6 +245,7 @@ public class DefaultHeartBeatControllerTest {
         .registerHeartBeat()
         .addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
+    Thread.sleep(1000);
     verify(storage, times(2)).storeHeartBeat(anyLong(), anyString());
     heartBeatController
         .getHeartBeatsHeader()
