@@ -140,7 +140,13 @@ class InstrURLConnectionBase {
 
     try {
       final InputStream inputStream = httpUrlConnection.getInputStream();
-      return new InstrHttpInputStream(inputStream, networkMetricBuilder, timer);
+      // Make sure we don't pass in a null into InstrHttpInputStream, since InstrHttpInputStream is
+      // not null-safe.
+      if (inputStream != null) {
+        return new InstrHttpInputStream(inputStream, networkMetricBuilder, timer);
+      }
+      // Only reached when inputStream is null
+      return inputStream;
     } catch (final IOException e) {
       networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
       NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
@@ -156,8 +162,14 @@ class InstrURLConnectionBase {
 
   public OutputStream getOutputStream() throws IOException {
     try {
-      return new InstrHttpOutputStream(
-          httpUrlConnection.getOutputStream(), networkMetricBuilder, timer);
+      final OutputStream outputStream = httpUrlConnection.getOutputStream();
+      // Make sure we don't pass in a null into InstrHttpOutputStream, since InstrHttpOutputStream
+      // is not null-safe.
+      if (outputStream != null) {
+        return new InstrHttpOutputStream(outputStream, networkMetricBuilder, timer);
+      }
+      // Only reached when outputStream is null
+      return outputStream;
     } catch (final IOException e) {
       networkMetricBuilder.setTimeToResponseCompletedMicros(timer.getDurationMicros());
       NetworkRequestMetricBuilderUtil.logError(networkMetricBuilder);
