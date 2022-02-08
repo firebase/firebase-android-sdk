@@ -105,6 +105,12 @@ public class IndexBackfiller {
     return persistence.runTransaction("Backfill Indexes", () -> this.writeIndexEntries());
   }
 
+  /** Writes all remaining index entries. Used only for testing. */
+  @VisibleForTesting
+  public void backfillAll() {
+    while (backfill() != 0) {}
+  }
+
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries() {
     Set<String> processedCollectionGroups = new HashSet<>();

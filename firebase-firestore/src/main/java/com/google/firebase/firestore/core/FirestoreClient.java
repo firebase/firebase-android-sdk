@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -48,6 +49,7 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.firestore.util.Preconditions;
 import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -78,6 +80,7 @@ public final class FirestoreClient {
   // LRU-related
   @Nullable private Scheduler indexBackfillScheduler;
   @Nullable private Scheduler gcScheduler;
+  @Nullable private IndexBackfiller indexBackfiller;
 
   public FirestoreClient(
       final Context context,
@@ -281,7 +284,7 @@ public final class FirestoreClient {
     remoteStore = provider.getRemoteStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
-    IndexBackfiller indexBackfiller = provider.getIndexBackfiller();
+    indexBackfiller = provider.getIndexBackfiller();
 
     if (gcScheduler != null) {
       gcScheduler.start();
@@ -346,5 +349,14 @@ public final class FirestoreClient {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
+  }
+
+  @VisibleForTesting
+  public Task<Void> forceBackfill() {
+      this.verifyNotTerminated();
+    return asyncQueue.enqueue(() -> {
+        Preconditions.checkNotNull(indexBackfiller, "Can't force backfill with memory persistence");
+        indexBackfiller.backfillAll();
+    });
   }
 }

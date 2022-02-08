@@ -352,6 +352,11 @@ public class FirebaseFirestore {
     return client.configureFieldIndexes(parsedIndexes);
   }
 
+  Task<Void> forceBackfill() {
+    ensureClientConfigured();
+    return client.forceBackfill();
+  }
+
   /**
    * Gets a {@code CollectionReference} instance that refers to the collection at the specified path
    * within the database.
