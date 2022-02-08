@@ -250,8 +250,7 @@ public class FirebaseAppDistribution {
     }
     if (!isTesterSignedIn()) {
       return Tasks.forException(
-          new FirebaseAppDistributionException(
-              Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+          new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
     }
 
     cachedCheckForNewReleaseTask =
@@ -301,7 +300,7 @@ public class FirebaseAppDistribution {
         UpdateTaskImpl updateTask = new UpdateTaskImpl();
         updateTask.setException(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+                "Tester is not signed in", AUTHENTICATION_FAILURE));
         return updateTask;
       }
       if (cachedNewRelease == null) {
