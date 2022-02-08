@@ -261,7 +261,7 @@ public class RemoteConfigComponent {
 
   @VisibleForTesting
   synchronized ConfigRealtimeHTTPClient getRealtimeClient(ConfigFetchHandler configFetchHandler) {
-    return new ConfigRealtimeHTTPClient(configFetchHandler);
+    return new ConfigRealtimeHTTPClient(this.firebaseApp, this.firebaseInstallations, configFetchHandler, this.context, this.executorService);
   }
 
   private ConfigGetParameterHandler getGetHandler(
