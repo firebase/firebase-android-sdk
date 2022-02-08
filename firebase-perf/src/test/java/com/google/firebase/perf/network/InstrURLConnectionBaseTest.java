@@ -108,6 +108,15 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void testGetInputStreamWithNullInputStreamReturnsNull() throws IOException {
+    HttpURLConnection urlConnection = mockHttpUrlConnection();
+    when(urlConnection.getInputStream()).thenReturn(null);
+    assertThat(
+            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder).getInputStream())
+        .isNull();
+  }
+
+  @Test
   public void testGetOutputStreamThrowsIOException() throws IOException {
     HttpURLConnection urlConnection = mockHttpUrlConnection();
     doThrow(IOException.class).when(urlConnection).getOutputStream();
@@ -120,6 +129,16 @@ public class InstrURLConnectionBaseTest extends FirebasePerformanceTestBase {
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
     NetworkRequestMetric metric = networkArgumentCaptor.getValue();
     assertThat(metric.getTimeToResponseCompletedUs()).isEqualTo(2000);
+  }
+
+  @Test
+  public void testGetOutputStreamWithNullOuputStreamReturnsNull() throws IOException {
+    HttpURLConnection urlConnection = mockHttpUrlConnection();
+    when(urlConnection.getOutputStream()).thenReturn(null);
+    assertThat(
+            new InstrURLConnectionBase(urlConnection, timer, networkMetricBuilder)
+                .getOutputStream())
+        .isNull();
   }
 
   @Test
