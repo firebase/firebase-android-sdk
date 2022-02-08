@@ -47,6 +47,7 @@ public class BackgroundQueue implements Executor {
       completedTasks.acquire(pendingTaskCount);
       pendingTaskCount = 0;
     } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       fail("Interrupted while waiting for background task", e);
     }
   }
