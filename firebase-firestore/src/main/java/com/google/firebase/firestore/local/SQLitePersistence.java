@@ -505,18 +505,12 @@ public final class SQLitePersistence extends Persistence {
      * @return The number of rows processed (either zero or one).
      */
     int first(Consumer<Cursor> consumer) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         if (cursor.moveToFirst()) {
           consumer.accept(cursor);
           return 1;
         }
         return 0;
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
@@ -530,30 +524,18 @@ public final class SQLitePersistence extends Persistence {
      */
     @Nullable
     <T> T firstValue(Function<Cursor, T> function) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         if (cursor.moveToFirst()) {
           return function.apply(cursor);
         }
         return null;
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
     /** Runs the query and returns true if the result was nonempty. */
     boolean isEmpty() {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         return !cursor.moveToFirst();
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
