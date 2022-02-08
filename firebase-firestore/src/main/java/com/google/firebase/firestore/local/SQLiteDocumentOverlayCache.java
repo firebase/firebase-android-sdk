@@ -16,16 +16,24 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 
+import android.database.Cursor;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
+import com.google.firebase.firestore.util.BackgroundQueue;
+import com.google.firebase.firestore.util.Executors;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.concurrent.Executor;
 
 public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   private final SQLitePersistence db;
@@ -47,7 +55,49 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
                 + "WHERE uid = ? AND collection_path = ? AND document_id = ?")
         .binding(uid, collectionPath, documentId)
-        .firstValue(this::decodeOverlay);
+        .firstValue(row -> this.decodeOverlay(row.getBlob(0), row.getInt(1)));
+  }
+
+  @Override
+  public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    ResourcePath currentCollectionPath = ResourcePath.EMPTY;
+    List<Object> currentDocumentIds = new ArrayList<>();
+    for (DocumentKey key : keys) {
+      if (!currentCollectionPath.equals(key.getCollectionPath())) {
+        processSingleCollection(result, backgroundQueue, currentCollectionPath, currentDocumentIds);
+        currentDocumentIds = new ArrayList<>();
+      }
+      currentCollectionPath = key.getCollectionPath();
+      currentDocumentIds.add(key.getDocumentId());
+    }
+
+    processSingleCollection(result, backgroundQueue, currentCollectionPath, currentDocumentIds);
+    backgroundQueue.drain();
+    return result;
+  }
+
+  /** Reads the overlays for the documents in a single collection. */
+  private void processSingleCollection(
+      Map<DocumentKey, Overlay> result,
+      BackgroundQueue backgroundQueue,
+      ResourcePath collectionPath,
+      List<Object> documentIds) {
+    SQLitePersistence.LongQuery longQuery =
+        new SQLitePersistence.LongQuery(
+            db,
+            "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
+                + "WHERE uid = ? AND collection_path = ? AND document_id IN (",
+            Arrays.asList(uid, EncodedPath.encode(collectionPath)),
+            documentIds,
+            ")");
+    while (longQuery.hasMoreSubqueries()) {
+      longQuery
+          .performNextSubquery()
+          .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
+    }
   }
 
   private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
@@ -83,19 +133,14 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
   @Override
   public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
-    String collectionPath = EncodedPath.encode(collection);
-
     Map<DocumentKey, Overlay> result = new HashMap<>();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
                 + "WHERE uid = ? AND collection_path = ? AND largest_batch_id > ?")
-        .binding(uid, collectionPath, sinceBatchId)
-        .forEach(
-            row -> {
-              Overlay overlay = decodeOverlay(row);
-              result.put(overlay.getKey(), overlay);
-            });
-
+        .binding(uid, EncodedPath.encode(collection), sinceBatchId)
+        .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
+    backgroundQueue.drain();
     return result;
   }
 
@@ -103,20 +148,26 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   public Map<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
     Map<DocumentKey, Overlay> result = new HashMap<>();
-    Overlay[] lastOverlay = new Overlay[] {null};
+    String[] lastCollectionPath = new String[] {null};
+    String[] lastDocumentPath = new String[] {null};
+    int[] lastLargestBatchId = new int[] {0};
 
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
-            "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
+            "SELECT overlay_mutation, largest_batch_id, collection_path, document_id "
+                + " FROM document_overlays "
                 + "WHERE uid = ? AND collection_group = ? AND largest_batch_id > ? "
                 + "ORDER BY largest_batch_id, collection_path, document_id LIMIT ?")
         .binding(uid, collectionGroup, sinceBatchId, count)
         .forEach(
             row -> {
-              lastOverlay[0] = decodeOverlay(row);
-              result.put(lastOverlay[0].getKey(), lastOverlay[0]);
+              lastLargestBatchId[0] = row.getInt(1);
+              lastCollectionPath[0] = row.getString(2);
+              lastDocumentPath[0] = row.getString(3);
+              processOverlaysInBackground(backgroundQueue, result, row);
             });
 
-    if (lastOverlay[0] == null) {
+    if (lastCollectionPath[0] == null) {
       return result;
     }
 
@@ -124,8 +175,6 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     // result set exceeds the given `count` argument. Since the `LIMIT` in the above query might
     // result in a partial batch, the following query appends any remaining overlays for the last
     // batch.
-    DocumentKey key = lastOverlay[0].getKey();
-    String encodedCollectionPath = EncodedPath.encode(key.getCollectionPath());
     db.query(
             "SELECT overlay_mutation, largest_batch_id FROM document_overlays "
                 + "WHERE uid = ? AND collection_group = ? "
@@ -134,23 +183,35 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
         .binding(
             uid,
             collectionGroup,
-            encodedCollectionPath,
-            encodedCollectionPath,
-            key.getDocumentId(),
-            lastOverlay[0].getLargestBatchId())
-        .forEach(
-            row -> {
-              Overlay overlay = decodeOverlay(row);
-              result.put(overlay.getKey(), overlay);
-            });
-
+            lastCollectionPath[0],
+            lastCollectionPath[0],
+            lastDocumentPath[0],
+            lastLargestBatchId[0])
+        .forEach(row -> processOverlaysInBackground(backgroundQueue, result, row));
+    backgroundQueue.drain();
     return result;
   }
 
-  private Overlay decodeOverlay(android.database.Cursor row) {
+  private void processOverlaysInBackground(
+      BackgroundQueue backgroundQueue, Map<DocumentKey, Overlay> results, Cursor row) {
+    byte[] rawMutation = row.getBlob(0);
+    int largestBatchId = row.getInt(1);
+
+    // Since scheduling background tasks incurs overhead, we only dispatch to a
+    // background thread if there are still some documents remaining.
+    Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+    executor.execute(
+        () -> {
+          Overlay document = decodeOverlay(rawMutation, largestBatchId);
+          synchronized (results) {
+            results.put(document.getKey(), document);
+          }
+        });
+  }
+
+  private Overlay decodeOverlay(byte[] rawMutation, int largestBatchId) {
     try {
-      Write write = Write.parseFrom(row.getBlob(0));
-      int largestBatchId = row.getInt(1);
+      Write write = Write.parseFrom(rawMutation);
       Mutation mutation = serializer.decodeMutation(write);
       return Overlay.create(largestBatchId, mutation);
     } catch (InvalidProtocolBufferException e) {

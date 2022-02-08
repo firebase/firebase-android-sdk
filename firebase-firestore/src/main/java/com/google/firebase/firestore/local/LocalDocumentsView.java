@@ -39,7 +39,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
@@ -115,24 +117,20 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
       Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
-    return computeViews(docs, Collections.emptyMap(), existenceStateChanged);
+    Map<DocumentKey, Overlay> overlays = new HashMap<>();
+    populateOverlays(overlays, docs.keySet());
+    return computeViews(docs, overlays, existenceStateChanged);
   }
 
-  /**
-   * Computes the local view for doc, applying overlays from both {@code memoizedOverlays} and the
-   * overlay cache.
-   */
+  /*Computes the local view for doc */
   private ImmutableSortedMap<DocumentKey, Document> computeViews(
       Map<DocumentKey, MutableDocument> docs,
-      Map<DocumentKey, Overlay> memoizedOverlays,
+      Map<DocumentKey, Overlay> overlays,
       Set<DocumentKey> existenceStateChanged) {
     ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
     for (MutableDocument doc : docs.values()) {
-      Overlay overlay =
-          memoizedOverlays.containsKey(doc.getKey())
-              ? memoizedOverlays.get(doc.getKey())
-              : documentOverlayCache.getOverlay(doc.getKey());
+      Overlay overlay = overlays.get(doc.getKey());
       // Recalculate an overlay if the document's existence state is changed due to a remote
       // event *and* the overlay is a PatchMutation. This is because document existence state
       // can change if some patch mutation's preconditions are met.
@@ -290,9 +288,24 @@ class LocalDocumentsView {
       largestBatchId = Math.max(largestBatchId, overlay.getLargestBatchId());
     }
 
+    populateOverlays(overlays, docs.keySet());
     ImmutableSortedMap<DocumentKey, Document> localDocs =
         computeViews(docs, overlays, Collections.emptySet());
     return new LocalDocumentsResult(largestBatchId, localDocs);
+  }
+
+  /**
+   * Fetches the overlays for {@code keys} and adds them to provided overlay map if the map does not
+   * already contain an entry for the given key.
+   */
+  private void populateOverlays(Map<DocumentKey, Overlay> overlays, Set<DocumentKey> keys) {
+    SortedSet<DocumentKey> missingOverlays = new TreeSet<>();
+    for (DocumentKey key : keys) {
+      if (!overlays.containsKey(key)) {
+        missingOverlays.add(key);
+      }
+    }
+    overlays.putAll(documentOverlayCache.getOverlays(missingOverlays));
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(

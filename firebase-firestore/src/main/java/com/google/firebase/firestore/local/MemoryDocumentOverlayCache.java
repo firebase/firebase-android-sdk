@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 
 public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
@@ -36,6 +37,17 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public Overlay getOverlay(DocumentKey key) {
     return overlays.get(key);
+  }
+
+  public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+    for (DocumentKey key : keys) {
+      Overlay overlay = overlays.get(key);
+      if (overlay != null) {
+        result.put(key, overlay);
+      }
+    }
+    return result;
   }
 
   private void saveOverlay(int largestBatchId, @Nullable Mutation mutation) {

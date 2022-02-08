@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -30,9 +31,12 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.testutil.TestUtil;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
@@ -87,6 +91,13 @@ public abstract class DocumentOverlayCacheTestCase {
   }
 
   @Test
+  public void testSkipsNonExistingOverlayInBatchLookup() {
+    Map<DocumentKey, Overlay> overlays =
+        cache.getOverlays(new TreeSet<>(Collections.singleton(key("coll/doc1"))));
+    assertTrue(overlays.isEmpty());
+  }
+
+  @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
     saveOverlays(2, m);
@@ -104,6 +115,34 @@ public abstract class DocumentOverlayCacheTestCase {
     assertEquals(m1, cache.getOverlay(key("coll/doc1")).getMutation());
     assertEquals(m2, cache.getOverlay(key("coll/doc2")).getMutation());
     assertEquals(m3, cache.getOverlay(key("coll/doc3")).getMutation());
+  }
+
+  @Test
+  public void testCanReadSavedOverlaysInBatches() {
+    Mutation m1 = setMutation("coll1/a", map("a", 1));
+    Mutation m2 = setMutation("coll1/b", map("b", 2));
+    Mutation m3 = setMutation("coll2/c", map("c", 3));
+    saveOverlays(3, m1, m2, m3);
+
+    Map<DocumentKey, Overlay> overlays =
+        cache.getOverlays(
+            new TreeSet<>(Arrays.asList(key("coll1/a"), key("coll1/b"), key("coll2/c"))));
+    assertEquals(m1, overlays.get(key("coll1/a")).getMutation());
+    assertEquals(m2, overlays.get(key("coll1/b")).getMutation());
+    assertEquals(m3, overlays.get(key("coll2/c")).getMutation());
+  }
+
+  @Test
+  public void testCanReadUnlimitedNumberOfOverlays() {
+    // This test that we can read more than 1000 overlays, which exceeds the bind var limit in
+    // SQLite.
+    SortedSet<DocumentKey> keys = new TreeSet<>();
+    for (int i = 0; i < 1001; ++i) {
+      keys.add(key("coll/" + i));
+      saveOverlays(i, setMutation("coll/" + i, map()));
+    }
+    Map<DocumentKey, Overlay> result = cache.getOverlays(keys);
+    assertThat(result).hasSize(1001);
   }
 
   @Test
