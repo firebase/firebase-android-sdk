@@ -30,6 +30,7 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
+import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +55,9 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     ConfigResolver.clearInstance();
 
     appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
-    ConfigResolver.getInstance().setApplicationContext(appContext);
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setApplicationContext(appContext);
+    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
   }
 
   @Test
