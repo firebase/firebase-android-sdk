@@ -193,7 +193,7 @@ public class FirebaseAppDistributionTest {
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
 
-    assertTaskFailure(task, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
+    assertTaskFailure(task, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
 
   @Test
@@ -227,7 +227,7 @@ public class FirebaseAppDistributionTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
+    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
 
   @Test
