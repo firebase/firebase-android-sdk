@@ -201,10 +201,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
     TargetData targetData = localStore.allocateTarget(query.toTarget());
+    remoteStore.listen(targetData);
+
     ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, targetData.getTargetId());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
-    remoteStore.listen(targetData);
     return targetData.getTargetId();
   }
 
