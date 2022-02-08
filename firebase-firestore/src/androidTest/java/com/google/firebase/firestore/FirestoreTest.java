@@ -1071,7 +1071,7 @@ public class FirestoreTest {
     waitFor(docRef.set(map("foo", "bar")));
     waitFor(firestore.terminate());
     IntegrationTestUtil.removeFirestore(firestore);
-    waitFor(AccessHelper.clearPersistence(firestore));
+    waitFor(firestore.clearPersistence());
 
     // We restart the app with the same name and options to check that the previous instance's
     // persistent storage is actually cleared after the restart. Calling testFirestore() without the
@@ -1088,7 +1088,7 @@ public class FirestoreTest {
     FirebaseFirestore firestore = testFirestore();
     waitFor(firestore.enableNetwork());
 
-    Task<Void> transactionTask = AccessHelper.clearPersistence(firestore);
+    Task<Void> transactionTask = firestore.clearPersistence();
     waitForException(transactionTask);
     assertFalse(transactionTask.isSuccessful());
     Exception e = transactionTask.getException();
