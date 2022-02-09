@@ -43,7 +43,7 @@ import com.google.firebase.messaging.reporting.MessagingClientEventExtension;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Provides integration between GCM and Scion.
+ * Provides integration between FCM and Scion.
  *
  * <p>All Scion dependencies should be kept in this class, and missing dependencies should be
  * handled gracefully. Instead of crashing the app if Scion has not been included in the APK we

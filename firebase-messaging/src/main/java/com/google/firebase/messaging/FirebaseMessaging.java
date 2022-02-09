@@ -71,7 +71,7 @@ import javax.annotation.concurrent.GuardedBy;
  *
  * <pre>
  * FirebaseMessaging.getInstance().send(
- *     new RemoteMessage.Builder(SENDER_ID + "&#64;gcm.googleapis.com")
+ *     new RemoteMessage.Builder(SENDER_ID + "&#64;fcm.googleapis.com")
  *     .setMessageId(id)
  *     .addData("key", "value")
  *     .build());</pre>
