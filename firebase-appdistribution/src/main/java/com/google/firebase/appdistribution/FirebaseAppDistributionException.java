@@ -32,7 +32,7 @@ public class FirebaseAppDistributionException extends FirebaseException {
     /** The authentication process was canceled. */
     AUTHENTICATION_CANCELED,
 
-    /** No network is available to make requests or the request timed out. */
+    /** No network is available to make requests, or the request timed out. */
     NETWORK_FAILURE,
 
     /** The new release failed to download. */

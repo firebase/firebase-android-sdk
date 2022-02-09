@@ -19,12 +19,7 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
- * This class represents the AppDistributionRelease object returned by the App Distribution backend
- *
- * <p>It is an immutable value class implemented by AutoValue.
- *
- * @see <a
- *     href="https://github.com/google/auto/tree/master/value">https://github.com/google/auto/tree/master/value</a>
+ * This class represents the AppDistributionRelease object returned by the App Distribution backend.
  */
 @AutoValue
 abstract class AppDistributionReleaseInternal {
@@ -34,38 +29,38 @@ abstract class AppDistributionReleaseInternal {
     return new AutoValue_AppDistributionReleaseInternal.Builder();
   }
 
-  /** The short bundle version of this build (example 1.0.0) */
+  /** The short bundle version of this build (example: 1.0.0). */
   @NonNull
   abstract String getDisplayVersion();
 
-  /** The bundle version of this build (example: 123) */
+  /** The bundle version of this build (example: 123). */
   @NonNull
   abstract String getBuildVersion();
 
-  /** The release notes for this build */
+  /** The release notes for this build. */
   @Nullable
   abstract String getReleaseNotes();
 
-  /** The binary type for this build */
+  /** The binary type for this build. */
   @NonNull
   abstract BinaryType getBinaryType();
 
-  /** Hash of binary of an Android app */
+  /** Hash of binary of an Android app. */
   @Nullable
   abstract String getCodeHash();
 
-  /** Efficient hash of an Android apk. Used to identify a release */
+  /** Efficient hash of an Android apk. Used to identify a release. */
   @Nullable
   abstract String getApkHash();
 
   /**
    * IAS artifact id. This value is inserted into the manifest of APK's installed via Used to map a
-   * release to an APK installed via an app bundle
+   * release to an APK installed via an app bundle.
    */
   @Nullable
   abstract String getIasArtifactId();
 
-  /** Short-lived download URL */
+  /** Short-lived download URL. */
   @Nullable
   abstract String getDownloadUrl();
 

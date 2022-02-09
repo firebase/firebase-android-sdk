@@ -17,7 +17,7 @@ package com.google.firebase.appdistribution;
 class Constants {
   static class ErrorMessages {
     public static final String NETWORK_ERROR =
-        "Failed to fetch releases due to unknown network error";
+        "Failed to fetch releases due to unknown network error.";
 
     public static final String JSON_PARSING_ERROR = "Error parsing service response";
 
@@ -27,7 +27,7 @@ class Constants {
 
     public static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow";
 
-    public static final String NOT_FOUND_ERROR = "Tester or release not found";
+    public static final String NOT_FOUND_ERROR = "Tester or release not found.";
 
     public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout";
 

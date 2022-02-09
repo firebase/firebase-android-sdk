@@ -69,7 +69,7 @@ class FirebaseAppDistributionTesterApiClient {
   }
 
   /**
-   * Fetches and returns the lastest release for the app that the tester has access to, or null if
+   * Fetches and returns the latest release for the app that the tester has access to, or null if
    * the tester doesn't have access to any releases.
    */
   @Nullable

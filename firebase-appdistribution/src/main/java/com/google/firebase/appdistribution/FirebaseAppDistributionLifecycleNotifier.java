@@ -45,23 +45,23 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private Activity currentActivity;
 
-  /** A queue of listeners that trigger when the activity is foregrounded */
+  /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityCreatedListener> onActivityCreatedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is foregrounded */
+  /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityStartedListener> onActivityStartedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is resumed */
+  /** A queue of listeners that trigger when the activity is resumed. */
   @GuardedBy("lock")
   private final Queue<OnActivityResumedListener> onActivityResumedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is backgrounded */
+  /** A queue of listeners that trigger when the activity is backgrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityPausedListener> onActivityPausedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is destroyed */
+  /** A queue of listeners that trigger when the activity is destroyed. */
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 

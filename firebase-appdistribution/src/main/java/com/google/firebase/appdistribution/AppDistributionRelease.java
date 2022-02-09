@@ -30,7 +30,7 @@ public abstract class AppDistributionRelease {
     return new com.google.firebase.appdistribution.AutoValue_AppDistributionRelease.Builder();
   }
 
-  /** The short bundle version of this build (example 1.0.0). */
+  /** The short bundle version of this build (example: 1.0.0). */
   @NonNull
   public abstract String getDisplayVersion();
 
