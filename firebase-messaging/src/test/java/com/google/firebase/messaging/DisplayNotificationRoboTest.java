@@ -54,7 +54,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
 import org.junit.Before;
@@ -127,7 +127,7 @@ public class DisplayNotificationRoboTest {
   private ActivityManager activityManager;
   private KeyguardManager keyguardManager;
   private NotificationManager notificationManager;
-  private Executor executor;
+  private ExecutorService executor;
 
   @Before
   public void setUp() throws IOException {
