@@ -30,7 +30,7 @@ import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +54,7 @@ public final class DisplayNotificationChannelRoboTest {
   Context context = ApplicationProvider.getApplicationContext();
 
   NotificationManager notificationManager;
-  Executor executor;
+  ExecutorService executor;
 
   @Before
   public void setup() throws Exception {
@@ -204,7 +204,7 @@ public final class DisplayNotificationChannelRoboTest {
   }
 
   private static DisplayNotification createDisplayNotification(
-      Context context, Bundle message, Executor executor) {
+      Context context, Bundle message, ExecutorService executor) {
     return new DisplayNotification(context, new NotificationParams(message), executor);
   }
 
