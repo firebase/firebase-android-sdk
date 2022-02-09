@@ -167,10 +167,6 @@ public class FirebaseAppDistribution {
 
     lifecycleNotifier
         .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
-        // TODO(rachelprince): Revisit this comment once changes to checkForNewRelease are reviewed
-        // Even though checkForNewRelease() calls signInTester(), we explicitly call signInTester
-        // here for code clarity, and because we plan to remove the signInTester() call
-        // from checkForNewRelease() in the near future
         .onSuccessTask(unused -> signInTester())
         .onSuccessTask(unused -> checkForNewRelease())
         .continueWithTask(
@@ -266,9 +262,14 @@ public class FirebaseAppDistribution {
       LogWrapper.getInstance().v("Response in progress");
       return cachedCheckForNewReleaseTask;
     }
+    if (!isTesterSignedIn()) {
+      return Tasks.forException(
+          new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
+    }
+
     cachedCheckForNewReleaseTask =
-        signInTester()
-            .onSuccessTask(unused -> this.newReleaseFetcher.checkForNewRelease())
+        this.newReleaseFetcher
+            .checkForNewRelease()
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
                   setCachedNewRelease(appDistributionReleaseInternal);
@@ -315,7 +316,7 @@ public class FirebaseAppDistribution {
         UpdateTaskImpl updateTask = new UpdateTaskImpl();
         updateTask.setException(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE));
+                "Tester is not signed in", AUTHENTICATION_FAILURE));
         return updateTask;
       }
       if (cachedNewRelease == null) {
