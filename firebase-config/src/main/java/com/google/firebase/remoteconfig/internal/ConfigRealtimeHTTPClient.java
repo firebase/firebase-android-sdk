@@ -79,6 +79,7 @@ public class ConfigRealtimeHTTPClient {
         this.random = new Random();
         this.timer = new Timer();
 
+        // HTTP Client
         ConnectionPool connectionPool = new ConnectionPool();
         this.okHttpClient = new OkHttpClient.Builder()
                 .readTimeout(1, TimeUnit.HOURS)
@@ -89,78 +90,6 @@ public class ConfigRealtimeHTTPClient {
                 .retryOnConnectionFailure(true)
                 .connectionPool(connectionPool)
                 .build();
-    }
-
-    // Open HTTP connection and listen for messages asyncly
-    public void startRealtimeConnection() {
-        logger.info("Realtime connecting...");
-        this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
-        this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
-
-        if (!this.eventListeners.isEmpty()) {
-            if (this.eventSource == null) {
-                Task<InstallationTokenResult> installationAuthTokenTask =
-                        firebaseInstallations.getToken(false);
-                installationAuthTokenTask.onSuccessTask(executor, (token) ->
-                        {
-                            EventSource.Factory eventSourceFactory = EventSources.createFactory(this.okHttpClient);
-                            EventSourceListener eventSourceListener = createEventSourceListener();
-
-                            Request.Builder request = new Request.Builder()
-                                    .url(this.REALTIME_URL_STRING)
-                                    .addHeader(INSTALLATIONS_AUTH_TOKEN_HEADER, token.getToken())
-                                    .get();
-                            setCommonRequestHeaders(request);
-                            this.eventSource = eventSourceFactory.newEventSource(request.build(), eventSourceListener);
-
-                            return Tasks.forResult(null);
-                        }
-                );
-
-            }
-            logger.info("Realtime started");
-        } else {
-            logger.info("Add a listener before starting Realtime!");
-        }
-    }
-
-    private EventSourceListener createEventSourceListener() {
-        return new EventSourceListener() {
-            @Override
-            public void onClosed(@NonNull EventSource eventSource) {
-                logger.info("Connection closing");
-                pauseRealtimeConnection();
-                retryHTTPConnection();
-            }
-
-            @Override
-            public void onEvent(@NonNull EventSource eventSource, @Nullable String id, @Nullable String type, @NonNull String data) {
-                logger.info("Received invalidation notification.");
-                Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
-                fetchTask.onSuccessTask((unusedFetchResponse) ->
-                        {
-                            logger.info("Finished Fetching new updates.");
-                            // Execute callbacks for listeners.
-                            for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
-                                listener.onEvent();
-                            }
-                            return Tasks.forResult(null);
-                        }
-                );
-            }
-
-            @Override
-            public void onFailure(@NonNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-                logger.info("Connection failed with this error: " + t.toString());
-                pauseRealtimeConnection();
-                retryHTTPConnection();
-            }
-
-            @Override
-            public void onOpen(@NonNull EventSource eventSource, @NonNull Response response) {
-                super.onOpen(eventSource, response);
-            }
-        };
     }
 
     private void setCommonRequestHeaders(Request.Builder request) {
@@ -193,6 +122,66 @@ public class ConfigRealtimeHTTPClient {
         } catch (PackageManager.NameNotFoundException e) {
             logger.info("No such package: " + this.context.getPackageName());
             return null;
+        }
+    }
+
+    private EventSourceListener createEventSourceListener() {
+        return new EventSourceListener() {
+            @Override
+            public void onEvent(@NonNull EventSource eventSource, @Nullable String id, @Nullable String type, @NonNull String data) {
+                logger.info("Received invalidation notification.");
+                Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+                fetchTask.onSuccessTask((unusedFetchResponse) ->
+                        {
+                            logger.info("Finished Fetching new updates.");
+                            // Execute callbacks for listeners.
+                            for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
+                                listener.onEvent();
+                            }
+                            return Tasks.forResult(null);
+                        }
+                );
+            }
+
+            @Override
+            public void onFailure(@NonNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
+                logger.info("Connection failed with this error: " + t.toString());
+                retryHTTPConnection();
+            }
+        };
+    }
+
+    // Open HTTP connection and listen for messages asyncly
+    public void startRealtimeConnection() {
+        logger.info("Realtime connecting...");
+        this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
+
+        if (!this.eventListeners.isEmpty()) {
+            if (this.eventSource == null) {
+                Task<InstallationTokenResult> installationAuthTokenTask =
+                        firebaseInstallations.getToken(false);
+                installationAuthTokenTask.onSuccessTask(executor, (token) ->
+                        {
+                            EventSource.Factory eventSourceFactory = EventSources.createFactory(this.okHttpClient);
+                            EventSourceListener eventSourceListener = createEventSourceListener();
+
+                            Request.Builder request = new Request.Builder()
+                                    .url(this.REALTIME_URL_STRING)
+                                    .addHeader(INSTALLATIONS_AUTH_TOKEN_HEADER, token.getToken())
+                                    .get();
+                            setCommonRequestHeaders(request);
+                            this.eventSource = eventSourceFactory.newEventSource(request.build(), eventSourceListener);
+
+                            return Tasks.forResult(null);
+                        }
+                );
+
+            }
+
+            this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
+            logger.info("Realtime started");
+        } else {
+            logger.info("Add a listener before starting Realtime!");
         }
     }
 
