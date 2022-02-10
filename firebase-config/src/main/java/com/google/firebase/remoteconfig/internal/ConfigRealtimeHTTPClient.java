@@ -34,6 +34,7 @@ import okhttp3.sse.EventSourceListener;
 import okhttp3.sse.EventSources;
 
 public class ConfigRealtimeHTTPClient {
+    // Headers
     private static final String API_KEY_HEADER = "X-Goog-Api-Key";
     private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
     private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
@@ -42,9 +43,8 @@ public class ConfigRealtimeHTTPClient {
             "X-Goog-Firebase-Installations-Auth";
     
     private static final String REALTIME_URL_STRING = "http://10.0.2.2:5000/sse";
-    private final Map<String, RealTimeEventListener> eventListeners;
-
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
+
     private final ConfigFetchHandler configFetchHandler;
     private final FirebaseApp firebaseApp;
     private final FirebaseInstallationsApi firebaseInstallations;
@@ -62,6 +62,9 @@ public class ConfigRealtimeHTTPClient {
     // HTTP/2 client and SSE EventSource
     private final OkHttpClient okHttpClient;
     private EventSource eventSource;
+
+    // Map of callbacks
+    private final Map<String, RealTimeEventListener> eventListeners;
 
     public ConfigRealtimeHTTPClient(FirebaseApp firebaseApp,
                                     FirebaseInstallationsApi firebaseInstallations,
@@ -81,9 +84,9 @@ public class ConfigRealtimeHTTPClient {
 
         ConnectionPool connectionPool = new ConnectionPool();
         this.okHttpClient = new OkHttpClient.Builder()
-                .readTimeout(1, TimeUnit.HOURS)
-                .writeTimeout(1, TimeUnit.HOURS)
-                .connectTimeout(1, TimeUnit.HOURS)
+                .readTimeout(2, TimeUnit.HOURS)
+                .writeTimeout(2, TimeUnit.HOURS)
+                .connectTimeout(2, TimeUnit.HOURS)
                 .followRedirects(false)
                 .protocols(Collections.singletonList(Protocol.H2_PRIOR_KNOWLEDGE))
                 .retryOnConnectionFailure(true)
