@@ -20,6 +20,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * Provides methods to read and write document overlays.
@@ -37,6 +38,12 @@ public interface DocumentOverlayCache {
    */
   @Nullable
   Overlay getOverlay(DocumentKey key);
+
+  /**
+   * Gets the saved overlay mutation for the given document keys. Skips keys for which there are no
+   * overlays.
+   */
+  Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys);
 
   /**
    * Saves the given document key to mutation map to persistence as overlays. All overlays will have
