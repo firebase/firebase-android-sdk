@@ -71,7 +71,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
       if (!currentCollection.equals(key.getCollectionPath())) {
         processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
         currentCollection = key.getCollectionPath();
-        accumulatedDocumentIds = new ArrayList<>();
+        accumulatedDocumentIds.clear();
       }
       accumulatedDocumentIds.add(key.getDocumentId());
     }
