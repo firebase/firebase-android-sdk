@@ -15,11 +15,9 @@
 package com.google.firebase.firestore.index;
 
 import static com.google.firebase.firestore.util.Util.compareByteArrays;
-import static com.google.firebase.firestore.util.Util.nullSafeCompare;
 
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.util.Util;
 
 /** Represents an index entry saved by the SDK in its local storage. */
 @AutoValue
@@ -48,7 +46,7 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
     cmp = getDocumentKey().compareTo(other.getDocumentKey());
     if (cmp != 0) return cmp;
 
-    cmp = nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
+    cmp = compareByteArrays(getArrayValue(), other.getArrayValue());
     if (cmp != 0) return cmp;
 
     return compareByteArrays(getDirectionalValue(), other.getDirectionalValue());
