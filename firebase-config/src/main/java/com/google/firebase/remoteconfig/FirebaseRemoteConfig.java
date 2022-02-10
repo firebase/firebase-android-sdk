@@ -14,19 +14,13 @@
 
 package com.google.firebase.remoteconfig;
 
-import android.app.Application;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.Network;
-import android.net.NetworkCapabilities;
-import android.net.NetworkRequest;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.XmlRes;
 
-import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -49,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -679,14 +672,23 @@ public class FirebaseRemoteConfig {
     return activated == null || !fetched.getFetchTime().equals(activated.getFetchTime());
   }
 
+  /**
+   * Starts realtime.
+   * */
   public void startRealtime() {
     this.configRealtimeHTTPClient.startRealtimeConnection();
   }
 
+  /**
+   * Stops realtime.
+   * */
   public void pauseRealtime() {
     this.configRealtimeHTTPClient.pauseRealtimeConnection();
   }
 
+  /**
+   * Add callback for realtime.
+   * */
   public void addRealtimeListener(ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
     this.configRealtimeHTTPClient.putRealTimeEventListener("test", realTimeEventListener);
   }
