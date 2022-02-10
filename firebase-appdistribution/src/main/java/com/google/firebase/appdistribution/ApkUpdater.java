@@ -130,7 +130,9 @@ class ApkUpdater {
                   UpdateStatus.INSTALL_FAILED,
                   showDownloadNotificationManager);
               setUpdateTaskCompletionErrorWithDefault(
-                  e, FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
+                  e,
+                  FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED,
+                  Status.INSTALLATION_FAILURE);
             });
   }
 

@@ -25,32 +25,53 @@ public class FirebaseAppDistributionException extends FirebaseException {
     /** Unknown error or an error from a different error domain. */
     UNKNOWN,
 
-    /** The authentication process failed. The tester was either not signed in, or something went wrong. Try signing in again by calling {@link FirebaseAppDistribution#signInTester}. */
+    /**
+     * The authentication process failed. The tester was either not signed in, or something went
+     * wrong. Try signing in again by calling {@link FirebaseAppDistribution#signInTester}.
+     */
     AUTHENTICATION_FAILURE,
 
     /** The authentication process was canceled (typically by the user). */
     AUTHENTICATION_CANCELED,
 
-    /** No network is available to make requests, or the request timed out. Check your internet connection and try again. */
+    /**
+     * No network is available to make requests, or the request timed out. Check your internet
+     * connection and try again.
+     */
     NETWORK_FAILURE,
 
-    /** The new release failed to download. This is a most likely due to a transient condition and
-     * may be corrected by retrying. */
+    /**
+     * The new release failed to download. This is a most likely due to a transient condition and
+     * may be corrected by retrying.
+     */
     DOWNLOAD_FAILURE,
 
-    /** The new release failed to install. Verify that the new release has the same signing key as the version running on device. */
+    /**
+     * The new release failed to install. Verify that the new release has the same signing key as
+     * the version running on device.
+     */
     INSTALLATION_FAILURE,
 
     /** The installation was canceled (typically by the user). */
     INSTALLATION_CANCELED,
 
-    /** An update is not available for the current tester and app. Make sure that {@link FirebaseAppDistribution#checkForNewRelease()} returns with a non-null {@link AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp()} */
+    /**
+     * An update is not available for the current tester and app. Make sure that {@link
+     * FirebaseAppDistribution#checkForNewRelease()} returns with a non-null {@link
+     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp()}
+     */
     UPDATE_NOT_AVAILABLE,
 
-    /** The app is running in production. The App Distribution SDK is intended for beta testing usage only. Do not include the App Distribution SDK in production builds. */
+    /**
+     * The app is running in production. The App Distribution SDK is intended for beta testing usage
+     * only. Do not include the App Distribution SDK in production builds.
+     */
     APP_RUNNING_IN_PRODUCTION,
 
-    /** The host activity for a confirmation dialog was destroyed or pushed to the backstack. Try calling {@link FirebaseAppDistribution#updateIfNewReleaseAvailable()} again */
+    /**
+     * The host activity for a confirmation dialog was destroyed or pushed to the backstack. Try
+     * calling {@link FirebaseAppDistribution#updateIfNewReleaseAvailable()} again
+     */
     HOST_ACTIVITY_INTERRUPTED,
   }
 

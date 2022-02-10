@@ -222,6 +222,7 @@ public class TesterSignInManagerTest {
     Exception e = signInTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 }

@@ -180,7 +180,8 @@ public class FirebaseAppDistributionTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR, Status.NETWORK_FAILURE)));
+                    FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR,
+                    Status.NETWORK_FAILURE)));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
     assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
@@ -296,7 +297,8 @@ public class FirebaseAppDistributionTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                    AUTHENTICATION_CANCELED)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -305,7 +307,10 @@ public class FirebaseAppDistributionTest {
 
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
-    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED);
+    assertTaskFailure(
+        updateTask,
+        AUTHENTICATION_CANCELED,
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED);
   }
 
   @Test
@@ -315,7 +320,8 @@ public class FirebaseAppDistributionTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR,
+                    AUTHENTICATION_FAILURE)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -395,7 +401,8 @@ public class FirebaseAppDistributionTest {
     Exception e = updateTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   @Test
@@ -410,7 +417,8 @@ public class FirebaseAppDistributionTest {
     Exception e = signInTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   private AlertDialog assertAlertDialogShown() {
@@ -498,7 +506,9 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
     assertTaskFailure(
-        updateTask, HOST_ACTIVITY_INTERRUPTED, FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        updateTask,
+        HOST_ACTIVITY_INTERRUPTED,
+        FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
@@ -515,7 +525,9 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
     assertTaskFailure(
-        updateTask, HOST_ACTIVITY_INTERRUPTED, FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        updateTask,
+        HOST_ACTIVITY_INTERRUPTED,
+        FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test

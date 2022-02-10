@@ -182,7 +182,9 @@ public class NewReleaseFetcherTest {
     FirebaseAppDistributionException actualException =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
-    assertThat(actualException).hasMessageThat().contains(FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException)
+        .hasMessageThat()
+        .contains(FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR);
     assertThat(actualException).hasMessageThat().contains("test ex");
     assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
@@ -203,7 +205,9 @@ public class NewReleaseFetcherTest {
     FirebaseAppDistributionException actualException =
         assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
 
-    assertThat(actualException).hasMessageThat().contains(FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR);
+    assertThat(actualException)
+        .hasMessageThat()
+        .contains(FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR);
     assertThat(actualException).hasMessageThat().contains("test ex");
     assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
