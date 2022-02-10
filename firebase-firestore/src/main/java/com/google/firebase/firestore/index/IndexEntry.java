@@ -48,9 +48,9 @@ public abstract class IndexEntry implements Comparable<IndexEntry> {
     cmp = getDocumentKey().compareTo(other.getDocumentKey());
     if (cmp != 0) return cmp;
 
-    cmp = compareByteArrays(getDirectionalValue(), other.getDirectionalValue());
+    cmp = nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
     if (cmp != 0) return cmp;
 
-    return nullSafeCompare(getArrayValue(), other.getArrayValue(), Util::compareByteArrays);
+    return compareByteArrays(getDirectionalValue(), other.getDirectionalValue());
   }
 }
