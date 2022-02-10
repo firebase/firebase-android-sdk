@@ -42,8 +42,8 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
-  private static final String X_CLIENT_VERSION_HEADER_KEY = "X-Client-Version";
   // Format of "X-Client-Version": "{ClientId}/{ClientVersion}"
+  private static final String X_CLIENT_VERSION_HEADER_KEY = "X-Client-Version";
 
   private static final String BUILD_VERSION_JSON_KEY = "buildVersion";
   private static final String DISPLAY_VERSION_JSON_KEY = "displayVersion";
