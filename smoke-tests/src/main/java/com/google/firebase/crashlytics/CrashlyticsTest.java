@@ -16,16 +16,16 @@ package com.google.firebase.crashlytics;
 
 import static com.google.common.truth.Truth.assertThat;
 
-//import android.os.Bundle;
-//import androidx.test.core.app.ApplicationProvider;
-//import com.google.firebase.analytics.FirebaseAnalytics;
+import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import androidx.test.runner.AndroidJUnit4;
-//import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-//import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
-//import java.lang.reflect.Field;
-//import java.util.concurrent.CountDownLatch;
-//import java.util.concurrent.TimeUnit;
+import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
+import java.lang.reflect.Field;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,30 +41,30 @@ public final class CrashlyticsTest {
 //                Fields `core` and `breadcrumbSource` were made visible for test in
 //                https://github.com/firebase/firebase-android-sdk/pull/2737, which goes out in
 //                18.2.0 (M100). This test case that builds against 18.1.0 is expected to fail.
-//  @Test
-//  public void analyticsIntegration() {
-//    // Validates that Firebase Analytics and Crashlytics interoperability is working, by confirming
-//    // that events sent to Firebase Analytics are received by the Crashlytics breadcrumb handler.
-//    try {
-//      BreadcrumbSource breadcrumbSource = FirebaseCrashlytics.getInstance().core.breadcrumbSource;
-//      final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
-//      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler -> {
-//        eventReceivedLatch.countDown();
-//      });
-//
-//      Bundle eventBundle = new Bundle();
-//      eventBundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "testName");
-//      FirebaseAnalytics.getInstance(ApplicationProvider.getApplicationContext()).logEvent(
-//          FirebaseAnalytics.Event.APP_OPEN, eventBundle);
-//
-//      // Wait up to 2 seconds, which is plenty of time for the event
-//      eventReceivedLatch.await(2000, TimeUnit.MILLISECONDS);
-//      assertThat(eventReceivedLatch.getCount()).isEqualTo(0);
-//
-//    } catch (Exception e) {
-//      throw new RuntimeException(e);
-//    }
-//  }
+  @Test
+  public void analyticsIntegration() {
+    // Validates that Firebase Analytics and Crashlytics interoperability is working, by confirming
+    // that events sent to Firebase Analytics are received by the Crashlytics breadcrumb handler.
+    try {
+      BreadcrumbSource breadcrumbSource = FirebaseCrashlytics.getInstance().core.breadcrumbSource;
+      final CountDownLatch eventReceivedLatch = new CountDownLatch(1);
+      breadcrumbSource.registerBreadcrumbHandler(breadcrumbHandler -> {
+        eventReceivedLatch.countDown();
+      });
+
+      Bundle eventBundle = new Bundle();
+      eventBundle.putString(FirebaseAnalytics.Param.ITEM_NAME, "testName");
+      FirebaseAnalytics.getInstance(ApplicationProvider.getApplicationContext()).logEvent(
+          FirebaseAnalytics.Event.APP_OPEN, eventBundle);
+
+      // Wait up to 2 seconds, which is plenty of time for the event
+      eventReceivedLatch.await(2000, TimeUnit.MILLISECONDS);
+      assertThat(eventReceivedLatch.getCount()).isEqualTo(0);
+
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @Test
   public void setCustomKeys() {
@@ -85,4 +85,3 @@ public final class CrashlyticsTest {
     assertThat(FirebaseCrashlytics.getInstance().didCrashOnPreviousExecution()).isFalse();
   }
 }
-
