@@ -28,7 +28,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.io.BufferedOutputStream;
@@ -131,7 +130,7 @@ class ApkUpdater {
                   UpdateStatus.INSTALL_FAILED,
                   showDownloadNotificationManager);
               setUpdateTaskCompletionErrorWithDefault(
-                  e, ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
+                  e, FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
             });
   }
 

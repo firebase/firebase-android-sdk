@@ -32,7 +32,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.appdistribution.internal.SignInStorage;
@@ -233,13 +232,13 @@ public class FirebaseAppDistribution {
         (dialogInterface, i) ->
             showSignInDialogTask.setException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
     signInConfirmationDialog.setOnCancelListener(
         dialogInterface ->
             showSignInDialogTask.setException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
     signInConfirmationDialog.show();
 
@@ -323,13 +322,13 @@ public class FirebaseAppDistribution {
         LogWrapper.getInstance().v("New release not found.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+                FirebaseAppDistributionException.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
       }
       if (cachedNewRelease.getDownloadUrl() == null) {
         LogWrapper.getInstance().v("Download failed to execute.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                FirebaseAppDistributionException.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
                 FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
       }
 
@@ -358,7 +357,7 @@ public class FirebaseAppDistribution {
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showSignInDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+                FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
         showSignInConfirmationDialog(activity);
       }
@@ -368,7 +367,7 @@ public class FirebaseAppDistribution {
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showUpdateDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+                FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
         synchronized (cachedNewReleaseLock) {
           showUpdateConfirmationDialog(
@@ -447,13 +446,13 @@ public class FirebaseAppDistribution {
         (dialogInterface, i) ->
             showUpdateDialogTask.setException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateConfirmationDialog.setOnCancelListener(
         dialogInterface ->
             showUpdateDialogTask.setException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
     updateConfirmationDialog.show();
 

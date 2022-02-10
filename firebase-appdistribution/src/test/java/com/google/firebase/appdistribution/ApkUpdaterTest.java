@@ -30,7 +30,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
 import java.io.IOException;
@@ -187,7 +186,7 @@ public class ApkUpdaterTest {
 
     installTaskCompletionSource.setException(
         new FirebaseAppDistributionException(
-            Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED,
             FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
 
     assertThat(updateTask.isComplete()).isFalse();
@@ -214,7 +213,7 @@ public class ApkUpdaterTest {
 
     installTaskCompletionSource.setException(
         new FirebaseAppDistributionException(
-            ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE));
+            FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE));
 
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());

@@ -32,7 +32,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import com.google.firebase.appdistribution.internal.LogWrapper;
@@ -111,7 +110,7 @@ class TesterSignInManager {
           LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
           setSignInTaskCompletionError(
               new FirebaseAppDistributionException(
-                  Constants.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
+                  FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
         }
       }
     }
@@ -139,10 +138,10 @@ class TesterSignInManager {
           .get()
           .getId()
           .addOnFailureListener(
-              handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
+              handleTaskFailure(FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
           .onSuccessTask(this::getForegroundActivityAndOpenSignInFlow)
           // Catch any unexpected failures to be safe.
-          .addOnFailureListener(handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
+          .addOnFailureListener(handleTaskFailure(FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
 
       return signInTaskCompletionSource.getTask();
     }

@@ -26,7 +26,6 @@ import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 import android.app.Activity;
 import android.net.Uri;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -166,7 +165,7 @@ public class AabUpdaterTest {
     aabUpdater.onActivityStarted(activity);
 
     FirebaseAppDistributionException exception =
-        assertTaskFailure(updateTask, Status.INSTALLATION_CANCELED, ErrorMessages.UPDATE_CANCELED);
+        assertTaskFailure(updateTask, Status.INSTALLATION_CANCELED, FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED);
     assertEquals(
         ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
         exception.getRelease());
