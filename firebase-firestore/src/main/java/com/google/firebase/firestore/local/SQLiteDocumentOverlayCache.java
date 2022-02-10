@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.database.Cursor;
 import androidx.annotation.Nullable;
@@ -60,21 +61,22 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
 
   @Override
   public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
+    hardAssert(keys.comparator() == null, "getOverlays() requires natural order");
     Map<DocumentKey, Overlay> result = new HashMap<>();
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
-    ResourcePath currentCollectionPath = ResourcePath.EMPTY;
-    List<Object> currentDocumentIds = new ArrayList<>();
+    ResourcePath currentCollection = ResourcePath.EMPTY;
+    List<Object> accumulatedDocumentIds = new ArrayList<>();
     for (DocumentKey key : keys) {
-      if (!currentCollectionPath.equals(key.getCollectionPath())) {
-        processSingleCollection(result, backgroundQueue, currentCollectionPath, currentDocumentIds);
-        currentDocumentIds = new ArrayList<>();
+      if (!currentCollection.equals(key.getCollectionPath())) {
+        processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
+        currentCollection = key.getCollectionPath();
+        accumulatedDocumentIds.clear();
       }
-      currentCollectionPath = key.getCollectionPath();
-      currentDocumentIds.add(key.getDocumentId());
+      accumulatedDocumentIds.add(key.getDocumentId());
     }
 
-    processSingleCollection(result, backgroundQueue, currentCollectionPath, currentDocumentIds);
+    processSingleCollection(result, backgroundQueue, currentCollection, accumulatedDocumentIds);
     backgroundQueue.drain();
     return result;
   }
@@ -85,6 +87,10 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
       BackgroundQueue backgroundQueue,
       ResourcePath collectionPath,
       List<Object> documentIds) {
+    if (documentIds.isEmpty()) {
+      return;
+    }
+
     SQLitePersistence.LongQuery longQuery =
         new SQLitePersistence.LongQuery(
             db,
@@ -148,9 +154,9 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   public Map<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
     Map<DocumentKey, Overlay> result = new HashMap<>();
-    String[] lastCollectionPath = new String[] {null};
-    String[] lastDocumentPath = new String[] {null};
-    int[] lastLargestBatchId = new int[] {0};
+    String[] lastCollectionPath = new String[1];
+    String[] lastDocumentPath = new String[1];
+    int[] lastLargestBatchId = new int[1];
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     db.query(
@@ -202,9 +208,9 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
     executor.execute(
         () -> {
-          Overlay document = decodeOverlay(rawMutation, largestBatchId);
+          Overlay overlay = decodeOverlay(rawMutation, largestBatchId);
           synchronized (results) {
-            results.put(document.getKey(), document);
+            results.put(overlay.getKey(), overlay);
           }
         });
   }

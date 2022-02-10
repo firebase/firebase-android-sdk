@@ -98,6 +98,12 @@ public abstract class DocumentOverlayCacheTestCase {
   }
 
   @Test
+  public void testSupportsEmptyBatchInBatchLookup() {
+    Map<DocumentKey, Overlay> overlays = cache.getOverlays(new TreeSet<>());
+    assertTrue(overlays.isEmpty());
+  }
+
+  @Test
   public void testCanReadSavedOverlay() {
     Mutation m = patchMutation("coll/doc1", map("foo", "bar"));
     saveOverlays(2, m);
