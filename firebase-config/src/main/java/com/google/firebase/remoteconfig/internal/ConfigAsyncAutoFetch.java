@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.logging.Logger;
 
+// Class extended from AsyncTask that will allow for async monitoring of Realtime RC HTTP/1.1 chunked stream.
 public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     private final HttpURLConnection httpURLConnection;
     private final ConfigFetchHandler configFetchHandler;
