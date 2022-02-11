@@ -5,8 +5,6 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -14,7 +12,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.util.Collections;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,16 +22,7 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
-import okhttp3.ConnectionPool;
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.sse.EventSource;
-import okhttp3.sse.EventSourceListener;
-import okhttp3.sse.EventSources;
 
 public class ConfigRealtimeHTTPClient {
     private static final String API_KEY_HEADER = "X-Goog-Api-Key";
@@ -40,11 +31,10 @@ public class ConfigRealtimeHTTPClient {
     private static final String X_GOOGLE_GFE_CAN_RETRY = "X-Google-GFE-Can-Retry";
     private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
             "X-Goog-Firebase-Installations-Auth";
-    
-    private static final String REALTIME_URL_STRING = "http://10.0.2.2:5000/sse";
-    private final Map<String, RealTimeEventListener> eventListeners;
 
+    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8080";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
+
     private final ConfigFetchHandler configFetchHandler;
     private final FirebaseApp firebaseApp;
     private final FirebaseInstallationsApi firebaseInstallations;
@@ -59,9 +49,9 @@ public class ConfigRealtimeHTTPClient {
     private int RETRIES_REMAINING;
     private final Random random;
 
-    // HTTP/2 client and SSE EventSource
-    private final OkHttpClient okHttpClient;
-    private EventSource eventSource;
+    private URL realtimeURL;
+    private HttpURLConnection httpURLConnection;
+    private final Map<String, RealTimeEventListener> eventListeners;
 
     public ConfigRealtimeHTTPClient(FirebaseApp firebaseApp,
                                     FirebaseInstallationsApi firebaseInstallations,
@@ -79,31 +69,20 @@ public class ConfigRealtimeHTTPClient {
         this.random = new Random();
         this.timer = new Timer();
 
-        // HTTP Client
-        ConnectionPool connectionPool = new ConnectionPool();
-        this.okHttpClient = new OkHttpClient.Builder()
-                .readTimeout(1, TimeUnit.HOURS)
-                .writeTimeout(1, TimeUnit.HOURS)
-                .connectTimeout(1, TimeUnit.HOURS)
-                .followRedirects(false)
-                .protocols(Collections.singletonList(Protocol.H2_PRIOR_KNOWLEDGE))
-                .retryOnConnectionFailure(true)
-                .connectionPool(connectionPool)
-                .build();
+        try {
+            this.realtimeURL = new URL(this.REALTIME_URL_STRING);
+        } catch (MalformedURLException ex) {
+            logger.info("URL is malformed");
+        }
     }
 
-    private void setCommonRequestHeaders(Request.Builder request) {
-        request.addHeader(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
-
-        // Headers required for Android API Key Restrictions.
-        request.addHeader(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
-        request.addHeader(X_ANDROID_CERT_HEADER, getFingerprintHashForPackage());
-
-        // Header to denote request is retryable on the server.
-        request.addHeader(X_GOOGLE_GFE_CAN_RETRY, "yes");
-
-        // Headers to denote that the request body is an SSE request
-        request.addHeader("Content-Type", "text/eventstream");
+    private void getInstallationAuthToken() {
+        Task<InstallationTokenResult> installationAuthTokenTask =
+                firebaseInstallations.getToken(false);
+        installationAuthTokenTask.onSuccessTask(unusedToken -> {
+            this.httpURLConnection.setRequestProperty(INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
+            return Tasks.forResult(null);
+        });
     }
 
     /** Gets the Android package's SHA-1 fingerprint. */
@@ -125,61 +104,47 @@ public class ConfigRealtimeHTTPClient {
         }
     }
 
-    private EventSourceListener createEventSourceListener() {
-        return new EventSourceListener() {
-            @Override
-            public void onEvent(@NonNull EventSource eventSource, @Nullable String id, @Nullable String type, @NonNull String data) {
-                logger.info("Received invalidation notification.");
-                Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
-                fetchTask.onSuccessTask((unusedFetchResponse) ->
-                        {
-                            logger.info("Finished Fetching new updates.");
-                            // Execute callbacks for listeners.
-                            for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
-                                listener.onEvent();
-                            }
-                            return Tasks.forResult(null);
-                        }
-                );
-            }
+    private void setCommonRequestHeaders() {
+        getInstallationAuthToken();
+        this.httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
 
-            @Override
-            public void onFailure(@NonNull EventSource eventSource, @Nullable Throwable t, @Nullable Response response) {
-                logger.info("Connection failed with this error: " + t.toString());
-                retryHTTPConnection();
-            }
-        };
+        // Headers required for Android API Key Restrictions.
+        this.httpURLConnection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+        this.httpURLConnection.setRequestProperty(X_ANDROID_CERT_HEADER, getFingerprintHashForPackage());
+
+        // Header to denote request is retryable on the server.
+        this.httpURLConnection.setRequestProperty(X_GOOGLE_GFE_CAN_RETRY, "yes");
+
+        // Headers to denote that the request body is a JSONObject.
+        this.httpURLConnection.setRequestProperty("Content-Type", "application/json");
+        this.httpURLConnection.setRequestProperty("Accept", "application/json");
     }
 
     // Open HTTP connection and listen for messages asyncly
     public void startRealtimeConnection() {
         logger.info("Realtime connecting...");
         this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
-
+        this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
         if (!this.eventListeners.isEmpty()) {
-            if (this.eventSource == null) {
-                Task<InstallationTokenResult> installationAuthTokenTask =
-                        firebaseInstallations.getToken(false);
-                installationAuthTokenTask.onSuccessTask(executor, (token) ->
-                        {
-                            EventSource.Factory eventSourceFactory = EventSources.createFactory(this.okHttpClient);
-                            EventSourceListener eventSourceListener = createEventSourceListener();
+            try {
+                if (this.httpURLConnection == null) {
+                    this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
 
-                            Request.Builder request = new Request.Builder()
-                                    .url(this.REALTIME_URL_STRING)
-                                    .addHeader(INSTALLATIONS_AUTH_TOKEN_HEADER, token.getToken())
-                                    .get();
-                            setCommonRequestHeaders(request);
-                            this.eventSource = eventSourceFactory.newEventSource(request.build(), eventSourceListener);
+                      this.setCommonRequestHeaders();
+                }
+                logger.info("Realtime connection started.");
 
-                            return Tasks.forResult(null);
-                        }
-                );
-
+                RealTimeEventListener retryCallback = new RealTimeEventListener() {
+                    @Override
+                    public void onEvent() {
+                        retryHTTPConnection();
+                    }
+                };
+                new ConfigAsyncAutoFetch(this.httpURLConnection, this.configFetchHandler, this.eventListeners, retryCallback).execute();
+            } catch (Exception ex) {
+                logger.info("Can't start http connection");
+                this.retryHTTPConnection();
             }
-
-            this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
-            logger.info("Realtime started");
         } else {
             logger.info("Add a listener before starting Realtime!");
         }
@@ -187,11 +152,11 @@ public class ConfigRealtimeHTTPClient {
 
     // Close HTTP connection.
     public void pauseRealtimeConnection() {
-        if (this.eventSource != null) {
-            this.eventSource.cancel();
-            this.eventSource = null;
+        if (this.httpURLConnection != null) {
+            this.httpURLConnection.disconnect();
+            this.httpURLConnection = null;
+            logger.info("Realtime connection stopped.");
         }
-        logger.info("Realtime connection stopped.");
     }
 
     // Try to reopen HTTP connection after a random amount of time
