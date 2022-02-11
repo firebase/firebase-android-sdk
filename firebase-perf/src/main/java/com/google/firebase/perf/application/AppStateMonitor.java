@@ -174,7 +174,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
         // no more activity in foreground, app goes to background.
         stopTime = clock.getTime();
         sendSessionLog(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), resumeTime, stopTime);
-        // order is important to avoid b/204362742
+        // order is important to transport _fs before triggering a sessionId change b/204362742
         updateAppState(ApplicationProcessState.BACKGROUND);
       }
     }
@@ -198,7 +198,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       } else {
         // case 2: app switch from background to foreground.
         sendSessionLog(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), stopTime, resumeTime);
-        // order is important to avoid b/204362742
+        // order is important to transport _bs before triggering a sessionId change b/204362742
         updateAppState(ApplicationProcessState.FOREGROUND);
       }
     } else {
