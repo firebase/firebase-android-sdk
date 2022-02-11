@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.send;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
@@ -45,7 +44,7 @@ public class DataTransportCrashlyticsReportSender {
   private static final Transformer<CrashlyticsReport, byte[]> DEFAULT_TRANSFORM =
       (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
 
-  private final Transport<CrashlyticsReport> transport;
+  private final ReportQueue reportQueue;
   private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(Context context) {
@@ -58,31 +57,28 @@ public class DataTransportCrashlyticsReportSender {
                 CrashlyticsReport.class,
                 Encoding.of("json"),
                 DEFAULT_TRANSFORM);
-    return new DataTransportCrashlyticsReportSender(transport, DEFAULT_TRANSFORM);
+    ReportQueue reportQueue = new ReportQueue(transport);
+    return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
   }
 
   DataTransportCrashlyticsReportSender(
-      Transport<CrashlyticsReport> transport,
-      Transformer<CrashlyticsReport, byte[]> transportTransform) {
-    this.transport = transport;
+      ReportQueue reportQueue, Transformer<CrashlyticsReport, byte[]> transportTransform) {
+    this.reportQueue = reportQueue;
     this.transportTransform = transportTransform;
   }
 
   @NonNull
-  public Task<CrashlyticsReportWithSessionId> sendReport(
+  public Task<CrashlyticsReportWithSessionId> enqueueReport(
       @NonNull CrashlyticsReportWithSessionId reportWithSessionId) {
-    final CrashlyticsReport report = reportWithSessionId.getReport();
+    return enqueueReport(reportWithSessionId, /*blocking=*/ false);
+  }
 
+  @NonNull
+  public Task<CrashlyticsReportWithSessionId> enqueueReport(
+      @NonNull CrashlyticsReportWithSessionId reportWithSessionId, boolean blocking) {
+    // TODO(mrober): Clean up this Task flow.
     TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
-    transport.schedule(
-        Event.ofUrgent(report),
-        error -> {
-          if (error != null) {
-            tcs.trySetException(error);
-            return;
-          }
-          tcs.trySetResult(reportWithSessionId);
-        });
+    reportQueue.enqueueReport(reportWithSessionId, tcs, blocking);
     return tcs.getTask();
   }
 

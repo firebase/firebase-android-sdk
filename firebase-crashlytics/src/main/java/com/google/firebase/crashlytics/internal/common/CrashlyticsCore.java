@@ -374,6 +374,7 @@ public class CrashlyticsCore {
   /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
   public void logFatalException(Throwable throwable) {
     // TODO(mrober): Put this count somewhere?
+    Logger.getLogger().d("Logging fatal: " + recordedOnDemandExceptions);
     controller.setInternalKey(ON_DEMAND_KEY, Integer.toString(recordedOnDemandExceptions));
     controller.logFatalException(Thread.currentThread(), throwable);
     recordedOnDemandExceptions++;
