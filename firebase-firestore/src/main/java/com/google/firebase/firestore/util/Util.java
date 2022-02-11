@@ -214,18 +214,6 @@ public class Util {
             });
   }
 
-  public static <T> int nullSafeCompare(
-      @Nullable T left, @Nullable T right, Comparator<T> comparator) {
-    if (left != null && right != null) {
-      return comparator.compare(left, right);
-    }
-    return left == null ? (right == null ? 0 : -1) : 1;
-  }
-
-  public static <T extends Comparable<T>> int nullSafeCompare(@Nullable T left, @Nullable T right) {
-    return nullSafeCompare(left, right, Comparable::compareTo);
-  }
-
   public static int compareByteArrays(byte[] left, byte[] right) {
     int size = Math.min(left.length, right.length);
     for (int i = 0; i < size; i++) {
