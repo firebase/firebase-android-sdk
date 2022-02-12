@@ -480,12 +480,6 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
         "coll/{array:foo}",
         "coll/{array:[1]}");
     verifyResults(
-        q.orderBy(orderBy("array", "desc"))
-            .startAt(bound(false, Collections.singletonList(2)))
-            .limitToFirst(2),
-        "coll/{array:[1,foo],int:1}",
-        "coll/{array:[1]}");
-    verifyResults(
         q.orderBy(orderBy("array")).startAt(bound(false, Arrays.asList(2, "foo"))),
         "coll/{array:[3,foo],int:3}");
     verifyResults(
