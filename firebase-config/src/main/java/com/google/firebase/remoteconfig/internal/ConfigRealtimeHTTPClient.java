@@ -12,6 +12,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,6 +34,7 @@ public class ConfigRealtimeHTTPClient {
     private static final String X_GOOGLE_GFE_CAN_RETRY = "X-Google-GFE-Can-Retry";
     private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
             "X-Goog-Firebase-Installations-Auth";
+    private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
 
     private static final String REALTIME_URL_STRING = "http://10.0.2.2:8080";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
@@ -49,6 +53,7 @@ public class ConfigRealtimeHTTPClient {
     private int RETRIES_REMAINING;
     private final Random random;
 
+    // Realtime HTTP components
     private URL realtimeURL;
     private HttpURLConnection httpURLConnection;
     private final Map<String, RealTimeEventListener> eventListeners;
@@ -76,11 +81,11 @@ public class ConfigRealtimeHTTPClient {
         }
     }
 
-    private void getInstallationAuthToken() {
+    private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
         Task<InstallationTokenResult> installationAuthTokenTask =
                 firebaseInstallations.getToken(false);
         installationAuthTokenTask.onSuccessTask(unusedToken -> {
-            this.httpURLConnection.setRequestProperty(INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
+            httpURLConnection.setRequestProperty(INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
             return Tasks.forResult(null);
         });
     }
@@ -91,7 +96,6 @@ public class ConfigRealtimeHTTPClient {
 
         try {
             hash = AndroidUtilsLight.getPackageCertificateHashBytes(this.context, this.context.getPackageName());
-
             if (hash == null) {
                 Log.e(TAG, "Could not get fingerprint hash for package: " + this.context.getPackageName());
                 return null;
@@ -104,20 +108,23 @@ public class ConfigRealtimeHTTPClient {
         }
     }
 
-    private void setCommonRequestHeaders() {
-        getInstallationAuthToken();
-        this.httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
+    private void setCommonRequestHeaders(HttpURLConnection httpURLConnection) {
+        getInstallationAuthToken(httpURLConnection);
+        httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
 
         // Headers required for Android API Key Restrictions.
-        this.httpURLConnection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
-        this.httpURLConnection.setRequestProperty(X_ANDROID_CERT_HEADER, getFingerprintHashForPackage());
+        httpURLConnection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+        httpURLConnection.setRequestProperty(X_ANDROID_CERT_HEADER, getFingerprintHashForPackage());
 
         // Header to denote request is retryable on the server.
-        this.httpURLConnection.setRequestProperty(X_GOOGLE_GFE_CAN_RETRY, "yes");
+        httpURLConnection.setRequestProperty(X_GOOGLE_GFE_CAN_RETRY, "yes");
+
+        // Header to tell server that client expects stream response
+        httpURLConnection.setRequestProperty(X_ACCEPT_RESPONSE_STREAMING, "true");
 
         // Headers to denote that the request body is a JSONObject.
-        this.httpURLConnection.setRequestProperty("Content-Type", "application/json");
-        this.httpURLConnection.setRequestProperty("Accept", "application/json");
+        httpURLConnection.setRequestProperty("Content-Type", "application/json");
+        httpURLConnection.setRequestProperty("Accept", "application/json");
     }
 
     // Open HTTP connection and listen for messages asyncly
@@ -129,8 +136,7 @@ public class ConfigRealtimeHTTPClient {
             try {
                 if (this.httpURLConnection == null) {
                     this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
-
-                      this.setCommonRequestHeaders();
+                    this.setCommonRequestHeaders(this.httpURLConnection);
                 }
                 logger.info("Realtime connection started.");
 
@@ -179,7 +185,7 @@ public class ConfigRealtimeHTTPClient {
 
     // Event Listener interface to be used by developers.
     public interface RealTimeEventListener extends EventListener {
-        // Call back for when Real Time signal occurs.
+        // Call back for when Real Time.
         void onEvent();
     }
 

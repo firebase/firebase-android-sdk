@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -19,6 +21,11 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     private final Map<String, ConfigRealtimeHTTPClient.RealTimeEventListener> eventListeners;
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
     private final ConfigRealtimeHTTPClient.RealTimeEventListener retryCallback;
+    private static final String REALTIME_PONG_URL_STRING = "http://10.0.2.2:8080";
+
+    // Pong HTTP components
+    private URL realtimePongURL;
+    private HttpURLConnection pongHttpURLConnection;
 
     public ConfigAsyncAutoFetch(HttpURLConnection httpURLConnection,
                                 ConfigFetchHandler configFetchHandler,
@@ -28,6 +35,12 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         this.configFetchHandler = configFetchHandler;
         this.eventListeners = eventListeners;
         this.retryCallback = retryCallback;
+
+        try {
+            this.realtimePongURL = new URL(this.REALTIME_PONG_URL_STRING);
+        } catch (MalformedURLException ex) {
+            logger.info("URL is malformed");
+        }
     }
 
 
@@ -62,19 +75,46 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     // Auto-fetch new config and execute callbacks on each new message
     private void handleNotifications(InputStream inputStream) throws IOException {
         BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream)));
-        while (reader.readLine() != null) {
-            Task<ConfigFetchHandler.FetchResponse> fetchTask = this.configFetchHandler.fetch(0L);
-            fetchTask.onSuccessTask((unusedFetchResponse) ->
-                    {
-                        logger.info("Finished Fetching new updates.");
-                        // Execute callbacks for listeners.
-                        for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
-                            listener.onEvent();
+        String message;
+        while ((message = reader.readLine()) != null) {
+            logger.info(message);
+            if (message.contains("Ping")) {
+                this.sendPong();
+            } else {
+                Task<ConfigFetchHandler.FetchResponse> fetchTask = this.configFetchHandler.fetch(0L);
+                fetchTask.onSuccessTask((unusedFetchResponse) ->
+                        {
+                            logger.info("Finished Fetching new updates.");
+                            // Execute callbacks for listeners.
+                            for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
+                                listener.onEvent();
+                            }
+                            return Tasks.forResult(null);
                         }
-                        return Tasks.forResult(null);
-                    }
-            );
+                );
+            }
         }
         reader.close();
+    }
+
+    public void sendPong() {
+        if (this.pongHttpURLConnection == null) {
+            try {
+                this.pongHttpURLConnection = (HttpURLConnection) this.realtimePongURL.openConnection();
+                // TODO add headers
+            } catch (Exception ex) {
+                logger.info("Can't connect to pong endpoint due to " + ex.toString());
+                // TODO integrate retry function with pong sender
+            }
+        }
+
+        try {
+            int responseCode = this.pongHttpURLConnection.getResponseCode();
+            if (responseCode != 200) {
+                logger.info("Request failed with code " + responseCode);
+            }
+        } catch (IOException ex) {
+            logger.info("Can't get response code.");
+        }
     }
 }
