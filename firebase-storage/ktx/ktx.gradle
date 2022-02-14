@@ -60,7 +60,7 @@ dependencies {
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-storage')
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"

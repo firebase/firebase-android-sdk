@@ -54,7 +54,7 @@ dependencies {
     testImplementation project(':firebase-database-collection')
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    testImplementation 'com.google.android.gms:play-services-tasks:16.0.1'
+    testImplementation 'com.google.android.gms:play-services-tasks:18.0.1'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
