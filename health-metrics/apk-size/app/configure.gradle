@@ -15,7 +15,7 @@
 
 repositories {
     maven {
-        url '../../build/m2repository/'
+        url '../../../build/m2repository/'
     }
     google()
     jcenter()
