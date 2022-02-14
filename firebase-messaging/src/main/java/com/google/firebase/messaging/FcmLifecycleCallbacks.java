@@ -16,7 +16,11 @@ package com.google.firebase.messaging;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -35,12 +39,14 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
       return;
     }
 
-    Bundle extras = startingIntent.getExtras();
-    if (extras != null) {
-      Bundle analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
-      if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
-        MessagingAnalytics.logNotificationOpen(analyticsData);
-      }
+    if (VERSION.SDK_INT <= VERSION_CODES.N) {
+      // On Android 7.0 and lower Bundle unparceling is not thread safe. Wait to log notification
+      // open after Activity.onCreate() has completed to try to avoid race conditions with other
+      // code that may be trying to access the Intent extras Bundle in onCreate() on a different
+      // thread.
+      new Handler(Looper.getMainLooper()).post(() -> logNotificationOpen(startingIntent));
+    } else {
+      logNotificationOpen(startingIntent);
     }
   }
 
@@ -66,4 +72,14 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
 
   @Override
   public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {}
+
+  private void logNotificationOpen(Intent startingIntent) {
+    Bundle extras = startingIntent.getExtras();
+    if (extras != null) {
+      Bundle analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
+      if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
+        MessagingAnalytics.logNotificationOpen(analyticsData);
+      }
+    }
+  }
 }
