@@ -69,8 +69,8 @@ dependencies {
     implementation project(":firebase-installations-interop")
     runtimeOnly project(":firebase-installations")
 
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     // Support Libraries
     implementation 'com.google.guava:guava:28.1-android'

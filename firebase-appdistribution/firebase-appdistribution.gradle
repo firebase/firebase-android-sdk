@@ -51,7 +51,7 @@ dependencies {
     androidTestImplementation "org.mockito:mockito-android:3.4.0"
     testImplementation 'androidx.test:core:1.2.0'
 
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'

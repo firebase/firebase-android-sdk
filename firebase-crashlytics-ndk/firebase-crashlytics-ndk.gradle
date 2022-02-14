@@ -116,7 +116,7 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-crashlytics')
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
 
     testImplementation 'androidx.test:runner:1.4.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
