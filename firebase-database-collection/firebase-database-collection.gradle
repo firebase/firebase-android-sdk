@@ -33,7 +33,7 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-base:17.0.0'
+    implementation 'com.google.android.gms:play-services-base:18.0.1'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'net.java:quickcheck:0.6'
