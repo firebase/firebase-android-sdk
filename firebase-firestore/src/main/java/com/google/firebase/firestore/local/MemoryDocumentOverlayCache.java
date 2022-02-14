@@ -117,6 +117,9 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public Map<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
+    // NOTE: This method is only used by the backfiller, which will not run for memory persistence;
+    // therefore, this method is being implemented only so that the test suite for
+    // `LevelDbDocumentOverlayCache` can be re-used by the test suite for this class.
     SortedMap<Integer, Map<DocumentKey, Overlay>> batchIdToOverlays = new TreeMap<>();
 
     for (Overlay overlay : overlays.values()) {
