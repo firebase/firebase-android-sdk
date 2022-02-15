@@ -54,7 +54,7 @@ public class ConfigRealtimeHTTPClient {
     // Retry parameters
     private final Timer timer;
     private final int ORIGINAL_RETRIES = 7;
-    private final long RETRY_TIME = 10000;
+    private final long RETRY_SECONDS = 10000;
     private long RETRY_MULTIPLIER;
     private int RETRIES_REMAINING;
     private final Random random;
@@ -199,14 +199,14 @@ public class ConfigRealtimeHTTPClient {
         if (this.RETRIES_REMAINING > 0) {
             RETRIES_REMAINING--;
             this.pauseRealtimeConnection();
-            logger.info("Retrying in " + (this.RETRY_TIME * this.RETRY_MULTIPLIER) + " seconds");
+            logger.info("Retrying in " + (this.RETRY_SECONDS * this.RETRY_MULTIPLIER) + " seconds");
             this.timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     logger.info("Retrying Realtime connection.");
                     startRealtimeConnection();
                 }
-            }, (this.RETRY_TIME * this.RETRY_MULTIPLIER));
+            }, (this.RETRY_SECONDS * this.RETRY_MULTIPLIER));
         } else {
             logger.info("No retries remaining. Restart app.");
         }
