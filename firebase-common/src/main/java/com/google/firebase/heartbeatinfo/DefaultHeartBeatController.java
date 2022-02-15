@@ -15,8 +15,11 @@
 package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.Base64;
+import android.util.Base64OutputStream;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.tasks.Task;
@@ -77,6 +80,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         });
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   @Override
   public Task<String> getHeartBeatsHeader() {
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
@@ -95,19 +99,20 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
               HeartBeatResult result = allHeartBeats.get(i);
               JSONObject obj = new JSONObject();
               obj.put("agent", result.getUserAgent());
-              obj.put("date", result.getUsedDates());
+              obj.put("dates", new JSONArray(result.getUsedDates()));
               array.put(obj);
             }
             JSONObject output = new JSONObject();
             output.put("heartbeats", array);
             output.put("version", "2");
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            GZIPOutputStream gzip = new GZIPOutputStream(out);
-            gzip.write(output.toString().getBytes());
+            Base64OutputStream b64os =
+                new Base64OutputStream(out, Base64.URL_SAFE | Base64.NO_PADDING | Base64.NO_WRAP);
+            GZIPOutputStream gzip = new GZIPOutputStream(b64os);
+            gzip.write(output.toString().getBytes("UTF-8"));
             gzip.close();
-            return Base64.encodeToString(
-                out.toString("UTF-8").getBytes(),
-                Base64.URL_SAFE | Base64.NO_PADDING | Base64.NO_WRAP);
+            b64os.close();
+            return out.toString("UTF-8");
           }
         });
   }
