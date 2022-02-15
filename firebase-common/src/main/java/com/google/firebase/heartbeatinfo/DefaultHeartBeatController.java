@@ -15,11 +15,9 @@
 package com.google.firebase.heartbeatinfo;
 
 import android.content.Context;
-import android.os.Build;
 import android.util.Base64;
 import android.util.Base64OutputStream;
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.tasks.Task;
@@ -80,7 +78,6 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         });
   }
 
-  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   @Override
   public Task<String> getHeartBeatsHeader() {
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
