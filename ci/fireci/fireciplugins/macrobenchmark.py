@@ -65,8 +65,8 @@ async def _launch_macrobenchmark_test():
 
 
 async def _parse_artifact_versions():
-  # proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
-  # await proc.wait()
+  proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
+  await proc.wait()
 
   with open('build/m2repository/changed-artifacts.json') as json_file:
     artifacts = json.load(json_file)

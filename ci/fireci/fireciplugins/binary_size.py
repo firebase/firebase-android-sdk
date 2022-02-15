@@ -83,7 +83,7 @@ def _measure_aar_sizes(artifacts):
 def _measure_apk_sizes():
   test_results = []
 
-  regex = fr'./health-metrics/apk-size/**/*.apk'
+  regex = r'./health-metrics/apk-size/**/*.apk'
   apk_files = glob.glob(regex, recursive=True)
   for apk_file in apk_files:
     filename = os.path.basename(apk_file)
