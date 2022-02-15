@@ -31,8 +31,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -86,6 +86,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(fieldIndex("coll", "exists", Kind.ASCENDING));
     addDoc("coll/doc1", map("exists", 1));
     addDoc("coll/doc2", map());
+  }
+
+  @Test
+  public void testOrderByFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
+    addDoc("coll/val1", map("count", 1));
+    addDoc("coll/val2", map("not-count", 2));
+    addDoc("coll/val3", map("count", 3));
+    Query query = query("coll").orderBy(orderBy("count"));
+    verifyResults(query, "coll/val1", "coll/val3");
   }
 
   @Test
@@ -248,6 +258,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
     assertNull(indexManager.getFieldIndex(query.toTarget()));
+    assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 
   @Test
@@ -709,8 +720,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    assertTrue("Target cannot be served from index.", indexManager.canServeFromIndex(target));
     Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
+    assertNotNull("Target cannot be served from index.", results);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }
