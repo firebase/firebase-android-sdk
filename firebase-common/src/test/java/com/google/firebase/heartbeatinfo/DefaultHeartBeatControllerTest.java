@@ -41,9 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -116,16 +114,6 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    JSONObject output = new JSONObject();
-    JSONArray array = new JSONArray();
-    JSONObject obj = new JSONObject();
-    obj.put("agent", "test-agent");
-    ArrayList<String> dateList = new ArrayList<>();
-    dateList.add("2015-02-03");
-    obj.put("dates", new JSONArray(dateList));
-    array.put(obj);
-    output.put("heartbeats", array);
-    output.put("version", "2");
     String str =
         "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-02-03\"]}],\"version\":\"2\"}";
     String expected = compress(str);
