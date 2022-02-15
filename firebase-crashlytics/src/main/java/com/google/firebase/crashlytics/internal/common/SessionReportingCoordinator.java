@@ -73,7 +73,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final CrashlyticsReportPersistence reportPersistence =
         new CrashlyticsReportPersistence(fileStore, settingsProvider);
     final DataTransportCrashlyticsReportSender reportSender =
-        DataTransportCrashlyticsReportSender.create(context);
+        DataTransportCrashlyticsReportSender.create(context, settingsProvider);
     return new SessionReportingCoordinator(
         dataCapture, reportPersistence, reportSender, logFileManager, userMetadata);
   }

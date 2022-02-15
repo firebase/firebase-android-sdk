@@ -8,6 +8,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -16,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Represents a rate limited bounded queue for sending Crashlytics reports. */
 final class ReportQueue {
+  private static final int MS_PER_SECOND = 1_000;
   private static final int MS_PER_MINUTE = 60_000;
   private static final int MAX_DELAY_MS = 3_600_000; // 1 hour.
 
@@ -31,9 +33,12 @@ final class ReportQueue {
   private int step;
   private long lastUpdatedMs;
 
-  ReportQueue(Transport<CrashlyticsReport> transport) {
-    // TODO(mrober): Get these from settings.
-    this(10, 1.2, 60_000, transport);
+  ReportQueue(Transport<CrashlyticsReport> transport, Settings settings) {
+    this(
+        settings.onDemandUploadRatePerMinute(),
+        settings.onDemandBackoffBase(),
+        (long) settings.onDemandBackoffStepDurationSeconds() * MS_PER_SECOND,
+        transport);
   }
 
   ReportQueue(
