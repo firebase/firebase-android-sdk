@@ -219,13 +219,11 @@ class TesterSignInManager {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
-      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       customTabsIntent.launchUrl(activity, uri);
     } else {
       // If we can't launch a chrome view try to launch anything that can handle a URL.
       Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
       browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       activity.startActivity(browserIntent);
     }

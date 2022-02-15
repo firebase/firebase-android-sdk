@@ -146,9 +146,9 @@ public class TargetIndexMatcher {
 
     // Process all equalities first. Equalities can appear out of order.
     for (; segmentIndex < segments.size(); ++segmentIndex) {
-      // We attempt to greedily match all segments to equality filters. If a a filter matches an
-      // index segments, we can mark the segment as used. Since it is not possible to use the same
-      // filed path in both an equality and inequality/oderBy cause, we do not have to consider the
+      // We attempt to greedily match all segments to equality filters. If a filter matches an
+      // index segment, we can mark the segment as used. Since it is not possible to use the same
+      // field path in both an equality and inequality/oderBy clause, we do not have to consider the
       // possibility that a matching equality segment should instead be used to map to an inequality
       // filter or orderBy clause.
       if (!hasMatchingEqualityFilter(segments.get(segmentIndex))) {
@@ -166,7 +166,7 @@ public class TargetIndexMatcher {
     }
 
     // If there is an inequality filter, the next segment must match both the filter and the first
-    //  orderBy clause.
+    // orderBy clause.
     if (inequalityFilter != null) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
@@ -175,7 +175,7 @@ public class TargetIndexMatcher {
       ++segmentIndex;
     }
 
-    // All remaining segment need to represent the prefix of the target's orderBy
+    // All remaining segments need to represent the prefix of the target's orderBy.
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {

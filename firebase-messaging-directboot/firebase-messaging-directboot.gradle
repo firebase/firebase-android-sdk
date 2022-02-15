@@ -57,9 +57,9 @@ dependencies {
     implementation project(':encoders:firebase-encoders-json')
 
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation "com.google.android.gms:play-services-tasks:17.0.2"
-    implementation "com.google.android.gms:play-services-basement:17.2.1"
-    implementation 'com.google.android.gms:play-services-base:17.2.1'
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
+    implementation "com.google.android.gms:play-services-basement:18.0.0"
+    implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation ("com.google.firebase:firebase-iid:20.2.3") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"

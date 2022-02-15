@@ -22,26 +22,30 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-/** Abstraction around downloading an image in a background executor. */
-class ImageDownload implements Closeable {
+/**
+ * Abstraction around downloading an image in a background executor.
+ *
+ * @hide
+ */
+public class ImageDownload implements Closeable {
 
   /** Maximum image size to download in bytes (1 MiB). */
   private static final int MAX_IMAGE_SIZE_BYTES = 1024 * 1024;
 
   private final URL url;
+  @Nullable private volatile Future<?> future;
   @Nullable private Task<Bitmap> task;
-  @Nullable private volatile InputStream connectionInputStream;
 
   @Nullable
   public static ImageDownload create(String imageUrl) {
@@ -60,8 +64,19 @@ class ImageDownload implements Closeable {
     this.url = url;
   }
 
-  public void start(Executor executor) {
-    task = Tasks.call(executor, this::blockingDownload);
+  public void start(ExecutorService executor) {
+    TaskCompletionSource<Bitmap> taskCompletionSource = new TaskCompletionSource<>();
+    future =
+        executor.submit(
+            () -> {
+              try {
+                Bitmap bitmap = blockingDownload();
+                taskCompletionSource.setResult(bitmap);
+              } catch (Exception e) {
+                taskCompletionSource.setException(e);
+              }
+            });
+    task = taskCompletionSource.getTask();
   }
 
   public Task<Bitmap> getTask() {
@@ -69,7 +84,9 @@ class ImageDownload implements Closeable {
   }
 
   public Bitmap blockingDownload() throws IOException {
-    Log.i(TAG, "Starting download of: " + url);
+    if (Log.isLoggable(TAG, Log.INFO)) {
+      Log.i(TAG, "Starting download of: " + url);
+    }
 
     byte[] imageBytes = blockingDownloadBytes();
     Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, /* offset= */ 0, imageBytes.length);
@@ -96,9 +113,6 @@ class ImageDownload implements Closeable {
     // Now actually try to download the content
     byte[] bytes;
     try (InputStream connectionInputStream = connection.getInputStream()) {
-      // Save to a field so that it can be closed on timeout
-      this.connectionInputStream = connectionInputStream;
-
       // Read one byte over the limit so we can tell if the data is too big, as in many cases
       // BitmapFactory will happily decode a partial image.
       bytes =
@@ -118,14 +132,6 @@ class ImageDownload implements Closeable {
 
   @Override
   public void close() {
-    // Close the stream to prevent downloaded any additional data. This will cause the input stream
-    // to throw an IOException on read, which will finish the task.
-    try {
-      Closeables.closeQuietly(connectionInputStream);
-    } catch (NullPointerException npe) {
-      // Older versions of okio don't handle closing on a different thread than the one that it was
-      // started on, so just catch it for now.
-      Log.e(TAG, "Failed to close the image download stream.", npe);
-    }
+    future.cancel(true);
   }
 }

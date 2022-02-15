@@ -95,7 +95,7 @@ dependencies {
     // Google Deps
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:17.2.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
     implementation 'androidx.vectordrawable:vectordrawable:1.1.0'

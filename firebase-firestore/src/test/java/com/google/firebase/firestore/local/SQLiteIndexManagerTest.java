@@ -652,6 +652,21 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testDeleteFieldIndexRemovesAllMetadata() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", 1, IndexState.create(1, IndexOffset.NONE), "value", Kind.ASCENDING));
+    addDoc("coll/doc", map("value", 1));
+    indexManager.updateCollectionGroup("coll", IndexOffset.NONE);
+
+    validateRowCount(1);
+
+    FieldIndex existingIndex = indexManager.getFieldIndexes("coll").iterator().next();
+    indexManager.deleteFieldIndex(existingIndex);
+
+    validateRowCount(0);
+  }
+
+  @Test
   public void testChangeUser() {
     IndexManager indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     indexManager.start();
@@ -713,5 +728,22 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
+  }
+
+  /** Validates the row count in the SQLite tables that are used for indexing. */
+  private void validateRowCount(int expectedRows) {
+    SQLitePersistence persistence = (SQLitePersistence) this.persistence;
+    persistence
+        .query(
+            "SELECT "
+                + "(SELECT COUNT(*) FROM index_state) AS index_state_count, "
+                + "(SELECT COUNT(*) FROM index_entries) AS index_entries_count, "
+                + "(SELECT COUNT(*) FROM index_configuration) AS index_configuration_count")
+        .first(
+            value -> {
+              assertEquals(value.getInt(0), expectedRows);
+              assertEquals(value.getInt(1), expectedRows);
+              assertEquals(value.getInt(2), expectedRows);
+            });
   }
 }

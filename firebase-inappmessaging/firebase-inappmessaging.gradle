@@ -123,7 +123,7 @@ dependencies {
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
-    implementation 'com.google.android.gms:play-services-tasks:17.0.2'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation "io.grpc:grpc-stub:$grpcVersion"
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
