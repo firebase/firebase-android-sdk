@@ -127,23 +127,29 @@ public class FirebaseAppDistributionException extends FirebaseException {
     public static final String NETWORK_ERROR =
         "Failed to fetch releases due to unknown network error.";
 
-    public static final String JSON_PARSING_ERROR = "Error parsing service response when checking for new release. This is a most likely due to a transient condition and may be corrected by retrying.";
+    public static final String JSON_PARSING_ERROR =
+        "Error parsing service response when checking for new release. This is a most likely due to a transient condition and may be corrected by retrying.";
 
-    public static final String AUTHENTICATION_ERROR = "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
+    public static final String AUTHENTICATION_ERROR =
+        "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
 
-    public static final String AUTHORIZATION_ERROR = "Failed to authorize the tester. The tester is not authorized to test this app. Verify that the tester has accepted an invitation to test this app.";
+    public static final String AUTHORIZATION_ERROR =
+        "Failed to authorize the tester. The tester is not authorized to test this app. Verify that the tester has accepted an invitation to test this app.";
 
     public static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
 
-    public static final String NOT_FOUND_ERROR = "Release not found. An update is not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
+    public static final String NOT_FOUND_ERROR =
+        "Release not found. An update is not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
 
-    public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout. Check your internet connection and try again.";
+    public static final String TIMEOUT_ERROR =
+        "Failed to fetch releases due to timeout. Check your internet connection and try again.";
 
     public static final String UPDATE_CANCELED = "Tester canceled the update.";
 
     public static final String UNKNOWN_ERROR = "Unknown error.";
 
-    public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found. This is a most likely due to a transient condition and may be corrected by retrying.";
+    public static final String DOWNLOAD_URL_NOT_FOUND =
+        "Download URL not found. This is a most likely due to a transient condition and may be corrected by retrying.";
 
     public static final String HOST_ACTIVITY_INTERRUPTED =
         "Host activity interrupted while dialog was showing. Try calling FirebaseAppDistribution#updateIfNewReleaseAvailable again.";
