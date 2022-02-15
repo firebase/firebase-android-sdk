@@ -104,7 +104,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
             output.put("version", "2");
             try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
               Base64OutputStream b64os =
-                      new Base64OutputStream(out, Base64.URL_SAFE | Base64.NO_PADDING | Base64.NO_WRAP);
+                  new Base64OutputStream(out, Base64.URL_SAFE | Base64.NO_PADDING | Base64.NO_WRAP);
               GZIPOutputStream gzip = new GZIPOutputStream(b64os);
               gzip.write(output.toString().getBytes("UTF-8"));
               gzip.close();

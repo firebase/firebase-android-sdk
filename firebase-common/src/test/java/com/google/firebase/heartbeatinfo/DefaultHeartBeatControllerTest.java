@@ -126,7 +126,9 @@ public class DefaultHeartBeatControllerTest {
     array.put(obj);
     output.put("heartbeats", array);
     output.put("version", "2");
-    String expected = compress(output.toString());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-02-03\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
@@ -204,15 +206,9 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    JSONObject output = new JSONObject();
-    JSONArray array = new JSONArray();
-    JSONObject obj = new JSONObject();
-    obj.put("agent", "test-agent");
-    obj.put("dates", new JSONArray(dateList));
-    array.put(obj);
-    output.put("heartbeats", array);
-    output.put("version", "2");
-    String expected = compress(output.toString());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-03-02\",\"2015-03-01\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
@@ -263,23 +259,9 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    JSONObject output = new JSONObject();
-    JSONArray array = new JSONArray();
-    JSONObject obj = new JSONObject();
-    ArrayList<String> dateList = new ArrayList<>();
-    dateList.add("2015-03-02");
-    obj.put("agent", "test-agent");
-    obj.put("dates", new JSONArray(dateList));
-    array.put(obj);
-    JSONObject obj1 = new JSONObject();
-    obj1.put("agent", "test-agent-1");
-    ArrayList<String> dateList1 = new ArrayList<>();
-    dateList1.add("2015-03-03");
-    obj1.put("dates", new JSONArray(dateList1));
-    array.put(obj1);
-    output.put("heartbeats", array);
-    output.put("version", "2");
-    String expected = compress(output.toString());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-03-02\"]},{\"agent\":\"test-agent-1\",\"dates\":[\"2015-03-03\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 }
