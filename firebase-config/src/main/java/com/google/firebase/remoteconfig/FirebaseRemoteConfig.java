@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.app.Application;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -709,10 +710,7 @@ public class FirebaseRemoteConfig {
 
   public void handleAutomaticRealtime(boolean background) {
     if (this.automaticRealtimeHandling) {
-      if (background) {
-        Log.i(this.TAG, "App is in background");
-        pauseRealtime();
-      } else {
+      if (!background) {
         Log.i(this.TAG, "App is in foreground");
         startRealtime();
       }

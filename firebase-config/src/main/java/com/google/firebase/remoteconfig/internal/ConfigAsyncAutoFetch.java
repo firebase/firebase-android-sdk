@@ -97,6 +97,7 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         reader.close();
     }
 
+    // Sends pong response for any ping received from the server.
     public void sendPong() {
         if (this.pongHttpURLConnection == null) {
             try {
