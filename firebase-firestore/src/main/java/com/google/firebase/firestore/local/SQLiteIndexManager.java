@@ -217,7 +217,7 @@ final class SQLiteIndexManager implements IndexManager {
   public void deleteFieldIndex(FieldIndex index) {
     db.execute("DELETE FROM index_configuration WHERE index_id = ?", index.getIndexId());
     db.execute("DELETE FROM index_entries WHERE index_id = ?", index.getIndexId());
-    db.execute("DELETE FROM index_state WHERE index_id = ?", index.getIndexState());
+    db.execute("DELETE FROM index_state WHERE index_id = ?", index.getIndexId());
 
     nextIndexToUpdate.remove(index);
     Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
