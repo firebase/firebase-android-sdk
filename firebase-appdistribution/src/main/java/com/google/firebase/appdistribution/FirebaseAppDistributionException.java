@@ -58,19 +58,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     /**
      * An update is not available for the current tester and app. Make sure that {@link
      * FirebaseAppDistribution#checkForNewRelease()} returns with a non-null {@link
-     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp()}
+     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp()},
      */
     UPDATE_NOT_AVAILABLE,
 
     /**
-     * The app is running in production. The App Distribution SDK is intended for beta testing usage
-     * only. Do not include the App Distribution SDK in production builds.
-     */
-    APP_RUNNING_IN_PRODUCTION,
-
-    /**
      * The host activity for a confirmation dialog was destroyed or pushed to the backstack. Try
-     * calling {@link FirebaseAppDistribution#updateIfNewReleaseAvailable()} again
+     * calling {@link FirebaseAppDistribution#updateIfNewReleaseAvailable()} again.
      */
     HOST_ACTIVITY_INTERRUPTED,
   }
@@ -133,28 +127,28 @@ public class FirebaseAppDistributionException extends FirebaseException {
     public static final String NETWORK_ERROR =
         "Failed to fetch releases due to unknown network error.";
 
-    public static final String JSON_PARSING_ERROR = "Error parsing service response.";
+    public static final String JSON_PARSING_ERROR = "Error parsing service response when checking for new release. This is a most likely due to a transient condition and may be corrected by retrying.";
 
-    public static final String AUTHENTICATION_ERROR = "Failed to authenticate the tester.";
+    public static final String AUTHENTICATION_ERROR = "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
 
-    public static final String AUTHORIZATION_ERROR = "Failed to authorize the tester.";
+    public static final String AUTHORIZATION_ERROR = "Failed to authorize the tester. The tester is not authorized to test this app. Verify that the tester has accepted an invitation to test this app.";
 
     public static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
 
-    public static final String NOT_FOUND_ERROR = "Tester or release not found.";
+    public static final String NOT_FOUND_ERROR = "Release not found. An update is not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
 
-    public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout.";
+    public static final String TIMEOUT_ERROR = "Failed to fetch releases due to timeout. Check your internet connection and try again.";
 
-    public static final String UPDATE_CANCELED = "Update canceled.";
+    public static final String UPDATE_CANCELED = "Tester canceled the update.";
 
     public static final String UNKNOWN_ERROR = "Unknown error.";
 
-    public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found.";
+    public static final String DOWNLOAD_URL_NOT_FOUND = "Download URL not found. This is a most likely due to a transient condition and may be corrected by retrying.";
 
     public static final String HOST_ACTIVITY_INTERRUPTED =
-        "Host activity interrupted while dialog was showing.";
+        "Host activity interrupted while dialog was showing. Try calling FirebaseAppDistribution#updateIfNewReleaseAvailable again.";
 
     public static final String APK_INSTALLATION_FAILED =
-        "The APK failed to install or installation was canceled.";
+        "The APK failed to install or installation was canceled by the tester.";
   }
 }
