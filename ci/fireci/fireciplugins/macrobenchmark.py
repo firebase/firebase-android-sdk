@@ -36,8 +36,6 @@ from fireci import uploader
 
 _logger = logging.getLogger('fireci.macrobenchmark')
 
-_macrobenchmark_dir = "health-metrics/macrobenchmark"
-
 
 @ci_command()
 def macrobenchmark():
@@ -55,7 +53,9 @@ async def _launch_macrobenchmark_test():
     _copy_google_services(),
   )
 
-  with chdir(_macrobenchmark_dir):
+  _logger.info(f'Artifact versions: {artifact_versions}')
+
+  with chdir('health-metrics/macrobenchmark'):
     runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
     results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
 
@@ -65,8 +65,8 @@ async def _launch_macrobenchmark_test():
 
 
 async def _parse_artifact_versions():
-  proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
-  await proc.wait()
+  # proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
+  # await proc.wait()
 
   with open('build/m2repository/changed-artifacts.json') as json_file:
     artifacts = json.load(json_file)
@@ -79,12 +79,12 @@ def _artifact_key_version(artifact):
 
 
 async def _parse_config_yaml():
-  with open(f'{_macrobenchmark_dir}/config.yaml') as yaml_file:
+  with open('health-metrics/macrobenchmark/config.yaml') as yaml_file:
     return yaml.safe_load(yaml_file)
 
 
 async def _create_gradle_wrapper():
-  with open(f'{_macrobenchmark_dir}/settings.gradle', 'w'):
+  with open('health-metrics/macrobenchmark/settings.gradle', 'w'):
     pass
 
   proc = await asyncio.subprocess.create_subprocess_exec(
@@ -93,7 +93,7 @@ async def _create_gradle_wrapper():
     '--gradle-version',
     '6.9',
     '--project-dir',
-    'macrobenchmark'
+    'health-metrics/macrobenchmark'
   )
   await proc.wait()
 
@@ -101,7 +101,7 @@ async def _create_gradle_wrapper():
 async def _copy_google_services():
   if 'FIREBASE_CI' in os.environ:
     src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
-    dst = f'{_macrobenchmark_dir}/template/app/google-services.json'
+    dst = 'health-metrics/macrobenchmark/template/app/google-services.json'
     _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
     shutil.copyfile(src, dst)
 
