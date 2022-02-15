@@ -106,6 +106,8 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
+            // Note: Unlike Auth, we do not need to block on receiving the first App Check token.
+            // The first App Check token is retrieved the first time a stream is being set up.
             initialize(context, initialUser, settings);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);

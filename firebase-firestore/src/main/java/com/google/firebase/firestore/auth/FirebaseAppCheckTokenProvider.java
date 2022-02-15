@@ -29,6 +29,7 @@ import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
+import java.util.Objects;
 
 /** FirebaseAppCheckTokenProvider uses Firebase AppCheck to get an AppCheck token. */
 public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<String> {
@@ -49,6 +50,9 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
 
   @GuardedBy("this")
   private boolean forceRefresh;
+
+  @GuardedBy("this")
+  private String latestAppCheckToken;
 
   /**
    * The listener registered with FirebaseApp; used to start/stop receiving AppCheck token changes.
@@ -79,7 +83,27 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
           "Error getting App Check token; using placeholder token instead. Error: "
               + result.getError());
     }
-    if (changeListener != null) {
+
+    // We should *not* invoke `changeListener` the very first time an App Check token is retrieved.
+    // Otherwise, FirestoreClient upon startup sets up a stream and immediately tears it down and
+    // re-establishes a new stream.
+    //
+    // The reason is as follows:
+    //
+    // (1) Retrieving App Check tokens can be slow, so (unlike Auth) we do not block the
+    // FirestoreClient initialization (main thread) waiting for an App Check token. Instead, we take
+    // a lazy approach: `getToken` gets called when a stream is about to be set up.
+    //
+    // (2) Calling `getToken` for the very first time always results in `onTokenChanged` getting
+    // invoked (by App Check) on another thread *before* `getToken` has completed. This is because
+    // App Check does not invoke the listener until the first time it retrieves a token.
+    //
+    // (3) FirestoreClient listens to App Check token changes and re-establishes streams when
+    // App Check tokens expire (happens when `changeListener` is invoked below).
+    if (changeListener != null
+        && latestAppCheckToken != null
+        && !Objects.equals(latestAppCheckToken, result.getToken())) {
+      latestAppCheckToken = result.getToken();
       changeListener.onValue(result.getToken());
     }
   }
@@ -99,10 +123,13 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
     return res.continueWithTask(
         Executors.DIRECT_EXECUTOR,
         task -> {
-          if (task.isSuccessful()) {
-            return Tasks.forResult(task.getResult().getToken());
-          } else {
-            return Tasks.forException(task.getException());
+          synchronized (this) {
+            if (task.isSuccessful()) {
+              latestAppCheckToken = task.getResult().getToken();
+              return Tasks.forResult(task.getResult().getToken());
+            } else {
+              return Tasks.forException(task.getException());
+            }
           }
         });
   }
