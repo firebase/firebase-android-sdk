@@ -750,10 +750,7 @@ public class FirebaseRemoteConfig {
 
   public void handleAutomaticRealtime(boolean background) {
     if (this.automaticRealtimeHandling) {
-      if (background) {
-        Log.i(this.TAG, "App is in background");
-        pauseRealtime();
-      } else {
+      if (!background) {
         Log.i(this.TAG, "App is in foreground");
         startRealtime();
       }
