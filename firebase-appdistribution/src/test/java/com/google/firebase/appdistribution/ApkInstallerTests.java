@@ -85,7 +85,7 @@ public class ApkInstallerTests {
 
     assert ex instanceof FirebaseAppDistributionException;
     assertEquals(
-        "The APK failed to install or installation was cancelled",
+        FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED,
         ((FirebaseAppDistributionException) ex).getMessage());
     assertEquals(
         FirebaseAppDistributionException.Status.INSTALLATION_FAILURE,
