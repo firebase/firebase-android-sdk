@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
-import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,7 +24,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.TaskExecutors;
 import com.google.android.gms.tasks.Tasks;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -118,49 +116,52 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * <p>The continuation function will always be called on the main thread.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
-    synchronized (lock) {
-      return getForegroundActivity()
-          .onSuccessTask(
-              getForegroundActivityCallbackExecutor(),
-              activity -> {
-                try {
-                  return continuation.then(activity);
-                } catch (Throwable t) {
-                  return Tasks.forException(FirebaseAppDistributionException.wrap(t));
-                }
-              });
-    }
+    return getForegroundActivity()
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in
+            // foreground. Also, since the Task returned by getForegroundActivity is always
+            // completed on the main thread, the onSuccessTask callback will also be called on the
+            // main thread.
+            DIRECT_EXECUTOR,
+            activity -> {
+              try {
+                return continuation.then(activity);
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionException.wrap(t));
+              }
+            });
   }
 
-  private Executor getForegroundActivityCallbackExecutor() {
-    synchronized (lock) {
-      // We can run the callback immediately if:
-      //   1. There is no current activity (since the callback will already be run in the main
-      //      thread when the activity comes into the foreground) OR
-      //   2. If there is a current activity and we are already on the main thread
-      //
-      // Otherwise, we want to queue the callback to run on the main thread.
-      return currentActivity == null || Looper.myLooper() == Looper.getMainLooper()
-          ? DIRECT_EXECUTOR
-          : TaskExecutors.MAIN_THREAD;
-    }
-  }
-
+  /**
+   * Get a {@link Task} that will complete with the current foreground activity, when one is
+   * available.
+   *
+   * <p>The task will always be completed on the main thread.
+   */
   private Task<Activity> getForegroundActivity() {
     synchronized (lock) {
-      if (currentActivity != null) {
-        return Tasks.forResult(currentActivity);
-      }
       TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
 
-      addOnActivityResumedListener(
-          new OnActivityResumedListener() {
-            @Override
-            public void onResumed(Activity activity) {
-              task.setResult(activity);
-              removeOnActivityResumedListener(this);
-            }
-          });
+      if (currentActivity != null) {
+        // If we are currently on a background thread, this ensures that the Task will be completed
+        // on the main (UI) thread. If we are already on the main thread, it will be completed
+        // immediately.
+        currentActivity.runOnUiThread(() -> {
+          synchronized (lock) {
+            task.setResult(currentActivity);
+          }
+        });
+      } else {
+        addOnActivityResumedListener(
+            new OnActivityResumedListener() {
+              @Override
+              public void onResumed(Activity activity) {
+                // This will always be called on the main thread
+                task.setResult(activity);
+                removeOnActivityResumedListener(this);
+              }
+            });
+      }
 
       return task.getTask();
     }
