@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.model.Values.MAX_VALUE;
+import static com.google.firebase.firestore.model.Values.MIN_VALUE;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
@@ -212,14 +214,11 @@ public final class Target {
             filterValue = Values.MIN_VALUE;
             break;
           case NOT_IN:
-            {
-              ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-              for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                arrayValue.addValues(Values.MIN_VALUE);
-              }
-              filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
-              break;
-            }
+            filterValue =
+                Value.newBuilder()
+                    .setArrayValue(ArrayValue.newBuilder().addValues(MIN_VALUE))
+                    .build();
+            break;
           default:
             // Remaining filters cannot be used as lower bounds.
         }
@@ -295,14 +294,11 @@ public final class Target {
             filterValue = Values.MAX_VALUE;
             break;
           case NOT_IN:
-            {
-              ArrayValue.Builder arrayValue = ArrayValue.newBuilder();
-              for (int i = 0; i < fieldFilter.getValue().getArrayValue().getValuesCount(); ++i) {
-                arrayValue.addValues(Values.MAX_VALUE);
-              }
-              filterValue = Value.newBuilder().setArrayValue(arrayValue).build();
-              break;
-            }
+            filterValue =
+                Value.newBuilder()
+                    .setArrayValue(ArrayValue.newBuilder().addValues(MAX_VALUE))
+                    .build();
+            break;
           default:
             // Remaining filters cannot be used as upper bounds.
         }
