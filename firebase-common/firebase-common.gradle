@@ -64,8 +64,8 @@ android {
 dependencies {
     // TODO(vkryachko): have sdks depend on components directly once components are released.
     implementation project(':firebase-components')
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
-    implementation "com.google.android.gms:play-services-tasks:17.0.0"
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
     // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
     javadocClasspath project(path: ':firebase-storage')

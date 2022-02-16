@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.SortedSet;
 import java.util.TreeMap;
 
 public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
@@ -36,6 +37,17 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public Overlay getOverlay(DocumentKey key) {
     return overlays.get(key);
+  }
+
+  public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
+    Map<DocumentKey, Overlay> result = new HashMap<>();
+    for (DocumentKey key : keys) {
+      Overlay overlay = overlays.get(key);
+      if (overlay != null) {
+        result.put(key, overlay);
+      }
+    }
+    return result;
   }
 
   private void saveOverlay(int largestBatchId, @Nullable Mutation mutation) {
@@ -105,6 +117,9 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public Map<DocumentKey, Overlay> getOverlays(
       String collectionGroup, int sinceBatchId, int count) {
+    // NOTE: This method is only used by the backfiller, which will not run for memory persistence;
+    // therefore, this method is being implemented only so that the test suite for
+    // `LevelDbDocumentOverlayCache` can be re-used by the test suite for this class.
     SortedMap<Integer, Map<DocumentKey, Overlay>> batchIdToOverlays = new TreeMap<>();
 
     for (Overlay overlay : overlays.values()) {

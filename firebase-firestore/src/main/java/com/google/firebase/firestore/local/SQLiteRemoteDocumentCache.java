@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.firstNEntries;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 
+import android.database.Cursor;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -107,15 +108,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public MutableDocument get(DocumentKey documentKey) {
-    String path = EncodedPath.encode(documentKey.getPath());
-
-    MutableDocument document =
-        db.query(
-                "SELECT contents, read_time_seconds, read_time_nanos "
-                    + "FROM remote_documents WHERE path = ?")
-            .binding(path)
-            .firstValue(row -> decodeMaybeDocument(row.getBlob(0), row.getInt(1), row.getInt(2)));
-    return document != null ? document : MutableDocument.newInvalidDocument(documentKey);
+    return getAll(Collections.singletonList(documentKey)).get(documentKey);
   }
 
   @Override
@@ -138,17 +131,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             bindVars,
             ") ORDER BY path");
 
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(
-              row -> {
-                MutableDocument decoded =
-                    decodeMaybeDocument(row.getBlob(0), row.getInt(1), row.getInt(2));
-                results.put(decoded.getKey(), decoded);
-              });
+          .forEach(row -> processRowInBackground(backgroundQueue, results, row));
     }
-
+    backgroundQueue.drain();
     return results;
   }
 
@@ -215,39 +204,31 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     bindVars[i] = count;
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
-    Map<DocumentKey, MutableDocument>[] results =
-        (HashMap<DocumentKey, MutableDocument>[]) (new HashMap[] {new HashMap()});
-
+    Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
-        .forEach(
-            row -> {
-              // Store row values in array entries to provide the correct context inside the
-              // executor.
-              final byte[] rawDocument = row.getBlob(0);
-              final int[] readTimeSeconds = {row.getInt(1)};
-              final int[] readTimeNanos = {row.getInt(2)};
+        .forEach(row -> processRowInBackground(backgroundQueue, results, row));
+    backgroundQueue.drain();
+    return results;
+  }
 
-              // Since scheduling background tasks incurs overhead, we only dispatch to a
-              // background thread if there are still some documents remaining.
-              Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-              executor.execute(
-                  () -> {
-                    MutableDocument document =
-                        decodeMaybeDocument(rawDocument, readTimeSeconds[0], readTimeNanos[0]);
-                    synchronized (SQLiteRemoteDocumentCache.this) {
-                      results[0].put(document.getKey(), document);
-                    }
-                  });
-            });
+  private void processRowInBackground(
+      BackgroundQueue backgroundQueue, Map<DocumentKey, MutableDocument> results, Cursor row) {
+    byte[] rawDocument = row.getBlob(0);
+    int readTimeSeconds = row.getInt(1);
+    int readTimeNanos = row.getInt(2);
 
-    try {
-      backgroundQueue.drain();
-    } catch (InterruptedException e) {
-      fail("Interrupted while deserializing documents", e);
-    }
-
-    return results[0];
+    // Since scheduling background tasks incurs overhead, we only dispatch to a
+    // background thread if there are still some documents remaining.
+    Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
+    executor.execute(
+        () -> {
+          MutableDocument document =
+              decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+          synchronized (results) {
+            results.put(document.getKey(), document);
+          }
+        });
   }
 
   @Override

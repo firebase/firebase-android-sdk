@@ -28,6 +28,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import java.util.Collection;
 import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * A test-only QueryEngine that forwards all API calls and exposes the number of documents and
@@ -166,6 +167,11 @@ class CountingQueryEngine extends QueryEngine {
       public Overlay getOverlay(DocumentKey key) {
         ++overlaysReadByKey[0];
         return subject.getOverlay(key);
+      }
+
+      public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
+        overlaysReadByKey[0] += keys.size();
+        return subject.getOverlays(keys);
       }
 
       @Override

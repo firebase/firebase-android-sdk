@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static com.google.firebase.firestore.util.Assert.fail;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
 
@@ -40,8 +42,13 @@ public class BackgroundQueue implements Executor {
   }
 
   /** Wait for all currently scheduled tasks to complete. */
-  public void drain() throws InterruptedException {
-    completedTasks.acquire(pendingTaskCount);
-    pendingTaskCount = 0;
+  public void drain() {
+    try {
+      completedTasks.acquire(pendingTaskCount);
+      pendingTaskCount = 0;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      fail("Interrupted while waiting for background task", e);
+    }
   }
 }

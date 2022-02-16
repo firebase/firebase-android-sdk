@@ -104,7 +104,7 @@ dependencies {
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
     // Google Deps
-    implementation "com.google.android.gms:play-services-tasks:17.1.0"
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation "androidx.annotation:annotation:1.1.0"
 

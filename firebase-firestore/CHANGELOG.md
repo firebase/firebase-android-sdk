@@ -8,6 +8,8 @@ by opting into a release at
   AppCheck users that set their expiration time to under an hour.
 - [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
   the shutdown from proceeding if a network connection was opened right before.
+- [changed] Queries are now send to the backend before the SDK starts local 
+  processing, which reduces overall Query latency.
 
 # 24.0.1
 - [changed] Improved performance for databases that contain many document
