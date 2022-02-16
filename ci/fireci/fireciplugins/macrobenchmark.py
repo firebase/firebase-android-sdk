@@ -224,8 +224,7 @@ class MacrobenchmarkTest:
   async def _aggregate_benchmark_results(self):
     results = []
     blobs = self.gcs_client.list_blobs(self.test_results_bucket, prefix=self.test_results_dir)
-    files = [x for x in blobs if re.search(r'artifacts/[^/]*\.json', x.name)]
-    _logger.debug(f'Macrobenchmark JSON files for {self.sdk_name}: {files}')
+    files = [x for x in blobs if re.search(r'sdcard/Download/[^/]*\.json', x.name)]
     for file in files:
       device = re.search(r'([^/]*)/artifacts/', file.name).group(1)
       benchmarks = json.loads(file.download_as_bytes())['benchmarks']
