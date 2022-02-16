@@ -41,16 +41,15 @@ public class Values {
   public static final Value NULL_VALUE =
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
   public static final Value MIN_VALUE = NULL_VALUE;
+  private static final Value MAX_VALUE_TYPE = Value.newBuilder().setStringValue("__max__").build();
   public static final Value MAX_VALUE =
       Value.newBuilder()
-          .setMapValue(
-              MapValue.newBuilder()
-                  .putFields("__type__", Value.newBuilder().setStringValue("__max__").build()))
+          .setMapValue(MapValue.newBuilder().putFields("__type__", MAX_VALUE_TYPE))
           .build();
 
   /**
    * The order of types in Firestore. This order is based on the backend's ordering, but modified to
-   * support server timestamps.
+   * support server timestamps and {@link #MAX_VALUE}.
    */
   public static final int TYPE_ORDER_NULL = 0;
 
@@ -64,6 +63,8 @@ public class Values {
   public static final int TYPE_ORDER_GEOPOINT = 8;
   public static final int TYPE_ORDER_ARRAY = 9;
   public static final int TYPE_ORDER_MAP = 10;
+
+  public static final int TYPE_ORDER_MAX_VALUE = Integer.MAX_VALUE;
 
   /** Returns the backend's type order of the given Value type. */
   public static int typeOrder(Value value) {
@@ -91,8 +92,11 @@ public class Values {
       case MAP_VALUE:
         if (isServerTimestamp(value)) {
           return TYPE_ORDER_SERVER_TIMESTAMP;
+        } else if (isMaxValue(value)) {
+          return TYPE_ORDER_MAX_VALUE;
+        } else {
+          return TYPE_ORDER_MAP;
         }
-        return TYPE_ORDER_MAP;
       default:
         throw fail("Invalid value type: " + value.getValueTypeCase());
     }
@@ -122,6 +126,8 @@ public class Values {
         return objectEquals(left, right);
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return getLocalWriteTime(left).equals(getLocalWriteTime(right));
+      case TYPE_ORDER_MAX_VALUE:
+        return true;
       default:
         return left.equals(right);
     }
@@ -195,6 +201,7 @@ public class Values {
 
     switch (leftType) {
       case TYPE_ORDER_NULL:
+      case TYPE_ORDER_MAX_VALUE:
         return 0;
       case TYPE_ORDER_BOOLEAN:
         return Util.compareBooleans(left.getBooleanValue(), right.getBooleanValue());
@@ -531,6 +538,6 @@ public class Values {
 
   /** Returns true if the Value represents the canonical {@link #MAX_VALUE} . */
   public static boolean isMaxValue(Value value) {
-    return equals(value, MAX_VALUE);
+    return MAX_VALUE_TYPE.equals(value.getMapValue().getFieldsMap().get("__type__"));
   }
 }
