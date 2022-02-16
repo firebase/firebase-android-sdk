@@ -16,12 +16,12 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
-import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityAnswer;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,12 +80,12 @@ public class TesterSignInManagerTest {
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private SignInStorage mockSignInStorage;
-  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private SignInResultActivity mockSignInResultActivity;
 
   @Before
@@ -130,15 +130,12 @@ public class TesterSignInManagerTest {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
-    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
-        .thenAnswer(applyToForegroundActivityAnswer(activity));
+    lifecycleNotifier = spy(FirebaseAppDistributionLifecycleNotifier.getInstance());
+    lifecycleNotifier.onActivityResumed(activity);
 
     testerSignInManager =
         new TesterSignInManager(
-            firebaseApp,
-            mockFirebaseInstallationsProvider,
-            mockSignInStorage,
-            mockLifecycleNotifier);
+            firebaseApp, mockFirebaseInstallationsProvider, mockSignInStorage, lifecycleNotifier);
   }
 
   @Test
@@ -156,7 +153,7 @@ public class TesterSignInManagerTest {
   public void signInTester_whenUnexpectedFailureInTask_failsWithUnknownError() {
     Exception unexpectedException = new Exception("unexpected exception");
     // Raise an unexpected exception in our handler passed to applyToForegroundActivity
-    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+    when(lifecycleNotifier.applyToForegroundActivity(any()))
         .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();

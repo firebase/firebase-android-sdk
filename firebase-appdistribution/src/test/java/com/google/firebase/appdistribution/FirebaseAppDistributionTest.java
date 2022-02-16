@@ -25,14 +25,12 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
-import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -113,6 +111,8 @@ public class FirebaseAppDistributionTest {
   private FirebaseAppDistribution firebaseAppDistribution;
   private TestActivity activity;
   private FirebaseApp firebaseApp;
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
+      FirebaseAppDistributionLifecycleNotifier.getInstance();
 
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInManager mockTesterSignInManager;
@@ -120,7 +120,6 @@ public class FirebaseAppDistributionTest {
   @Mock private ApkUpdater mockApkUpdater;
   @Mock private AabUpdater mockAabUpdater;
   @Mock private SignInStorage mockSignInStorage;
-  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   private TestActivity mockedActivity;
 
   static class TestActivity extends Activity {}
@@ -150,7 +149,7 @@ public class FirebaseAppDistributionTest {
                 mockApkUpdater,
                 mockAabUpdater,
                 mockSignInStorage,
-                mockLifecycleNotifier));
+                lifecycleNotifier));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
 
@@ -174,8 +173,7 @@ public class FirebaseAppDistributionTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
-    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
-        .thenAnswer(applyToForegroundActivityTaskAnswer(activity));
+    lifecycleNotifier.onActivityResumed(activity);
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
   }
 

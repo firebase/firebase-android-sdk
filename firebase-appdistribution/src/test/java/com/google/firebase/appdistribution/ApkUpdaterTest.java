@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -76,8 +75,9 @@ public class ApkUpdaterTest {
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
-  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
+      FirebaseAppDistributionLifecycleNotifier.getInstance();
   private final Executor testExecutor = Executors.newSingleThreadExecutor();
 
   static class TestActivity extends Activity {}
@@ -103,9 +103,8 @@ public class ApkUpdaterTest {
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
-    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
-        .thenAnswer(applyToForegroundActivityTaskAnswer(activity));
     onCompleteListener = new TestOnCompleteListener<>();
+    lifecycleNotifier.onActivityResumed(activity);
 
     apkUpdater =
         Mockito.spy(
@@ -115,7 +114,7 @@ public class ApkUpdaterTest {
                 mockApkInstaller,
                 mockNotificationsManager,
                 mockHttpsUrlConnectionFactory,
-                mockLifecycleNotifier));
+                lifecycleNotifier));
   }
 
   @Test

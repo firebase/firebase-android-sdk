@@ -146,11 +146,12 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
         // If we are currently on a background thread, this ensures that the Task will be completed
         // on the main (UI) thread. If we are already on the main thread, it will be completed
         // immediately.
-        currentActivity.runOnUiThread(() -> {
-          synchronized (lock) {
-            task.setResult(currentActivity);
-          }
-        });
+        currentActivity.runOnUiThread(
+            () -> {
+              synchronized (lock) {
+                task.setResult(currentActivity);
+              }
+            });
       } else {
         addOnActivityResumedListener(
             new OnActivityResumedListener() {
