@@ -75,9 +75,6 @@ public interface IndexManager {
   /** Returns all configured field indexes. */
   Collection<FieldIndex> getFieldIndexes();
 
-  /** Returns whether we can serve the given target from an index. */
-  boolean canServeFromIndex(Target target);
-
   /**
    * Iterates over all field indexes that are used to serve the given target, and returns the
    * minimum offset of them all. Asserts that the target can be served from index.
@@ -94,7 +91,10 @@ public interface IndexManager {
   @Nullable
   FieldIndex getFieldIndex(Target target);
 
-  /** Returns the documents that match the given target based on the provided index. */
+  /**
+   * Returns the documents that match the given target based on the provided index or {@code null}
+   * if the query cannot be served from an index.
+   */
   Set<DocumentKey> getDocumentsMatchingTarget(Target target);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
