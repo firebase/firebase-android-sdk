@@ -63,8 +63,10 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2);
+    final Task<CrashlyticsReportWithSessionId> send1 =
+        reportSender.enqueueReport(report1, /*isOnDemand=*/ true);
+    final Task<CrashlyticsReportWithSessionId> send2 =
+        reportSender.enqueueReport(report2, /*isOnDemand=*/ true);
 
     try {
       Thread.sleep(2_000); // give time to process queue
@@ -88,8 +90,8 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, true);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, true);
+    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
+    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
 
     try {
       Thread.sleep(2_000); // give time to process queue
@@ -116,8 +118,8 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, true);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, true);
+    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
+    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
 
     try {
       Thread.sleep(2_000); // give time to process queue

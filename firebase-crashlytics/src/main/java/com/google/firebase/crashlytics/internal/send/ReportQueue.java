@@ -65,31 +65,50 @@ final class ReportQueue {
    *
    * <p>The report will be sent according to the per-minute rate. avoiding bursts.
    */
-  void enqueueReport(
-      CrashlyticsReportWithSessionId reportWithSessionId,
-      TaskCompletionSource<CrashlyticsReportWithSessionId> tcs,
-      boolean blocking) {
+  TaskCompletionSource<CrashlyticsReportWithSessionId> enqueueReport(
+      CrashlyticsReportWithSessionId reportWithSessionId, boolean isOnDemand) {
     synchronized (queue) {
+      TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
       if (isQueueAvailable()) {
-        Logger.getLogger().d("Enqueueing report: " + reportWithSessionId.getSessionId());
-        Logger.getLogger().d("Queue size: " + queue.size());
-        singleThreadExecutor.execute(new ReportRunnable(reportWithSessionId, tcs));
+        if (isOnDemand) {
+          Logger.getLogger().d("Enqueueing report: " + reportWithSessionId.getSessionId());
+          Logger.getLogger().d("Queue size: " + queue.size());
+          singleThreadExecutor.execute(new ReportRunnable(reportWithSessionId, tcs));
 
-        // TODO(mrober): Avoid this, so queued tasks can still fail properly.
-        if (!blocking) {
+          // TODO(mrober): Avoid this, so queued tasks can still fail properly.
           // Complete the task right away to not block on-demand callers.
           Logger.getLogger().d("Closing task for report: " + reportWithSessionId.getSessionId());
           tcs.trySetResult(reportWithSessionId);
+        } else {
+          sendReport(reportWithSessionId, tcs);
         }
 
-        return;
+        return tcs;
       }
 
       calcStep();
       Logger.getLogger()
           .d("Dropping report due to queue being full: " + reportWithSessionId.getSessionId());
       tcs.trySetResult(reportWithSessionId); // Complete the task right away.
+      return tcs;
     }
+  }
+
+  /** Send the report to Crashlytics through Google DataTransport. */
+  private void sendReport(
+      CrashlyticsReportWithSessionId reportWithSessionId,
+      TaskCompletionSource<CrashlyticsReportWithSessionId> tcs) {
+    Logger.getLogger()
+        .d("Sending report through Google DataTransport: " + reportWithSessionId.getSessionId());
+    transport.schedule(
+        Event.ofUrgent(reportWithSessionId.getReport()),
+        error -> {
+          if (error != null) {
+            tcs.trySetException(error);
+            return;
+          }
+          tcs.trySetResult(reportWithSessionId);
+        });
   }
 
   private boolean isQueueAvailable() {
@@ -146,18 +165,7 @@ final class ReportQueue {
 
     @Override
     public void run() {
-      Logger.getLogger()
-          .d("Sending report to Google DataTransport: " + reportWithSessionId.getSessionId());
-
-      transport.schedule(
-          Event.ofUrgent(reportWithSessionId.getReport()),
-          error -> {
-            if (error != null) {
-              tcs.trySetException(error);
-              return;
-            }
-            tcs.trySetResult(reportWithSessionId);
-          });
+      sendReport(reportWithSessionId, tcs);
 
       // Block the single thread executor to enforce the rate, with or without backoff.
       double delay = calcDelay();

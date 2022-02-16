@@ -22,7 +22,6 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
@@ -71,17 +70,8 @@ public class DataTransportCrashlyticsReportSender {
 
   @NonNull
   public Task<CrashlyticsReportWithSessionId> enqueueReport(
-      @NonNull CrashlyticsReportWithSessionId reportWithSessionId) {
-    return enqueueReport(reportWithSessionId, /*blocking=*/ false);
-  }
-
-  @NonNull
-  public Task<CrashlyticsReportWithSessionId> enqueueReport(
-      @NonNull CrashlyticsReportWithSessionId reportWithSessionId, boolean blocking) {
-    // TODO(mrober): Clean up this Task flow.
-    TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
-    reportQueue.enqueueReport(reportWithSessionId, tcs, blocking);
-    return tcs.getTask();
+      @NonNull CrashlyticsReportWithSessionId reportWithSessionId, boolean isOnDemand) {
+    return reportQueue.enqueueReport(reportWithSessionId, isOnDemand).getTask();
   }
 
   private static String mergeStrings(String part1, String part2) {

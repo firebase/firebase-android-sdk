@@ -214,7 +214,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       if (sessionId == null || sessionId.equals(reportToSend.getSessionId())) {
         sendTasks.add(
             reportsSender
-                .enqueueReport(reportToSend, sessionId == null)
+                .enqueueReport(reportToSend, sessionId != null)
                 .continueWith(reportSendCompleteExecutor, this::onReportSendComplete));
       }
     }
