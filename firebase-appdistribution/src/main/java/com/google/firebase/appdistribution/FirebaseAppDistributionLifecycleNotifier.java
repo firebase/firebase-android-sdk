@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.TaskExecutors;
 import com.google.android.gms.tasks.Tasks;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -35,7 +37,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
   /** A functional interface for a function that takes an activity and does something with it. */
-  interface ActivityConsumer<T> {
+  interface ActivityConsumer {
     void consume(Activity activity);
   }
 
@@ -98,38 +100,50 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   /**
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete immediately after the function is applied.
+   *
+   * <p>The consumer function will always be called on the main thread.
    */
   Task<Void> applyToForegroundActivity(ActivityConsumer consumer) {
-    return getForegroundActivity()
-        .onSuccessTask(
-            // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
-            activity -> {
-              try {
-                consumer.consume(activity);
-                return Tasks.forResult(null);
-              } catch (Throwable t) {
-                return Tasks.forException(FirebaseAppDistributionException.wrap(t));
-              }
-            });
+    return applyToForegroundActivityTask(
+        activity -> {
+          consumer.consume(activity);
+          return Tasks.forResult(null);
+        });
   }
 
   /**
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete with the result of the Task returned by that function.
+   *
+   * <p>The continuation function will always be called on the main thread.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
-    return getForegroundActivity()
-        .onSuccessTask(
-            // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
-            activity -> {
-              try {
-                return continuation.then(activity);
-              } catch (Throwable t) {
-                return Tasks.forException(FirebaseAppDistributionException.wrap(t));
-              }
-            });
+    synchronized (lock) {
+      return getForegroundActivity()
+          .onSuccessTask(
+              getForegroundActivityCallbackExecutor(),
+              activity -> {
+                try {
+                  return continuation.then(activity);
+                } catch (Throwable t) {
+                  return Tasks.forException(FirebaseAppDistributionException.wrap(t));
+                }
+              });
+    }
+  }
+
+  private Executor getForegroundActivityCallbackExecutor() {
+    synchronized (lock) {
+      // We can run the callback immediately if:
+      //   1. There is no current activity (since the callback will already be run in the main
+      //      thread when the activity comes into the foreground) OR
+      //   2. If there is a current activity and we are already on the main thread
+      //
+      // Otherwise, we want to queue the callback to run on the main thread.
+      return currentActivity == null || Looper.myLooper() == Looper.getMainLooper()
+          ? DIRECT_EXECUTOR
+          : TaskExecutors.MAIN_THREAD;
+    }
   }
 
   private Task<Activity> getForegroundActivity() {

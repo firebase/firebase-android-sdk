@@ -61,6 +61,10 @@ import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -453,6 +457,21 @@ public class FirebaseAppDistributionTest {
     // Update flow
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.DOWNLOADING, progressEvents.get(0).getUpdateStatus());
+  }
+
+  @Test
+  public void updateIfNewReleaseAvailable_fromABackgroundThread_succeeds()
+      throws InterruptedException, ExecutionException {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+    when(activity.isChangingConfigurations()).thenReturn(true);
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    Future<UpdateTask> future =
+        executorService.submit(() -> firebaseAppDistribution.updateIfNewReleaseAvailable());
+    TestUtils.awaitAsyncOperations(executorService);
+
+    assertAlertDialogShown();
+    assertFalse(((UpdateTask) future.get()).isComplete());
   }
 
   @Test

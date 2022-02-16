@@ -16,17 +16,24 @@ package com.google.firebase.appdistribution;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.TestUtils.assertTaskFailure;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
+import android.os.Looper;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,19 +44,40 @@ import org.robolectric.RobolectricTestRunner;
 public class FirebaseAppDistributionLifecycleNotifierTest {
   private TestActivity activity;
   private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+  private ActivityConsumer activityConsumer;
+  private SuccessContinuation<Activity, String> successContinuation;
 
   static class TestActivity extends Activity {}
 
   @Before
-  public void setup() {
+  public void setup() throws Exception {
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     lifecycleNotifier = new FirebaseAppDistributionLifecycleNotifier();
+
+    activityConsumer = mock(ActivityConsumer.class);
+    doAnswer(
+            invocationOnMock -> {
+              // Assert that consumer is called on the main thread
+              assertThat(Looper.myLooper() == Looper.getMainLooper()).isTrue();
+              return null;
+            })
+        .when(activityConsumer)
+        .consume(any());
+
+    successContinuation = mock(SuccessContinuation.class);
+    doAnswer(
+            invocationOnMock -> {
+              // Assert that continuation is called on the main thread
+              assertThat(Looper.myLooper() == Looper.getMainLooper()).isTrue();
+              return Tasks.forResult("result");
+            })
+        .when(successContinuation)
+        .then(any());
   }
 
   @Test
-  public void applyToForegroundActivity_noCurrentActivity_succeedsAndCallsConsumer() {
-    ActivityConsumer consumer = spy(ActivityConsumer.class);
-    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(consumer);
+  public void applyToForegroundActivity_noCurrentActivity_succeedsAndCallsConsumerOnMainThread() {
+    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(activityConsumer);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
@@ -57,7 +85,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
     assertThat(task.getResult()).isNull();
-    verify(consumer).consume(activity);
+    verify(activityConsumer).consume(activity);
   }
 
   @Test
@@ -66,21 +94,38 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // applyToForegroundActivity is called
     lifecycleNotifier.onActivityResumed(activity);
 
-    ActivityConsumer consumer = spy(ActivityConsumer.class);
-    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(consumer);
+    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(activityConsumer);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
     assertThat(task.getResult()).isEqualTo(null);
-    verify(consumer).consume(activity);
+    verify(activityConsumer).consume(activity);
+  }
+
+  @Test
+  public void applyToForegroundActivity_onBackgroundThread_succeedsAndCallsConsumer()
+      throws InterruptedException, ExecutionException {
+    // Resume an activity so there is a current foreground activity already when
+    // applyToForegroundActivityTask is called
+    lifecycleNotifier.onActivityResumed(activity);
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    Future<Task<Void>> future =
+        executorService.submit(() -> lifecycleNotifier.applyToForegroundActivity(activityConsumer));
+    TestUtils.awaitAsyncOperations(executorService);
+
+    Task<Void> task = future.get();
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo(null);
+    verify(activityConsumer).consume(activity);
   }
 
   @Test
   public void applyToForegroundActivity_consumerThrows_fails() {
     RuntimeException consumerException = new RuntimeException("exception in consumer");
-    ActivityConsumer consumer = spy(ActivityConsumer.class);
-    doThrow(consumerException).when(consumer).consume(activity);
-    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(consumer);
+    doThrow(consumerException).when(activityConsumer).consume(activity);
+    Task<Void> task = lifecycleNotifier.applyToForegroundActivity(activityConsumer);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
@@ -89,15 +134,12 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   }
 
   @Test
-  public void applyToForegroundActivityTask_withCurrentActivity_succeedsAndCallsConsumer()
-      throws Exception {
+  public void applyToForegroundActivityTask_withCurrentActivity_succeedsAndCallsConsumer() {
     // Resume an activity so there is a current foreground activity already when
     // applyToForegroundActivityTask is called
     lifecycleNotifier.onActivityResumed(activity);
 
-    SuccessContinuation<Activity, String> continuation = spy(SuccessContinuation.class);
-    when(continuation.then(activity)).thenReturn(Tasks.forResult("result"));
-    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
+    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(successContinuation);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
@@ -105,11 +147,27 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   }
 
   @Test
-  public void applyToForegroundActivityTask_noCurrentActivity_succeedsAndCallsConsumer()
-      throws Exception {
-    SuccessContinuation<Activity, String> continuation = spy(SuccessContinuation.class);
-    when(continuation.then(activity)).thenReturn(Tasks.forResult("result"));
-    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
+  public void applyToForegroundActivityTask_onBackgroundThread_succeedsAndCallsConsumer()
+      throws InterruptedException, ExecutionException {
+    // Resume an activity so there is a current foreground activity already when
+    // applyToForegroundActivityTask is called
+    lifecycleNotifier.onActivityResumed(activity);
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    Future<Task<String>> future =
+        executorService.submit(
+            () -> lifecycleNotifier.applyToForegroundActivityTask(successContinuation));
+    TestUtils.awaitAsyncOperations(executorService);
+
+    Task<String> task = future.get();
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo("result");
+  }
+
+  @Test
+  public void applyToForegroundActivityTask_noCurrentActivity_succeedsAndCallsConsumer() {
+    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(successContinuation);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
@@ -121,12 +179,11 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
 
   @Test
   public void applyToForegroundActivityTask_continuationThrows_fails() throws Exception {
-    SuccessContinuation<Activity, String> continuation = spy(SuccessContinuation.class);
     FirebaseAppDistributionException continuationException =
         new FirebaseAppDistributionException(
             "exception in continuation task", Status.AUTHENTICATION_CANCELED);
-    when(continuation.then(activity)).thenThrow(continuationException);
-    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
+    when(successContinuation.then(activity)).thenThrow(continuationException);
+    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(successContinuation);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
@@ -137,10 +194,9 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   @Test
   public void applyToForegroundActivityTask_continuationThrowsUnknownException_wrapsException()
       throws Exception {
-    SuccessContinuation<Activity, String> continuation = spy(SuccessContinuation.class);
     RuntimeException continuationException = new RuntimeException("exception in continuation");
-    when(continuation.then(activity)).thenThrow(continuationException);
-    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
+    when(successContinuation.then(activity)).thenThrow(continuationException);
+    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(successContinuation);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
@@ -151,10 +207,9 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   @Test
   public void applyToForegroundActivityTask_continuationTaskFails_failsWithSameException()
       throws Exception {
-    SuccessContinuation<Activity, String> continuation = spy(SuccessContinuation.class);
     RuntimeException continuationException = new RuntimeException("exception in continuation");
-    when(continuation.then(activity)).thenReturn(Tasks.forException(continuationException));
-    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
+    when(successContinuation.then(activity)).thenReturn(Tasks.forException(continuationException));
+    Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(successContinuation);
 
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
