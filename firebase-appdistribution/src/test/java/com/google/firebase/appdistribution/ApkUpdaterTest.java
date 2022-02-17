@@ -14,13 +14,14 @@
 
 package com.google.firebase.appdistribution;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
@@ -29,14 +30,14 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,7 +70,6 @@ public class ApkUpdaterTest {
           .build();
 
   private ApkUpdater apkUpdater;
-  private TestOnCompleteListener<Void> onCompleteListener;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
@@ -78,7 +78,7 @@ public class ApkUpdaterTest {
 
   private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
       FirebaseAppDistributionLifecycleNotifier.getInstance();
-  private final Executor testExecutor = Executors.newSingleThreadExecutor();
+  private final ExecutorService testExecutor = Executors.newSingleThreadExecutor();
 
   static class TestActivity extends Activity {}
 
@@ -103,7 +103,6 @@ public class ApkUpdaterTest {
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
-    onCompleteListener = new TestOnCompleteListener<>();
     lifecycleNotifier.onActivityResumed(activity);
 
     apkUpdater =
@@ -123,13 +122,10 @@ public class ApkUpdaterTest {
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    FirebaseAppDistributionException e =
-        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+    awaitUpdateApk();
 
-    assertThat(e.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
-    assertThat(e).hasMessageThat().contains("Failed to open connection");
-    assertThat(e).hasCauseThat().isEqualTo(caughtException);
+    TestUtils.assertTaskFailure(
+        updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
   }
 
   @Test
@@ -137,12 +133,9 @@ public class ApkUpdaterTest {
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(400);
 
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    FirebaseAppDistributionException e =
-        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+    awaitUpdateApk();
 
-    assertThat(e.getErrorCode()).isEqualTo(Status.DOWNLOAD_FAILURE);
-    assertThat(e).hasMessageThat().contains("400");
+    TestUtils.assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "400");
   }
 
   @Test
@@ -151,27 +144,25 @@ public class ApkUpdaterTest {
     when(mockHttpsUrlConnection.getInputStream()).thenThrow(caughtException);
 
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    FirebaseAppDistributionException e =
-        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+    awaitUpdateApk();
 
-    assertThat(e.getErrorCode()).isEqualTo(Status.DOWNLOAD_FAILURE);
-    assertThat(e).hasMessageThat().contains("Failed to download APK");
-    assertThat(e).hasCauseThat().isEqualTo(caughtException);
+    TestUtils.assertTaskFailure(
+        updateTask, Status.DOWNLOAD_FAILURE, "Failed to download APK", caughtException);
   }
 
   @Test
   public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
     doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
+
     UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    onCompleteListener.await();
+    awaitUpdateApk();
+
     assertThat(updateTask.isSuccessful()).isTrue();
   }
 
   @Test
-  public void updateApk_whenInstallFailed_setsError() {
+  public void updateApk_whenInstallFailed_setsError() throws InterruptedException {
     boolean showNotification = true;
     doReturn(Tasks.forResult(mockFile))
         .when(apkUpdater)
@@ -180,19 +171,20 @@ public class ApkUpdaterTest {
     when(mockApkInstaller.installApk(any(), any()))
         .thenReturn(installTaskCompletionSource.getTask());
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
 
-    installTaskCompletionSource.setException(
+    FirebaseAppDistributionException installTaskException =
         new FirebaseAppDistributionException(
             Constants.ErrorMessages.APK_INSTALLATION_FAILED,
-            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE);
+    installTaskCompletionSource.setException(installTaskException);
 
     assertThat(updateTask.isComplete()).isFalse();
-    FirebaseAppDistributionException e =
-        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
-    assertThat(e.getErrorCode()).isEqualTo(Status.INSTALLATION_FAILURE);
+    awaitUpdateApk();
+
+    assertThat(updateTask.isComplete()).isTrue();
+    assertThat(updateTask.getException()).isEqualTo(installTaskException);
     assertThat(progressEvents).hasSize(1);
     assertThat(progressEvents.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.INSTALL_FAILED);
     assertThat(updateTask.isSuccessful()).isFalse();
@@ -200,7 +192,8 @@ public class ApkUpdaterTest {
   }
 
   @Test
-  public void updateApk_showNotificationFalse_doesNotUpdateNotificationManager() {
+  public void updateApk_showNotificationFalse_doesNotUpdateNotificationManager()
+      throws InterruptedException {
     boolean showNotification = false;
     doReturn(Tasks.forResult(mockFile))
         .when(apkUpdater)
@@ -209,15 +202,18 @@ public class ApkUpdaterTest {
     when(mockApkInstaller.installApk(any(), any()))
         .thenReturn(installTaskCompletionSource.getTask());
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, showNotification);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    installTaskCompletionSource.setException(
+    FirebaseAppDistributionException installTaskException =
         new FirebaseAppDistributionException(
-            ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE));
+            Constants.ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE);
+    installTaskCompletionSource.setException(installTaskException);
 
-    FirebaseAppDistributionException e =
-        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
-    assertThat(e.getErrorCode()).isEqualTo(Status.INSTALLATION_FAILURE);
+    assertThat(updateTask.isComplete()).isFalse();
+    awaitUpdateApk();
+
+    assertThat(updateTask.isComplete()).isTrue();
+    assertThat(updateTask.getException()).isEqualTo(installTaskException);
     verifyNoInteractions(mockNotificationsManager);
   }
 
@@ -236,5 +232,15 @@ public class ApkUpdaterTest {
     UpdateTask updateTask2 = apkUpdater.updateApk(TEST_RELEASE, false);
 
     assertThat(updateTask1).isEqualTo(updateTask2);
+  }
+
+  private void awaitUpdateApk() throws InterruptedException {
+    // Because the sequence of tasks in updateApk includes some operations run on the passed in
+    // executor, plus an operation in the middle that's run on the main thread (when getting the
+    // foreground activity) we unfortunately have to flush the executor, then the main thread, then
+    // the executor again.
+    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    shadowOf(getMainLooper()).idle();
+    testExecutor.awaitTermination(100, TimeUnit.MILLISECONDS);
   }
 }
