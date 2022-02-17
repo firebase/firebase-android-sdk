@@ -3,10 +3,10 @@
   <groupId>com.google.firebase</groupId>
   <artifactId>firebase-crashlytics</artifactId>
   <versioning>
-    <latest>18.2.5-SNAPSHOT</latest>
+    <latest>18.2.9-SNAPSHOT</latest>
     <versions>
-      <version>18.2.5-SNAPSHOT</version>
+      <version>18.2.9-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20220216211321</lastUpdated>
+    <lastUpdated>20220217180154</lastUpdated>
   </versioning>
 </metadata>

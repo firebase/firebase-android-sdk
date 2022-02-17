@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.firebase</groupId>
   <artifactId>firebase-crashlytics</artifactId>
-  <version>18.2.5-SNAPSHOT</version>
+  <version>18.2.9-SNAPSHOT</version>
   <packaging>aar</packaging>
   <licenses>
         
@@ -123,7 +123,7 @@
             
       <artifactId>transport-runtime</artifactId>
             
-      <version>3.1.0</version>
+      <version>3.1.2</version>
             
     
       <type>aar</type>
@@ -136,7 +136,7 @@
             
       <artifactId>transport-backend-cct</artifactId>
             
-      <version>3.1.0</version>
+      <version>3.1.2</version>
             
     
       <type>aar</type>
@@ -175,7 +175,7 @@
             
       <artifactId>play-services-tasks</artifactId>
             
-      <version>17.0.0</version>
+      <version>18.0.0</version>
             
     
       <type>aar</type>

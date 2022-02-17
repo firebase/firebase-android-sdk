@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.google.firebase</groupId>
   <artifactId>firebase-crashlytics-ktx</artifactId>
-  <version>18.2.5-SNAPSHOT</version>
+  <version>18.2.9</version>
   <packaging>aar</packaging>
   <licenses>
         
@@ -84,7 +84,7 @@
             
       <artifactId>firebase-crashlytics</artifactId>
             
-      <version>18.2.5</version>
+      <version>18.2.9</version>
             
     
       <type>aar</type>
