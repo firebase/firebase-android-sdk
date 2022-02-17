@@ -235,7 +235,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() {
+  public void updateIfNewReleaseAvailable_whenNewAabReleaseAvailable_showsUpdateDialog() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
 
@@ -252,7 +252,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_fromABackgroundThread_showsUpdateDialog()
+  public void updateIfNewReleaseAvailable_fromABackgroundThread_showsUpdateDialog()
       throws InterruptedException {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
@@ -265,7 +265,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
+  public void updateIfNewReleaseAvailable_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build())));
 
@@ -280,7 +280,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() {
+  public void updateIfNewReleaseAvailable_whenNoReleaseAvailable_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -294,7 +294,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
+  public void updateIfNewReleaseAvailable_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -308,7 +308,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+  public void updateIfNewReleaseAvailable_whenSignInCancelled_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInManager.signInTester())
         .thenReturn(
@@ -327,7 +327,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenSignInFailed_checkForUpdateNotCalled() {
+  public void updateIfNewReleaseAvailable_whenSignInFailed_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInManager.signInTester())
         .thenReturn(
@@ -344,7 +344,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenDialogDismissed_taskFails() {
+  public void updateIfNewReleaseAvailable_whenDialogDismissed_taskFails() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
@@ -358,7 +358,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenDialogCanceled_taskFails() {
+  public void updateIfNewReleaseAvailable_whenDialogCanceled_taskFails() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
@@ -373,7 +373,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() {
+  public void updateIfNewReleaseAvailable_whenCheckForUpdateFails_updateAppNotCalled() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(
             Tasks.forException(
@@ -393,7 +393,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenTesterIsSignedIn_doesNotOpenDialog() {
+  public void updateIfNewReleaseAvailable_whenTesterIsSignedIn_doesNotOpenDialog() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -417,7 +417,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenSignInDialogCanceled_taskFails() {
+  public void updateIfNewReleaseAvailable_whenSignInDialogCanceled_taskFails() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     Task signInTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -446,7 +446,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() {
+  public void updateIfNewReleaseAvailable_receiveProgressUpdateFromUpdateApp() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     UpdateTaskImpl mockTask = new UpdateTaskImpl();

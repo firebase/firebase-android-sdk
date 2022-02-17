@@ -123,8 +123,8 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * will complete with the result of the Task returned by that function.
    *
    * <p>The continuation function will be called immediately once the activity is available. This
-   * may be on the main thread or the calling thread, depending on whether or not there is already
-   * a foreground activity available when this method is called.
+   * may be on the main thread or the calling thread, depending on whether or not there is already a
+   * foreground activity available when this method is called.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
     return getForegroundActivity()
