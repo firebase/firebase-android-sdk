@@ -138,6 +138,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testEqualsWithNotEqualsFilterSameField() {
+    setUpSingleValueFilter();
+    Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "!=", 2));
+    verifyResults(query, "coll/val3");
+
+    query = query("coll").filter(filter("count", "==", 1)).filter(filter("count", "!=", 2));
+    verifyResults(query, "coll/val1");
+
+    query = query("coll").filter(filter("count", "==", 1)).filter(filter("count", "!=", 1));
+    verifyResults(query);
+  }
+
+  @Test
   public void testLessThanFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "<", 2));
@@ -224,6 +237,26 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNotInFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "not-in", Arrays.asList(1, 2)));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
+  public void testNotInWithGreaterThanFilter() {
+    setUpSingleValueFilter();
+    Query query =
+        query("coll")
+            .filter(filter("count", ">", 1))
+            .filter(filter("count", "not-in", Collections.singletonList(2)));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
+  public void testOutOfBoundsNotInWithGreaterThanFilter() {
+    setUpSingleValueFilter();
+    Query query =
+        query("coll")
+            .filter(filter("count", ">", 2))
+            .filter(filter("count", "not-in", Collections.singletonList(1)));
     verifyResults(query, "coll/val3");
   }
 

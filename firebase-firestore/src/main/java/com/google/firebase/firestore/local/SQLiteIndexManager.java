@@ -448,7 +448,7 @@ final class SQLiteIndexManager implements IndexManager {
       }
 
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
-      @Nullable List<Value> notInValues = subTarget.getNotInValues(fieldIndex);
+      @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
       @Nullable Bound lowerBound = subTarget.getLowerBound(fieldIndex);
       @Nullable Bound upperBound = subTarget.getUpperBound(fieldIndex);
 
@@ -564,7 +564,7 @@ final class SQLiteIndexManager implements IndexManager {
     Object[] bindArgs =
         fillBounds(statementCount, indexId, arrayValues, lowerBounds, upperBounds, notIn);
 
-    List<Object> result = new ArrayList<Object>();
+    List<Object> result = new ArrayList<>();
     result.add(sql.toString());
     result.addAll(Arrays.asList(bindArgs));
     return result.toArray();
@@ -673,7 +673,7 @@ final class SQLiteIndexManager implements IndexManager {
    * queries, a list of possible values is returned.
    */
   private @Nullable Object[] encodeValues(
-      FieldIndex fieldIndex, Target target, @Nullable List<Value> values) {
+      FieldIndex fieldIndex, Target target, @Nullable Collection<Value> values) {
     if (values == null) return null;
 
     List<IndexByteEncoder> encoders = new ArrayList<>();
@@ -740,8 +740,10 @@ final class SQLiteIndexManager implements IndexManager {
     for (Filter filter : target.getFilters()) {
       if ((filter instanceof FieldFilter) && ((FieldFilter) filter).getField().equals(fieldPath)) {
         FieldFilter.Operator operator = ((FieldFilter) filter).getOperator();
-        return operator.equals(FieldFilter.Operator.IN)
-            || operator.equals(FieldFilter.Operator.NOT_IN);
+        if (operator.equals(FieldFilter.Operator.IN)
+            || operator.equals(FieldFilter.Operator.NOT_IN)) {
+          return true;
+        }
       }
     }
     return false;
