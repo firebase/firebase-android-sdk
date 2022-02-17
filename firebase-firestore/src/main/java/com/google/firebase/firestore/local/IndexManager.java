@@ -20,6 +20,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.Collection;
 import java.util.List;
@@ -75,14 +76,26 @@ public interface IndexManager {
   Collection<FieldIndex> getFieldIndexes();
 
   /**
+   * Iterates over all field indexes that are used to serve the given target, and returns the
+   * minimum offset of them all. Asserts that the target can be served from index.
+   */
+  IndexOffset getMinOffset(Target target);
+
+  /** Returns the minimum offset for the given collection group. */
+  IndexOffset getMinOffset(String collectionGroup);
+
+  /**
    * Returns an index that can be used to serve the provided target. Returns {@code null} if no
    * index is configured.
    */
   @Nullable
   FieldIndex getFieldIndex(Target target);
 
-  /** Returns the documents that match the given target based on the provided index. */
-  Set<DocumentKey> getDocumentsMatchingTarget(FieldIndex fieldIndex, Target target);
+  /**
+   * Returns the documents that match the given target based on the provided index or {@code null}
+   * if the query cannot be served from an index.
+   */
+  Set<DocumentKey> getDocumentsMatchingTarget(Target target);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable

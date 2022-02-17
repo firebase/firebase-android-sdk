@@ -271,7 +271,7 @@ public class IntegrationTestUtil {
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
-    waitFor(AccessHelper.clearPersistence(firestore));
+    waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 

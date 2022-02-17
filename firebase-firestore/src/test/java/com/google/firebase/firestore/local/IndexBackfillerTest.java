@@ -453,9 +453,8 @@ public class IndexBackfillerTest {
     documentsProcessed = backfiller.backfill();
     assertEquals(1, documentsProcessed);
 
-    FieldIndex fieldIndex = indexManager.getFieldIndexes("coll").iterator().next();
     Target target = query("coll").filter(filter("foo", "==", 2)).toTarget();
-    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(fieldIndex, target);
+    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(target);
     assertTrue(matching.isEmpty());
   }
 
@@ -511,13 +510,12 @@ public class IndexBackfillerTest {
 
   private void verifyQueryResults(Query query, String... expectedKeys) {
     Target target = query.toTarget();
-    FieldIndex persistedIndex = indexManager.getFieldIndex(target);
-    if (persistedIndex != null) {
-      Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(persistedIndex, target);
+    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
+    if (actualKeys == null) {
+      assertEquals(0, expectedKeys.length);
+    } else {
       assertThat(actualKeys)
           .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
-    } else {
-      assertEquals(0, expectedKeys.length);
     }
   }
 

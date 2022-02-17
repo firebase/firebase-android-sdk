@@ -84,7 +84,7 @@ dependencies {
     }
 
     // Google Deps
-    implementation "com.google.android.gms:play-services-tasks:17.2.0"
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation "com.google.guava:guava:29.0-android"
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.multidex:multidex:2.0.1'

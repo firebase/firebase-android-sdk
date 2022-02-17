@@ -173,8 +173,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       if (activityToResumedMap.isEmpty()) {
         // no more activity in foreground, app goes to background.
         stopTime = clock.getTime();
-        updateAppState(ApplicationProcessState.BACKGROUND);
         sendSessionLog(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), resumeTime, stopTime);
+        // order is important to complete _fs before triggering a sessionId change b/204362742
+        updateAppState(ApplicationProcessState.BACKGROUND);
       }
     }
   }
@@ -189,14 +190,16 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       // The first resumed activity means app comes to foreground.
       resumeTime = clock.getTime();
       activityToResumedMap.put(activity, true);
-      updateAppState(ApplicationProcessState.FOREGROUND);
       if (isColdStart) {
         // case 1: app startup.
+        updateAppState(ApplicationProcessState.FOREGROUND);
         sendAppColdStartUpdate();
         isColdStart = false;
       } else {
         // case 2: app switch from background to foreground.
         sendSessionLog(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), stopTime, resumeTime);
+        // order is important to complete _bs before triggering a sessionId change b/204362742
+        updateAppState(ApplicationProcessState.FOREGROUND);
       }
     } else {
       // case 3: app already in foreground, current activity is replaced by another activity.
@@ -457,6 +460,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @VisibleForTesting
   Timer getPauseTime() {
     return stopTime;
+  }
+
+  @VisibleForTesting
+  void setStopTime(Timer timer) {
+    stopTime = timer;
   }
 
   @VisibleForTesting
