@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.model.Values.MAX_VALUE;
-import static com.google.firebase.firestore.model.Values.MIN_VALUE;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
@@ -25,10 +23,11 @@ import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.Values;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 /**
@@ -153,9 +152,8 @@ public final class Target {
    * Returns the list of values that are used in != or NOT_IN filters. Returns {@code null} if there
    * are no such filters.
    */
-  public @Nullable List<Value> getNotInValues(FieldIndex fieldIndex) {
-    List<Value> values = new ArrayList<>();
-
+  public @Nullable Collection<Value> getNotInValues(FieldIndex fieldIndex) {
+    LinkedHashMap<FieldPath, Value> values = new LinkedHashMap<>();
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
         switch (fieldFilter.getOperator()) {
@@ -163,13 +161,12 @@ public final class Target {
           case IN:
             // Encode equality prefix, which is encoded in the index value before the inequality
             // (e.g. `a == 'a' && b != 'b'` is encoded to `value != 'ab'`).
-            values.add(fieldFilter.getValue());
+            values.put(segment.getFieldPath(), fieldFilter.getValue());
             break;
           case NOT_IN:
           case NOT_EQUAL:
-            // NotIn/NotEqual is always a suffix
-            values.add(fieldFilter.getValue());
-            return values;
+            values.put(segment.getFieldPath(), fieldFilter.getValue());
+            return values.values(); // NotIn/NotEqual is always a suffix
         }
       }
     }
@@ -211,13 +208,8 @@ public final class Target {
             filterInclusive = false;
             break;
           case NOT_EQUAL:
-            filterValue = Values.MIN_VALUE;
-            break;
           case NOT_IN:
-            filterValue =
-                Value.newBuilder()
-                    .setArrayValue(ArrayValue.newBuilder().addValues(MIN_VALUE))
-                    .build();
+            filterValue = Values.MIN_VALUE;
             break;
           default:
             // Remaining filters cannot be used as lower bounds.
@@ -291,13 +283,8 @@ public final class Target {
             filterInclusive = false;
             break;
           case NOT_EQUAL:
-            filterValue = Values.MAX_VALUE;
-            break;
           case NOT_IN:
-            filterValue =
-                Value.newBuilder()
-                    .setArrayValue(ArrayValue.newBuilder().addValues(MAX_VALUE))
-                    .build();
+            filterValue = Values.MAX_VALUE;
             break;
           default:
             // Remaining filters cannot be used as upper bounds.
