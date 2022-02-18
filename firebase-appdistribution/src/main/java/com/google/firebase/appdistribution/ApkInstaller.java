@@ -79,7 +79,7 @@ class ApkInstaller {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
-    LogWrapper.getInstance().v(TAG + "Prompting user with install activity ");
+    LogWrapper.getInstance().v(TAG + "Prompting tester with install activity ");
   }
 
   void trySetInstallTaskError() {

@@ -31,18 +31,20 @@ public class FirebaseAppDistributionException extends FirebaseException {
      */
     AUTHENTICATION_FAILURE,
 
-    /** The authentication process was canceled (typically by the user). */
+    /** The authentication process was canceled (typically by the tester). */
     AUTHENTICATION_CANCELED,
 
     /**
-     * No network is available to make requests, or the request timed out. Check your internet
-     * connection and try again.
+     * No network was available to make requests, or the request timed out. Check the tester's
+     * internet connection and retrying the call to {@link FirebaseAppDistribution}.
      */
     NETWORK_FAILURE,
 
     /**
-     * The new release failed to download. This is a most likely due to a transient condition and
-     * may be corrected by retrying.
+     * The new release failed to download. This was a most likely due to a transient condition and
+     * may be corrected by retrying the call to {@link
+     * FirebaseAppDistribution#updateIfNewReleaseAvailable} or {@link
+     * FirebaseAppDistribution#updateApp}.
      */
     DOWNLOAD_FAILURE,
 
@@ -52,13 +54,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
      */
     INSTALLATION_FAILURE,
 
-    /** The installation was canceled (typically by the user). */
+    /** The installation was canceled (typically by the tester). */
     INSTALLATION_CANCELED,
 
     /**
-     * An update is not available for the current tester and app. Make sure that {@link
-     * FirebaseAppDistribution#checkForNewRelease()} returns with a non-null {@link
-     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp()},
+     * An update was not available for the current tester and app. Make sure that {@link
+     * FirebaseAppDistribution#checkForNewRelease} returns with a non-null {@link
+     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp},
      */
     UPDATE_NOT_AVAILABLE,
 
@@ -128,7 +130,7 @@ public class FirebaseAppDistributionException extends FirebaseException {
         "Failed to fetch releases due to unknown network error.";
 
     public static final String JSON_PARSING_ERROR =
-        "Error parsing service response when checking for new release. This is a most likely due to a transient condition and may be corrected by retrying.";
+        "Error parsing service response when checking for new release. This was most likely due to a transient condition and may be corrected by retrying.";
 
     public static final String AUTHENTICATION_ERROR =
         "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
@@ -139,17 +141,17 @@ public class FirebaseAppDistributionException extends FirebaseException {
     public static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
 
     public static final String NOT_FOUND_ERROR =
-        "Release not found. An update is not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
+        "Release not found. An update was not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
 
     public static final String TIMEOUT_ERROR =
-        "Failed to fetch releases due to timeout. Check your internet connection and try again.";
+        "Failed to fetch releases due to timeout. Check the tester's internet connection and try again.";
 
     public static final String UPDATE_CANCELED = "Tester canceled the update.";
 
     public static final String UNKNOWN_ERROR = "Unknown error.";
 
     public static final String DOWNLOAD_URL_NOT_FOUND =
-        "Download URL not found. This is a most likely due to a transient condition and may be corrected by retrying.";
+        "Download URL not found. This was a most likely due to a transient condition and may be corrected by retrying.";
 
     public static final String HOST_ACTIVITY_INTERRUPTED =
         "Host activity interrupted while dialog was showing. Try calling FirebaseAppDistribution#updateIfNewReleaseAvailable again.";

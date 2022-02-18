@@ -38,7 +38,8 @@ class TaskUtils {
    *
    * <p>This allows long running operations to be chained together using {@link Task#onSuccessTask}.
    * If the operation throws an exception, the task will fail, and the exception will be surfaced to
-   * the user as {@code FirebaseAppDistributionException}, available via {@link Task#getException}.
+   * the caller as {@code FirebaseAppDistributionException}, available via {@link
+   * Task#getException}.
    *
    * <p>Exceptions that are not {@code FirebaseAppDistributionException} will be wrapped in one,
    * with {@link Status#UNKNOWN}.

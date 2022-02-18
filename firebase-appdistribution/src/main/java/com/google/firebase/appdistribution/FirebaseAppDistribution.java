@@ -141,15 +141,16 @@ public class FirebaseAppDistribution {
   /**
    * Updates the app to the newest release, if one is available.
    *
-   * <p>Returns the release information or null if no update is found. Performs the following
-   * actions:
+   * <p>Returns the release information or {@code null} if no update is found. Performs the
+   * following actions:
    *
    * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google sign in UI.
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
    *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
    *       dialog to begin the download.
-   *   <li>For APKs, downloads the binary and starts an installation intent. For AABs, directs the
-   *       tester to the Google Play app to complete the download and installation.
+   *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
+   *       newest release is an AAB, directs the tester to the Play app to complete the download and
+   *       installation.
    * </ol>
    */
   @NonNull
