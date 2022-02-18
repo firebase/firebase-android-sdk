@@ -236,6 +236,22 @@ public abstract class DocumentOverlayCacheTestCase {
     verifyOverlayContains(overlays, "coll/doc1", "coll/doc2", "coll/doc3");
   }
 
+  @Test
+  public void testUpdateDocumentOverlay() {
+    Mutation mutation1 = setMutation("coll/doc", map("foo", 1));
+    Mutation mutation2 = setMutation("coll/doc", map("foo", 2));
+    saveOverlays(1, mutation1);
+    saveOverlays(2, mutation2);
+
+    // Verify that `getOverlay()` returns the updated mutation.
+    Overlay overlay = cache.getOverlay(DocumentKey.fromPathString("coll/doc"));
+    assertEquals(overlay, Overlay.create(2, mutation2));
+
+    // Verify that `removeOverlaysForBatchId()` removes the overlay completely.
+    cache.removeOverlaysForBatchId(2);
+    assertNull(cache.getOverlay(DocumentKey.fromPathString("coll/doc")));
+  }
+
   void verifyOverlayContains(Map<DocumentKey, Overlay> overlays, String... keys) {
     Set<DocumentKey> expected = Arrays.stream(keys).map(TestUtil::key).collect(Collectors.toSet());
     assertThat(overlays.keySet()).containsExactlyElementsIn(expected);
