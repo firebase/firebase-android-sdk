@@ -110,14 +110,13 @@ public class QueryEngine {
       return null;
     }
 
-    if (!indexManager.canServeFromIndex(target)) {
+    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
+    if (keys == null) {
       return null;
     }
 
-    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
-
     return appendRemainingResults(
         values(indexedDocuments), query, indexManager.getMinOffset(target));
   }

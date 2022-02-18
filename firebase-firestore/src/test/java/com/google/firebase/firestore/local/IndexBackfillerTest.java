@@ -510,12 +510,12 @@ public class IndexBackfillerTest {
 
   private void verifyQueryResults(Query query, String... expectedKeys) {
     Target target = query.toTarget();
-    if (indexManager.canServeFromIndex(target)) {
-      Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
+    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
+    if (actualKeys == null) {
+      assertEquals(0, expectedKeys.length);
+    } else {
       assertThat(actualKeys)
           .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
-    } else {
-      assertEquals(0, expectedKeys.length);
     }
   }
 

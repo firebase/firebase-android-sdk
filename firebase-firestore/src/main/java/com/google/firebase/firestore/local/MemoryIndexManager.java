@@ -72,7 +72,7 @@ class MemoryIndexManager implements IndexManager {
   @Nullable
   public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.
-    return Collections.emptySet();
+    return null;
   }
 
   @Nullable
@@ -97,11 +97,6 @@ class MemoryIndexManager implements IndexManager {
   public Collection<FieldIndex> getFieldIndexes() {
     // Field indices are not supported with memory persistence.
     return Collections.emptyList();
-  }
-
-  @Override
-  public boolean canServeFromIndex(Target target) {
-    return false;
   }
 
   @Override

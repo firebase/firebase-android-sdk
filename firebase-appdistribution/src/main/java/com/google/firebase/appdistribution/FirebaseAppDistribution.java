@@ -215,36 +215,42 @@ public class FirebaseAppDistribution {
       showSignInDialogTask = new TaskCompletionSource<>();
     }
 
-    signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     dialogHostActivity = hostActivity;
 
-    Context context = firebaseApp.getApplicationContext();
-    signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
-    signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
+    // We may not be on the main (UI) thread in some cases, specifically if the developer calls
+    // the basic config from the background. If we are already on the main thread, this will
+    // execute immediately.
+    hostActivity.runOnUiThread(
+        () -> {
+          signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
 
-    signInConfirmationDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.singin_yes_button),
-        (dialogInterface, i) -> showSignInDialogTask.setResult(null));
+          Context context = firebaseApp.getApplicationContext();
+          signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
+          signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
 
-    signInConfirmationDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.singin_no_button),
-        (dialogInterface, i) ->
-            showSignInDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
-                    AUTHENTICATION_CANCELED)));
+          signInConfirmationDialog.setButton(
+              AlertDialog.BUTTON_POSITIVE,
+              context.getString(R.string.singin_yes_button),
+              (dialogInterface, i) -> showSignInDialogTask.setResult(null));
 
-    signInConfirmationDialog.setOnCancelListener(
-        dialogInterface ->
-            showSignInDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
-                    AUTHENTICATION_CANCELED)));
+          signInConfirmationDialog.setButton(
+              AlertDialog.BUTTON_NEGATIVE,
+              context.getString(R.string.singin_no_button),
+              (dialogInterface, i) ->
+                  showSignInDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                          AUTHENTICATION_CANCELED)));
 
-    signInConfirmationDialog.show();
+          signInConfirmationDialog.setOnCancelListener(
+              dialogInterface ->
+                  showSignInDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                          AUTHENTICATION_CANCELED)));
 
+          signInConfirmationDialog.show();
+        });
     return showSignInDialogTask.getTask();
   }
 
@@ -425,44 +431,49 @@ public class FirebaseAppDistribution {
     }
 
     Context context = firebaseApp.getApplicationContext();
-
-    updateConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     dialogHostActivity = hostActivity;
-    updateConfirmationDialog.setTitle(context.getString(R.string.update_dialog_title));
 
-    StringBuilder message =
-        new StringBuilder(
-            String.format(
-                "Version %s (%s) is available.",
-                newRelease.getDisplayVersion(), newRelease.getVersionCode()));
+    // We should already be on the main (UI) thread here, but be explicit just to be safe. If we are
+    // already on the main thread, this will execute immediately.
+    hostActivity.runOnUiThread(
+        () -> {
+          updateConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
+          updateConfirmationDialog.setTitle(context.getString(R.string.update_dialog_title));
 
-    if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
-      message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
-    }
-    updateConfirmationDialog.setMessage(message);
+          StringBuilder message =
+              new StringBuilder(
+                  String.format(
+                      "Version %s (%s) is available.",
+                      newRelease.getDisplayVersion(), newRelease.getVersionCode()));
 
-    updateConfirmationDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.update_yes_button),
-        (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
+          if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
+            message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
+          }
+          updateConfirmationDialog.setMessage(message);
 
-    updateConfirmationDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.update_no_button),
-        (dialogInterface, i) ->
-            showUpdateDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
-                    Status.INSTALLATION_CANCELED)));
+          updateConfirmationDialog.setButton(
+              AlertDialog.BUTTON_POSITIVE,
+              context.getString(R.string.update_yes_button),
+              (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
 
-    updateConfirmationDialog.setOnCancelListener(
-        dialogInterface ->
-            showUpdateDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
-                    Status.INSTALLATION_CANCELED)));
+          updateConfirmationDialog.setButton(
+              AlertDialog.BUTTON_NEGATIVE,
+              context.getString(R.string.update_no_button),
+              (dialogInterface, i) ->
+                  showUpdateDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
+                          Status.INSTALLATION_CANCELED)));
 
-    updateConfirmationDialog.show();
+          updateConfirmationDialog.setOnCancelListener(
+              dialogInterface ->
+                  showUpdateDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
+                          Status.INSTALLATION_CANCELED)));
+
+          updateConfirmationDialog.show();
+        });
 
     return showUpdateDialogTask.getTask();
   }

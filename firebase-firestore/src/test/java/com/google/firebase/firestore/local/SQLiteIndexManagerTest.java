@@ -31,8 +31,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -89,6 +89,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testOrderByFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
+    addDoc("coll/val1", map("count", 1));
+    addDoc("coll/val2", map("not-count", 2));
+    addDoc("coll/val3", map("count", 3));
+    Query query = query("coll").orderBy(orderBy("count"));
+    verifyResults(query, "coll/val1", "coll/val3");
+  }
+
+  @Test
   public void testEqualityFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "==", 2));
@@ -125,6 +135,19 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     query = query("coll").filter(filter("b", "!=", 1)).filter(filter("a", "==", 1));
     verifyResults(query, "coll/val2");
+  }
+
+  @Test
+  public void testEqualsWithNotEqualsFilterSameField() {
+    setUpSingleValueFilter();
+    Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "!=", 2));
+    verifyResults(query, "coll/val3");
+
+    query = query("coll").filter(filter("count", "==", 1)).filter(filter("count", "!=", 2));
+    verifyResults(query, "coll/val1");
+
+    query = query("coll").filter(filter("count", "==", 1)).filter(filter("count", "!=", 1));
+    verifyResults(query);
   }
 
   @Test
@@ -218,6 +241,26 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testNotInWithGreaterThanFilter() {
+    setUpSingleValueFilter();
+    Query query =
+        query("coll")
+            .filter(filter("count", ">", 1))
+            .filter(filter("count", "not-in", Collections.singletonList(2)));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
+  public void testOutOfBoundsNotInWithGreaterThanFilter() {
+    setUpSingleValueFilter();
+    Query query =
+        query("coll")
+            .filter(filter("count", ">", 2))
+            .filter(filter("count", "not-in", Collections.singletonList(1)));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
   public void testArrayContainsFilter() {
     setUpArrayValueFilter();
     Query query = query("coll").filter(filter("values", "array-contains", 1));
@@ -248,6 +291,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
     assertNull(indexManager.getFieldIndex(query.toTarget()));
+    assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 
   @Test
@@ -724,8 +768,8 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    assertTrue("Target cannot be served from index.", indexManager.canServeFromIndex(target));
     Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
+    assertNotNull("Target cannot be served from index.", results);
     List<DocumentKey> keys = Arrays.stream(documents).map(s -> key(s)).collect(Collectors.toList());
     assertWithMessage("Result for %s", query).that(results).containsExactlyElementsIn(keys);
   }
