@@ -24,14 +24,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.FirebaseAppCheck;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,6 +41,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
 import org.json.JSONException;
 
 /**
@@ -69,8 +69,7 @@ public class NetworkClient {
   private final String apiKey;
   private final String appId;
   private final String projectId;
-  private final Provider<UserAgentPublisher> userAgentPublisherProvider;
-  private final Provider<HeartBeatInfo> heartBeatInfoProvider;
+  private final Provider<HeartBeatController> heartBeatControllerProvider;
 
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({UNKNOWN, SAFETY_NET, DEBUG})
@@ -85,21 +84,17 @@ public class NetworkClient {
         firebaseApp.getApplicationContext(),
         firebaseApp.getOptions(),
         ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp))
-            .getUserAgentPublisherProvider(),
-        ((DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp))
-            .getHeartBeatInfoProvider());
+            .getHeartbeatControllerProvider());
   }
 
   @VisibleForTesting
   NetworkClient(
       @NonNull Context context,
       @NonNull FirebaseOptions firebaseOptions,
-      @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
-      @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider) {
+      @NonNull Provider<HeartBeatController> heartBeatControllerProvider) {
     checkNotNull(context);
     checkNotNull(firebaseOptions);
-    checkNotNull(userAgentPublisherProvider);
-    checkNotNull(heartBeatInfoProvider);
+    checkNotNull(heartBeatControllerProvider);
     this.context = context;
     this.apiKey = firebaseOptions.getApiKey();
     this.appId = firebaseOptions.getApplicationId();
@@ -107,8 +102,7 @@ public class NetworkClient {
     if (projectId == null) {
       throw new IllegalArgumentException("FirebaseOptions#getProjectId cannot be null.");
     }
-    this.userAgentPublisherProvider = userAgentPublisherProvider;
-    this.heartBeatInfoProvider = heartBeatInfoProvider;
+    this.heartBeatControllerProvider = heartBeatControllerProvider;
   }
 
   /**
@@ -131,17 +125,13 @@ public class NetworkClient {
       urlConnection.setDoOutput(true);
       urlConnection.setFixedLengthStreamingMode(requestBytes.length);
       urlConnection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      String userAgent = getUserAgent();
-      if (userAgent != null) {
-        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, userAgent);
-      }
-
-      // getHeartbeatCode should not be called multiple times, as subsequent calls will return
-      // HeartBeat.NONE until the heartbeat is reset.
-      HeartBeat heartBeat = getHeartbeatCode();
-      if (heartBeat != HeartBeat.NONE) {
-        urlConnection.setRequestProperty(
-            X_FIREBASE_CLIENT_LOG_TYPE, Integer.toString(heartBeat.getCode()));
+      HeartBeatController controller = heartBeatControllerProvider.get();
+      try {
+        String heartBeatHeader = Tasks.await(controller.getHeartBeatsHeader());
+        System.out.println(heartBeatHeader);
+        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, heartBeatHeader);
+      } catch (Exception e) {
+        Log.w(TAG, "Unable to get heartbeats!");
       }
 
       // Headers for Android API key restrictions.
@@ -181,18 +171,6 @@ public class NetworkClient {
     } finally {
       urlConnection.disconnect();
     }
-  }
-
-  private String getUserAgent() {
-    return userAgentPublisherProvider.get() != null
-        ? userAgentPublisherProvider.get().getUserAgent()
-        : null;
-  }
-
-  private HeartBeat getHeartbeatCode() {
-    return heartBeatInfoProvider.get() != null
-        ? heartBeatInfoProvider.get().getHeartBeatCode(HEART_BEAT_STORAGE_TAG)
-        : HeartBeat.NONE;
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */
