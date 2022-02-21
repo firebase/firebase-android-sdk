@@ -132,7 +132,6 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final SchemaManager.Migration MIGRATION_TO_V5 =
       db -> {
         db.execSQL(DROP_LOG_EVENT_DROPPED_SQL);
-        db.execSQL(DROP_GLOBAL_LOG_EVENT_STATE_SQL);
         db.execSQL(CREATE_LOG_EVENT_DROPPED_TABLE);
         db.execSQL(CREATE_GLOBAL_LOG_EVENT_STATE_TABLE);
         db.execSQL(CREATE_INITIAL_GLOBAL_LOG_EVENT_STATE_VALUE_SQL);
