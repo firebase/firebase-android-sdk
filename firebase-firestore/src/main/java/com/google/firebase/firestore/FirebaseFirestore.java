@@ -307,7 +307,7 @@ public class FirebaseFirestore {
    */
   @PreviewApi
   @NonNull
-  public Task<Void> setIndexConfiguration(String json) {
+  public Task<Void> setIndexConfiguration(@NonNull String json) {
     ensureClientConfigured();
     Preconditions.checkState(
         settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
