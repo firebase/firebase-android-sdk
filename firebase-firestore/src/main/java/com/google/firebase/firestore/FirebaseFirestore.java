@@ -306,6 +306,7 @@ public class FirebaseFirestore {
    * @throws IllegalArgumentException if the JSON format is invalid
    */
   @PreviewApi
+  @NonNull
   public Task<Void> setIndexConfiguration(String json) {
     ensureClientConfigured();
     Preconditions.checkState(
