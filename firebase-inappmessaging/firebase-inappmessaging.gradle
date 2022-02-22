@@ -99,7 +99,7 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:30.1-android'
+            force 'com.google.guava:guava:30.1.1-android'
         }
     }
 }
@@ -129,7 +129,7 @@ dependencies {
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
-    implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
+    implementation 'com.google.auto.value:auto-value-annotations:1.8.1'
 
     implementation('com.google.firebase:firebase-measurement-connector:18.0.2') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
