@@ -2,10 +2,12 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# 24.0.2
-- [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
-  working and receive a "Permission Denied" error. This issue only occurred for
-  AppCheck users that set their expiration time to under an hour.
+# Unreleased
+- [feature] Added experimental support for indexed query execution. Indexes can
+  be enabled by invoking `FirebaseFirestore.setIndexConfiguration()` with the
+  JSON index definition exported by the Firestore CLI. Queries against the
+  cache are executed using an index once the asynchronous operation to generate
+  the index entries completes.
 - [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
   the shutdown from proceeding if a network connection was opened right before.
 - [changed] Queries are now send to the backend before the SDK starts local 
