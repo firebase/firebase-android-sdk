@@ -99,7 +99,7 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:30.1-android'
+            force 'com.google.guava:guava:30.1.1-android'
         }
     }
 }
