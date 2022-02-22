@@ -25,7 +25,6 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.internal.InstallActivity;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.appdistribution.internal.SignInResultActivity;
@@ -181,7 +180,7 @@ class AabUpdater {
       safeSetTaskException(
           cachedUpdateTask,
           new FirebaseAppDistributionException(
-              ErrorMessages.UPDATE_CANCELED,
+              FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
               ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }

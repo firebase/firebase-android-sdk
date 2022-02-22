@@ -47,7 +47,7 @@ public class InstallActivity extends AppCompatActivity {
     // Since we kick-off installation with FLAG_ACTIVITY_NEW_TASK (in a new task), we won't be able
     // to figure out if installation failed or was canceled.
     // If we re-enter InstallActivity after install is already kicked off, we can assume that either
-    // installation failure or user canceled the install.
+    // installation failure or tester canceled the install.
     if (installInProgress) {
       LogWrapper.getInstance()
           .e(

@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import java.io.BufferedInputStream;
@@ -91,7 +90,7 @@ class FirebaseAppDistributionTesterApiClient {
       responseBody = readResponseBody(connection);
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+          FirebaseAppDistributionException.ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     } finally {
       if (connection != null) {
         connection.disconnect();
@@ -164,7 +163,7 @@ class FirebaseAppDistributionTesterApiClient {
     } catch (JSONException e) {
       LogWrapper.getInstance().e(TAG + "Error parsing the new release.", e);
       throw new FirebaseAppDistributionException(
-          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
+          FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
   }
 
@@ -175,17 +174,19 @@ class FirebaseAppDistributionTesterApiClient {
             "Bad request when fetching new release", Status.UNKNOWN);
       case 401:
         return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
+            FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR,
+            Status.AUTHENTICATION_FAILURE);
       case 403:
         return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
+            FirebaseAppDistributionException.ErrorMessages.AUTHORIZATION_ERROR,
+            Status.AUTHENTICATION_FAILURE);
       case 404:
         return new FirebaseAppDistributionException(
             "App or tester not found when fetching new release", Status.AUTHENTICATION_FAILURE);
       case 408:
       case 504:
         return new FirebaseAppDistributionException(
-            ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
+            FirebaseAppDistributionException.ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
       default:
         return new FirebaseAppDistributionException(
             "Received error status when fetching new release: " + responseCode, Status.UNKNOWN);
