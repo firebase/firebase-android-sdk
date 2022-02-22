@@ -74,8 +74,7 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     defaultFirebaseAppCheck =
-        new DefaultFirebaseAppCheck(
-            mockFirebaseApp, () -> mockHeartBeatController);
+        new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockHeartBeatController);
   }
 
   @Test
@@ -95,7 +94,6 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(mockFirebaseApp, null);
         });
   }
-
 
   @Test
   public void testInstallAppCheckFactory_nullFactory_expectThrows() {

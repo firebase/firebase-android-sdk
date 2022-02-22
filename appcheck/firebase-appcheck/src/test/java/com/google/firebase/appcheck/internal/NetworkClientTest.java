@@ -34,13 +34,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
-
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -90,16 +87,16 @@ public class NetworkClientTest {
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-
     networkClient =
         spy(
             new NetworkClient(
                 ApplicationProvider.getApplicationContext(),
                 FIREBASE_OPTIONS,
-                    () -> mockHeartBeatController));
-
+                () -> mockHeartBeatController));
+    when(mockHeartBeatController.getHeartBeatsHeader())
+        .thenReturn(Tasks.forResult(HEART_BEAT_HEADER_TEST));
+    doReturn(HEART_BEAT_HEADER_TEST).when(networkClient).getHeartBeat();
     doReturn(mockHttpUrlConnection).when(networkClient).createHttpUrlConnection(any(URL.class));
-    when(mockHeartBeatController.getHeartBeatsHeader()).thenReturn("vinay");
     when(mockRetryManager.canRetry()).thenReturn(true);
   }
 
@@ -257,6 +254,7 @@ public class NetworkClientTest {
   }
 
   private void verifyRequestHeaders() {
+    verify(networkClient).getHeartBeat();
     verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, HEART_BEAT_HEADER_TEST);
     verify(mockHttpUrlConnection)
         .setRequestProperty(

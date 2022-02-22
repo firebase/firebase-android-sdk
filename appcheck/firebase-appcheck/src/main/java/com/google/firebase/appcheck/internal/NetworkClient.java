@@ -41,7 +41,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
-
 import org.json.JSONException;
 
 /**
@@ -125,11 +124,12 @@ public class NetworkClient {
       urlConnection.setDoOutput(true);
       urlConnection.setFixedLengthStreamingMode(requestBytes.length);
       urlConnection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      HeartBeatController controller = heartBeatControllerProvider.get();
       try {
-        String heartBeatHeader = Tasks.await(controller.getHeartBeatsHeader());
-        System.out.println(heartBeatHeader);
-        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, heartBeatHeader);
+        String heartBeatHeader = getHeartBeat();
+        if (heartBeatHeader != null) {
+          urlConnection.setRequestProperty(X_FIREBASE_CLIENT, heartBeatHeader);
+        }
+
       } catch (Exception e) {
         Log.w(TAG, "Unable to get heartbeats!");
       }
@@ -173,6 +173,19 @@ public class NetworkClient {
     }
   }
 
+  @VisibleForTesting
+  String getHeartBeat() {
+    HeartBeatController controller = heartBeatControllerProvider.get();
+    if (controller != null) {
+      try {
+        return Tasks.await(controller.getHeartBeatsHeader());
+      } catch (Exception e) {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;
