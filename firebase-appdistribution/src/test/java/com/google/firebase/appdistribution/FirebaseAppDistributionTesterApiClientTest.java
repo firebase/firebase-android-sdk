@@ -129,7 +129,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
-    assertThat(ex.getMessage()).contains("Failed to fetch releases due to unknown network error");
+    assertThat(ex.getMessage())
+        .contains(FirebaseAppDistributionException.ErrorMessages.NETWORK_ERROR);
     assertThat(ex.getCause()).isEqualTo(caughtException);
   }
 
@@ -146,7 +147,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
-    assertThat(ex.getMessage()).isEqualTo("Failed to authenticate the tester");
+    assertThat(ex.getMessage())
+        .isEqualTo(FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -163,7 +165,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
-    assertThat(ex.getMessage()).isEqualTo("Failed to authorize the tester");
+    assertThat(ex.getMessage())
+        .isEqualTo(FirebaseAppDistributionException.ErrorMessages.AUTHORIZATION_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -197,7 +200,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
-    assertThat(ex.getMessage()).isEqualTo("Failed to fetch releases due to timeout");
+    assertThat(ex.getMessage())
+        .isEqualTo(FirebaseAppDistributionException.ErrorMessages.TIMEOUT_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -232,7 +236,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
                     TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext));
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.UNKNOWN);
-    assertThat(ex.getMessage()).isEqualTo("Error parsing service response");
+    assertThat(ex.getMessage())
+        .isEqualTo(FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR);
     assertThat(ex.getCause()).isInstanceOf(JSONException.class);
     verify(mockHttpsURLConnection).disconnect();
   }
