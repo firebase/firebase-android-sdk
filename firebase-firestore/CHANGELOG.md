@@ -3,6 +3,8 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.0.2
+- [fixed] Fixed an issue of long grpc reconnection period, when App moves to
+  foreground after staying in background for a while.
 - [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
   working and receive a "Permission Denied" error. This issue only occurred for
   AppCheck users that set their expiration time to under an hour.
