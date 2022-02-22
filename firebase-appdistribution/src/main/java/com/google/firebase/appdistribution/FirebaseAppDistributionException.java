@@ -36,7 +36,7 @@ public class FirebaseAppDistributionException extends FirebaseException {
 
     /**
      * No network was available to make requests, or the request timed out. Check the tester's
-     * internet connection and retrying the call to {@link FirebaseAppDistribution}.
+     * internet connection and retry the call to {@link FirebaseAppDistribution}.
      */
     NETWORK_FAILURE,
 
