@@ -57,7 +57,8 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
 
-  gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir='apk-size', check=False)
+  workdir = 'health-metrics/apk-size'
+  gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)
 
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes()
   test_report = {'metric': 'BinarySize', 'results': test_results, 'log': log}
@@ -82,7 +83,8 @@ def _measure_aar_sizes(artifacts):
 def _measure_apk_sizes():
   test_results = []
 
-  apk_files = glob.glob(fr'./apk-size/**/*.apk', recursive=True)
+  regex = r'./health-metrics/apk-size/**/*.apk'
+  apk_files = glob.glob(regex, recursive=True)
   for apk_file in apk_files:
     filename = os.path.basename(apk_file)
     artifact, build_type, abi = os.path.splitext(filename)[0].split('::')

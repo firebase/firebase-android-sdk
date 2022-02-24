@@ -41,7 +41,7 @@ allprojects {
         mavenCentral()
 
         maven {
-            url rootProject.file('../../../build/m2repository')
+            url rootProject.file('../../../../build/m2repository')
         }
     }
 }
