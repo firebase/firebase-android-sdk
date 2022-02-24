@@ -94,9 +94,10 @@ final class SQLiteIndexManager implements IndexManager {
       new PriorityQueue<>(
           10,
           (l, r) -> {
-            int sequenceCmp = Long.compare(
-              l.getIndexState().getSequenceNumber(), r.getIndexState().getSequenceNumber());
-            if(sequenceCmp == 0) {
+            int sequenceCmp =
+                Long.compare(
+                    l.getIndexState().getSequenceNumber(), r.getIndexState().getSequenceNumber());
+            if (sequenceCmp == 0) {
               return l.getCollectionGroup().compareTo(r.getCollectionGroup());
             }
             return sequenceCmp;
