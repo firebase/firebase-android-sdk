@@ -48,7 +48,7 @@ ext {
     googleTruthVersion = '1.1.2'
     grpcVersion = '1.44.1'
     robolectricVersion = '4.3.1'
-    protocVersion = '3.14.0'
+    protocVersion = '3.17.3'
     javaliteVersion = '3.14.0'
 }
 
