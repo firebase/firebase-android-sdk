@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
@@ -103,6 +104,16 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "==", 2));
     verifyResults(query, "coll/val2");
+  }
+
+  @Test
+  public void testOrderByWithNotEqualsFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
+    addDoc("coll/val1", map("count", 1));
+    addDoc("coll/val2", map("count", 2));
+
+    Query query = query("coll").filter(filter("count", "!=", 2)).orderBy(orderBy("count"));
+    verifyResults(query, "coll/val1");
   }
 
   @Test
@@ -193,6 +204,17 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testAppliesStartAtFilterWithNotIn() {
+    setUpSingleValueFilter();
+    Query query =
+        query("coll")
+            .filter(filter("count", "!=", 2))
+            .orderBy(orderBy("count"))
+            .startAt(bound(/* inclusive= */ true, 2));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
   public void testStartAfterFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").orderBy(orderBy("count")).startAt(bound(/* inclusive= */ false, 2));
@@ -265,6 +287,93 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     setUpArrayValueFilter();
     Query query = query("coll").filter(filter("values", "array-contains", 1));
     verifyResults(query, "coll/arr1");
+  }
+
+  @Test
+  public void testArrayContainsWithNotEqualsFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.CONTAINS, "b", Kind.ASCENDING));
+    addDoc("coll/val1", map("a", Collections.singletonList(1), "b", 1));
+    addDoc("coll/val2", map("a", Collections.singletonList(1), "b", 2));
+    addDoc("coll/val3", map("a", Collections.singletonList(2), "b", 1));
+    addDoc("coll/val4", map("a", Collections.singletonList(2), "b", 2));
+
+    Query query =
+        query("coll").filter(filter("a", "array-contains", 1)).filter(filter("b", "!=", 1));
+    verifyResults(query, "coll/val2");
+  }
+
+  @Test
+  public void testArrayContainsWithNotEqualsFilterOnSameField() {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.CONTAINS, "a", Kind.ASCENDING));
+    addDoc("coll/val1", map("a", Arrays.asList(1, 1)));
+    addDoc("coll/val2", map("a", Arrays.asList(1, 2)));
+    addDoc("coll/val3", map("a", Arrays.asList(2, 1)));
+    addDoc("coll/val4", map("a", Arrays.asList(2, 2)));
+
+    Query query =
+        query("coll")
+            .filter(filter("a", "array-contains", 1))
+            .filter(filter("a", "!=", Arrays.asList(1, 2)));
+    verifyResults(query, "coll/val1", "coll/val3");
+  }
+
+  @Test
+  public void testEqualsWithNotEqualsOnSameField() {
+    setUpSingleValueFilter();
+
+    Object[][] filtersAndResults =
+        new Object[][] {
+          new Filter[] {filter("count", ">", 1), filter("count", "!=", 2)},
+          new String[] {"coll/val3"},
+          new Filter[] {filter("count", "==", 1), filter("count", "!=", 2)},
+          new String[] {"coll/val1"},
+          new Filter[] {filter("count", "==", 1), filter("count", "!=", 1)},
+          new String[] {},
+          new Filter[] {filter("count", ">", 2), filter("count", "!=", 2)},
+          new String[] {"coll/val3"},
+          new Filter[] {filter("count", ">=", 2), filter("count", "!=", 2)},
+          new String[] {"coll/val3"},
+          new Filter[] {filter("count", "<=", 2), filter("count", "!=", 2)},
+          new String[] {"coll/val1"},
+          new Filter[] {filter("count", "<=", 2), filter("count", "!=", 1)},
+          new String[] {"coll/val2"},
+          new Filter[] {filter("count", "<", 2), filter("count", "!=", 2)},
+          new String[] {"coll/val1"},
+          new Filter[] {filter("count", "<", 2), filter("count", "!=", 1)},
+          new String[] {},
+          new Filter[] {
+            filter("count", ">", 2), filter("count", "not-in", Collections.singletonList(3))
+          },
+          new String[] {},
+          new Filter[] {
+            filter("count", ">=", 2), filter("count", "not-in", Collections.singletonList(3))
+          },
+          new String[] {"coll/val2"},
+          new Filter[] {filter("count", ">=", 2), filter("count", "not-in", Arrays.asList(3, 3))},
+          new String[] {"coll/val2"},
+          new Filter[] {filter("count", ">", 1), filter("count", "<", 3), filter("count", "!=", 2)},
+          new String[] {},
+          new Filter[] {
+            filter("count", ">=", 1), filter("count", "<", 3), filter("count", "!=", 2)
+          },
+          new String[] {"coll/val1"},
+          new Filter[] {
+            filter("count", ">=", 1), filter("count", "<=", 3), filter("count", "!=", 2)
+          },
+          new String[] {"coll/val1", "coll/val3"},
+          new Filter[] {
+            filter("count", ">", 1), filter("count", "<=", 3), filter("count", "!=", 2)
+          },
+          new String[] {"coll/val3"}
+        };
+
+    for (int i = 0; i < filtersAndResults.length; i += 2) {
+      Query query = query("coll");
+      for (Filter filter : (Filter[]) filtersAndResults[i]) {
+        query = query.filter(filter);
+      }
+      verifyResults(query, (String[]) filtersAndResults[i + 1]);
+    }
   }
 
   @Test
