@@ -3,7 +3,7 @@
 This directory contains the source code, configuration and documentation for health metrics
 (size, app startup time, etc.) measurement for Firebase Android SDKs.
 
-Available metrics are published in Firebase documentation at the
+Available metrics are published in the Firebase
 [Android SDK metrics](https://firebase.google.com/docs/android/sdk-metrics) page.
 
 ## Size
