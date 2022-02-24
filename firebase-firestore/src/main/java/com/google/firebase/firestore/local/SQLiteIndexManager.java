@@ -93,9 +93,15 @@ final class SQLiteIndexManager implements IndexManager {
   private final Queue<FieldIndex> nextIndexToUpdate =
       new PriorityQueue<>(
           10,
-          (l, r) ->
-              Long.compare(
-                  l.getIndexState().getSequenceNumber(), r.getIndexState().getSequenceNumber()));
+          (l, r) -> {
+            int sequenceCmp =
+                Long.compare(
+                    l.getIndexState().getSequenceNumber(), r.getIndexState().getSequenceNumber());
+            if (sequenceCmp == 0) {
+              return l.getCollectionGroup().compareTo(r.getCollectionGroup());
+            }
+            return sequenceCmp;
+          });
 
   private boolean started = false;
   private int memoizedMaxIndexId = -1;
