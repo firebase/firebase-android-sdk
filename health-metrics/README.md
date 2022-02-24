@@ -1,6 +1,6 @@
 # SDK Health Metrics
 
-This directory contains the source code, configurations and documentations for health metrics
+This directory contains the source code, configuration and documentation for health metrics
 (size, app startup time, etc.) measurement for Firebase Android SDKs.
 
 Available metrics are published in Firebase documentation at the
