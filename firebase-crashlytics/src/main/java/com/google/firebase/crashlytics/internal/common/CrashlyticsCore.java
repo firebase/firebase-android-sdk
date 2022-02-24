@@ -61,7 +61,10 @@ public class CrashlyticsCore {
 
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
 
-  private static final String ON_DEMAND_KEY = "com.crashlytics.on-demand.recorded-exceptions";
+  private static final String ON_DEMAND_RECORDED_KEY =
+      "com.crashlytics.on-demand.recorded-exceptions";
+  private static final String ON_DEMAND_DROPPED_KEY =
+      "com.crashlytics.on-demand.dropped-exceptions";
 
   // If this marker sticks around, the app is crashing before we finished initializing
   private static final String INITIALIZATION_MARKER_FILE_NAME = "initialization_marker";
@@ -70,13 +73,13 @@ public class CrashlyticsCore {
   private final Context context;
   private final FirebaseApp app;
   private final DataCollectionArbiter dataCollectionArbiter;
+  private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
 
   private CrashlyticsFileMarker initializationMarker;
   private CrashlyticsFileMarker crashMarker;
   private boolean didCrashOnPreviousExecution;
-  private int recordedOnDemandExceptions = 0;
 
   private CrashlyticsController controller;
   private final IdManager idManager;
@@ -113,6 +116,7 @@ public class CrashlyticsCore {
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
+    onDemandCounter = OnDemandCounter.getInstance();
   }
 
   // endregion
@@ -373,11 +377,15 @@ public class CrashlyticsCore {
 
   /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
   public void logFatalException(Throwable throwable) {
-    // TODO(mrober): Put this count somewhere?
-    Logger.getLogger().d("Logging fatal: " + recordedOnDemandExceptions);
-    controller.setInternalKey(ON_DEMAND_KEY, Integer.toString(recordedOnDemandExceptions));
+    Logger.getLogger()
+        .d("Recorded on-demand fatal events: " + onDemandCounter.getRecordedOnDemandExceptions());
+    Logger.getLogger()
+        .d("Dropped on-demand fatal events: " + onDemandCounter.getDroppedOnDemandExceptions());
+    controller.setInternalKey(
+        ON_DEMAND_RECORDED_KEY, Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
+    controller.setInternalKey(
+        ON_DEMAND_DROPPED_KEY, Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
     controller.logFatalException(Thread.currentThread(), throwable);
-    recordedOnDemandExceptions++;
   }
 
   // endregion

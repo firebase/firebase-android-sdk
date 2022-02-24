@@ -7,6 +7,7 @@ import com.google.android.datatransport.Transport;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import java.util.Locale;
@@ -29,6 +30,7 @@ final class ReportQueue {
   private final BlockingQueue<Runnable> queue;
   private final ThreadPoolExecutor singleThreadExecutor;
   private final Transport<CrashlyticsReport> transport;
+  private final OnDemandCounter onDemandCounter;
 
   private int step;
   private long lastUpdatedMs;
@@ -58,6 +60,8 @@ final class ReportQueue {
 
     step = 0;
     lastUpdatedMs = 0;
+
+    onDemandCounter = OnDemandCounter.getInstance();
   }
 
   /**
@@ -69,8 +73,9 @@ final class ReportQueue {
       CrashlyticsReportWithSessionId reportWithSessionId, boolean isOnDemand) {
     synchronized (queue) {
       TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
-      if (isQueueAvailable()) {
-        if (isOnDemand) {
+      if (isOnDemand) {
+        onDemandCounter.incrementRecordedOnDemandExceptions();
+        if (isQueueAvailable()) {
           Logger.getLogger().d("Enqueueing report: " + reportWithSessionId.getSessionId());
           Logger.getLogger().d("Queue size: " + queue.size());
           singleThreadExecutor.execute(new ReportRunnable(reportWithSessionId, tcs));
@@ -79,17 +84,19 @@ final class ReportQueue {
           // Complete the task right away to not block on-demand callers.
           Logger.getLogger().d("Closing task for report: " + reportWithSessionId.getSessionId());
           tcs.trySetResult(reportWithSessionId);
-        } else {
-          sendReport(reportWithSessionId, tcs);
+
+          return tcs;
         }
 
+        calcStep();
+        Logger.getLogger()
+            .d("Dropping report due to queue being full: " + reportWithSessionId.getSessionId());
+        onDemandCounter.incrementDroppedOnDemandExceptions();
+        tcs.trySetResult(reportWithSessionId); // Complete the task right away.
         return tcs;
       }
 
-      calcStep();
-      Logger.getLogger()
-          .d("Dropping report due to queue being full: " + reportWithSessionId.getSessionId());
-      tcs.trySetResult(reportWithSessionId); // Complete the task right away.
+      sendReport(reportWithSessionId, tcs);
       return tcs;
     }
   }
@@ -166,6 +173,7 @@ final class ReportQueue {
     @Override
     public void run() {
       sendReport(reportWithSessionId, tcs);
+      onDemandCounter.resetDroppedOnDemandExceptions();
 
       // Block the single thread executor to enforce the rate, with or without backoff.
       double delay = calcDelay();
