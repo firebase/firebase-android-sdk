@@ -53,7 +53,9 @@ async def _launch_macrobenchmark_test():
     _copy_google_services(),
   )
 
-  with chdir('macrobenchmark'):
+  _logger.info(f'Artifact versions: {artifact_versions}')
+
+  with chdir('health-metrics/macrobenchmark'):
     runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
     results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
 
@@ -77,12 +79,12 @@ def _artifact_key_version(artifact):
 
 
 async def _parse_config_yaml():
-  with open('macrobenchmark/config.yaml') as yaml_file:
+  with open('health-metrics/macrobenchmark/config.yaml') as yaml_file:
     return yaml.safe_load(yaml_file)
 
 
 async def _create_gradle_wrapper():
-  with open('macrobenchmark/settings.gradle', 'w'):
+  with open('health-metrics/macrobenchmark/settings.gradle', 'w'):
     pass
 
   proc = await asyncio.subprocess.create_subprocess_exec(
@@ -91,7 +93,7 @@ async def _create_gradle_wrapper():
     '--gradle-version',
     '6.9',
     '--project-dir',
-    'macrobenchmark'
+    'health-metrics/macrobenchmark'
   )
   await proc.wait()
 
@@ -99,7 +101,7 @@ async def _create_gradle_wrapper():
 async def _copy_google_services():
   if 'FIREBASE_CI' in os.environ:
     src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
-    dst = 'macrobenchmark/template/app/google-services.json'
+    dst = 'health-metrics/macrobenchmark/template/app/google-services.json'
     _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
     shutil.copyfile(src, dst)
 
@@ -222,7 +224,7 @@ class MacrobenchmarkTest:
   async def _aggregate_benchmark_results(self):
     results = []
     blobs = self.gcs_client.list_blobs(self.test_results_bucket, prefix=self.test_results_dir)
-    files = [x for x in blobs if re.search(r'artifacts/[^/]*\.json', x.name)]
+    files = [x for x in blobs if re.search(r'sdcard/Download/[^/]*\.json', x.name)]
     for file in files:
       device = re.search(r'([^/]*)/artifacts/', file.name).group(1)
       benchmarks = json.loads(file.download_as_bytes())['benchmarks']
