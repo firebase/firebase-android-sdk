@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import com.google.firebase.gradle.MultiProjectReleasePlugin
 
 buildscript {
     ext.kotlinVersion = '1.3.72'
@@ -50,11 +51,18 @@ ext {
     robolectricVersion = '4.3.1'
     protocVersion = '3.14.0'
     javaliteVersion = '3.14.0'
+
+    gMavenRoot = 'https://dl.google.com/dl/android/maven2'
+    firebaseDefaultPreguardFile='oss/default-preguard.txt'
+    errorproneVersion = '2.3.2'
+    errorproneJavacVersion = '9+181-r4173-1'
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
+
+apply plugin: MultiProjectReleasePlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
