@@ -87,6 +87,18 @@ class TesterSignInManager {
   }
 
   @VisibleForTesting
+  void onActivityCreated(Activity activity) {
+    LogWrapper.getInstance().e(TAG + "ON ACTIVITY CREATED");
+    // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
+    // result of the signIn Task in the onActivityCreated callback
+    if (activity instanceof SignInResultActivity) {
+      LogWrapper.getInstance().v("Sign in completed");
+      this.setSuccessfulSignInResult();
+      this.signInStorage.setSignInStatus(true);
+    }
+  }
+
+  @VisibleForTesting
   void onActivityResumed(Activity activity) {
     if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
       // SignInResult and InstallActivity are internal to the SDK and should not be treated as
@@ -103,18 +115,6 @@ class TesterSignInManager {
                   AUTHENTICATION_CANCELED));
         }
       }
-    }
-  }
-
-  @VisibleForTesting
-  void onActivityCreated(Activity activity) {
-    LogWrapper.getInstance().e(TAG + "ON ACTIVITY CREATED");
-    // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
-    // result of the signIn Task in the onActivityCreated callback
-    if (activity instanceof SignInResultActivity) {
-      LogWrapper.getInstance().v("Sign in completed");
-      this.setSuccessfulSignInResult();
-      this.signInStorage.setSignInStatus(true);
     }
   }
 
