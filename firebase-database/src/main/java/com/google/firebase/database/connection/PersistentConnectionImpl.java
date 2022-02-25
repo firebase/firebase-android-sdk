@@ -428,22 +428,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
             });
     outstandingGets.put(readId, outstandingGet);
 
-    if (!connected()) {
-      executorService.schedule(
-          () -> {
-            if (!outstandingGet.markSent()) {
-              return;
-            }
-            if (logger.logsDebug()) {
-              logger.debug("get " + readId + " timed out waiting for connection");
-            }
-            outstandingGets.remove(readId);
-            source.setException(new Exception("Client is offline"));
-          },
-          GET_CONNECT_TIMEOUT,
-          TimeUnit.MILLISECONDS);
-    }
-
     if (canSendReads()) {
       sendGet(readId);
     }

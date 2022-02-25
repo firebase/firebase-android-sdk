@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -4556,22 +4557,34 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetThrowsExceptionForEmptyNodeWhenOffline()
-      throws DatabaseException, InterruptedException {
+  public void testGetWaitsForConnection() throws DatabaseException, InterruptedException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node = db.getReference().child(db.getReference().push().getKey());
+    long offlinePause = 3000L;
     db.goOffline();
+    THREAD_POOL_EXECUTOR.execute(
+        () -> {
+          try {
+            Thread.sleep(offlinePause);
+          } catch (InterruptedException e) {
+            fail("Exception while pausing for get.");
+          } finally {
+            db.goOnline();
+          }
+        });
     try {
+      long startTime = System.currentTimeMillis();
       Tasks.await(node.get());
+      long elapsed = System.currentTimeMillis() - startTime;
+      // Since get starts after we schedule the re-connect task, it could technically
+      // block for slightly less long than offlinePause, but the difference should be
+      // negligible.
+      assertTrue(elapsed > offlinePause * 0.75);
     } catch (ExecutionException e) {
-      assertEquals(e.getCause().getMessage(), "Client is offline");
-      return;
-    } finally {
-      db.goOnline();
+      fail("get threw an exception: " + e);
     }
-    fail("Client get succeeded even though offline.");
   }
 
   @Test

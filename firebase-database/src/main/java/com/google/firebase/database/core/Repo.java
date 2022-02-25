@@ -17,7 +17,6 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
@@ -303,6 +302,11 @@ public class Repo implements PersistentConnection.Delegate {
     ctx.getRunLoop().scheduleNow(r);
   }
 
+  public void scheduleDelayed(Runnable r, long millis) {
+    ctx.requireStarted();
+    ctx.getRunLoop().schedule(r, millis);
+  }
+
   public void postEvent(Runnable r) {
     ctx.requireStarted();
     ctx.getEventTarget().postEvent(r);
@@ -522,36 +526,37 @@ public class Repo implements PersistentConnection.Delegate {
               return;
             }
             serverSyncTree.setQueryActive(query.getSpec());
+            final DataSnapshot persisted = serverSyncTree.persistenceServerCache(query);
+            if (persisted.exists()) {
+              // Prefer the locally persisted value if the server is not responsive.
+              scheduleDelayed(() -> source.trySetResult(persisted), 3000);
+            }
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
                 .addOnCompleteListener(
                     ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
-                    new OnCompleteListener<Object>() {
-                      @Override
-                      public void onComplete(@NonNull Task<Object> task) {
-                        if (!task.isSuccessful()) {
-                          operationLogger.info(
-                              "get for query "
-                                  + query.getPath()
-                                  + " falling back to disk cache after error: "
-                                  + task.getException().getMessage());
-                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
-                          if (!cached.exists()) {
-                            source.setException(task.getException());
-                          } else {
-                            source.setResult(cached);
-                          }
-                        } else {
-                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                          postEvents(
-                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                          source.setResult(
-                              InternalHelpers.createDataSnapshot(
-                                  query.getRef(),
-                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                    (@NonNull Task<Object> task) -> {
+                      // We do not need to synchronize with the persisted set result callback
+                      // because the run on the same run loop. If the delayed callback above runs
+                      // before this one, this task is a no-op.
+                      if (!task.isSuccessful()) {
+                        if (!persisted.exists()) {
+                          source.setException(
+                              task.getException() != null
+                                  ? task.getException()
+                                  : new IllegalStateException(
+                                      "Query get task failed without exception."));
                         }
-                        serverSyncTree.setQueryInactive(query.getSpec());
+                      } else if (!source.getTask().isComplete()) {
+                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        postEvents(
+                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        source.setResult(
+                            InternalHelpers.createDataSnapshot(
+                                query.getRef(),
+                                IndexedNode.from(serverNode, query.getSpec().getIndex())));
                       }
+                      serverSyncTree.setQueryInactive(query.getSpec());
                     });
           }
         });

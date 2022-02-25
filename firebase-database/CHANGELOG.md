@@ -1,6 +1,8 @@
 # Unreleased
 - [fixed] Fixed a crash that prevented the RTDB SDK from reconnecting to the
   backend if a token refresh attempt was unsuccesful.
+- [fixed] `Query.get` no longer throws "Client is offline" exception when local
+  value is not available, waits for connection instead.
 
 # 20.0.2
 - [fixed] The SDK can now continue to issue writes for apps that send an
