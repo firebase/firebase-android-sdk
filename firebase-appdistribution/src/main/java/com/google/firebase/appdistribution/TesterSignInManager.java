@@ -148,7 +148,6 @@ class TesterSignInManager {
           .addOnFailureListener(
               handleTaskFailure(
                   FirebaseAppDistributionException.ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
-      LogWrapper.getInstance().e("DONE WITH SIGN IN");
       return signInTaskCompletionSource.getTask();
     }
   }
