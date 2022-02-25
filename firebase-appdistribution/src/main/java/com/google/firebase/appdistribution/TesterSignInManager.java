@@ -88,7 +88,6 @@ class TesterSignInManager {
 
   @VisibleForTesting
   void onActivityCreated(Activity activity) {
-    LogWrapper.getInstance().e(TAG + "ON ACTIVITY CREATED");
     // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
     // result of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
