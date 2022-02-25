@@ -78,15 +78,35 @@ public class CompositeFilter extends Filter {
    * Returns true if this filter is a conjunction of field filters only. Returns false otherwise.
    */
   public boolean isFlatConjunction() {
-    if (operator != Operator.AND) {
-      return false;
-    }
+    return isFlat() && isConjunction();
+  }
+
+  /**
+   * Returns true if this filter does not contain any composite filters. Returns false otherwise.
+   */
+  public boolean isFlat() {
     for (Filter filter : filters) {
       if (filter instanceof CompositeFilter) {
         return false;
       }
     }
     return true;
+  }
+
+  /**
+   * Returns a new composite filter that contains all filter from `this` plus all the given filters.
+   */
+  public CompositeFilter withAddedFilters(List<Filter> otherFilters) {
+    List<Filter> mergedFilters = new ArrayList<>(filters);
+    mergedFilters.addAll(otherFilters);
+    return new CompositeFilter(mergedFilters, operator);
+  }
+
+  /** Returns a new composite filter that contains all filter from `this` plus the given filter. */
+  public CompositeFilter withAddedFilter(FieldFilter other) {
+    List<Filter> mergedFilters = new ArrayList<>(filters);
+    mergedFilters.add(other);
+    return new CompositeFilter(mergedFilters, operator);
   }
 
   /**
@@ -135,10 +155,12 @@ public class CompositeFilter extends Filter {
     // TODO(orquery): Add special case for flat AND filters.
 
     List<String> canonicalIds = new ArrayList<>();
-    for (Filter filter : filters) canonicalIds.add(filter.getCanonicalId());
+    for (Filter filter : filters) {
+      canonicalIds.add(filter.getCanonicalId());
+    }
     StringBuilder builder = new StringBuilder();
     builder.append(isConjunction() ? "and(" : "or(");
-    TextUtils.join(",", canonicalIds);
+    builder.append(TextUtils.join(",", canonicalIds));
     builder.append(")");
     return builder.toString();
   }
