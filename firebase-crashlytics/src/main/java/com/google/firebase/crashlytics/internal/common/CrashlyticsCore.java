@@ -116,7 +116,7 @@ public class CrashlyticsCore {
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
-    onDemandCounter = OnDemandCounter.getInstance();
+    onDemandCounter = new OnDemandCounter();
   }
 
   // endregion
@@ -157,7 +157,8 @@ public class CrashlyticsCore {
               logFileManager,
               userMetadata,
               stackTraceTrimmingStrategy,
-              settingsProvider);
+              settingsProvider,
+              onDemandCounter);
 
       controller =
           new CrashlyticsController(

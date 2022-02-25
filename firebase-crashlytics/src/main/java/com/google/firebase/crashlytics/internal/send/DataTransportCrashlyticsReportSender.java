@@ -23,6 +23,7 @@ import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
@@ -48,7 +49,7 @@ public class DataTransportCrashlyticsReportSender {
   private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(
-      Context context, SettingsDataProvider settingsProvider) {
+      Context context, SettingsDataProvider settingsProvider, OnDemandCounter onDemandCounter) {
     TransportRuntime.initialize(context);
     final Transport<CrashlyticsReport> transport =
         TransportRuntime.getInstance()
@@ -58,7 +59,8 @@ public class DataTransportCrashlyticsReportSender {
                 CrashlyticsReport.class,
                 Encoding.of("json"),
                 DEFAULT_TRANSFORM);
-    ReportQueue reportQueue = new ReportQueue(transport, settingsProvider.getSettings());
+    ReportQueue reportQueue =
+        new ReportQueue(transport, settingsProvider.getSettings(), onDemandCounter);
     return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
   }
 

@@ -29,6 +29,7 @@ import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
@@ -53,7 +54,7 @@ public class DataTransportCrashlyticsReportSenderTest {
     when(mockTransform.apply(any())).thenReturn(new byte[0]);
     reportSender =
         new DataTransportCrashlyticsReportSender(
-            new ReportQueue(60, 1.2, 3_000, mockTransport), mockTransform);
+            new ReportQueue(60, 1.2, 3_000, mockTransport, new OnDemandCounter()), mockTransform);
   }
 
   @Test

@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.crashlytics.internal.send;
 
 import static com.google.firebase.components.Preconditions.checkState;
@@ -35,23 +49,27 @@ final class ReportQueue {
   private int step;
   private long lastUpdatedMs;
 
-  ReportQueue(Transport<CrashlyticsReport> transport, Settings settings) {
+  ReportQueue(
+      Transport<CrashlyticsReport> transport, Settings settings, OnDemandCounter onDemandCounter) {
     this(
         settings.onDemandUploadRatePerMinute(),
         settings.onDemandBackoffBase(),
         (long) settings.onDemandBackoffStepDurationSeconds() * MS_PER_SECOND,
-        transport);
+        transport,
+        onDemandCounter);
   }
 
   ReportQueue(
       double ratePerMinute,
       double base,
       long stepDurationMs,
-      Transport<CrashlyticsReport> transport) {
+      Transport<CrashlyticsReport> transport,
+      OnDemandCounter onDemandCounter) {
     this.ratePerMinute = ratePerMinute;
     this.base = base;
     this.stepDurationMs = stepDurationMs;
     this.transport = transport;
+    this.onDemandCounter = onDemandCounter;
 
     // The queue capacity is the per-minute rate number. // TODO(mrober): Round up to next int?
     queueCapacity = (int) ratePerMinute;
@@ -60,8 +78,6 @@ final class ReportQueue {
 
     step = 0;
     lastUpdatedMs = 0;
-
-    onDemandCounter = OnDemandCounter.getInstance();
   }
 
   /**
