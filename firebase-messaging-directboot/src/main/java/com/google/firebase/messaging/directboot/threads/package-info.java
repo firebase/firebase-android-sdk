@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-buildscript {
-
-    repositories {
-        google()
-        jcenter()
-
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0-beta02'
-    }
-}
-
-plugins {
-    id "com.dorongold.task-tree" version "1.5"
-}
-
-apply from: '../sdkProperties.gradle'
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
-}
+/** @hide */
+package com.google.firebase.messaging.directboot.threads;
