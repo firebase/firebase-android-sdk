@@ -97,6 +97,7 @@ dependencies {
     androidTestImplementation 'org.hamcrest:hamcrest:2.2'
     androidTestImplementation 'org.hamcrest:hamcrest-library:2.2'
     androidTestImplementation 'net.java:quickcheck:0.6'
+    androidTestImplementation 'org.codehaus.plexus:plexus-utils:1.5.7'
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
@@ -108,6 +109,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation 'org.codehaus.plexus:plexus-utils:1.5.7'
 }
 
 gradle.projectsEvaluated {

@@ -162,6 +162,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
@@ -174,6 +175,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'org.hamcrest:hamcrest:2.2'
 }
 
 gradle.projectsEvaluated {
