@@ -59,10 +59,8 @@ public class NetworkClient {
   private static final String APPLICATION_JSON = "application/json";
   private static final String UTF_8 = "UTF-8";
   @VisibleForTesting static final String X_FIREBASE_CLIENT = "X-Firebase-Client";
-  @VisibleForTesting static final String X_FIREBASE_CLIENT_LOG_TYPE = "X-Firebase-Client-Log-Type";
   @VisibleForTesting static final String X_ANDROID_PACKAGE = "X-Android-Package";
   @VisibleForTesting static final String X_ANDROID_CERT = "X-Android-Cert";
-  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
 
   private final Context context;
   private final String apiKey;
@@ -124,14 +122,9 @@ public class NetworkClient {
       urlConnection.setDoOutput(true);
       urlConnection.setFixedLengthStreamingMode(requestBytes.length);
       urlConnection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      try {
-        String heartBeatHeader = getHeartBeat();
-        if (heartBeatHeader != null) {
-          urlConnection.setRequestProperty(X_FIREBASE_CLIENT, heartBeatHeader);
-        }
-
-      } catch (Exception e) {
-        Log.w(TAG, "Unable to get heartbeats!");
+      String heartBeatHeader = getHeartBeat();
+      if (heartBeatHeader != null) {
+        urlConnection.setRequestProperty(X_FIREBASE_CLIENT, heartBeatHeader);
       }
 
       // Headers for Android API key restrictions.
@@ -180,6 +173,7 @@ public class NetworkClient {
       try {
         return Tasks.await(controller.getHeartBeatsHeader());
       } catch (Exception e) {
+        Log.w(TAG, "Unable to get heartbeats!");
         return null;
       }
     } else {
