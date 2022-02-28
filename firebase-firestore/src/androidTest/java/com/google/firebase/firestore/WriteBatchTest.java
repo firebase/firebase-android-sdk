@@ -309,7 +309,7 @@ public class WriteBatchTest {
 
   @Test
   public void testCanHandleMutationWithoutRemoteDocument() {
-    DocumentReference doc = testFirestore().document("coll/NotExistYet");
+    DocumentReference doc = testDocument();
     waitFor(doc.update(map("foo", "bar")));
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertFalse(snapshot.exists());
