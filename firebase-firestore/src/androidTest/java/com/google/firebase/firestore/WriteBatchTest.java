@@ -306,31 +306,4 @@ public class WriteBatchTest {
     assertTrue(snapshot.exists());
     assertEquals(map("foo", "bar", "baz", 42L), snapshot.getData());
   }
-
-  @Test
-  public void testCanHandlePendingMutationsWithIrrelevantDocuments() {
-    DocumentReference doc = testDocument();
-    DocumentReference anotherDoc = doc.getParent().document();
-    FirebaseFirestore db = doc.getFirestore();
-    // Prepare two batches, the first one will get rejected by the backend.
-    // When the first batch is rejected, overlay is recalculated with only the
-    // second batch, even though it has more documents mutated.
-    // See: https://github.com/firebase/firebase-android-sdk/issues/3490
-    WriteBatch batch1 = db.batch();
-    batch1.update(doc, map("foo", "bar"));
-    WriteBatch batch2 = db.batch();
-    batch2.set(doc, map("foo", "bar_set"));
-    batch2.set(anotherDoc, map("foo", "another"));
-    batch1.commit();
-    batch2.commit();
-
-    waitFor(doc.getFirestore().waitForPendingWrites());
-    DocumentSnapshot snapshot = waitFor(doc.get());
-    assertTrue(snapshot.exists());
-    assertEquals(map("foo", "bar_set"), snapshot.getData());
-
-    snapshot = waitFor(anotherDoc.get());
-    assertTrue(snapshot.exists());
-    assertEquals(map("foo", "another"), snapshot.getData());
-  }
 }
