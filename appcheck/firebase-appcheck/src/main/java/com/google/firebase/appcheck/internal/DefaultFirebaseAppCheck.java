@@ -31,9 +31,8 @@ import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.internal.util.Clock;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +41,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private static final long BUFFER_TIME_MILLIS = 5 * 60 * 1000; // 5 minutes in milliseconds
 
   private final FirebaseApp firebaseApp;
-  private final Provider<UserAgentPublisher> userAgentPublisherProvider;
-  private final Provider<HeartBeatInfo> heartBeatInfoProvider;
+  private final Provider<HeartBeatController> heartbeatControllerProvider;
   private final List<AppCheckTokenListener> appCheckTokenListenerList;
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
@@ -56,14 +54,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<UserAgentPublisher> userAgentPublisherProvider,
-      @NonNull Provider<HeartBeatInfo> heartBeatInfoProvider) {
+      @NonNull Provider<HeartBeatController> heartBeatController) {
     checkNotNull(firebaseApp);
-    checkNotNull(userAgentPublisherProvider);
-    checkNotNull(heartBeatInfoProvider);
+    checkNotNull(heartBeatController);
     this.firebaseApp = firebaseApp;
-    this.userAgentPublisherProvider = userAgentPublisherProvider;
-    this.heartBeatInfoProvider = heartBeatInfoProvider;
+    this.heartbeatControllerProvider = heartBeatController;
     this.appCheckTokenListenerList = new ArrayList<>();
     this.appCheckListenerList = new ArrayList<>();
     this.storageHelper =
@@ -217,13 +212,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   }
 
   @NonNull
-  Provider<UserAgentPublisher> getUserAgentPublisherProvider() {
-    return userAgentPublisherProvider;
-  }
-
-  @NonNull
-  Provider<HeartBeatInfo> getHeartBeatInfoProvider() {
-    return heartBeatInfoProvider;
+  Provider<HeartBeatController> getHeartbeatControllerProvider() {
+    return heartbeatControllerProvider;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */

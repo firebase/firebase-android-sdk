@@ -104,6 +104,11 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
     return currentAppState;
   }
 
+  /**
+   * Reason: HIDE_ANNOTATION_REQUIRED_IN_CHILD_CLASS
+   *
+   * @hide
+   */
   @VisibleForTesting
   public WeakReference<AppStateCallback> getAppStateCallback() {
     return appStateCallback;
