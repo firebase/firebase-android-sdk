@@ -10,6 +10,8 @@ by opting into a release at
   the shutdown from proceeding if a network connection was opened right before.
 - [changed] Queries are now send to the backend before the SDK starts local 
   processing, which reduces overall Query latency.
+- [fixed] Fixed an issue where mutations with multiple documents are not handled
+  correctly during previous mutation acknowledgement(#3490).
 
 # 24.0.1
 - [changed] Improved performance for databases that contain many document
