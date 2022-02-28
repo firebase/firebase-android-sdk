@@ -166,7 +166,7 @@ class LocalDocumentsView {
     for (MutationBatch batch : batches) {
       for (DocumentKey key : batch.getKeys()) {
         MutableDocument baseDoc = docs.get(key);
-        if (baseDoc == null) { 
+        if (baseDoc == null) {
           // If this batch has documents not included in passed in `docs`, skip them.
           continue;
         }
