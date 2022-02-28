@@ -165,6 +165,11 @@ class LocalDocumentsView {
     // along the way.
     for (MutationBatch batch : batches) {
       for (DocumentKey key : batch.getKeys()) {
+        // If this batch has documents not included in passed in `docs`, skip them.
+        if (!docs.containsKey(key)) {
+          continue;
+        }
+
         FieldMask mask = masks.containsKey(key) ? masks.get(key) : FieldMask.EMPTY;
         mask = batch.applyToLocalView(docs.get(key), mask);
         masks.put(key, mask);
