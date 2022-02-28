@@ -306,4 +306,13 @@ public class WriteBatchTest {
     assertTrue(snapshot.exists());
     assertEquals(map("foo", "bar", "baz", 42L), snapshot.getData());
   }
+
+  @Test
+  public void testCanHandleMutationWithoutRemoteDocument() {
+    DocumentReference doc = testFirestore().document("coll/NotExistYet");
+    waitFor(doc.set(map("foo", "bar")));
+    DocumentSnapshot snapshot = waitFor(doc.get());
+    assertTrue(snapshot.exists());
+    assertEquals(map("foo", "bar"), snapshot.getData());
+  }
 }
