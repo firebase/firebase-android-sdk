@@ -56,7 +56,6 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-inline:2.25.0'
-    testImplementation 'org.hamcrest:hamcrest:2.2'
 
     androidTestImplementation project(':integ-testing')
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
@@ -66,5 +65,4 @@ dependencies {
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
-    androidTestImplementation 'org.hamcrest:hamcrest:2.2'
 }
