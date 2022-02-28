@@ -21,9 +21,8 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
-import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,14 +40,12 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.optionalProvider(UserAgentPublisher.class))
-            .add(Dependency.optionalProvider(HeartBeatInfo.class))
+            .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
                 (container) ->
                     new DefaultFirebaseAppCheck(
                         container.get(FirebaseApp.class),
-                        container.getProvider(UserAgentPublisher.class),
-                        container.getProvider(HeartBeatInfo.class)))
+                        container.getProvider(HeartBeatController.class)))
             .alwaysEager()
             .build(),
         LibraryVersionComponent.create("fire-app-check", BuildConfig.VERSION_NAME));
