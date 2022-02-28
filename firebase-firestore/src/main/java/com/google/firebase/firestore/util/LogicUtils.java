@@ -302,7 +302,6 @@ public class LogicUtils {
       runningResult = applyDistribution(runningResult, newCompositeFilter.getFilters().get(i));
     }
     return runningResult;
-    // return runningResult.applyAssociativity();
   }
 
   /**
