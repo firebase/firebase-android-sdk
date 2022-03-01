@@ -67,6 +67,7 @@ import java.util.TreeSet;
 /** A persisted implementation of IndexManager. */
 final class SQLiteIndexManager implements IndexManager {
   private static final String TAG = SQLiteIndexManager.class.getSimpleName();
+  private static final byte[] EMPTY_BYTES_VALUE = new byte[] {};
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
@@ -540,9 +541,7 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder statement = new StringBuilder();
     statement.append("SELECT document_key, directional_value FROM index_entries ");
     statement.append("WHERE index_id = ? AND uid = ? ");
-    if (arrayValues != null) {
-      statement.append("AND array_value = ? ");
-    }
+    statement.append("AND array_value = ? ");
     if (lowerBounds != null) {
       statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
     }
@@ -584,11 +583,7 @@ final class SQLiteIndexManager implements IndexManager {
       @Nullable Object[] lowerBounds,
       @Nullable Object[] upperBounds,
       @Nullable Object[] notInValues) {
-    int bindsPerStatement =
-        2
-            + (arrayValues != null ? 1 : 0)
-            + (lowerBounds != null ? 1 : 0)
-            + (upperBounds != null ? 1 : 0);
+    int bindsPerStatement = 3 + (lowerBounds != null ? 1 : 0) + (upperBounds != null ? 1 : 0);
     int statementsPerArrayValue = statementCount / (arrayValues != null ? arrayValues.size() : 1);
 
     Object[] bindArgs =
@@ -598,9 +593,11 @@ final class SQLiteIndexManager implements IndexManager {
     for (int i = 0; i < statementCount; ++i) {
       bindArgs[offset++] = indexId;
       bindArgs[offset++] = uid;
-      if (arrayValues != null) {
-        bindArgs[offset++] = encodeSingleElement(arrayValues.get(i / statementsPerArrayValue));
-      }
+      bindArgs[offset++] =
+          arrayValues != null
+              ? encodeSingleElement(arrayValues.get(i / statementsPerArrayValue))
+              : EMPTY_BYTES_VALUE;
+
       if (lowerBounds != null) {
         bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
       }
