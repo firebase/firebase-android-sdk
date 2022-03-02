@@ -91,13 +91,6 @@ package com.google.firebase.messaging {
     method @Nullable public Integer getVisibility();
   }
 
-  public class RemoteMessageCreator implements android.os.Parcelable.Creator<com.google.firebase.messaging.RemoteMessage> {
-    ctor public RemoteMessageCreator();
-    method @Nullable public com.google.firebase.messaging.RemoteMessage createFromParcel(android.os.Parcel);
-    method @Nullable public com.google.firebase.messaging.RemoteMessage[] newArray(int);
-    field public static final int CONTENT_DESCRIPTION = 0; // 0x0
-  }
-
   public final class SendException extends java.lang.Exception {
     method public int getErrorCode();
     field public static final int ERROR_INVALID_PARAMETERS = 1; // 0x1
@@ -105,32 +98,6 @@ package com.google.firebase.messaging {
     field public static final int ERROR_TOO_MANY_MESSAGES = 4; // 0x4
     field public static final int ERROR_TTL_EXCEEDED = 3; // 0x3
     field public static final int ERROR_UNKNOWN = 0; // 0x0
-  }
-
-}
-
-package com.google.firebase.messaging.threads {
-
-  public interface ExecutorFactory {
-    method public void executeOneOff(String, String, com.google.firebase.messaging.threads.ThreadPriority, Runnable);
-    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ScheduledExecutorService newScheduledThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newSingleThreadExecutor(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newThreadPool(com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newThreadPool(java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newThreadPool(int, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.ExecutorService newThreadPool(int, java.util.concurrent.ThreadFactory, com.google.firebase.messaging.threads.ThreadPriority);
-    method public java.util.concurrent.Future<?> submitOneOff(String, String, com.google.firebase.messaging.threads.ThreadPriority, Runnable);
-  }
-
-  public class PoolableExecutors {
-    method public static com.google.firebase.messaging.threads.ExecutorFactory factory();
-  }
-
-  public enum ThreadPriority {
-    enum_constant public static final com.google.firebase.messaging.threads.ThreadPriority HIGH_SPEED;
-    enum_constant public static final com.google.firebase.messaging.threads.ThreadPriority LOW_POWER;
   }
 
 }
