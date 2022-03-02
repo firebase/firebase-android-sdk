@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -4561,27 +4562,24 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference node = db.getReference().child(db.getReference().push().getKey());
-    long offlinePause = 3000L;
+    DatabaseReference node =
+        db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
     db.goOffline();
+    AtomicBoolean receivedValue = new AtomicBoolean();
     THREAD_POOL_EXECUTOR.execute(
         () -> {
           try {
-            Thread.sleep(offlinePause);
+            Thread.sleep(3000L);
           } catch (InterruptedException e) {
             fail("Exception while pausing for get.");
           } finally {
+            assertFalse(receivedValue.get());
             db.goOnline();
           }
         });
     try {
-      long startTime = System.currentTimeMillis();
       Tasks.await(node.get());
-      long elapsed = System.currentTimeMillis() - startTime;
-      // Since get starts after we schedule the re-connect task, it could technically
-      // block for slightly less long than offlinePause, but the difference should be
-      // negligible.
-      assertTrue(elapsed > offlinePause * 0.75);
+      receivedValue.set(true);
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
