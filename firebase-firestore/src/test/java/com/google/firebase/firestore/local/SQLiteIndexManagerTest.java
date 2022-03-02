@@ -100,6 +100,28 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testMultipleOrderBys() {
+    indexManager.addFieldIndex(
+        fieldIndex("coll", "a", Kind.DESCENDING, "b", Kind.ASCENDING, "c", Kind.DESCENDING));
+    addDoc("coll/val1", map("a", 1, "b", 1, "c", 3));
+    addDoc("coll/val2", map("a", 2, "b", 2, "c", 2));
+    addDoc("coll/val3", map("a", 2, "b", 2, "c", 3));
+    addDoc("coll/val4", map("a", 2, "b", 2, "c", 4));
+    addDoc("coll/val5", map("a", 2, "b", 2, "c", 5));
+    addDoc("coll/val6", map("a", 3, "b", 3, "c", 6));
+    Query query =
+        query("coll")
+            .filter(filter("a", "==", 2))
+            .filter(filter("b", "==", 2))
+            .filter(filter("c", ">", 2))
+            .orderBy(orderBy("c", "desc"))
+            .orderBy(orderBy("b", "asc"))
+            .orderBy(orderBy("a", "desc"))
+            .limitToFirst(2);
+    verifyResults(query, "coll/val4", "coll/val5");
+  }
+
+  @Test
   public void testEqualityFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", "==", 2));
