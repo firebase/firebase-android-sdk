@@ -537,7 +537,7 @@ public class Repo implements PersistentConnection.Delegate {
                     ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
                     (@NonNull Task<Object> task) -> {
                       // We do not need to synchronize with the persisted set result callback
-                      // because the run on the same run loop. If the delayed callback above runs
+                      // because they run on the same run loop. If the delayed callback above runs
                       // before this one, this task is a no-op.
                       if (!task.isSuccessful()) {
                         if (!persisted.exists()) {
