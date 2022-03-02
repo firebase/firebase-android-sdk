@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public class Repo implements PersistentConnection.Delegate {
 
@@ -536,18 +537,14 @@ public class Repo implements PersistentConnection.Delegate {
                 .addOnCompleteListener(
                     ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
                     (@NonNull Task<Object> task) -> {
-                      // We do not need to synchronize with the persisted set result callback
-                      // because they run on the same run loop. If the delayed callback above runs
-                      // before this one, this task is a no-op.
+                      if (source.getTask().isComplete()) {
+                        return;
+                      }
                       if (!task.isSuccessful()) {
                         if (!persisted.exists()) {
-                          source.setException(
-                              task.getException() != null
-                                  ? task.getException()
-                                  : new IllegalStateException(
-                                      "Query get task failed without exception."));
+                          source.setException(Objects.requireNonNull(task.getException()));
                         }
-                      } else if (!source.getTask().isComplete()) {
+                      } else {
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         postEvents(
                             serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));

@@ -275,7 +275,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
 
   private static final long IDLE_TIMEOUT = 60 * 1000;
-  private static final long GET_CONNECT_TIMEOUT = 3 * 1000;
 
   /**
    * If auth or appcheck fails repeatedly, we'll assume something is wrong and log a warning / back
