@@ -211,7 +211,7 @@ public class LogicUtils {
     // A & (B | C) --> (A & B) | (A & C)
     if (compositeFilter.isConjunction()) {
       // Case 1
-      return compositeFilter.withAddedFilter(fieldFilter);
+      return compositeFilter.withAddedFilters(Collections.singletonList(fieldFilter));
     } else {
       // Case 2
       List<Filter> newFilters = new ArrayList<>();

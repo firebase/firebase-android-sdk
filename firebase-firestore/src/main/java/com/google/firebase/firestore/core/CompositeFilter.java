@@ -102,13 +102,6 @@ public class CompositeFilter extends Filter {
     return new CompositeFilter(mergedFilters, operator);
   }
 
-  /** Returns a new composite filter that contains all filter from `this` plus the given filter. */
-  public CompositeFilter withAddedFilter(FieldFilter other) {
-    List<Filter> mergedFilters = new ArrayList<>(filters);
-    mergedFilters.add(other);
-    return new CompositeFilter(mergedFilters, operator);
-  }
-
   /**
    * Performs a depth-first search to find and return the first FieldFilter in the composite filter
    * that satisfies the condition. Returns {@code null} if none of the FieldFilters satisfy the
