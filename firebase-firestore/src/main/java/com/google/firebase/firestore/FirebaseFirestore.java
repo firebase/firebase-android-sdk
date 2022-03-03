@@ -481,7 +481,7 @@ public class FirebaseFirestore {
   }
 
   @NonNull
-  public <TResult> Task<TResult> runTransaction(
+  public <TResult> Task<TResult> runReadOnlyTransaction(
       @NonNull ReadOnlyTransaction.Function<TResult> updateFunction) {
     throw new RuntimeException("not implemented");
   }
