@@ -260,8 +260,7 @@ public class Transaction {
 
       int maxAttempts = 5;
 
-      public Builder() {
-      }
+      public Builder() {}
 
       public Builder(@NonNull Builder builder) {
         maxAttempts = builder.maxAttempts;
@@ -275,7 +274,6 @@ public class Transaction {
       public Options build() {
         return new Options(this);
       }
-
     }
   }
 }

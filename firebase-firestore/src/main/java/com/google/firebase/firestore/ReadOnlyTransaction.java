@@ -16,13 +16,11 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.firebase.Timestamp;
 
 public class ReadOnlyTransaction {
 
-  ReadOnlyTransaction() {
-  }
+  ReadOnlyTransaction() {}
 
   @NonNull
   public DocumentSnapshot get(@NonNull DocumentReference documentRef)
