@@ -72,7 +72,8 @@ public class TesterSignInManagerTest {
       String.format(
           "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
               + "?appName=com.google.firebase.appdistribution.test"
-              + "&packageName=com.google.firebase.appdistribution.test",
+              + "&packageName=com.google.firebase.appdistribution.test"
+              + "&newRedirectScheme=appdistribution",
           TEST_APP_ID_1, TEST_FID_1);
 
   private TesterSignInManager testerSignInManager;
