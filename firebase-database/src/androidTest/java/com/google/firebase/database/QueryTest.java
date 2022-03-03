@@ -4569,7 +4569,7 @@ public class QueryTest {
     THREAD_POOL_EXECUTOR.execute(
         () -> {
           try {
-            Thread.sleep(3000L);
+            Thread.sleep(200L);
           } catch (InterruptedException e) {
             fail("Exception while pausing for get.");
           } finally {

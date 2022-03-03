@@ -61,6 +61,7 @@ import java.util.Objects;
 public class Repo implements PersistentConnection.Delegate {
 
   private static final String INTERRUPT_REASON = "repo_interrupt";
+  private static final int GET_TIMEOUT_MS = 3000;
 
   private final RepoInfo repoInfo;
   private final OffsetClock serverClock = new OffsetClock(new DefaultClock(), 0);
@@ -530,7 +531,7 @@ public class Repo implements PersistentConnection.Delegate {
             final DataSnapshot persisted = serverSyncTree.persistenceServerCache(query);
             if (persisted.exists()) {
               // Prefer the locally persisted value if the server is not responsive.
-              scheduleDelayed(() -> source.trySetResult(persisted), 3000);
+              scheduleDelayed(() -> source.trySetResult(persisted), GET_TIMEOUT_MS);
             }
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
@@ -541,7 +542,9 @@ public class Repo implements PersistentConnection.Delegate {
                         return;
                       }
                       if (!task.isSuccessful()) {
-                        if (!persisted.exists()) {
+                        if (persisted.exists()) {
+                          source.setResult(persisted);
+                        } else {
                           source.setException(Objects.requireNonNull(task.getException()));
                         }
                       } else {
