@@ -474,6 +474,18 @@ public class FirebaseFirestore {
         com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
   }
 
+  @NonNull
+  public <TResult> Task<TResult> runTransaction(
+      @NonNull Transaction.Function<TResult> updateFunction, @NonNull Transaction.Options options) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @NonNull
+  public <TResult> Task<TResult> runTransaction(
+      @NonNull ReadOnlyTransaction.Function<TResult> updateFunction) {
+    throw new RuntimeException("not implemented");
+  }
+
   /**
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *

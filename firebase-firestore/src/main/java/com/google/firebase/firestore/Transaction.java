@@ -243,4 +243,39 @@ public class Transaction {
     @Nullable
     TResult apply(@NonNull Transaction transaction) throws FirebaseFirestoreException;
   }
+
+  public static final class Options {
+
+    private final int maxAttempts;
+
+    Options(@NonNull Builder builder) {
+      maxAttempts = builder.maxAttempts;
+    }
+
+    public int getMaxAttempts() {
+      return maxAttempts;
+    }
+
+    public static final class Builder {
+
+      int maxAttempts = 5;
+
+      public Builder() {
+      }
+
+      public Builder(@NonNull Builder builder) {
+        maxAttempts = builder.maxAttempts;
+      }
+
+      public Builder setMaxAttempts(int maxAttempts) {
+        this.maxAttempts = maxAttempts;
+        return this;
+      }
+
+      public Options build() {
+        return new Options(this);
+      }
+
+    }
+  }
 }
