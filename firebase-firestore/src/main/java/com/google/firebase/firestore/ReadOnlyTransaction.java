@@ -25,17 +25,45 @@ public class ReadOnlyTransaction {
   @NonNull
   public DocumentSnapshot get(@NonNull DocumentReference documentRef)
       throws FirebaseFirestoreException {
-    return get(documentRef, null);
-  }
-
-  @NonNull
-  public DocumentSnapshot get(@NonNull DocumentReference documentRef, @Nullable Timestamp readTime)
-      throws FirebaseFirestoreException {
     throw new RuntimeException("not implemented");
   }
 
   public interface Function<TResult> {
     @Nullable
     TResult apply(@NonNull ReadOnlyTransaction transaction) throws FirebaseFirestoreException;
+  }
+
+  public static final class Options {
+
+    @Nullable private final Timestamp readTime;
+
+    Options(@NonNull Options.Builder builder) {
+      readTime = builder.readTime;
+    }
+
+    @Nullable
+    public Timestamp getReadTime() {
+      return readTime;
+    }
+
+    public static final class Builder {
+
+      @Nullable private Timestamp readTime;
+
+      public Builder() {}
+
+      public Builder(@NonNull Builder builder) {
+        readTime = builder.readTime;
+      }
+
+      public Builder setReadTime(@NonNull Timestamp readTime) {
+        this.readTime = readTime;
+        return this;
+      }
+
+      public Options build() {
+        return new Options(this);
+      }
+    }
   }
 }

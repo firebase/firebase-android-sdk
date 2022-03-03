@@ -486,6 +486,13 @@ public class FirebaseFirestore {
     throw new RuntimeException("not implemented");
   }
 
+  @NonNull
+  public <TResult> Task<TResult> runReadOnlyTransaction(
+      @NonNull ReadOnlyTransaction.Function<TResult> updateFunction,
+      @NonNull ReadOnlyTransaction.Options options) {
+    throw new RuntimeException("not implemented");
+  }
+
   /**
    * Creates a write batch, used for performing multiple writes as a single atomic operation.
    *
