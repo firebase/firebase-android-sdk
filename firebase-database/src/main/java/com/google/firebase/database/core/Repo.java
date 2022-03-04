@@ -17,7 +17,6 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
@@ -57,10 +56,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public class Repo implements PersistentConnection.Delegate {
 
   private static final String INTERRUPT_REASON = "repo_interrupt";
+  private static final int GET_TIMEOUT_MS = 3000;
 
   private final RepoInfo repoInfo;
   private final OffsetClock serverClock = new OffsetClock(new DefaultClock(), 0);
@@ -303,6 +304,11 @@ public class Repo implements PersistentConnection.Delegate {
     ctx.getRunLoop().scheduleNow(r);
   }
 
+  public void scheduleDelayed(Runnable r, long millis) {
+    ctx.requireStarted();
+    ctx.getRunLoop().schedule(r, millis);
+  }
+
   public void postEvent(Runnable r) {
     ctx.requireStarted();
     ctx.getEventTarget().postEvent(r);
@@ -522,36 +528,35 @@ public class Repo implements PersistentConnection.Delegate {
               return;
             }
             serverSyncTree.setQueryActive(query.getSpec());
+            final DataSnapshot persisted = serverSyncTree.persistenceServerCache(query);
+            if (persisted.exists()) {
+              // Prefer the locally persisted value if the server is not responsive.
+              scheduleDelayed(() -> source.trySetResult(persisted), GET_TIMEOUT_MS);
+            }
             connection
                 .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
                 .addOnCompleteListener(
                     ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
-                    new OnCompleteListener<Object>() {
-                      @Override
-                      public void onComplete(@NonNull Task<Object> task) {
-                        if (!task.isSuccessful()) {
-                          operationLogger.info(
-                              "get for query "
-                                  + query.getPath()
-                                  + " falling back to disk cache after error: "
-                                  + task.getException().getMessage());
-                          DataSnapshot cached = serverSyncTree.persistenceServerCache(query);
-                          if (!cached.exists()) {
-                            source.setException(task.getException());
-                          } else {
-                            source.setResult(cached);
-                          }
-                        } else {
-                          Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                          postEvents(
-                              serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
-                          source.setResult(
-                              InternalHelpers.createDataSnapshot(
-                                  query.getRef(),
-                                  IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        }
-                        serverSyncTree.setQueryInactive(query.getSpec());
+                    (@NonNull Task<Object> task) -> {
+                      if (source.getTask().isComplete()) {
+                        return;
                       }
+                      if (!task.isSuccessful()) {
+                        if (persisted.exists()) {
+                          source.setResult(persisted);
+                        } else {
+                          source.setException(Objects.requireNonNull(task.getException()));
+                        }
+                      } else {
+                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        postEvents(
+                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        source.setResult(
+                            InternalHelpers.createDataSnapshot(
+                                query.getRef(),
+                                IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                      }
+                      serverSyncTree.setQueryInactive(query.getSpec());
                     });
           }
         });
