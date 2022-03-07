@@ -21,7 +21,7 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 
 ## Unreleased
 
-*   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps. ([GitHub #3311](//github.com/firebase/firebase-android-sdk/pull/3311))
+*   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
 
 ## Released
 
