@@ -20,10 +20,36 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 > **Note:** Refer go/firebase-android-release for `MXX` info.
 
 ## Unreleased
+
+*   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps. ([GitHub #3311](//github.com/firebase/firebase-android-sdk/pull/3311))
+
+## Released
+
+## v20.0.6 (M112)
+
+#### Android library
+
+*   {{fixed}} Fixed a null pointer exception (NPE) when instrumenting network requests. ([GitHub Issue #3406](//github.com/firebase/firebase-android-sdk/issues/3406))
+*   {{fixed}} Fixed a bug where incorrect session IDs were associated with some foreground and background traces.
+
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+## v20.0.5 (M111)
+
+#### Android library
+
 *   {{feature}} Enable global custom attributes on Network Requests
 *   {{fixed}} Update log statement to differentiate event drop because of rate limiting and sampling.
 
-## Released
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 ## v20.0.1 (M97)
 
