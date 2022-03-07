@@ -247,6 +247,7 @@ public class FirebaseInAppMessagingDisplayTest {
   @Test
   public void onActivityPaused_clearsImageDownload() {
     resumeActivity(activity);
+    when(windowManager.isFiamDisplayed()).thenReturn(true);
     pauseActivity(activity);
 
     verify(imageLoader).cancelTag(activity.getClass());
