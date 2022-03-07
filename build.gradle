@@ -52,8 +52,6 @@ ext {
     protocVersion = '3.14.0'
     javaliteVersion = '3.14.0'
 
-    gMavenRoot = 'https://dl.google.com/dl/android/maven2'
-    firebaseDefaultPreguardFile='oss/default-preguard.txt'
     errorproneVersion = '2.3.2'
     errorproneJavacVersion = '9+181-r4173-1'
 }
