@@ -1599,4 +1599,21 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 1, map("val", "old")));
     assertContains(doc("foo/baz", 2, map("val", "new")));
   }
+
+  @Test
+  public void testCanHandleBatchAckWhenPendingBatchesHaveOtherDocs() {
+    // Prepare two batches, the first one will get rejected by the backend.
+    // When the first batch is rejected, overlay is recalculated with only the
+    // second batch, even though it has more documents than what is being rejected.
+    // See: https://github.com/firebase/firebase-android-sdk/issues/3490
+    writeMutation(patchMutation("foo/bar", map("foo", "bar")));
+    writeMutations(
+        asList(
+            setMutation("foo/bar", map("foo", "bar-set")),
+            setMutation("foo/another", map("foo", "another"))));
+
+    rejectMutation();
+    assertContains(doc("foo/bar", 0, map("foo", "bar-set")).setHasLocalMutations());
+    assertContains(doc("foo/another", 0, map("foo", "another")).setHasLocalMutations());
+  }
 }
