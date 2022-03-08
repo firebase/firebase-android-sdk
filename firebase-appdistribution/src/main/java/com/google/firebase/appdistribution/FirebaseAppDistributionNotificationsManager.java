@@ -110,6 +110,20 @@ class FirebaseAppDistributionNotificationsManager {
       LogWrapper.getInstance().w(TAG + "No activity found to launch app");
       return null;
     }
-    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_ONE_SHOT);
+    return PendingIntent.getActivity(
+        context, 0, intent, getPendingIntentFlags(PendingIntent.FLAG_ONE_SHOT));
+  }
+
+  /**
+   * Adds {@link PendingIntent#FLAG_IMMUTABLE} to a PendingIntent's flags since any PendingIntents
+   * used here don't need to be modified.
+   *
+   * <p>Specifying mutability is required starting at SDK level 31.
+   */
+  private static int getPendingIntentFlags(int baseFlags) {
+    // Only add on platform levels that support FLAG_IMMUTABLE.
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+        ? baseFlags | PendingIntent.FLAG_IMMUTABLE
+        : baseFlags;
   }
 }
