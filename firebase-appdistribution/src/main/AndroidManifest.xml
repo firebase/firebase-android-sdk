@@ -40,7 +40,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
 
-                <data android:scheme="intent" android:host="authredirect" android:path="/appdistribution-${applicationId}"/>
+                   <data android:scheme="appdistribution-${applicationId}" android:host="authredirect" />
 
             </intent-filter>
         </activity>

@@ -45,7 +45,7 @@ import java.util.List;
 class TesterSignInManager {
   private static final String TAG = "TesterSignInManager:";
   private static final String SIGNIN_REDIRECT_URL =
-      "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s&newRedirectScheme=appdistribution";
+      "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s&newRedirectScheme=true";
 
   private final FirebaseApp firebaseApp;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
