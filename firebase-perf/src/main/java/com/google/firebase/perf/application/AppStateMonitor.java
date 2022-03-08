@@ -184,16 +184,26 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                     && configResolver.isPerformanceMonitoringEnabled()) {
                   frameMetricsAggregator.add(activity);
                   // Start the Trace
-                  String name = "";
-                  Fragment curFragment = fragment;
-                  while (curFragment != null) {
-                    name = "-" + curFragment.getClass().getSimpleName() + name;
-                    curFragment = curFragment.getParentFragment();
-                  }
-                  name = Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName() + name;
+                  String name = Constants.SCREEN_TRACE_PREFIX + fragment.getClass().getSimpleName();
+//                  Fragment curFragment = fragment;
+//                  while (curFragment != null) {
+//                    name = "-" + curFragment.getClass().getSimpleName() + name;
+//                    curFragment = curFragment.getParentFragment();
+//                  }
+//                  name = Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName() + name;
                   Trace screenTrace =
                       new Trace(name, transportManager, clock, AppStateMonitor.getInstance());
                   screenTrace.start();
+
+                  // Add custom attributes for parent fragment and hosting activity
+                  if (fragment.getParentFragment() != null) {
+                    screenTrace.putAttribute("Parent_fragment", fragment.getParentFragment().getClass().getSimpleName());
+                  } else {
+                    screenTrace.putAttribute("Parent_fragment", "");
+                  }
+                  screenTrace.putAttribute("Hosting_activity", activity.getClass().getSimpleName());
+                  System.out.println("-jeremy: " + screenTrace.getAttribute("Hosting_activity") );
+
                   fragmentToScreenTraceMap.put(fragment, screenTrace);
                   FrameMetrics frameMetrics =
                       calculateFrameMetircs(
@@ -279,6 +289,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (frozenFrames > 0) {
       screenTrace.putMetric(Constants.CounterNames.FRAMES_FROZEN.toString(), frozenFrames);
     }
+
+
     logger.debug(
         "*** sendScreenTrace name:"
             + fragment.getClass().getSimpleName()
@@ -307,6 +319,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       frameMetricsAggregator.add(activity);
       // Start the Trace
       Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
+      screenTrace.putAttribute("k1", "v1");
       screenTrace.start();
       activityToScreenTraceMap.put(activity, screenTrace);
     }
