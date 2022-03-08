@@ -185,7 +185,7 @@ public class ComparatorTester {
     if (comparator == null) {
       try {
         compare(obj, null);
-        assert_().fail("Expected NullPointerException in %s.compare(null)", obj);
+        assert_().withMessage("Expected NullPointerException in %s.compare(null)", obj).fail();
       } catch (NullPointerException expected) {
         // TODO(cpovirk): Consider accepting JavaScriptException under GWT
       }
@@ -196,7 +196,9 @@ public class ComparatorTester {
     if (comparator == null) {
       try {
         compare(obj, ICanNotBeCompared.INSTANCE);
-        assert_().fail("Expected ClassCastException in %s.compareTo(otherObject)", obj);
+        assert_()
+            .withMessage("Expected ClassCastException in %s.compareTo(otherObject)", obj)
+            .fail();
       } catch (ClassCastException expected) {
       }
     }

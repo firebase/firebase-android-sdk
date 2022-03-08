@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import static android.os.AsyncTask.THREAD_POOL_EXECUTOR;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
@@ -4556,22 +4558,31 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetThrowsExceptionForEmptyNodeWhenOffline()
-      throws DatabaseException, InterruptedException {
+  public void testGetWaitsForConnection() throws DatabaseException, InterruptedException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference node = db.getReference().child(db.getReference().push().getKey());
+    DatabaseReference node =
+        db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
     db.goOffline();
+    AtomicBoolean receivedValue = new AtomicBoolean();
+    THREAD_POOL_EXECUTOR.execute(
+        () -> {
+          try {
+            Thread.sleep(200L);
+          } catch (InterruptedException e) {
+            fail("Exception while pausing for get.");
+          } finally {
+            assertFalse(receivedValue.get());
+            db.goOnline();
+          }
+        });
     try {
       Tasks.await(node.get());
+      receivedValue.set(true);
     } catch (ExecutionException e) {
-      assertEquals(e.getCause().getMessage(), "Client is offline");
-      return;
-    } finally {
-      db.goOnline();
+      fail("get threw an exception: " + e);
     }
-    fail("Client get succeeded even though offline.");
   }
 
   @Test

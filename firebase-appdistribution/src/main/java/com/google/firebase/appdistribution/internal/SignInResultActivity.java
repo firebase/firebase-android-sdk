@@ -28,7 +28,7 @@ public class SignInResultActivity extends AppCompatActivity {
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
     super.onCreate(savedInstanceBundle);
-    LogWrapper.getInstance().v(TAG + "The User is signing in");
+    LogWrapper.getInstance().v(TAG + "The tester is signing in");
     // While this does not appear to be achieving much, handling the redirect in this way
     // ensures that we can remove the browser tab from the back stack. See the documentation
     // on AuthorizationManagementActivity for more details.

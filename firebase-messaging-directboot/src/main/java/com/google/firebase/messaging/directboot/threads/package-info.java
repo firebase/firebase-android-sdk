@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package android.util;
-
-public class Base64 {
-  public static String encodeToString(byte[] input, int flags) {
-    return java.util.Base64.getUrlEncoder().encodeToString(input);
-  }
-}
+/** @hide */
+package com.google.firebase.messaging.directboot.threads;

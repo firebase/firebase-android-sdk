@@ -31,8 +31,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.platforminfo.UserAgentPublisher;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,8 +57,7 @@ public class DefaultFirebaseAppCheckTest {
   @Mock private AppCheckProvider mockAppCheckProvider;
   @Mock private AppCheckTokenListener mockAppCheckTokenListener;
   @Mock private AppCheckListener mockAppCheckListener;
-  @Mock private UserAgentPublisher mockUserAgentPublisher;
-  @Mock private HeartBeatInfo mockHeartBeatInfo;
+  @Mock private HeartBeatController mockHeartBeatController;
 
   private DefaultAppCheckToken validDefaultAppCheckToken;
   private DefaultFirebaseAppCheck defaultFirebaseAppCheck;
@@ -76,8 +74,7 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     defaultFirebaseAppCheck =
-        new DefaultFirebaseAppCheck(
-            mockFirebaseApp, () -> mockUserAgentPublisher, () -> mockHeartBeatInfo);
+        new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockHeartBeatController);
   }
 
   @Test
@@ -85,25 +82,16 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(null, () -> mockUserAgentPublisher, () -> mockHeartBeatInfo);
+          new DefaultFirebaseAppCheck(null, () -> mockHeartBeatController);
         });
   }
 
   @Test
-  public void testConstructor_nullUserAgentPublisherProvider_expectThrows() {
+  public void testConstructor_nullHeartBeatControllerProvider_expectThrows() {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(mockFirebaseApp, null, () -> mockHeartBeatInfo);
-        });
-  }
-
-  @Test
-  public void testConstructor_nullHeartBeatInfoProvider_expectThrows() {
-    assertThrows(
-        NullPointerException.class,
-        () -> {
-          new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockUserAgentPublisher, null);
+          new DefaultFirebaseAppCheck(mockFirebaseApp, null);
         });
   }
 

@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Registers FirebaseAppDistribution
+ * Registers FirebaseAppDistribution.
  *
  * @hide
  */

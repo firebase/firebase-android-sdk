@@ -15,6 +15,7 @@
 package com.google.firebase.heartbeatinfo;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -40,9 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -115,13 +114,9 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    String expected =
-        Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(
-                compress(
-                        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-02-03]\"}],\"version\":\"2\"}")
-                    .getBytes());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-02-03\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
@@ -162,10 +157,7 @@ public class DefaultHeartBeatControllerTest {
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
             () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
-    String emptyString =
-        Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(compress("{\"heartbeats\":[],\"version\":\"2\"}").getBytes());
+    String emptyString = compress("{\"heartbeats\":[],\"version\":\"2\"}");
     controller.registerHeartBeat().addOnCompleteListener(executor, storeOnCompleteListener);
     storeOnCompleteListener.await();
     int heartBeatCode = controller.getHeartBeatCode("test").getCode();
@@ -202,27 +194,32 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    JSONObject output = new JSONObject();
-    JSONArray array = new JSONArray();
-    JSONObject obj = new JSONObject();
-    obj.put("agent", "test-agent");
-    obj.put("date", dateList);
-    array.put(obj);
-    output.put("heartbeats", array);
-    output.put("version", "2");
-    String expected =
-        Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(compress(output.toString()).getBytes());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-03-02\",\"2015-03-01\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 
+  private static String base64Encode(byte[] input) {
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(input);
+  }
+
+  private static byte[] gzip(String input) {
+    ByteArrayOutputStream byteOutputStream = new ByteArrayOutputStream();
+    try {
+      try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteOutputStream)) {
+        gzipOutputStream.write(input.getBytes(UTF_8));
+      }
+      byte[] gzipped = byteOutputStream.toByteArray();
+      byteOutputStream.close();
+      return gzipped;
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
   private String compress(String str) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    GZIPOutputStream gzip = new GZIPOutputStream(out);
-    gzip.write(str.toString().getBytes());
-    gzip.close();
-    return out.toString("UTF-8");
+    return base64Encode(gzip(str));
   }
 
   @Config(sdk = 29)
@@ -250,13 +247,9 @@ public class DefaultHeartBeatControllerTest {
     heartBeatController
         .getHeartBeatsHeader()
         .addOnCompleteListener(executor, getOnCompleteListener);
-    String expected =
-        Base64.getUrlEncoder()
-            .withoutPadding()
-            .encodeToString(
-                compress(
-                        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"date\":\"[2015-03-02]\"},{\"agent\":\"test-agent-1\",\"date\":\"[2015-03-03]\"}],\"version\":\"2\"}")
-                    .getBytes());
+    String str =
+        "{\"heartbeats\":[{\"agent\":\"test-agent\",\"dates\":[\"2015-03-02\"]},{\"agent\":\"test-agent-1\",\"dates\":[\"2015-03-03\"]}],\"version\":\"2\"}";
+    String expected = compress(str);
     assertThat(getOnCompleteListener.await().replace("\n", "")).isEqualTo(expected);
   }
 }

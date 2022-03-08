@@ -3,6 +3,8 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.0.2
+- [fixed] Fixed an issue of long grpc reconnection period, when App moves to
+  foreground after staying in background for a while.
 - [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
   working and receive a "Permission Denied" error. This issue only occurred for
   AppCheck users that set their expiration time to under an hour.
@@ -10,6 +12,8 @@ by opting into a release at
   the shutdown from proceeding if a network connection was opened right before.
 - [changed] Queries are now send to the backend before the SDK starts local 
   processing, which reduces overall Query latency.
+- [fixed] Fixed a NPE issue where mutations with multiple documents are not
+  handled correctly during previous mutation acknowledgement(#3490).
 
 # 24.0.1
 - [changed] Improved performance for databases that contain many document

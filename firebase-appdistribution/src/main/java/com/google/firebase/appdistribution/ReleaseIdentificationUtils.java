@@ -37,9 +37,9 @@ final class ReleaseIdentificationUtils {
   private static final int NO_FLAGS = 0;
 
   /**
-   * Get the package info for the currently installed app
+   * Get the package info for the currently installed app.
    *
-   * @throws FirebaseAppDistributionException if the package name can't be found
+   * @throws FirebaseAppDistributionException if the package name can't be found.
    */
   static PackageInfo getPackageInfo(Context context) throws FirebaseAppDistributionException {
     return getPackageInfoWithFlags(context, NO_FLAGS);
@@ -49,7 +49,7 @@ final class ReleaseIdentificationUtils {
    * Get the package info for the currently installed app, with the PackageManager.GET_META_DATA
    * flag set.
    *
-   * @throws FirebaseAppDistributionException if the package name can't be found
+   * @throws FirebaseAppDistributionException if the package name can't be found.
    */
   static PackageInfo getPackageInfoWithMetadata(Context context)
       throws FirebaseAppDistributionException {

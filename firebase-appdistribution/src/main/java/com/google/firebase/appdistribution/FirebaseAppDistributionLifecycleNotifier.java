@@ -45,23 +45,23 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private Activity currentActivity;
 
-  /** A queue of listeners that trigger when the activity is foregrounded */
+  /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityCreatedListener> onActivityCreatedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is foregrounded */
+  /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityStartedListener> onActivityStartedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is resumed */
+  /** A queue of listeners that trigger when the activity is resumed. */
   @GuardedBy("lock")
   private final Queue<OnActivityResumedListener> onActivityResumedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is backgrounded */
+  /** A queue of listeners that trigger when the activity is backgrounded. */
   @GuardedBy("lock")
   private final Queue<OnActivityPausedListener> onActivityPausedListeners = new ArrayDeque<>();
 
-  /** A queue of listeners that trigger when the activity is destroyed */
+  /** A queue of listeners that trigger when the activity is destroyed. */
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
@@ -98,6 +98,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   /**
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete immediately after the function is applied.
+   *
+   * <p>The consumer function will be called immediately once the activity is available. This may be
+   * on the main thread or the calling thread, depending on whether or not there is already a
+   * foreground activity available when this method is called.
    */
   Task<Void> applyToForegroundActivity(ActivityConsumer consumer) {
     return getForegroundActivity()
@@ -117,6 +121,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   /**
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete with the result of the Task returned by that function.
+   *
+   * <p>The continuation function will be called immediately once the activity is available. This
+   * may be on the main thread or the calling thread, depending on whether or not there is already a
+   * foreground activity available when this method is called.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
     return getForegroundActivity()

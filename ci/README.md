@@ -13,7 +13,7 @@ This directory contains tooling used to run Continuous Integration tasks.
   python3 -m venv ~/.venvs/fireci
   source ~/.venvs/fireci/bin/activate
   ```
-- At the root of of the firebase sdk repo, run
+- At the root of the firebase sdk repo, run
   ```
   ./ci/fireci/setup.py develop
   ```

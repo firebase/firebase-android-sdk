@@ -14,11 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
-import static com.google.firebase.appdistribution.Constants.ErrorMessages.AUTHENTICATION_ERROR;
-import static com.google.firebase.appdistribution.Constants.ErrorMessages.JSON_PARSING_ERROR;
-import static com.google.firebase.appdistribution.Constants.ErrorMessages.NETWORK_ERROR;
-import static com.google.firebase.appdistribution.Constants.ErrorMessages.NOT_FOUND_ERROR;
-import static com.google.firebase.appdistribution.Constants.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.ErrorMessages.NETWORK_ERROR;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.ErrorMessages.NOT_FOUND_ERROR;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
@@ -55,12 +55,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -181,7 +184,8 @@ public class FirebaseAppDistributionTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.JSON_PARSING_ERROR, Status.NETWORK_FAILURE)));
+                    FirebaseAppDistributionException.ErrorMessages.JSON_PARSING_ERROR,
+                    Status.NETWORK_FAILURE)));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
     assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
@@ -231,7 +235,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNewAabReleaseAvailable_showsUpdateDialog() {
+  public void updateIfNewReleaseAvailable_whenNewAabReleaseAvailable_showsUpdateDialog() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
 
@@ -248,7 +252,20 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
+  public void updateIfNewReleaseAvailable_fromABackgroundThread_showsUpdateDialog()
+      throws InterruptedException {
+    when(mockNewReleaseFetcher.checkForNewRelease())
+        .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    executorService.submit(() -> firebaseAppDistribution.updateIfNewReleaseAvailable());
+    TestUtils.awaitAsyncOperations(executorService);
+
+    assertAlertDialogShown();
+  }
+
+  @Test
+  public void updateIfNewReleaseAvailable_whenReleaseNotesEmpty_doesNotShowReleaseNotes() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build())));
 
@@ -263,7 +280,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenNoReleaseAvailable_updateDialogNotShown() {
+  public void updateIfNewReleaseAvailable_whenNoReleaseAvailable_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -277,7 +294,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenActivityBackgrounded_updateDialogNotShown() {
+  public void updateIfNewReleaseAvailable_whenActivityBackgrounded_updateDialogNotShown() {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
 
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -291,13 +308,14 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenSignInCancelled_checkForUpdateNotCalled() {
+  public void updateIfNewReleaseAvailable_whenSignInCancelled_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInManager.signInTester())
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                    AUTHENTICATION_CANCELED)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -306,17 +324,21 @@ public class FirebaseAppDistributionTest {
 
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
-    assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
+    assertTaskFailure(
+        updateTask,
+        AUTHENTICATION_CANCELED,
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED);
   }
 
   @Test
-  public void updateToNewRelease_whenSignInFailed_checkForUpdateNotCalled() {
+  public void updateIfNewReleaseAvailable_whenSignInFailed_checkForUpdateNotCalled() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     when(mockTesterSignInManager.signInTester())
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE)));
+                    FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_ERROR,
+                    AUTHENTICATION_FAILURE)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -327,7 +349,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenDialogDismissed_taskFails() {
+  public void updateIfNewReleaseAvailable_whenDialogDismissed_taskFails() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
@@ -341,7 +363,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenDialogCanceled_taskFails() {
+  public void updateIfNewReleaseAvailable_whenDialogCanceled_taskFails() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
@@ -356,12 +378,12 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenCheckForUpdateFails_updateAppNotCalled() {
+  public void updateIfNewReleaseAvailable_whenCheckForUpdateFails_updateAppNotCalled() {
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    Constants.ErrorMessages.NETWORK_ERROR,
+                    FirebaseAppDistributionException.ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -376,7 +398,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_whenTesterIsSignedIn_doesNotOpenDialog() {
+  public void updateIfNewReleaseAvailable_whenTesterIsSignedIn_doesNotOpenDialog() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -396,11 +418,12 @@ public class FirebaseAppDistributionTest {
     Exception e = updateTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   @Test
-  public void updateToNewRelease_whenSignInDialogCanceled_taskFails() {
+  public void updateIfNewReleaseAvailable_whenSignInDialogCanceled_taskFails() {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
     Task signInTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
@@ -411,7 +434,8 @@ public class FirebaseAppDistributionTest {
     Exception e = signInTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(
+        FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   private AlertDialog assertAlertDialogShown() {
@@ -429,7 +453,7 @@ public class FirebaseAppDistributionTest {
   }
 
   @Test
-  public void updateToNewRelease_receiveProgressUpdateFromUpdateApp() {
+  public void updateIfNewReleaseAvailable_receiveProgressUpdateFromUpdateApp() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
     UpdateTaskImpl mockTask = new UpdateTaskImpl();
@@ -453,6 +477,20 @@ public class FirebaseAppDistributionTest {
     // Update flow
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.DOWNLOADING, progressEvents.get(0).getUpdateStatus());
+  }
+
+  @Test
+  public void updateIfNewReleaseAvailable_fromABackgroundThread_showsSignInDialog()
+      throws InterruptedException, ExecutionException {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+    Future<UpdateTask> future =
+        executorService.submit(() -> firebaseAppDistribution.updateIfNewReleaseAvailable());
+    TestUtils.awaitAsyncOperations(executorService);
+
+    assertAlertDialogShown();
+    assertFalse(((UpdateTask) future.get()).isComplete());
   }
 
   @Test
@@ -499,7 +537,9 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
     assertTaskFailure(
-        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        updateTask,
+        HOST_ACTIVITY_INTERRUPTED,
+        FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
@@ -516,7 +556,9 @@ public class FirebaseAppDistributionTest {
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
     assertTaskFailure(
-        updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        updateTask,
+        HOST_ACTIVITY_INTERRUPTED,
+        FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test

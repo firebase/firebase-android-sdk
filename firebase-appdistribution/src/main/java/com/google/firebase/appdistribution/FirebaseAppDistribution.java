@@ -32,7 +32,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.Constants.ErrorMessages;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.appdistribution.internal.SignInStorage;
@@ -81,7 +80,7 @@ public class FirebaseAppDistribution {
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
 
-  /** Constructor for FirebaseAppDistribution */
+  /** Constructor for FirebaseAppDistribution. */
   @VisibleForTesting
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
@@ -103,7 +102,7 @@ public class FirebaseAppDistribution {
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
   }
 
-  /** Constructor for FirebaseAppDistribution */
+  /** Constructor for FirebaseAppDistribution. */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
@@ -122,7 +121,7 @@ public class FirebaseAppDistribution {
         lifecycleNotifier);
   }
 
-  /** Constructor for FirebaseAppDistribution */
+  /** Constructor for FirebaseAppDistribution. */
   FirebaseAppDistribution(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
@@ -142,15 +141,16 @@ public class FirebaseAppDistribution {
   /**
    * Updates the app to the newest release, if one is available.
    *
-   * <p>Returns the release information or null if no update is found. Performs the following
-   * actions:
+   * <p>Returns the release information or {@code null} if no update is found. Performs the
+   * following actions:
    *
    * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google sign in UI.
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
    *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
    *       dialog to begin the download.
-   *   <li>For APKs, downloads the binary and starts an installation intent. For AABs, directs the
-   *       tester to the Play app to complete the download and installation.
+   *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
+   *       newest release is an AAB, directs the tester to the Play app to complete the download and
+   *       installation.
    * </ol>
    */
   @NonNull
@@ -215,38 +215,46 @@ public class FirebaseAppDistribution {
       showSignInDialogTask = new TaskCompletionSource<>();
     }
 
-    signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     dialogHostActivity = hostActivity;
 
-    Context context = firebaseApp.getApplicationContext();
-    signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
-    signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
+    // We may not be on the main (UI) thread in some cases, specifically if the developer calls
+    // the basic config from the background. If we are already on the main thread, this will
+    // execute immediately.
+    hostActivity.runOnUiThread(
+        () -> {
+          signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
 
-    signInConfirmationDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.singin_yes_button),
-        (dialogInterface, i) -> showSignInDialogTask.setResult(null));
+          Context context = firebaseApp.getApplicationContext();
+          signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
+          signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
 
-    signInConfirmationDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.singin_no_button),
-        (dialogInterface, i) ->
-            showSignInDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+          signInConfirmationDialog.setButton(
+              AlertDialog.BUTTON_POSITIVE,
+              context.getString(R.string.singin_yes_button),
+              (dialogInterface, i) -> showSignInDialogTask.setResult(null));
 
-    signInConfirmationDialog.setOnCancelListener(
-        dialogInterface ->
-            showSignInDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
+          signInConfirmationDialog.setButton(
+              AlertDialog.BUTTON_NEGATIVE,
+              context.getString(R.string.singin_no_button),
+              (dialogInterface, i) ->
+                  showSignInDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                          AUTHENTICATION_CANCELED)));
 
-    signInConfirmationDialog.show();
+          signInConfirmationDialog.setOnCancelListener(
+              dialogInterface ->
+                  showSignInDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.AUTHENTICATION_CANCELED,
+                          AUTHENTICATION_CANCELED)));
 
+          signInConfirmationDialog.show();
+        });
     return showSignInDialogTask.getTask();
   }
 
-  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI */
+  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI. */
   @NonNull
   public Task<Void> signInTester() {
     return this.testerSignInManager.signInTester();
@@ -323,13 +331,14 @@ public class FirebaseAppDistribution {
         LogWrapper.getInstance().v("New release not found.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+                FirebaseAppDistributionException.ErrorMessages.NOT_FOUND_ERROR,
+                UPDATE_NOT_AVAILABLE));
       }
       if (cachedNewRelease.getDownloadUrl() == null) {
-        LogWrapper.getInstance().v("Download failed to execute");
+        LogWrapper.getInstance().v("Download failed to execute.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                Constants.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                FirebaseAppDistributionException.ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
                 FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
       }
 
@@ -346,7 +355,7 @@ public class FirebaseAppDistribution {
     return this.signInStorage.getSignInStatus();
   }
 
-  /** Signs out the App Distribution tester */
+  /** Signs out the App Distribution tester. */
   public void signOutTester() {
     setCachedNewRelease(null);
     this.signInStorage.setSignInStatus(false);
@@ -358,7 +367,8 @@ public class FirebaseAppDistribution {
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showSignInDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+                FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED,
+                HOST_ACTIVITY_INTERRUPTED));
       } else {
         showSignInConfirmationDialog(activity);
       }
@@ -368,7 +378,8 @@ public class FirebaseAppDistribution {
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showUpdateDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
+                FirebaseAppDistributionException.ErrorMessages.HOST_ACTIVITY_INTERRUPTED,
+                HOST_ACTIVITY_INTERRUPTED));
       } else {
         synchronized (cachedNewReleaseLock) {
           showUpdateConfirmationDialog(
@@ -420,42 +431,49 @@ public class FirebaseAppDistribution {
     }
 
     Context context = firebaseApp.getApplicationContext();
-
-    updateConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
     dialogHostActivity = hostActivity;
-    updateConfirmationDialog.setTitle(context.getString(R.string.update_dialog_title));
 
-    StringBuilder message =
-        new StringBuilder(
-            String.format(
-                "Version %s (%s) is available.",
-                newRelease.getDisplayVersion(), newRelease.getVersionCode()));
+    // We should already be on the main (UI) thread here, but be explicit just to be safe. If we are
+    // already on the main thread, this will execute immediately.
+    hostActivity.runOnUiThread(
+        () -> {
+          updateConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
+          updateConfirmationDialog.setTitle(context.getString(R.string.update_dialog_title));
 
-    if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
-      message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
-    }
-    updateConfirmationDialog.setMessage(message);
+          StringBuilder message =
+              new StringBuilder(
+                  String.format(
+                      "Version %s (%s) is available.",
+                      newRelease.getDisplayVersion(), newRelease.getVersionCode()));
 
-    updateConfirmationDialog.setButton(
-        AlertDialog.BUTTON_POSITIVE,
-        context.getString(R.string.update_yes_button),
-        (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
+          if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
+            message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
+          }
+          updateConfirmationDialog.setMessage(message);
 
-    updateConfirmationDialog.setButton(
-        AlertDialog.BUTTON_NEGATIVE,
-        context.getString(R.string.update_no_button),
-        (dialogInterface, i) ->
-            showUpdateDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
+          updateConfirmationDialog.setButton(
+              AlertDialog.BUTTON_POSITIVE,
+              context.getString(R.string.update_yes_button),
+              (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
 
-    updateConfirmationDialog.setOnCancelListener(
-        dialogInterface ->
-            showUpdateDialogTask.setException(
-                new FirebaseAppDistributionException(
-                    ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
+          updateConfirmationDialog.setButton(
+              AlertDialog.BUTTON_NEGATIVE,
+              context.getString(R.string.update_no_button),
+              (dialogInterface, i) ->
+                  showUpdateDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
+                          Status.INSTALLATION_CANCELED)));
 
-    updateConfirmationDialog.show();
+          updateConfirmationDialog.setOnCancelListener(
+              dialogInterface ->
+                  showUpdateDialogTask.setException(
+                      new FirebaseAppDistributionException(
+                          FirebaseAppDistributionException.ErrorMessages.UPDATE_CANCELED,
+                          Status.INSTALLATION_CANCELED)));
+
+          updateConfirmationDialog.show();
+        });
 
     return showUpdateDialogTask.getTask();
   }

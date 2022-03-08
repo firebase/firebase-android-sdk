@@ -129,7 +129,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation 'androidx.test.espresso:espresso-intents:3.2.0'
     testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation 'androidx.test.ext:truth:1.2.0'
+    testImplementation 'androidx.test.ext:truth:1.4.0'
     testImplementation 'androidx.test.services:test-services:1.2.0'
     testImplementation 'androidx.core:core:1.6.0'
 }

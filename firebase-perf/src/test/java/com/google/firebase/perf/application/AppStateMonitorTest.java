@@ -369,7 +369,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
-      monitor.onActivityStopped(activity);
+      monitor.onActivityPostPaused(activity);
       Assert.assertEquals(0, monitor.getActivity2ScreenTrace().size());
     }
   }
@@ -421,7 +421,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
     currentTime = 200;
-    monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityPostPaused(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
@@ -431,7 +431,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
     // Confirm that this doesn't throw an exception.
-    monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityPostPaused(activityWithNonHardwareAcceleratedView);
   }
 
   @Test
