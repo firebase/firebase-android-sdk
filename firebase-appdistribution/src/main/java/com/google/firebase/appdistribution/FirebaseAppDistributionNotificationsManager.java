@@ -110,6 +110,6 @@ class FirebaseAppDistributionNotificationsManager {
       LogWrapper.getInstance().w(TAG + "No activity found to launch app");
       return null;
     }
-    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_ONE_SHOT);
+    return PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
   }
 }
