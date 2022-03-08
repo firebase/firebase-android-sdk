@@ -40,7 +40,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
 
-                <data android:scheme="intent" android:host="appdistribution" android:path="/${applicationId}" />
+                <data android:scheme="intent" android:host="appdistribution" android:path="/${applicationId}"/>
 
             </intent-filter>
         </activity>
