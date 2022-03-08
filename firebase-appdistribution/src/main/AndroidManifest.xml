@@ -35,12 +35,12 @@
         <activity android:name="com.google.firebase.appdistribution.internal.InstallActivity" android:exported="true" android:launchMode="singleTask"/>
 
         <activity android:name="com.google.firebase.appdistribution.internal.SignInResultActivity" android:exported="true">
-               <intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
 
-                   <data android:scheme="appdistribution-${applicationId}" android:host="authredirect" />
+                <data android:scheme="intent" android:host="appdistribution" android:path="/${applicationId" />
 
             </intent-filter>
         </activity>
