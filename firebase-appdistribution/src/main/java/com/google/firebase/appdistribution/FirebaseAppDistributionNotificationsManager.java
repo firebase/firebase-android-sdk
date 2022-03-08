@@ -65,22 +65,22 @@ class FirebaseAppDistributionNotificationsManager {
   }
 
   int getNotificationContentTitleId(UpdateStatus status) {
-    if (isErrorState(status)) {
-      return R.string.download_failed;
-    } else if (status.equals(UpdateStatus.DOWNLOADED)) {
-      return R.string.download_completed;
-    } else {
-      return R.string.downloading_app_update;
+    switch (status) {
+      case DOWNLOAD_FAILED:
+        return R.string.download_failed;
+      case INSTALL_FAILED:
+        return R.string.install_failed;
+      case INSTALL_CANCELED:
+        return R.string.install_canceled;
+      case NEW_RELEASE_CHECK_FAILED:
+        return R.string.new_release_check_failed;
+      case UPDATE_CANCELED:
+        return R.string.update_canceled;
+      case DOWNLOADED:
+        return R.string.download_completed;
+      default:
+        return R.string.downloading_app_update;
     }
-  }
-
-  // CHECK THIS LATER
-  private boolean isErrorState(UpdateStatus status) {
-    return status.equals(UpdateStatus.DOWNLOAD_FAILED)
-        || status.equals(UpdateStatus.INSTALL_FAILED)
-        || status.equals(UpdateStatus.INSTALL_CANCELED)
-        || status.equals(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
-        || status.equals(UpdateStatus.UPDATE_CANCELED);
   }
 
   private NotificationManager createNotificationManager(Context context) {
