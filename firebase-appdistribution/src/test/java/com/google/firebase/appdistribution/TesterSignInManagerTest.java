@@ -216,7 +216,7 @@ public class TesterSignInManagerTest {
     Task signInTask = testerSignInManager.signInTester();
 
     // Simulate re-entering app before completing sign in
-    testerSignInManager.onActivityStarted(activity);
+    testerSignInManager.onActivityResumed(activity);
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();
