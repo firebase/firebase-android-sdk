@@ -70,7 +70,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void updateNotification_withSuccess() {
     firebaseAppDistributionNotificationsManager.updateNotification(
-        1000, 1000, R.string.downloading_app_update);
+        1000, 1000, R.string.download_completed);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
