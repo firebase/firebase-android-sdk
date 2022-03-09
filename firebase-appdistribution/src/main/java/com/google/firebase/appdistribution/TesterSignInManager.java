@@ -83,7 +83,7 @@ class TesterSignInManager {
     this.lifecycleNotifier = lifecycleNotifier;
 
     lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
-    lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
   }
 
   @VisibleForTesting
@@ -98,7 +98,7 @@ class TesterSignInManager {
   }
 
   @VisibleForTesting
-  void onActivityStarted(Activity activity) {
+  void onActivityResumed(Activity activity) {
     if (activity instanceof SignInResultActivity || activity instanceof InstallActivity) {
       // SignInResult and InstallActivity are internal to the SDK and should not be treated as
       // reentering the app
