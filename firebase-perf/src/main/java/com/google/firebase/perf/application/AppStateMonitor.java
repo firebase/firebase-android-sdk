@@ -174,12 +174,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
         .registerFragmentLifecycleCallbacks(
             new FragmentManager.FragmentLifecycleCallbacks() {
               @Override
-              public void onFragmentViewCreated(
+              public void onFragmentStarted(
                   @NonNull FragmentManager fm,
-                  @NonNull Fragment fragment,
-                  @NonNull View v,
-                  @Nullable Bundle savedInstanceState) {
-                System.out.println("*** View created " + fragment.getClass().getSimpleName());
+                  @NonNull Fragment fragment
+                 ) {
+                System.out.println("*** Fragment Started " + fragment.getClass().getSimpleName());
                 if (isScreenTraceSupported(activity)
                     && configResolver.isPerformanceMonitoringEnabled()) {
                   frameMetricsAggregator.add(activity);
@@ -199,7 +198,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                   if (fragment.getParentFragment() != null) {
                     screenTrace.putAttribute("Parent_fragment", fragment.getParentFragment().getClass().getSimpleName());
                   } else {
-                    screenTrace.putAttribute("Parent_fragment", "");
+                    screenTrace.putAttribute("Parent_fragment", "None");
                   }
                   screenTrace.putAttribute("Hosting_activity", activity.getClass().getSimpleName());
                   System.out.println("-jeremy: " + screenTrace.getAttribute("Hosting_activity") );
@@ -219,9 +218,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
               }
 
               @Override
-              public void onFragmentViewDestroyed(
+              public void onFragmentPaused(
                   @NonNull FragmentManager fm, @NonNull Fragment fragment) {
-                System.out.println("*** View destroyed " + fragment.getClass().getSimpleName());
+                System.out.println("*** View paused " + fragment.getClass().getSimpleName());
                 if (isScreenTraceSupported(activity)) {
                   sendFragmentTrace(fragment);
                 }
@@ -319,7 +318,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       frameMetricsAggregator.add(activity);
       // Start the Trace
       Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
-      screenTrace.putAttribute("k1", "v1");
       screenTrace.start();
       activityToScreenTraceMap.put(activity, screenTrace);
     }
