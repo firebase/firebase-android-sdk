@@ -184,12 +184,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                   frameMetricsAggregator.add(activity);
                   // Start the Trace
                   String name = Constants.SCREEN_TRACE_PREFIX + fragment.getClass().getSimpleName();
-//                  Fragment curFragment = fragment;
-//                  while (curFragment != null) {
-//                    name = "-" + curFragment.getClass().getSimpleName() + name;
-//                    curFragment = curFragment.getParentFragment();
-//                  }
-//                  name = Constants.SCREEN_TRACE_PREFIX + activity.getClass().getSimpleName() + name;
                   Trace screenTrace =
                       new Trace(name, transportManager, clock, AppStateMonitor.getInstance());
                   screenTrace.start();
@@ -201,11 +195,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                     screenTrace.putAttribute("Parent_fragment", "None");
                   }
                   screenTrace.putAttribute("Hosting_activity", activity.getClass().getSimpleName());
-                  System.out.println("-jeremy: " + screenTrace.getAttribute("Hosting_activity") );
+                  System.out.println("*** attributes: " + screenTrace.getAttribute("Parent_fragment") + " "  + screenTrace.getAttribute("Hosting_activity") );
 
                   fragmentToScreenTraceMap.put(fragment, screenTrace);
                   FrameMetrics frameMetrics =
-                      calculateFrameMetircs(
+                      calculateFrameMetrics(
                           AppStateMonitor.getInstance().getFrameMetricsAggregator().getMetrics());
                   System.out.printf(
                       "*** start time frameMetrics %s %d %d %d\n",
@@ -220,7 +214,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
               @Override
               public void onFragmentPaused(
                   @NonNull FragmentManager fm, @NonNull Fragment fragment) {
-                System.out.println("*** View paused " + fragment.getClass().getSimpleName());
+                System.out.println("*** Fragment paused " + fragment.getClass().getSimpleName());
                 if (isScreenTraceSupported(activity)) {
                   sendFragmentTrace(fragment);
                 }
@@ -229,7 +223,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             true);
   }
 
-  public FrameMetrics calculateFrameMetircs(SparseIntArray[] arr) {
+  public FrameMetrics calculateFrameMetrics(SparseIntArray[] arr) {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
@@ -262,7 +256,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       return;
     }
 
-    FrameMetrics frameMetrics = calculateFrameMetircs(frameMetricsAggregator.getMetrics());
+    FrameMetrics frameMetrics = calculateFrameMetrics(frameMetricsAggregator.getMetrics());
     System.out.printf(
         "*** end time frameMetrics %s %d %d %d\n",
         fragment.getClass().getSimpleName(),
