@@ -202,8 +202,8 @@ public class FirebaseCrashlytics {
   }
 
   /** Records a fatal report and sends to Crashlytics on-demand. */
-  // TODO(mrober): Remove this after testing, and let the plugin call CrashlyticsCore directly.
-  public void recordFatalException(Throwable throwable) {
+  // TODO(mrober): Move this to a FirebaseCrashlyticsInternal interface.
+  private void recordFatalException(Throwable throwable) {
     if (throwable == null) {
       Logger.getLogger().w("A null value was passed to recordFatalException. Ignoring.");
       return;
