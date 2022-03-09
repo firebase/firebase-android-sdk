@@ -46,13 +46,13 @@ class FirebaseAppDistributionNotificationsManager {
     this.appIconSource = appIconSource;
   }
 
-  void updateNotification(long totalBytes, long downloadedBytes, UpdateStatus status) {
+  void updateNotification(long totalBytes, long downloadedBytes, int stringResourceId) {
     NotificationManager notificationManager = createNotificationManager(context);
     NotificationCompat.Builder notificationBuilder =
         new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setOnlyAlertOnce(true)
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
-            .setContentTitle(context.getString(getNotificationContentTitleId(status)))
+            .setContentTitle(context.getString(stringResourceId))
             .setProgress(
                 100,
                 (int) (((float) downloadedBytes / (float) totalBytes) * 100),
@@ -62,25 +62,6 @@ class FirebaseAppDistributionNotificationsManager {
       notificationBuilder.setContentIntent(appLaunchIntent);
     }
     notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, notificationBuilder.build());
-  }
-
-  int getNotificationContentTitleId(UpdateStatus status) {
-    switch (status) {
-      case DOWNLOAD_FAILED:
-        return R.string.download_failed;
-      case INSTALL_FAILED:
-        return R.string.install_failed;
-      case INSTALL_CANCELED:
-        return R.string.install_canceled;
-      case NEW_RELEASE_CHECK_FAILED:
-        return R.string.new_release_check_failed;
-      case UPDATE_CANCELED:
-        return R.string.update_canceled;
-      case DOWNLOADED:
-        return R.string.download_completed;
-      default:
-        return R.string.downloading_app_update;
-    }
   }
 
   private NotificationManager createNotificationManager(Context context) {

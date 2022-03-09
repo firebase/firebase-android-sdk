@@ -128,7 +128,8 @@ class ApkUpdater {
                   file.length(),
                   file.length(),
                   UpdateStatus.INSTALL_FAILED,
-                  showDownloadNotificationManager);
+                  showDownloadNotificationManager,
+                  R.string.install_failed);
               setUpdateTaskCompletionErrorWithDefault(
                   e,
                   FirebaseAppDistributionException.ErrorMessages.APK_INSTALLATION_FAILED,
@@ -179,7 +180,8 @@ class ApkUpdater {
     }
 
     long responseLength = connection.getContentLength();
-    postUpdateProgress(responseLength, 0, UpdateStatus.PENDING, showNotification);
+    postUpdateProgress(
+        responseLength, 0, UpdateStatus.PENDING, showNotification, R.string.download_pending);
     String fileName = getApkFileName();
     LogWrapper.getInstance().v(TAG + "Attempting to download APK to disk");
 
@@ -188,7 +190,12 @@ class ApkUpdater {
     File apkFile = context.getFileStreamPath(fileName);
     validateJarFile(apkFile, responseLength, showNotification, bytesDownloaded);
 
-    postUpdateProgress(responseLength, bytesDownloaded, UpdateStatus.DOWNLOADED, showNotification);
+    postUpdateProgress(
+        responseLength,
+        bytesDownloaded,
+        UpdateStatus.DOWNLOADED,
+        showNotification,
+        R.string.download_completed);
     safeSetTaskResult(downloadTaskCompletionSource, apkFile);
   }
 
@@ -220,12 +227,20 @@ class ApkUpdater {
         if (currentTimeMs - lastMsUpdated > UPDATE_INTERVAL_MS) {
           lastMsUpdated = currentTimeMs;
           postUpdateProgress(
-              totalSize, bytesDownloaded, UpdateStatus.DOWNLOADING, showNotification);
+              totalSize,
+              bytesDownloaded,
+              UpdateStatus.DOWNLOADING,
+              showNotification,
+              R.string.downloading_app_update);
         }
       }
     } catch (IOException e) {
       postUpdateProgress(
-          totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED, showNotification);
+          totalSize,
+          bytesDownloaded,
+          UpdateStatus.DOWNLOAD_FAILED,
+          showNotification,
+          R.string.download_failed);
       throw new FirebaseAppDistributionException("Failed to download APK", DOWNLOAD_FAILURE, e);
     }
     return bytesDownloaded;
@@ -238,7 +253,11 @@ class ApkUpdater {
       new JarFile(apkFile).close();
     } catch (IOException e) {
       postUpdateProgress(
-          totalSize, bytesDownloaded, UpdateStatus.DOWNLOAD_FAILED, showNotification);
+          totalSize,
+          bytesDownloaded,
+          UpdateStatus.DOWNLOAD_FAILED,
+          showNotification,
+          R.string.download_failed);
       throw new FirebaseAppDistributionException(
           "Downloaded APK was not a valid JAR file", DOWNLOAD_FAILURE, e);
     }
@@ -274,7 +293,11 @@ class ApkUpdater {
   }
 
   private void postUpdateProgress(
-      long totalBytes, long downloadedBytes, UpdateStatus status, boolean showNotification) {
+      long totalBytes,
+      long downloadedBytes,
+      UpdateStatus status,
+      boolean showNotification,
+      int stringResourceId) {
     synchronized (updateTaskLock) {
       cachedUpdateTask.updateProgress(
           UpdateProgress.builder()
@@ -284,7 +307,8 @@ class ApkUpdater {
               .build());
     }
     if (showNotification) {
-      appDistributionNotificationsManager.updateNotification(totalBytes, downloadedBytes, status);
+      appDistributionNotificationsManager.updateNotification(
+          totalBytes, downloadedBytes, stringResourceId);
     }
   }
 }
