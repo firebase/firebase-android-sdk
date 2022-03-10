@@ -127,7 +127,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
       DocumentKey key = entry.getKey();
-      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: " + key);
+      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: %s", key);
       saveOverlay(largestBatchId, key, overlay);
     }
   }

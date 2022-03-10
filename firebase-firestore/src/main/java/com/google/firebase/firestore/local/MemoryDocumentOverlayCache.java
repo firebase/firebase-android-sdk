@@ -71,7 +71,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: " + entry.getKey());
+      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: %s", entry.getKey());
       saveOverlay(largestBatchId, overlay);
     }
   }
