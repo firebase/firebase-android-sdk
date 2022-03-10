@@ -28,8 +28,8 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Logger;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Nullable;
 
 /**
@@ -110,7 +110,7 @@ public class QueryEngine {
       return null;
     }
 
-    Set<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
     if (keys == null) {
       return null;
     }

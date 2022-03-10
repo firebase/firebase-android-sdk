@@ -30,6 +30,7 @@ import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
+import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
 import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
@@ -54,13 +55,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -441,7 +440,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public Set<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
     hardAssert(started, "IndexManager not started");
 
     List<String> subQueries = new ArrayList<>();
@@ -489,23 +488,17 @@ final class SQLiteIndexManager implements IndexManager {
       bindings.addAll(Arrays.asList(subQueryAndBindings).subList(1, subQueryAndBindings.length));
     }
 
-    String queryString;
-    if (subQueries.size() == 1) {
-      // If there's only one subQuery, just execute the one subQuery.
-      queryString = subQueries.get(0);
-    } else {
-      // Construct "SELECT * FROM (subQuery1 UNION subQuery2 UNION ...) LIMIT N"
-      queryString = "SELECT * FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
-      if (target.getLimit() != -1) {
-        queryString = queryString + " LIMIT " + target.getLimit();
-      }
+    String queryString =
+        "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
+    if (target.getLimit() != -1) {
+      queryString = queryString + " LIMIT " + target.getLimit();
     }
 
     hardAssert(bindings.size() < 1000, "Cannot perform query with more than 999 bind elements");
 
     SQLitePersistence.Query query = db.query(queryString).binding(bindings.toArray());
 
-    Set<DocumentKey> result = new HashSet<>();
+    List<DocumentKey> result = new ArrayList<>();
     query.forEach(
         row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
 
@@ -553,7 +546,8 @@ final class SQLiteIndexManager implements IndexManager {
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
-    sql.append(" ORDER BY directional_value, document_key ");
+    sql.append("ORDER BY directional_value, document_key ");
+    sql.append(target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
     if (target.getLimit() != -1) {
       sql.append("LIMIT ").append(target.getLimit()).append(" ");
     }

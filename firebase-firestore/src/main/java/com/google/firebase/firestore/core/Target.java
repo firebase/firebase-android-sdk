@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.model.Values.min;
 
 import android.util.Pair;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
@@ -188,23 +189,8 @@ public final class Target {
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Pair<Value, Boolean> segmentBound =
           segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)
-              ? getAscendingBound(segment)
-              : getDescendingBound(segment);
-
-      // If there is a startAt bound, compare the values against the existing boundary to see if we
-      // can narrow the scope.
-      if (startAt != null) {
-        for (int i = 0; i < orderBys.size(); ++i) {
-          OrderBy orderBy = this.orderBys.get(i);
-          if (orderBy.getField().equals(segment.getFieldPath())) {
-            Value cursorValue = startAt.getPosition().get(i);
-            if (max(segmentBound.first, cursorValue) == cursorValue) {
-              segmentBound = new Pair<>(cursorValue, startAt.isInclusive());
-            }
-            break;
-          }
-        }
-      }
+              ? getAscendingBound(segment, startAt)
+              : getDescendingBound(segment, startAt);
 
       if (segmentBound.first == null) {
         // No lower bound exists
@@ -230,23 +216,8 @@ public final class Target {
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Pair<Value, Boolean> segmentBound =
           segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)
-              ? getDescendingBound(segment)
-              : getAscendingBound(segment);
-
-      // If there is an endAt bound, compare the values against the existing boundary to see if we
-      // can narrow the scope.
-      if (endAt != null) {
-        for (int i = 0; i < orderBys.size(); ++i) {
-          OrderBy orderBy = this.orderBys.get(i);
-          if (orderBy.getField().equals(segment.getFieldPath())) {
-            Value cursorValue = endAt.getPosition().get(i);
-            if (min(segmentBound.first, cursorValue) == cursorValue) {
-              segmentBound = new Pair<>(cursorValue, endAt.isInclusive());
-            }
-            break;
-          }
-        }
-      }
+              ? getDescendingBound(segment, endAt)
+              : getAscendingBound(segment, endAt);
 
       if (segmentBound.first == null) {
         // No upper segmentBound exists
@@ -264,9 +235,11 @@ public final class Target {
    * Returns the value for an ascending bound of `segment`.
    *
    * @param segment The segment to get the value for.
+   * @param bound A bound to restrict the index range.
    * @return a Pair with a nullable Value and a boolean indicating whether the bound is inclusive
    */
-  private Pair<Value, Boolean> getAscendingBound(FieldIndex.Segment segment) {
+  private Pair<Value, Boolean> getAscendingBound(
+      FieldIndex.Segment segment, @Nullable Bound bound) {
     Value segmentValue = null;
     boolean segmentInclusive = true;
 
@@ -303,6 +276,21 @@ public final class Target {
       }
     }
 
+    // If there is a bound, compare the values against the existing boundary to see if we can narrow
+    // the scope.
+    if (bound != null) {
+      for (int i = 0; i < orderBys.size(); ++i) {
+        OrderBy orderBy = this.orderBys.get(i);
+        if (orderBy.getField().equals(segment.getFieldPath())) {
+          Value cursorValue = bound.getPosition().get(i);
+          if (max(segmentValue, cursorValue) == cursorValue) {
+            segmentValue = cursorValue;
+            segmentInclusive = bound.isInclusive();
+          }
+        }
+      }
+    }
+
     return new Pair<>(segmentValue, segmentInclusive);
   }
 
@@ -310,9 +298,11 @@ public final class Target {
    * Returns the value for a descending bound of `segment`.
    *
    * @param segment The segment to get the value for.
+   * @param bound A bound to restrict the index range.
    * @return a Pair with a nullable Value and a boolean indicating whether the bound is inclusive
    */
-  private Pair<Value, Boolean> getDescendingBound(FieldIndex.Segment segment) {
+  private Pair<Value, Boolean> getDescendingBound(
+      FieldIndex.Segment segment, @Nullable Bound bound) {
     Value segmentValue = null;
     boolean segmentInclusive = true;
 
@@ -349,11 +339,32 @@ public final class Target {
         segmentInclusive = filterInclusive;
       }
     }
+
+    // If there is a bound, compare the values against the existing boundary to see if we can narrow
+    // the scope.
+    if (bound != null) {
+      for (int i = 0; i < orderBys.size(); ++i) {
+        OrderBy orderBy = this.orderBys.get(i);
+        if (orderBy.getField().equals(segment.getFieldPath())) {
+          Value cursorValue = bound.getPosition().get(i);
+          if (min(segmentValue, cursorValue) == cursorValue) {
+            segmentValue = cursorValue;
+            segmentInclusive = bound.isInclusive();
+          }
+        }
+      }
+    }
+
     return new Pair<>(segmentValue, segmentInclusive);
   }
 
   public List<OrderBy> getOrderBy() {
     return this.orderBys;
+  }
+
+  /** Returns the order of the document key component. */
+  public Direction getKeyOrder() {
+    return this.orderBys.get(this.orderBys.size() - 1).getDirection();
   }
 
   /** Returns a canonical string representing this target. */
