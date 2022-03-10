@@ -46,13 +46,13 @@ class FirebaseAppDistributionNotificationsManager {
     this.appIconSource = appIconSource;
   }
 
-  void updateNotification(long totalBytes, long downloadedBytes, UpdateStatus status) {
+  void updateNotification(long totalBytes, long downloadedBytes, int stringResourceId) {
     NotificationManager notificationManager = createNotificationManager(context);
     NotificationCompat.Builder notificationBuilder =
         new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setOnlyAlertOnce(true)
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
-            .setContentTitle(context.getString(getNotificationContentTitleId(status)))
+            .setContentTitle(context.getString(stringResourceId))
             .setProgress(
                 100,
                 (int) (((float) downloadedBytes / (float) totalBytes) * 100),
@@ -62,25 +62,6 @@ class FirebaseAppDistributionNotificationsManager {
       notificationBuilder.setContentIntent(appLaunchIntent);
     }
     notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, notificationBuilder.build());
-  }
-
-  int getNotificationContentTitleId(UpdateStatus status) {
-    if (isErrorState(status)) {
-      return R.string.download_failed;
-    } else if (status.equals(UpdateStatus.DOWNLOADED)) {
-      return R.string.download_completed;
-    } else {
-      return R.string.downloading_app_update;
-    }
-  }
-
-  // CHECK THIS LATER
-  private boolean isErrorState(UpdateStatus status) {
-    return status.equals(UpdateStatus.DOWNLOAD_FAILED)
-        || status.equals(UpdateStatus.INSTALL_FAILED)
-        || status.equals(UpdateStatus.INSTALL_CANCELED)
-        || status.equals(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
-        || status.equals(UpdateStatus.UPDATE_CANCELED);
   }
 
   private NotificationManager createNotificationManager(Context context) {
