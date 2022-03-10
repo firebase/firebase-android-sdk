@@ -220,7 +220,7 @@ public final class Target {
               : getAscendingBound(segment, endAt);
 
       if (segmentBound.first == null) {
-        // No upper segmentBound exists
+        // No upper bound exists
         return null;
       }
 
