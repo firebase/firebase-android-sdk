@@ -49,6 +49,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-safetynet:18.0.0'
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath 'org.checkerframework:checker-qual:2.5.2'
 
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
