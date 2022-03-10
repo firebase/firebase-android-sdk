@@ -106,7 +106,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     }
   }
 
-  private void saveOverlay(int largestBatchId, DocumentKey key, @Nullable Mutation mutation) {
+  private void saveOverlay(int largestBatchId, DocumentKey key, Mutation mutation) {
     String group = key.getCollectionGroup();
     String collectionPath = EncodedPath.encode(key.getPath().popLast());
     String documentId = key.getPath().getLastSegment();
@@ -125,9 +125,7 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      if (entry.getValue() != null) {
-        saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
-      }
+      saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
     }
   }
 

@@ -50,11 +50,7 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
     return result;
   }
 
-  private void saveOverlay(int largestBatchId, @Nullable Mutation mutation) {
-    if (mutation == null) {
-      return;
-    }
-
+  private void saveOverlay(int largestBatchId, Mutation mutation) {
     // Remove the association of the overlay to its batch id.
     Overlay existing = this.overlays.get(mutation.getKey());
     if (existing != null) {

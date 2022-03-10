@@ -147,7 +147,9 @@ public final class MutationBatch {
       MutableDocument document = (MutableDocument) documentMap.get(key);
       FieldMask mutatedFields = applyToLocalView(document);
       Mutation overlay = Mutation.calculateOverlayMutation(document, mutatedFields);
-      overlays.put(key, overlay);
+      if (overlay != null) {
+        overlays.put(key, overlay);
+      }
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);
       }
