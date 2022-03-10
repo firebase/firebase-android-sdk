@@ -300,15 +300,6 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void testGreaterThanFilterWithDescendingOrder() {
-    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.DESCENDING));
-    addDoc("coll/val1", map("count", 1));
-    addDoc("coll/val2", map("count", 2));
-    Query query = query("coll").filter(filter("count", ">", 1)).orderBy(orderBy("count", "desc"));
-    verifyResults(query, "coll/val2");
-  }
-
-  @Test
   public void testRangeFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("count", ">", 1)).filter(filter("count", "<", 3));
