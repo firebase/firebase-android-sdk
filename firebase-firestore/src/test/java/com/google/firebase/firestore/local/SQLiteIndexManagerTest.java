@@ -114,6 +114,21 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testOrderByKeyFilter() {
+    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "count", Kind.DESCENDING));
+    addDoc("coll/val1", map("count", 1));
+    addDoc("coll/val2", map("count", 1));
+    addDoc("coll/val3", map("count", 3));
+
+    Query query = query("coll").orderBy(orderBy("count"));
+    verifyResults(query, "coll/val1", "coll/val2", "coll/val3");
+
+    query = query("coll").orderBy(orderBy("count", "desc"));
+    verifyResults(query, "coll/val3", "coll/val2", "coll/val1");
+  }
+
+  @Test
   public void testAscendingOrderWithLessThanFilter() {
     setUpMultipleOrderBys();
 
