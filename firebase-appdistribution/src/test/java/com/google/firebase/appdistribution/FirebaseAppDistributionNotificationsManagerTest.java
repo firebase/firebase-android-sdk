@@ -50,7 +50,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void updateNotification_withProgress() {
     firebaseAppDistributionNotificationsManager.updateNotification(
-        1000, 900, UpdateStatus.DOWNLOADING);
+        1000, 900, R.string.downloading_app_update);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(90);
@@ -60,7 +60,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void updateNotification_withError() {
     firebaseAppDistributionNotificationsManager.updateNotification(
-        1000, 1000, UpdateStatus.DOWNLOAD_FAILED);
+        1000, 1000, R.string.download_failed);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
@@ -70,7 +70,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void updateNotification_withSuccess() {
     firebaseAppDistributionNotificationsManager.updateNotification(
-        1000, 1000, UpdateStatus.DOWNLOADED);
+        1000, 1000, R.string.download_completed);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
@@ -79,7 +79,8 @@ public class FirebaseAppDistributionNotificationsManagerTest {
 
   @Test
   public void updateNotification_withZeroTotalBytes_shows0Percent() {
-    firebaseAppDistributionNotificationsManager.updateNotification(0, 0, UpdateStatus.DOWNLOADING);
+    firebaseAppDistributionNotificationsManager.updateNotification(
+        0, 0, R.string.downloading_app_update);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(0);

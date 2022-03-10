@@ -196,7 +196,7 @@ public class ApkUpdaterTest {
     assertThat(progressEvents).hasSize(1);
     assertThat(progressEvents.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.INSTALL_FAILED);
     assertThat(updateTask.isSuccessful()).isFalse();
-    verify(mockNotificationsManager).updateNotification(1000, 1000, UpdateStatus.INSTALL_FAILED);
+    verify(mockNotificationsManager).updateNotification(1000, 1000, R.string.install_failed);
   }
 
   @Test
