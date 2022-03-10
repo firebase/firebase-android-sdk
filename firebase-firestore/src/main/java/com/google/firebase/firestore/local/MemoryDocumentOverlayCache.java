@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
+
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -69,7 +71,8 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      saveOverlay(largestBatchId, entry.getValue());
+      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: " + entry.getKey());
+      saveOverlay(largestBatchId, overlay);
     }
   }
 

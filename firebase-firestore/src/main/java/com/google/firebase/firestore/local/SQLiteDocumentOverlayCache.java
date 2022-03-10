@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.database.Cursor;
 import androidx.annotation.Nullable;
@@ -125,7 +126,9 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   @Override
   public void saveOverlays(int largestBatchId, Map<DocumentKey, Mutation> overlays) {
     for (Map.Entry<DocumentKey, Mutation> entry : overlays.entrySet()) {
-      saveOverlay(largestBatchId, entry.getKey(), entry.getValue());
+      DocumentKey key = entry.getKey();
+      Mutation overlay = checkNotNull(entry.getValue(), "null value for key: " + key);
+      saveOverlay(largestBatchId, key, overlay);
     }
   }
 
