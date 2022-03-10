@@ -276,8 +276,8 @@ public final class Target {
       }
     }
 
-    // If there is a bound, compare the values against the existing boundary to see if we can narrow
-    // the scope.
+    // If there is an additional bound, compare the values against the existing range to see if we
+    // can narrow the scope.
     if (bound != null) {
       for (int i = 0; i < orderBys.size(); ++i) {
         OrderBy orderBy = this.orderBys.get(i);
@@ -340,8 +340,8 @@ public final class Target {
       }
     }
 
-    // If there is a bound, compare the values against the existing boundary to see if we can narrow
-    // the scope.
+    // If there is an additional bound, compare the values against the existing range to see if we
+    // can narrow the scope.
     if (bound != null) {
       for (int i = 0; i < orderBys.size(); ++i) {
         OrderBy orderBy = this.orderBys.get(i);
