@@ -181,7 +181,7 @@ class ApkUpdater {
 
     long responseLength = connection.getContentLength();
     postUpdateProgress(
-        responseLength, 0, UpdateStatus.PENDING, showNotification, R.string.download_pending);
+        responseLength, 0, UpdateStatus.PENDING, showNotification, R.string.downloading_app_update);
     String fileName = getApkFileName();
     LogWrapper.getInstance().v(TAG + "Attempting to download APK to disk");
 
