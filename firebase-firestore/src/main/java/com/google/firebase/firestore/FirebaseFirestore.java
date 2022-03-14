@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.PreviewApi;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
@@ -304,8 +305,9 @@ public class FirebaseFirestore {
    * @return A task that resolves once all indices are successfully configured.
    * @throws IllegalArgumentException if the JSON format is invalid
    */
-  @VisibleForTesting
-  Task<Void> setIndexConfiguration(String json) {
+  @PreviewApi
+  @NonNull
+  public Task<Void> setIndexConfiguration(@NonNull String json) {
     ensureClientConfigured();
     Preconditions.checkState(
         settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
