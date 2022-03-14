@@ -70,10 +70,10 @@ public class TargetTest {
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.DESCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "");
+    verifyBound(lowerBound, false, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, "bar");
+    verifyBound(upperBound, true, "");
   }
 
   @Test
@@ -106,10 +106,10 @@ public class TargetTest {
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.DESCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
-    verifyBound(lowerBound, true, "bar");
+    verifyBound(lowerBound, false, blob());
 
     Bound upperBound = target.getUpperBound(index);
-    verifyBound(upperBound, false, blob());
+    verifyBound(upperBound, true, "bar");
   }
 
   @Test
