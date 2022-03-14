@@ -168,7 +168,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     // cases:
     // 1. At app startup, first activity comes to foreground.
     // 2. app switch from background to foreground.
-    // 3. app already in foreground, current activity is replaced by another activity, or the current activity was paused then resumed without onStop (ex: a dialog pauses the activity, then closing it resumes)
+    // 3. app already in foreground, current activity is replaced by another activity, or the
+    // current activity was paused then resumed without onStop, for example by an AlertDialog
     if (activityToResumedMap.isEmpty()) {
       // The first resumed activity means app comes to foreground.
       resumeTime = clock.getTime();
@@ -185,7 +186,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
         updateAppState(ApplicationProcessState.FOREGROUND);
       }
     } else {
-      // case 3: app already in foreground, current activity is replaced by another activity, or the current activity was paused then resumed without onStop (ex: a dialog pauses the activity, then closing it resumes)
+      // case 3: app already in foreground, current activity is replaced by another activity, or the
+      // current activity was paused then resumed without onStop, for example by an AlertDialog
       activityToResumedMap.put(activity, true);
     }
 
