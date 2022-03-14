@@ -8,9 +8,14 @@ by opting into a release at
   JSON index definition exported by the Firestore CLI. Queries against the
   cache are executed using an index once the asynchronous operation to generate
   the index entries completes.
+
+# 24.0.2
 - [fixed] Fixed an issue of long grpc reconnection period, when App moves to
   foreground after staying in background for a while.
-- [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
+- [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
+  working and receive a "Permission Denied" error. This issue only occurred for
+  AppCheck users that set their expiration time to under an hour.
+- [fixed] Fixed a potential problem during Firestore's shutdown that prevented
   the shutdown from proceeding if a network connection was opened right before.
 - [changed] Queries are now send to the backend before the SDK starts local 
   processing, which reduces overall Query latency.
