@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-rootProject.name = 'com.google.firebase'
-//Note: do not add subprojects to this file. Instead add them to subprojects.gradle
-
-apply from: 'gradle/projectSettings.gradle'
-
-discoverSubprojects(file('subprojects.cfg')).each {
-  include ":$it"
-}
-
-renameBuildScripts(rootProject)
-rootProject.buildFileName = 'alternative-root-project.gradle'
-
-apply from: new File(settingsDir, 'gradle/buildCache.gradle')
+/** @hide */
+package com.google.firebase.messaging.directboot.threads;

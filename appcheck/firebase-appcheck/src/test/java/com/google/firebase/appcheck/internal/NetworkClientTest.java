@@ -23,11 +23,9 @@ import static com.google.firebase.appcheck.internal.HttpErrorResponse.MESSAGE_KE
 import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_CERT;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_ANDROID_PACKAGE;
 import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT;
-import static com.google.firebase.appcheck.internal.NetworkClient.X_FIREBASE_CLIENT_LOG_TYPE;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -36,12 +34,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo;
-import com.google.firebase.heartbeatinfo.HeartBeatInfo.HeartBeat;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.platforminfo.UserAgentPublisher;
+import com.google.firebase.heartbeatinfo.HeartBeatController;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -79,11 +75,9 @@ public class NetworkClientTest {
   private static final String ATTESTATION_TOKEN = "token";
   private static final String TIME_TO_LIVE = "3600s";
   private static final String ERROR_MESSAGE = "error message";
-  private static final String USER_AGENT = "user-agent";
-  private static final String HEART_BEAT_STORAGE_TAG = "fire-app-check";
+  private static final String HEART_BEAT_HEADER_TEST = "test-header";
 
-  @Mock UserAgentPublisher mockUserAgentPublisher;
-  @Mock HeartBeatInfo mockHeartBeatInfo;
+  @Mock HeartBeatController mockHeartBeatController;
   @Mock HttpURLConnection mockHttpUrlConnection;
   @Mock OutputStream mockOutputStream;
   @Mock RetryManager mockRetryManager;
@@ -93,29 +87,16 @@ public class NetworkClientTest {
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-
     networkClient =
         spy(
             new NetworkClient(
                 ApplicationProvider.getApplicationContext(),
                 FIREBASE_OPTIONS,
-                new Provider<UserAgentPublisher>() {
-                  @Override
-                  public UserAgentPublisher get() {
-                    return mockUserAgentPublisher;
-                  }
-                },
-                new Provider<HeartBeatInfo>() {
-                  @Override
-                  public HeartBeatInfo get() {
-                    return mockHeartBeatInfo;
-                  }
-                }));
-
+                () -> mockHeartBeatController));
+    when(mockHeartBeatController.getHeartBeatsHeader())
+        .thenReturn(Tasks.forResult(HEART_BEAT_HEADER_TEST));
+    doReturn(HEART_BEAT_HEADER_TEST).when(networkClient).getHeartBeat();
     doReturn(mockHttpUrlConnection).when(networkClient).createHttpUrlConnection(any(URL.class));
-    when(mockUserAgentPublisher.getUserAgent()).thenReturn(USER_AGENT);
-    when(mockHeartBeatInfo.getHeartBeatCode(HEART_BEAT_STORAGE_TAG))
-        .thenReturn(HeartBeat.SDK, HeartBeat.NONE);
     when(mockRetryManager.canRetry()).thenReturn(true);
   }
 
@@ -150,7 +131,7 @@ public class NetworkClientTest {
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
     verify(mockRetryManager).resetBackoffOnSuccess();
-    verifyRequestHeaders(/* shouldSendHeartbeat= */ true);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -176,7 +157,7 @@ public class NetworkClientTest {
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
     verify(mockRetryManager, never()).resetBackoffOnSuccess();
-    verifyRequestHeaders(/* shouldSendHeartbeat= */ true);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -200,7 +181,7 @@ public class NetworkClientTest {
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
     verify(mockRetryManager).resetBackoffOnSuccess();
-    verifyRequestHeaders(/* shouldSendHeartbeat= */ true);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -226,7 +207,7 @@ public class NetworkClientTest {
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
     verify(mockRetryManager, never()).resetBackoffOnSuccess();
-    verifyRequestHeaders(/* shouldSendHeartbeat= */ true);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -237,13 +218,11 @@ public class NetworkClientTest {
     when(mockHttpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
-    when(mockHeartBeatInfo.getHeartBeatCode(HEART_BEAT_STORAGE_TAG)).thenReturn(HeartBeat.NONE);
-
     // The heartbeat request header should not be attached when the heartbeat is HeartBeat.NONE.
     networkClient.exchangeAttestationForAppCheckToken(
         JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
 
-    verifyRequestHeaders(/* shouldSendHeartbeat= */ false);
+    verifyRequestHeaders();
   }
 
   @Test
@@ -274,16 +253,9 @@ public class NetworkClientTest {
     verify(mockRetryManager, never()).resetBackoffOnSuccess();
   }
 
-  private void verifyRequestHeaders(boolean shouldSendHeartbeat) {
-    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, USER_AGENT);
-    if (shouldSendHeartbeat) {
-      verify(mockHttpUrlConnection)
-          .setRequestProperty(
-              X_FIREBASE_CLIENT_LOG_TYPE, Integer.toString(HeartBeat.SDK.getCode()));
-    } else {
-      verify(mockHttpUrlConnection, never())
-          .setRequestProperty(eq(X_FIREBASE_CLIENT_LOG_TYPE), anyString());
-    }
+  private void verifyRequestHeaders() {
+    verify(networkClient).getHeartBeat();
+    verify(mockHttpUrlConnection).setRequestProperty(X_FIREBASE_CLIENT, HEART_BEAT_HEADER_TEST);
     verify(mockHttpUrlConnection)
         .setRequestProperty(
             X_ANDROID_PACKAGE, ApplicationProvider.getApplicationContext().getPackageName());

@@ -72,7 +72,8 @@ public class TesterSignInManagerTest {
       String.format(
           "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
               + "?appName=com.google.firebase.appdistribution.test"
-              + "&packageName=com.google.firebase.appdistribution.test",
+              + "&packageName=com.google.firebase.appdistribution.test"
+              + "&newRedirectScheme=true",
           TEST_APP_ID_1, TEST_FID_1);
 
   private TesterSignInManager testerSignInManager;
@@ -216,7 +217,7 @@ public class TesterSignInManagerTest {
     Task signInTask = testerSignInManager.signInTester();
 
     // Simulate re-entering app before completing sign in
-    testerSignInManager.onActivityStarted(activity);
+    testerSignInManager.onActivityResumed(activity);
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();

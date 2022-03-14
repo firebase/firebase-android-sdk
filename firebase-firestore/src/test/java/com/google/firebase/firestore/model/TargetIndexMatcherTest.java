@@ -87,6 +87,17 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
+  public void cannotUsePartialIndexWithMissingArrayContains() {
+    Query q = query("collId").filter(filter("a", "array-contains", "a")).orderBy(orderBy("b"));
+    validateServesTarget(
+        q, "a", FieldIndex.Segment.Kind.CONTAINS, "b", FieldIndex.Segment.Kind.ASCENDING);
+
+    q = query("collId").orderBy(orderBy("b"));
+    validateDoesNotServeTarget(
+        q, "a", FieldIndex.Segment.Kind.CONTAINS, "b", FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
   public void cannotUseOverspecifiedIndex() {
     Query q = query("collId").orderBy(orderBy("a"));
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
