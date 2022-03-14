@@ -19,8 +19,8 @@ import java.lang.annotation.Target;
 
 /**
  * Indicates that this object (class, method, etc) is experimental and that both its signature and
- * implementation are subject to change. An API marked with this annotation provides no guarantee
- * of API stability or backward-compatibility.
+ * implementation are subject to change. An API marked with this annotation provides no guarantee of
+ * API stability or backward-compatibility.
  */
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface PreviewApi {}
