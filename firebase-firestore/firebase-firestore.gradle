@@ -123,6 +123,7 @@ googleJavaFormat {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':protolite-well-known-types')
     implementation project(':firebase-database-collection')
