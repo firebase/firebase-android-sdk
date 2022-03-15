@@ -50,15 +50,13 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
                     inputStream.close();
                 } else {
                     logger.info("Can't open Realtime stream");
-                    this.retryCallback.onEvent();
                 }
 
             } catch (IOException ex) {
                 logger.info("Error handling messages.");
-                this.retryCallback.onEvent();
             }
         }
-        logger.info("No more messages to receive.");
+        this.retryCallback.onEvent();
     }
 
     // Auto-fetch new config and execute callbacks on each new message
