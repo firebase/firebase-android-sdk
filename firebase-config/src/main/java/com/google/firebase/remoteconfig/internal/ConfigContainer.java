@@ -31,6 +31,7 @@ public class ConfigContainer {
   static final String FETCH_TIME_KEY = "fetch_time_key";
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
+  static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -55,6 +56,8 @@ public class ConfigContainer {
 
   private JSONObject personalizationMetadata;
 
+  private long templateVersionNumber;
+
   /**
    * Creates a new container with the specified configs and fetch time.
    *
@@ -64,18 +67,21 @@ public class ConfigContainer {
       JSONObject configsJson,
       Date fetchTime,
       JSONArray abtExperiments,
-      JSONObject personalizationMetadata)
+      JSONObject personalizationMetadata,
+      long templateVersionNumber)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
     containerJson.put(FETCH_TIME_KEY, fetchTime.getTime());
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
     containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
+    containerJson.put(TEMPLATE_VERSION_NUMBER_KEY, templateVersionNumber);
 
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
     this.personalizationMetadata = personalizationMetadata;
+    this.templateVersionNumber = templateVersionNumber;
 
     this.containerJson = containerJson;
   }
@@ -97,7 +103,8 @@ public class ConfigContainer {
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
-        personalizationMetadataJSON);
+        personalizationMetadataJSON,
+            containerJson.getLong(TEMPLATE_VERSION_NUMBER_KEY));
   }
 
   /**
@@ -124,6 +131,8 @@ public class ConfigContainer {
   public JSONObject getPersonalizationMetadata() {
     return personalizationMetadata;
   }
+
+  public long getTemplateVersionNumber() { return templateVersionNumber; }
 
   @Override
   public String toString() {
@@ -154,12 +163,15 @@ public class ConfigContainer {
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;
     private JSONObject builderPersonalizationMetadata;
+    private long builderTemplateVersionNumber;
 
     private Builder() {
       builderConfigsJson = new JSONObject();
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
+      builderTemplateVersionNumber = 0;
+
     }
 
     public Builder(ConfigContainer otherContainer) {
@@ -167,6 +179,7 @@ public class ConfigContainer {
       this.builderFetchTime = otherContainer.getFetchTime();
       this.builderAbtExperiments = otherContainer.getAbtExperiments();
       this.builderPersonalizationMetadata = otherContainer.getPersonalizationMetadata();
+      this.builderTemplateVersionNumber = otherContainer.getTemplateVersionNumber();
     }
 
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
@@ -215,13 +228,19 @@ public class ConfigContainer {
       return this;
     }
 
+    public Builder withTemplateVersionNumber(long templateVersionNumber) {
+      this.builderTemplateVersionNumber = templateVersionNumber;
+      return this;
+    }
+
     /** If a fetch time is not provided, the defaults container fetch time is used. */
     public ConfigContainer build() throws JSONException {
       return new ConfigContainer(
           builderConfigsJson,
           builderFetchTime,
           builderAbtExperiments,
-          builderPersonalizationMetadata);
+          builderPersonalizationMetadata,
+              builderTemplateVersionNumber);
     }
   }
 
