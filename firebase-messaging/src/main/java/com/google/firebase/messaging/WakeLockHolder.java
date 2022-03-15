@@ -17,12 +17,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.stats.WakeLock;
 import com.google.errorprone.annotations.RestrictedApi;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Helper class to manage wake locks in FCM.

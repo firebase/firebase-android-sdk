@@ -59,7 +59,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.concurrent.GuardedBy;
+import androidx.annotation.GuardedBy;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most

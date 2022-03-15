@@ -49,7 +49,6 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
                         container.getProvider(HeartBeatController.class)))
             .alwaysEager()
             .build(),
-        HeartBeatConsumerComponent.create(),
         LibraryVersionComponent.create("fire-app-check", BuildConfig.VERSION_NAME));
   }
 }

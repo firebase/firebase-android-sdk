@@ -21,13 +21,13 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.IntDef;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.firebase.FirebaseApp;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.List;
-import javax.annotation.concurrent.GuardedBy;
 
 /** Helper to query app's metadata. */
 class Metadata {

@@ -23,7 +23,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.common.io.ByteStreams;
+
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,9 +116,16 @@ public class ImageDownload implements Closeable {
     try (InputStream connectionInputStream = connection.getInputStream()) {
       // Read one byte over the limit so we can tell if the data is too big, as in many cases
       // BitmapFactory will happily decode a partial image.
-      bytes =
-          ByteStreams.toByteArray(
-              ByteStreams.limit(connectionInputStream, MAX_IMAGE_SIZE_BYTES + 1));
+      ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+      int nRead;
+      byte[] data = new byte[MAX_IMAGE_SIZE_BYTES+1];
+
+      while ((nRead = connectionInputStream.read(data, 0, data.length)) != -1) {
+        buffer.write(data, 0, nRead);
+      }
+
+      bytes =  buffer.toByteArray();
     }
 
     if (Log.isLoggable(TAG, Log.VERBOSE)) {

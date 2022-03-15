@@ -28,6 +28,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -54,7 +55,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Top level <a href="https://firebase.google.com/docs/cloud-messaging/">Firebase Cloud

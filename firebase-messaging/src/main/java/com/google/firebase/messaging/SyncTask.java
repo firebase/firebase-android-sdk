@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /** Background task to perform sync operations with the Firebase backend using a bg thread */
 class SyncTask implements Runnable {
