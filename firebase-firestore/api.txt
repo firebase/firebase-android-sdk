@@ -153,6 +153,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> runBatch(@NonNull com.google.firebase.firestore.WriteBatch.Function);
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
     method public void useEmulator(@NonNull String, int);

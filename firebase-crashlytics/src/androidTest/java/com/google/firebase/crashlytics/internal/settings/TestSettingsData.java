@@ -37,7 +37,10 @@ public class TestSettingsData extends SettingsData {
         buildSettingsData(),
         buildFeaturesData(),
         settingsVersion,
-        3600);
+        3600,
+        10,
+        1.2,
+        60);
   }
 
   private static FeaturesSettingsData buildFeaturesData() {

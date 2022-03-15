@@ -22,6 +22,9 @@ public class SettingsData implements Settings {
   public final long expiresAtMillis;
   public final int settingsVersion;
   public final int cacheDuration;
+  public final double onDemandUploadRatePerMinute;
+  public final double onDemandBackoffBase;
+  public final int onDemandBackoffStepDurationSeconds;
 
   public SettingsData(
       long expiresAtMillis,
@@ -29,13 +32,19 @@ public class SettingsData implements Settings {
       SessionSettingsData sessionData,
       FeaturesSettingsData featuresData,
       int settingsVersion,
-      int cacheDuration) {
+      int cacheDuration,
+      double onDemandUploadRatePerMinute,
+      double onDemandBackoffBase,
+      int onDemandBackoffStepDurationSeconds) {
     this.expiresAtMillis = expiresAtMillis;
     this.appData = appData;
     this.sessionData = sessionData;
     this.featuresData = featuresData;
     this.settingsVersion = settingsVersion;
     this.cacheDuration = cacheDuration;
+    this.onDemandUploadRatePerMinute = onDemandUploadRatePerMinute;
+    this.onDemandBackoffBase = onDemandBackoffBase;
+    this.onDemandBackoffStepDurationSeconds = onDemandBackoffStepDurationSeconds;
   }
 
   public AppSettingsData getAppSettingsData() {
@@ -70,5 +79,20 @@ public class SettingsData implements Settings {
   @Override
   public int getCacheDuration() {
     return cacheDuration;
+  }
+
+  @Override
+  public double onDemandUploadRatePerMinute() {
+    return onDemandUploadRatePerMinute;
+  }
+
+  @Override
+  public double onDemandBackoffBase() {
+    return onDemandBackoffBase;
+  }
+
+  @Override
+  public int onDemandBackoffStepDurationSeconds() {
+    return onDemandBackoffStepDurationSeconds;
   }
 }

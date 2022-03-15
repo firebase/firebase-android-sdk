@@ -17,16 +17,16 @@ package com.google.firebase.crashlytics.internal.send;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
+import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
 import java.nio.charset.Charset;
 
 /**
@@ -45,10 +45,11 @@ public class DataTransportCrashlyticsReportSender {
   private static final Transformer<CrashlyticsReport, byte[]> DEFAULT_TRANSFORM =
       (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
 
-  private final Transport<CrashlyticsReport> transport;
+  private final ReportQueue reportQueue;
   private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
-  public static DataTransportCrashlyticsReportSender create(Context context) {
+  public static DataTransportCrashlyticsReportSender create(
+      Context context, SettingsDataProvider settingsProvider, OnDemandCounter onDemandCounter) {
     TransportRuntime.initialize(context);
     final Transport<CrashlyticsReport> transport =
         TransportRuntime.getInstance()
@@ -58,32 +59,21 @@ public class DataTransportCrashlyticsReportSender {
                 CrashlyticsReport.class,
                 Encoding.of("json"),
                 DEFAULT_TRANSFORM);
-    return new DataTransportCrashlyticsReportSender(transport, DEFAULT_TRANSFORM);
+    ReportQueue reportQueue =
+        new ReportQueue(transport, settingsProvider.getSettings(), onDemandCounter);
+    return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
   }
 
   DataTransportCrashlyticsReportSender(
-      Transport<CrashlyticsReport> transport,
-      Transformer<CrashlyticsReport, byte[]> transportTransform) {
-    this.transport = transport;
+      ReportQueue reportQueue, Transformer<CrashlyticsReport, byte[]> transportTransform) {
+    this.reportQueue = reportQueue;
     this.transportTransform = transportTransform;
   }
 
   @NonNull
-  public Task<CrashlyticsReportWithSessionId> sendReport(
-      @NonNull CrashlyticsReportWithSessionId reportWithSessionId) {
-    final CrashlyticsReport report = reportWithSessionId.getReport();
-
-    TaskCompletionSource<CrashlyticsReportWithSessionId> tcs = new TaskCompletionSource<>();
-    transport.schedule(
-        Event.ofUrgent(report),
-        error -> {
-          if (error != null) {
-            tcs.trySetException(error);
-            return;
-          }
-          tcs.trySetResult(reportWithSessionId);
-        });
-    return tcs.getTask();
+  public Task<CrashlyticsReportWithSessionId> enqueueReport(
+      @NonNull CrashlyticsReportWithSessionId reportWithSessionId, boolean isOnDemand) {
+    return reportQueue.enqueueReport(reportWithSessionId, isOnDemand).getTask();
   }
 
   private static String mergeStrings(String part1, String part2) {

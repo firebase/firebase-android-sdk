@@ -49,6 +49,8 @@ public class FirestoreChannel {
 
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Metadata.Key<String> X_GOOG_REQUEST_PARAMS_HEADER =
+      Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER);
 
   /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
   // Note: there is no good way to get the Java language version on Android
@@ -301,8 +303,12 @@ public class FirestoreChannel {
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
     headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
-    // This header is used to improve routing and project isolation by the backend.
+    // These headers are used to improve routing and project isolation by the backend.
+    // TODO(b/199767712): We are keeping RESOURCE_PREFIX_HEADER until Emulators can be released
+    // with cl/428820046. Currently blocked because Emulators are now built with Java 11 from
+    // Google3.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
+    headers.put(X_GOOG_REQUEST_PARAMS_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }

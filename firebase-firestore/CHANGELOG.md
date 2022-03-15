@@ -3,6 +3,11 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.1.0
+- [feature] Added experimental support for indexed query execution. Indexes can
+  be enabled by invoking `FirebaseFirestore.setIndexConfiguration()` with the
+  JSON index definition exported by the Firestore CLI. Queries against the
+  cache are executed using an index once the asynchronous operation to generate
+  the index entries completes.
 - [fixed] Fixed missing document fields issue with offline overlays (#3528)
 
 # 24.0.2

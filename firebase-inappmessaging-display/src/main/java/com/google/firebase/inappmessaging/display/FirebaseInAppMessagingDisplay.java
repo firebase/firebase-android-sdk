@@ -224,7 +224,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         && currentlyBoundActivityName.equals(activity.getLocalClassName())) {
       Logging.logi("Unbinding from activity: " + activity.getLocalClassName());
       headlessInAppMessaging.clearDisplayListener();
-      imageLoader.cancelTag(activity.getClass());
       removeDisplayedFiam(activity);
       currentlyBoundActivityName = null;
     }
@@ -507,6 +506,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
   private void removeDisplayedFiam(Activity activity) {
     if (windowManager.isFiamDisplayed()) {
+      imageLoader.cancelTag(activity.getClass());
       windowManager.destroy(activity);
       cancelTimers();
     }

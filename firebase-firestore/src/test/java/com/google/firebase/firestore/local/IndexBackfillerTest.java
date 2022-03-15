@@ -44,8 +44,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -454,7 +454,7 @@ public class IndexBackfillerTest {
     assertEquals(1, documentsProcessed);
 
     Target target = query("coll").filter(filter("foo", "==", 2)).toTarget();
-    Set<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(target);
     assertTrue(matching.isEmpty());
   }
 
@@ -510,7 +510,7 @@ public class IndexBackfillerTest {
 
   private void verifyQueryResults(Query query, String... expectedKeys) {
     Target target = query.toTarget();
-    Set<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
     if (actualKeys == null) {
       assertEquals(0, expectedKeys.length);
     } else {

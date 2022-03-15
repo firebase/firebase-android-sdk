@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-rootProject.name = 'com.google.firebase'
-//Note: do not add subprojects to this file. Instead add them to subprojects.gradle
+package com.google.firebase.annotations;
 
-apply from: 'gradle/projectSettings.gradle'
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-discoverSubprojects(file('subprojects.cfg')).each {
-  include ":$it"
-}
-
-renameBuildScripts(rootProject)
-rootProject.buildFileName = 'alternative-root-project.gradle'
-
-apply from: new File(settingsDir, 'gradle/buildCache.gradle')
+/**
+ * Indicates that this object (class, method, etc) is experimental and that both its signature and
+ * implementation are subject to change. An API marked with this annotation provides no guarantee of
+ * API stability or backward-compatibility.
+ */
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD, ElementType.CONSTRUCTOR})
+public @interface PreviewApi {}

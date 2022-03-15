@@ -17,7 +17,9 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.FieldPath;
@@ -185,65 +187,18 @@ public final class Target {
 
     // For each segment, retrieve a lower bound if there is a suitable filter or startAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      Value segmentValue = null;
-      boolean segmentInclusive = true;
+      Pair<Value, Boolean> segmentBound =
+          segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)
+              ? getAscendingBound(segment, startAt)
+              : getDescendingBound(segment, startAt);
 
-      // Process all filters to find a value for the current field segment
-      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-        Value filterValue = null;
-        boolean filterInclusive = true;
-
-        switch (fieldFilter.getOperator()) {
-          case LESS_THAN:
-          case LESS_THAN_OR_EQUAL:
-            filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
-            break;
-          case EQUAL:
-          case IN:
-          case GREATER_THAN_OR_EQUAL:
-            filterValue = fieldFilter.getValue();
-            break;
-          case GREATER_THAN:
-            filterValue = fieldFilter.getValue();
-            filterInclusive = false;
-            break;
-          case NOT_EQUAL:
-          case NOT_IN:
-            filterValue = Values.MIN_VALUE;
-            break;
-          default:
-            // Remaining filters cannot be used as lower bounds.
-        }
-
-        if (max(segmentValue, filterValue) == filterValue) {
-          segmentValue = filterValue;
-          segmentInclusive = filterInclusive;
-        }
-      }
-
-      // If there is a startAt bound, compare the values against the existing boundary to see
-      // if we can narrow the scope.
-      if (startAt != null) {
-        for (int i = 0; i < orderBys.size(); ++i) {
-          OrderBy orderBy = this.orderBys.get(i);
-          if (orderBy.getField().equals(segment.getFieldPath())) {
-            Value cursorValue = startAt.getPosition().get(i);
-            if (max(segmentValue, cursorValue) == cursorValue) {
-              segmentValue = cursorValue;
-              segmentInclusive = startAt.isInclusive();
-            }
-            break;
-          }
-        }
-      }
-
-      if (segmentValue == null) {
+      if (segmentBound.first == null) {
         // No lower bound exists
         return null;
       }
 
-      values.add(segmentValue);
-      inclusive &= segmentInclusive;
+      values.add(segmentBound.first);
+      inclusive &= segmentBound.second;
     }
 
     return new Bound(values, inclusive);
@@ -259,73 +214,157 @@ public final class Target {
 
     // For each segment, retrieve an upper bound if there is a suitable filter or endAt.
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
-      @Nullable Value segmentValue = null;
-      boolean segmentInclusive = true;
+      Pair<Value, Boolean> segmentBound =
+          segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)
+              ? getDescendingBound(segment, endAt)
+              : getAscendingBound(segment, endAt);
 
-      // Process all filters to find a value for the current field segment
-      for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-        Value filterValue = null;
-        boolean filterInclusive = true;
-
-        switch (fieldFilter.getOperator()) {
-          case GREATER_THAN_OR_EQUAL:
-          case GREATER_THAN:
-            filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
-            filterInclusive = false;
-            break;
-          case EQUAL:
-          case IN:
-          case LESS_THAN_OR_EQUAL:
-            filterValue = fieldFilter.getValue();
-            break;
-          case LESS_THAN:
-            filterValue = fieldFilter.getValue();
-            filterInclusive = false;
-            break;
-          case NOT_EQUAL:
-          case NOT_IN:
-            filterValue = Values.MAX_VALUE;
-            break;
-          default:
-            // Remaining filters cannot be used as upper bounds.
-        }
-
-        if (min(segmentValue, filterValue) == filterValue) {
-          segmentValue = filterValue;
-          segmentInclusive = filterInclusive;
-        }
-      }
-
-      // If there is an endAt bound, compare the values against the existing boundary to see
-      // if we can narrow the scope.
-      if (endAt != null) {
-        for (int i = 0; i < orderBys.size(); ++i) {
-          OrderBy orderBy = this.orderBys.get(i);
-          if (orderBy.getField().equals(segment.getFieldPath())) {
-            Value cursorValue = endAt.getPosition().get(i);
-            if (min(segmentValue, cursorValue) == cursorValue) {
-              segmentValue = cursorValue;
-              segmentInclusive = endAt.isInclusive();
-            }
-            break;
-          }
-        }
-      }
-
-      if (segmentValue == null) {
+      if (segmentBound.first == null) {
         // No upper bound exists
         return null;
       }
 
-      values.add(segmentValue);
-      inclusive &= segmentInclusive;
+      values.add(segmentBound.first);
+      inclusive &= segmentBound.second;
     }
 
     return new Bound(values, inclusive);
   }
 
+  /**
+   * Returns the value for an ascending bound of `segment`.
+   *
+   * @param segment The segment to get the value for.
+   * @param bound A bound to restrict the index range.
+   * @return a Pair with a nullable Value and a boolean indicating whether the bound is inclusive
+   */
+  private Pair<Value, Boolean> getAscendingBound(
+      FieldIndex.Segment segment, @Nullable Bound bound) {
+    Value segmentValue = null;
+    boolean segmentInclusive = true;
+
+    // Process all filters to find a value for the current field segment
+    for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+      Value filterValue = null;
+      boolean filterInclusive = true;
+
+      switch (fieldFilter.getOperator()) {
+        case LESS_THAN:
+        case LESS_THAN_OR_EQUAL:
+          filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
+          break;
+        case EQUAL:
+        case IN:
+        case GREATER_THAN_OR_EQUAL:
+          filterValue = fieldFilter.getValue();
+          break;
+        case GREATER_THAN:
+          filterValue = fieldFilter.getValue();
+          filterInclusive = false;
+          break;
+        case NOT_EQUAL:
+        case NOT_IN:
+          filterValue = Values.MIN_VALUE;
+          break;
+        default:
+          // Remaining filters cannot be used as bound.
+      }
+
+      if (max(segmentValue, filterValue) == filterValue) {
+        segmentValue = filterValue;
+        segmentInclusive = filterInclusive;
+      }
+    }
+
+    // If there is an additional bound, compare the values against the existing range to see if we
+    // can narrow the scope.
+    if (bound != null) {
+      for (int i = 0; i < orderBys.size(); ++i) {
+        OrderBy orderBy = this.orderBys.get(i);
+        if (orderBy.getField().equals(segment.getFieldPath())) {
+          Value cursorValue = bound.getPosition().get(i);
+          if (max(segmentValue, cursorValue) == cursorValue) {
+            segmentValue = cursorValue;
+            segmentInclusive = bound.isInclusive();
+          }
+        }
+      }
+    }
+
+    return new Pair<>(segmentValue, segmentInclusive);
+  }
+
+  /**
+   * Returns the value for a descending bound of `segment`.
+   *
+   * @param segment The segment to get the value for.
+   * @param bound A bound to restrict the index range.
+   * @return a Pair with a nullable Value and a boolean indicating whether the bound is inclusive
+   */
+  private Pair<Value, Boolean> getDescendingBound(
+      FieldIndex.Segment segment, @Nullable Bound bound) {
+    Value segmentValue = null;
+    boolean segmentInclusive = true;
+
+    // Process all filters to find a value for the current field segment
+    for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
+      Value filterValue = null;
+      boolean filterInclusive = true;
+
+      switch (fieldFilter.getOperator()) {
+        case GREATER_THAN_OR_EQUAL:
+        case GREATER_THAN:
+          filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
+          filterInclusive = false;
+          break;
+        case EQUAL:
+        case IN:
+        case LESS_THAN_OR_EQUAL:
+          filterValue = fieldFilter.getValue();
+          break;
+        case LESS_THAN:
+          filterValue = fieldFilter.getValue();
+          filterInclusive = false;
+          break;
+        case NOT_EQUAL:
+        case NOT_IN:
+          filterValue = Values.MAX_VALUE;
+          break;
+        default:
+          // Remaining filters cannot be used as bound.
+      }
+
+      if (min(segmentValue, filterValue) == filterValue) {
+        segmentValue = filterValue;
+        segmentInclusive = filterInclusive;
+      }
+    }
+
+    // If there is an additional bound, compare the values against the existing range to see if we
+    // can narrow the scope.
+    if (bound != null) {
+      for (int i = 0; i < orderBys.size(); ++i) {
+        OrderBy orderBy = this.orderBys.get(i);
+        if (orderBy.getField().equals(segment.getFieldPath())) {
+          Value cursorValue = bound.getPosition().get(i);
+          if (min(segmentValue, cursorValue) == cursorValue) {
+            segmentValue = cursorValue;
+            segmentInclusive = bound.isInclusive();
+          }
+        }
+      }
+    }
+
+    return new Pair<>(segmentValue, segmentInclusive);
+  }
+
   public List<OrderBy> getOrderBy() {
     return this.orderBys;
+  }
+
+  /** Returns the order of the document key component. */
+  public Direction getKeyOrder() {
+    return this.orderBys.get(this.orderBys.size() - 1).getDirection();
   }
 
   /** Returns a canonical string representing this target. */

@@ -21,6 +21,7 @@ import android.content.Intent;
 import android.os.Build;
 import android.util.Base64;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -28,7 +29,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Processes incoming FCM broadcasts.

@@ -24,7 +24,6 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Represents a set of indexes that are used to execute queries efficiently.
@@ -95,7 +94,7 @@ public interface IndexManager {
    * Returns the documents that match the given target based on the provided index or {@code null}
    * if the query cannot be served from an index.
    */
-  Set<DocumentKey> getDocumentsMatchingTarget(Target target);
+  List<DocumentKey> getDocumentsMatchingTarget(Target target);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable

@@ -438,13 +438,13 @@ public class SessionReportingCoordinatorTest {
     final Task<CrashlyticsReportWithSessionId> failedTask =
         Tasks.forException(new Exception("fail"));
 
-    when(reportSender.sendReport(mockReport1)).thenReturn(successfulTask);
-    when(reportSender.sendReport(mockReport2)).thenReturn(failedTask);
+    when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
+    when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
 
     reportingCoordinator.sendReports(Runnable::run);
 
-    verify(reportSender).sendReport(mockReport1);
-    verify(reportSender).sendReport(mockReport2);
+    verify(reportSender).enqueueReport(mockReport1, false);
+    verify(reportSender).enqueueReport(mockReport2, false);
   }
 
   @Test

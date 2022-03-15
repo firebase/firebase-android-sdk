@@ -61,6 +61,11 @@ public class CrashlyticsCore {
 
   static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
 
+  private static final String ON_DEMAND_RECORDED_KEY =
+      "com.crashlytics.on-demand.recorded-exceptions";
+  private static final String ON_DEMAND_DROPPED_KEY =
+      "com.crashlytics.on-demand.dropped-exceptions";
+
   // If this marker sticks around, the app is crashing before we finished initializing
   private static final String INITIALIZATION_MARKER_FILE_NAME = "initialization_marker";
   static final String CRASH_MARKER_FILE_NAME = "crash_marker";
@@ -68,6 +73,7 @@ public class CrashlyticsCore {
   private final Context context;
   private final FirebaseApp app;
   private final DataCollectionArbiter dataCollectionArbiter;
+  private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
 
@@ -110,6 +116,7 @@ public class CrashlyticsCore {
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
 
     startTime = System.currentTimeMillis();
+    onDemandCounter = new OnDemandCounter();
   }
 
   // endregion
@@ -150,7 +157,8 @@ public class CrashlyticsCore {
               logFileManager,
               userMetadata,
               stackTraceTrimmingStrategy,
-              settingsProvider);
+              settingsProvider,
+              onDemandCounter);
 
       controller =
           new CrashlyticsController(
@@ -348,6 +356,10 @@ public class CrashlyticsCore {
     controller.setCustomKeys(keysAndValues);
   }
 
+  // endregion
+
+  // region Internal API
+
   /**
    * Set a value to be associated with a given key for your crash data. The key/value pairs will be
    * reported with any crash that occurs in this session. A maximum of 64 key/value pairs can be
@@ -362,6 +374,19 @@ public class CrashlyticsCore {
    */
   public void setInternalKey(String key, String value) {
     controller.setInternalKey(key, value);
+  }
+
+  /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
+  public void logFatalException(Throwable throwable) {
+    Logger.getLogger()
+        .d("Recorded on-demand fatal events: " + onDemandCounter.getRecordedOnDemandExceptions());
+    Logger.getLogger()
+        .d("Dropped on-demand fatal events: " + onDemandCounter.getDroppedOnDemandExceptions());
+    controller.setInternalKey(
+        ON_DEMAND_RECORDED_KEY, Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
+    controller.setInternalKey(
+        ON_DEMAND_DROPPED_KEY, Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
+    controller.logFatalException(Thread.currentThread(), throwable);
   }
 
   // endregion

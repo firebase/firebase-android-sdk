@@ -12,24 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.model;
-
-public interface Settings {
-  SessionSettingsData getSessionData();
-
-  FeaturesSettingsData getFeaturesData();
-
-  long getExpiresAtMillis();
-
-  int getSettingsVersion();
-
-  int getCacheDuration();
-
-  double onDemandUploadRatePerMinute();
-
-  double onDemandBackoffBase();
-
-  int onDemandBackoffStepDurationSeconds();
-
-  boolean isExpired(long currentTimeMillis);
-}
+/** @hide */
+package com.google.firebase.messaging.threads;
