@@ -148,7 +148,6 @@ public class ConfigRealtimeHTTPClient {
                     }
                 };
                 new ConfigAsyncAutoFetch(this.httpURLConnection, this.configFetchHandler, this.eventListeners, retryCallback).execute();
-                this.retryHTTPConnection();
             } catch (Exception ex) {
                 logger.info("Can't start http connection");
                 this.retryHTTPConnection();
