@@ -21,7 +21,6 @@ import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.heartbeatinfo.HeartBeatConsumerComponent;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;

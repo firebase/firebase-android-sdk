@@ -34,7 +34,7 @@ public class FirebaseAppCheckRegistrarTest {
     FirebaseAppCheckRegistrar firebaseAppCheckRegistrar = new FirebaseAppCheckRegistrar();
     List<Component<?>> components = firebaseAppCheckRegistrar.getComponents();
     assertThat(components).isNotEmpty();
-    assertThat(components).hasSize(3);
+    assertThat(components).hasSize(2);
     Component<?> firebaseAppCheckComponent = components.get(0);
     assertThat(firebaseAppCheckComponent.getDependencies())
         .containsExactly(
