@@ -122,19 +122,6 @@ class LocalDocumentsView {
     return computeViews(docs, overlays, existenceStateChanged);
   }
 
-  /**
-   * Similar to {@link #getDocuments}, but creates the local view from the given {@code baseDocs}
-   * without retrieving documents from the local store.
-   *
-   * @param docs The documents to apply local mutations to get the local views.
-   */
-  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
-      Map<DocumentKey, MutableDocument> docs) {
-    Map<DocumentKey, Overlay> overlays = new HashMap<>();
-    populateOverlays(overlays, docs.keySet());
-    return computeViews(docs, overlays, new HashSet<>());
-  }
-
   /*Computes the local view for doc */
   private ImmutableSortedMap<DocumentKey, Document> computeViews(
       Map<DocumentKey, MutableDocument> docs,

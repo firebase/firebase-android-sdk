@@ -2,6 +2,9 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
+# 24.1.0
+- [fixed] Fixed missing document fields issue with offline overlays (#3528)
+
 # 24.0.2
 - [fixed] Fixed an issue of long grpc reconnection period, when App moves to
   foreground after staying in background for a while.
