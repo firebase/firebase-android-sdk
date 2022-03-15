@@ -25,6 +25,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.MainThread;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -32,7 +33,6 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import java.util.ArrayDeque;
 import java.util.Queue;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Manages securely starting the app's FirebaseMessagingService implementation even though they are
