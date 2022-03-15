@@ -14,33 +14,35 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /** Simple, thread-safe, class to keep count of recorded and dropped on-demand events. */
 public final class OnDemandCounter {
-  private int recordedOnDemandExceptions;
-  private int droppedOnDemandExceptions;
+  private final AtomicInteger recordedOnDemandExceptions;
+  private final AtomicInteger droppedOnDemandExceptions;
 
   public OnDemandCounter() {
-    recordedOnDemandExceptions = 0;
-    droppedOnDemandExceptions = 0;
+    recordedOnDemandExceptions = new AtomicInteger();
+    droppedOnDemandExceptions = new AtomicInteger();
   }
 
-  public synchronized int getRecordedOnDemandExceptions() {
-    return recordedOnDemandExceptions;
+  public int getRecordedOnDemandExceptions() {
+    return recordedOnDemandExceptions.get();
   }
 
-  public synchronized void incrementRecordedOnDemandExceptions() {
-    recordedOnDemandExceptions++;
+  public void incrementRecordedOnDemandExceptions() {
+    recordedOnDemandExceptions.getAndIncrement();
   }
 
-  public synchronized int getDroppedOnDemandExceptions() {
-    return droppedOnDemandExceptions;
+  public int getDroppedOnDemandExceptions() {
+    return droppedOnDemandExceptions.get();
   }
 
-  public synchronized void incrementDroppedOnDemandExceptions() {
-    droppedOnDemandExceptions++;
+  public void incrementDroppedOnDemandExceptions() {
+    droppedOnDemandExceptions.getAndIncrement();
   }
 
-  public synchronized void resetDroppedOnDemandExceptions() {
-    droppedOnDemandExceptions = 0;
+  public void resetDroppedOnDemandExceptions() {
+    droppedOnDemandExceptions.set(0);
   }
 }

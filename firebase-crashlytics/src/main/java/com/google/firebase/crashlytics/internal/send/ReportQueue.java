@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.send;
 
-import static com.google.firebase.components.Preconditions.checkState;
-
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -139,8 +137,6 @@ final class ReportQueue {
   }
 
   private boolean isQueueFull() {
-    // TODO(mrober): Remove this after testing.
-    checkState(queue.size() <= queueCapacity, "Queue went over capacity. Concurrency issue?");
     return queue.size() == queueCapacity;
   }
 

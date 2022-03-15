@@ -201,16 +201,6 @@ public class FirebaseCrashlytics {
     core.logException(throwable);
   }
 
-  /** Records a fatal report and sends to Crashlytics on-demand. */
-  // TODO(mrober): Move this to a FirebaseCrashlyticsInternal interface.
-  private void recordFatalException(Throwable throwable) {
-    if (throwable == null) {
-      Logger.getLogger().w("A null value was passed to recordFatalException. Ignoring.");
-      return;
-    }
-    core.logFatalException(throwable);
-  }
-
   /**
    * Logs a message that's included in the next fatal, non-fatal, or ANR report.
    *
