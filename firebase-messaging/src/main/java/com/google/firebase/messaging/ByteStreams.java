@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.Queue;
 
 /** @hide */
-public final class ByteStreams {
+final class ByteStreams {
 
   private static final int BUFFER_SIZE = 8192;
 
