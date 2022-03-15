@@ -25,5 +25,11 @@ public interface Settings {
 
   int getCacheDuration();
 
+  double onDemandUploadRatePerMinute();
+
+  double onDemandBackoffBase();
+
+  int onDemandBackoffStepDurationSeconds();
+
   boolean isExpired(long currentTimeMillis);
 }

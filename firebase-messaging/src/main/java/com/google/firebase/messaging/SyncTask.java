@@ -26,6 +26,7 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import java.io.IOException;
@@ -33,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
 /** Background task to perform sync operations with the Firebase backend using a bg thread */
 class SyncTask implements Runnable {

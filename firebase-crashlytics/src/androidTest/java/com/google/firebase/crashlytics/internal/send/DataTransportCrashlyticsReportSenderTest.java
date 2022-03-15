@@ -29,6 +29,7 @@ import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
+import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.File;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +52,9 @@ public class DataTransportCrashlyticsReportSenderTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     when(mockTransform.apply(any())).thenReturn(new byte[0]);
-    reportSender = new DataTransportCrashlyticsReportSender(mockTransport, mockTransform);
+    reportSender =
+        new DataTransportCrashlyticsReportSender(
+            new ReportQueue(60, 1.2, 3_000, mockTransport, new OnDemandCounter()), mockTransform);
   }
 
   @Test
@@ -61,10 +64,13 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
+    final Task<CrashlyticsReportWithSessionId> send1 =
+        reportSender.enqueueReport(report1, /*isOnDemand=*/ true);
+    final Task<CrashlyticsReportWithSessionId> send2 =
+        reportSender.enqueueReport(report2, /*isOnDemand=*/ true);
 
     try {
+      Thread.sleep(2_000); // give time to process queue
       Tasks.await(send1);
       Tasks.await(send2);
     } catch (ExecutionException e) {
@@ -85,10 +91,11 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
+    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
+    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
 
     try {
+      Thread.sleep(2_000); // give time to process queue
       Tasks.await(send1);
       Tasks.await(send2);
     } catch (ExecutionException e) {
@@ -112,10 +119,11 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report1 = mockReportWithSessionId();
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
-    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.sendReport(report1);
-    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.sendReport(report2);
+    final Task<CrashlyticsReportWithSessionId> send1 = reportSender.enqueueReport(report1, false);
+    final Task<CrashlyticsReportWithSessionId> send2 = reportSender.enqueueReport(report2, false);
 
     try {
+      Thread.sleep(2_000); // give time to process queue
       Tasks.await(send1);
       Tasks.await(send2);
     } catch (ExecutionException e) {
