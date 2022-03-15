@@ -886,6 +886,7 @@ public class QueryTest {
   }
 
   // See: https://github.com/firebase/firebase-android-sdk/issues/3528
+  // TODO(Overlay): These two tests should be part of local store tests instead.
   @Test
   public void testAddThenUpdatesWhileOffline() {
     CollectionReference collection = testCollection();

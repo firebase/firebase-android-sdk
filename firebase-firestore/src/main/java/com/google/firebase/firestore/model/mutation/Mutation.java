@@ -23,7 +23,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ObjectValue;
-import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,7 +93,7 @@ public abstract class Mutation {
     }
 
     // mask == null when there are Set or Delete being applied to get to the current document.
-    if (mask == null || doc.getVersion().equals(SnapshotVersion.NONE)) {
+    if (mask == null) {
       if (doc.isNoDocument()) {
         return new DeleteMutation(doc.getKey(), Precondition.NONE);
       } else {

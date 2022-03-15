@@ -16,7 +16,7 @@ by opting into a release at
 - [fixed] Fixed an AppCheck issue that caused Firestore listeners to stop
   working and receive a "Permission Denied" error. This issue only occurred for
   AppCheck users that set their expiration time to under an hour.
-- [fixed] Fixed a potential problem during Firestore's shutdown that prevented 
+- [fixed] Fixed a potential problem during Firestore's shutdown that prevented
   the shutdown from proceeding if a network connection was opened right before.
 - [changed] Queries are now send to the backend before the SDK starts local 
   processing, which reduces overall Query latency.
