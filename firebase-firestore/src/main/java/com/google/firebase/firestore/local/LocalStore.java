@@ -244,9 +244,20 @@ public final class LocalStore implements BundleCallback {
     return persistence.runTransaction(
         "Locally write mutations",
         () -> {
+          // Figure out which keys do not have a remote version in the cache, this is needed to
+          // create the right overlay mutation: if no remote version presents, we do not need to
+          // create overlays as patch mutations.
+          Map<DocumentKey, MutableDocument> remoteDocs = remoteDocuments.getAll(keys);
+          Set<DocumentKey> docsWithoutRemoteVersion = new HashSet<>();
+          for (Map.Entry<DocumentKey, MutableDocument> entry : remoteDocs.entrySet()) {
+            if (!entry.getValue().isValidDocument()) {
+              docsWithoutRemoteVersion.add(entry.getKey());
+            }
+          }
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, Document> documents = localDocuments.getDocuments(keys);
+          ImmutableSortedMap<DocumentKey, Document> documents =
+              localDocuments.getLocalViewOfDocuments(remoteDocs);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
@@ -270,7 +281,8 @@ public final class LocalStore implements BundleCallback {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          Map<DocumentKey, Mutation> overlays = batch.applyToLocalDocumentSet(documents);
+          Map<DocumentKey, Mutation> overlays =
+              batch.applyToLocalDocumentSet(documents, docsWithoutRemoteVersion);
           documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
           return new LocalDocumentsResult(batch.getBatchId(), documents);
         });

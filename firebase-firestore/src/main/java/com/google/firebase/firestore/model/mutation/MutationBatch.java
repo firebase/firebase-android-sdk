@@ -136,7 +136,8 @@ public final class MutationBatch {
    * applications.
    */
   public Map<DocumentKey, Mutation> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, Document> documentMap) {
+      ImmutableSortedMap<DocumentKey, Document> documentMap,
+      Set<DocumentKey> documentsWithoutRemoteVersion) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
@@ -146,6 +147,9 @@ public final class MutationBatch {
       // remove this cast.
       MutableDocument document = (MutableDocument) documentMap.get(key);
       FieldMask mutatedFields = applyToLocalView(document);
+      // Set mutationFields to null if the document is only from local mutations, this creates
+      // a Set(or Delete) mutation, instead of trying to create a patch mutation as the overlay.
+      mutatedFields = documentsWithoutRemoteVersion.contains(key) ? null : mutatedFields;
       Mutation overlay = Mutation.calculateOverlayMutation(document, mutatedFields);
       overlays.put(key, overlay);
       if (!document.isValidDocument()) {
