@@ -4,6 +4,8 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
@@ -12,9 +14,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -79,6 +78,7 @@ public class ConfigRealtimeHTTPClient {
         } catch (MalformedURLException ex) {
             logger.info("URL is malformed");
         }
+        this.retryOnEveryNetworkConnection();
     }
 
     private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
@@ -137,6 +137,7 @@ public class ConfigRealtimeHTTPClient {
                 if (this.httpURLConnection == null) {
                     this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
                     this.setCommonRequestHeaders(this.httpURLConnection);
+                    this.httpURLConnection.setRequestProperty("lastKnownVersionNumber", Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
                 }
                 logger.info("Realtime connection started.");
 
@@ -147,6 +148,7 @@ public class ConfigRealtimeHTTPClient {
                     }
                 };
                 new ConfigAsyncAutoFetch(this.httpURLConnection, this.configFetchHandler, this.eventListeners, retryCallback).execute();
+                this.retryHTTPConnection();
             } catch (Exception ex) {
                 logger.info("Can't start http connection");
                 this.retryHTTPConnection();
@@ -168,7 +170,8 @@ public class ConfigRealtimeHTTPClient {
     // Try to reopen HTTP connection after a random amount of time
     private void retryHTTPConnection() {
         if (this.RETRIES_REMAINING > 0) {
-            RETRIES_REMAINING--;
+            this.RETRIES_REMAINING--;
+            this.RETRY_MULTIPLIER++;
             this.pauseRealtimeConnection();
             logger.info("Retrying in " + (this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER) + " seconds");
             this.timer.schedule(new TimerTask() {
@@ -181,6 +184,28 @@ public class ConfigRealtimeHTTPClient {
         } else {
             logger.info("No retries remaining. Restart app.");
         }
+    }
+
+    private void retryOnEveryNetworkConnection() {
+        Timer retryTimer = new Timer();
+
+        retryTimer.scheduleAtFixedRate(new TimerTask() {
+            final ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            final NetworkInfo[] networkInfos = connectivityManager.getAllNetworkInfo();
+
+            @Override
+            public void run() {
+                for (NetworkInfo networkInfo : networkInfos) {
+                    String networkName = networkInfo.getTypeName();
+                    if (networkName.equalsIgnoreCase("WIFI") || networkName.equalsIgnoreCase("MOBILE")) {
+                        if (networkInfo.isAvailable()) {
+                            startRealtimeConnection();
+                        }
+                    }
+                }
+                startRealtimeConnection();
+            }
+        }, 0, 5 * (60*1000));
     }
 
     // Event Listener interface to be used by developers.
