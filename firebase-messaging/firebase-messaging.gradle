@@ -100,7 +100,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:19.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.1.0"
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.1'
-    implementation ("com.google.api-client:google-api-client:1.30.9") {
+    implementation "com.google.errorprone:error_prone_annotations:2.9.0"
+    testImplementation ("com.google.api-client:google-api-client:1.30.9") {
         exclude group: "org.apache.httpcomponents", module: "httpclient"
     }
     testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
