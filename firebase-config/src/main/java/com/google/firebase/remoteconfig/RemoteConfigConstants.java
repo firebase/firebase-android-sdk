@@ -79,6 +79,7 @@ public final class RemoteConfigConstants {
     String EXPERIMENT_DESCRIPTIONS = "experimentDescriptions";
     String PERSONALIZATION_METADATA = "personalizationMetadata";
     String STATE = "state";
+    String TEMPLATE_VERSION_NUMBER = "templateVersionNumber";
   }
 
   /**

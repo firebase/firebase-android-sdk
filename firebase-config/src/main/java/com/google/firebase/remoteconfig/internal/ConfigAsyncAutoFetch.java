@@ -21,11 +21,6 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     private final Map<String, ConfigRealtimeHTTPClient.RealTimeEventListener> eventListeners;
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
     private final ConfigRealtimeHTTPClient.RealTimeEventListener retryCallback;
-    private static final String REALTIME_PONG_URL_STRING = "http://10.0.2.2:8080";
-
-    // Pong HTTP components
-    private URL realtimePongURL;
-    private HttpURLConnection pongHttpURLConnection;
 
     public ConfigAsyncAutoFetch(HttpURLConnection httpURLConnection,
                                 ConfigFetchHandler configFetchHandler,
@@ -35,12 +30,6 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         this.configFetchHandler = configFetchHandler;
         this.eventListeners = eventListeners;
         this.retryCallback = retryCallback;
-
-        try {
-            this.realtimePongURL = new URL(this.REALTIME_PONG_URL_STRING);
-        } catch (MalformedURLException ex) {
-            logger.info("URL is malformed");
-        }
     }
 
 
@@ -78,9 +67,6 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         String message;
         while ((message = reader.readLine()) != null) {
             logger.info(message);
-            if (message.contains("Ping")) {
-                this.sendPong();
-            } else {
                 Task<ConfigFetchHandler.FetchResponse> fetchTask = this.configFetchHandler.fetch(0L);
                 fetchTask.onSuccessTask((unusedFetchResponse) ->
                         {
@@ -92,30 +78,7 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
                             return Tasks.forResult(null);
                         }
                 );
-            }
         }
         reader.close();
-    }
-
-    // Sends pong response for any ping received from the server.
-    public void sendPong() {
-        if (this.pongHttpURLConnection == null) {
-            try {
-                this.pongHttpURLConnection = (HttpURLConnection) this.realtimePongURL.openConnection();
-                // TODO add headers
-            } catch (Exception ex) {
-                logger.info("Can't connect to pong endpoint due to " + ex.toString());
-                // TODO integrate retry function with pong sender
-            }
-        }
-
-        try {
-            int responseCode = this.pongHttpURLConnection.getResponseCode();
-            if (responseCode != 200) {
-                logger.info("Request failed with code " + responseCode);
-            }
-        } catch (IOException ex) {
-            logger.info("Can't get response code.");
-        }
     }
 }

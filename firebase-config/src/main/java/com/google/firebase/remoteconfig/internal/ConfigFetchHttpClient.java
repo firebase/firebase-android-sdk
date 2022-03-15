@@ -32,6 +32,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.PERSONALIZATION_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.TEMPLATE_VERSION_NUMBER;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
@@ -413,6 +414,16 @@ public class ConfigFetchHttpClient {
       }
       if (personalizationMetadata != null) {
         containerBuilder.withPersonalizationMetadata(personalizationMetadata);
+      }
+
+      Long templateVersionNumber = null;
+      try {
+        templateVersionNumber = fetchResponse.getLong(TEMPLATE_VERSION_NUMBER);
+      } catch (JSONException ex) {
+        // Do nothing if template version number does not exist.
+      }
+      if (templateVersionNumber != null) {
+        containerBuilder.withTemplateVersionNumber(templateVersionNumber);
       }
 
       return containerBuilder.build();
