@@ -623,4 +623,42 @@ final class ConfigurationConstants {
       return "com.google.firebase.perf.LogSourceName";
     }
   }
+
+  protected static final class FragmentSamplingRate extends ConfigurationFlag<Float> {
+    private static FragmentSamplingRate instance;
+
+    private FragmentSamplingRate() {
+      super();
+    }
+
+    protected static synchronized FragmentSamplingRate getInstance() {
+      if (instance == null) {
+        instance = new FragmentSamplingRate();
+      }
+      return instance;
+    }
+
+    @Override
+    protected Float getDefault() {
+      // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 0.20f, which is 20%.
+      // 0.00f means 0%, Fireperf will not capture any event for fragment trace from the device,
+      // 1.00f means 100%, Fireperf will capture all events for fragment trace from the device.
+      return 0.20f;
+    }
+
+    @Override
+    protected String getRemoteConfigFlag() {
+      return "fpr_vc_fragment_sampling_rate";
+    }
+
+    @Override
+    protected String getDeviceCacheFlag() {
+      return "com.google.firebase.perf.FragmentSamplingRate";
+    }
+
+    @Override
+    protected String getMetadataFlag() {
+      return "fragment_sampling_rate";
+    }
+  }
 }

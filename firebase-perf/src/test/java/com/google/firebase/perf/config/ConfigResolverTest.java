@@ -126,6 +126,11 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   private static final String SESSIONS_MAX_DURATION_MIN_CACHE_KEY =
       "com.google.firebase.perf.SessionsMaxDurationMinutes";
 
+  // Fragment trace sampling rate flags
+  private static final String FRAGMENT_SAMPLING_RATE_FRC_KEY = "fpr_vc_fragment_sampling_rate";
+  private static final String FRAGMENT_SAMPLING_RATE_CACHE_KEY =
+      "com.google.firebase.perf.FragmentSamplingRate";
+
   private ConfigResolver testConfigResolver;
 
   @Mock private RemoteConfigManager mockRemoteConfigManager;
@@ -2481,5 +2486,238 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
     verify(mockDeviceCacheManager, times(1))
         .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF_INTERNAL_LOW"));
+  }
+
+  @Test
+  public void getFragmentSamplingRate_validMetadata_returnsMetadata() {
+    // #1 pass: Validate that method returns Remote Config Value when there is no metadata value.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.01f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.01f);
+
+    // #2 pass: Validate that method returns Metadata value which takes higher precedence.
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 20.0f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+  }
+
+  @Test
+  public void getFragmentSamplingRate_validMetadata_notSaveMetadataInCache() {
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 20.0f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+
+    verify(mockDeviceCacheManager, never()).setValue(any(), any());
+  }
+
+  @Test
+  public void getFragmentSamplingRate_invalidAndroidMetadataBundle_returnDefaultValue() {
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+
+    // Case #1: Android Metadata bundle value is too high.
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 200.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+
+    // Case #2: Android Metadata bundle value is too low.
+    bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", -1.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+  }
+
+  @Test
+  public void getFragmentSamplingRate_invalidAndroidMetadataBundle_returnRemoteConfigValue() {
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.25f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+
+    // Case #1: Android Metadata bundle value is too high.
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 200.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+
+    // Case #2: Android Metadata bundle value is too low.
+    bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", -1.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+  }
+
+  @Test
+  public void getFragmentSamplingRate_invalidMetadataBundle_returnCacheValue() {
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(1.0f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
+
+    // Case #1: Android Metadata bundle value is too high.
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 200.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
+
+    // Case #2: Android Metadata bundle value is too low.
+    bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", -1.00f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
+  }
+
+  @Test
+  public void getFragmentSamplingRate_validRemoteConfig_returnRemoteConfigValue() {
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.25f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+    verify(mockDeviceCacheManager, times(1))
+        .setValue(eq(FRAGMENT_SAMPLING_RATE_CACHE_KEY), eq(0.25f));
+
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.0f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.0f);
+    verify(mockDeviceCacheManager, times(1))
+        .setValue(eq(FRAGMENT_SAMPLING_RATE_CACHE_KEY), eq(0.0f));
+
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.00005f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.00005f);
+    verify(mockDeviceCacheManager, times(1))
+        .setValue(eq(FRAGMENT_SAMPLING_RATE_CACHE_KEY), eq(0.00005f));
+
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.0000000001f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.0000000001f);
+    verify(mockDeviceCacheManager, times(1))
+        .setValue(eq(FRAGMENT_SAMPLING_RATE_CACHE_KEY), eq(0.0000000001f));
+  }
+
+  @Test
+  public void getFragmentSamplingRate_invalidRemoteConfig_returnDefaultValue() {
+    // Mock behavior that device cache doesn't have session sampling rate value.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+
+    // Case #1: Firebase Remote Config value is too high.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(1.01f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.01f);
+    verify(mockDeviceCacheManager, never()).setValue(any(), any());
+
+    // Case #2: Firebase Remote Config value is too low.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(-0.1f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.01f);
+    verify(mockDeviceCacheManager, never()).setValue(any(), any());
+  }
+
+  @Test
+  public void getFragnebtSamplingRate_invalidRemoteConfig_returnCacheValue() {
+    // Mock behavior that device cache doesn't have session sampling rate value.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(0.25f));
+
+    // Case #1: Firebase Remote Config value is too high.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(1.01f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+    verify(mockDeviceCacheManager, never()).setValue(any(), any());
+
+    // Case #2: Firebase Remote Config value is too low.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(-0.1f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.25f);
+    verify(mockDeviceCacheManager, never()).setValue(any(), any());
+  }
+
+  @Test
+  public void getFragmentSamplingRate_validCache_returnCacheValue() {
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(1.0f));
+
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
+  }
+
+  @Test
+  public void getFragmentSamplingRate_invalidCache_returnDefaultValue() {
+    // Mock behavior that remote config doesn't have session sampling rate value.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+
+    // Case #1: Device Cache value is too high.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(10.0f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+
+    // Case #2: Device Cache value is too low.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(-1.0f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+  }
+
+  @Test
+  public void
+      getFragmentSamplingRate_metadataAndRemoteConfigAndCacheAreSet_metadataHasHighestConfigPrecedence() {
+    // Set cache value.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(0.2f));
+
+    // Set remote config value.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.3f));
+
+    // Set Android Manifest value.
+    Bundle bundle = new Bundle();
+    bundle.putFloat("fragment_sampling_percentage", 4.0f);
+    testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.04f);
+  }
+
+  @Test
+  public void
+      getFragmentSamplingRate_remoteConfigAndCacheAreSet_remoteConfigHasHighestConfigPrecedence() {
+    // Set cache value.
+    when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.of(0.2f));
+
+    // Set remote config value.
+    when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.of(0.3f));
+
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.3f);
   }
 }

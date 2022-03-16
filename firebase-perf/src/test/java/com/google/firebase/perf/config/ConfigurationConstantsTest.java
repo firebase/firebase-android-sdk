@@ -253,4 +253,15 @@ public class ConfigurationConstantsTest {
     assertThat(LogSourceName.getLogSourceName(675L)).isEqualTo("FIREPERF_INTERNAL_LOW");
     assertThat(LogSourceName.getLogSourceName(676L)).isEqualTo("FIREPERF_INTERNAL_HIGH");
   }
+
+  @Test
+  public void getInstance_FragmentSamplingRate_validateConstants() {
+    SessionsSamplingRate configFlag = SessionsSamplingRate.getInstance();
+
+    assertThat(configFlag.getDefault()).isEqualTo(0.2f);
+    assertThat(configFlag.getDeviceCacheFlag())
+        .isEqualTo("com.google.firebase.perf.SessionSamplingRate");
+    assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_fragment_sampling_rate");
+    assertThat(configFlag.getMetadataFlag()).isEqualTo("fragment_sampling_percentage");
+  }
 }
