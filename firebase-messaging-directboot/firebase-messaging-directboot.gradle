@@ -67,7 +67,5 @@ dependencies {
     }
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation "com.google.firebase:firebase-iid-interop:17.0.0"
-    implementation ("com.google.api-client:google-api-client:1.30.9") {
-        exclude group: "org.apache.httpcomponents", module: "httpclient"
-    }
+    implementation "com.google.errorprone:error_prone_annotations:2.9.0"
 }
