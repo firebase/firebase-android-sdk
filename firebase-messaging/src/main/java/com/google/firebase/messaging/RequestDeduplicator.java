@@ -16,11 +16,11 @@ package com.google.firebase.messaging;
 import static com.google.firebase.messaging.FirebaseMessaging.TAG;
 
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.collection.ArrayMap;
 import com.google.android.gms.tasks.Task;
 import java.util.Map;
 import java.util.concurrent.Executor;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * Deduplicates concurrent requests for FCM tokens into the same request to GmsCore/FCM backend.

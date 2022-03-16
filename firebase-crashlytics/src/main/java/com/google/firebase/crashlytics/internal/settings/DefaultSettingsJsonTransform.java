@@ -37,6 +37,18 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
         json.optInt(
             SettingsJsonConstants.CACHE_DURATION_KEY,
             SettingsJsonConstants.SETTINGS_CACHE_DURATION_DEFAULT);
+    final double onDemandUploadRatePerMinute =
+        json.optDouble(
+            SettingsJsonConstants.ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY,
+            SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT);
+    final double onDemandBackoffBase =
+        json.optDouble(
+            SettingsJsonConstants.ON_DEMAND_BACKOFF_BASE_KEY,
+            SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT);
+    final int onDemandBackoffStepDurationSeconds =
+        json.optInt(
+            SettingsJsonConstants.ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_KEY,
+            SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT);
 
     final AppSettingsData appData =
         buildAppDataFrom(json.getJSONObject(SettingsJsonConstants.APP_KEY));
@@ -48,7 +60,15 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
     final long expiresAtMillis = getExpiresAtFrom(currentTimeProvider, cacheDuration, json);
 
     return new SettingsData(
-        expiresAtMillis, appData, settingsData, featureData, settingsVersion, cacheDuration);
+        expiresAtMillis,
+        appData,
+        settingsData,
+        featureData,
+        settingsVersion,
+        cacheDuration,
+        onDemandUploadRatePerMinute,
+        onDemandBackoffBase,
+        onDemandBackoffStepDurationSeconds);
   }
 
   /** Creates a new Settings with reasonable default values. */
@@ -64,7 +84,15 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
     final long expiresAtMillis = getExpiresAtFrom(currentTimeProvider, cacheDuration, empty);
 
     return new SettingsData(
-        expiresAtMillis, appData, settingsData, featureData, settingsVersion, cacheDuration);
+        expiresAtMillis,
+        appData,
+        settingsData,
+        featureData,
+        settingsVersion,
+        cacheDuration,
+        SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT,
+        SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT,
+        SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT);
   }
 
   @Override

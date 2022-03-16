@@ -85,6 +85,7 @@ class CrashlyticsController {
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
+  private SettingsDataProvider settingsProvider = null;
 
   // A promise that will be resolved when unsent reports are found on the device, and
   // send/deleteUnsentReports can be called to decide how to deal with them.
@@ -140,6 +141,7 @@ class CrashlyticsController {
       String sessionIdentifier,
       Thread.UncaughtExceptionHandler defaultHandler,
       SettingsDataProvider settingsProvider) {
+    this.settingsProvider = settingsProvider;
     // This must be called before installing the controller with
     // Thread.setDefaultUncaughtExceptionHandler to ensure that we are ready to handle
     // any crashes we catch.
@@ -160,10 +162,18 @@ class CrashlyticsController {
     Thread.setDefaultUncaughtExceptionHandler(crashHandler);
   }
 
-  synchronized void handleUncaughtException(
+  void handleUncaughtException(
       @NonNull SettingsDataProvider settingsDataProvider,
       @NonNull final Thread thread,
       @NonNull final Throwable ex) {
+    handleUncaughtException(settingsDataProvider, thread, ex, /*isOnDemand=*/ false);
+  }
+
+  synchronized void handleUncaughtException(
+      @NonNull SettingsDataProvider settingsDataProvider,
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex,
+      boolean isOnDemand) {
 
     Logger.getLogger()
         .d("Handling uncaught " + "exception \"" + ex + "\" from thread " + thread.getName());
@@ -222,13 +232,15 @@ class CrashlyticsController {
                             // Data collection is enabled, so it's safe to send the report.
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
-                                reportingCoordinator.sendReports(executor));
+                                reportingCoordinator.sendReports(
+                                    executor, isOnDemand ? currentSessionId : null));
                           }
                         });
               }
             });
 
     try {
+      // TODO(mrober): Don't block the main thread ever for on-demand fatals.
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
     } catch (Exception e) {
       Logger.getLogger().e("Error handling uncaught exception", e);
@@ -417,6 +429,14 @@ class CrashlyticsController {
             }
           }
         });
+  }
+
+  void logFatalException(Thread thread, Throwable ex) {
+    if (settingsProvider == null) {
+      Logger.getLogger().w("settingsProvider not set");
+      return;
+    }
+    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ true);
   }
 
   void setUserId(String identifier) {
