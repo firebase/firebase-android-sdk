@@ -658,7 +658,7 @@ final class ConfigurationConstants {
 
     @Override
     protected String getMetadataFlag() {
-      return "fragment_sampling_rate";
+      return "fragment_sampling_percentage";
     }
   }
 }

@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionDeactivated;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionEnabled;
+import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
 import com.google.firebase.perf.config.ConfigurationConstants.LogSourceName;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountForeground;
@@ -256,11 +257,11 @@ public class ConfigurationConstantsTest {
 
   @Test
   public void getInstance_FragmentSamplingRate_validateConstants() {
-    SessionsSamplingRate configFlag = SessionsSamplingRate.getInstance();
+    FragmentSamplingRate configFlag = FragmentSamplingRate.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(0.2f);
     assertThat(configFlag.getDeviceCacheFlag())
-        .isEqualTo("com.google.firebase.perf.SessionSamplingRate");
+        .isEqualTo("com.google.firebase.perf.FragmentSamplingRate");
     assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_fragment_sampling_rate");
     assertThat(configFlag.getMetadataFlag()).isEqualTo("fragment_sampling_percentage");
   }
