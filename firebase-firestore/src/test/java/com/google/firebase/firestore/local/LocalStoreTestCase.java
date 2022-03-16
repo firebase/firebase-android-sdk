@@ -759,7 +759,7 @@ public abstract class LocalStoreTestCase {
 
     acknowledgeMutation(2); // delete mutation
     assertRemoved("foo/bar");
-    assertContains(deletedDoc("foo/bar", 2).setHasCommittedMutations());
+    assertContains(deletedDoc("foo/bar", 0).setHasLocalMutations());
 
     acknowledgeMutation(3); // patch mutation
     assertChanged(unknownDoc("foo/bar", 3));
