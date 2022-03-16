@@ -2626,14 +2626,14 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.of(1.01f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.01f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
 
     // Case #2: Firebase Remote Config value is too low.
     when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.of(-0.1f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.01f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
   }
 
