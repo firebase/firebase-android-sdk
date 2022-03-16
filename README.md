@@ -1,5 +1,5 @@
 # Firebase Android Open Source Development
-
+TEST
 This repository contains a subset of the Firebase Android SDK source. It
 currently includes the following Firebase libraries, and some of their
 dependencies:
