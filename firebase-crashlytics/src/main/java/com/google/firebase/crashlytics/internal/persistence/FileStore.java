@@ -101,16 +101,12 @@ public class FileStore {
     return fileOrDirectory.delete();
   }
 
-  /**
-   * @return internal File used by Crashlytics, that is not specific to a session
-   */
+  /** @return internal File used by Crashlytics, that is not specific to a session */
   public File getCommonFile(String filename) {
     return new File(rootDir, filename);
   }
 
-  /**
-   * @return all common (non session specific) files matching the given filter.
-   */
+  /** @return all common (non session specific) files matching the given filter. */
   public List<File> getCommonFiles(FilenameFilter filter) {
     return safeArrayToList(rootDir.listFiles(filter));
   }
