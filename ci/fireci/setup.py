@@ -28,7 +28,7 @@ setup(
         'click==7.0',
         'google-cloud-storage==1.38.0',
         'numpy==1.19.5',
-        'PyGithub==1.43.8',
+        'PyGithub==1.55',
         'pystache==0.6.0',
         'requests==2.23.0',
         'PyYAML==5.4.1',
