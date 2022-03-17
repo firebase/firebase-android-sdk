@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionDeactivated;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionEnabled;
+import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
 import com.google.firebase.perf.config.ConfigurationConstants.LogSourceName;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountForeground;
@@ -252,5 +253,16 @@ public class ConfigurationConstantsTest {
     assertThat(LogSourceName.getLogSourceName(462L)).isEqualTo("FIREPERF");
     assertThat(LogSourceName.getLogSourceName(675L)).isEqualTo("FIREPERF_INTERNAL_LOW");
     assertThat(LogSourceName.getLogSourceName(676L)).isEqualTo("FIREPERF_INTERNAL_HIGH");
+  }
+
+  @Test
+  public void getInstance_FragmentSamplingRate_validateConstants() {
+    FragmentSamplingRate configFlag = FragmentSamplingRate.getInstance();
+
+    assertThat(configFlag.getDefault()).isEqualTo(1.0f);
+    assertThat(configFlag.getDeviceCacheFlag())
+        .isEqualTo("com.google.firebase.perf.FragmentSamplingRate");
+    assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_fragment_sampling_rate");
+    assertThat(configFlag.getMetadataFlag()).isEqualTo("fragment_sampling_percentage");
   }
 }
