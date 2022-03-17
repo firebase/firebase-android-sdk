@@ -2638,7 +2638,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void getFragnebtSamplingRate_invalidRemoteConfig_returnCacheValue() {
+  public void getFragmentSamplingRate_invalidRemoteConfig_returnCacheValue() {
     // Mock behavior that device cache doesn't have session sampling rate value.
     when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
         .thenReturn(Optional.of(0.25f));
