@@ -26,7 +26,7 @@ setup(
     version='0.1',
     install_requires=[
         'click==8.0.4',
-        'google-cloud-storage==2.0.0',
+        'google-cloud-storage==2.2.1',
         'numpy==1.22.3',
         'PyGithub==1.55',
         'pystache==0.6.0',
