@@ -259,7 +259,7 @@ public class ConfigurationConstantsTest {
   public void getInstance_FragmentSamplingRate_validateConstants() {
     FragmentSamplingRate configFlag = FragmentSamplingRate.getInstance();
 
-    assertThat(configFlag.getDefault()).isEqualTo(0.2f);
+    assertThat(configFlag.getDefault()).isEqualTo(1.0f);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.FragmentSamplingRate");
     assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_fragment_sampling_rate");

@@ -2510,7 +2510,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     bundle.putFloat("fragment_sampling_percentage", 20.0f);
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
 
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
   }
@@ -2522,21 +2522,21 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
         .thenReturn(Optional.absent());
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
 
     // Case #1: Android Metadata bundle value is too high.
     Bundle bundle = new Bundle();
     bundle.putFloat("fragment_sampling_percentage", 200.00f);
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
 
     // Case #2: Android Metadata bundle value is too low.
     bundle = new Bundle();
     bundle.putFloat("fragment_sampling_percentage", -1.00f);
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
   }
 
   @Test
@@ -2626,14 +2626,14 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.of(1.01f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
 
     // Case #2: Firebase Remote Config value is too low.
     when(mockRemoteConfigManager.getFloat(FRAGMENT_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.of(-0.1f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
   }
 
@@ -2679,13 +2679,13 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
         .thenReturn(Optional.of(10.0f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
 
     // Case #2: Device Cache value is too low.
     when(mockDeviceCacheManager.getFloat(FRAGMENT_SAMPLING_RATE_CACHE_KEY))
         .thenReturn(Optional.of(-1.0f));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
   }
 
   @Test
