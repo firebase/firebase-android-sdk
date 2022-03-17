@@ -5,7 +5,7 @@
 ## v20.0.6 (M112)
 
 #### Android library
-* {{feature}} The Firebase App Distributio Android SDK is now available in beta. You
+* {{feature}} The Firebase App Distribution Android SDK is now available in beta. You
   can use this SDK to notify testers in-app when a new test build is available.
   To learn more, visit the
   [reference documentation](https://firebase.google.com/docs/reference/android/com/google/firebase/appdistribution/package-summary).
