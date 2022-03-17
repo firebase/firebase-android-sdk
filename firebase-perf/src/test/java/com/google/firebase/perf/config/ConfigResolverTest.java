@@ -2510,7 +2510,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     bundle.putFloat("fragment_sampling_percentage", 20.0f);
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
-    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(1.0f);
+    assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.2f);
 
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
   }
