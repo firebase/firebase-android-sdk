@@ -41,7 +41,7 @@ public class LogicUtils {
   }
 
   /** Returns true if the given filter is a single field filter. e.g. (a == 10). */
-  private static boolean isFieldFilter(Filter filter) {
+  private static boolean isSingleFieldFilter(Filter filter) {
     return filter instanceof FieldFilter;
   }
 
@@ -62,7 +62,7 @@ public class LogicUtils {
       CompositeFilter compositeFilter = (CompositeFilter) filter;
       if (compositeFilter.isDisjunction()) {
         for (Filter subfilter : compositeFilter.getFilters()) {
-          if (!isFieldFilter(subfilter) && !isFlatConjunction(subfilter)) {
+          if (!isSingleFieldFilter(subfilter) && !isFlatConjunction(subfilter)) {
             return false;
           }
         }
@@ -83,9 +83,9 @@ public class LogicUtils {
   private static boolean isDisjunctiveNormalForm(Filter filter) {
     // A single field filter is always in DNF form.
     // An AND of several field filters ("Flat AND") is in DNF form. e.g (A && B).
-    // An OR of field filters and "Flat AND"s is in DNF form. e.g. (A || (B && C) || (D && F)).
+    // An OR of field filters and "Flat AND"s is in DNF form. e.g. A || (B && C) || (D && F).
     // Everything else is not in DNF form.
-    return isFieldFilter(filter)
+    return isSingleFieldFilter(filter)
         || isFlatConjunction(filter)
         || isDisjunctionOfFieldFiltersAndFlatConjunctions(filter);
   }
@@ -93,9 +93,10 @@ public class LogicUtils {
   /**
    * Applies the associativity property to the given filter and returns the resulting filter.
    *
-   * <p>A | (B | C) == (A | B) | C == (A | B | C)
-   *
-   * <p>A & (B & C) == (A & B) & C == (A & B & C)
+   * <ul>
+   *   <li>A | (B | C) == (A | B) | C == (A | B | C)
+   *   <li>A & (B & C) == (A & B) & C == (A & B & C)
+   * </ul>
    *
    * <p>For more info, visit: https://en.wikipedia.org/wiki/Associative_property#Propositional_logic
    */
@@ -103,7 +104,7 @@ public class LogicUtils {
   public static Filter applyAssociation(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
-    if (isFieldFilter(filter)) {
+    if (isSingleFieldFilter(filter)) {
       return filter;
     }
 
@@ -166,13 +167,12 @@ public class LogicUtils {
    *
    * <p>There are generally four types of distributions:
    *
-   * <p>Distribution of conjunction over disjunction: P & (Q | R) == (P & Q) | (P & R)
-   *
-   * <p>Distribution of disjunction over conjunction: P | (Q & R) == (P | Q) & (P | R)
-   *
-   * <p>Distribution of conjunction over conjunction: P & (Q & R) == (P & Q) & (P & R)
-   *
-   * <p>Distribution of disjunction over disjunction: P | (Q | R) == (P | Q) | (P | R)
+   * <ul>
+   *   <li>Distribution of conjunction over disjunction: P & (Q | R) == (P & Q) | (P & R)
+   *   <li>Distribution of disjunction over conjunction: P | (Q & R) == (P | Q) & (P | R)
+   *   <li>Distribution of conjunction over conjunction: P & (Q & R) == (P & Q) & (P & R)
+   *   <li>Distribution of disjunction over disjunction: P | (Q | R) == (P | Q) | (P | R)
+   * </ul>
    *
    * <p>This function ONLY performs the first type (distributing conjunction over disjunction) as it
    * is meant to be used towards arriving at a DNF form.
@@ -226,7 +226,7 @@ public class LogicUtils {
 
   private static Filter applyDistribution(CompositeFilter lhs, CompositeFilter rhs) {
     hardAssert(
-        lhs.getFilters().size() > 0 && rhs.getFilters().size() > 0,
+        !lhs.getFilters().isEmpty() && !rhs.getFilters().isEmpty(),
         "Found an empty composite filter");
     if (lhs.getFilters().size() == 1) {
       return applyDistribution(lhs.getFilters().get(0), rhs);
@@ -264,7 +264,7 @@ public class LogicUtils {
   }
 
   @VisibleForTesting
-  public static Filter computeDnf(Filter filter) {
+  public static Filter computeDistributedNormalForm(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
     if (filter instanceof FieldFilter) {
@@ -274,13 +274,13 @@ public class LogicUtils {
     CompositeFilter compositeFilter = (CompositeFilter) filter;
 
     if (compositeFilter.getFilters().size() == 1) {
-      return computeDnf(filter.getFilters().get(0));
+      return computeDistributedNormalForm(filter.getFilters().get(0));
     }
 
     // Compute the DNF for each of the subfilters first.
     List<Filter> result = new ArrayList<>();
     for (Filter subfilter : compositeFilter.getFilters()) {
-      result.add(computeDnf(subfilter));
+      result.add(computeDistributedNormalForm(subfilter));
     }
     Filter newFilter = new CompositeFilter(result, compositeFilter.getOperator());
     newFilter = applyAssociation(newFilter);
@@ -323,12 +323,13 @@ public class LogicUtils {
       return Collections.emptyList();
     }
 
-    Filter result = computeDnf(filter);
+    Filter result = computeDistributedNormalForm(filter);
 
     hardAssert(
-        isDisjunctiveNormalForm(result), "computeDNF did not result in disjunctive normal form");
+        isDisjunctiveNormalForm(result),
+        "computeDistributedNormalForm did not result in disjunctive normal form");
 
-    if (isFieldFilter(result) || isFlatConjunction(result)) {
+    if (isSingleFieldFilter(result) || isFlatConjunction(result)) {
       return Collections.singletonList(result);
     }
 
