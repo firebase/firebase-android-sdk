@@ -72,11 +72,6 @@ class CountingQueryEngine extends QueryEngine {
     return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
   }
 
-  /** Returns the query engine that is used as the backing implementation. */
-  QueryEngine getSubject() {
-    return queryEngine;
-  }
-
   /**
    * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
    * last call to `resetCounts()`)
@@ -147,7 +142,6 @@ class CountingQueryEngine extends QueryEngine {
           String collectionGroup, IndexOffset offset, int limit) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(collectionGroup, offset, limit);
         documentsReadByCollection[0] += result.size();
-
         return result;
       }
 
