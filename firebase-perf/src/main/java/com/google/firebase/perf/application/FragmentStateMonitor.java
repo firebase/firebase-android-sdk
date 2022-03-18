@@ -24,7 +24,7 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 
-public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks {
+public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private final FragmentActivity activity;
   private final Clock clock;
@@ -32,7 +32,7 @@ public class FragmentMonitor extends FragmentManager.FragmentLifecycleCallbacks 
   private final AppStateMonitor appStateMonitor;
   private final FrameMetricsAggregator frameMetricsAggregator;
 
-  public FragmentMonitor(
+  public FragmentStateMonitor(
       FragmentActivity activity,
       Clock clock,
       TransportManager transportManager,
