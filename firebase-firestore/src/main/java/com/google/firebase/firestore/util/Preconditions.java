@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.util;
 
+import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -145,6 +146,24 @@ public class Preconditions {
       @Nonnull T reference, @Nullable Object errorMessage) {
     if (reference == null) {
       throw new NullPointerException(String.valueOf(errorMessage));
+    }
+    return reference;
+  }
+
+  /**
+   * Ensures that an object reference passed as a parameter to the calling method is not null.
+   *
+   * @param reference an object reference
+   * @param errorFormatString the exception message to use if the check fails; will be formatted
+   *     using {@link String#format}.
+   * @param formatArgs the args to specify when formatting the given {@code errorFormatString}.
+   * @return the non-null reference that was validated
+   * @throws NullPointerException if {@code reference} is null
+   */
+  public static <T extends Object> T checkNotNull(
+      @Nonnull T reference, String errorFormatString, @Nullable Object... formatArgs) {
+    if (reference == null) {
+      throw new NullPointerException(String.format(Locale.US, errorFormatString, formatArgs));
     }
     return reference;
   }

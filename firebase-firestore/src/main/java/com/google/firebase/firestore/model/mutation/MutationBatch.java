@@ -151,7 +151,9 @@ public final class MutationBatch {
       // a Set(or Delete) mutation, instead of trying to create a patch mutation as the overlay.
       mutatedFields = documentsWithoutRemoteVersion.contains(key) ? null : mutatedFields;
       Mutation overlay = Mutation.calculateOverlayMutation(document, mutatedFields);
-      overlays.put(key, overlay);
+      if (overlay != null) {
+        overlays.put(key, overlay);
+      }
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);
       }

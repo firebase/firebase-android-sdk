@@ -202,7 +202,10 @@ class LocalDocumentsView {
       Map<DocumentKey, Mutation> overlays = new HashMap<>();
       for (DocumentKey key : entry.getValue()) {
         if (!processed.contains(key)) {
-          overlays.put(key, Mutation.calculateOverlayMutation(docs.get(key), masks.get(key)));
+          Mutation mutation = Mutation.calculateOverlayMutation(docs.get(key), masks.get(key));
+          if (mutation != null) {
+            overlays.put(key, mutation);
+          }
           processed.add(key);
         }
       }
