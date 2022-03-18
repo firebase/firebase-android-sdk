@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.addedRemoteEvent;
+import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
@@ -35,6 +36,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.FieldIndex;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -141,7 +143,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     backfillIndexes();
 
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 0);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertQueryReturned("coll/a");
 
     applyRemoteEvent(
@@ -149,7 +151,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     // No backfill needed for deleted document.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byQuery= */ 0);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 0);
     assertQueryReturned();
   }
 
@@ -168,7 +170,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     backfillIndexes();
 
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 0);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertQueryReturned("coll/a");
   }
 
@@ -188,7 +190,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 20, map("matches", true)), targetId));
 
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 1, /* byQuery= */ 1);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/b");
   }
 
@@ -208,6 +210,61 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/b");
+  }
+
+  @Test
+  public void testDoesNotUseIndexForLimitQueryWhenIndexIsOutdated() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "count", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").orderBy(orderBy("count")).limitToFirst(2);
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(
+        addedRemoteEvent(
+            Arrays.asList(
+                doc("coll/a", 10, map("count", 1)),
+                doc("coll/b", 10, map("count", 2)),
+                doc("coll/c", 10, map("count", 3))),
+            Collections.singletonList(targetId),
+            Collections.emptyList()));
+    backfillIndexes();
+
+    writeMutation(deleteMutation("coll/b"));
+
+    executeQuery(query);
+    // The query engine first reads the documents by key and then discards the results, which means
+    // that we read both by key and by collection.
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 3);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/c");
+  }
+
+  @Test
+  public void testUsesIndexForLimitQueryWhenIndexIsUpdated() {
+    FieldIndex index =
+        fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "count", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").orderBy(orderBy("count")).limitToFirst(2);
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(
+        addedRemoteEvent(
+            Arrays.asList(
+                doc("coll/a", 10, map("count", 1)),
+                doc("coll/b", 10, map("count", 2)),
+                doc("coll/c", 10, map("count", 3))),
+            Collections.singletonList(targetId),
+            Collections.emptyList()));
+    writeMutation(deleteMutation("coll/b"));
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/c");
   }
 
   @Test
