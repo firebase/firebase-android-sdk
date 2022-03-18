@@ -23,7 +23,6 @@ import com.google.firebase.firestore.testutil.ComparatorTester;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -63,13 +62,6 @@ public class DocumentKeyTest {
   @Test
   public void testUnevenNumberOfSegmentsAreRejected() {
     List<String> segments = Collections.singletonList("a");
-    assertThrows(
-        Throwable.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() {
-            DocumentKey.fromSegments(segments);
-          }
-        });
+    assertThrows(Throwable.class, () -> DocumentKey.fromSegments(segments));
   }
 }

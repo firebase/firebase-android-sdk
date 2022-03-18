@@ -39,7 +39,6 @@ import java.util.Collections;
 import java.util.List;
 import org.json.JSONException;
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -228,14 +227,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getBundleMetadata();
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test
@@ -245,14 +237,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getBundleMetadata();
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test
@@ -262,14 +247,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        JSONException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getBundleMetadata();
-          }
-        });
+    assertThrows(JSONException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test
@@ -281,14 +259,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getNextElement();
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getNextElement());
   }
 
   @Test
@@ -298,14 +269,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getBundleMetadata();
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test
@@ -324,14 +288,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            bundleReader.getBundleMetadata();
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test

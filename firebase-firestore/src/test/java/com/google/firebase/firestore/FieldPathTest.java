@@ -19,7 +19,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -36,50 +35,22 @@ public class FieldPathTest {
 
   @Test
   public void emptyPathIsInvalid() {
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() {
-            FieldPath.fromDotSeparatedPath("");
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> FieldPath.fromDotSeparatedPath(""));
   }
 
   @Test
   public void emptyFirstSegmentIsInvalid() {
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() {
-            FieldPath.fromDotSeparatedPath(".a");
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> FieldPath.fromDotSeparatedPath(".a"));
   }
 
   @Test
   public void emptyLastSegmentIsInvalid() {
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() {
-            FieldPath.fromDotSeparatedPath("a.");
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> FieldPath.fromDotSeparatedPath("a."));
   }
 
   @Test
   public void emptyMiddleSegmentIsInvalid() {
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() {
-            FieldPath.fromDotSeparatedPath("a..b");
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> FieldPath.fromDotSeparatedPath("a..b"));
   }
 
   @Test

@@ -44,7 +44,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
-import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -602,56 +601,28 @@ public class BundleSerializerTest {
   public void testDoesNotDecodeOffset() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], offset: 5 }";
     Query query = TestUtil.query("coll");
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            assertDecodesNamedQuery(json, query);
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> assertDecodesNamedQuery(json, query));
   }
 
   @Test
   public void testDoesNotDecodeSelect() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], select: [] }";
     Query query = TestUtil.query("coll");
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            assertDecodesNamedQuery(json, query);
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> assertDecodesNamedQuery(json, query));
   }
 
   @Test
   public void testDoesNotDecodeMissingCollection() throws JSONException {
     String json = "{ from: [ ] }";
     Query query = TestUtil.query("coll");
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            assertDecodesNamedQuery(json, query);
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> assertDecodesNamedQuery(json, query));
   }
 
   @Test
   public void testDoesNotDecodeMultipleCollections() throws JSONException {
     String json = "{ from: [ { collectionId: 'c1' }, { collectionId: 'c2' } ] }";
     Query query = TestUtil.query("coll");
-    assertThrows(
-        IllegalArgumentException.class,
-        new ThrowingRunnable() {
-          @Override
-          public void run() throws Throwable {
-            assertDecodesNamedQuery(json, query);
-          }
-        });
+    assertThrows(IllegalArgumentException.class, () -> assertDecodesNamedQuery(json, query));
   }
 
   // BundleMetadata tests
