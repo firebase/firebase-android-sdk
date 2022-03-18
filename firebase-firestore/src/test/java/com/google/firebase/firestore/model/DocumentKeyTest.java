@@ -17,10 +17,13 @@ package com.google.firebase.firestore.model;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -57,8 +60,16 @@ public class DocumentKeyTest {
         .testCompare();
   }
 
-  @Test(expected = Throwable.class)
+  @Test
   public void testUnevenNumberOfSegmentsAreRejected() {
-    DocumentKey.fromSegments(Collections.singletonList("a"));
+    List<String> segments = Collections.singletonList("a");
+    assertThrows(
+        Throwable.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() {
+            DocumentKey.fromSegments(segments);
+          }
+        });
   }
 }

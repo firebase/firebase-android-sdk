@@ -16,8 +16,10 @@ package com.google.firebase.firestore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -32,24 +34,52 @@ public class FieldPathTest {
     assertEquals("a.b.c", fieldPath.toString());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void emptyPathIsInvalid() {
-    FieldPath.fromDotSeparatedPath("");
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() {
+            FieldPath.fromDotSeparatedPath("");
+          }
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void emptyFirstSegmentIsInvalid() {
-    FieldPath.fromDotSeparatedPath(".a");
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() {
+            FieldPath.fromDotSeparatedPath(".a");
+          }
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void emptyLastSegmentIsInvalid() {
-    FieldPath.fromDotSeparatedPath("a.");
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() {
+            FieldPath.fromDotSeparatedPath("a.");
+          }
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void emptyMiddleSegmentIsInvalid() {
-    FieldPath.fromDotSeparatedPath("a..b");
+    assertThrows(
+        IllegalArgumentException.class,
+        new ThrowingRunnable() {
+          @Override
+          public void run() {
+            FieldPath.fromDotSeparatedPath("a..b");
+          }
+        });
   }
 
   @Test
