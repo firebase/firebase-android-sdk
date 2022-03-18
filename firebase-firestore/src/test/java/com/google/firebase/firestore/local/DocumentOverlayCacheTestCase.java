@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.auth.User;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 /**
  * These are tests for any implementation of the DocumentOverlayCache interface.
@@ -250,6 +252,24 @@ public abstract class DocumentOverlayCacheTestCase {
     // Verify that `removeOverlaysForBatchId()` removes the overlay completely.
     cache.removeOverlaysForBatchId(2);
     assertNull(cache.getOverlay(DocumentKey.fromPathString("coll/doc")));
+  }
+
+  @Test
+  public void testSaveOverlaysThrowsNullPointerExceptionOnNullMapValue() {
+    Map<DocumentKey, Mutation> data = new HashMap<>();
+    data.put(key("coll/doc"), null);
+
+    NullPointerException e =
+        assertThrows(
+            NullPointerException.class,
+            new ThrowingRunnable() {
+              @Override
+              public void run() {
+                cache.saveOverlays(1, data);
+              }
+            });
+
+    assertThat(e.getMessage()).contains("coll/doc");
   }
 
   void verifyOverlayContains(Map<DocumentKey, Overlay> overlays, String... keys) {
