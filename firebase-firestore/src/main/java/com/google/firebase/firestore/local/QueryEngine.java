@@ -117,8 +117,15 @@ public class QueryEngine {
 
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
-    return appendRemainingResults(
-        values(indexedDocuments), query, indexManager.getMinOffset(target));
+    IndexOffset offset = indexManager.getMinOffset(target);
+
+    ImmutableSortedSet<Document> previousResults = applyQuery(query, indexedDocuments);
+    if ((query.hasLimitToFirst() || query.hasLimitToLast())
+        && needsRefill(query.getLimitType(), keys.size(), previousResults, offset.getReadTime())) {
+      return null;
+    }
+
+    return appendRemainingResults(values(indexedDocuments), query, offset);
   }
 
   /**
@@ -146,7 +153,10 @@ public class QueryEngine {
 
     if ((query.hasLimitToFirst() || query.hasLimitToLast())
         && needsRefill(
-            query.getLimitType(), previousResults, remoteKeys, lastLimboFreeSnapshotVersion)) {
+            query.getLimitType(),
+            remoteKeys.size(),
+            previousResults,
+            lastLimboFreeSnapshotVersion)) {
       return null;
     }
 
@@ -186,19 +196,21 @@ public class QueryEngine {
    * index-free execution.
    *
    * @param limitType The type of limit query for refill calculation.
-   * @param sortedPreviousResults The documents that matched the query when it was last
-   *     synchronized, sorted by the query's comparator.
-   * @param remoteKeys The document keys that matched the query at the last snapshot.
+   * @param expectedDocumentCount The number of documents keys that matched the query at the last
+   *     snapshot.
+   * @param sortedPreviousResults The documents that match the query based on the previous result,
+   *     sorted by the query's comparator. The size of the result set may be different from
+   *     `expectedDocumentCount` if documents cease to match the query.
    * @param limboFreeSnapshotVersion The version of the snapshot when the query was last
    *     synchronized.
    */
   private boolean needsRefill(
       Query.LimitType limitType,
+      int expectedDocumentCount,
       ImmutableSortedSet<Document> sortedPreviousResults,
-      ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion limboFreeSnapshotVersion) {
     // The query needs to be refilled if a previously matching document no longer matches.
-    if (remoteKeys.size() != sortedPreviousResults.size()) {
+    if (expectedDocumentCount != sortedPreviousResults.size()) {
       return true;
     }
 
