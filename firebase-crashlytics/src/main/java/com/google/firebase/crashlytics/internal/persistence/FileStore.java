@@ -185,7 +185,7 @@ public class FileStore {
       }
     }
     if (!file.mkdirs()) {
-      throw new IllegalStateException("Could not create Crashlytics-specific directory: " + file);
+      Logger.getLogger().e("Could not create Crashlytics-specific directory: " + file);
     }
     return file;
   }

@@ -2,6 +2,11 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
+# Unreleased
+- [changed] Fixed an issue in the experimental index engine that might have
+  caused Firestore to exclude document results for limit queries with local
+  modifications.
+
 # 24.1.0
 - [feature] Added experimental support for indexed query execution. Indexes can
   be enabled by invoking `FirebaseFirestore.setIndexConfiguration()` with the

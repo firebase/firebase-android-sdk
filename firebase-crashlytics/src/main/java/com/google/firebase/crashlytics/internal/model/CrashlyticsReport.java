@@ -319,7 +319,7 @@ public abstract class CrashlyticsReport {
       builder.setEndedAt(timestamp);
       builder.setCrashed(isCrashed);
       if (userId != null) {
-        builder.setUser(User.builder().setIdentifier(userId).build()).build();
+        builder.setUser(User.builder().setIdentifier(userId).build());
       }
       return builder.build();
     }
