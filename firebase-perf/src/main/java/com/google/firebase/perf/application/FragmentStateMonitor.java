@@ -46,10 +46,10 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
   }
 
   /**
-   * Screen trace name is prefix "_st_" concatenates with Fragment's class name.
+   * Fragment screen trace name is prefix "_st_" concatenates with Fragment's class name.
    *
    * @param fragment fragment object.
-   * @return screen trace name.
+   * @return Fragment screen trace name.
    */
   public static String getFragmentScreenTraceName(Fragment fragment) {
     return Constants.SCREEN_TRACE_PREFIX + fragment.getClass().getSimpleName();
@@ -58,14 +58,14 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
   @Override
   public void onFragmentResumed(@NonNull FragmentManager fm, @NonNull Fragment f) {
     super.onFragmentResumed(fm, f);
-    // Start screen trace
+    // Start Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentResumed", f.getClass().getSimpleName());
   }
 
   @Override
   public void onFragmentPaused(@NonNull FragmentManager fm, @NonNull Fragment f) {
     super.onFragmentPaused(fm, f);
-    // Stop screen trace
+    // Stop Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentPaused ", f.getClass().getSimpleName());
   }
 }
