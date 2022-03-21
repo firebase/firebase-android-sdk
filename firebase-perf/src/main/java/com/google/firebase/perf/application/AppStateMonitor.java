@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
+import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -140,7 +141,19 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+      if (activity instanceof FragmentActivity) {
+        FragmentActivity fragmentActivity = (FragmentActivity) activity;
+        fragmentActivity
+            .getSupportFragmentManager()
+            .registerFragmentLifecycleCallbacks(
+                new FragmentStateMonitor(
+                    fragmentActivity, clock, transportManager, this, frameMetricsAggregator),
+                true);
+      }
+    }
+  }
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
