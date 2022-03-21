@@ -84,6 +84,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     if (!fragmentToTraceMap.containsKey(f)) {
       logger.error(
           "FragmentMonitor: missed a fragment trace from %s", f.getClass().getSimpleName());
+      return;
     }
 
     Trace fragmentTrace = fragmentToTraceMap.get(f);
