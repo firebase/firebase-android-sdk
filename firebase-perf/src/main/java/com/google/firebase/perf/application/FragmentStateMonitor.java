@@ -23,7 +23,6 @@ import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
-
 import java.util.WeakHashMap;
 
 public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
@@ -60,14 +59,18 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     super.onFragmentResumed(fm, f);
     // Start Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentResumed", f.getClass().getSimpleName());
-    Trace fragmentTrace = new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
+    Trace fragmentTrace =
+        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
     fragmentTrace.start();
 
     if (f.getParentFragment() != null) {
-      fragmentTrace.putAttribute(Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY, f.getParentFragment().getClass().getSimpleName());
+      fragmentTrace.putAttribute(
+          Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY,
+          f.getParentFragment().getClass().getSimpleName());
     }
     if (f.getActivity() != null) {
-      fragmentTrace.putAttribute(Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
+      fragmentTrace.putAttribute(
+          Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
     }
 
     fragmentToTraceMap.put(f, fragmentTrace);
@@ -79,7 +82,8 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     // Stop Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentPaused ", f.getClass().getSimpleName());
     if (!fragmentToTraceMap.containsKey(f)) {
-      logger.error("FragmentMonitor: missed a fragment trace from %s", f.getClass().getSimpleName());
+      logger.error(
+          "FragmentMonitor: missed a fragment trace from %s", f.getClass().getSimpleName());
     }
 
     Trace fragmentTrace = fragmentToTraceMap.get(f);
