@@ -148,9 +148,11 @@ public class StorageReferenceTest {
     Assert.assertEquals("gs://foo-bar.appspot.com/", customRef.toString());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void badInitTest() throws Exception {
-    FirebaseStorage.getInstance().getReference("gs://fooey.appspot.com/child");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> FirebaseStorage.getInstance().getReference("gs://fooey.appspot.com/child"));
   }
 
   @Test
@@ -178,15 +180,18 @@ public class StorageReferenceTest {
     Assert.assertEquals("child", ref.getName());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void badInitWithApp1() throws Exception {
-    FirebaseStorage.getInstance().getReference("gs://bucket/child");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> FirebaseStorage.getInstance().getReference("gs://bucket/child"));
   }
 
   @SuppressWarnings("ConstantConditions")
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void badInitWithApp2() throws Exception {
-    FirebaseStorage.getInstance().getReference(null);
+    assertThrows(
+        IllegalArgumentException.class, () -> FirebaseStorage.getInstance().getReference(null));
   }
 
   @Test
