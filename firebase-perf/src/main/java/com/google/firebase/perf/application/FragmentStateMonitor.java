@@ -26,6 +26,8 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import java.util.WeakHashMap;
 
+import java.util.WeakHashMap;
+
 public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private final WeakHashMap<Fragment, Trace> fragmentToTraceMap = new WeakHashMap<>();
@@ -60,18 +62,14 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     super.onFragmentResumed(fm, f);
     // Start Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentResumed", f.getClass().getSimpleName());
-    Trace fragmentTrace =
-        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
+    Trace fragmentTrace = new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
     fragmentTrace.start();
 
     if (f.getParentFragment() != null) {
-      fragmentTrace.putAttribute(
-          Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY,
-          f.getParentFragment().getClass().getSimpleName());
+      fragmentTrace.putAttribute(Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY, f.getParentFragment().getClass().getSimpleName());
     }
     if (f.getActivity() != null) {
-      fragmentTrace.putAttribute(
-          Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
+      fragmentTrace.putAttribute(Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
     }
 
     fragmentToTraceMap.put(f, fragmentTrace);
