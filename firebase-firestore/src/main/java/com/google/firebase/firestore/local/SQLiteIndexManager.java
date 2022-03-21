@@ -324,7 +324,7 @@ final class SQLiteIndexManager implements IndexManager {
     } else {
       // There is an implicit AND operation between all the filters stored in the target.
       List<Filter> dnf =
-          LogicUtils.DnfTransform(
+          LogicUtils.getDnfTerms(
               new CompositeFilter(
                   target.getFilters(), StructuredQuery.CompositeFilter.Operator.AND));
       for (Filter term : dnf) {

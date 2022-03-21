@@ -16,7 +16,6 @@ package com.google.firebase.firestore.util;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -100,8 +99,7 @@ public class LogicUtils {
    *
    * <p>For more info, visit: https://en.wikipedia.org/wiki/Associative_property#Propositional_logic
    */
-  @VisibleForTesting
-  public static Filter applyAssociation(Filter filter) {
+  protected static Filter applyAssociation(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
     if (isSingleFieldFilter(filter)) {
@@ -180,8 +178,7 @@ public class LogicUtils {
    * <p>For more info, visit:
    * https://en.wikipedia.org/wiki/Distributive_property#Propositional_logic
    */
-  @VisibleForTesting
-  public static Filter applyDistribution(Filter lhs, Filter rhs) {
+  protected static Filter applyDistribution(Filter lhs, Filter rhs) {
     assertFieldFilterOrCompositeFilter(lhs);
     assertFieldFilterOrCompositeFilter(rhs);
     if (lhs instanceof FieldFilter && rhs instanceof FieldFilter) {
@@ -263,8 +260,7 @@ public class LogicUtils {
     return applyAssociation(new CompositeFilter(results, Operator.OPERATOR_UNSPECIFIED));
   }
 
-  @VisibleForTesting
-  public static Filter computeDistributedNormalForm(Filter filter) {
+  protected static Filter computeDistributedNormalForm(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
     if (filter instanceof FieldFilter) {
@@ -315,7 +311,7 @@ public class LogicUtils {
    * @param filter the composite filter to calculate DNF transform for.
    * @return the terms in the DNF transform.
    */
-  public static List<Filter> DnfTransform(CompositeFilter filter) {
+  public static List<Filter> getDnfTerms(CompositeFilter filter) {
     // TODO(orquery): write the DNF transform algorithm here.
     // For now, assume all inputs are of the form AND(A, B, ...). Therefore the resulting DNF form
     // is the same as the input.

@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
 import static java.util.Arrays.asList;
@@ -702,17 +703,14 @@ public class QueryTest {
 
     // Two equalities: a==1 || b==1.
     Query query1 =
-        Query.atPath(ResourcePath.fromString("collection"))
-            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+        query("collection").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
     assertQueryMatches(
         query1,
         /* match */ Arrays.asList(doc1, doc2, doc4, doc5),
         /* not match */ Arrays.asList(doc3));
 
     // with one inequality: a>2 || b==1.
-    Query query2 =
-        Query.atPath(ResourcePath.fromString("collection"))
-            .filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
+    Query query2 = query("collection").filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
     assertQueryMatches(
         query2,
         /* match */ Arrays.asList(doc2, doc3, doc5),
@@ -720,7 +718,7 @@ public class QueryTest {
 
     // (a==1 && b==0) || (a==3 && b==2)
     Query query3 =
-        Query.atPath(ResourcePath.fromString("collection"))
+        query("collection")
             .filter(
                 orFilters(
                     andFilters(filter("a", "==", 1), filter("b", "==", 0)),
@@ -732,7 +730,7 @@ public class QueryTest {
 
     // a==1 && (b==0 || b==3).
     Query query4 =
-        Query.atPath(ResourcePath.fromString("collection"))
+        query("collection")
             .filter(
                 andFilters(
                     filter("a", "==", 1), orFilters(filter("b", "==", 0), filter("b", "==", 3))));
@@ -743,7 +741,7 @@ public class QueryTest {
 
     // (a==2 || b==2) && (a==3 || b==3)
     Query query5 =
-        Query.atPath(ResourcePath.fromString("collection"))
+        query("collection")
             .filter(
                 andFilters(
                     orFilters(filter("a", "==", 2), filter("b", "==", 2)),
@@ -755,11 +753,11 @@ public class QueryTest {
   }
 
   private void assertQueryMatches(
-      Query query, List<MutableDocument> match, List<MutableDocument> nonmatch) {
-    for (MutableDocument doc : match) {
+      Query query, List<MutableDocument> matching, List<MutableDocument> nonMatching) {
+    for (MutableDocument doc : matching) {
       assertTrue(query.matches(doc));
     }
-    for (MutableDocument doc : nonmatch) {
+    for (MutableDocument doc : nonMatching) {
       assertFalse(query.matches(doc));
     }
   }
