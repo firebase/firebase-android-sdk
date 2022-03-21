@@ -366,7 +366,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       int startTime = i * 100;
       int endTime = startTime + 10;
       currentTime = startTime;
-      monitor.onActivityStarted(activity);
+      monitor.onActivityResumed(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
       monitor.onActivityPostPaused(activity);
@@ -418,7 +418,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Assert that screen trace has been created.
     currentTime = 100;
-    monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityResumed(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
     currentTime = 200;
     monitor.onActivityPostPaused(activityWithNonHardwareAcceleratedView);
