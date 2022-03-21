@@ -21,7 +21,6 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import com.google.firebase.perf.FirebasePerformance;
-import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -55,10 +54,5 @@ public final class BuildOnlyTest {
   @Test
   public void performance_IsNotNull() {
     assertThat(FirebasePerformance.getInstance()).isNotNull();
-  }
-
-  @Test
-  public void appDistribution_IsNotNull(){
-    assertThat(FirebaseAppDistribution.getInstance()).isNotNull();
   }
 }
