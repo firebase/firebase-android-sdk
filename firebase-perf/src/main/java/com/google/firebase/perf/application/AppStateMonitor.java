@@ -149,7 +149,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .getSupportFragmentManager()
             .registerFragmentLifecycleCallbacks(
                 new FragmentStateMonitor(
-                    fragmentActivity, clock, transportManager, this, frameMetricsAggregator),
+                    clock, transportManager, this, frameMetricsAggregator),
                 true);
       }
     }
