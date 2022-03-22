@@ -15,7 +15,10 @@
 package com.google.firebase.perf.application;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -28,11 +31,14 @@ import androidx.fragment.app.FragmentManager;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
+import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.TraceMetric;
 import com.google.testing.timing.FakeDirectExecutorService;
+import java.util.WeakHashMap;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,17 +54,21 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Mock private Clock clock;
   @Mock private Fragment mockFragment;
-  @Mock private FragmentManager mockfragmentManager;
+  @Mock private FragmentManager mockFragmentManager;
   @Mock private TransportManager mockTransportManager;
   @Mock private AppCompatActivity mockActivity;
+  @Mock private AppCompatActivity mockActivityB;
   @Mock private AppStateMonitor appStateMonitor;
   @Mock private FrameMetricsAggregator fma;
 
   @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
 
   private long currentTime = 0;
+  private static final String longFragmentName =
+      "_st_NeverGonnaGiveYouUpNeverGonnaLetYouDownNeverGonnaRunAroundAndDesertYouNeverGonnaMakeYouCryNeverGonnaSayGoodbyeNeverGonnaTellALieAndHurtYou";
 
   private Activity activity1;
+  private ConfigResolver configResolver;
 
   @Before
   public void setUp() {
@@ -71,16 +81,93 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
+    ConfigResolver spyConfigResolver = spy(configResolver);
+    doReturn(true).when(spyConfigResolver).isPerformanceMonitoringEnabled();
+    this.configResolver = spyConfigResolver;
+  }
+
+  /************ Trace Creation Tests ****************/
+
+  @Test
+  public void lifecycleCallbacks_logFragmentScreenTrace() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
+
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
+
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
+
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(2)).log(any(TraceMetric.class), any());
   }
 
   @Test
-  public void fragmentLifecycleCallbacks_logFragmentScreenTrace() {
-    FragmentStateMonitor monitor =
+  public void lifecycleCallbacks_cleansUpMap_duringActivityTransitions() {
+    // Simulate call order of activity + fragment lifecycle events
+    AppStateMonitor appStateMonitor =
+        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, fma));
+    FragmentStateMonitor fragmentMonitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
-    monitor.onFragmentResumed(mockfragmentManager, mockFragment);
-    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
+    doReturn(true).when(appStateMonitor).isScreenTraceSupported();
+    WeakHashMap<Fragment, Trace> map = fragmentMonitor.getFragmentToTraceMap();
+    // Activity_A onCreate registers FragmentStateMonitor, then:
+    appStateMonitor.onActivityStarted(mockActivity);
+    Assert.assertEquals(0, map.size());
+    appStateMonitor.onActivityResumed(mockActivity);
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    Assert.assertEquals(1, map.size());
+    appStateMonitor.onActivityPaused(mockActivity);
+    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    Assert.assertEquals(0, map.size());
+    appStateMonitor.onActivityPostPaused(mockActivity);
+    // Activity_B onCreate registers FragmentStateMonitor, then:
+    appStateMonitor.onActivityStarted(mockActivityB);
+    appStateMonitor.onActivityResumed(mockActivityB);
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    appStateMonitor.onActivityStopped(mockActivity);
+    Assert.assertEquals(1, map.size());
+  }
 
-    monitor.onFragmentPaused(mockfragmentManager, mockFragment);
-    verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
+  @Test
+  public void fragmentTraceCreation_truncatesName_whenFragmentNameTooLong() {
+    AppStateMonitor appStateMonitor =
+        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, fma));
+    FragmentStateMonitor fragmentMonitor =
+        spy(new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma));
+    doReturn(true).when(appStateMonitor).isScreenTraceSupported();
+    doReturn(longFragmentName)
+        .when(fragmentMonitor)
+        .getFragmentScreenTraceName(nullable(Fragment.class));
+
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
+  }
+
+  /************ FrameMetrics Collection Tests ****************/
+
+  @Test
+  public void onFragmentPaused_processFrameMetrics_beforeReset() {
+    // Simulate call order of activity + fragment lifecycle events
+    AppStateMonitor appStateMonitor =
+        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, fma));
+    FragmentStateMonitor fragmentMonitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
+    doReturn(true).when(appStateMonitor).isScreenTraceSupported();
+    // Activity_A onCreate registers FragmentStateMonitor, then:
+    appStateMonitor.onActivityStarted(mockActivity);
+    appStateMonitor.onActivityResumed(mockActivity);
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    appStateMonitor.onActivityPaused(mockActivity);
+    // reset() was not called at the time of fragments collecting its frame metrics
+    verify(fma, times(0)).reset();
+    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(fma, times(0)).reset();
+    // reset() is only called after fragment is done collecting its metrics
+    appStateMonitor.onActivityPostPaused(mockActivity);
+    verify(fma, times(1)).reset();
   }
 }

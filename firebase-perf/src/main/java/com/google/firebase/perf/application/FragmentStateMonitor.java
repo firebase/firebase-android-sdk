@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
@@ -50,7 +51,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
    * @param fragment fragment object.
    * @return Fragment screen trace name.
    */
-  public static String getFragmentScreenTraceName(Fragment fragment) {
+  public String getFragmentScreenTraceName(Fragment fragment) {
     return Constants.SCREEN_TRACE_PREFIX + fragment.getClass().getSimpleName();
   }
 
@@ -93,5 +94,10 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     // TODO: Add frame metrics
 
     fragmentTrace.stop();
+  }
+
+  @VisibleForTesting
+  WeakHashMap<Fragment, Trace> getFragmentToTraceMap() {
+    return fragmentToTraceMap;
   }
 }
