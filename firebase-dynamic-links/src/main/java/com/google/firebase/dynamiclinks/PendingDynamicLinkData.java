@@ -71,12 +71,12 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * Return the {@link Bundle} so that 1P dynamic links extensions can access extension data. The
+   * Returns the {@link Bundle} so that 1P dynamic links extensions can access extension data. The
    * data is stored bundle with keys defined by the extension. The bundle is shared with all
    * extensions, so the keys should be unique using the package name of the extension to define the
    * namespace.
    *
-   * @return A bundle will all extension data.
+   * @return A bundle with all extensions data.
    * @hide
    */
   @KeepForSdk
@@ -89,7 +89,7 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * Return the link parameter of the dynamic link.
+   * Returns the link parameter of the Firebase Dynamic Link.
    *
    * <p>This link will be set as data in the launch Intent, see {@link Intent#setData(Uri)}, which
    * will match {@link android.content.IntentFilter} to deep link into the app.
@@ -109,8 +109,8 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * Return the {@link Bundle} which contains utm parameters associated with the firebase dynamic
-   * link.
+   * Returns the {@link Bundle} which contains utm parameters associated with the Firebase Dynamic
+   * Link.
    *
    * @return Bundle of utm parameters associated with firebase dynamic link.
    */
@@ -124,9 +124,9 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * The minimum app version requested to process the dynamic link that can be compared directly
-   * with {@link android.content.pm.PackageInfo#versionCode}. If the minimum version code is higher
-   * than the installed app version code, the app can upgrade using {@link
+   * Gets the minimum app version requested to process the Firebase Dynamic Link that can be
+   * compared directly with {@link android.content.pm.PackageInfo#versionCode}. If the minimum
+   * version code is higher than the installed app version code, the app can upgrade using {@link
    * #getUpdateAppIntent(Context)}.
    *
    * @return minimum version code set on the dynamic link, or 0 if not specified.
@@ -139,8 +139,8 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * The time that the user clicked on the dynamic link. This can be used to determine the amount of
-   * time that has passed since the user selected the link until the app is launched.
+   * Gets the time that the user clicked on the Firebase Dynamic Link. This can be used to determine
+   * the amount of time that has passed since the user selected the link until the app is launched.
    *
    * @return The number of milliseconds that have elapsed since January 1, 1970.
    */
@@ -152,7 +152,7 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * Provides the redirect url, which is used as the alternative to opening the app. This url may
+   * Gets the redirect url, which is used as the alternative to opening the app. This url may
    * install the app or go to an app specific website.
    *
    * @return Url that can be used to create an intent to launch an activity.
@@ -168,7 +168,7 @@ public class PendingDynamicLinkData {
   }
 
   /**
-   * Provide an intent to update the app to the version in the Play Store.
+   * Gets the intent to update the app to the version in the Play Store.
    *
    * <p>An intent is returned to be used as a parameter to {@link
    * android.app.Activity#startActivity(Intent)} to launch the Play Store update flow for the app.
