@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
+import com.google.firebase.messaging.test.R;
 import com.google.firebase.messaging.testing.TestImageServer;
 import java.io.IOException;
 import java.util.Arrays;
@@ -35,7 +36,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import com.google.firebase.messaging.test.R;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(shadows = {ShadowPreconditions.class})
