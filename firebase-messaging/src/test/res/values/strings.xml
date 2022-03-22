@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="fcm_fallback_notification_channel_label">Miscellaneous</string>
     <string name="fcm_no_args">String with no arguments</string>
     <string name="fcm_2_args">First: %1$s and second %2$s</string>
     <color name="fcm_test_color">#4285F4</color>
