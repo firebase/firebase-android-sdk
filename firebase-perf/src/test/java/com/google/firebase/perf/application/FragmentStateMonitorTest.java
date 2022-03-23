@@ -133,7 +133,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void fragmentTraceCreation_truncatesName_whenFragmentNameTooLong() {
+  public void fragmentTraceCreation_dropsTrace_whenFragmentNameTooLong() {
     AppStateMonitor appStateMonitor =
         spy(new AppStateMonitor(mockTransportManager, clock, configResolver, fma));
     FragmentStateMonitor fragmentMonitor =
@@ -144,7 +144,9 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         .getFragmentScreenTraceName(nullable(Fragment.class));
 
     fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
   }
 
   /************ FrameMetrics Collection Tests ****************/
@@ -164,10 +166,13 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     appStateMonitor.onActivityPaused(mockActivity);
     // reset() was not called at the time of fragments collecting its frame metrics
     verify(fma, times(0)).reset();
+    verify(fma, times(0)).remove(nullable(Activity.class));
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
     verify(fma, times(0)).reset();
+    verify(fma, times(0)).remove(nullable(Activity.class));
     // reset() is only called after fragment is done collecting its metrics
     appStateMonitor.onActivityPostPaused(mockActivity);
     verify(fma, times(1)).reset();
+    verify(fma, times(1)).remove(nullable(Activity.class));
   }
 }
