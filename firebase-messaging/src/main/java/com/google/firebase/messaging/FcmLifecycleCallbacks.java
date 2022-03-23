@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
+import static com.google.firebase.messaging.Constants.TAG;
+
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
@@ -21,6 +23,7 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -74,12 +77,19 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
   public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {}
 
   private void logNotificationOpen(Intent startingIntent) {
-    Bundle extras = startingIntent.getExtras();
-    if (extras != null) {
-      Bundle analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
-      if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
-        MessagingAnalytics.logNotificationOpen(analyticsData);
+    Bundle analyticsData = null;
+    try {
+      Bundle extras = startingIntent.getExtras();
+      if (extras != null) {
+        analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
       }
+    } catch (RuntimeException e) {
+      // Don't crash if there was a problem trying to get the analytics data Bundle since the
+      // Intent could be coming from anywhere and could be incorrectly formatted.
+      Log.w(TAG, "Failed trying to get analytics data from Intent extras.", e);
+    }
+    if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
+      MessagingAnalytics.logNotificationOpen(analyticsData);
     }
   }
 }
