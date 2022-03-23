@@ -83,7 +83,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     // Stop Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentPaused ", f.getClass().getSimpleName());
     if (!fragmentToTraceMap.containsKey(f)) {
-      logger.error(
+      logger.warn(
           "FragmentMonitor: missed a fragment trace from %s", f.getClass().getSimpleName());
       return;
     }
