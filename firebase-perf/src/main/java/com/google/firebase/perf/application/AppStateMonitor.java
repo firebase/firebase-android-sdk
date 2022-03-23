@@ -90,13 +90,22 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
+    this(
+        transportManager,
+        clock,
+        ConfigResolver.getInstance(),
+        hasFrameMetricsAggregatorClass() ? new FrameMetricsAggregator() : null);
+  }
+
+  AppStateMonitor(
+      TransportManager transportManager,
+      Clock clock,
+      ConfigResolver configResolver,
+      FrameMetricsAggregator frameMetricsAggregator) {
     this.transportManager = transportManager;
     this.clock = clock;
-    configResolver = ConfigResolver.getInstance();
-    hasFrameMetricsAggregator = hasFrameMetricsAggregatorClass();
-    if (hasFrameMetricsAggregator) {
-      frameMetricsAggregator = new FrameMetricsAggregator();
-    }
+    this.configResolver = configResolver;
+    this.frameMetricsAggregator = frameMetricsAggregator;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
@@ -142,14 +151,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
-    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       if (activity instanceof FragmentActivity) {
         FragmentActivity fragmentActivity = (FragmentActivity) activity;
         fragmentActivity
             .getSupportFragmentManager()
             .registerFragmentLifecycleCallbacks(
-                new FragmentStateMonitor(
-                    fragmentActivity, clock, transportManager, this, frameMetricsAggregator),
+                new FragmentStateMonitor(clock, transportManager, this, frameMetricsAggregator),
                 true);
       }
     }
@@ -160,7 +168,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
-    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
       /**
        * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
@@ -307,7 +315,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   /** Stops screen trace right after onPause because of b/210055697 */
   @Override
   public void onActivityPostPaused(@NonNull Activity activity) {
-    if (isScreenTraceSupported(activity)) {
+    if (isScreenTraceSupported()) {
       sendScreenTrace(activity);
     }
   }
@@ -428,10 +436,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   /**
    * Only send screen trace if FrameMetricsAggregator exists.
    *
-   * @param activity The Activity for which we're monitoring the screen rendering performance.
    * @return true if supported, false if not.
    */
-  private boolean isScreenTraceSupported(Activity activity) {
+  protected boolean isScreenTraceSupported() {
     return hasFrameMetricsAggregator;
   }
 
@@ -440,7 +447,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * updated to 26.1.0 (b/69954793), there will be ClassNotFoundException. This method is to check
    * if FrameMetricsAggregator exists to avoid ClassNotFoundException.
    */
-  private boolean hasFrameMetricsAggregatorClass() {
+  private static boolean hasFrameMetricsAggregatorClass() {
     try {
       Class<?> initializerClass = Class.forName(FRAME_METRICS_AGGREGATOR_CLASSNAME);
       return true;
