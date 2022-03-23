@@ -1,6 +1,8 @@
 package com.google.firebase.perf.metrics;
 
 import android.util.SparseIntArray;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.firebase.perf.util.Constants;
 
@@ -35,7 +37,7 @@ public class FrameMetricsCalculator {
    * @param arr the metrics data collected by {@link FrameMetricsAggregator}
    * @return the frame metrics
    */
-  public static FrameMetrics calculateFrameMetrics(SparseIntArray[] arr) {
+  public static @NonNull FrameMetrics calculateFrameMetrics(@Nullable SparseIntArray[] arr) {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
