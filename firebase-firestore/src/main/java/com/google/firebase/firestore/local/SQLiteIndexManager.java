@@ -446,11 +446,16 @@ final class SQLiteIndexManager implements IndexManager {
 
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
+    boolean hasPartialIndexes = false;
 
     for (Target subTarget : getSubTargets(target)) {
       FieldIndex fieldIndex = getFieldIndex(subTarget);
       if (fieldIndex == null) {
         return null;
+      }
+
+      if (!hasPartialIndexes && new TargetIndexMatcher(subTarget).isPartialIndex(fieldIndex)) {
+        hasPartialIndexes = true;
       }
 
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
@@ -491,7 +496,12 @@ final class SQLiteIndexManager implements IndexManager {
 
     String queryString =
         "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
-    if (target.getLimit() != -1) {
+
+    // If a partial index has been used, the SQL query may return a superset of documents that match
+    // the target (e.g. if the index doesn't include all the target's filters), or may return the
+    // correct set of documents in the wrong order (e.g. if the index doesn't include a segment for
+    // one of the orderBys). Therefore a LIMIT should not be applied in such cases.
+    if (target.getLimit() != -1 && !hasPartialIndexes) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
 
@@ -547,9 +557,6 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
     sql.append("ORDER BY directional_value, document_key ");
     sql.append(target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
-    if (target.getLimit() != -1) {
-      sql.append("LIMIT ").append(target.getLimit()).append(" ");
-    }
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.

@@ -186,6 +186,55 @@ public class TargetIndexMatcher {
     return true;
   }
 
+  /**
+   * Returns whether the given index is a partial index for the current target.
+   *
+   * <p>A partial index is one which does not have a segment for every field filter and every
+   * orderBy in the query.
+   */
+  public boolean isPartialIndex(FieldIndex index) {
+    List<FieldFilter> allFilters = new ArrayList<>(equalityFilters);
+    if (inequalityFilter != null) {
+      allFilters.add(inequalityFilter);
+    }
+
+    // See if any filter is absent in the index.
+    for (FieldFilter filter : allFilters) {
+      if (!filter.getField().isKeyField() && !indexHasSegmentMatchingFilter(index, filter)) {
+        return true;
+      }
+    }
+
+    // See if any orderBy is absent in the index.
+    for (OrderBy orderBy : orderBys) {
+      if (!orderBy.getField().isKeyField() && !indexHasSegmentMatchingOrderBy(index, orderBy)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /** Returns true if the given index contains a segment matching the given filter. */
+  private boolean indexHasSegmentMatchingFilter(FieldIndex index, FieldFilter filter) {
+    for (FieldIndex.Segment segment : index.getSegments()) {
+      if (matchesFilter(filter, segment)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Returns true if the given index contains a segment matching the given orderBy. */
+  private boolean indexHasSegmentMatchingOrderBy(FieldIndex index, OrderBy orderBy) {
+    for (FieldIndex.Segment segment : index.getSegments()) {
+      if (matchesOrderBy(orderBy, segment)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
     for (FieldFilter filter : equalityFilters) {
       if (matchesFilter(filter, segment)) {

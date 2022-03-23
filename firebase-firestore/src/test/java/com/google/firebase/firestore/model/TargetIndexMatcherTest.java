@@ -16,7 +16,6 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
@@ -566,6 +565,231 @@ public class TargetIndexMatcherTest {
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
+  // Testing the partial index logic
+
+  @Test
+  public void isPartialIndexWithMultipleEqualities() {
+    Query q = query("collId").filter(filter("a", "==", 1)).filter(filter("b", "==", 2));
+    validateIsPartialIndex(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+
+    q =
+        query("collId")
+            .filter(filter("a", "==", 1))
+            .filter(filter("b", "==", 2))
+            .orderBy(orderBy("__name__", "desc"));
+    validateIsPartialIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsPartialIndex(
+        q, "b", FieldIndex.Segment.Kind.ASCENDING, "__name__", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "__name__",
+        FieldIndex.Segment.Kind.DESCENDING);
+  }
+
+  @Test
+  public void isPartialIndexWithOrderBys() {
+    Query q = query("collId").orderBy(orderBy("a"));
+    validateIsFullIndex(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+
+    q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("b"));
+    validateIsPartialIndex(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsPartialIndex(
+        q, "a", FieldIndex.Segment.Kind.DESCENDING, "b", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsPartialIndex(
+        q, "a", FieldIndex.Segment.Kind.DESCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
+  public void isPartialIndexWithArrayContains() {
+    Query q = query("collId").filter(filter("a", "array-contains", "a")).orderBy(orderBy("b"));
+    validateIsPartialIndex(q, "a", FieldIndex.Segment.Kind.CONTAINS);
+    validateIsPartialIndex(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.CONTAINS, "b", FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
+  public void isPartialIndexWithEqualitiesWithDefaultOrder() {
+    for (Query query : queriesWithEqualities) {
+      validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+      validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+      validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+    }
+  }
+
+  @Test
+  public void isPartialIndexWithEqualitiesWithAscendingOrder() {
+    Stream<Query> queriesWithEqualitiesAndAscendingOrder =
+        queriesWithEqualities.stream().map(q -> q.orderBy(orderBy("a", "asc")));
+
+    queriesWithEqualitiesAndAscendingOrder.forEach(
+        query -> {
+          validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.DESCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+          validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+        });
+  }
+
+  @Test
+  public void isPartialIndexWithEqualitiesWithDescendingOrder() {
+    Stream<Query> queriesWithEqualitiesAndDescendingOrder =
+        queriesWithEqualities.stream().map(q -> q.orderBy(orderBy("a", "desc")));
+
+    queriesWithEqualitiesAndDescendingOrder.forEach(
+        query -> {
+          validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.DESCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+          validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+        });
+  }
+
+  @Test
+  public void isPartialIndexInequalitiesWithDefaultOrder() {
+    for (Query query : queriesWithInequalities) {
+      validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+      validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+      validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+    }
+  }
+
+  @Test
+  public void isPartialIndexInequalitiesWithAscendingOrder() {
+    Stream<Query> queriesWithInequalitiesAndAscendingOrder =
+        queriesWithInequalities.stream().map(q -> q.orderBy(orderBy("a", "asc")));
+
+    queriesWithInequalitiesAndAscendingOrder.forEach(
+        query -> {
+          validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.ASCENDING);
+          validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+        });
+  }
+
+  @Test
+  public void isPartialIndexInequalitiesWithDescendingOrder() {
+    Stream<Query> queriesWithInequalitiesAndDescendingOrder =
+        queriesWithInequalities.stream().map(q -> q.orderBy(orderBy("a", "desc")));
+
+    queriesWithInequalitiesAndDescendingOrder.forEach(
+        query -> {
+          validateIsFullIndex(query, "a", FieldIndex.Segment.Kind.DESCENDING);
+          validateIsPartialIndex(query, "b", FieldIndex.Segment.Kind.ASCENDING);
+          validateIsPartialIndex(query, "a", FieldIndex.Segment.Kind.CONTAINS);
+        });
+  }
+
+  @Test
+  public void isPartialIndexMultipleFiltersOnTheSameField() {
+    Query q = query("collId").filter(filter("a", ">", 1)).filter(filter("a", "<", 10));
+    validateIsFullIndex(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+  }
+
+  @Test
+  public void isPartialIndexInQuery() {
+    Query q =
+        query("collId").filter(filter("a", "in", Arrays.asList(1, 2))).filter(filter("b", "==", 5));
+    validateIsPartialIndex(q, "a", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(q, "a", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsPartialIndex(q, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(q, "b", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.ASCENDING, "b", FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.DESCENDING, "b", FieldIndex.Segment.Kind.ASCENDING);
+    validateIsFullIndex(
+        q, "a", FieldIndex.Segment.Kind.DESCENDING, "b", FieldIndex.Segment.Kind.DESCENDING);
+  }
+
+  @Test
+  public void isPartialIndexInQueryWithOrderBy() {
+    Query q =
+        query("collId")
+            .filter(filter("a", "in", Arrays.asList(1, 2)))
+            .filter(filter("b", "==", 5))
+            .orderBy(orderBy("c"));
+    validateIsFullIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "c",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "c",
+        FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "c",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "c",
+        FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "c",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "c",
+        FieldIndex.Segment.Kind.DESCENDING);
+    validateIsFullIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "b",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "c",
+        FieldIndex.Segment.Kind.ASCENDING);
+    validateIsPartialIndex(
+        q,
+        "a",
+        FieldIndex.Segment.Kind.DESCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "c",
+        FieldIndex.Segment.Kind.DESCENDING);
+  }
+
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
@@ -578,5 +802,19 @@ public class TargetIndexMatcherTest {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
     assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
+  }
+
+  private void validateIsPartialIndex(
+      Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
+    FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertTrue(targetIndexMatcher.isPartialIndex(expectedIndex));
+  }
+
+  private void validateIsFullIndex(
+      Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
+    FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
+    assertFalse(targetIndexMatcher.isPartialIndex(expectedIndex));
   }
 }
