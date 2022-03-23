@@ -13,19 +13,47 @@ import androidx.appcompat.widget.AppCompatButton
 import com.google.android.gms.tasks.Task
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.UpdateProgress
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import com.google.firebase.appdistribution.FirebaseAppDistributionException as FirebaseAppDistributionException1
 
 class MainActivity : AppCompatActivity() {
     var firebaseAppDistribution: FirebaseAppDistribution = FirebaseAppDistribution.getInstance()
     var updateTask: Task<Void>? = null
     var release: AppDistributionRelease? = null
     val executorService: ExecutorService = Executors.newFixedThreadPool(1)
+    lateinit var signInButton: AppCompatButton
+    lateinit var signOutButton: AppCompatButton
+    lateinit var checkForUpdateButton: AppCompatButton
+    lateinit var updateAppButton: AppCompatButton
+    lateinit var updateIfNewReleaseAvailableButton: AppCompatButton
+    lateinit var updateIfNewReleaseAvailableButtonBackground: AppCompatButton
+    lateinit var signInButtonBackground: AppCompatButton
+    lateinit var signOutButtonBackground: AppCompatButton
+    lateinit var checkForUpdateButtonBackground: AppCompatButton
+    lateinit var updateAppButtonBackground: AppCompatButton
+    lateinit var progressPercentage: TextView
+    lateinit var signInStatus: TextView
+    lateinit var progressPercent: TextView
+    lateinit var progressBar: ProgressBar
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
+        signOutButton = findViewById<AppCompatButton>(R.id.sign_out)
+        checkForUpdateButton = findViewById<AppCompatButton>(R.id.check_for_update)
+        updateAppButton = findViewById<AppCompatButton>(R.id.update_app)
+        updateIfNewReleaseAvailableButton = findViewById<AppCompatButton>(R.id.basic_config)
+        updateIfNewReleaseAvailableButtonBackground = findViewById<AppCompatButton>(R.id.basic_config2)
+        signInButtonBackground = findViewById<AppCompatButton>(R.id.sign_in_button2)
+        signOutButtonBackground = findViewById<AppCompatButton>(R.id.sign_out2)
+        checkForUpdateButtonBackground = findViewById<AppCompatButton>(R.id.check_for_update2)
+        updateAppButtonBackground = findViewById<AppCompatButton>(R.id.update_app2)
+        progressPercentage = findViewById<TextView>(R.id.progress_percentage)
+        signInStatus = findViewById<TextView>(R.id.sign_in_status)
+        progressPercent = findViewById<TextView>(R.id.progress_percentage)
+        progressBar = findViewById<ProgressBar>(R.id.progress_bar)
     }
 
     override fun onResume() {
@@ -34,53 +62,19 @@ class MainActivity : AppCompatActivity() {
             "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
         setupUI(isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
 
-        val progressBar = findViewById<ProgressBar>(R.id.progress_bar)
-        val progressPercent = findViewById<TextView>(R.id.progress_percentage)
-        val signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
-        val signOutButton = findViewById<AppCompatButton>(R.id.sign_out)
-        val checkForUpdateButton = findViewById<AppCompatButton>(R.id.check_for_update)
-        val updateAppButton = findViewById<AppCompatButton>(R.id.update_app)
-        val updateIfNewReleaseAvailableButton = findViewById<AppCompatButton>(R.id.basic_config)
-        val updateIfNewReleaseAvailableButtonBackground = findViewById<AppCompatButton>(R.id.basic_config2)
-        val signInButtonBackground = findViewById<AppCompatButton>(R.id.sign_in_button2)
-        val signOutButtonBackground = findViewById<AppCompatButton>(R.id.sign_out2)
-        val checkForUpdateButtonBackground = findViewById<AppCompatButton>(R.id.check_for_update2)
-        val updateAppButtonBackground = findViewById<AppCompatButton>(R.id.update_app2)
 
         /** Button Listeners */
         updateIfNewReleaseAvailableButton.setOnClickListener {
-                   if (updateTask == null || updateTask?.isComplete == true) {
-           updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable().addOnFailureListener {
-               val ex = it as FirebaseAppDistributionException1
-               Log.d("FirebaseAppDistribution", "MAINACTIVITY:ERROR ERROR. CODE: " + it.errorCode)
-               AlertDialog.Builder(this)
-                   .setTitle("Error updating to new release")
-                   .setMessage("${ex.message}: ${ex.errorCode}")
-                   .setNeutralButton("Okay") { dialog, _ ->
-                       dialog.dismiss()
-                   }.show()
-           }
-       }
+            if (updateTask == null || updateTask?.isComplete == true) {
+              updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable().addOnFailureListener(){ failureListener(it) }
+          }
         }
 
         updateIfNewReleaseAvailableButtonBackground.setOnClickListener {
             executorService.execute {
-                Thread.sleep(10000)
                 if (updateTask == null || updateTask?.isComplete == true) {
                     updateTask =
-                        firebaseAppDistribution.updateIfNewReleaseAvailable().addOnFailureListener {
-                            val ex = it as com.google.firebase.appdistribution.FirebaseAppDistributionException
-                            Log.d(
-                                "FirebaseAppDistribution",
-                                "MAINACTIVITY:ERROR ERROR. CODE: " + it.errorCode
-                            )
-                            AlertDialog.Builder(this)
-                                .setTitle("Error updating to new release")
-                                .setMessage("${ex.message}: ${ex.errorCode}")
-                                .setNeutralButton("Okay") { dialog, _ ->
-                                    dialog.dismiss()
-                                }.show()
-                        }
+                        firebaseAppDistribution.updateIfNewReleaseAvailable().addOnFailureListener { failureListener(it) }
                 }
             }
         }
@@ -89,16 +83,7 @@ class MainActivity : AppCompatActivity() {
             firebaseAppDistribution.signInTester().addOnSuccessListener {
                 setupUI(isSignedIn =  firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
             }
-                .addOnFailureListener {
-                    val ex = it as com.google.firebase.appdistribution.FirebaseAppDistributionException
-                    Log.d("FirebaseAppDistribution", "MAINACTIVITY:ERROR ERROR. CODE: " + it.errorCode)
-                    AlertDialog.Builder(this)
-                        .setTitle("Error updating to new release")
-                        .setMessage("${ex.message}: ${ex.errorCode}")
-                        .setNeutralButton("Okay") { dialog, _ ->
-                            dialog.dismiss()
-                        }.show()
-                }
+                .addOnFailureListener { failureListener(it) }
         }
 
         signInButtonBackground.setOnClickListener {
@@ -106,6 +91,7 @@ class MainActivity : AppCompatActivity() {
                 firebaseAppDistribution.signInTester().addOnSuccessListener {
 
                 }
+                    .addOnFailureListener { failureListener(it) }
             }
             setupUI(isSignedIn =  firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
         }
@@ -114,12 +100,15 @@ class MainActivity : AppCompatActivity() {
             firebaseAppDistribution.checkForNewRelease().addOnSuccessListener {
                 setupUI(isSignedIn =  firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = it != null, release = it)
             }
+                .addOnFailureListener { failureListener(it) }
         }
+
         checkForUpdateButtonBackground.setOnClickListener {
             executorService.execute {
                 firebaseAppDistribution.checkForNewRelease().addOnSuccessListener {
                     release = it
                 }
+                    .addOnFailureListener { failureListener(it) }
             }
             setupUI(isSignedIn =  firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = release != null, release =  release)
         }
@@ -138,34 +127,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateAppButton.setOnClickListener {
-            val progressBar = findViewById<ProgressBar>(R.id.progress_bar)
-            val progressPercent = findViewById<TextView>(R.id.progress_percentage)
-            progressBar.visibility = View.VISIBLE
-            progressPercent.visibility = View.VISIBLE
-            progressBar.isIndeterminate = false
-            firebaseAppDistribution.updateApp().addOnProgressListener {
-                progressBar.isIndeterminate = false
-                val percentage = ((it.apkBytesDownloaded * 100)/ it.apkFileTotalBytes).toInt()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    progressBar.setProgress(percentage, true)
-                }
-                progressPercent.text = "$percentage %"
-            }
+            setProgressBar()
+            firebaseAppDistribution.updateApp().addOnProgressListener {progressListener(it)}
+                .addOnCanceledListener { setupUI(isSignedIn =  firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)}
         }
 
         updateAppButtonBackground.setOnClickListener {
-            progressBar.visibility = View.VISIBLE
-            progressPercent.visibility = View.VISIBLE
+            setProgressBar()
             executorService.execute {
-                progressBar.isIndeterminate = false
-                firebaseAppDistribution.updateApp().addOnProgressListener {
-                    progressBar.isIndeterminate = false
-                    val percentage = ((it.apkBytesDownloaded * 100) / it.apkFileTotalBytes).toInt()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        progressBar.setProgress(percentage, true)
-                    }
-                    progressPercent.text = "$percentage %"
-                }
+                firebaseAppDistribution.updateApp().addOnProgressListener {progressListener(it)}
             }
         }
     }
@@ -174,60 +144,61 @@ class MainActivity : AppCompatActivity() {
         val intent = Intent(this, SecondActivity::class.java)
         startActivity(intent)
     }
+    fun setProgressBar(){
+        progressBar.visibility = View.VISIBLE
+        progressPercent.visibility = View.VISIBLE
+        progressBar.isIndeterminate = false
+    }
+
+    fun failureListener(exception: Exception) {
+        val ex = exception as com.google.firebase.appdistribution.FirebaseAppDistributionException
+        Log.d(
+            "FirebaseAppDistribution",
+            "MAINACTIVITY:ERROR ERROR. CODE: " + exception.errorCode
+        )
+        AlertDialog.Builder(this)
+            .setTitle("Error updating to new release")
+            .setMessage("${ex.message}: ${ex.errorCode}")
+            .setNeutralButton("Okay") { dialog, _ ->
+                dialog.dismiss()
+            }.show()
+    }
+
+    fun progressListener(updateProgress: UpdateProgress){
+        val percentage = ((updateProgress.apkBytesDownloaded * 100) / updateProgress.apkFileTotalBytes).toInt()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            progressBar.setProgress(percentage, true)
+        }
+        progressPercent.text = "$percentage %"
+    }
 
     private fun setupUI(isSignedIn: Boolean, isUpdateAvailable: Boolean, release: AppDistributionRelease? = null) {
-        val signInStatus = findViewById<TextView>(R.id.sign_in_status)
-        val signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
-        val signOutButton = findViewById<AppCompatButton>(R.id.sign_out)
-        val checkForUpdateButton = findViewById<AppCompatButton>(R.id.check_for_update)
-        val updateAppButton = findViewById<AppCompatButton>(R.id.update_app)
-        val signInButtonBackground = findViewById<AppCompatButton>(R.id.sign_in_button2)
-        val signOutButtonBackground = findViewById<AppCompatButton>(R.id.sign_out2)
-        val checkForUpdateButtonBackground = findViewById<AppCompatButton>(R.id.check_for_update2)
-        val updateAppButtonBackground = findViewById<AppCompatButton>(R.id.update_app2)
-        val progressBar = findViewById<ProgressBar>(R.id.progress_bar)
-        val progressPercentage = findViewById<TextView>(R.id.progress_percentage)
-
-        if (!isSignedIn) {
-            signInStatus.text = "Not Signed In"
-            signInButton.visibility = View.VISIBLE
-            signInButtonBackground.visibility = View.VISIBLE
-            checkForUpdateButton.visibility = View.GONE
-            checkForUpdateButtonBackground.visibility = View.GONE
-            updateAppButton.visibility = View.GONE
-            updateAppButtonBackground.visibility = View.GONE
-            progressBar.visibility = View.GONE
-            signOutButton.visibility = View.GONE
-            signOutButtonBackground.visibility = View.GONE
-            progressPercentage.visibility = View.GONE
-            return
-        }
-
-        if (isSignedIn && !isUpdateAvailable) {
-            signInStatus.text = "Tester signed In!"
+        progressBar.visibility = View.GONE
+        progressPercentage.visibility = View.GONE
+        if (isUpdateAvailable) {
+            signInStatus.text = "Release available - ${release?.displayVersion} (${release?.versionCode})"
             signInButton.visibility = View.GONE
             signInButtonBackground.visibility = View.GONE
+            checkForUpdateButton.visibility = View.GONE
+            checkForUpdateButtonBackground.visibility = View.GONE
+            updateAppButton.visibility = View.VISIBLE
+            updateAppButtonBackground.visibility = View.VISIBLE
             signOutButton.visibility = View.VISIBLE
-            signOutButtonBackground.visibility = View.VISIBLE
-            checkForUpdateButton.visibility = View.VISIBLE
-            checkForUpdateButtonBackground.visibility = View.VISIBLE
-            updateAppButton.visibility = View.GONE
-            updateAppButtonBackground.visibility = View.GONE
             progressBar.visibility = View.GONE
-            progressPercentage.visibility = View.GONE
+            signOutButtonBackground.visibility = View.VISIBLE
             return
         }
 
-        signInStatus.text = "Release available - ${release?.displayVersion} (${release?.versionCode})"
-        signInButton.visibility = View.GONE
-        signInButtonBackground.visibility = View.GONE
-        checkForUpdateButton.visibility = View.GONE
-        checkForUpdateButtonBackground.visibility = View.GONE
-        updateAppButton.visibility = View.VISIBLE
-        updateAppButtonBackground.visibility = View.VISIBLE
-        signOutButton.visibility = View.VISIBLE
-        progressBar.visibility = View.GONE
-        signOutButtonBackground.visibility = View.VISIBLE
-        progressPercentage.visibility = View.GONE
+        signInStatus.text = if(isSignedIn) "Tester signed In!" else "Not Signed In"
+        signInButton.visibility = if (isSignedIn)  View.GONE else View.VISIBLE
+        signInButtonBackground.visibility = if (isSignedIn)  View.GONE else View.VISIBLE
+        signOutButton.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        signOutButtonBackground.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        checkForUpdateButton.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        checkForUpdateButtonBackground.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        updateAppButton.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        updateAppButtonBackground.visibility = if (isSignedIn)  View.VISIBLE else View.GONE
+        updateAppButton.visibility = View.GONE
+        updateAppButtonBackground.visibility = View.GONE
     }
 }
