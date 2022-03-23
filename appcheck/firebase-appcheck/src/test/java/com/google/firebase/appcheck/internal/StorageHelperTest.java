@@ -40,6 +40,7 @@ public class StorageHelperTest {
   private static final long RECEIVED_AT_TIMESTAMP = 10L;
   private static final long IAT = 10L;
   private static final long EXP = 30L;
+  private static final long ONE_SECOND_MILLIS = 1000L;
   private static final String TOKEN_PREFIX = "prefix";
   private static final String TOKEN_SUFFIX = "suffix";
   private static final String SEPARATOR = ".";
@@ -108,8 +109,8 @@ public class StorageHelperTest {
         (DefaultAppCheckToken) storageHelper.retrieveAppCheckToken();
     assertThat(retrievedToken).isNotNull();
     assertThat(retrievedToken.getToken()).isEqualTo(rawToken);
-    assertThat(retrievedToken.getExpiresInMillis()).isEqualTo(EXP - IAT);
-    assertThat(retrievedToken.getReceivedAtTimestamp()).isEqualTo(IAT);
+    assertThat(retrievedToken.getExpiresInMillis()).isEqualTo((EXP - IAT) * ONE_SECOND_MILLIS);
+    assertThat(retrievedToken.getReceivedAtTimestamp()).isEqualTo(IAT * ONE_SECOND_MILLIS);
   }
 
   @Test
