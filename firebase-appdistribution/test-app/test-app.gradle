@@ -60,6 +60,10 @@ dependencies {
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     testImplementation 'junit:junit:4.+'
+
+    implementation project(':firebase-components')
+    implementation project(':firebase-installations-interop')
+    implementation project(':firebase-common')
 }
 
 // This allows the app to connect to Firebase on the CI.
