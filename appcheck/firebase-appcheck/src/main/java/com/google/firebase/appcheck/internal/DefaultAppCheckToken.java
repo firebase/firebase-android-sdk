@@ -138,10 +138,10 @@ public final class DefaultAppCheckToken extends AppCheckToken {
     Map<String, Object> claimsMap = TokenParser.parseTokenClaims(token);
     long iat = getLongFromClaimsSafely(claimsMap, ISSUED_AT_KEY);
     long exp = getLongFromClaimsSafely(claimsMap, EXPIRATION_TIME_KEY);
-    long expiresInMillis = exp - iat;
+    long expiresInMillis = (exp - iat) * 1000L;
     // We use iat for receivedAtTimestamp as an approximation since we have to guess for raw JWTs
     // that we recovered from storage
-    return new DefaultAppCheckToken(token, expiresInMillis, iat);
+    return new DefaultAppCheckToken(token, expiresInMillis, iat * 1000L);
   }
 
   private static long getLongFromClaimsSafely(
