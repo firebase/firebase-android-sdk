@@ -101,7 +101,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
 
-    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(2)).log(any(TraceMetric.class), any());
   }
 
