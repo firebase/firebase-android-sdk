@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter.Operator;
 import java.util.ArrayList;
 import java.util.Arrays;
