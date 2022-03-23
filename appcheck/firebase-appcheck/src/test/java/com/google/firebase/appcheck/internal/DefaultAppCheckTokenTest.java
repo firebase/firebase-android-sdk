@@ -37,6 +37,7 @@ public class DefaultAppCheckTokenTest {
   private static final String INVALID_TIME_TO_LIVE = "notanumber";
   private static final long EXPIRES_IN_ONE_HOUR = 60L * 60L * 1000L; // 1 hour in millis
   private static final long RECEIVED_AT_TIMESTAMP = 1L;
+  private static final long ONE_SECOND_MILLIS = 1000L;
   private static final long IAT = 10L;
   private static final long EXP = 30L;
   private static final String TOKEN_PREFIX = "prefix";
@@ -104,8 +105,9 @@ public class DefaultAppCheckTokenTest {
 
     assertThat(defaultAppCheckToken).isNotNull();
     assertThat(defaultAppCheckToken.getToken()).isEqualTo(rawToken);
-    assertThat(defaultAppCheckToken.getReceivedAtTimestamp()).isEqualTo(IAT);
-    assertThat(defaultAppCheckToken.getExpiresInMillis()).isEqualTo(EXP - IAT);
+    assertThat(defaultAppCheckToken.getReceivedAtTimestamp()).isEqualTo(IAT * ONE_SECOND_MILLIS);
+    assertThat(defaultAppCheckToken.getExpiresInMillis())
+        .isEqualTo((EXP - IAT) * ONE_SECOND_MILLIS);
   }
 
   @Test
@@ -143,7 +145,8 @@ public class DefaultAppCheckTokenTest {
         DefaultAppCheckToken.constructFromAppCheckTokenResponse(mockAppCheckTokenResponse);
 
     assertThat(defaultAppCheckToken.getToken()).isEqualTo(rawToken);
-    assertThat(defaultAppCheckToken.getExpiresInMillis()).isEqualTo(EXP - IAT);
+    assertThat(defaultAppCheckToken.getExpiresInMillis())
+        .isEqualTo((EXP - IAT) * ONE_SECOND_MILLIS);
   }
 
   private String constructFakeRawToken() throws Exception {
