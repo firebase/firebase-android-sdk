@@ -79,7 +79,7 @@ public final class DefaultAppCheckToken extends AppCheckToken {
           TokenParser.parseTokenClaims(tokenResponse.getAttestationToken());
       long iat = getLongFromClaimsSafely(claimsMap, ISSUED_AT_KEY);
       long exp = getLongFromClaimsSafely(claimsMap, EXPIRATION_TIME_KEY);
-      expiresInMillis = exp - iat;
+      expiresInMillis = (exp - iat) * 1000L;
     }
 
     return new DefaultAppCheckToken(tokenResponse.getAttestationToken(), expiresInMillis);
