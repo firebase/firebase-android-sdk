@@ -104,6 +104,17 @@ final class RateLimiter {
     return samplingBucketId < validNetworkSamplingBucketIdThreshold;
   }
 
+  /** Returns whether device is allowed to send trace events based on trace sampling rate. */
+  private boolean isDeviceAllowedToSendFragmentScreenTraces() {
+    float validFragmentSamplingBucketIdThreshold = configResolver.getFragmentSamplingRate();
+    return samplingBucketId < validFragmentSamplingBucketIdThreshold;
+  }
+
+  /** Identifies if the {@link PerfMetric} is a Fragment screen trace */
+  private boolean isFragmentScreenTrace(PerfMetric metric) {
+    return metric.hasTraceMetric() && metric.getTraceMetric().getName().startsWith(Constants.SCREEN_TRACE_PREFIX) && metric.getTraceMetric().containsCustomAttributes(Constants.ACTIVITY_ATTRIBUTE_KEY);
+  }
+
   /**
    * Check if the {@link PerfMetric} should be rate limited.
    *
@@ -136,6 +147,12 @@ final class RateLimiter {
   boolean isEventSampled(PerfMetric metric) {
     if (metric.hasTraceMetric()
         && !(isDeviceAllowedToSendTraces()
+            || hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList()))) {
+      return false;
+    }
+
+    if (isFragmentScreenTrace(metric)
+        && !(isDeviceAllowedToSendFragmentScreenTraces()
             || hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList()))) {
       return false;
     }
