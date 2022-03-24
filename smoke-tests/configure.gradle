@@ -19,7 +19,7 @@ def configurePlatform() {
     bom = project.getProperty("firebase-bom")
   }
 
-  def platform = project.dependencies.platform(bom)
+  def platform = project.dependencies.enforcedPlatform(bom)
   project.dependencies.add("implementation", platform)
 }
 
