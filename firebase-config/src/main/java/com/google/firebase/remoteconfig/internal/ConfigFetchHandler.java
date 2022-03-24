@@ -94,6 +94,7 @@ public class ConfigFetchHandler {
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigFetchHttpClient frcBackendApiClient;
   private final ConfigMetadataClient frcMetadata;
+  private long templateVersionNumber;
 
   private final Map<String, String> customHttpHeaders;
 
@@ -117,6 +118,12 @@ public class ConfigFetchHandler {
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
     this.customHttpHeaders = customHttpHeaders;
+
+    if (fetchedConfigsCache.get().getResult() != null) {
+      this.templateVersionNumber = fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
+    } else {
+      this.templateVersionNumber = 0;
+    }
   }
 
   /**
@@ -322,6 +329,10 @@ public class ConfigFetchHandler {
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
+      if (response.getFetchedConfigs() != null) {
+        this.templateVersionNumber = response.getFetchedConfigs().getTemplateVersionNumber();
+      }
+
       // If the execute method did not throw exceptions, then the server sent a successful response
       // and the client can stop backing off.
       frcMetadata.resetBackoff();
@@ -534,6 +545,10 @@ public class ConfigFetchHandler {
   @VisibleForTesting
   public Provider<AnalyticsConnector> getAnalyticsConnector() {
     return analyticsConnector;
+  }
+
+  public long getTemplateVersionNumber() {
+    return this.templateVersionNumber;
   }
 
   /**
