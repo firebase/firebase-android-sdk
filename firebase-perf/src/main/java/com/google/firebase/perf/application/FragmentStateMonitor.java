@@ -31,8 +31,7 @@ import java.util.WeakHashMap;
 public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private final WeakHashMap<Fragment, Trace> fragmentToTraceMap = new WeakHashMap<>();
-  private final WeakHashMap<Fragment, FrameMetricsCalculator.FrameMetrics> fragmentToMetricsMap =
-      new WeakHashMap<>();
+  private final WeakHashMap<Fragment, FrameMetrics> fragmentToMetricsMap = new WeakHashMap<>();
   private final Clock clock;
   private final TransportManager transportManager;
   private final AppStateMonitor appStateMonitor;
@@ -127,5 +126,10 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
   @VisibleForTesting
   WeakHashMap<Fragment, Trace> getFragmentToTraceMap() {
     return fragmentToTraceMap;
+  }
+
+  @VisibleForTesting
+  WeakHashMap<Fragment, FrameMetrics> getFragmentToMetricsMap() {
+    return fragmentToMetricsMap;
   }
 }

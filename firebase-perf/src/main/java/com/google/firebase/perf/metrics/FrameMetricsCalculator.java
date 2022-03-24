@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.perf.metrics;
 
 import android.util.SparseIntArray;
@@ -6,13 +20,19 @@ import androidx.annotation.Nullable;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.firebase.perf.util.Constants;
 
+/**
+ * FrameMetricsCalculator helps calculate total frames, slow frames, and frozen frames from {@link
+ * FrameMetricsAggregator}
+ *
+ * @hide
+ */
 public class FrameMetricsCalculator {
   public static class FrameMetrics {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
 
-    FrameMetrics(int totalFrames, int slowFrames, int frozenFrames) {
+    public FrameMetrics(int totalFrames, int slowFrames, int frozenFrames) {
       this.totalFrames = totalFrames;
       this.slowFrames = slowFrames;
       this.frozenFrames = frozenFrames;
@@ -32,7 +52,9 @@ public class FrameMetricsCalculator {
   }
 
   /**
-   * Calculate total frames, slow frames, and frozen frames from arr.
+   * Calculate total frames, slow frames, and frozen frames from SparseIntArray[] recorded by {@link
+   * FrameMetricsAggregator}. For a given non-null SparseIntArray, the results stored are the number
+   * of samples at each millisecond value (rounded).
    *
    * @param arr the metrics data collected by {@link FrameMetricsAggregator}
    * @return the frame metrics
