@@ -21,8 +21,8 @@ import androidx.core.app.FrameMetricsAggregator;
 import com.google.firebase.perf.util.Constants;
 
 /**
- * FrameMetricsCalculator helps calculate total frames, slow frames, and frozen frames from {@link
- * FrameMetricsAggregator}
+ * FrameMetricsCalculator helps calculate total frames, slow frames, and frozen frames from metrics
+ * collected by {@link FrameMetricsAggregator}
  *
  * @hide
  */

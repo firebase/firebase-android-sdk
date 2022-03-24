@@ -78,7 +78,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
    * FrameMetricsAggregator#getMetrics()}
    */
   private SparseIntArray[] fmaMetrics1 = new SparseIntArray[1];
-
   private SparseIntArray[] fmaMetrics2 = new SparseIntArray[1];
 
   @Before
