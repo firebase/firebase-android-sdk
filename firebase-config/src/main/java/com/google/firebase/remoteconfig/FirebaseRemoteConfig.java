@@ -676,8 +676,12 @@ public class FirebaseRemoteConfig {
   /**
    * Starts realtime.
    * */
-  public void startRealtime() {
-    this.configRealtimeHTTPClient.startRealtimeConnection();
+  public ConfigRealtimeHTTPClient.RealtimeListenerRegistration startRealtime(
+          ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
+    ConfigRealtimeHTTPClient.RealtimeListenerRegistration registration
+            = this.configRealtimeHTTPClient.putRealTimeEventListener("test", realTimeEventListener);
+
+    return registration;
   }
 
   /**
@@ -687,33 +691,10 @@ public class FirebaseRemoteConfig {
     this.configRealtimeHTTPClient.pauseRealtimeConnection();
   }
 
-  /**
-   * Add callback for realtime.
-   * */
-  public void addRealtimeListener(ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
-    this.configRealtimeHTTPClient.putRealTimeEventListener("test", realTimeEventListener);
-  }
-
-  /**
-   * Starts automatic realtime handling.
-   * */
-  public void startAutomaticStreamHandling() {
-    this.automaticRealtimeHandling = true;
-  }
-
-  /**
-   * Stops automatic realtime handling.
-   * */
-  public void stopAutomaticStreamHandling() {
-    this.automaticRealtimeHandling = false;
-  }
-
   public void handleAutomaticRealtime(boolean background) {
-    if (this.automaticRealtimeHandling) {
-      if (!background) {
-        Log.i(this.TAG, "App is in foreground");
-        startRealtime();
-      }
+    if (!background) {
+      Log.i(this.TAG, "App is in foreground");
+      this.configRealtimeHTTPClient.startRealtimeConnection();
     }
   }
 }

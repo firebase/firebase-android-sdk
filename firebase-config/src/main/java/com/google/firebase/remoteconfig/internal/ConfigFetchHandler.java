@@ -111,7 +111,7 @@ public class ConfigFetchHandler {
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
-    this.templateVersionNumber = fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
+    this.templateVersionNumber = 0;
 
     this.customHttpHeaders = customHttpHeaders;
   }
