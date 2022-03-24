@@ -43,7 +43,9 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     private void listenForNotifications() {
         if (this.httpURLConnection != null) {
             try {
+                logger.info(httpURLConnection.toString());
                 int responseCode = httpURLConnection.getResponseCode();
+                logger.info(responseCode + "");
                 if (responseCode == 200) {
                     InputStream inputStream = httpURLConnection.getInputStream();
                     handleNotifications(inputStream);
@@ -53,7 +55,7 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
                 }
 
             } catch (IOException ex) {
-                logger.info("Error handling messages.");
+                logger.info("Error handling messages with exception: " + ex.toString());
             }
         }
         this.retryCallback.onEvent();

@@ -25,6 +25,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ConfigRealtimeHTTPClient {
     private static final String API_KEY_HEADER = "X-Goog-Api-Key";
@@ -35,7 +37,7 @@ public class ConfigRealtimeHTTPClient {
             "X-Goog-Firebase-Installations-Auth";
     private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
 
-    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8080";
+    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8788";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
 
     private final ConfigFetchHandler configFetchHandler;
@@ -79,6 +81,18 @@ public class ConfigRealtimeHTTPClient {
             logger.info("URL is malformed");
         }
         this.retryOnEveryNetworkConnection();
+    }
+
+    /**
+     * A regular expression for the GMP App Id format. The first group (index 1) is the project
+     * number.
+     */
+    private static final Pattern GMP_APP_ID_PATTERN =
+            Pattern.compile("^[^:]+:([0-9]+):(android|ios|web):([0-9a-f]+)");
+
+    private static String extractProjectNumberFromAppId(String gmpAppId) {
+        Matcher matcher = GMP_APP_ID_PATTERN.matcher(gmpAppId);
+        return matcher.matches() ? matcher.group(1) : null;
     }
 
     private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
@@ -137,6 +151,10 @@ public class ConfigRealtimeHTTPClient {
                 if (this.httpURLConnection == null) {
                     this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
                     this.setCommonRequestHeaders(this.httpURLConnection);
+                    this.httpURLConnection.setRequestMethod("POST");
+                    this.httpURLConnection.setRequestProperty("project", "299394317711");
+//                    this.httpURLConnection.setRequestProperty("project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
+                    this.httpURLConnection.setRequestProperty("namespace", "firebase");
                     this.httpURLConnection.setRequestProperty("lastKnownVersionNumber", Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
                 }
                 logger.info("Realtime connection started.");
@@ -202,9 +220,22 @@ public class ConfigRealtimeHTTPClient {
                         }
                     }
                 }
-                startRealtimeConnection();
             }
-        }, 0, 5 * (60*1000));
+        }, 6000, 5 * (60*1000));
+    }
+
+    public class RealtimeListenerRegistration {
+        final String listenerName;
+        final Map<String, RealTimeEventListener> eventListener;
+
+        public RealtimeListenerRegistration (String listenerName, Map<String, RealTimeEventListener> eventListeners) {
+            this.listenerName = listenerName;
+            this.eventListener = eventListeners;
+        }
+
+        public void removeListener() {
+            this.eventListener.remove(this.listenerName);
+        }
     }
 
     // Event Listener interface to be used by developers.
@@ -214,12 +245,8 @@ public class ConfigRealtimeHTTPClient {
     }
 
     // Add Event listener.
-    public void putRealTimeEventListener(String listenerName, RealTimeEventListener realTimeEventListener) {
+    public RealtimeListenerRegistration putRealTimeEventListener(String listenerName, RealTimeEventListener realTimeEventListener) {
         this.eventListeners.put(listenerName, realTimeEventListener);
-    }
-
-    // Remove Event listener.
-    public void removeRealTimeEventListener(String listenerName) {
-        this.eventListeners.remove(listenerName);
+        return new RealtimeListenerRegistration(listenerName, eventListeners);
     }
 }
