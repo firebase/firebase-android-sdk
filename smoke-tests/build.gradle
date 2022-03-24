@@ -51,10 +51,6 @@ android {
     }
   }
 
-  packagingOptions {
-    exclude 'META-INF/DEPENDENCIES'
-  }
-
   compileOptions {
     sourceCompatibility 1.8
     targetCompatibility 1.8
