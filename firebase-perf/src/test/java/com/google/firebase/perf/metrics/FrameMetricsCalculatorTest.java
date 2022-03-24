@@ -23,9 +23,8 @@ public class FrameMetricsCalculatorTest {
 
   @Test
   public void calculateFrameMetrics_validSparseIntArray_returnsCorrectFrameMetrics() {
-    // For a given non-null SparseIntArray, the results stored are the number of samples at each
-    // millisecond value (rounded).
-    // Slow frames are duration greater than 16ms and frozen frames are duration greater than 700ms.
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
     SparseIntArray sparseIntArray = new SparseIntArray();
     sparseIntArray.append(5, 3);
     sparseIntArray.append(20, 2);
@@ -34,6 +33,8 @@ public class FrameMetricsCalculatorTest {
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
     FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+
+    // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(10);
     assertThat(metrics.getSlowFrames()).isEqualTo(7);
     assertThat(metrics.getFrozenFrames()).isEqualTo(5);
@@ -42,9 +43,8 @@ public class FrameMetricsCalculatorTest {
   @Test
   public void
       calculateFrameMetrics_validSparseIntArrayWithoutFrozenFrames_returnsCorrectFrameMetrics() {
-    // For a given non-null SparseIntArray, the results stored are the number of samples at each
-    // millisecond value (rounded).
-    // Slow frames are duration greater than 16ms and frozen frames are duration greater than 700ms.
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
     SparseIntArray sparseIntArray = new SparseIntArray();
     sparseIntArray.append(5, 3);
     sparseIntArray.append(20, 2);
@@ -52,6 +52,8 @@ public class FrameMetricsCalculatorTest {
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
     FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+
+    // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
     assertThat(metrics.getSlowFrames()).isEqualTo(2);
     assertThat(metrics.getFrozenFrames()).isEqualTo(0);
@@ -60,9 +62,8 @@ public class FrameMetricsCalculatorTest {
   @Test
   public void
       calculateFrameMetrics_validSparseIntArrayWithoutSlowFrames_returnsCorrectFrameMetrics() {
-    // For a given non-null SparseIntArray, the results stored are the number of samples at each
-    // millisecond value (rounded).
-    // Slow frames are duration greater than 16ms and frozen frames are duration greater than 700ms.
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
     SparseIntArray sparseIntArray = new SparseIntArray();
     sparseIntArray.append(5, 3);
     sparseIntArray.append(701, 2);
@@ -70,6 +71,8 @@ public class FrameMetricsCalculatorTest {
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
     FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+
+    // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
     assertThat(metrics.getSlowFrames()).isEqualTo(2);
     assertThat(metrics.getFrozenFrames()).isEqualTo(2);

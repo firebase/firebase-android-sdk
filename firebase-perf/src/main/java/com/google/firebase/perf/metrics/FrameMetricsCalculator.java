@@ -53,10 +53,9 @@ public class FrameMetricsCalculator {
 
   /**
    * Calculate total frames, slow frames, and frozen frames from SparseIntArray[] recorded by {@link
-   * FrameMetricsAggregator}. For a given non-null SparseIntArray, the results stored are the number
-   * of samples at each millisecond value (rounded).
+   * FrameMetricsAggregator}.
    *
-   * @param arr the metrics data collected by {@link FrameMetricsAggregator}
+   * @param arr the metrics data collected by {@link FrameMetricsAggregator#getMetrics()}
    * @return the frame metrics
    */
   public static @NonNull FrameMetrics calculateFrameMetrics(@Nullable SparseIntArray[] arr) {
