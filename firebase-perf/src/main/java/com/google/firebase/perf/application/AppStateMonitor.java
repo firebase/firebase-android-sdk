@@ -53,6 +53,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       "androidx.core.app.FrameMetricsAggregator";
 
   private static volatile AppStateMonitor instance;
+  private static boolean hasFrameMetricsAggregator = false;
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
@@ -76,7 +77,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private boolean isRegisteredForLifecycleCallbacks = false;
   private boolean isColdStart = true;
-  private boolean hasFrameMetricsAggregator = false;
 
   public static AppStateMonitor getInstance() {
     if (instance == null) {
@@ -450,8 +450,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private static boolean hasFrameMetricsAggregatorClass() {
     try {
       Class<?> initializerClass = Class.forName(FRAME_METRICS_AGGREGATOR_CLASSNAME);
+      hasFrameMetricsAggregator = true;
       return true;
     } catch (ClassNotFoundException e) {
+      hasFrameMetricsAggregator = false;
       return false;
     }
   }
