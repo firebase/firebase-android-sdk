@@ -131,13 +131,13 @@ public class TargetIndexMatcher {
    *
    * @throws AssertionError if the index is for a different collection
    */
-  public boolean servedByIndex(FieldIndex index) {
+  public int servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
     if (arraySegment != null && !hasMatchingEqualityFilter(arraySegment)) {
-      return false;
+      return -1;
     }
 
     Iterator<OrderBy> orderBys = this.orderBys.iterator();
@@ -162,7 +162,7 @@ public class TargetIndexMatcher {
     // filters and we do not need to map any segments to the target's inequality and orderBy
     // clauses.
     if (segmentIndex == segments.size()) {
-      return true;
+      return segmentIndex;
     }
 
     // If there is an inequality filter, the next segment must match both the filter and the first
@@ -170,7 +170,7 @@ public class TargetIndexMatcher {
     if (inequalityFilter != null) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+        return -1;
       }
       ++segmentIndex;
     }
@@ -179,11 +179,11 @@ public class TargetIndexMatcher {
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+        return -1;
       }
     }
 
-    return true;
+    return segmentIndex;
   }
 
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {

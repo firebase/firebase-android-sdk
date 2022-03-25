@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import android.text.TextUtils;
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -447,11 +448,16 @@ final class SQLiteIndexManager implements IndexManager {
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
 
+    boolean isFullIndex = true;
+
     for (Target subTarget : getSubTargets(target)) {
-      FieldIndex fieldIndex = getFieldIndex(subTarget);
-      if (fieldIndex == null) {
+      Pair<FieldIndex, Integer> pair = doMagic(subTarget);
+      if (pair == null) {
         return null;
       }
+
+      FieldIndex fieldIndex = pair.first;
+      isFullIndex |= fieldIndex.getSegments().size() == pair.second;
 
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
@@ -610,6 +616,11 @@ final class SQLiteIndexManager implements IndexManager {
   @Nullable
   @Override
   public FieldIndex getFieldIndex(Target target) {
+    Pair<FieldIndex, Integer> fieldIndexIntegerPair = doMagic(target);
+    return  fieldIndexIntegerPair != null ? fieldIndexIntegerPair.first : null;
+  }
+
+   @Nullable Pair<FieldIndex, Integer> doMagic(Target target) {
     hardAssert(started, "IndexManager not started");
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
@@ -623,21 +634,17 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    List<FieldIndex> matchingIndexes = new ArrayList<>();
+    int matchingSegments = -1;
+    FieldIndex matchingIndex = null;
     for (FieldIndex fieldIndex : collectionIndexes) {
-      boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-      if (matches) {
-        matchingIndexes.add(fieldIndex);
+      int segments = targetIndexMatcher.servedByIndex(fieldIndex);
+      if (segments > matchingSegments) {
+        matchingSegments = segments;
+        matchingIndex = fieldIndex;
       }
     }
 
-    if (matchingIndexes.isEmpty()) {
-      return null;
-    }
-
-    // Return the index with the most number of segments
-    return Collections.max(
-        matchingIndexes, (l, r) -> Integer.compare(l.getSegments().size(), r.getSegments().size()));
+    return new Pair<>(matchingIndex, matchingSegments);
   }
 
   /**
