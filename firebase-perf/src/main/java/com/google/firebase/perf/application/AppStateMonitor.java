@@ -167,7 +167,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityDestroyed(Activity activity) {}
 
   @Override
-
   public synchronized void onActivityStarted(Activity activity) {}
 
   @Override
