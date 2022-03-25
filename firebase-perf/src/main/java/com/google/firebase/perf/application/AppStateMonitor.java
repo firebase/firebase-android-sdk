@@ -19,21 +19,21 @@ import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
-import android.util.SparseIntArray;
 import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
+import com.google.firebase.perf.util.ScreenTraceUtil;
 import com.google.firebase.perf.util.Timer;
-import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
@@ -354,50 +354,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     } catch (IllegalArgumentException ignored) {
       logger.debug("View not hardware accelerated. Unable to collect screen trace.");
     }
-    SparseIntArray[] arr = frameMetricsAggregator.reset();
-    if (arr != null) {
-      SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
-      if (frameTimes != null) {
-        for (int i = 0; i < frameTimes.size(); i++) {
-          int frameTime = frameTimes.keyAt(i);
-          int numFrames = frameTimes.valueAt(i);
-          totalFrames += numFrames;
-          if (frameTime > Constants.FROZEN_FRAME_TIME) {
-            // Frozen frames mean the app appear frozen.  The recommended thresholds is 700ms
-            frozenFrames += numFrames;
-          }
-          if (frameTime > Constants.SLOW_FRAME_TIME) {
-            // Slow frames are anything above 16ms (i.e. 60 frames/second)
-            slowFrames += numFrames;
-          }
-        }
-      }
-    }
-    if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
+    FrameMetricsCalculator.FrameMetrics frameMetrics =
+        FrameMetricsCalculator.calculateFrameMetrics(frameMetricsAggregator.reset());
+    if (frameMetrics.getTotalFrames() == 0
+        && frameMetrics.getSlowFrames() == 0
+        && frameMetrics.getFrozenFrames() == 0) {
       // All metrics are zero, no need to send screen trace.
-      // return;
+      return;
     }
-    // Only incrementMetric if corresponding metric is non-zero.
-    if (totalFrames > 0) {
-      screenTrace.putMetric(Constants.CounterNames.FRAMES_TOTAL.toString(), totalFrames);
-    }
-    if (slowFrames > 0) {
-      screenTrace.putMetric(Constants.CounterNames.FRAMES_SLOW.toString(), slowFrames);
-    }
-    if (frozenFrames > 0) {
-      screenTrace.putMetric(Constants.CounterNames.FRAMES_FROZEN.toString(), frozenFrames);
-    }
-    if (Utils.isDebugLoggingEnabled(activity.getApplicationContext())) {
-      logger.debug(
-          "sendScreenTrace name:"
-              + getScreenTraceName(activity)
-              + " _fr_tot:"
-              + totalFrames
-              + " _fr_slo:"
-              + slowFrames
-              + " _fr_fzn:"
-              + frozenFrames);
-    }
+    ScreenTraceUtil.addFrameCounters(screenTrace, frameMetrics);
     // Stop and record trace
     screenTrace.stop();
   }
