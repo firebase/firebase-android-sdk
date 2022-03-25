@@ -213,7 +213,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
 
     // Screen trace is after session update so the sessionId is not added twice to the Trace
-    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
       /**
        * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
