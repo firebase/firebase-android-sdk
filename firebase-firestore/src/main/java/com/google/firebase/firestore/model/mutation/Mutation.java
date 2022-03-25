@@ -87,6 +87,7 @@ public abstract class Mutation {
    * of the document, and a {@link FieldMask} representing the fields that are mutated by the local
    * mutations.
    */
+  @Nullable
   public static Mutation calculateOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
     if ((!doc.hasLocalMutations()) || (mask != null && mask.getMask().isEmpty())) {
       return null;

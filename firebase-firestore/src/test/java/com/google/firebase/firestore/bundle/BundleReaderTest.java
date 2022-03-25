@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
@@ -219,35 +220,37 @@ public class BundleReaderTest {
     verifyAllElements(bundleReader);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testThrowsWithoutLengthPrefix() throws IOException, JSONException {
     String bundle = "{metadata: 'no length prefix' }";
 
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    bundleReader.getBundleMetadata();
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testThrowsWithMissingBrackets() throws IOException, JSONException {
     String bundle = "3abc";
 
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
-    bundleReader.getBundleMetadata();
+
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
-  @Test(expected = JSONException.class)
+  @Test
   public void testThrowsWithInvalidJSON() throws IOException, JSONException {
     String bundle = "3{abc}";
 
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
-    bundleReader.getBundleMetadata();
+
+    assertThrows(JSONException.class, () -> bundleReader.getBundleMetadata());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testThrowsWhenSecondElementIsMissing() throws IOException, JSONException {
     TestBundleBuilder bundleBuilder = new TestBundleBuilder(TEST_PROJECT);
     String bundle =
@@ -255,19 +258,21 @@ public class BundleReaderTest {
 
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
-    bundleReader.getNextElement();
+
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getNextElement());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testThrowsWhenBundleDoesNotContainEnoughData() throws IOException, JSONException {
     String bundle = "3{}";
 
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
-    bundleReader.getBundleMetadata();
+
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testWhenFirstElementIsNotBundleMetadata() throws IOException, JSONException {
     String json =
         String.format(
@@ -283,7 +288,7 @@ public class BundleReaderTest {
     BundleReader bundleReader =
         new BundleReader(SERIALIZER, new ByteArrayInputStream(bundle.getBytes(UTF8_CHARSET)));
 
-    bundleReader.getBundleMetadata();
+    assertThrows(IllegalArgumentException.class, () -> bundleReader.getBundleMetadata());
   }
 
   @Test

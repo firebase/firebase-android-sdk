@@ -167,20 +167,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityDestroyed(Activity activity) {}
 
   @Override
-  public synchronized void onActivityStarted(Activity activity) {
-    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
-      // Starts recording frame metrics for this activity.
-      /**
-       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
-       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
-       */
-      frameMetricsAggregator.add(activity);
-      // Start the Trace
-      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
-      screenTrace.start();
-      activityToScreenTraceMap.put(activity, screenTrace);
-    }
-  }
+
+  public synchronized void onActivityStarted(Activity activity) {}
 
   @Override
   public synchronized void onActivityStopped(Activity activity) {
@@ -202,7 +190,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     // cases:
     // 1. At app startup, first activity comes to foreground.
     // 2. app switch from background to foreground.
-    // 3. app already in foreground, current activity is replaced by another activity.
+    // 3. app already in foreground, current activity is replaced by another activity, or the
+    // current activity was paused then resumed without onStop, for example by an AlertDialog
     if (activityToResumedMap.isEmpty()) {
       // The first resumed activity means app comes to foreground.
       resumeTime = clock.getTime();
@@ -219,8 +208,23 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
         updateAppState(ApplicationProcessState.FOREGROUND);
       }
     } else {
-      // case 3: app already in foreground, current activity is replaced by another activity.
+      // case 3: app already in foreground, current activity is replaced by another activity, or the
+      // current activity was paused then resumed without onStop, for example by an AlertDialog
       activityToResumedMap.put(activity, true);
+    }
+
+    // Screen trace is after session update so the sessionId is not added twice to the Trace
+    if (isScreenTraceSupported(activity) && configResolver.isPerformanceMonitoringEnabled()) {
+      // Starts recording frame metrics for this activity.
+      /**
+       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
+       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
+       */
+      frameMetricsAggregator.add(activity);
+      // Start the Trace
+      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
+      screenTrace.start();
+      activityToScreenTraceMap.put(activity, screenTrace);
     }
   }
 
