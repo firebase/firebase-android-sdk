@@ -26,6 +26,7 @@ import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
+import com.google.firebase.perf.util.ScreenTraceUtil;
 import java.util.WeakHashMap;
 
 public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
@@ -109,17 +110,8 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
       // All metrics are zero, no need to send screen trace.
       return;
     }
-    // Only putMetric if corresponding metric is non-zero.
-    if (totalFrames > 0) {
-      fragmentTrace.putMetric(Constants.CounterNames.FRAMES_TOTAL.toString(), totalFrames);
-    }
-    if (slowFrames > 0) {
-      fragmentTrace.putMetric(Constants.CounterNames.FRAMES_SLOW.toString(), slowFrames);
-    }
-    if (frozenFrames > 0) {
-      fragmentTrace.putMetric(Constants.CounterNames.FRAMES_FROZEN.toString(), frozenFrames);
-    }
-
+    ScreenTraceUtil.addFrameCounters(
+        fragmentTrace, new FrameMetrics(totalFrames, slowFrames, frozenFrames));
     fragmentTrace.stop();
   }
 

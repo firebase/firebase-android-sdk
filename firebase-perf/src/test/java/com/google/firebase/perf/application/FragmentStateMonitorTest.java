@@ -78,6 +78,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
    * FrameMetricsAggregator#getMetrics()}
    */
   private SparseIntArray[] fmaMetrics1 = new SparseIntArray[1];
+
   private SparseIntArray[] fmaMetrics2 = new SparseIntArray[1];
 
   @Before
@@ -134,15 +135,33 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void lifecycleCallbacks_sameFrameMetricsCapturedByFma_dropFragmentScreenTrace() {
+  public void lifecycleCallbacks_onPausedCalledTwice_logFragmentScreenTraceOnce() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
     when(fma.getMetrics()).thenReturn(fmaMetrics1);
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
 
-    when(fma.getMetrics()).thenReturn(fmaMetrics1);
+    when(fma.getMetrics()).thenReturn(fmaMetrics2);
     monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
+
+    when(fma.getMetrics()).thenReturn(fmaMetrics2);
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
+  }
+
+  @Test
+  public void lifecycleCallbacks_onPausedCalledBeforeOnResume_doesNotLogFragmentScreenTrace() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
+    when(fma.getMetrics()).thenReturn(fmaMetrics1);
+
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
+
+    when(fma.getMetrics()).thenReturn(fmaMetrics2);
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
   }
 
@@ -204,6 +223,19 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     appStateMonitor.onActivityStopped(mockActivity);
     Assert.assertEquals(1, fragmentToTraceMap.size());
     Assert.assertEquals(1, fragmentToMetricsMap.size());
+  }
+
+  @Test
+  public void fragmentTraceCreation_whenFrameMetricsIsUnchanged_dropsTrace() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
+    when(fma.getMetrics()).thenReturn(fmaMetrics1);
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
+
+    when(fma.getMetrics()).thenReturn(fmaMetrics1);
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+    verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
   }
 
   @Test
