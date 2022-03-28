@@ -49,14 +49,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
-// @RunWith(PowerMockRunner.class)
-// @PrepareForTest(ApkUpdaterTest.class)
 @RunWith(RobolectricTestRunner.class)
-@PrepareForTest(ApkUpdaterTest.class)
 public class ApkUpdaterTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
@@ -268,7 +264,7 @@ public class ApkUpdaterTest {
   }
 
   @Test
-  public void downloadToDisk_whenHasInputStream_notificationSetCorrectlyHasCorrectInputLength()
+  public void downloadToDisk_withInputStream_notificationSetCorrectlyHasCorrectInputLength()
       throws IOException, FirebaseAppDistributionException {
     doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
         .when(mockHttpsUrlConnection)
@@ -280,5 +276,15 @@ public class ApkUpdaterTest {
     verify(mockNotificationsManager)
         .updateNotification(1000, TEST_FILE.length(), R.string.downloading_app_update);
     assertThat(result).isEqualTo(TEST_FILE.length());
+  }
+
+  @Test
+  public void downloadToDisk_withoutInputStream_notificationSetDownloadFailed() throws IOException {
+    when(mockHttpsUrlConnection.getInputStream()).thenThrow(new IOException());
+    assertThrows(
+        FirebaseAppDistributionException.class,
+        () ->
+            apkUpdater.downloadToDisk(mockHttpsUrlConnection, TEST_FILE_LENGTH, "fileName", true));
+    verify(mockNotificationsManager).updateNotification(1000, 0, R.string.download_failed);
   }
 }

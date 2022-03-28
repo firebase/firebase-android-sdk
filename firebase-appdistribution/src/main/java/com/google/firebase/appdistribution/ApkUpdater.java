@@ -160,8 +160,7 @@ class ApkUpdater {
     return downloadTaskCompletionSource.getTask();
   }
 
-  @VisibleForTesting
-  void makeApkDownloadRequest(
+  private void makeApkDownloadRequest(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification)
       throws FirebaseAppDistributionException {
     String downloadUrl = newRelease.getDownloadUrl();
