@@ -15,7 +15,7 @@
 package com.google.firebase.perf.util;
 
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.FrameMetricsCalculator.FrameMetrics;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
 
 /** Utility class for screen traces. */
@@ -26,33 +26,33 @@ public class ScreenTraceUtil {
    * Set the metrics of total frames, slow frames, and frozen frames for the given screen trace.
    *
    * @param screenTrace a screen trace
-   * @param frameMetrics frame metrics calculated by {@link
+   * @param perfFrameMetrics frame metrics calculated by {@link
    *     com.google.firebase.perf.metrics.FrameMetricsCalculator#calculateFrameMetrics}
    * @return the screen trace with frame metrics added.
    */
-  public static Trace addFrameCounters(Trace screenTrace, FrameMetrics frameMetrics) {
+  public static Trace addFrameCounters(Trace screenTrace, PerfFrameMetrics perfFrameMetrics) {
     // Only putMetric if corresponding metric is greater than zero.
-    if (frameMetrics.getTotalFrames() > 0) {
+    if (perfFrameMetrics.getTotalFrames() > 0) {
       screenTrace.putMetric(
-          Constants.CounterNames.FRAMES_TOTAL.toString(), frameMetrics.getTotalFrames());
+          Constants.CounterNames.FRAMES_TOTAL.toString(), perfFrameMetrics.getTotalFrames());
     }
-    if (frameMetrics.getSlowFrames() > 0) {
+    if (perfFrameMetrics.getSlowFrames() > 0) {
       screenTrace.putMetric(
-          Constants.CounterNames.FRAMES_SLOW.toString(), frameMetrics.getSlowFrames());
+          Constants.CounterNames.FRAMES_SLOW.toString(), perfFrameMetrics.getSlowFrames());
     }
-    if (frameMetrics.getFrozenFrames() > 0) {
+    if (perfFrameMetrics.getFrozenFrames() > 0) {
       screenTrace.putMetric(
-          Constants.CounterNames.FRAMES_FROZEN.toString(), frameMetrics.getFrozenFrames());
+          Constants.CounterNames.FRAMES_FROZEN.toString(), perfFrameMetrics.getFrozenFrames());
     }
     logger.debug(
         "Screen trace: "
             + screenTrace.getClass().getSimpleName()
             + " _fr_tot:"
-            + frameMetrics.getTotalFrames()
+            + perfFrameMetrics.getTotalFrames()
             + " _fr_slo:"
-            + frameMetrics.getSlowFrames()
+            + perfFrameMetrics.getSlowFrames()
             + " _fr_fzn:"
-            + frameMetrics.getFrozenFrames());
+            + perfFrameMetrics.getFrozenFrames());
     return screenTrace;
   }
 }

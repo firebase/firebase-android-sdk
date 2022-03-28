@@ -201,7 +201,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, fma);
     doReturn(true).when(appStateMonitor).isScreenTraceSupported();
     WeakHashMap<Fragment, Trace> fragmentToTraceMap = fragmentMonitor.getFragmentToTraceMap();
-    WeakHashMap<Fragment, FrameMetricsCalculator.FrameMetrics> fragmentToMetricsMap =
+    WeakHashMap<Fragment, FrameMetricsCalculator.PerfFrameMetrics> fragmentToMetricsMap =
         fragmentMonitor.getFragmentToMetricsMap();
     // Activity_A onCreate registers FragmentStateMonitor, then:
     appStateMonitor.onActivityStarted(mockActivity);

@@ -354,15 +354,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     } catch (IllegalArgumentException ignored) {
       logger.debug("View not hardware accelerated. Unable to collect screen trace.");
     }
-    FrameMetricsCalculator.FrameMetrics frameMetrics =
+    FrameMetricsCalculator.PerfFrameMetrics perfFrameMetrics =
         FrameMetricsCalculator.calculateFrameMetrics(frameMetricsAggregator.reset());
-    if (frameMetrics.getTotalFrames() == 0
-        && frameMetrics.getSlowFrames() == 0
-        && frameMetrics.getFrozenFrames() == 0) {
+    if (perfFrameMetrics.getTotalFrames() == 0
+        && perfFrameMetrics.getSlowFrames() == 0
+        && perfFrameMetrics.getFrozenFrames() == 0) {
       // All metrics are zero, no need to send screen trace.
       return;
     }
-    ScreenTraceUtil.addFrameCounters(screenTrace, frameMetrics);
+    ScreenTraceUtil.addFrameCounters(screenTrace, perfFrameMetrics);
     // Stop and record trace
     screenTrace.stop();
   }

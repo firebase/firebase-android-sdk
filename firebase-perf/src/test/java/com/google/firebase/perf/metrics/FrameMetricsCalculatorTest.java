@@ -29,7 +29,8 @@ public class FrameMetricsCalculatorTest {
   public void calculateFrameMetrics_sparseIntArrayIsNull_returnsFrameMetricsWithAllZeros() {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = null;
-    FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    FrameMetricsCalculator.PerfFrameMetrics metrics =
+        FrameMetricsCalculator.calculateFrameMetrics(arr);
     assertThat(metrics.getTotalFrames()).isEqualTo(0);
     assertThat(metrics.getSlowFrames()).isEqualTo(0);
     assertThat(metrics.getFrozenFrames()).isEqualTo(0);
@@ -46,7 +47,8 @@ public class FrameMetricsCalculatorTest {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
-    FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    FrameMetricsCalculator.PerfFrameMetrics metrics =
+        FrameMetricsCalculator.calculateFrameMetrics(arr);
 
     // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(10);
@@ -65,7 +67,8 @@ public class FrameMetricsCalculatorTest {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
-    FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    FrameMetricsCalculator.PerfFrameMetrics metrics =
+        FrameMetricsCalculator.calculateFrameMetrics(arr);
 
     // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -84,7 +87,8 @@ public class FrameMetricsCalculatorTest {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
-    FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    FrameMetricsCalculator.PerfFrameMetrics metrics =
+        FrameMetricsCalculator.calculateFrameMetrics(arr);
 
     // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -102,7 +106,8 @@ public class FrameMetricsCalculatorTest {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
 
-    FrameMetricsCalculator.FrameMetrics metrics = FrameMetricsCalculator.calculateFrameMetrics(arr);
+    FrameMetricsCalculator.PerfFrameMetrics metrics =
+        FrameMetricsCalculator.calculateFrameMetrics(arr);
 
     // we should expect 3 total frames, 0 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(3);

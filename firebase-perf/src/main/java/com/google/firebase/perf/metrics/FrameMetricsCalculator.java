@@ -27,12 +27,12 @@ import com.google.firebase.perf.util.Constants;
  * @hide
  */
 public class FrameMetricsCalculator {
-  public static class FrameMetrics {
+  public static class PerfFrameMetrics {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
 
-    public FrameMetrics(int totalFrames, int slowFrames, int frozenFrames) {
+    public PerfFrameMetrics(int totalFrames, int slowFrames, int frozenFrames) {
       this.totalFrames = totalFrames;
       this.slowFrames = slowFrames;
       this.frozenFrames = frozenFrames;
@@ -58,7 +58,7 @@ public class FrameMetricsCalculator {
    * @param arr the metrics data collected by {@link FrameMetricsAggregator#getMetrics()}
    * @return the frame metrics
    */
-  public static @NonNull FrameMetrics calculateFrameMetrics(@Nullable SparseIntArray[] arr) {
+  public static @NonNull PerfFrameMetrics calculateFrameMetrics(@Nullable SparseIntArray[] arr) {
     int totalFrames = 0;
     int slowFrames = 0;
     int frozenFrames = 0;
@@ -82,6 +82,6 @@ public class FrameMetricsCalculator {
       }
     }
     // Only incrementMetric if corresponding metric is non-zero.
-    return new FrameMetrics(totalFrames, slowFrames, frozenFrames);
+    return new PerfFrameMetrics(totalFrames, slowFrames, frozenFrames);
   }
 }
