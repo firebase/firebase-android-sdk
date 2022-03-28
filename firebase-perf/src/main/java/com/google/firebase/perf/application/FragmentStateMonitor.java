@@ -20,15 +20,19 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
+import com.google.firebase.perf.util.ScreenTraceUtil;
 import java.util.WeakHashMap;
 
 public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallbacks {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private final WeakHashMap<Fragment, Trace> fragmentToTraceMap = new WeakHashMap<>();
+  private final WeakHashMap<Fragment, PerfFrameMetrics> fragmentToMetricsMap = new WeakHashMap<>();
   private final Clock clock;
   private final TransportManager transportManager;
   private final AppStateMonitor appStateMonitor;
@@ -73,8 +77,11 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
       fragmentTrace.putAttribute(
           Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
     }
-
     fragmentToTraceMap.put(f, fragmentTrace);
+
+    PerfFrameMetrics perfFrameMetrics =
+        FrameMetricsCalculator.calculateFrameMetrics(this.frameMetricsAggregator.getMetrics());
+    fragmentToMetricsMap.put(f, perfFrameMetrics);
   }
 
   @Override
@@ -89,14 +96,33 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
 
     Trace fragmentTrace = fragmentToTraceMap.get(f);
     fragmentToTraceMap.remove(f);
+    PerfFrameMetrics prePerfFrameMetrics = fragmentToMetricsMap.get(f);
+    fragmentToMetricsMap.remove(f);
 
-    // TODO: Add frame metrics
+    PerfFrameMetrics curPerfFrameMetrics =
+        FrameMetricsCalculator.calculateFrameMetrics(this.frameMetricsAggregator.getMetrics());
 
+    int totalFrames = curPerfFrameMetrics.getTotalFrames() - prePerfFrameMetrics.getTotalFrames();
+    int slowFrames = curPerfFrameMetrics.getSlowFrames() - prePerfFrameMetrics.getSlowFrames();
+    int frozenFrames =
+        curPerfFrameMetrics.getFrozenFrames() - prePerfFrameMetrics.getFrozenFrames();
+
+    if (totalFrames == 0 && slowFrames == 0 && frozenFrames == 0) {
+      // All metrics are zero, no need to send screen trace.
+      return;
+    }
+    ScreenTraceUtil.addFrameCounters(
+        fragmentTrace, new PerfFrameMetrics(totalFrames, slowFrames, frozenFrames));
     fragmentTrace.stop();
   }
 
   @VisibleForTesting
   WeakHashMap<Fragment, Trace> getFragmentToTraceMap() {
     return fragmentToTraceMap;
+  }
+
+  @VisibleForTesting
+  WeakHashMap<Fragment, PerfFrameMetrics> getFragmentToMetricsMap() {
+    return fragmentToMetricsMap;
   }
 }
