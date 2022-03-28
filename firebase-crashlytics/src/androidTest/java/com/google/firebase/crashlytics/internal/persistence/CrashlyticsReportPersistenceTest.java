@@ -55,7 +55,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     SessionSettingsData sessionSettingsDataMock =
         new SessionSettingsData(maxCustomExceptionEvents, maxCompleteSessionsCount);
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
+    when(settingsDataProvider.getSettingsSync()).thenReturn(settingsMock);
     return settingsDataProvider;
   }
 
@@ -290,7 +290,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     SessionSettingsData sessionSettingsDataMockDifferentValues =
         new SessionSettingsData(VERY_LARGE_UPPER_LIMIT, 8);
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
+    when(settingsDataProvider.getSettingsSync()).thenReturn(settingsMock);
     reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
 
     DecimalFormat format = new DecimalFormat("00");
@@ -549,7 +549,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     SessionSettingsData sessionSettingsDataMockDifferentValues =
         new SessionSettingsData(8, VERY_LARGE_UPPER_LIMIT);
     when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
+    when(settingsDataProvider.getSettingsSync()).thenReturn(settingsMock);
     reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
 
     final String sessionId = "testSession";

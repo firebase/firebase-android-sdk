@@ -227,7 +227,7 @@ public class CrashlyticsCore {
     try {
       breadcrumbSource.registerBreadcrumbHandler(this::log);
 
-      final Settings settingsData = settingsProvider.getSettings();
+      final Settings settingsData = settingsProvider.getSettingsSync();
 
       if (!settingsData.getFeaturesData().collectReports) {
         Logger.getLogger().d("Collection of crash reports disabled in Crashlytics settings.");
@@ -244,7 +244,7 @@ public class CrashlyticsCore {
       // TODO: Move this call out of this method, so that the return value merely indicates
       // initialization is complete. Callers that want to know when report sending is complete can
       // handle that as a separate call.
-      return controller.submitAllReports(settingsProvider.getAppSettings());
+      return controller.submitAllReports(settingsProvider.getSettingsAsync());
     } catch (Exception e) {
       Logger.getLogger()
           .e("Crashlytics encountered a problem during asynchronous initialization.", e);

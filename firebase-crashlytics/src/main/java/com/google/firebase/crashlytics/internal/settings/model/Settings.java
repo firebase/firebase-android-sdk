@@ -21,10 +21,6 @@ public interface Settings {
 
   long getExpiresAtMillis();
 
-  int getSettingsVersion();
-
-  int getCacheDuration();
-
   double onDemandUploadRatePerMinute();
 
   double onDemandBackoffBase();

@@ -132,7 +132,7 @@ public class CrashlyticsControllerRobolectricTest {
 
   private void mockSettingsData(boolean collectAnrs) {
     Settings mockSettings = mock(Settings.class);
-    when(mockSettingsDataProvider.getSettings()).thenReturn(mockSettings);
+    when(mockSettingsDataProvider.getSettingsSync()).thenReturn(mockSettings);
     when(mockSettings.getFeaturesData()).thenReturn(new FeaturesSettingsData(true, collectAnrs));
   }
 

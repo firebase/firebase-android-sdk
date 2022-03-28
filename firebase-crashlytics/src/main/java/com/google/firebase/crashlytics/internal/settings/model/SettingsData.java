@@ -14,9 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.settings.model;
 
-/** Immutable value object used to represent hold settings in memory. */
+/** Immutable value object used to represent settings in memory. */
 public class SettingsData implements Settings {
-  public final AppSettingsData appData;
   public final SessionSettingsData sessionData;
   public final FeaturesSettingsData featuresData;
   public final long expiresAtMillis;
@@ -28,7 +27,6 @@ public class SettingsData implements Settings {
 
   public SettingsData(
       long expiresAtMillis,
-      AppSettingsData appData,
       SessionSettingsData sessionData,
       FeaturesSettingsData featuresData,
       int settingsVersion,
@@ -37,7 +35,6 @@ public class SettingsData implements Settings {
       double onDemandBackoffBase,
       int onDemandBackoffStepDurationSeconds) {
     this.expiresAtMillis = expiresAtMillis;
-    this.appData = appData;
     this.sessionData = sessionData;
     this.featuresData = featuresData;
     this.settingsVersion = settingsVersion;
@@ -45,10 +42,6 @@ public class SettingsData implements Settings {
     this.onDemandUploadRatePerMinute = onDemandUploadRatePerMinute;
     this.onDemandBackoffBase = onDemandBackoffBase;
     this.onDemandBackoffStepDurationSeconds = onDemandBackoffStepDurationSeconds;
-  }
-
-  public AppSettingsData getAppSettingsData() {
-    return appData;
   }
 
   @Override
@@ -69,16 +62,6 @@ public class SettingsData implements Settings {
   @Override
   public long getExpiresAtMillis() {
     return expiresAtMillis;
-  }
-
-  @Override
-  public int getSettingsVersion() {
-    return settingsVersion;
-  }
-
-  @Override
-  public int getCacheDuration() {
-    return cacheDuration;
   }
 
   @Override

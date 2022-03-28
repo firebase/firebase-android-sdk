@@ -32,7 +32,6 @@ import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
@@ -62,7 +61,7 @@ public class SettingsController implements SettingsDataProvider {
   private final DataCollectionArbiter dataCollectionArbiter;
 
   private final AtomicReference<Settings> settings = new AtomicReference<>();
-  private final AtomicReference<TaskCompletionSource<AppSettingsData>> appSettingsData =
+  private final AtomicReference<TaskCompletionSource<Settings>> settingsTask =
       new AtomicReference<>(new TaskCompletionSource<>());
 
   SettingsController(
@@ -132,17 +131,22 @@ public class SettingsController implements SettingsDataProvider {
         dataCollectionArbiter);
   }
 
-  /** Gets the best available settings that have been loaded. */
-  public Settings getSettings() {
-    return settings.get();
+  /**
+   * Returns a Task that will be resolved with SettingsData, once it has been fetched from the
+   * network or loaded from the cache.
+   */
+  @Override
+  public Task<Settings> getSettingsAsync() {
+    return settingsTask.get().getTask();
   }
 
   /**
-   * Returns a Task that will be resolved with AppSettingsData, once it has been fetched from the
+   * Returns a Task that will be resolved with SettingsData, once it has been fetched from the
    * network or loaded from the cache.
    */
-  public Task<AppSettingsData> getAppSettings() {
-    return appSettingsData.get().getTask();
+  @Override
+  public Settings getSettingsSync() {
+    return settings.get();
   }
 
   /**
@@ -169,7 +173,7 @@ public class SettingsController implements SettingsDataProvider {
       final SettingsData cachedSettings = getCachedSettingsData(cacheBehavior);
       if (cachedSettings != null) {
         settings.set(cachedSettings);
-        appSettingsData.get().trySetResult(cachedSettings.getAppSettingsData());
+        settingsTask.get().trySetResult(cachedSettings);
         return Tasks.forResult(null);
       }
     }
@@ -183,7 +187,7 @@ public class SettingsController implements SettingsDataProvider {
         getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION);
     if (expiredSettings != null) {
       settings.set(expiredSettings);
-      appSettingsData.get().trySetResult(expiredSettings.getAppSettingsData());
+      settingsTask.get().trySetResult(expiredSettings);
     }
 
     // Kick off fetching fresh settings.
@@ -212,14 +216,8 @@ public class SettingsController implements SettingsDataProvider {
                   // Update the regular settings.
                   settings.set(fetchedSettings);
 
-                  // Signal the app settings on any Tasks that already exist, and then replace the
-                  // task so
-                  // that any new callers get the new app settings instead of any old ones.
-                  appSettingsData.get().trySetResult(fetchedSettings.getAppSettingsData());
-                  TaskCompletionSource<AppSettingsData> fetchedAppSettings =
-                      new TaskCompletionSource<>();
-                  fetchedAppSettings.trySetResult(fetchedSettings.getAppSettingsData());
-                  appSettingsData.set(fetchedAppSettings);
+                  // Signal the Task that we have a new valid settings
+                  settingsTask.get().trySetResult(fetchedSettings);
                 }
 
                 return Tasks.forResult(null);

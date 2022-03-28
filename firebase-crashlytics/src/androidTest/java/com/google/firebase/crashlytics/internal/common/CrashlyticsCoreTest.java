@@ -340,8 +340,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     SettingsController mockSettingsController = mock(SettingsController.class);
     final SettingsData settings = new TestSettingsData(3);
-    when(mockSettingsController.getSettings()).thenReturn(settings);
-    when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settings.appData));
+    when(mockSettingsController.getSettingsSync()).thenReturn(settings);
+    when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settings));
 
     AppData appData =
         new AppData(

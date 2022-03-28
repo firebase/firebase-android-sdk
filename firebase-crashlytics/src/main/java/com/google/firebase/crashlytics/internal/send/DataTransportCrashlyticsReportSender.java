@@ -60,7 +60,7 @@ public class DataTransportCrashlyticsReportSender {
                 Encoding.of("json"),
                 DEFAULT_TRANSFORM);
     ReportQueue reportQueue =
-        new ReportQueue(transport, settingsProvider.getSettings(), onDemandCounter);
+        new ReportQueue(transport, settingsProvider.getSettingsSync(), onDemandCounter);
     return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
   }
 

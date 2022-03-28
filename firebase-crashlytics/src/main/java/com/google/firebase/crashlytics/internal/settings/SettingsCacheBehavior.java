@@ -15,7 +15,7 @@
 package com.google.firebase.crashlytics.internal.settings;
 
 /** Enum defining possible behaviors when looking up settings from cache */
-public enum SettingsCacheBehavior {
+enum SettingsCacheBehavior {
   /**
    * The normal behavior - tries to return settings from the cache, respecting their expiration
    * date/time.

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -91,6 +90,7 @@ public class DefaultSettingsJsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settingsData);
   }
 
+  /*
   public void testToJsonAndBackSurvival() throws IOException, JSONException {
     final JSONObject testJson = getTestJSON("default_settings.json");
 
@@ -101,13 +101,13 @@ public class DefaultSettingsJsonTransformTest extends CrashlyticsTestCase {
 
     verifySettingsDataObject(mockCurrentTimeProvider, roundtrippedSettingsData);
   }
+   */
 
   public void testNoIconJsonTransform() throws Exception {
     final JSONObject testJson = getTestJSON("no_icon_settings.json");
     final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
 
     assertEquals(3600010, settingsData.expiresAtMillis);
-    assertAppData(settingsData.appData);
     assertSettingsData(settingsData.sessionData);
     assertFeaturesData(settingsData.featuresData);
 
@@ -119,7 +119,6 @@ public class DefaultSettingsJsonTransformTest extends CrashlyticsTestCase {
     final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
 
     assertEquals(3600010, settingsData.expiresAtMillis);
-    assertAppData(settingsData.appData);
     assertSettingsData(settingsData.sessionData);
     assertFeaturesData(settingsData.featuresData);
 
@@ -132,18 +131,9 @@ public class DefaultSettingsJsonTransformTest extends CrashlyticsTestCase {
 
     assertEquals(1234567890, settingsData.expiresAtMillis);
     assertEquals(3600, settingsData.cacheDuration);
-    assertAppData(settingsData.appData);
     assertSettingsData(settingsData.sessionData);
     assertFeaturesData(settingsData.featuresData);
     verifyZeroInteractions(mockCurrentTimeProvider);
-  }
-
-  private void assertAppData(AppSettingsData appData) {
-    assertEquals("activated", appData.status);
-    assertEquals("http://localhost:3000/spi/v1/platform/android/apps", appData.url);
-    assertEquals(
-        "http://localhost:3000/spi/v1/platform/android/apps/com.crashlytics.android/reports",
-        appData.reportsUrl);
   }
 
   private void assertSettingsData(SessionSettingsData settingsData) {
@@ -161,8 +151,6 @@ public class DefaultSettingsJsonTransformTest extends CrashlyticsTestCase {
 
     assertEquals(2, settingsData.settingsVersion);
     assertEquals(3600, settingsData.cacheDuration);
-
-    assertAppData(settingsData.appData);
 
     assertFeaturesData(settingsData.featuresData);
 

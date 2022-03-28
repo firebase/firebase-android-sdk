@@ -72,8 +72,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
     mockSettingsController = mock(SettingsController.class);
     final SettingsData settingsData = new TestSettingsData();
-    when(mockSettingsController.getSettings()).thenReturn(settingsData);
-    when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settingsData.appData));
+    when(mockSettingsController.getSettingsSync()).thenReturn(settingsData);
+    when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settingsData));
   }
 
   @Override

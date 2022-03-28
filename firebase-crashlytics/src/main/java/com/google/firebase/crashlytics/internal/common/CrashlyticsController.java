@@ -36,7 +36,7 @@ import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
+import com.google.firebase.crashlytics.internal.settings.model.Settings;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -215,15 +215,14 @@ class CrashlyticsController {
                 Executor executor = backgroundWorker.getExecutor();
 
                 return settingsDataProvider
-                    .getAppSettings()
+                    .getSettingsAsync()
                     .onSuccessTask(
                         executor,
-                        new SuccessContinuation<AppSettingsData, Void>() {
+                        new SuccessContinuation<Settings, Void>() {
                           @NonNull
                           @Override
-                          public Task<Void> then(@Nullable AppSettingsData appSettingsData)
-                              throws Exception {
-                            if (appSettingsData == null) {
+                          public Task<Void> then(@Nullable Settings settings) throws Exception {
+                            if (settings == null) {
                               Logger.getLogger()
                                   .w(
                                       "Received null app settings, cannot send reports at crash time.");
@@ -325,7 +324,7 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  Task<Void> submitAllReports(Task<AppSettingsData> appSettingsDataTask) {
+  Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
@@ -364,12 +363,12 @@ class CrashlyticsController {
 
                         Executor executor = backgroundWorker.getExecutor();
 
-                        return appSettingsDataTask.onSuccessTask(
+                        return settingsDataTask.onSuccessTask(
                             executor,
-                            new SuccessContinuation<AppSettingsData, Void>() {
+                            new SuccessContinuation<Settings, Void>() {
                               @NonNull
                               @Override
-                              public Task<Void> then(@Nullable AppSettingsData appSettingsData)
+                              public Task<Void> then(@Nullable Settings appSettingsData)
                                   throws Exception {
                                 if (appSettingsData == null) {
                                   Logger.getLogger()
@@ -578,7 +577,7 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+    if (settingsDataProvider.getSettingsSync().getFeaturesData().collectAnrs) {
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
     } else {
       Logger.getLogger().v("ANR feature disabled.");

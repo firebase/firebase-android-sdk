@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -31,16 +30,7 @@ public class TestSettingsData extends SettingsData {
 
   public TestSettingsData(
       int settingsVersion, int reportUploadVariant, int nativeReportUploadVariant) {
-    super(
-        5,
-        buildAppData(reportUploadVariant, nativeReportUploadVariant),
-        buildSettingsData(),
-        buildFeaturesData(),
-        settingsVersion,
-        3600,
-        10,
-        1.2,
-        60);
+    super(5, buildSettingsData(), buildFeaturesData(), settingsVersion, 3600, 10, 1.2, 60);
   }
 
   private static FeaturesSettingsData buildFeaturesData() {
@@ -49,19 +39,5 @@ public class TestSettingsData extends SettingsData {
 
   private static SessionSettingsData buildSettingsData() {
     return new SessionSettingsData(64, 4);
-  }
-
-  private static AppSettingsData buildAppData(
-      int reportUploadVariant, int nativeReportUploadVariant) {
-    return new AppSettingsData(
-        AppSettingsData.STATUS_ACTIVATED,
-        "http://localhost",
-        "http://localhost",
-        "http://localhost",
-        "testBundleId",
-        "testOrganizationId",
-        false,
-        reportUploadVariant,
-        nativeReportUploadVariant);
   }
 }

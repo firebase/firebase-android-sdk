@@ -36,14 +36,4 @@ interface SettingsJsonTransform {
    */
   SettingsData buildFromJson(CurrentTimeProvider currentTimeProvider, JSONObject json)
       throws JSONException;
-
-  /**
-   * Transforms the provided {@link SettingsData} model object to its JSON representation. Should
-   * throw an exception rather than returning <code>null</code> in the event of a problem.
-   *
-   * @param settingsData {@link SettingsData} to translate
-   * @return {@link JSONObject} representing the settings data
-   * @throws JSONException if a problem occurs while translating the settings data.
-   */
-  JSONObject toJson(SettingsData settingsData) throws JSONException;
 }

@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
 import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
@@ -68,6 +67,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settingsData, false, true);
   }
 
+  /* TODO remove?
   public void testToJsonAndBackSurvival() throws IOException, JSONException {
     final JSONObject testJson = getTestJSON("firebase_settings.json");
 
@@ -79,23 +79,8 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, roundtrippedSettingsData);
   }
 
-  private void assertAppData(AppSettingsData appData, boolean isAppNew) {
-    assertEquals(isAppNew ? "new" : "activated", appData.status);
-    assertEquals(
-        isAppNew
-            ? "https://update.crashlytics.com/spi/v1/platforms/android/apps"
-            : "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
-        appData.url);
-    assertEquals(
-        "https://reports.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/reports",
-        appData.reportsUrl);
-    assertEquals(
-        "https://reports.crashlytics.com/sdk-api/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/minidumps",
-        appData.ndkReportsUrl);
-    assertTrue(appData.updateRequired);
-    assertEquals(2, appData.reportUploadVariant);
-    assertEquals(2, appData.nativeReportUploadVariant);
-  }
+   */
+
 
   private void assertSettingsData(SessionSettingsData settingsData) {
     assertEquals(8, settingsData.maxCustomExceptionEvents);
@@ -127,10 +112,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     assertEquals(3, settingsData.settingsVersion);
     assertEquals(7200, settingsData.cacheDuration);
 
-    assertAppData(settingsData.appData, isAppNew);
-
     assertFeaturesData(settingsData.featuresData, collectAnrs);
-
     assertSettingsData(settingsData.sessionData);
 
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();
