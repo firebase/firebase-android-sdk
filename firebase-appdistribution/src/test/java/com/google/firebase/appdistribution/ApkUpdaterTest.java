@@ -18,6 +18,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -31,6 +35,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,10 +49,14 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
+// @RunWith(PowerMockRunner.class)
+// @PrepareForTest(ApkUpdaterTest.class)
 @RunWith(RobolectricTestRunner.class)
+@PrepareForTest(ApkUpdaterTest.class)
 public class ApkUpdaterTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
@@ -55,6 +64,7 @@ public class ApkUpdaterTest {
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_URL = "https://test-url";
   private static final String TEST_CODE_HASH = "abcdefghijklmnopqrstuvwxyz";
+  private static final String TEST_FILE = "test_file";
   private static final long TEST_FILE_LENGTH = 1000;
   private TestActivity activity;
 
@@ -237,5 +247,38 @@ public class ApkUpdaterTest {
     UpdateTask updateTask2 = apkUpdater.updateApk(TEST_RELEASE, false);
 
     assertThat(updateTask1).isEqualTo(updateTask2);
+  }
+
+  @Test
+  public void updateApk_whenSuccessfullyUpdated_notificationsSetCorrectly()
+      throws FirebaseAppDistributionException {
+    doReturn(TEST_FILE_LENGTH)
+        .when(apkUpdater)
+        .downloadToDisk(any(), anyLong(), anyString(), anyBoolean());
+    doNothing().when(apkUpdater).validateJarFile(any(), anyLong(), anyBoolean(), anyLong());
+
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    List<UpdateProgress> progressEvents = new ArrayList<>();
+    updateTask.addOnProgressListener(testExecutor, progressEvents::add);
+
+    assertThat(progressEvents).hasSize(2);
+    assertThat(progressEvents.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.PENDING);
+    assertThat(progressEvents.get(1).getUpdateStatus()).isEqualTo(UpdateStatus.DOWNLOADED);
+  }
+
+  @Test
+  public void downloadToDisk_whenHasInputStream_notificationSetCorrectlyHasCorrectInputLength()
+      throws IOException, FirebaseAppDistributionException {
+    doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
+        .when(mockHttpsUrlConnection)
+        .getInputStream();
+
+    long result =
+        apkUpdater.downloadToDisk(mockHttpsUrlConnection, TEST_FILE_LENGTH, "fileName", true);
+
+    verify(mockNotificationsManager)
+        .updateNotification(1000, TEST_FILE.length(), R.string.downloading_app_update);
+    assertThat(result).isEqualTo(TEST_FILE.length());
   }
 }

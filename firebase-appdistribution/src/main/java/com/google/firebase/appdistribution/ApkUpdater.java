@@ -84,6 +84,7 @@ class ApkUpdater {
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     this.lifeCycleNotifier = lifeCycleNotifier;
+    cachedUpdateTask = new UpdateTaskImpl();
   }
 
   UpdateTaskImpl updateApk(
@@ -159,7 +160,8 @@ class ApkUpdater {
     return downloadTaskCompletionSource.getTask();
   }
 
-  private void makeApkDownloadRequest(
+  @VisibleForTesting
+  void makeApkDownloadRequest(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification)
       throws FirebaseAppDistributionException {
     String downloadUrl = newRelease.getDownloadUrl();
@@ -203,7 +205,8 @@ class ApkUpdater {
     return responseCode >= 200 && responseCode < 300;
   }
 
-  private long downloadToDisk(
+  @VisibleForTesting
+  long downloadToDisk(
       HttpsURLConnection connection, long totalSize, String fileName, boolean showNotification)
       throws FirebaseAppDistributionException {
     context.deleteFile(fileName);
@@ -246,8 +249,8 @@ class ApkUpdater {
     return bytesDownloaded;
   }
 
-  private void validateJarFile(
-      File apkFile, long totalSize, boolean showNotification, long bytesDownloaded)
+  @VisibleForTesting
+  void validateJarFile(File apkFile, long totalSize, boolean showNotification, long bytesDownloaded)
       throws FirebaseAppDistributionException {
     try {
       new JarFile(apkFile).close();
