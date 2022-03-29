@@ -46,7 +46,7 @@ public class ScreenTraceUtil {
     }
     logger.debug(
         "Screen trace: "
-            + screenTrace.getClass().getSimpleName()
+            + screenTrace.getName()
             + " _fr_tot:"
             + perfFrameMetrics.getTotalFrames()
             + " _fr_slo:"
