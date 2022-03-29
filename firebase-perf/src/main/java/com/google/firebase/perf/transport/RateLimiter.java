@@ -89,11 +89,11 @@ final class RateLimiter {
       float fragmentBucketId,
       ConfigResolver configResolver) {
     Utils.checkArgument(
-        0.0f <= samplingBucketId
-            && samplingBucketId < 1.0f
-            && 0.0f <= fragmentBucketId
-            && fragmentBucketId < 1.0f,
+        0.0f <= samplingBucketId && samplingBucketId < 1.0f,
         "Sampling bucket ID should be in range [0.0f, 1.0f).");
+    Utils.checkArgument(
+        0.0f <= fragmentBucketId && fragmentBucketId < 1.0f,
+        "Fragment sampling bucket ID should be in range [0.0f, 1.0f).");
     this.samplingBucketId = samplingBucketId;
     this.fragmentBucketId = fragmentBucketId;
     this.configResolver = configResolver;
