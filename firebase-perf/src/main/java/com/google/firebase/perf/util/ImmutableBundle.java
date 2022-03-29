@@ -78,7 +78,7 @@ public final class ImmutableBundle {
 
     try {
       Object o = bundle.get(key);
-      return Optional.fromNullable(((Number) o).floatValue());
+      return Optional.fromNullable((Float) o);
     } catch (ClassCastException e) {
       logger.debug("Metadata key %s contains type other than float: %s", key, e.getMessage());
     }
