@@ -114,7 +114,7 @@ final class RateLimiter {
   }
 
   /** Identifies if the {@link PerfMetric} is a Fragment screen trace */
-  private boolean isFragmentScreenTrace(PerfMetric metric) {
+  protected boolean isFragmentScreenTrace(PerfMetric metric) {
     return metric.hasTraceMetric()
         && metric.getTraceMetric().getName().startsWith(Constants.SCREEN_TRACE_PREFIX)
         && metric.getTraceMetric().containsCustomAttributes(Constants.ACTIVITY_ATTRIBUTE_KEY);
@@ -227,6 +227,11 @@ final class RateLimiter {
   @VisibleForTesting
   boolean getIsDeviceAllowedToSendNetworkEvents() {
     return isDeviceAllowedToSendNetworkEvents();
+  }
+
+  @VisibleForTesting
+  boolean getIsDeviceAllowedToSendFragmentScreenTraces() {
+    return isDeviceAllowedToSendFragmentScreenTraces();
   }
 
   /** The implementation of Token Bucket rate limiter. */
