@@ -49,6 +49,8 @@ final class RateLimiter {
   /** The app's bucket ID for sampling, a number in [0.0f, 1.0f). */
   private final float samplingBucketId;
 
+  private final float fragmentBucketId;
+
   private RateLimiterImpl traceLimiter = null;
   private RateLimiterImpl networkLimiter = null;
 
@@ -63,7 +65,13 @@ final class RateLimiter {
    * @param capacity token bucket capacity
    */
   public RateLimiter(@NonNull Context appContext, final Rate rate, final long capacity) {
-    this(rate, capacity, new Clock(), getSamplingBucketId(), ConfigResolver.getInstance());
+    this(
+        rate,
+        capacity,
+        new Clock(),
+        getSamplingBucketId(),
+        getSamplingBucketId(),
+        ConfigResolver.getInstance());
     this.isLogcatEnabled = Utils.isDebugLoggingEnabled(appContext);
   }
 
@@ -78,11 +86,16 @@ final class RateLimiter {
       final long capacity,
       final Clock clock,
       float samplingBucketId,
+      float fragmentBucketId,
       ConfigResolver configResolver) {
     Utils.checkArgument(
-        0.0f <= samplingBucketId && samplingBucketId < 1.0f,
+        0.0f <= samplingBucketId
+            && samplingBucketId < 1.0f
+            && 0.0f <= fragmentBucketId
+            && fragmentBucketId < 1.0f,
         "Sampling bucket ID should be in range [0.0f, 1.0f).");
     this.samplingBucketId = samplingBucketId;
+    this.fragmentBucketId = fragmentBucketId;
     this.configResolver = configResolver;
 
     traceLimiter =
@@ -110,7 +123,7 @@ final class RateLimiter {
    */
   private boolean isDeviceAllowedToSendFragmentScreenTraces() {
     float validFragmentSamplingBucketIdThreshold = configResolver.getFragmentSamplingRate();
-    return samplingBucketId < validFragmentSamplingBucketIdThreshold;
+    return fragmentBucketId < validFragmentSamplingBucketIdThreshold;
   }
 
   /** Identifies if the {@link PerfMetric} is a Fragment screen trace */
