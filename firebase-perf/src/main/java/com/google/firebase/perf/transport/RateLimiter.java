@@ -49,6 +49,8 @@ final class RateLimiter {
   /** The app's bucket ID for sampling, a number in [0.0f, 1.0f). */
   private final float samplingBucketId;
 
+  private final float fragmentBucketId;
+
   private RateLimiterImpl traceLimiter = null;
   private RateLimiterImpl networkLimiter = null;
 
@@ -63,7 +65,13 @@ final class RateLimiter {
    * @param capacity token bucket capacity
    */
   public RateLimiter(@NonNull Context appContext, final Rate rate, final long capacity) {
-    this(rate, capacity, new Clock(), getSamplingBucketId(), ConfigResolver.getInstance());
+    this(
+        rate,
+        capacity,
+        new Clock(),
+        getSamplingBucketId(),
+        getSamplingBucketId(),
+        ConfigResolver.getInstance());
     this.isLogcatEnabled = Utils.isDebugLoggingEnabled(appContext);
   }
 
@@ -78,11 +86,16 @@ final class RateLimiter {
       final long capacity,
       final Clock clock,
       float samplingBucketId,
+      float fragmentBucketId,
       ConfigResolver configResolver) {
     Utils.checkArgument(
         0.0f <= samplingBucketId && samplingBucketId < 1.0f,
         "Sampling bucket ID should be in range [0.0f, 1.0f).");
+    Utils.checkArgument(
+        0.0f <= fragmentBucketId && fragmentBucketId < 1.0f,
+        "Fragment sampling bucket ID should be in range [0.0f, 1.0f).");
     this.samplingBucketId = samplingBucketId;
+    this.fragmentBucketId = fragmentBucketId;
     this.configResolver = configResolver;
 
     traceLimiter =
@@ -102,6 +115,22 @@ final class RateLimiter {
   private boolean isDeviceAllowedToSendNetworkEvents() {
     float validNetworkSamplingBucketIdThreshold = configResolver.getNetworkRequestSamplingRate();
     return samplingBucketId < validNetworkSamplingBucketIdThreshold;
+  }
+
+  /**
+   * Returns whether device is allowed to send Fragment screen trace events based on Fragment screen
+   * trace sampling rate.
+   */
+  private boolean isDeviceAllowedToSendFragmentScreenTraces() {
+    float validFragmentSamplingBucketIdThreshold = configResolver.getFragmentSamplingRate();
+    return fragmentBucketId < validFragmentSamplingBucketIdThreshold;
+  }
+
+  /** Identifies if the {@link PerfMetric} is a Fragment screen trace */
+  protected boolean isFragmentScreenTrace(PerfMetric metric) {
+    return metric.hasTraceMetric()
+        && metric.getTraceMetric().getName().startsWith(Constants.SCREEN_TRACE_PREFIX)
+        && metric.getTraceMetric().containsCustomAttributes(Constants.ACTIVITY_ATTRIBUTE_KEY);
   }
 
   /**
@@ -136,6 +165,12 @@ final class RateLimiter {
   boolean isEventSampled(PerfMetric metric) {
     if (metric.hasTraceMetric()
         && !(isDeviceAllowedToSendTraces()
+            || hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList()))) {
+      return false;
+    }
+
+    if (isFragmentScreenTrace(metric)
+        && !(isDeviceAllowedToSendFragmentScreenTraces()
             || hasVerboseSessions(metric.getTraceMetric().getPerfSessionsList()))) {
       return false;
     }
@@ -205,6 +240,11 @@ final class RateLimiter {
   @VisibleForTesting
   boolean getIsDeviceAllowedToSendNetworkEvents() {
     return isDeviceAllowedToSendNetworkEvents();
+  }
+
+  @VisibleForTesting
+  boolean getIsDeviceAllowedToSendFragmentScreenTraces() {
+    return isDeviceAllowedToSendFragmentScreenTraces();
   }
 
   /** The implementation of Token Bucket rate limiter. */
