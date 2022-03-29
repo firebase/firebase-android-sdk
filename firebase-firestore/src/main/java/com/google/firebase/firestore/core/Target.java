@@ -287,6 +287,7 @@ public final class Target {
             segmentValue = cursorValue;
             segmentInclusive = bound.isInclusive();
           }
+          break;
         }
       }
     }
@@ -351,6 +352,7 @@ public final class Target {
             segmentValue = cursorValue;
             segmentInclusive = bound.isInclusive();
           }
+          break;
         }
       }
     }

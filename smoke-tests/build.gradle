@@ -51,10 +51,6 @@ android {
     }
   }
 
-  packagingOptions {
-    exclude 'META-INF/DEPENDENCIES'
-  }
-
   compileOptions {
     sourceCompatibility 1.8
     targetCompatibility 1.8
@@ -71,6 +67,7 @@ dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
   implementation "com.google.firebase:firebase-annotations"
+  implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta01"
   implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
