@@ -147,13 +147,9 @@ public class CompositeFilter extends Filter {
   public String getCanonicalId() {
     // TODO(orquery): Add special case for flat AND filters.
 
-    List<String> canonicalIds = new ArrayList<>();
-    for (Filter filter : filters) {
-      canonicalIds.add(filter.getCanonicalId());
-    }
     StringBuilder builder = new StringBuilder();
     builder.append(isConjunction() ? "and(" : "or(");
-    builder.append(TextUtils.join(",", canonicalIds));
+    builder.append(TextUtils.join(",", filters));
     builder.append(")");
     return builder.toString();
   }

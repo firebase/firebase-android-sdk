@@ -140,7 +140,7 @@ public class LogicUtils {
         newSubfilters.add(subfilter);
       } else if (subfilter instanceof CompositeFilter) {
         CompositeFilter compositeSubfilter = (CompositeFilter) subfilter;
-        if (compositeSubfilter.getOperator() == compositeFilter.getOperator()) {
+        if (compositeSubfilter.getOperator().equals(compositeFilter.getOperator())) {
           // compositeFilter: (A | (B | C))
           // compositeSubfilter: (B | C)
           // Result: (A | B | C)
