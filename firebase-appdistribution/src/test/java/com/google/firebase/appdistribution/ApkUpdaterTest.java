@@ -78,7 +78,6 @@ public class ApkUpdaterTest {
           .build();
 
   private ApkUpdater apkUpdater;
-  private ApkUpdater apkUpdater2;
   private TestOnCompleteListener<Void> onCompleteListener;
   @Mock private File mockFile;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
@@ -208,7 +207,7 @@ public class ApkUpdaterTest {
   }
 
   @Test
-  public void s() throws IOException {
+  public void updateApk_invalidJarFile_throwsException() throws IOException {
     doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
         .when(mockHttpsUrlConnection)
         .getInputStream();

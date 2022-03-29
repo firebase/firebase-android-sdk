@@ -95,6 +95,7 @@ class ApkUpdater {
 
       cachedUpdateTask = new UpdateTaskImpl();
     }
+
     downloadApk(newRelease, showNotification)
         .addOnSuccessListener(taskExecutor, file -> installApk(file, showNotification))
         .addOnFailureListener(
