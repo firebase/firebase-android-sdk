@@ -509,7 +509,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
     when(mockConfigResolver.getFragmentSamplingRate()).thenReturn(0.00000001f);
 
     RateLimiter limiter =
-        new RateLimiter(TWO_TOKENS_PER_MINUTE, 2, mClock, 1, 0.000000005f, mockConfigResolver);
+        new RateLimiter(TWO_TOKENS_PER_MINUTE, 2, mClock, 0.99f, 0.000000005f, mockConfigResolver);
 
     assertThat(limiter.getIsDeviceAllowedToSendFragmentScreenTraces()).isTrue();
   }
@@ -949,8 +949,9 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void isEventSampled_verboseSessionEnabledAndDiceRollFailed_returnsTrue() {
+  public void isEventSampled_fragmentWithVerboseSessionEnabled_returnsTrue() {
     makeConfigResolverReturnDefaultValues();
+    when(mockConfigResolver.getTraceSamplingRate()).thenReturn(1.0f);
     when(mockConfigResolver.getFragmentSamplingRate()).thenReturn(0.70f);
 
     // Passing a value for samplingBucketId which is greater than the sampling rate means that
@@ -970,9 +971,11 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
         PerfMetric.newBuilder()
             .setTraceMetric(
                 TraceMetric.newBuilder()
+                    .setName("_st_TestFragment")
+                    .putCustomAttributes(Constants.ACTIVITY_ATTRIBUTE_KEY, "TestActivity")
                     .addAllPerfSessions(Arrays.asList(createVerbosePerfSessions())))
             .build();
-
+    assertThat(limiter.isFragmentScreenTrace(trace)).isTrue();
     assertThat(limiter.isEventSampled(trace)).isTrue();
   }
 
@@ -1031,9 +1034,10 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void isEventSampled_verboseSessionDisabledAndDiceRollFailed_returnsFalse() {
+  public void isEventSampled_fragmentWithVerboseSessionDisabled_returnsFalse() {
     makeConfigResolverReturnDefaultValues();
     when(mockConfigResolver.getFragmentSamplingRate()).thenReturn(0.70f);
+    when(mockConfigResolver.getTraceSamplingRate()).thenReturn(1.0f);
 
     // Passing a value for samplingBucketId which is greater than the sampling rate means that
     // the sampling dice roll failed causing all the metrics to be dropped
@@ -1052,9 +1056,11 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
         PerfMetric.newBuilder()
             .setTraceMetric(
                 TraceMetric.newBuilder()
+                    .setName("_st_TestFragment")
+                    .putCustomAttributes(Constants.ACTIVITY_ATTRIBUTE_KEY, "TestActivity")
                     .addAllPerfSessions(Arrays.asList(createNonVerbosePerfSessions())))
             .build();
-
+    assertThat(limiter.isFragmentScreenTrace(trace)).isTrue();
     assertThat(limiter.isEventSampled(trace)).isFalse();
   }
 
@@ -1063,6 +1069,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
     makeConfigResolverReturnDefaultValues();
     when(mockConfigResolver.getTraceSamplingRate()).thenReturn(0.70f);
     when(mockConfigResolver.getNetworkRequestSamplingRate()).thenReturn(0.70f);
+    when(mockConfigResolver.getFragmentSamplingRate()).thenReturn(0.70f);
 
     // Passing a value for samplingBucketId which is greater than the sampling rate ensures that
     // the sampling will be enabled causing all the metrics to be dropped
@@ -1072,7 +1079,7 @@ public class RateLimiterTest extends FirebasePerformanceTestBase {
             /* capacity= */ 2,
             mClock,
             /* samplingBucketId= */ 0.71f,
-            /* fragmentBucketId= */ 1,
+            /* fragmentBucketId= */ 0.71f,
             mockConfigResolver);
     assertThat(limiter.getIsDeviceAllowedToSendTraces()).isFalse();
     assertThat(limiter.getIsDeviceAllowedToSendNetworkEvents()).isFalse();
