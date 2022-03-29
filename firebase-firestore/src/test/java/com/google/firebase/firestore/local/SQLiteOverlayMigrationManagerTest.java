@@ -99,7 +99,7 @@ public class SQLiteOverlayMigrationManagerTest {
     assertEquals(
         setMutation("foo/bar", map("foo", "bar")),
         persistence
-            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getDocumentOverlayCache(User.UNAUTHENTICATED)
             .getOverlay(key("foo/bar"))
             .getMutation());
     // Version is 0 because of remote document elision.
@@ -126,7 +126,7 @@ public class SQLiteOverlayMigrationManagerTest {
     assertEquals(
         deleteMutation("foo/bar"),
         persistence
-            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getDocumentOverlayCache(User.UNAUTHENTICATED)
             .getOverlay(key("foo/bar"))
             .getMutation());
     // Version is 0 because of remote document elision.
@@ -155,7 +155,7 @@ public class SQLiteOverlayMigrationManagerTest {
         new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
     localStore.start();
 
-    DocumentOverlayCache overlay = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    DocumentOverlayCache overlay = persistence.getDocumentOverlayCache(User.UNAUTHENTICATED);
     assertEquals(
         mergeMutation("foo/bar", map("it", 2), Collections.emptyList()),
         overlay.getOverlay(key("foo/bar")).getMutation());
@@ -194,13 +194,13 @@ public class SQLiteOverlayMigrationManagerTest {
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-unauthenticated")),
         persistence
-            .getDocumentOverlay(User.UNAUTHENTICATED)
+            .getDocumentOverlayCache(User.UNAUTHENTICATED)
             .getOverlay(key("foo/bar"))
             .getMutation());
     assertEquals(
         setMutation("foo/bar", map("foo", "set-by-another_user")),
         persistence
-            .getDocumentOverlay(new User("another_user"))
+            .getDocumentOverlayCache(new User("another_user"))
             .getOverlay(key("foo/bar"))
             .getMutation());
 

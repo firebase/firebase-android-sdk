@@ -60,7 +60,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
             }
 
             // Recalculate and save overlays
-            DocumentOverlayCache documentOverlayCache = db.getDocumentOverlay(user);
+            DocumentOverlayCache documentOverlayCache = db.getDocumentOverlayCache(user);
             LocalDocumentsView localView =
                 new LocalDocumentsView(
                     remoteDocumentCache,

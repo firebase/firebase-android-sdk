@@ -92,7 +92,7 @@ public abstract class Persistence {
   abstract BundleCache getBundleCache();
 
   /** Returns a DocumentOverlayCache representing the documents that are mutated locally. */
-  abstract DocumentOverlayCache getDocumentOverlay(User user);
+  abstract DocumentOverlayCache getDocumentOverlayCache(User user);
 
   /** Returns a OverlayMigrationManager that runs any pending data migration required by SDK. */
   abstract OverlayMigrationManager getOverlayMigrationManager();
