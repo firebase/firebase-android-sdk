@@ -27,7 +27,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.app.Activity;
-import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -83,7 +82,6 @@ public class ApkUpdaterTest {
   @Mock private ApkInstaller mockApkInstaller;
   @Mock private FirebaseAppDistributionNotificationsManager mockNotificationsManager;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
-  private Context mockContext;
 
   private final Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -95,11 +93,9 @@ public class ApkUpdaterTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    mockContext = Mockito.spy(ApplicationProvider.getApplicationContext());
-
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
-            mockContext,
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setApplicationId(TEST_APP_ID_1)
                 .setProjectId(TEST_PROJECT_ID)
@@ -120,7 +116,7 @@ public class ApkUpdaterTest {
         Mockito.spy(
             new ApkUpdater(
                 testExecutor,
-                mockContext,
+                ApplicationProvider.getApplicationContext(),
                 mockApkInstaller,
                 mockNotificationsManager,
                 mockHttpsUrlConnectionFactory,
