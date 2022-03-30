@@ -22,7 +22,7 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 ## Unreleased
 
 *   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
-*   {{feature}} Fragment screen performance provides frame rendering time metrics for your application out of the box.
+*   {{feature}} Add support for out-of-the-box Fragment screen performance measurement.
 
 ## Released
 
