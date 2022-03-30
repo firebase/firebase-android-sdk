@@ -197,6 +197,7 @@ public class ApkUpdaterTest {
         .getInputStream();
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
 
+    // If validateJarFile is not mocked it will be called with an invalid jar file.
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     FirebaseAppDistributionException e =
