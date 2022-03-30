@@ -246,8 +246,8 @@ class ApkUpdater {
     return bytesDownloaded;
   }
 
-  private void validateJarFile(
-      File apkFile, long totalSize, boolean showNotification, long bytesDownloaded)
+  @VisibleForTesting
+  void validateJarFile(File apkFile, long totalSize, boolean showNotification, long bytesDownloaded)
       throws FirebaseAppDistributionException {
     try {
       new JarFile(apkFile).close();
