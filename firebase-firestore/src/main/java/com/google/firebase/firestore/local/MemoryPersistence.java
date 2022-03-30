@@ -130,7 +130,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  DocumentOverlayCache getDocumentOverlay(User user) {
+  DocumentOverlayCache getDocumentOverlayCache(User user) {
     MemoryDocumentOverlayCache overlay = overlays.get(user);
     if (overlay == null) {
       overlay = new MemoryDocumentOverlayCache();

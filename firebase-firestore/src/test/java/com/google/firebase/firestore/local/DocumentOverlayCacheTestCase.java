@@ -61,7 +61,7 @@ public abstract class DocumentOverlayCacheTestCase {
   @Before
   public void setUp() {
     persistence = getPersistence();
-    cache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    cache = persistence.getDocumentOverlayCache(User.UNAUTHENTICATED);
   }
 
   @After

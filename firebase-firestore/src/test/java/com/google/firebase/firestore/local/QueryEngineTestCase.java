@@ -95,7 +95,7 @@ public abstract class QueryEngineTestCase {
 
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager);
-    documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    documentOverlayCache = persistence.getDocumentOverlayCache(User.UNAUTHENTICATED);
     remoteDocumentCache = persistence.getRemoteDocumentCache();
     targetCache = persistence.getTargetCache();
     queryEngine = new QueryEngine();

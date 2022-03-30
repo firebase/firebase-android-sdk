@@ -71,7 +71,7 @@ public class IndexBackfillerTest {
   public void setUp() {
     persistence = PersistenceTestHelpers.createSQLitePersistence();
     remoteDocumentCache = persistence.getRemoteDocumentCache();
-    documentOverlayCache = persistence.getDocumentOverlay(User.UNAUTHENTICATED);
+    documentOverlayCache = persistence.getDocumentOverlayCache(User.UNAUTHENTICATED);
     indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
     indexManager.start();
 
