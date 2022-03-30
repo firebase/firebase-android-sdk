@@ -15,11 +15,13 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.model.DocumentCollections.emptyMutableDocumentMap;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
@@ -426,5 +428,59 @@ public abstract class QueryEngineTestCase {
                     LAST_LIMBO_FREE_SNAPSHOT,
                     targetCache.getMatchingKeysForTargetId(TEST_TARGET_ID)));
     assertEquals(emptyMutableDocumentMap().insert(MATCHING_DOC_A.getKey(), MATCHING_DOC_A), docs);
+  }
+
+  @Test
+  public void canPerformOrQueriesUsingFullCollectionScan() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("a", 2, "b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1, "b", 1));
+    addDocument(doc1, doc2, doc3, doc4, doc5);
+
+    // Two equalities: a==1 || b==1.
+    Query query1 = query("coll").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc2, doc4, doc5), result1);
+
+    // with one inequality: a>2 || b==1.
+    Query query2 = query("coll").filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc2, doc3, doc5), result2);
+
+    // (a==1 && b==0) || (a==3 && b==2)
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    andFilters(filter("a", "==", 1), filter("b", "==", 0)),
+                    andFilters(filter("a", "==", 3), filter("b", "==", 2))));
+    DocumentSet result3 =
+        expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query3.comparator(), doc1, doc3), result3);
+
+    // a==1 && (b==0 || b==3).
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "==", 1), orFilters(filter("b", "==", 0), filter("b", "==", 3))));
+    DocumentSet result4 =
+        expectFullCollectionScan(() -> runQuery(query4, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query4.comparator(), doc1, doc4), result4);
+
+    // (a==2 || b==2) && (a==3 || b==3)
+    Query query5 =
+        query("coll")
+            .filter(
+                andFilters(
+                    orFilters(filter("a", "==", 2), filter("b", "==", 2)),
+                    orFilters(filter("a", "==", 3), filter("b", "==", 3))));
+    DocumentSet result5 =
+        expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query5.comparator(), doc3), result5);
   }
 }
