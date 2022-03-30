@@ -30,7 +30,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firestore.admin.v1.Index;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
