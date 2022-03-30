@@ -18,6 +18,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.TestUtils.applyToForegroundActivityTaskAnswer;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -31,10 +34,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
@@ -55,6 +60,7 @@ public class ApkUpdaterTest {
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_URL = "https://test-url";
   private static final String TEST_CODE_HASH = "abcdefghijklmnopqrstuvwxyz";
+  private static final String TEST_FILE = "test_file";
   private static final long TEST_FILE_LENGTH = 1000;
   private TestActivity activity;
 
@@ -150,7 +156,7 @@ public class ApkUpdaterTest {
     IOException caughtException = new IOException("error");
     when(mockHttpsUrlConnection.getInputStream()).thenThrow(caughtException);
 
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
@@ -158,16 +164,51 @@ public class ApkUpdaterTest {
     assertThat(e.getErrorCode()).isEqualTo(Status.DOWNLOAD_FAILURE);
     assertThat(e).hasMessageThat().contains("Failed to download APK");
     assertThat(e).hasCauseThat().isEqualTo(caughtException);
+    verify(mockNotificationsManager).updateNotification(0, 0, R.string.download_failed);
   }
 
   @Test
-  public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
+  public void updateApk_whenSuccessfullyUpdated_notificationsSetCorrectly()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException,
+          IOException {
+    doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
+        .when(mockHttpsUrlConnection)
+        .getInputStream();
+    doNothing().when(apkUpdater).validateJarFile(any(), anyLong(), anyBoolean(), anyLong());
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    List<UpdateProgress> events = new ArrayList<>();
+    updateTask.addOnProgressListener(testExecutor, events::add);
     onCompleteListener.await();
-    assertThat(updateTask.isSuccessful()).isTrue();
+
+    assertThat(events).hasSize(3);
+    assertThat(events.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.PENDING);
+    assertThat(events.get(1).getUpdateStatus()).isEqualTo(UpdateStatus.DOWNLOADING);
+    assertThat(events.get(1).getApkBytesDownloaded()).isEqualTo(TEST_FILE.length());
+    assertThat(events.get(2).getUpdateStatus()).isEqualTo(UpdateStatus.DOWNLOADED);
+  }
+
+  @Test
+  public void updateApk_invalidJarFile_throwsException() throws IOException {
+    doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
+        .when(mockHttpsUrlConnection)
+        .getInputStream();
+    when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
+
+    // If validateJarFile is not mocked it will be called with an invalid jar file.
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
+    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
+    FirebaseAppDistributionException e =
+        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.DOWNLOAD_FAILURE);
+    assertThat(updateTask.isSuccessful()).isFalse();
+
+    // Verify that the notification in validateJarFile is set.
+    verify(mockNotificationsManager)
+        .updateNotification(0, TEST_FILE.length(), R.string.download_failed);
   }
 
   @Test
