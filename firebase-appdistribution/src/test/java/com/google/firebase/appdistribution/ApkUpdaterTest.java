@@ -20,7 +20,6 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -38,7 +37,6 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,16 +172,6 @@ public class ApkUpdaterTest {
   }
 
   @Test
-  public void updateApk_whenInstallSuccessful_setsResult() throws Exception {
-    doReturn(Tasks.forResult(mockFile)).when(apkUpdater).downloadApk(TEST_RELEASE, false);
-    when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
-    updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
-    onCompleteListener.await();
-    assertThat(updateTask.isSuccessful()).isTrue();
-  }
-
-  @Test
   public void updateApk_whenSuccessfullyUpdated_notificationsSetCorrectly()
       throws FirebaseAppDistributionException, ExecutionException, InterruptedException,
           IOException {
@@ -212,9 +200,6 @@ public class ApkUpdaterTest {
         .when(mockHttpsUrlConnection)
         .getInputStream();
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
-    FileInputStream fileInputStream =
-        (FileInputStream) ApkUpdaterTest.class.getResourceAsStream("file does not exist");
-    doReturn(fileInputStream).when(mockContext).openFileInput(anyString());
 
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
