@@ -195,7 +195,7 @@ public abstract class QueryEngineTestCase {
     }
   }
 
-  private DocumentSet runQuery(Query query, SnapshotVersion lastLimboFreeSnapshotVersion) {
+  protected DocumentSet runQuery(Query query, SnapshotVersion lastLimboFreeSnapshotVersion) {
     Preconditions.checkNotNull(
         expectFullCollectionScan,
         "Encountered runQuery() call not wrapped in expectOptimizedCollectionQuery()/expectFullCollectionQuery()");
