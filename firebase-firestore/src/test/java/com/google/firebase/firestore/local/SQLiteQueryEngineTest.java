@@ -30,6 +30,7 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firestore.admin.v1.Index;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,6 +82,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
 
     indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
     indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc5));
 
     Query query =
         query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1)).limitToFirst(3);
