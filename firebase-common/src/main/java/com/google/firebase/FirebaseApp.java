@@ -173,6 +173,15 @@ public class FirebaseApp {
    *
    * @throws IllegalStateException if the default app was not initialized.
    */
+  public void amazing() {
+    System.out.println("Amazing");
+  }
+
+  /**
+   * Returns the default (first initialized) instance of the {@link FirebaseApp}.
+   *
+   * @throws IllegalStateException if the default app was not initialized.
+   */
   @NonNull
   public static FirebaseApp getInstance() {
     synchronized (LOCK) {

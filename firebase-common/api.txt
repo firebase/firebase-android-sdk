@@ -2,6 +2,7 @@
 package com.google.firebase {
 
   public class FirebaseApp {
+    method @NonNull public static java.util.List<com.google.firebase.FirebaseApp> getApps(@NonNull android.content.Context);
     method @NonNull public static com.google.firebase.FirebaseApp getInstance();
     method @NonNull public static com.google.firebase.FirebaseApp getInstance(@NonNull String);
     method @NonNull public String getName();
