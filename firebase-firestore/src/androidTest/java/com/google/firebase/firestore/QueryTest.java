@@ -364,6 +364,75 @@ public class QueryTest {
     listener2.remove();
   }
 
+  /*
+  // TODO(orquery): Re-enable this test once the `where` API is public.
+  @Test
+  public void testInvalidQueryFilters() {
+    CollectionReference collection = testCollection();
+    // Multiple inequalities, one of which is inside a nested composite filter.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Query query =
+              collection
+                  .where(
+                      or(
+                          and(equalTo("a", "b"), greaterThan("c", "d")),
+                          and(equalTo("e", "f"), equalTo("g", "h"))))
+                  .where(greaterThan("r", "s"));
+        });
+    // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Query query =
+              collection
+                  .where(
+                      or(
+                          and(equalTo("a", "b"), greaterThan("c", "d")),
+                          and(equalTo("e", "f"), equalTo("g", "h"))))
+                  .orderBy("r");
+        });
+    // Conflicting operations within a composite filter.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Query query =
+              collection.where(
+                  or(
+                      and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                      and(equalTo("e", "f"), notInArray("c", Arrays.asList("d", "e")))));
+        });
+    // Conflicting operations between a field filter and a composite filter.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Query query =
+              collection
+                  .where(
+                      or(
+                          and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                          and(equalTo("e", "f"), equalTo("g", "h"))))
+                  .where(notInArray("c", Arrays.asList("d", "e")));
+        });
+    // Conflicting operations between two composite filters.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          Query query =
+              collection
+                  .where(
+                      or(
+                          and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                          and(equalTo("e", "f"), equalTo("g", "h"))))
+                  .where(
+                      or(
+                          and(equalTo("a", "b"), notInArray("c", Arrays.asList("d", "e"))),
+                          and(equalTo("e", "f"), equalTo("g", "h"))));
+        });
+  }
+  */
+
   @Test
   public void testCanExplicitlySortByDocumentId() {
     Map<String, Map<String, Object>> testDocs =

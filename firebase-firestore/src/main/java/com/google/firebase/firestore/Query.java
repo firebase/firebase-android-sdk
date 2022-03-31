@@ -639,7 +639,7 @@ public class Query {
     com.google.firebase.firestore.core.Query testQuery = query;
     for (FieldFilter subfilter : filter.getFlattenedFilters()) {
       validateNewFieldFilter(testQuery, subfilter);
-      testQuery = query.filter(subfilter);
+      testQuery = testQuery.filter(subfilter);
     }
   }
 
@@ -651,10 +651,9 @@ public class Query {
   private Operator findFilterWithOperator(
       List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
     for (com.google.firebase.firestore.core.Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        Operator filterOp = ((FieldFilter) filter).getOperator();
-        if (operators.contains(filterOp)) {
-          return filterOp;
+      for (FieldFilter fieldFilter : filter.getFlattenedFilters()) {
+        if (operators.contains(fieldFilter.getOperator())) {
+          return fieldFilter.getOperator();
         }
       }
     }

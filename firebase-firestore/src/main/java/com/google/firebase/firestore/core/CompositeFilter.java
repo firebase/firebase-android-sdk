@@ -28,6 +28,10 @@ public class CompositeFilter extends Filter {
   private final List<Filter> filters;
   private final Operator operator;
 
+  // Memoized list of all field filters that can be found by traversing the tree of filters
+  // contained in this composite filter.
+  private List<FieldFilter> flattenedFilters;
+
   public CompositeFilter(List<Filter> filters, Operator operator) {
     this.filters = filters;
     this.operator = operator;
@@ -44,12 +48,14 @@ public class CompositeFilter extends Filter {
 
   @Override
   public List<FieldFilter> getFlattenedFilters() {
-    // TODO(orquery): memoize this result if this method is used more than once.
-    List<FieldFilter> result = new ArrayList<>();
-    for (Filter subfilter : filters) {
-      result.addAll(subfilter.getFlattenedFilters());
+    if (flattenedFilters != null) {
+      return flattenedFilters;
     }
-    return result;
+    flattenedFilters = new ArrayList<>();
+    for (Filter subfilter : filters) {
+      flattenedFilters.addAll(subfilter.getFlattenedFilters());
+    }
+    return flattenedFilters;
   }
 
   /**
