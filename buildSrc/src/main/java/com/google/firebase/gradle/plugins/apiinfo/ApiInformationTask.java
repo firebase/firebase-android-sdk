@@ -90,7 +90,6 @@ public abstract class ApiInformationTask extends DefaultTask {
 
   @TaskAction
   void execute() {
-    System.out.println("Vinay is great!!!");
     String sourcePath =
         getSourceDirs().stream()
             .filter(File::exists)
@@ -119,7 +118,7 @@ public abstract class ApiInformationTask extends DefaultTask {
     if (!outputFileDir.exists()) {
       outputFileDir.mkdirs();
     }
-    System.out.println(getMetalavaJarPath());
+
     // Generate api.txt file and store it in the  build directory.
     getProject()
         .javaexec(
