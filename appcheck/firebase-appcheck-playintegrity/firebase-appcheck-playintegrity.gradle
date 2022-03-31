@@ -44,6 +44,8 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck')
+    implementation 'com.google.android.gms:play-services-base:18.0.1'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     testImplementation 'junit:junit:4.13-beta-2'
 }
