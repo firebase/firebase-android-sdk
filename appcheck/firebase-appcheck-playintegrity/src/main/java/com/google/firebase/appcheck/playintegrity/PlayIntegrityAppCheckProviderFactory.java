@@ -41,6 +41,6 @@ public class PlayIntegrityAppCheckProviderFactory implements AppCheckProviderFac
   @NonNull
   @Override
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return new PlayIntegrityAppCheckProvider();
+    return new PlayIntegrityAppCheckProvider(firebaseApp);
   }
 }
