@@ -14,9 +14,8 @@
 
 package com.google.firebase.appcheck.playintegrity.internal;
 
-import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -39,10 +38,17 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   private final RetryManager retryManager;
 
   public PlayIntegrityAppCheckProvider(FirebaseApp firebaseApp) {
-    checkNotNull(firebaseApp);
-    this.networkClient = new NetworkClient(firebaseApp);
-    this.backgroundExecutor = Executors.newCachedThreadPool();
-    this.retryManager = new RetryManager();
+    this(new NetworkClient(firebaseApp), Executors.newCachedThreadPool(), new RetryManager());
+  }
+
+  @VisibleForTesting
+  PlayIntegrityAppCheckProvider(
+      @NonNull NetworkClient networkClient,
+      @NonNull ExecutorService backgroundExecutor,
+      @NonNull RetryManager retryManager) {
+    this.networkClient = networkClient;
+    this.backgroundExecutor = backgroundExecutor;
+    this.retryManager = retryManager;
   }
 
   @NonNull
