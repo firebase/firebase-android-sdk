@@ -14,6 +14,12 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.Filter.and;
+import static com.google.firebase.firestore.Filter.equalTo;
+import static com.google.firebase.firestore.Filter.greaterThan;
+import static com.google.firebase.firestore.Filter.inArray;
+import static com.google.firebase.firestore.Filter.notInArray;
+import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
@@ -28,6 +34,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -37,11 +44,13 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -364,8 +373,6 @@ public class QueryTest {
     listener2.remove();
   }
 
-  /*
-  // TODO(orquery): Re-enable this test once the `where` API is public.
   @Test
   public void testInvalidQueryFilters() {
     CollectionReference collection = testCollection();
@@ -431,7 +438,6 @@ public class QueryTest {
                           and(equalTo("e", "f"), equalTo("g", "h"))));
         });
   }
-  */
 
   @Test
   public void testCanExplicitlySortByDocumentId() {

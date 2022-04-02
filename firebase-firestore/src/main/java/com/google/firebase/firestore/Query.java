@@ -468,7 +468,7 @@ public class Query {
   }
 
   // TODO(orquery): This method will become public API. Change visibility and add documentation.
-  private Query where(Filter filter) {
+  Query where(Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
     if (parsedFilter.getFilters().isEmpty()) {
       // Return the existing query if not adding any more filters (e.g. an empty composite filter).
