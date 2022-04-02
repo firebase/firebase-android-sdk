@@ -37,7 +37,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   private final ExecutorService backgroundExecutor;
   private final RetryManager retryManager;
 
-  public PlayIntegrityAppCheckProvider(FirebaseApp firebaseApp) {
+  public PlayIntegrityAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
     this(new NetworkClient(firebaseApp), Executors.newCachedThreadPool(), new RetryManager());
   }
 
