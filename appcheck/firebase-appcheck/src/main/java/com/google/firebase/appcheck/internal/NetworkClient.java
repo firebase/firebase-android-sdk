@@ -142,7 +142,7 @@ public class NetworkClient {
   }
 
   private String makeNetworkRequest(
-      URL url, @NonNull byte[] requestBytes, @NonNull RetryManager retryManager)
+      @NonNull URL url, @NonNull byte[] requestBytes, @NonNull RetryManager retryManager)
       throws FirebaseException, IOException, JSONException {
     HttpURLConnection urlConnection = createHttpUrlConnection(url);
 
