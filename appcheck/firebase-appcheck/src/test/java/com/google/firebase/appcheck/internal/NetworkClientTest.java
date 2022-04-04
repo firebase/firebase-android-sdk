@@ -69,6 +69,8 @@ public class NetworkClientTest {
       "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
   private static final String DEBUG_EXPECTED_URL =
       "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
+  private static final String PLAY_INTEGRITY_EXPECTED_URL =
+      "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangePlayIntegrityToken?key=apiKey";
   private static final String JSON_REQUEST = "jsonRequest";
   private static final int SUCCESS_CODE = 200;
   private static final int ERROR_CODE = 404;
@@ -211,17 +213,53 @@ public class NetworkClientTest {
   }
 
   @Test
-  public void exchangeAttestation_heartbeatNone_doesNotAttachHeader() throws Exception {
+  public void exchangePlayIntegrityToken_successResponse_returnsAppCheckTokenResponse()
+      throws Exception {
     JSONObject responseBodyJson = createAttestationResponse();
 
     when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
     when(mockHttpUrlConnection.getInputStream())
         .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
     when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
-    // The heartbeat request header should not be attached when the heartbeat is HeartBeat.NONE.
-    networkClient.exchangeAttestationForAppCheckToken(
-        JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
 
+    AppCheckTokenResponse tokenResponse =
+        networkClient.exchangeAttestationForAppCheckToken(
+            JSON_REQUEST.getBytes(), NetworkClient.PLAY_INTEGRITY, mockRetryManager);
+    assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
+
+    URL expectedUrl = new URL(PLAY_INTEGRITY_EXPECTED_URL);
+    verify(networkClient).createHttpUrlConnection(expectedUrl);
+    verify(mockOutputStream)
+        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager).resetBackoffOnSuccess();
+    verifyRequestHeaders();
+  }
+
+  @Test
+  public void exchangePlayIntegrityToken_errorResponse_throwsException() throws Exception {
+    JSONObject responseBodyJson = createHttpErrorResponse();
+
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
+    when(mockHttpUrlConnection.getErrorStream())
+        .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
+    when(mockHttpUrlConnection.getResponseCode()).thenReturn(ERROR_CODE);
+
+    FirebaseException exception =
+        assertThrows(
+            FirebaseException.class,
+            () ->
+                networkClient.exchangeAttestationForAppCheckToken(
+                    JSON_REQUEST.getBytes(), NetworkClient.PLAY_INTEGRITY, mockRetryManager));
+
+    assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
+    URL expectedUrl = new URL(PLAY_INTEGRITY_EXPECTED_URL);
+    verify(networkClient).createHttpUrlConnection(expectedUrl);
+    verify(mockOutputStream)
+        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -235,6 +273,21 @@ public class NetworkClientTest {
 
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
     verify(mockRetryManager, never()).resetBackoffOnSuccess();
+  }
+
+  @Test
+  public void exchangeAttestation_heartbeatNone_doesNotAttachHeader() throws Exception {
+    JSONObject responseBodyJson = createAttestationResponse();
+
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
+    when(mockHttpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
+    when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
+    // The heartbeat request header should not be attached when the heartbeat is HeartBeat.NONE.
+    networkClient.exchangeAttestationForAppCheckToken(
+        JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
+
+    verifyRequestHeaders();
   }
 
   @Test
