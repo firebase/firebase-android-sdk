@@ -14,12 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.Filter.and;
-import static com.google.firebase.firestore.Filter.equalTo;
-import static com.google.firebase.firestore.Filter.greaterThan;
-import static com.google.firebase.firestore.Filter.inArray;
-import static com.google.firebase.firestore.Filter.notInArray;
-import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
@@ -34,7 +28,6 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -44,7 +37,6 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -370,72 +362,6 @@ public class QueryTest {
 
     listener1.remove();
     listener2.remove();
-  }
-
-  @Test
-  public void testInvalidQueryFilters() {
-    CollectionReference collection = testCollection();
-    // Multiple inequalities, one of which is inside a nested composite filter.
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Query query =
-              collection
-                  .where(
-                      or(
-                          and(equalTo("a", "b"), greaterThan("c", "d")),
-                          and(equalTo("e", "f"), equalTo("g", "h"))))
-                  .where(greaterThan("r", "s"));
-        });
-    // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Query query =
-              collection
-                  .where(
-                      or(
-                          and(equalTo("a", "b"), greaterThan("c", "d")),
-                          and(equalTo("e", "f"), equalTo("g", "h"))))
-                  .orderBy("r");
-        });
-    // Conflicting operations within a composite filter.
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Query query =
-              collection.where(
-                  or(
-                      and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
-                      and(equalTo("e", "f"), notInArray("c", Arrays.asList("d", "e")))));
-        });
-    // Conflicting operations between a field filter and a composite filter.
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Query query =
-              collection
-                  .where(
-                      or(
-                          and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
-                          and(equalTo("e", "f"), equalTo("g", "h"))))
-                  .where(notInArray("c", Arrays.asList("d", "e")));
-        });
-    // Conflicting operations between two composite filters.
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          Query query =
-              collection
-                  .where(
-                      or(
-                          and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
-                          and(equalTo("e", "f"), equalTo("g", "h"))))
-                  .where(
-                      or(
-                          and(equalTo("a", "b"), notInArray("c", Arrays.asList("d", "e"))),
-                          and(equalTo("e", "f"), equalTo("g", "h"))));
-        });
   }
 
   @Test
