@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import android.text.TextUtils;
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -315,7 +316,10 @@ final class SQLiteIndexManager implements IndexManager {
   public IndexOffset getMinOffset(Target target) {
     List<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
-      fieldIndexes.add(getFieldIndex(subTarget));
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount != null) {
+        fieldIndexes.add(indexAndSegmentCount.first);
+      }
     }
     return getMinOffset(fieldIndexes);
   }
@@ -441,21 +445,23 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public Pair<List<DocumentKey>, Boolean> getDocumentsMatchingTarget(Target target) {
     hardAssert(started, "IndexManager not started");
 
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
-    boolean hasPartialIndexes = false;
+    boolean isFullIndex = true;
 
     for (Target subTarget : getSubTargets(target)) {
-      FieldIndex fieldIndex = getFieldIndex(subTarget);
-      if (fieldIndex == null) {
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount == null) {
         return null;
       }
 
-      if (!hasPartialIndexes && new TargetIndexMatcher(subTarget).isPartialIndex(fieldIndex)) {
-        hasPartialIndexes = true;
+      FieldIndex fieldIndex = indexAndSegmentCount.first;
+      Integer indexSegmentCount = indexAndSegmentCount.second;
+      if (isFullIndex && indexSegmentCount < subTarget.getSegmentCount()) {
+        isFullIndex = false;
       }
 
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
@@ -501,7 +507,7 @@ final class SQLiteIndexManager implements IndexManager {
     // the target (e.g. if the index doesn't include all the target's filters), or may return the
     // correct set of documents in the wrong order (e.g. if the index doesn't include a segment for
     // one of the orderBys). Therefore a LIMIT should not be applied in such cases.
-    if (target.getLimit() != -1 && !hasPartialIndexes) {
+    if (target.getLimit() != -1 && isFullIndex) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
 
@@ -514,7 +520,7 @@ final class SQLiteIndexManager implements IndexManager {
         row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
 
     Logger.debug(TAG, "Index scan returned %s documents", result.size());
-    return result;
+    return new Pair<>(result, isFullIndex);
   }
 
   /**
@@ -616,7 +622,7 @@ final class SQLiteIndexManager implements IndexManager {
 
   @Nullable
   @Override
-  public FieldIndex getFieldIndex(Target target) {
+  public Pair<FieldIndex, Integer> getFieldIndexAndSegmentCount(Target target) {
     hardAssert(started, "IndexManager not started");
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
@@ -630,21 +636,20 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    List<FieldIndex> matchingIndexes = new ArrayList<>();
+    // Return the index with the most number of segments.
+    int maxNumMatchingSegments = -1;
+    FieldIndex matchingIndex = null;
     for (FieldIndex fieldIndex : collectionIndexes) {
-      boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-      if (matches) {
-        matchingIndexes.add(fieldIndex);
+      int numMatchingSegments = targetIndexMatcher.servedByIndex(fieldIndex);
+      if (numMatchingSegments > maxNumMatchingSegments) {
+        maxNumMatchingSegments = numMatchingSegments;
+        matchingIndex = fieldIndex;
       }
     }
-
-    if (matchingIndexes.isEmpty()) {
+    if (maxNumMatchingSegments == -1) {
       return null;
     }
-
-    // Return the index with the most number of segments
-    return Collections.max(
-        matchingIndexes, (l, r) -> Integer.compare(l.getSegments().size(), r.getSegments().size()));
+    return new Pair<>(matchingIndex, maxNumMatchingSegments);
   }
 
   /**

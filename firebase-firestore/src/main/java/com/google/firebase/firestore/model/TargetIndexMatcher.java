@@ -111,7 +111,8 @@ public class TargetIndexMatcher {
   }
 
   /**
-   * Returns whether the index can be used to serve the TargetIndexMatcher's target.
+   * Returns the number of index segments that match the TargetIndexMatcher's target. Returns -1 if
+   * the index cannot be used to serve the target.
    *
    * <p>An index is considered capable of serving the target when:
    *
@@ -131,13 +132,13 @@ public class TargetIndexMatcher {
    *
    * @throws AssertionError if the index is for a different collection
    */
-  public boolean servedByIndex(FieldIndex index) {
+  public int servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
     if (arraySegment != null && !hasMatchingEqualityFilter(arraySegment)) {
-      return false;
+      return -1;
     }
 
     Iterator<OrderBy> orderBys = this.orderBys.iterator();
@@ -162,7 +163,7 @@ public class TargetIndexMatcher {
     // filters and we do not need to map any segments to the target's inequality and orderBy
     // clauses.
     if (segmentIndex == segments.size()) {
-      return true;
+      return segmentIndex + 1;
     }
 
     // If there is an inequality filter, the next segment must match both the filter and the first
@@ -170,7 +171,7 @@ public class TargetIndexMatcher {
     if (inequalityFilter != null) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+        return -1;
       }
       ++segmentIndex;
     }
@@ -179,60 +180,11 @@ public class TargetIndexMatcher {
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+        return -1;
       }
     }
 
-    return true;
-  }
-
-  /**
-   * Returns whether the given index is a partial index for the current target.
-   *
-   * <p>A partial index is one which does not have a segment for every field filter and every
-   * orderBy in the query.
-   */
-  public boolean isPartialIndex(FieldIndex index) {
-    List<FieldFilter> allFilters = new ArrayList<>(equalityFilters);
-    if (inequalityFilter != null) {
-      allFilters.add(inequalityFilter);
-    }
-
-    // See if any filter is absent in the index.
-    for (FieldFilter filter : allFilters) {
-      if (!filter.getField().isKeyField() && !indexHasSegmentMatchingFilter(index, filter)) {
-        return true;
-      }
-    }
-
-    // See if any orderBy is absent in the index.
-    for (OrderBy orderBy : orderBys) {
-      if (!orderBy.getField().isKeyField() && !indexHasSegmentMatchingOrderBy(index, orderBy)) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  /** Returns true if the given index contains a segment matching the given filter. */
-  private boolean indexHasSegmentMatchingFilter(FieldIndex index, FieldFilter filter) {
-    for (FieldIndex.Segment segment : index.getSegments()) {
-      if (matchesFilter(filter, segment)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /** Returns true if the given index contains a segment matching the given orderBy. */
-  private boolean indexHasSegmentMatchingOrderBy(FieldIndex index, OrderBy orderBy) {
-    for (FieldIndex.Segment segment : index.getSegments()) {
-      if (matchesOrderBy(orderBy, segment)) {
-        return true;
-      }
-    }
-    return false;
+    return segmentIndex + 1;
   }
 
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {

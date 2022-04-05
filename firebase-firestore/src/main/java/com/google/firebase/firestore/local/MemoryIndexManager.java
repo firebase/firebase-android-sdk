@@ -15,6 +15,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
@@ -62,14 +63,14 @@ class MemoryIndexManager implements IndexManager {
 
   @Nullable
   @Override
-  public FieldIndex getFieldIndex(Target target) {
+  public Pair<FieldIndex, Integer> getFieldIndexAndSegmentCount(Target target) {
     // Field indices are not supported with memory persistence.
     return null;
   }
 
   @Override
   @Nullable
-  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+  public Pair<List<DocumentKey>, Boolean> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.
     return null;
   }

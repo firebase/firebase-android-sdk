@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.values;
 
+import android.util.Pair;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -110,17 +111,21 @@ public class QueryEngine {
       return null;
     }
 
-    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
-    if (keys == null) {
+    Pair<List<DocumentKey>, Boolean> indexResults = indexManager.getDocumentsMatchingTarget(target);
+    if (indexResults == null) {
       return null;
     }
+
+    List<DocumentKey> keys = indexResults.first;
+    boolean usedFullIndex = indexResults.second;
 
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
     IndexOffset offset = indexManager.getMinOffset(target);
 
     ImmutableSortedSet<Document> previousResults = applyQuery(query, indexedDocuments);
-    if ((query.hasLimitToFirst() || query.hasLimitToLast())
+    if (usedFullIndex
+        && (query.hasLimitToFirst() || query.hasLimitToLast())
         && needsRefill(query.getLimitType(), keys.size(), previousResults, offset.getReadTime())) {
       return null;
     }

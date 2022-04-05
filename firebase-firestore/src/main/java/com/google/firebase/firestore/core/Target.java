@@ -29,8 +29,10 @@ import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A Target represents the WatchTarget representation of a Query, which is used by the LocalStore
@@ -367,6 +369,20 @@ public final class Target {
   /** Returns the order of the document key component. */
   public Direction getKeyOrder() {
     return this.orderBys.get(this.orderBys.size() - 1).getDirection();
+  }
+
+  /** Returns the number of segments of a perfect index for this target. */
+  public Integer getSegmentCount() {
+    Set<FieldPath> fields = new HashSet<>();
+    for (Filter filter : filters) {
+      for (FieldFilter subFilter : filter.getFlattenedFilters()) {
+        fields.add(subFilter.getField());
+      }
+    }
+    for (OrderBy orderBy : orderBys) {
+      fields.add(orderBy.getField());
+    }
+    return fields.size();
   }
 
   /** Returns a canonical string representing this target. */
