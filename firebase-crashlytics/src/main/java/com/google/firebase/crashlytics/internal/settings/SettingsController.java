@@ -32,11 +32,6 @@ import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
-import com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall;
-import com.google.firebase.crashlytics.internal.settings.network.SettingsSpiCall;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,7 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Implements the logic of when to use cached settings, and when to load them from the network. */
-public class SettingsController implements SettingsDataProvider {
+public class SettingsController implements SettingsProvider {
   private static final String PREFS_BUILD_INSTANCE_IDENTIFIER = "existing_instance_identifier";
 
   private static final String SETTINGS_URL_FORMAT =
@@ -170,7 +165,7 @@ public class SettingsController implements SettingsDataProvider {
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
-      final SettingsData cachedSettings = getCachedSettingsData(cacheBehavior);
+      final Settings cachedSettings = getCachedSettingsData(cacheBehavior);
       if (cachedSettings != null) {
         settings.set(cachedSettings);
         settingsTask.get().trySetResult(cachedSettings);
@@ -183,7 +178,7 @@ public class SettingsController implements SettingsDataProvider {
     // This has been true in production for some time, though, so no rush to "fix" it.
 
     // The cached settings are too old, so if there are expired settings, use those for now.
-    final SettingsData expiredSettings =
+    final Settings expiredSettings =
         getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION);
     if (expiredSettings != null) {
       settings.set(expiredSettings);
@@ -205,7 +200,7 @@ public class SettingsController implements SettingsDataProvider {
                     settingsSpiCall.invoke(settingsRequest, dataCollectionToken);
 
                 if (settingsJson != null) {
-                  final SettingsData fetchedSettings =
+                  final Settings fetchedSettings =
                       settingsJsonParser.parseSettingsJson(settingsJson);
                   cachedSettingsIo.writeCachedSettings(
                       fetchedSettings.getExpiresAtMillis(), settingsJson);
@@ -225,24 +220,24 @@ public class SettingsController implements SettingsDataProvider {
             });
   }
 
-  private SettingsData getCachedSettingsData(SettingsCacheBehavior cacheBehavior) {
-    SettingsData toReturn = null;
+  private Settings getCachedSettingsData(SettingsCacheBehavior cacheBehavior) {
+    Settings toReturn = null;
 
     try {
       if (!SettingsCacheBehavior.SKIP_CACHE_LOOKUP.equals(cacheBehavior)) {
         final JSONObject settingsJson = cachedSettingsIo.readCachedSettings();
 
         if (settingsJson != null) {
-          final SettingsData settingsData = settingsJsonParser.parseSettingsJson(settingsJson);
+          final Settings settings = settingsJsonParser.parseSettingsJson(settingsJson);
 
-          if (settingsData != null) {
+          if (settings != null) {
             logSettings(settingsJson, "Loaded cached settings: ");
 
             final long currentTimeMillis = currentTimeProvider.getCurrentTimeMillis();
 
             if (SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION.equals(cacheBehavior)
-                || !settingsData.isExpired(currentTimeMillis)) {
-              toReturn = settingsData;
+                || !settings.isExpired(currentTimeMillis)) {
+              toReturn = settings;
               Logger.getLogger().v("Returning cached settings.");
             } else {
               Logger.getLogger().v("Cached settings have expired.");

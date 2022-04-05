@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.network;
+package com.google.firebase.crashlytics.internal.settings;
 
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -20,7 +20,6 @@ import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -28,7 +27,7 @@ import java.util.Map;
 import org.json.JSONObject;
 
 /** Default implementation of the {@link SettingsSpiCall} */
-public class DefaultSettingsSpiCall implements SettingsSpiCall {
+class DefaultSettingsSpiCall implements SettingsSpiCall {
 
   static final String HEADER_GOOGLE_APP_ID = "X-CRASHLYTICS-GOOGLE-APP-ID";
   static final String HEADER_CLIENT_TYPE = "X-CRASHLYTICS-API-CLIENT-TYPE";

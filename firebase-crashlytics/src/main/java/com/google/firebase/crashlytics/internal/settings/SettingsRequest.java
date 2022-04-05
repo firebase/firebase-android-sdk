@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.model;
+package com.google.firebase.crashlytics.internal.settings;
 
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
 
 /** Immutable value object capturing the data needed to make an settings query SPI web request. */
-public class SettingsRequest {
+class SettingsRequest {
   public final String googleAppId;
   public final String deviceModel;
   public final String osBuildVersion;
@@ -33,7 +33,7 @@ public class SettingsRequest {
       String deviceModel,
       String osBuildVersion,
       String osDisplayVersion,
-      InstallIdProvider installIdProvier,
+      InstallIdProvider installIdProvider,
       String instanceId,
       String displayVersion,
       String buildVersion,
@@ -42,7 +42,7 @@ public class SettingsRequest {
     this.deviceModel = deviceModel;
     this.osBuildVersion = osBuildVersion;
     this.osDisplayVersion = osDisplayVersion;
-    this.installIdProvider = installIdProvier;
+    this.installIdProvider = installIdProvider;
     this.instanceId = instanceId;
     this.displayVersion = displayVersion;
     this.buildVersion = buildVersion;

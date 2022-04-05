@@ -39,9 +39,9 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
-import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
+import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
@@ -339,7 +339,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     Thread.setDefaultUncaughtExceptionHandler(NOOP_HANDLER);
 
     SettingsController mockSettingsController = mock(SettingsController.class);
-    final SettingsData settings = new TestSettingsData(3);
+    final Settings settings = new TestSettings(3);
     when(mockSettingsController.getSettingsSync()).thenReturn(settings);
     when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settings));
 

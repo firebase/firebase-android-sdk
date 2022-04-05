@@ -24,7 +24,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.model.serialization.CrashlyticsReportJsonTransform;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -79,12 +79,11 @@ public class CrashlyticsReportPersistence {
 
   private final FileStore fileStore;
 
-  @NonNull private final SettingsDataProvider settingsDataProvider;
+  @NonNull private final SettingsProvider settingsProvider;
 
-  public CrashlyticsReportPersistence(
-      FileStore fileStore, SettingsDataProvider settingsDataProvider) {
+  public CrashlyticsReportPersistence(FileStore fileStore, SettingsProvider settingsProvider) {
     this.fileStore = fileStore;
-    this.settingsDataProvider = settingsDataProvider;
+    this.settingsProvider = settingsProvider;
   }
 
   public void persistReport(@NonNull CrashlyticsReport report) {
@@ -129,7 +128,7 @@ public class CrashlyticsReportPersistence {
       @NonNull String sessionId,
       boolean isHighPriority) {
     int maxEventsToKeep =
-        settingsDataProvider.getSettingsSync().getSessionData().maxCustomExceptionEvents;
+        settingsProvider.getSettingsSync().getSessionData().maxCustomExceptionEvents;
     final String json = TRANSFORM.eventToJson(event);
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
@@ -249,7 +248,7 @@ public class CrashlyticsReportPersistence {
 
   private void capFinalizedReports() {
     int maxReportsToKeep =
-        settingsDataProvider.getSettingsSync().getSessionData().maxCompleteSessionsCount;
+        settingsProvider.getSettingsSync().getSessionData().maxCompleteSessionsCount;
     List<File> finalizedReportFiles = getAllFinalizedReportFiles();
 
     int fileCount = finalizedReportFiles.size();

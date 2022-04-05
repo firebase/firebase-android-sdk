@@ -31,8 +31,8 @@ import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
+import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
@@ -123,7 +123,7 @@ public class CrashlyticsCore {
 
   // region Initialization
 
-  public boolean onPreExecute(AppData appData, SettingsDataProvider settingsProvider) {
+  public boolean onPreExecute(AppData appData, SettingsProvider settingsProvider) {
     // before starting the crash detector make sure that this was built with our build
     // tools.
     // Throw an exception and halt the app if the build ID is required and not present.
@@ -208,7 +208,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization asynchronously on the background worker's thread. */
-  public Task<Void> doBackgroundInitializationAsync(SettingsDataProvider settingsProvider) {
+  public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
     return Utils.callTask(
         crashHandlerExecutor,
         new Callable<Task<Void>>() {
@@ -220,7 +220,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization synchronously on the calling thread. */
-  private Task<Void> doBackgroundInitialization(SettingsDataProvider settingsProvider) {
+  private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
     // create the marker for this run
     markInitializationStarted();
 
@@ -229,7 +229,7 @@ public class CrashlyticsCore {
 
       final Settings settingsData = settingsProvider.getSettingsSync();
 
-      if (!settingsData.getFeaturesData().collectReports) {
+      if (!settingsData.getFeatureFlagData().collectReports) {
         Logger.getLogger().d("Collection of crash reports disabled in Crashlytics settings.");
         // TODO: This isn't actually an error condition, so figure out the right way to
         // handle this case.
@@ -405,13 +405,13 @@ public class CrashlyticsCore {
    * When a startup crash occurs, Crashlytics must lock on the main thread and complete
    * initializaiton to upload crash result. 4 seconds is chosen for the lock to prevent ANR
    */
-  private void finishInitSynchronously(SettingsDataProvider settingsDataProvider) {
+  private void finishInitSynchronously(SettingsProvider settingsProvider) {
 
     final Runnable runnable =
         new Runnable() {
           @Override
           public void run() {
-            doBackgroundInitialization(settingsDataProvider);
+            doBackgroundInitialization(settingsProvider);
           }
         };
 

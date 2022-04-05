@@ -16,19 +16,18 @@ package com.google.firebase.crashlytics.internal.common;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
   interface CrashListener {
 
-    void onUncaughtException(
-        SettingsDataProvider settingsDataProvider, Thread thread, Throwable ex);
+    void onUncaughtException(SettingsProvider settingsProvider, Thread thread, Throwable ex);
   }
 
   private final CrashListener crashListener;
-  private final SettingsDataProvider settingsDataProvider;
+  private final SettingsProvider settingsProvider;
   private final Thread.UncaughtExceptionHandler defaultHandler;
   private final CrashlyticsNativeComponent nativeComponent;
 
@@ -37,11 +36,11 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
 
   public CrashlyticsUncaughtExceptionHandler(
       CrashListener crashListener,
-      SettingsDataProvider settingsProvider,
+      SettingsProvider settingsProvider,
       Thread.UncaughtExceptionHandler defaultHandler,
       CrashlyticsNativeComponent nativeComponent) {
     this.crashListener = crashListener;
-    this.settingsDataProvider = settingsProvider;
+    this.settingsProvider = settingsProvider;
     this.defaultHandler = defaultHandler;
     this.isHandlingException = new AtomicBoolean(false);
     this.nativeComponent = nativeComponent;
@@ -52,7 +51,7 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
     isHandlingException.set(true);
     try {
       if (shouldRecordUncaughtException(thread, ex)) {
-        crashListener.onUncaughtException(settingsDataProvider, thread, ex);
+        crashListener.onUncaughtException(settingsProvider, thread, ex);
       } else {
         Logger.getLogger().d("Uncaught exception will not be recorded by Crashlytics.");
       }
