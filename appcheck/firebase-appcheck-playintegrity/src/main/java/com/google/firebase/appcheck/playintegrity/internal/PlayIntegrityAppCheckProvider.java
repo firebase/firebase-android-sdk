@@ -37,6 +37,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
 
   private static final String UTF_8 = "UTF-8";
 
+  private final String projectNumber;
   private final IntegrityManager integrityManager;
   private final NetworkClient networkClient;
   private final ExecutorService backgroundExecutor;
@@ -44,6 +45,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
 
   public PlayIntegrityAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
     this(
+        firebaseApp.getOptions().getGcmSenderId(),
         IntegrityManagerFactory.create(firebaseApp.getApplicationContext()),
         new NetworkClient(firebaseApp),
         Executors.newCachedThreadPool(),
@@ -52,10 +54,12 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
 
   @VisibleForTesting
   PlayIntegrityAppCheckProvider(
+      @NonNull String projectNumber,
       @NonNull IntegrityManager integrityManager,
       @NonNull NetworkClient networkClient,
       @NonNull ExecutorService backgroundExecutor,
       @NonNull RetryManager retryManager) {
+    this.projectNumber = projectNumber;
     this.integrityManager = integrityManager;
     this.networkClient = networkClient;
     this.backgroundExecutor = backgroundExecutor;
@@ -117,6 +121,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
             if (task.isSuccessful()) {
               return integrityManager.requestIntegrityToken(
                   IntegrityTokenRequest.builder()
+                      .setCloudProjectNumber(Long.parseLong(projectNumber))
                       .setNonce(task.getResult().getChallenge())
                       .build());
             }
