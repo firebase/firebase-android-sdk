@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
+
 import android.content.Context;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -170,21 +173,19 @@ public class Datastore {
     for (DocumentKey key : keys) {
       builder.addDocuments(serializer.encodeKey(key));
     }
-    return channel
-        .runStreamingResponseRpc(FirestoreGrpc.getBatchGetDocumentsMethod(), builder.build())
-        .continueWith(
-            workerQueue.getExecutor(),
-            task -> {
-              if (!task.isSuccessful()) {
-                if (task.getException() instanceof FirebaseFirestoreException
-                    && ((FirebaseFirestoreException) task.getException()).getCode()
-                        == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
-                  channel.invalidateToken();
-                }
-              }
+    List<BatchGetDocumentsResponse> responses = new ArrayList<>();
+    TaskCompletionSource<List<MutableDocument>> tcs = new TaskCompletionSource<>();
 
+    channel.runStreamingResponseRpc(
+        FirestoreGrpc.getBatchGetDocumentsMethod(),
+        builder.build(),
+        new FirestoreChannel.Listener<BatchGetDocumentsResponse>() {
+          @Override
+          public void onMessage(BatchGetDocumentsResponse message) {
+            responses.add(message);
+            if (responses.size() == keys.size()) {
+              callback_fired = true;
               Map<DocumentKey, MutableDocument> resultMap = new HashMap<>();
-              List<BatchGetDocumentsResponse> responses = task.getResult();
               for (BatchGetDocumentsResponse response : responses) {
                 MutableDocument doc = serializer.decodeMaybeDocument(response);
                 resultMap.put(doc.getKey(), doc);
@@ -193,8 +194,26 @@ public class Datastore {
               for (DocumentKey key : keys) {
                 results.add(resultMap.get(key));
               }
-              return results;
-            });
+              tcs.setResult(results);
+            }
+          }
+
+          @Override
+          public void onClose(Status status) {
+            if (status.isOk() && !callback_fired) {
+              callback_fired = true;
+              tcs.setResult(new ArrayList<>());
+            } else if (!status.isOk()) {
+              FirebaseFirestoreException exception = exceptionFromStatus(status);
+              if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                channel.invalidateToken();
+              }
+              tcs.setException(exception);
+            }
+          }
+        });
+
+    return tcs.getTask();
   }
 
   /**

@@ -33,8 +33,6 @@ import io.grpc.ForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
@@ -43,6 +41,16 @@ import java.util.List;
  * @hide
  */
 public class FirestoreChannel {
+
+  public abstract static class Listener<T> {
+    public Listener() {}
+
+    public void onMessage(T message) {}
+
+    public void onClose(Status status) {}
+
+    public boolean callback_fired = false;
+  }
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
@@ -184,36 +192,28 @@ public class FirestoreChannel {
   }
 
   /** Creates and starts a streaming response RPC. */
-  <ReqT, RespT> Task<List<RespT>> runStreamingResponseRpc(
-      MethodDescriptor<ReqT, RespT> method, ReqT request) {
-    TaskCompletionSource<List<RespT>> tcs = new TaskCompletionSource<>();
-
+  <ReqT, RespT> void runStreamingResponseRpc(
+      MethodDescriptor<ReqT, RespT> method,
+      ReqT request,
+      FirestoreChannel.Listener<RespT> callback) {
     callProvider
         .createClientCall(method)
         .addOnCompleteListener(
             asyncQueue.getExecutor(),
             result -> {
               ClientCall<ReqT, RespT> call = result.getResult();
-
-              List<RespT> results = new ArrayList<>();
-
               call.start(
                   new ClientCall.Listener<RespT>() {
                     @Override
                     public void onMessage(RespT message) {
-                      results.add(message);
-
+                      callback.onMessage(message);
                       // Make sure next message can be delivered
                       call.request(1);
                     }
 
                     @Override
                     public void onClose(Status status, Metadata trailers) {
-                      if (status.isOk()) {
-                        tcs.setResult(results);
-                      } else {
-                        tcs.setException(exceptionFromStatus(status));
-                      }
+                      callback.onClose(status);
                     }
                   },
                   requestHeaders());
@@ -224,8 +224,6 @@ public class FirestoreChannel {
               call.sendMessage(request);
               call.halfClose();
             });
-
-    return tcs.getTask();
   }
 
   /** Creates and starts a single response RPC. */
