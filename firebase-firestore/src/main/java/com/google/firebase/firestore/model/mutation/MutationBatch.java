@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.local.OverlayedDocument;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -136,7 +136,7 @@ public final class MutationBatch {
    * applications.
    */
   public Map<DocumentKey, Mutation> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, Document> documentMap,
+      ImmutableSortedMap<DocumentKey, OverlayedDocument> documentMap,
       Set<DocumentKey> documentsWithoutRemoteVersion) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
     // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
@@ -145,8 +145,8 @@ public final class MutationBatch {
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
       // remove this cast.
-      MutableDocument document = (MutableDocument) documentMap.get(key);
-      FieldMask mutatedFields = applyToLocalView(document);
+      MutableDocument document = (MutableDocument) documentMap.get(key).getOverlay();
+      FieldMask mutatedFields = applyToLocalView(document, documentMap.get(key).getMutatedFields());
       // Set mutationFields to null if the document is only from local mutations, this creates
       // a Set(or Delete) mutation, instead of trying to create a patch mutation as the overlay.
       mutatedFields = documentsWithoutRemoteVersion.contains(key) ? null : mutatedFields;

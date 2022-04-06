@@ -1616,4 +1616,47 @@ public abstract class LocalStoreTestCase {
     assertContains(doc("foo/bar", 0, map("foo", "bar-set")).setHasLocalMutations());
     assertContains(doc("foo/another", 0, map("foo", "another")).setHasLocalMutations());
   }
+
+  @Test
+  public void testMultipleFieldPatchesOnRemoteDocs() {
+    Query query = query("foo");
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("foo/bar", 1, map("likes", 0, "stars", 0)), asList(2), emptyList()));
+    assertChanged(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
+    assertContains(doc("foo/bar", 1, map("likes", 0, "stars", 0)));
+
+    writeMutation(patchMutation("foo/bar", map("likes", 1)));
+    assertChanged(doc("foo/bar", 1, map("likes", 1, "stars", 0)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("likes", 1, "stars", 0)).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("stars", 1)));
+    assertChanged(doc("foo/bar", 1, map("likes", 1, "stars", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("likes", 1, "stars", 1)).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("stars", 2)));
+    assertChanged(doc("foo/bar", 1, map("likes", 1, "stars", 2)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 1, map("likes", 1, "stars", 2)).setHasLocalMutations());
+  }
+
+  @Test
+  public void testMultipleFieldPatchesOnLocalDocs() {
+    writeMutation(setMutation("foo/bar", map("likes", 0, "stars", 0)));
+    assertChanged(doc("foo/bar", 0, map("likes", 0, "stars", 0)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("likes", 0, "stars", 0)).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("likes", 1)));
+    assertChanged(doc("foo/bar", 0, map("likes", 1, "stars", 0)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("likes", 1, "stars", 0)).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("stars", 1)));
+    assertChanged(doc("foo/bar", 0, map("likes", 1, "stars", 1)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("likes", 1, "stars", 1)).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("stars", 2)));
+    assertChanged(doc("foo/bar", 0, map("likes", 1, "stars", 2)).setHasLocalMutations());
+    assertContains(doc("foo/bar", 0, map("likes", 1, "stars", 2)).setHasLocalMutations());
+  }
 }

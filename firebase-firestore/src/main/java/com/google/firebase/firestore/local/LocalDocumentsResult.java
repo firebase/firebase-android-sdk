@@ -14,9 +14,12 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
+
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
+import java.util.Map;
 
 /**
  * Represents a set of document along with their mutation batch ID.
@@ -31,6 +34,16 @@ public final class LocalDocumentsResult {
   LocalDocumentsResult(int batchId, ImmutableSortedMap<DocumentKey, Document> documents) {
     this.batchId = batchId;
     this.documents = documents;
+  }
+
+  public static LocalDocumentsResult fromOverlayedDocuments(
+      int batchId, ImmutableSortedMap<DocumentKey, OverlayedDocument> overlays) {
+    ImmutableSortedMap<DocumentKey, Document> documents = emptyDocumentMap();
+    for (Map.Entry<DocumentKey, OverlayedDocument> entry : overlays) {
+      documents = documents.insert(entry.getKey(), entry.getValue().getOverlay());
+    }
+
+    return new LocalDocumentsResult(batchId, documents);
   }
 
   public int getBatchId() {
