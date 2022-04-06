@@ -103,7 +103,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   }
 
   @NonNull
-  Task<IntegrityTokenResponse> getPlayIntegrityAttestation() {
+  private Task<IntegrityTokenResponse> getPlayIntegrityAttestation() {
     GeneratePlayIntegrityChallengeRequest generateChallengeRequest =
         new GeneratePlayIntegrityChallengeRequest();
     Task<GeneratePlayIntegrityChallengeResponse> generateChallengeTask =

@@ -22,6 +22,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.android.play.core.integrity.IntegrityManager;
+import com.google.android.play.core.integrity.IntegrityTokenRequest;
+import com.google.android.play.core.integrity.IntegrityTokenResponse;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
@@ -33,6 +37,8 @@ import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -43,17 +49,31 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class PlayIntegrityAppCheckProviderTest {
 
+  private static final String PROJECT_NUMBER = "123456";
   private static final String ATTESTATION_TOKEN = "token";
   private static final String TIME_TO_LIVE = "3600s";
+  private static final String CHALLENGE = "testChallenge";
+  private static final String CHALLENGE_JSON_RESPONSE =
+      "{\"challenge\":\"" + CHALLENGE + "\",\"ttl\":\"3600s\"}";
+  private static final String INTEGRITY_TOKEN = "integrityToken";
 
-  private ExecutorService backgroundExecutor = MoreExecutors.newDirectExecutorService();
+  @Mock private IntegrityManager mockIntegrityManager;
   @Mock private NetworkClient mockNetworkClient;
   @Mock private RetryManager mockRetryManager;
+  @Mock private IntegrityTokenResponse mockIntegrityTokenResponse;
   @Mock private AppCheckTokenResponse mockAppCheckTokenResponse;
+
+  @Captor private ArgumentCaptor<IntegrityTokenRequest> integrityTokenRequestCaptor;
+  @Captor private ArgumentCaptor<byte[]> exchangePlayIntegrityTokenRequestCaptor;
+
+  private ExecutorService backgroundExecutor = MoreExecutors.newDirectExecutorService();
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    when(mockIntegrityTokenResponse.token()).thenReturn(INTEGRITY_TOKEN);
+    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
+    when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
   }
 
   @Test
@@ -67,41 +87,76 @@ public class PlayIntegrityAppCheckProviderTest {
 
   @Test
   public void getToken_onSuccess_setsTaskResult() throws Exception {
+    when(mockNetworkClient.generatePlayIntegrityChallenge(any(), eq(mockRetryManager)))
+        .thenReturn(CHALLENGE_JSON_RESPONSE);
+    when(mockIntegrityManager.requestIntegrityToken(any()))
+        .thenReturn(Tasks.forResult(mockIntegrityTokenResponse));
     when(mockNetworkClient.exchangeAttestationForAppCheckToken(
             any(), eq(NetworkClient.PLAY_INTEGRITY), eq(mockRetryManager)))
         .thenReturn(mockAppCheckTokenResponse);
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
-    when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     PlayIntegrityAppCheckProvider provider =
-        new PlayIntegrityAppCheckProvider(mockNetworkClient, backgroundExecutor, mockRetryManager);
+        new PlayIntegrityAppCheckProvider(
+            PROJECT_NUMBER,
+            mockIntegrityManager,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
-
-    verify(mockNetworkClient)
-        .exchangeAttestationForAppCheckToken(
-            any(), eq(NetworkClient.PLAY_INTEGRITY), eq(mockRetryManager));
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
     assertThat(token.getToken()).isEqualTo(ATTESTATION_TOKEN);
+
+    verify(mockIntegrityManager).requestIntegrityToken(integrityTokenRequestCaptor.capture());
+    assertThat(integrityTokenRequestCaptor.getValue().cloudProjectNumber())
+        .isEqualTo(Long.parseLong(PROJECT_NUMBER));
+    assertThat(integrityTokenRequestCaptor.getValue().nonce()).isEqualTo(CHALLENGE);
+
+    verify(mockNetworkClient)
+        .exchangeAttestationForAppCheckToken(
+            exchangePlayIntegrityTokenRequestCaptor.capture(),
+            eq(NetworkClient.PLAY_INTEGRITY),
+            eq(mockRetryManager));
+    String exchangePlayIntegrityTokenRequestJsonString =
+        new String(exchangePlayIntegrityTokenRequestCaptor.getValue());
+    assertThat(exchangePlayIntegrityTokenRequestJsonString).contains(INTEGRITY_TOKEN);
   }
 
   @Test
-  public void getToken_onFailure_setsTaskException() throws Exception {
+  public void getToken_tokenExchangeFailure_setsTaskException() throws Exception {
+    when(mockNetworkClient.generatePlayIntegrityChallenge(any(), eq(mockRetryManager)))
+        .thenReturn(CHALLENGE_JSON_RESPONSE);
+    when(mockIntegrityManager.requestIntegrityToken(any()))
+        .thenReturn(Tasks.forResult(mockIntegrityTokenResponse));
     when(mockNetworkClient.exchangeAttestationForAppCheckToken(
             any(), eq(NetworkClient.PLAY_INTEGRITY), eq(mockRetryManager)))
         .thenThrow(new IOException());
 
     PlayIntegrityAppCheckProvider provider =
-        new PlayIntegrityAppCheckProvider(mockNetworkClient, backgroundExecutor, mockRetryManager);
+        new PlayIntegrityAppCheckProvider(
+            PROJECT_NUMBER,
+            mockIntegrityManager,
+            mockNetworkClient,
+            backgroundExecutor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
+
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isInstanceOf(IOException.class);
+
+    verify(mockIntegrityManager).requestIntegrityToken(integrityTokenRequestCaptor.capture());
+    assertThat(integrityTokenRequestCaptor.getValue().cloudProjectNumber())
+        .isEqualTo(Long.parseLong(PROJECT_NUMBER));
+    assertThat(integrityTokenRequestCaptor.getValue().nonce()).isEqualTo(CHALLENGE);
 
     verify(mockNetworkClient)
         .exchangeAttestationForAppCheckToken(
-            any(), eq(NetworkClient.PLAY_INTEGRITY), eq(mockRetryManager));
-
-    assertThat(task.isSuccessful()).isFalse();
-    Exception exception = task.getException();
-    assertThat(exception).isInstanceOf(IOException.class);
+            exchangePlayIntegrityTokenRequestCaptor.capture(),
+            eq(NetworkClient.PLAY_INTEGRITY),
+            eq(mockRetryManager));
+    String exchangePlayIntegrityTokenRequestJsonString =
+        new String(exchangePlayIntegrityTokenRequestCaptor.getValue());
+    assertThat(exchangePlayIntegrityTokenRequestJsonString).contains(INTEGRITY_TOKEN);
   }
 }
