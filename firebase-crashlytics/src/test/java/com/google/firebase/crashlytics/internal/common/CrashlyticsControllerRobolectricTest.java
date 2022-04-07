@@ -36,6 +36,8 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
+import com.google.firebase.crashlytics.internal.settings.Settings.SessionData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.inject.Deferred;
 import java.util.Collections;
@@ -84,7 +86,7 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsData(true);
+    mockSettingsProvider(true);
     controller.doCloseSessions(mockSettingsProvider);
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
@@ -105,7 +107,7 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsData(true);
+    mockSettingsProvider(true);
     controller.doCloseSessions(mockSettingsProvider);
     verify(mockSessionReportingCoordinator)
         .persistRelevantAppExitInfoEvent(
@@ -122,18 +124,18 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsData(false);
+    mockSettingsProvider(false);
     controller.doCloseSessions(mockSettingsProvider);
     verify(mockSessionReportingCoordinator, never())
         .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
-  private void mockSettingsData(boolean collectAnrs) {
-    Settings mockSettings = mock(Settings.class);
-    when(mockSettingsProvider.getSettingsSync()).thenReturn(mockSettings);
-    when(mockSettings.getFeatureFlagData())
-        .thenReturn(new Settings.FeatureFlagData(true, collectAnrs));
+  private void mockSettingsProvider(boolean collectAnrs) {
+    Settings settings =
+        new Settings(
+            0, new SessionData(4, 4), new FeatureFlagData(true, collectAnrs), 3, 0, 1.0, 1.0, 1);
+    when(mockSettingsProvider.getSettingsSync()).thenReturn(settings);
   }
 
   /** Creates a new CrashlyticsController with default options and opens a session. */

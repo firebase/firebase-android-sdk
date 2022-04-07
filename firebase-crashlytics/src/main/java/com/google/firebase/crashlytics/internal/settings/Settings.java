@@ -69,28 +69,4 @@ public class Settings {
   public boolean isExpired(long currentTimeMillis) {
     return expiresAtMillis < currentTimeMillis;
   }
-
-  public SessionData getSessionData() {
-    return sessionData;
-  }
-
-  public FeatureFlagData getFeatureFlagData() {
-    return featureFlagData;
-  }
-
-  public long getExpiresAtMillis() {
-    return expiresAtMillis;
-  }
-
-  public double onDemandUploadRatePerMinute() {
-    return onDemandUploadRatePerMinute;
-  }
-
-  public double onDemandBackoffBase() {
-    return onDemandBackoffBase;
-  }
-
-  public int onDemandBackoffStepDurationSeconds() {
-    return onDemandBackoffStepDurationSeconds;
-  }
 }

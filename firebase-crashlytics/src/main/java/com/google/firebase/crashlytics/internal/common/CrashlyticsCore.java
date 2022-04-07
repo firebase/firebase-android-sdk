@@ -229,7 +229,7 @@ public class CrashlyticsCore {
 
       final Settings settingsData = settingsProvider.getSettingsSync();
 
-      if (!settingsData.getFeatureFlagData().collectReports) {
+      if (!settingsData.featureFlagData.collectReports) {
         Logger.getLogger().d("Collection of crash reports disabled in Crashlytics settings.");
         // TODO: This isn't actually an error condition, so figure out the right way to
         // handle this case.

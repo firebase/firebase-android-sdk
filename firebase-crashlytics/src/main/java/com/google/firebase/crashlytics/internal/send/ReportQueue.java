@@ -50,9 +50,9 @@ final class ReportQueue {
   ReportQueue(
       Transport<CrashlyticsReport> transport, Settings settings, OnDemandCounter onDemandCounter) {
     this(
-        settings.onDemandUploadRatePerMinute(),
-        settings.onDemandBackoffBase(),
-        (long) settings.onDemandBackoffStepDurationSeconds() * MS_PER_SECOND,
+        settings.onDemandUploadRatePerMinute,
+        settings.onDemandBackoffBase,
+        (long) settings.onDemandBackoffStepDurationSeconds * MS_PER_SECOND,
         transport,
         onDemandCounter);
   }

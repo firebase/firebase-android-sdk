@@ -127,8 +127,7 @@ public class CrashlyticsReportPersistence {
       @NonNull CrashlyticsReport.Session.Event event,
       @NonNull String sessionId,
       boolean isHighPriority) {
-    int maxEventsToKeep =
-        settingsProvider.getSettingsSync().getSessionData().maxCustomExceptionEvents;
+    int maxEventsToKeep = settingsProvider.getSettingsSync().sessionData.maxCustomExceptionEvents;
     final String json = TRANSFORM.eventToJson(event);
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
@@ -247,8 +246,7 @@ public class CrashlyticsReportPersistence {
   }
 
   private void capFinalizedReports() {
-    int maxReportsToKeep =
-        settingsProvider.getSettingsSync().getSessionData().maxCompleteSessionsCount;
+    int maxReportsToKeep = settingsProvider.getSettingsSync().sessionData.maxCompleteSessionsCount;
     List<File> finalizedReportFiles = getAllFinalizedReportFiles();
 
     int fileCount = finalizedReportFiles.size();

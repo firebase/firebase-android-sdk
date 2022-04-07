@@ -203,7 +203,7 @@ public class SettingsController implements SettingsProvider {
                   final Settings fetchedSettings =
                       settingsJsonParser.parseSettingsJson(settingsJson);
                   cachedSettingsIo.writeCachedSettings(
-                      fetchedSettings.getExpiresAtMillis(), settingsJson);
+                      fetchedSettings.expiresAtMillis, settingsJson);
                   logSettings(settingsJson, "Loaded settings: ");
 
                   setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
