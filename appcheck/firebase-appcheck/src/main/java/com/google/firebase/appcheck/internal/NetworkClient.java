@@ -52,9 +52,9 @@ public class NetworkClient {
   private static final String TAG = NetworkClient.class.getName();
 
   private static final String SAFETY_NET_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
+      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
   private static final String DEBUG_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/%s/apps/%s:exchangeDebugToken?key=%s";
+      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeDebugToken?key=%s";
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
   private static final String UTF_8 = "UTF-8";
