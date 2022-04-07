@@ -258,8 +258,8 @@ public final class LocalStore implements BundleCallback {
           }
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, OverlayedDocument> overlayedDocuments =
-              localDocuments.getLocalViewOfDocuments(remoteDocs);
+          Map<DocumentKey, OverlayedDocument> overlayedDocuments =
+              localDocuments.getOverlayedDocuments(remoteDocs);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
@@ -269,7 +269,7 @@ public final class LocalStore implements BundleCallback {
           for (Mutation mutation : mutations) {
             ObjectValue baseValue =
                 mutation.extractTransformBaseValue(
-                    overlayedDocuments.get(mutation.getKey()).getOverlay());
+                    overlayedDocuments.get(mutation.getKey()).getDocument());
             if (baseValue != null) {
               // NOTE: The base state should only be applied if there's some existing
               // document to override, so use a Precondition of exists=true

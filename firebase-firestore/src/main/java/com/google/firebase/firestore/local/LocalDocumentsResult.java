@@ -37,10 +37,10 @@ public final class LocalDocumentsResult {
   }
 
   public static LocalDocumentsResult fromOverlayedDocuments(
-      int batchId, ImmutableSortedMap<DocumentKey, OverlayedDocument> overlays) {
+      int batchId, Map<DocumentKey, OverlayedDocument> overlays) {
     ImmutableSortedMap<DocumentKey, Document> documents = emptyDocumentMap();
-    for (Map.Entry<DocumentKey, OverlayedDocument> entry : overlays) {
-      documents = documents.insert(entry.getKey(), entry.getValue().getOverlay());
+    for (Map.Entry<DocumentKey, OverlayedDocument> entry : overlays.entrySet()) {
+      documents = documents.insert(entry.getKey(), entry.getValue().getDocument());
     }
 
     return new LocalDocumentsResult(batchId, documents);
