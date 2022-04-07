@@ -12,13 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.model;
+package com.google.firebase.crashlytics.internal.settings;
 
-/** Immutable value object used to represent hold settings in memory. */
-public class SettingsData implements Settings {
-  public final AppSettingsData appData;
-  public final SessionSettingsData sessionData;
-  public final FeaturesSettingsData featuresData;
+/** Immutable value object used to represent settings in memory. */
+public class Settings {
+
+  // Subsections of the Settings payload include session-specific params & feature flags.
+  public static class SessionData {
+    public final int maxCustomExceptionEvents;
+    public final int maxCompleteSessionsCount;
+
+    public SessionData(int maxCustomExceptionEvents, int maxCompleteSessionsCount) {
+      this.maxCustomExceptionEvents = maxCustomExceptionEvents;
+      this.maxCompleteSessionsCount = maxCompleteSessionsCount;
+    }
+  }
+
+  public static class FeatureFlagData {
+    public final boolean collectReports;
+    public final boolean collectAnrs;
+
+    public FeatureFlagData(boolean collectReports, boolean collectAnrs) {
+      this.collectReports = collectReports;
+      this.collectAnrs = collectAnrs;
+    }
+  }
+
+  public final SessionData sessionData;
+  public final FeatureFlagData featureFlagData;
   public final long expiresAtMillis;
   public final int settingsVersion;
   public final int cacheDuration;
@@ -26,20 +47,18 @@ public class SettingsData implements Settings {
   public final double onDemandBackoffBase;
   public final int onDemandBackoffStepDurationSeconds;
 
-  public SettingsData(
+  public Settings(
       long expiresAtMillis,
-      AppSettingsData appData,
-      SessionSettingsData sessionData,
-      FeaturesSettingsData featuresData,
+      SessionData sessionData,
+      FeatureFlagData featureFlagData,
       int settingsVersion,
       int cacheDuration,
       double onDemandUploadRatePerMinute,
       double onDemandBackoffBase,
       int onDemandBackoffStepDurationSeconds) {
     this.expiresAtMillis = expiresAtMillis;
-    this.appData = appData;
     this.sessionData = sessionData;
-    this.featuresData = featuresData;
+    this.featureFlagData = featureFlagData;
     this.settingsVersion = settingsVersion;
     this.cacheDuration = cacheDuration;
     this.onDemandUploadRatePerMinute = onDemandUploadRatePerMinute;
@@ -47,52 +66,7 @@ public class SettingsData implements Settings {
     this.onDemandBackoffStepDurationSeconds = onDemandBackoffStepDurationSeconds;
   }
 
-  public AppSettingsData getAppSettingsData() {
-    return appData;
-  }
-
-  @Override
   public boolean isExpired(long currentTimeMillis) {
     return expiresAtMillis < currentTimeMillis;
-  }
-
-  @Override
-  public SessionSettingsData getSessionData() {
-    return sessionData;
-  }
-
-  @Override
-  public FeaturesSettingsData getFeaturesData() {
-    return featuresData;
-  }
-
-  @Override
-  public long getExpiresAtMillis() {
-    return expiresAtMillis;
-  }
-
-  @Override
-  public int getSettingsVersion() {
-    return settingsVersion;
-  }
-
-  @Override
-  public int getCacheDuration() {
-    return cacheDuration;
-  }
-
-  @Override
-  public double onDemandUploadRatePerMinute() {
-    return onDemandUploadRatePerMinute;
-  }
-
-  @Override
-  public double onDemandBackoffBase() {
-    return onDemandBackoffBase;
-  }
-
-  @Override
-  public int onDemandBackoffStepDurationSeconds() {
-    return onDemandBackoffStepDurationSeconds;
   }
 }

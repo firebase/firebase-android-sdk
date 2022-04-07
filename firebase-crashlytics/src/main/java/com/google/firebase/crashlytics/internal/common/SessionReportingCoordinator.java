@@ -33,7 +33,7 @@ import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -67,7 +67,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       LogFileManager logFileManager,
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
-      SettingsDataProvider settingsProvider,
+      SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);

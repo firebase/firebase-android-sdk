@@ -14,8 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -28,7 +28,7 @@ public class SettingsJsonParser {
     this.currentTimeProvider = currentTimeProvider;
   }
 
-  public SettingsData parseSettingsJson(JSONObject settingsJson) throws JSONException {
+  public Settings parseSettingsJson(JSONObject settingsJson) throws JSONException {
     final int version = settingsJson.getInt(SettingsJsonConstants.SETTINGS_VERSION);
     final SettingsJsonTransform jsonTransform = getJsonTransformForVersion(version);
     return jsonTransform.buildFromJson(currentTimeProvider, settingsJson);
@@ -39,6 +39,11 @@ public class SettingsJsonParser {
       case 3:
         return new SettingsV3JsonTransform();
       default:
+        Logger.getLogger()
+            .e(
+                "Could not determine SettingsJsonTransform for settings version "
+                    + settingsVersion
+                    + ". Using default settings values.");
         return new DefaultSettingsJsonTransform();
     }
   }

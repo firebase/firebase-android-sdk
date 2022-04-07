@@ -14,12 +14,14 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
+import org.json.JSONObject;
 
-public interface SettingsDataProvider {
-  Settings getSettings();
-
-  Task<AppSettingsData> getAppSettings();
+/** Internal interface representing the SPI REST call to get settings from the server. */
+interface SettingsSpiCall {
+  /**
+   * @param requestData {@link SettingsRequest} data to be sent to the server
+   * @return the {@link JSONObject} created from JSON returned from the server, or <code>null</code>
+   *     if there was a problem getting the settings JSON from the server.
+   */
+  JSONObject invoke(SettingsRequest requestData, boolean dataCollectionToken);
 }
