@@ -15,7 +15,6 @@
 package com.google.firebase.appcheck.playintegrity.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
-import static com.google.android.gms.common.util.Strings.emptyToNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -38,8 +37,8 @@ public class GeneratePlayIntegrityChallengeResponse {
   public static GeneratePlayIntegrityChallengeResponse fromJsonString(@NonNull String jsonString)
       throws JSONException {
     JSONObject jsonObject = new JSONObject(jsonString);
-    String challenge = emptyToNull(jsonObject.optString(CHALLENGE_KEY));
-    String timeToLive = emptyToNull(jsonObject.optString(TIME_TO_LIVE_KEY));
+    String challenge = jsonObject.optString(CHALLENGE_KEY, null);
+    String timeToLive = jsonObject.optString(TIME_TO_LIVE_KEY, null);
     return new GeneratePlayIntegrityChallengeResponse(challenge, timeToLive);
   }
 

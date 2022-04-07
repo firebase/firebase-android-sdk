@@ -15,7 +15,6 @@
 package com.google.firebase.appcheck.playintegrity.internal;
 
 import androidx.annotation.NonNull;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -27,9 +26,10 @@ public class GeneratePlayIntegrityChallengeRequest {
   public GeneratePlayIntegrityChallengeRequest() {}
 
   @NonNull
-  public String toJsonString() throws JSONException {
+  public String toJsonString() {
     JSONObject jsonObject = new JSONObject();
 
+    // GeneratePlayIntegrityChallenge takes an empty POST body since the app ID is in the URL.
     return jsonObject.toString();
   }
 }
