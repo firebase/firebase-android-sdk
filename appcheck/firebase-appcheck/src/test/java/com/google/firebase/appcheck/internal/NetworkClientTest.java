@@ -69,7 +69,9 @@ public class NetworkClientTest {
       "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
   private static final String DEBUG_EXPECTED_URL =
       "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
-  private static final String PLAY_INTEGRITY_EXPECTED_URL =
+  private static final String PLAY_INTEGRITY_CHALLENGE_EXPECTED_URL =
+      "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:generatePlayIntegrityChallenge?key=apiKey";
+  private static final String PLAY_INTEGRITY_EXCHANGE_EXPECTED_URL =
       "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangePlayIntegrityToken?key=apiKey";
   private static final String JSON_REQUEST = "jsonRequest";
   private static final int SUCCESS_CODE = 200;
@@ -78,6 +80,7 @@ public class NetworkClientTest {
   private static final String TIME_TO_LIVE = "3600s";
   private static final String ERROR_MESSAGE = "error message";
   private static final String HEART_BEAT_HEADER_TEST = "test-header";
+  private static final String CHALLENGE_RESPONSE = "challengeResponse";
 
   @Mock HeartBeatController mockHeartBeatController;
   @Mock HttpURLConnection mockHttpUrlConnection;
@@ -228,7 +231,7 @@ public class NetworkClientTest {
     assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
-    URL expectedUrl = new URL(PLAY_INTEGRITY_EXPECTED_URL);
+    URL expectedUrl = new URL(PLAY_INTEGRITY_EXCHANGE_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
@@ -254,7 +257,7 @@ public class NetworkClientTest {
                     JSON_REQUEST.getBytes(), NetworkClient.PLAY_INTEGRITY, mockRetryManager));
 
     assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
-    URL expectedUrl = new URL(PLAY_INTEGRITY_EXPECTED_URL);
+    URL expectedUrl = new URL(PLAY_INTEGRITY_EXCHANGE_EXPECTED_URL);
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
@@ -300,6 +303,68 @@ public class NetworkClientTest {
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
                     JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager));
+
+    assertThat(exception.getMessage()).contains("Too many attempts");
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
+  }
+
+  @Test
+  public void generatePlayIntegrityChallenge_successResponse_returnsJsonString() throws Exception {
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
+    when(mockHttpUrlConnection.getInputStream())
+        .thenReturn(new ByteArrayInputStream(CHALLENGE_RESPONSE.getBytes()));
+    when(mockHttpUrlConnection.getResponseCode()).thenReturn(SUCCESS_CODE);
+
+    String challengeResponse =
+        networkClient.generatePlayIntegrityChallenge(JSON_REQUEST.getBytes(), mockRetryManager);
+    assertThat(challengeResponse).isEqualTo(CHALLENGE_RESPONSE);
+
+    URL expectedUrl = new URL(PLAY_INTEGRITY_CHALLENGE_EXPECTED_URL);
+    verify(networkClient).createHttpUrlConnection(expectedUrl);
+    verify(mockOutputStream)
+        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
+    verify(mockRetryManager).resetBackoffOnSuccess();
+    verifyRequestHeaders();
+  }
+
+  @Test
+  public void generatePlayIntegrityChallenge_errorResponse_throwsException() throws Exception {
+    JSONObject responseBodyJson = createHttpErrorResponse();
+
+    when(mockHttpUrlConnection.getOutputStream()).thenReturn(mockOutputStream);
+    when(mockHttpUrlConnection.getErrorStream())
+        .thenReturn(new ByteArrayInputStream(responseBodyJson.toString().getBytes()));
+    when(mockHttpUrlConnection.getResponseCode()).thenReturn(ERROR_CODE);
+
+    FirebaseException exception =
+        assertThrows(
+            FirebaseException.class,
+            () ->
+                networkClient.generatePlayIntegrityChallenge(
+                    JSON_REQUEST.getBytes(), mockRetryManager));
+
+    assertThat(exception.getMessage()).contains(ERROR_MESSAGE);
+    URL expectedUrl = new URL(PLAY_INTEGRITY_CHALLENGE_EXPECTED_URL);
+    verify(networkClient).createHttpUrlConnection(expectedUrl);
+    verify(mockOutputStream)
+        .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
+    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
+    verifyRequestHeaders();
+  }
+
+  @Test
+  public void generatePlayIntegrityChallenge_cannotRetry_throwsException() {
+    when(mockRetryManager.canRetry()).thenReturn(false);
+
+    FirebaseException exception =
+        assertThrows(
+            FirebaseException.class,
+            () ->
+                networkClient.generatePlayIntegrityChallenge(
+                    JSON_REQUEST.getBytes(), mockRetryManager));
 
     assertThat(exception.getMessage()).contains("Too many attempts");
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
