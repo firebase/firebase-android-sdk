@@ -14,17 +14,25 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
-/** Enum defining possible behaviors when looking up settings from cache */
-enum SettingsCacheBehavior {
-  /**
-   * The normal behavior - tries to return settings from the cache, respecting their expiration
-   * date/time.
-   */
-  USE_CACHE,
+public class TestSettings extends Settings {
 
-  /** Skips the entire initial cache lookup, going straight to fetching settings from the network */
-  SKIP_CACHE_LOOKUP,
+  public TestSettings() {
+    this(2);
+  }
 
-  /** States that any cached value should be used, regardless of whether it has expired. */
-  IGNORE_CACHE_EXPIRATION
+  public TestSettings(int settingsVersion) {
+    this(settingsVersion, 0, 0);
+  }
+
+  public TestSettings(int settingsVersion, int reportUploadVariant, int nativeReportUploadVariant) {
+    super(5, buildSettingsData(), buildFeatureFlagData(), settingsVersion, 3600, 10, 1.2, 60);
+  }
+
+  private static Settings.FeatureFlagData buildFeatureFlagData() {
+    return new Settings.FeatureFlagData(true, false);
+  }
+
+  private static Settings.SessionData buildSettingsData() {
+    return new Settings.SessionData(64, 4);
+  }
 }

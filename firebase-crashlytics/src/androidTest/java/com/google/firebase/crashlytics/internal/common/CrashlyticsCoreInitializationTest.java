@@ -34,9 +34,9 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
-import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
+import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
@@ -71,9 +71,9 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     fileStore = new FileStore(getContext());
 
     mockSettingsController = mock(SettingsController.class);
-    final SettingsData settingsData = new TestSettingsData();
-    when(mockSettingsController.getSettings()).thenReturn(settingsData);
-    when(mockSettingsController.getAppSettings()).thenReturn(Tasks.forResult(settingsData.appData));
+    Settings settings = new TestSettings();
+    when(mockSettingsController.getSettingsSync()).thenReturn(settings);
+    when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settings));
   }
 
   @Override
