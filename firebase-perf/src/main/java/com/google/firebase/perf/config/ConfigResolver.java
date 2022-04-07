@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionDeactivated;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionEnabled;
+import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
 import com.google.firebase.perf.config.ConfigurationConstants.LogSourceName;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountForeground;
@@ -727,6 +728,43 @@ public class ConfigResolver {
     }
 
     return configFlag.getDefault();
+  }
+
+  /** Returns what percentage of fragment traces should be collected, range is [0.00f, 1.00f]. */
+  public float getFragmentSamplingRate() {
+    // Order of precedence is:
+    // 1. If the value exists in Android Manifest, convert from [0.00f, 100.00f] to [0.00f, 1.00f]
+    // and return this value.
+    // 2. If the value exists through Firebase Remote Config, cache and return this value.
+    // 3. If the value exists in device cache, return this value.
+    // 4. Otherwise, return default value.
+    FragmentSamplingRate config = FragmentSamplingRate.getInstance();
+
+    // 1. Reads value in Android Manifest (it is set by developers during build time).
+    Optional<Float> metadataValue = getMetadataFloat(config);
+    if (metadataValue.isAvailable()) {
+      // Sampling percentage from metadata needs to convert from [0.00f, 100.00f] to [0.00f, 1.00f].
+      float samplingRate = metadataValue.get() / 100.0f;
+      if (isSamplingRateValid(samplingRate)) {
+        return samplingRate;
+      }
+    }
+
+    // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
+    Optional<Float> rcValue = getRemoteConfigFloat(config);
+    if (rcValue.isAvailable() && isSamplingRateValid(rcValue.get())) {
+      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
+      return rcValue.get();
+    }
+
+    // 3. Reads value from cache layer.
+    Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
+    if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
+      return deviceCacheValue.get();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
+    return config.getDefault();
   }
 
   // endregion
