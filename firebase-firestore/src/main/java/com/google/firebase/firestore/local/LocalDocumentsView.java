@@ -172,9 +172,9 @@ class LocalDocumentsView {
 
     Map<DocumentKey, OverlayedDocument> result = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
-          result.put(
-              entry.getKey(),
-              new OverlayedDocument(entry.getValue(), mutatedFields.get(entry.getKey())));
+      result.put(
+          entry.getKey(),
+          new OverlayedDocument(entry.getValue(), mutatedFields.get(entry.getKey())));
     }
     return result;
   }

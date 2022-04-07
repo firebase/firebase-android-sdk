@@ -16,12 +16,9 @@ package com.google.firebase.firestore.local;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.mutation.FieldMask;
-
 import javax.annotation.Nullable;
 
-/**
- * Represents a local view (overlay) of a document, and the fields that are locally mutated.
- */
+/** Represents a local view (overlay) of a document, and the fields that are locally mutated. */
 public class OverlayedDocument {
   private Document overlay;
   private FieldMask mutatedFields;
