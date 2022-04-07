@@ -640,7 +640,7 @@ final class ConfigurationConstants {
 
     @Override
     protected Float getDefault() {
-      // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 1.00f, which is 100%.
+      // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 0.00f, which is 0%.
       // 0.00f means 0%, Fireperf will not capture any event for fragment trace from the device,
       // 1.00f means 100%, Fireperf will capture all events for fragment trace from the device.
       return 0.00f;
