@@ -19,6 +19,7 @@ import static com.google.firebase.crashlytics.internal.common.CommonUtils.getRes
 import android.content.Context;
 import androidx.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStream;
 
 /** Provider for the development platform info. */
 public class DevelopmentPlatformProvider {
@@ -26,7 +27,7 @@ public class DevelopmentPlatformProvider {
   private static final String FLUTTER_PLATFORM = "Flutter";
 
   private static final String UNITY_VERSION_FIELD = "com.google.firebase.crashlytics.unity_version";
-  private static final String FLUTTER_ASSETS_PATH = "flutter_assets";
+  private static final String FLUTTER_ASSET_FILE = "flutter_assets/NOTICES.Z";
 
   private final Context context;
   @Nullable private DevelopmentPlatform developmentPlatform;
@@ -66,14 +67,13 @@ public class DevelopmentPlatformProvider {
     return getResourcesIdentifier(context, UNITY_VERSION_FIELD, "string") != 0;
   }
 
-  /** Quickly and safely check if the given asset path exists. */
-  private boolean assetPathExists(String path) {
-    try {
-      if (context.getAssets() == null) {
-        return false;
-      }
-      String[] list = context.getAssets().list(path);
-      return list != null && list.length > 0;
+  /** Quickly and safely check if the given asset file exists. */
+  private boolean assetFileExists(String file) {
+    if (context.getAssets() == null) {
+      return false;
+    }
+    try (InputStream ignored = context.getAssets().open(file)) {
+      return true;
     } catch (IOException ex) {
       return false;
     }
@@ -101,7 +101,7 @@ public class DevelopmentPlatformProvider {
       }
 
       // Flutter
-      if (assetPathExists(FLUTTER_ASSETS_PATH)) {
+      if (assetFileExists(FLUTTER_ASSET_FILE)) {
         developmentPlatform = FLUTTER_PLATFORM;
         // TODO: Get the version when available - https://github.com/flutter/flutter/issues/92681
         developmentPlatformVersion = null;
