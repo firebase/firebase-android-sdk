@@ -36,10 +36,4 @@ public abstract class Overlay {
   public DocumentKey getKey() {
     return getMutation().getKey();
   }
-
-  public FieldMask getFieldMask() {
-    return getMutation() instanceof PatchMutation
-        ? ((PatchMutation) getMutation()).getMask()
-        : null;
-  }
 }

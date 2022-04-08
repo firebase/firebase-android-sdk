@@ -100,14 +100,11 @@ public final class MutationBatch {
   }
 
   /**
-   * Computes the local view of a document given all the mutations in this batch. Returns an {@link
-   * FieldMask} representing all the fields that are mutated.
+   * Computes the local view of a document given all the mutations in this batch.
+   *
+   * @param mutatedFields Fields that are already mutated before applying the current one.
+   * @return An {@link FieldMask} representing all the fields that are mutated.
    */
-  public FieldMask applyToLocalView(MutableDocument document) {
-    FieldMask mutatedFields = FieldMask.fromSet(new HashSet<>());
-    return applyToLocalView(document, mutatedFields);
-  }
-
   public FieldMask applyToLocalView(MutableDocument document, @Nullable FieldMask mutatedFields) {
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.

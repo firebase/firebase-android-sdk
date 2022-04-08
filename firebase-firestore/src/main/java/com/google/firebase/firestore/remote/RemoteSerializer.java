@@ -269,7 +269,7 @@ public final class RemoteSerializer {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((SetMutation) mutation).getValue()));
     } else if (mutation instanceof PatchMutation) {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((PatchMutation) mutation).getValue()));
-      builder.setUpdateMask(encodeDocumentMask(((PatchMutation) mutation).getMask()));
+      builder.setUpdateMask(encodeDocumentMask(((PatchMutation) mutation).getFieldMask()));
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
     } else if (mutation instanceof VerifyMutation) {

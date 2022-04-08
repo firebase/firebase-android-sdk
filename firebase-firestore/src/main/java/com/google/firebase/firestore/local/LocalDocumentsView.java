@@ -142,7 +142,16 @@ class LocalDocumentsView {
     return computeViews(docs, overlays, new HashSet<>());
   }
 
-  /*Computes the local view for doc */
+  /**
+   * Computes the local view for the given documents.
+   *
+   * @param docs The documents to compute views for. It also has the base version of the documents.
+   * @param overlays The overlays that need to be applied to the given base version of the
+   *     documents.
+   * @param existenceStateChanged A set of documents that might there existence states changed. This
+   *     is used to determine if we need to re-calculate overlays from mutation queues.
+   * @return A map represents the local documents view.
+   */
   private Map<DocumentKey, OverlayedDocument> computeViews(
       Map<DocumentKey, MutableDocument> docs,
       Map<DocumentKey, Overlay> overlays,
@@ -161,7 +170,7 @@ class LocalDocumentsView {
           && (overlay == null || overlay.getMutation() instanceof PatchMutation)) {
         recalculateDocuments.put(doc.getKey(), doc);
       } else if (overlay != null) {
-        mutatedFields.put(doc.getKey(), overlay.getFieldMask());
+        mutatedFields.put(doc.getKey(), overlay.getMutation().getFieldMask());
         overlay.getMutation().applyToLocalView(doc, null, Timestamp.now());
       }
     }

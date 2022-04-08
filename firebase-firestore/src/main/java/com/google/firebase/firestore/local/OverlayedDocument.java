@@ -20,16 +20,16 @@ import javax.annotation.Nullable;
 
 /** Represents a local view (overlay) of a document, and the fields that are locally mutated. */
 public class OverlayedDocument {
-  private Document overlay;
+  private Document overlayedDocument;
   private FieldMask mutatedFields;
 
-  OverlayedDocument(Document overlay, FieldMask mutatedFields) {
-    this.overlay = overlay;
+  OverlayedDocument(Document overlayedDocument, FieldMask mutatedFields) {
+    this.overlayedDocument = overlayedDocument;
     this.mutatedFields = mutatedFields;
   }
 
   public Document getDocument() {
-    return overlay;
+    return overlayedDocument;
   }
 
   /**
