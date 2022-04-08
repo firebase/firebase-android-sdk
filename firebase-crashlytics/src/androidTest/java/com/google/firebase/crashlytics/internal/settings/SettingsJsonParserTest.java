@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import java.io.IOException;
 import java.io.InputStream;
 import org.json.JSONException;
@@ -42,27 +41,13 @@ public class SettingsJsonParserTest extends CrashlyticsTestCase {
     settingsJsonParser = new SettingsJsonParser(mockCurrentTimeProvider);
   }
 
-  public void testSettingsV2Parsing() throws Exception {
-    final JSONObject testJson = getTestJSON("default_settings.json");
-
-    final SettingsData settingsData = settingsJsonParser.parseSettingsJson(testJson);
-
-    Assert.assertEquals(
-        "http://localhost:3000/spi/v1/platform/android/apps", settingsData.appData.url);
-    Assert.assertNull(settingsData.appData.organizationId);
-    Assert.assertNull(settingsData.appData.bundleId);
-  }
-
   public void testSettingsV3Parsing() throws Exception {
     final JSONObject testJson = getTestJSON("firebase_settings.json");
 
-    final SettingsData settingsData = settingsJsonParser.parseSettingsJson(testJson);
-
-    Assert.assertEquals(
-        "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
-        settingsData.appData.url);
-    Assert.assertEquals("12345abcde12345abcde1234", settingsData.appData.organizationId);
-    Assert.assertEquals("com.google.firebase.crashlytics.sdk.test", settingsData.appData.bundleId);
+    Settings settings = settingsJsonParser.parseSettingsJson(testJson);
+    Assert.assertEquals(3, settings.settingsVersion);
+    Assert.assertEquals(7200, settings.cacheDuration);
+    Assert.assertTrue(settings.featureFlagData.collectReports);
   }
 
   private JSONObject getTestJSON(String fileName) throws IOException, JSONException {

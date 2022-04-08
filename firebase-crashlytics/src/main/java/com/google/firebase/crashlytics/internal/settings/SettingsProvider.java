@@ -12,18 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.model;
+package com.google.firebase.crashlytics.internal.settings;
 
-/**
- * Immutable value object used to represent the "session" portion of the App settings data in
- * memory.
- */
-public class SessionSettingsData {
-  public final int maxCustomExceptionEvents;
-  public final int maxCompleteSessionsCount;
+import com.google.android.gms.tasks.Task;
 
-  public SessionSettingsData(int maxCustomExceptionEvents, int maxCompleteSessionsCount) {
-    this.maxCustomExceptionEvents = maxCustomExceptionEvents;
-    this.maxCompleteSessionsCount = maxCompleteSessionsCount;
-  }
+public interface SettingsProvider {
+  Settings getSettingsSync();
+
+  Task<Settings> getSettingsAsync();
 }

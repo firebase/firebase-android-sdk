@@ -39,9 +39,9 @@ import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import com.google.firebase.crashlytics.internal.settings.TestSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
+import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.util.Arrays;
@@ -58,7 +58,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   private Context testContext;
   private IdManager idManager;
-  private SettingsDataProvider testSettingsDataProvider;
+  private SettingsProvider testSettingsProvider;
   private FileStore testFileStore;
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
@@ -81,17 +81,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     testFileStore = new FileStore(testContext);
 
-    final SettingsData testSettingsData = new TestSettingsData(3);
+    Settings testSettings = new TestSettings(3);
 
     mockSessionReportingCoordinator = mock(SessionReportingCoordinator.class);
 
     mockDataCollectionArbiter = mock(DataCollectionArbiter.class);
     when(mockDataCollectionArbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-    testSettingsDataProvider = mock(SettingsDataProvider.class);
-    when(testSettingsDataProvider.getSettings()).thenReturn(testSettingsData);
-    when(testSettingsDataProvider.getAppSettings())
-        .thenReturn(Tasks.forResult(testSettingsData.appData));
+    testSettingsProvider = mock(SettingsProvider.class);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
   }
 
   /** A convenience class for building CrashlyticsController instances for testing. */
@@ -185,7 +184,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
     controller.writeNonFatalException(thread, nonFatal);
-    controller.doCloseSessions(testSettingsDataProvider);
+    controller.doCloseSessions(testSettingsProvider);
 
     verify(mockSessionReportingCoordinator)
         .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
@@ -200,7 +199,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
-    controller.handleUncaughtException(testSettingsDataProvider, thread, fatal);
+    controller.handleUncaughtException(testSettingsProvider, thread, fatal);
 
     verify(mockSessionReportingCoordinator)
         .persistFatalEvent(eq(fatal), eq(thread), eq(sessionId), anyLong());
@@ -274,7 +273,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final CrashlyticsController controller =
         builder().setNativeComponent(mockNativeComponent).setLogFileManager(logFileManager).build();
 
-    controller.finalizeSessions(testSettingsDataProvider);
+    controller.finalizeSessions(testSettingsProvider);
     verify(mockSessionReportingCoordinator)
         .finalizeSessionWithNativeEvent(eq(previousSessionId), any());
     verify(mockSessionReportingCoordinator, never())
@@ -283,7 +282,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   public void testMissingNativeComponentCausesNoReports() {
     final CrashlyticsController controller = createController();
-    controller.finalizeSessions(testSettingsDataProvider);
+    controller.finalizeSessions(testSettingsProvider);
 
     List<String> sessions = testFileStore.getAllOpenSessionIds();
     for (String sessionId : sessions) {
@@ -300,7 +299,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   public void testLoggedExceptionsAfterCrashOk() {
     final CrashlyticsController controller = builder().build();
     controller.handleUncaughtException(
-        testSettingsDataProvider, Thread.currentThread(), new RuntimeException());
+        testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
     controller.writeNonFatalException(Thread.currentThread(), new RuntimeException());
@@ -314,7 +313,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   public void testLogStringAfterCrashOk() {
     final CrashlyticsController controller = builder().build();
     controller.handleUncaughtException(
-        testSettingsDataProvider, Thread.currentThread(), new RuntimeException());
+        testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
     controller.writeToLog(System.currentTimeMillis(), "Hi");
@@ -328,10 +327,10 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   public void testFinalizeSessionAfterCrashOk() throws Exception {
     final CrashlyticsController controller = builder().build();
     controller.handleUncaughtException(
-        testSettingsDataProvider, Thread.currentThread(), new RuntimeException());
+        testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.finalizeSessions(testSettingsDataProvider);
+    controller.finalizeSessions(testSettingsProvider);
   }
 
   public void testUploadWithNoReports() throws Exception {
@@ -339,7 +338,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
+    Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     await(task);
 
@@ -354,7 +353,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     await(task);
 
@@ -380,7 +379,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
@@ -407,7 +406,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
@@ -448,7 +447,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsDataProvider.getAppSettings());
+    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
@@ -491,8 +490,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     controller.openSession(SESSION_ID);
     controller.handleUncaughtException(
-        testSettingsDataProvider, Thread.currentThread(), new RuntimeException("Fatal"));
-    controller.finalizeSessions(testSettingsDataProvider);
+        testSettingsProvider, Thread.currentThread(), new RuntimeException("Fatal"));
+    controller.finalizeSessions(testSettingsProvider);
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
   }

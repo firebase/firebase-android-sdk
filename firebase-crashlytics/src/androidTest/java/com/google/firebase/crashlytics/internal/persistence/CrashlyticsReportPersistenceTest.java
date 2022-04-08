@@ -28,9 +28,9 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
+import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -48,15 +48,18 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   private CrashlyticsReportPersistence reportPersistence;
   private FileStore fileStore;
 
-  private static SettingsDataProvider getSettingsMock(
+  private static SettingsProvider createSettingsProviderMock(
       int maxCompleteSessionsCount, int maxCustomExceptionEvents) {
-    SettingsDataProvider settingsDataProvider = mock(SettingsDataProvider.class);
-    Settings settingsMock = mock(Settings.class);
-    SessionSettingsData sessionSettingsDataMock =
-        new SessionSettingsData(maxCustomExceptionEvents, maxCompleteSessionsCount);
-    when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
-    return settingsDataProvider;
+
+    SettingsProvider settingsProvider = mock(SettingsProvider.class);
+
+    Settings.SessionData sessionData =
+        new Settings.SessionData(maxCustomExceptionEvents, maxCompleteSessionsCount);
+    Settings settings =
+        new Settings(0, sessionData, new FeatureFlagData(true, false), 3, 0, 1.0, 1.0, 1);
+
+    when(settingsProvider.getSettingsSync()).thenReturn(settings);
+    return settingsProvider;
   }
 
   @Override
@@ -64,7 +67,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     fileStore = new FileStore(getContext());
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT));
+            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT));
   }
 
   public void testListSortedOpenSessionIds() {
@@ -270,7 +273,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testFinalizeReports_capsReports() {
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
@@ -283,15 +287,18 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   }
 
   public void testFinalizeReports_whenSettingsChanges_capsReports() throws IOException {
-    SettingsDataProvider settingsDataProvider = mock(SettingsDataProvider.class);
-    Settings settingsMock = mock(Settings.class);
-    SessionSettingsData sessionSettingsDataMock =
-        new SessionSettingsData(VERY_LARGE_UPPER_LIMIT, 4);
-    SessionSettingsData sessionSettingsDataMockDifferentValues =
-        new SessionSettingsData(VERY_LARGE_UPPER_LIMIT, 8);
-    when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
-    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
+    SettingsProvider settingsProvider = mock(SettingsProvider.class);
+
+    Settings.SessionData sessionData1 = new Settings.SessionData(VERY_LARGE_UPPER_LIMIT, 4);
+    Settings.SessionData sessionData2 = new Settings.SessionData(VERY_LARGE_UPPER_LIMIT, 8);
+
+    Settings settings1 =
+        new Settings(0, sessionData1, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+    Settings settings2 =
+        new Settings(0, sessionData2, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+
+    when(settingsProvider.getSettingsSync()).thenReturn(settings1);
+    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);
 
     DecimalFormat format = new DecimalFormat("00");
     for (int i = 0; i < 16; i++) {
@@ -302,7 +309,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     List<CrashlyticsReportWithSessionId> finalizedReports =
         reportPersistence.loadFinalizedReports();
     assertEquals(4, finalizedReports.size());
-    when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMockDifferentValues);
+    when(settingsProvider.getSettingsSync()).thenReturn(settings2);
 
     for (int i = 16; i < 32; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
@@ -316,7 +323,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testFinalizeReports_removesLowPriorityReportsFirst() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
 
     for (int i = 0; i < 10; i++) {
       boolean priority = i >= 3 && i <= 8;
@@ -338,7 +346,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
     CrashlyticsReport.FilesPayload filesPayload = makeFilePayload();
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
 
     persistReportWithEvent(reportPersistence, "testSession1", true);
     reportPersistence.finalizeSessionWithNativeEvent("testSession1", filesPayload);
@@ -360,7 +369,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testFinalizeReports_removesOldestReportsFirst() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(4, VERY_LARGE_UPPER_LIMIT));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
     for (int i = 0; i < 8; i++) {
       String sessionId = "testSession" + i;
       persistReportWithEvent(reportPersistence, sessionId, true);
@@ -508,7 +518,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
@@ -542,15 +553,17 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testPersistEvent_whenSettingsChanges_keepsAppropriateNumberOfMostRecentEvents()
       throws IOException {
-    SettingsDataProvider settingsDataProvider = mock(SettingsDataProvider.class);
-    Settings settingsMock = mock(Settings.class);
-    SessionSettingsData sessionSettingsDataMock =
-        new SessionSettingsData(4, VERY_LARGE_UPPER_LIMIT);
-    SessionSettingsData sessionSettingsDataMockDifferentValues =
-        new SessionSettingsData(8, VERY_LARGE_UPPER_LIMIT);
-    when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMock);
-    when(settingsDataProvider.getSettings()).thenReturn(settingsMock);
-    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsDataProvider);
+    SettingsProvider settingsProvider = mock(SettingsProvider.class);
+    Settings.SessionData sessionData1 = new Settings.SessionData(4, VERY_LARGE_UPPER_LIMIT);
+    Settings.SessionData sessionData2 = new Settings.SessionData(8, VERY_LARGE_UPPER_LIMIT);
+
+    Settings settings1 =
+        new Settings(0, sessionData1, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+    Settings settings2 =
+        new Settings(0, sessionData2, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+
+    when(settingsProvider.getSettingsSync()).thenReturn(settings1);
+    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);
 
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -582,7 +595,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
             .withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
 
-    when(settingsMock.getSessionData()).thenReturn(sessionSettingsDataMockDifferentValues);
+    when(settingsProvider.getSettingsSync()).thenReturn(settings2);
 
     final CrashlyticsReport.Session.Event testEvent6 = makeTestEvent("type6", "reason6");
     final CrashlyticsReport.Session.Event testEvent7 = makeTestEvent("type7", "reason7");
@@ -631,7 +644,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   public void testPersistReportWithAnrEvent() throws IOException {
     reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, getSettingsMock(VERY_LARGE_UPPER_LIMIT, 4));
+        new CrashlyticsReportPersistence(
+            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final Event testEvent = makeTestAnrEvent();

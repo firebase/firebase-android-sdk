@@ -33,6 +33,9 @@
         <meta-data
             android:name="sessions_sampling_percentage"
             android:value="100.0" />
+        <meta-data
+            android:name="fragment_sampling_percentage"
+            android:value="100.0" />
     </application>
 
 </manifest>
