@@ -9,26 +9,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Map;
 import java.util.logging.Logger;
 
 // Class extended from AsyncTask that will allow for async monitoring of Realtime RC HTTP/1.1 chunked stream.
 public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
+    private static final Logger logger = Logger.getLogger("Real_Time_RC");
+
     private final HttpURLConnection httpURLConnection;
     private final ConfigFetchHandler configFetchHandler;
-    private final Map<String, ConfigRealtimeHTTPClient.RealTimeEventListener> eventListeners;
-    private static final Logger logger = Logger.getLogger("Real_Time_RC");
-    private final ConfigRealtimeHTTPClient.RealTimeEventListener retryCallback;
+    private final ConfigRealtimeHTTPClient.EventListener eventListener;
+    private final ConfigRealtimeHTTPClient.EventListener retryCallback;
 
     public ConfigAsyncAutoFetch(HttpURLConnection httpURLConnection,
                                 ConfigFetchHandler configFetchHandler,
-                                Map<String, ConfigRealtimeHTTPClient.RealTimeEventListener> eventListeners,
-                                ConfigRealtimeHTTPClient.RealTimeEventListener retryCallback) {
+                                ConfigRealtimeHTTPClient.EventListener eventListener,
+                                ConfigRealtimeHTTPClient.EventListener retryCallback) {
         this.httpURLConnection = httpURLConnection;
         this.configFetchHandler = configFetchHandler;
-        this.eventListeners = eventListeners;
+        this.eventListener = eventListener;
         this.retryCallback = retryCallback;
     }
 
@@ -53,7 +51,6 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
                 } else {
                     logger.info("Can't open Realtime stream");
                 }
-
             } catch (IOException ex) {
                 logger.info("Error handling messages with exception: " + ex.toString());
             }
@@ -67,18 +64,29 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         String message;
         while ((message = reader.readLine()) != null) {
             logger.info(message);
-                Task<ConfigFetchHandler.FetchResponse> fetchTask = this.configFetchHandler.fetch(0L);
-                fetchTask.onSuccessTask((unusedFetchResponse) ->
-                        {
-                            logger.info("Finished Fetching new updates.");
-                            // Execute callbacks for listeners.
-                            for (ConfigRealtimeHTTPClient.RealTimeEventListener listener : eventListeners.values()) {
-                                listener.onEvent();
-                            }
-                            return Tasks.forResult(null);
-                        }
-                );
+
+            this.fetchAndHandleCallbacks(5, this.configFetchHandler.getTemplateVersionNumber());
         }
         reader.close();
+    }
+
+    private void fetchAndHandleCallbacks(int remainingAttempts, long currentVersion) {
+        if (remainingAttempts == 0) {
+            return;
+        }
+        Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+        fetchTask.onSuccessTask((unusedFetchResponse) ->
+        {
+            long newTemplateVersion
+                    = unusedFetchResponse.getFetchedConfigs().getTemplateVersionNumber();
+            if (newTemplateVersion > currentVersion) {
+                // Execute callbacks for listener.
+                this.eventListener.onEvent();
+            } else {
+                // Continue fetching until template version number if greater then current.
+                fetchAndHandleCallbacks(remainingAttempts - 1, currentVersion);
+            }
+            return Tasks.forResult(null);
+        });
     }
 }
