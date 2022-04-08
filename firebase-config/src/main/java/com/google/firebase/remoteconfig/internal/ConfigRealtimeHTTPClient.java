@@ -14,16 +14,14 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,14 +34,14 @@ public class ConfigRealtimeHTTPClient {
     private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
             "X-Goog-Firebase-Installations-Auth";
     private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
-
-    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8788";
+    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8080";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
+    private boolean firstConnection = true;
+    private boolean isInBackground = false;
 
     private final ConfigFetchHandler configFetchHandler;
     private final FirebaseApp firebaseApp;
     private final FirebaseInstallationsApi firebaseInstallations;
-    private final Executor executor;
     private final Context context;
 
     // Retry parameters
@@ -57,30 +55,27 @@ public class ConfigRealtimeHTTPClient {
     // Realtime HTTP components
     private URL realtimeURL;
     private HttpURLConnection httpURLConnection;
-    private final Map<String, RealTimeEventListener> eventListeners;
+    private EventListener eventListener;
 
     public ConfigRealtimeHTTPClient(FirebaseApp firebaseApp,
                                     FirebaseInstallationsApi firebaseInstallations,
                                     ConfigFetchHandler configFetchHandler,
-                                    Context context,
-                                    Executor executor) {
+                                    Context context) {
         this.firebaseApp = firebaseApp;
         this.configFetchHandler = configFetchHandler;
         this.firebaseInstallations = firebaseInstallations;
         this.context = context;
-        this.executor = executor;
-        this.eventListeners = new HashMap<>();
 
         // Retry parameters
         this.random = new Random();
         this.timer = new Timer();
+        this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
 
         try {
             this.realtimeURL = new URL(this.REALTIME_URL_STRING);
         } catch (MalformedURLException ex) {
             logger.info("URL is malformed");
         }
-        this.retryOnEveryNetworkConnection();
     }
 
     /**
@@ -123,7 +118,10 @@ public class ConfigRealtimeHTTPClient {
     }
 
     private void setCommonRequestHeaders(HttpURLConnection httpURLConnection) {
+        // Get Installation Token
         getInstallationAuthToken(httpURLConnection);
+
+        // API Key
         httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
 
         // Headers required for Android API Key Restrictions.
@@ -139,58 +137,28 @@ public class ConfigRealtimeHTTPClient {
         // Headers to denote that the request body is a JSONObject.
         httpURLConnection.setRequestProperty("Content-Type", "application/json");
         httpURLConnection.setRequestProperty("Accept", "application/json");
+
+        httpURLConnection.setRequestProperty("Transfer-Encoding", "chunked");
     }
-
-    // Open HTTP connection and listen for messages asyncly
-    public void startRealtimeConnection() {
-        logger.info("Realtime connecting...");
-        this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
-        this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
-        if (!this.eventListeners.isEmpty()) {
-            try {
-                if (this.httpURLConnection == null) {
-                    this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
-                    this.setCommonRequestHeaders(this.httpURLConnection);
-                    this.httpURLConnection.setRequestMethod("POST");
-                    this.httpURLConnection.setRequestProperty("project", "299394317711");
-//                    this.httpURLConnection.setRequestProperty("project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
-                    this.httpURLConnection.setRequestProperty("namespace", "firebase");
-                    this.httpURLConnection.setRequestProperty("lastKnownVersionNumber", Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
-                }
-                logger.info("Realtime connection started.");
-
-                RealTimeEventListener retryCallback = new RealTimeEventListener() {
-                    @Override
-                    public void onEvent() {
-                        retryHTTPConnection();
-                    }
-                };
-                new ConfigAsyncAutoFetch(this.httpURLConnection, this.configFetchHandler, this.eventListeners, retryCallback).execute();
-            } catch (Exception ex) {
-                logger.info("Can't start http connection");
-                this.retryHTTPConnection();
-            }
-        } else {
-            logger.info("Add a listener before starting Realtime!");
-        }
-    }
-
-    // Close HTTP connection.
-    public void pauseRealtimeConnection() {
-        if (this.httpURLConnection != null) {
-            this.httpURLConnection.disconnect();
-            this.httpURLConnection = null;
-            logger.info("Realtime connection stopped.");
-        }
+    
+    private void setRequestParams(HttpURLConnection httpURLConnection) throws ProtocolException {
+        httpURLConnection.setRequestMethod("POST");
+//                    this.httpURLConnection.setRequestProperty("project", "299394317711");
+        httpURLConnection.setRequestProperty(
+                "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
+        httpURLConnection.setRequestProperty("namespace", "firebase");
+        httpURLConnection.setRequestProperty(
+                "lastKnownVersionNumber", Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
     }
 
     // Try to reopen HTTP connection after a random amount of time
     private void retryHTTPConnection() {
-        if (this.RETRIES_REMAINING > 0) {
+        if (!isInBackground && this.RETRIES_REMAINING > 0) {
             this.RETRIES_REMAINING--;
             this.RETRY_MULTIPLIER++;
             this.pauseRealtimeConnection();
-            logger.info("Retrying in " + (this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER) + " seconds");
+            logger.info("Retrying in "
+                    + (this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER) + " seconds");
             this.timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
@@ -203,50 +171,106 @@ public class ConfigRealtimeHTTPClient {
         }
     }
 
-    private void retryOnEveryNetworkConnection() {
+    private void retryOnEveryNetworkConnection(ConfigRealtimeHTTPClient realtimeHTTPClient) {
         Timer retryTimer = new Timer();
-
         retryTimer.scheduleAtFixedRate(new TimerTask() {
-            final ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            final NetworkInfo[] networkInfos = connectivityManager.getAllNetworkInfo();
+            final ConnectivityManager connectivityManager
+                    = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            final ConfigRealtimeHTTPClient realtimeClient = realtimeHTTPClient;
 
             @Override
             public void run() {
+                NetworkInfo[] networkInfos = connectivityManager.getAllNetworkInfo();
                 for (NetworkInfo networkInfo : networkInfos) {
                     String networkName = networkInfo.getTypeName();
                     if (networkName.equalsIgnoreCase("WIFI") || networkName.equalsIgnoreCase("MOBILE")) {
                         if (networkInfo.isAvailable()) {
-                            startRealtimeConnection();
+                            this.realtimeClient.startRealtimeConnection();
                         }
                     }
                 }
             }
-        }, 6000, 5 * (60*1000));
+        }, 5000, 5 * (60*1000));
+    }
+    
+    private void startAsyncAutofetch() {
+        EventListener retryCallback = new EventListener() {
+            @Override
+            public void onEvent() {
+                retryHTTPConnection();
+            }
+        };
+        new ConfigAsyncAutoFetch(
+                this.httpURLConnection, this.configFetchHandler, this.eventListener, retryCallback).execute();
+    }
+    
+    public void setBackgroundFlag(boolean isInBackground) {
+        this.isInBackground = isInBackground;
     }
 
-    public class RealtimeListenerRegistration {
-        final String listenerName;
-        final Map<String, RealTimeEventListener> eventListener;
-
-        public RealtimeListenerRegistration (String listenerName, Map<String, RealTimeEventListener> eventListeners) {
-            this.listenerName = listenerName;
-            this.eventListener = eventListeners;
+    // Open HTTP connection and listen for messages asyncly
+    public void startRealtimeConnection() {
+        if (firstConnection) {
+            this.retryOnEveryNetworkConnection(this);
+            this.firstConnection = false;
         }
 
-        public void removeListener() {
-            this.eventListener.remove(this.listenerName);
+        if (!isInBackground && this.eventListener != null) {
+            logger.info("Realtime connecting...");
+            try {
+                if (this.httpURLConnection == null) {
+                    this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
+                    this.setCommonRequestHeaders(this.httpURLConnection);
+                    this.setRequestParams(this.httpURLConnection);
+
+                    this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
+                    this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
+                    startAsyncAutofetch();
+                }
+                logger.info("Realtime connection started.");
+            } catch (IOException ex) {
+                logger.info("Can't start http connection");
+                this.retryHTTPConnection();
+            }
+        }
+    }
+
+    // Close HTTP connection.
+    public void pauseRealtimeConnection() {
+        if (this.httpURLConnection != null) {
+            this.httpURLConnection.disconnect();
+            this.httpURLConnection = null;
+            logger.info("Realtime connection stopped.");
+        }
+    }
+
+    // Add Event listener.
+    public ListenerRegistration setRealtimeEventListener(EventListener eventListener) {
+        this.eventListener = eventListener;
+        return new ListenerRegistration(this);
+    }
+
+    public void removeRealtimeEventListener() {
+        this.eventListener = null;
+    }
+
+    public class ListenerRegistration {
+        private final ConfigRealtimeHTTPClient client;
+
+        public ListenerRegistration (
+                ConfigRealtimeHTTPClient client) {
+            this.client = client;
+        }
+
+        public void remove() {
+            this.client.removeRealtimeEventListener();
+            this.client.pauseRealtimeConnection();
         }
     }
 
     // Event Listener interface to be used by developers.
-    public interface RealTimeEventListener extends EventListener {
+    public interface EventListener {
         // Call back for when Real Time.
         void onEvent();
-    }
-
-    // Add Event listener.
-    public RealtimeListenerRegistration putRealTimeEventListener(String listenerName, RealTimeEventListener realTimeEventListener) {
-        this.eventListeners.put(listenerName, realTimeEventListener);
-        return new RealtimeListenerRegistration(listenerName, eventListeners);
     }
 }

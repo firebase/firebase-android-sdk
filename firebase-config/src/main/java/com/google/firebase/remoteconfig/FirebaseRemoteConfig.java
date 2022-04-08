@@ -16,6 +16,8 @@ package com.google.firebase.remoteconfig;
 
 import android.app.Application;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,6 +45,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executor;
 
 import org.json.JSONArray;
@@ -674,24 +678,23 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Starts realtime.
+   * Starts realtime and returns registration.
+   *
+   * @param realtimeEventListener A event listener that has one function that executes a callback
+   * @return A registration object that allows the user to remove the event listener,
+   *      and if it is the last listener, stop Realtime.
+   *
    * */
-  public ConfigRealtimeHTTPClient.RealtimeListenerRegistration startRealtime(
-          ConfigRealtimeHTTPClient.RealTimeEventListener realTimeEventListener) {
-    ConfigRealtimeHTTPClient.RealtimeListenerRegistration registration
-            = this.configRealtimeHTTPClient.putRealTimeEventListener("test", realTimeEventListener);
-
+  public ConfigRealtimeHTTPClient.ListenerRegistration setOnConfigUpdateListener(
+          ConfigRealtimeHTTPClient.EventListener realtimeEventListener) {
+    ConfigRealtimeHTTPClient.ListenerRegistration registration
+            = this.configRealtimeHTTPClient.setRealtimeEventListener(realtimeEventListener);
+    this.configRealtimeHTTPClient.startRealtimeConnection();
     return registration;
   }
 
-  /**
-   * Stops realtime.
-   * */
-  public void pauseRealtime() {
-    this.configRealtimeHTTPClient.pauseRealtimeConnection();
-  }
-
   public void handleAutomaticRealtime(boolean background) {
+    this.configRealtimeHTTPClient.setBackgroundFlag(background);
     if (!background) {
       Log.i(this.TAG, "App is in foreground");
       this.configRealtimeHTTPClient.startRealtimeConnection();
