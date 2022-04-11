@@ -101,7 +101,8 @@ public final class PatchMutation extends Mutation {
    * Returns the mask to apply to {@link #getValue}, where only fields that are in both the
    * fieldMask and the value will be updated.
    */
-  public FieldMask getMask() {
+  @Override
+  public FieldMask getFieldMask() {
     return mask;
   }
 

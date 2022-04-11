@@ -119,29 +119,45 @@ class LocalDocumentsView {
       Map<DocumentKey, MutableDocument> docs, Set<DocumentKey> existenceStateChanged) {
     Map<DocumentKey, Overlay> overlays = new HashMap<>();
     populateOverlays(overlays, docs.keySet());
-    return computeViews(docs, overlays, existenceStateChanged);
+    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+    for (Map.Entry<DocumentKey, OverlayedDocument> entry :
+        computeViews(docs, overlays, existenceStateChanged).entrySet()) {
+      result = result.insert(entry.getKey(), entry.getValue().getDocument());
+    }
+
+    return result;
   }
 
   /**
-   * Similar to {@link #getDocuments}, but creates the local view from the given {@code baseDocs}
-   * without retrieving documents from the local store.
+   * Gets the overlayed documents for the given document map, which will include the local view of
+   * those documents and a {@code FieldMask} indicating which fields are mutated locally, null if
+   * overlay is a Set or Delete mutation.
    *
    * @param docs The documents to apply local mutations to get the local views.
    */
-  ImmutableSortedMap<DocumentKey, Document> getLocalViewOfDocuments(
+  Map<DocumentKey, OverlayedDocument> getOverlayedDocuments(
       Map<DocumentKey, MutableDocument> docs) {
     Map<DocumentKey, Overlay> overlays = new HashMap<>();
     populateOverlays(overlays, docs.keySet());
     return computeViews(docs, overlays, new HashSet<>());
   }
 
-  /*Computes the local view for doc */
-  private ImmutableSortedMap<DocumentKey, Document> computeViews(
+  /**
+   * Computes the local view for the given documents.
+   *
+   * @param docs The documents to compute views for. It also has the base version of the documents.
+   * @param overlays The overlays that need to be applied to the given base version of the
+   *     documents.
+   * @param existenceStateChanged A set of documents whose existence states might have changed. This
+   *     is used to determine if we need to re-calculate overlays from mutation queues.
+   * @return A map represents the local documents view.
+   */
+  private Map<DocumentKey, OverlayedDocument> computeViews(
       Map<DocumentKey, MutableDocument> docs,
       Map<DocumentKey, Overlay> overlays,
       Set<DocumentKey> existenceStateChanged) {
-    ImmutableSortedMap<DocumentKey, Document> results = emptyDocumentMap();
     Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
+    Map<DocumentKey, FieldMask> mutatedFields = new HashMap<>();
     for (MutableDocument doc : docs.values()) {
       Overlay overlay = overlays.get(doc.getKey());
       // Recalculate an overlay if the document's existence state is changed due to a remote
@@ -154,19 +170,26 @@ class LocalDocumentsView {
           && (overlay == null || overlay.getMutation() instanceof PatchMutation)) {
         recalculateDocuments.put(doc.getKey(), doc);
       } else if (overlay != null) {
+        mutatedFields.put(doc.getKey(), overlay.getMutation().getFieldMask());
         overlay.getMutation().applyToLocalView(doc, null, Timestamp.now());
       }
     }
 
-    recalculateAndSaveOverlays(recalculateDocuments);
+    Map<DocumentKey, FieldMask> recalculatedFields =
+        recalculateAndSaveOverlays(recalculateDocuments);
+    mutatedFields.putAll(recalculatedFields);
 
+    Map<DocumentKey, OverlayedDocument> result = new HashMap<>();
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
-      results = results.insert(entry.getKey(), entry.getValue());
+      result.put(
+          entry.getKey(),
+          new OverlayedDocument(entry.getValue(), mutatedFields.get(entry.getKey())));
     }
-    return results;
+    return result;
   }
 
-  private void recalculateAndSaveOverlays(Map<DocumentKey, MutableDocument> docs) {
+  private Map<DocumentKey, FieldMask> recalculateAndSaveOverlays(
+      Map<DocumentKey, MutableDocument> docs) {
     List<MutationBatch> batches =
         mutationQueue.getAllMutationBatchesAffectingDocumentKeys(docs.keySet());
 
@@ -211,6 +234,8 @@ class LocalDocumentsView {
       }
       documentOverlayCache.saveOverlays(entry.getKey(), overlays);
     }
+
+    return masks;
   }
 
   /**
@@ -311,9 +336,9 @@ class LocalDocumentsView {
     }
 
     populateOverlays(overlays, docs.keySet());
-    ImmutableSortedMap<DocumentKey, Document> localDocs =
+    Map<DocumentKey, OverlayedDocument> localDocs =
         computeViews(docs, overlays, Collections.emptySet());
-    return new LocalDocumentsResult(largestBatchId, localDocs);
+    return LocalDocumentsResult.fromOverlayedDocuments(largestBatchId, localDocs);
   }
 
   /**
