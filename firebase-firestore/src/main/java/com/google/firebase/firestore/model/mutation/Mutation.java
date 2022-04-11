@@ -164,6 +164,12 @@ public abstract class Mutation {
   public abstract @Nullable FieldMask applyToLocalView(
       MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime);
 
+  /**
+   * Returns a {@code FieldMask} representing the fields that will be changed by applying this
+   * mutation. Returns {@code null} if the mutation will overwrite the entire document.
+   */
+  public abstract @Nullable FieldMask getFieldMask();
+
   /** Helper for derived classes to implement .equals(). */
   boolean hasSameKeyAndPrecondition(Mutation other) {
     return key.equals(other.key) && precondition.equals(other.precondition);

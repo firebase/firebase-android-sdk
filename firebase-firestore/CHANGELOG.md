@@ -3,6 +3,9 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # Unreleased
+- [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
+
+# 24.1.1
 - [fixed] Fixed an issue in the experimental index engine that might have
   caused Firestore to exclude document results for limit queries with local
   modifications.

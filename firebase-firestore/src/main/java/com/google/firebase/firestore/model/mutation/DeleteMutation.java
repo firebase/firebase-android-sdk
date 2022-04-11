@@ -79,4 +79,9 @@ public final class DeleteMutation extends Mutation {
 
     return previousMask;
   }
+
+  @Override
+  public @Nullable FieldMask getFieldMask() {
+    return null;
+  }
 }
