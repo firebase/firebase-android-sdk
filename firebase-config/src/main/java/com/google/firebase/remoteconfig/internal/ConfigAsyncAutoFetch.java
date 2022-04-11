@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 // Class extended from AsyncTask that will allow for async monitoring of Realtime RC HTTP/1.1 chunked stream.
 public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
+    private int FETCH_RETRY = 5;
 
     private final HttpURLConnection httpURLConnection;
     private final ConfigFetchHandler configFetchHandler;
@@ -64,8 +65,7 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         String message;
         while ((message = reader.readLine()) != null) {
             logger.info(message);
-
-            this.fetchAndHandleCallbacks(5, this.configFetchHandler.getTemplateVersionNumber());
+            this.fetchAndHandleCallbacks(this.FETCH_RETRY, this.configFetchHandler.getTemplateVersionNumber());
         }
         reader.close();
     }
