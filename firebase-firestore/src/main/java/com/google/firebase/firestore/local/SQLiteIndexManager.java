@@ -679,10 +679,10 @@ final class SQLiteIndexManager implements IndexManager {
     Iterator<Value> position = values.iterator();
     for (FieldIndex.Segment segment : fieldIndex.getDirectionalSegments()) {
       Value value = position.next();
-      for (IndexByteEncoder encoder : encoders) {
-        if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
-          encoders = expandIndexValues(encoders, segment, value);
-        } else {
+      if (isInFilter(target, segment.getFieldPath()) && isArray(value)) {
+        encoders = expandIndexValues(encoders, segment, value);
+      } else {
+        for (IndexByteEncoder encoder : encoders) {
           DirectionalIndexByteEncoder directionalEncoder = encoder.forKind(segment.getKind());
           FirestoreIndexValueWriter.INSTANCE.writeIndexValue(value, directionalEncoder);
         }
