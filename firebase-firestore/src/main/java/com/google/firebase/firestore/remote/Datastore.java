@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
+
 import android.content.Context;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -36,6 +39,7 @@ import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -170,21 +174,18 @@ public class Datastore {
     for (DocumentKey key : keys) {
       builder.addDocuments(serializer.encodeKey(key));
     }
-    return channel
-        .runStreamingResponseRpc(FirestoreGrpc.getBatchGetDocumentsMethod(), builder.build())
-        .continueWith(
-            workerQueue.getExecutor(),
-            task -> {
-              if (!task.isSuccessful()) {
-                if (task.getException() instanceof FirebaseFirestoreException
-                    && ((FirebaseFirestoreException) task.getException()).getCode()
-                        == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
-                  channel.invalidateToken();
-                }
-              }
+    List<BatchGetDocumentsResponse> responses = new ArrayList<>();
+    TaskCompletionSource<List<MutableDocument>> completionSource = new TaskCompletionSource<>();
 
+    channel.runStreamingResponseRpc(
+        FirestoreGrpc.getBatchGetDocumentsMethod(),
+        builder.build(),
+        new FirestoreChannel.StreamingListener<BatchGetDocumentsResponse>() {
+          @Override
+          public void onMessage(BatchGetDocumentsResponse message) {
+            responses.add(message);
+            if (responses.size() == keys.size()) {
               Map<DocumentKey, MutableDocument> resultMap = new HashMap<>();
-              List<BatchGetDocumentsResponse> responses = task.getResult();
               for (BatchGetDocumentsResponse response : responses) {
                 MutableDocument doc = serializer.decodeMaybeDocument(response);
                 resultMap.put(doc.getKey(), doc);
@@ -193,8 +194,25 @@ public class Datastore {
               for (DocumentKey key : keys) {
                 results.add(resultMap.get(key));
               }
-              return results;
-            });
+              completionSource.trySetResult(results);
+            }
+          }
+
+          @Override
+          public void onClose(Status status) {
+            if (status.isOk()) {
+              completionSource.trySetResult(Collections.emptyList());
+            } else {
+              FirebaseFirestoreException exception = exceptionFromStatus(status);
+              if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                channel.invalidateToken();
+              }
+              completionSource.trySetException(exception);
+            }
+          }
+        });
+
+    return completionSource.getTask();
   }
 
   /**
