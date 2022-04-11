@@ -42,14 +42,13 @@ import io.grpc.Status;
  */
 public class FirestoreChannel {
 
-  public abstract static class Listener<T> {
-    public Listener() {}
+  /** Listen to changes inside runStreamingResponseRpc */
+  public abstract static class StreamingListener<T> {
+    public StreamingListener() {}
 
     public void onMessage(T message) {}
 
     public void onClose(Status status) {}
-
-    public boolean callback_fired = false;
   }
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
@@ -195,7 +194,7 @@ public class FirestoreChannel {
   <ReqT, RespT> void runStreamingResponseRpc(
       MethodDescriptor<ReqT, RespT> method,
       ReqT request,
-      FirestoreChannel.Listener<RespT> callback) {
+      FirestoreChannel.StreamingListener<RespT> callback) {
     callProvider
         .createClientCall(method)
         .addOnCompleteListener(

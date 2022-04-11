@@ -39,6 +39,7 @@ import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -174,17 +175,16 @@ public class Datastore {
       builder.addDocuments(serializer.encodeKey(key));
     }
     List<BatchGetDocumentsResponse> responses = new ArrayList<>();
-    TaskCompletionSource<List<MutableDocument>> tcs = new TaskCompletionSource<>();
+    TaskCompletionSource<List<MutableDocument>> completionSource = new TaskCompletionSource<>();
 
     channel.runStreamingResponseRpc(
         FirestoreGrpc.getBatchGetDocumentsMethod(),
         builder.build(),
-        new FirestoreChannel.Listener<BatchGetDocumentsResponse>() {
+        new FirestoreChannel.StreamingListener<BatchGetDocumentsResponse>() {
           @Override
           public void onMessage(BatchGetDocumentsResponse message) {
             responses.add(message);
             if (responses.size() == keys.size()) {
-              callback_fired = true;
               Map<DocumentKey, MutableDocument> resultMap = new HashMap<>();
               for (BatchGetDocumentsResponse response : responses) {
                 MutableDocument doc = serializer.decodeMaybeDocument(response);
@@ -194,26 +194,25 @@ public class Datastore {
               for (DocumentKey key : keys) {
                 results.add(resultMap.get(key));
               }
-              tcs.setResult(results);
+              completionSource.trySetResult(results);
             }
           }
 
           @Override
           public void onClose(Status status) {
-            if (status.isOk() && !callback_fired) {
-              callback_fired = true;
-              tcs.setResult(new ArrayList<>());
-            } else if (!status.isOk()) {
+            if (status.isOk()) {
+              completionSource.trySetResult(Collections.emptyList());
+            } else {
               FirebaseFirestoreException exception = exceptionFromStatus(status);
               if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
                 channel.invalidateToken();
               }
-              tcs.setException(exception);
+              completionSource.trySetException(exception);
             }
           }
         });
 
-    return tcs.getTask();
+    return completionSource.getTask();
   }
 
   /**
