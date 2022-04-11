@@ -102,6 +102,7 @@ public final class MutationBatch {
   /**
    * Computes the local view of a document given all the mutations in this batch.
    *
+   * @param mutatedFields The document to be mutated.
    * @param mutatedFields Fields that are already mutated before applying the current one.
    * @return An {@link FieldMask} representing all the fields that are mutated.
    */

@@ -148,7 +148,7 @@ class LocalDocumentsView {
    * @param docs The documents to compute views for. It also has the base version of the documents.
    * @param overlays The overlays that need to be applied to the given base version of the
    *     documents.
-   * @param existenceStateChanged A set of documents that might there existence states changed. This
+   * @param existenceStateChanged A set of documents whose existence states might have changed. This
    *     is used to determine if we need to re-calculate overlays from mutation queues.
    * @return A map represents the local documents view.
    */
