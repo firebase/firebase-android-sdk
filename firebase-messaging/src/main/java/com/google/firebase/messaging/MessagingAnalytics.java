@@ -341,7 +341,7 @@ public class MessagingAnalytics {
           .getTransport(
               FirelogAnalytics.FCM_LOG_SOURCE,
               MessagingClientEventExtension.class,
-              Encoding.of("src/main/proto"),
+              Encoding.of("proto"),
               MessagingClientEventExtension::toByteArray)
           .send(
               Event.ofTelemetry(
