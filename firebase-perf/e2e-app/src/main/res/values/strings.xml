@@ -1,7 +1,7 @@
 <!-- Copyright 2021 Google Inc. All Rights Reserved. -->
 
 <resources>
-    <string name="title_activity_fragment">FirebasePerfFragmentActivity</string>
+    <string name="title_activity_fragment">FirebasePerfFragmentsActivity</string>
     <string name="title_home">Home</string>
     <string name="title_fast">Fast</string>
     <string name="title_slow">Slow</string>
