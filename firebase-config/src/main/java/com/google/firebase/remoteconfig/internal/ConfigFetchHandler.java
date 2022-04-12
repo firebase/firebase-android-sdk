@@ -314,11 +314,14 @@ public class ConfigFetchHandler {
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,
               currentTime);
-
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
-      this.templateVersionNumber = response.getFetchedConfigs().getTemplateVersionNumber();
+
+      if (response.getFetchedConfigs() != null) {
+        this.templateVersionNumber = response.getFetchedConfigs().getTemplateVersionNumber();
+      }
+
       // If the execute method did not throw exceptions, then the server sent a successful response
       // and the client can stop backing off.
       frcMetadata.resetBackoff();
@@ -520,7 +523,7 @@ public class ConfigFetchHandler {
   }
 
   public long getTemplateVersionNumber() {
-    return 1;
+    return this.templateVersionNumber;
   }
 
   /**

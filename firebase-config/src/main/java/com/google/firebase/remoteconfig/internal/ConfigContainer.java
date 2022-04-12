@@ -76,7 +76,6 @@ public class ConfigContainer {
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
     containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
     containerJson.put(TEMPLATE_VERSION_NUMBER_KEY, templateVersionNumber);
-
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
@@ -171,7 +170,6 @@ public class ConfigContainer {
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
       builderTemplateVersionNumber = 0;
-
     }
 
     public Builder(ConfigContainer otherContainer) {

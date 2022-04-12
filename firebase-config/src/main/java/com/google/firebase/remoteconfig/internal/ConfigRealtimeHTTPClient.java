@@ -137,8 +137,6 @@ public class ConfigRealtimeHTTPClient {
         // Headers to denote that the request body is a JSONObject.
         httpURLConnection.setRequestProperty("Content-Type", "application/json");
         httpURLConnection.setRequestProperty("Accept", "application/json");
-
-        httpURLConnection.setRequestProperty("Transfer-Encoding", "chunked");
     }
     
     private void setRequestParams(HttpURLConnection httpURLConnection) throws ProtocolException {
@@ -200,6 +198,7 @@ public class ConfigRealtimeHTTPClient {
                 retryHTTPConnection();
             }
         };
+        logger.info("Starting autofetch...");
         new ConfigAsyncAutoFetch(
                 this.httpURLConnection, this.configFetchHandler, this.eventListener, retryCallback).execute();
     }
@@ -210,15 +209,16 @@ public class ConfigRealtimeHTTPClient {
 
     // Open HTTP connection and listen for messages asyncly
     public void startRealtimeConnection() {
-        if (firstConnection) {
-            this.retryOnEveryNetworkConnection(this);
-            this.firstConnection = false;
-        }
+//        if (firstConnection) {
+//            this.retryOnEveryNetworkConnection(this);
+//            this.firstConnection = false;
+//        }
 
         if (!isInBackground && this.eventListener != null) {
             logger.info("Realtime connecting...");
             try {
                 if (this.httpURLConnection == null) {
+                    logger.info("Realtime starting up...");
                     this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
                     this.setCommonRequestHeaders(this.httpURLConnection);
                     this.setRequestParams(this.httpURLConnection);
