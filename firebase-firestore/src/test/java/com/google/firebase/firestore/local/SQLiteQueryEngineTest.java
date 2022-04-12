@@ -176,7 +176,8 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
   }
 
   private void validateIndex(Query query, boolean validateFullIndex) {
-    IndexStatus indexStatus = indexManager.canServeUsingIndex(query.toTarget());
-    assertEquals(indexStatus, validateFullIndex ? IndexStatus.FULL : IndexStatus.PARTIAL);
+    TargetIndexType targetIndexType = indexManager.hasIndex(query.toTarget());
+    assertEquals(
+        targetIndexType, validateFullIndex ? TargetIndexType.FULL : TargetIndexType.PARTIAL);
   }
 }

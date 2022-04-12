@@ -379,6 +379,11 @@ public final class Target {
     boolean hasArraySegment = false;
     for (Filter filter : filters) {
       for (FieldFilter subFilter : filter.getFlattenedFilters()) {
+        // __name__ is not an explicit segment of any index, so we don't need to count it.
+        if (subFilter.getField().isKeyField()) {
+          continue;
+        }
+
         // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters must be counted separately. For instance,
         // it is possible to have an index for "a ARRAY a ASC". Even though these are on the same
         // field, they should be counted as two separate segments in an index.
@@ -391,7 +396,10 @@ public final class Target {
       }
     }
     for (OrderBy orderBy : orderBys) {
-      fields.add(orderBy.getField());
+      // __name__ is not an explicit segment of any index, so we don't need to count it.
+      if (!orderBy.getField().isKeyField()) {
+        fields.add(orderBy.getField());
+      }
     }
     return fields.size() + (hasArraySegment ? 1 : 0);
   }

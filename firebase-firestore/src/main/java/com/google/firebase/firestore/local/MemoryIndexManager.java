@@ -102,8 +102,8 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public IndexStatus canServeUsingIndex(Target target) {
-    return IndexStatus.NONE;
+  public TargetIndexType hasIndex(Target target) {
+    return TargetIndexType.NONE;
   }
 
   @Override

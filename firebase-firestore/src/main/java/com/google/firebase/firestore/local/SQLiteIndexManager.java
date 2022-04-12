@@ -313,19 +313,19 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public IndexStatus canServeUsingIndex(Target target) {
+  public TargetIndexType hasIndex(Target target) {
     for (Target subTarget : getSubTargets(target)) {
       Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
       if (indexAndSegmentCount == null) {
-        return IndexStatus.NONE;
+        return TargetIndexType.NONE;
       }
 
       Integer indexSegmentCount = indexAndSegmentCount.second;
       if (indexSegmentCount < subTarget.getSegmentCount()) {
-        return IndexStatus.PARTIAL;
+        return TargetIndexType.PARTIAL;
       }
     }
-    return IndexStatus.FULL;
+    return TargetIndexType.FULL;
   }
 
   @Override
