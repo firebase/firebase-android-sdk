@@ -17,17 +17,12 @@ package com.google.firebase.testing.fireperf;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPosition;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
-import static com.google.common.truth.Truth.assertThat;
 
+import android.content.Intent;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
-import androidx.test.uiautomator.By;
-import androidx.test.uiautomator.UiDevice;
-import androidx.test.uiautomator.Until;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,16 +43,6 @@ public class FirebasePerformanceScreenTracesTest {
           /* initialTouchMode= */ false,
           /* launchActivity= */ true);
 
-  @After
-  public void pressHome_toTriggerSendScreenTrace() {
-    UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-    boolean success = device.pressHome();
-    // Wait for launcher
-    final String launcherPackage = device.getLauncherPackageName();
-    assertThat(launcherPackage).isNotNull();
-    device.wait(Until.hasObject(By.pkg(launcherPackage).depth(0)), LAUNCH_TIMEOUT);
-  }
-
   @Test
   public void scrollRecyclerViewToEnd() {
     RecyclerView recyclerView = activityRule.getActivity().findViewById(R.id.rv_numbers);
@@ -68,5 +53,8 @@ public class FirebasePerformanceScreenTracesTest {
       onView(withId(R.id.rv_numbers)).perform(scrollToPosition(currItemCount));
       currItemCount += 5;
     }
+    // End Activity screen trace by switching to another Activity
+    activityRule.launchActivity(
+        new Intent(activityRule.getActivity(), FirebasePerfScreenTracesActivity.class));
   }
 }
