@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS;
+import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
@@ -372,17 +374,26 @@ public final class Target {
   }
 
   /** Returns the number of segments of a perfect index for this target. */
-  public Integer getSegmentCount() {
+  public int getSegmentCount() {
     Set<FieldPath> fields = new HashSet<>();
+    boolean hasArraySegment = false;
     for (Filter filter : filters) {
       for (FieldFilter subFilter : filter.getFlattenedFilters()) {
-        fields.add(subFilter.getField());
+        // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters must be counted separately. For instance,
+        // it is possible to have an index for "a ARRAY a ASC". Even though these are on the same
+        // field, they should be counted as two separate segments in an index.
+        if (subFilter.getOperator().equals(ARRAY_CONTAINS)
+            || subFilter.getOperator().equals(ARRAY_CONTAINS_ANY)) {
+          hasArraySegment = true;
+        } else {
+          fields.add(subFilter.getField());
+        }
       }
     }
     for (OrderBy orderBy : orderBys) {
       fields.add(orderBy.getField());
     }
-    return fields.size();
+    return fields.size() + (hasArraySegment ? 1 : 0);
   }
 
   /** Returns a canonical string representing this target. */

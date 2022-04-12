@@ -17,7 +17,6 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.values;
 
-import android.util.Pair;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -111,21 +110,33 @@ public class QueryEngine {
       return null;
     }
 
-    Pair<List<DocumentKey>, Boolean> indexResults = indexManager.getDocumentsMatchingTarget(target);
-    if (indexResults == null) {
+    IndexManager.IndexStatus indexStatus = indexManager.canServeUsingIndex(target);
+
+    if (indexStatus.equals(IndexManager.IndexStatus.NONE)) {
+      // The target cannot be served from any index.
       return null;
     }
 
-    List<DocumentKey> keys = indexResults.first;
-    boolean usedFullIndex = indexResults.second;
+    if (indexStatus.equals(IndexManager.IndexStatus.PARTIAL)) {
+      // We cannot apply a limit for targets that are served using a partial index.
+      // If a partial index will be used to serve the target, the query may return a superset of
+      // documents that match the target (e.g. if the index doesn't include all the target's
+      // filters), or may return the correct set of documents in the wrong order (e.g. if the index
+      // doesn't include a segment for one of the orderBys). Therefore a limit should not be applied
+      // in such cases.
+      query = query.limitToFirst(-1);
+      target = query.toTarget();
+    }
+
+    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
+    hardAssert(keys != null, "index manager must return results for partial and full indexes.");
 
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);
     IndexOffset offset = indexManager.getMinOffset(target);
 
     ImmutableSortedSet<Document> previousResults = applyQuery(query, indexedDocuments);
-    if (usedFullIndex
-        && (query.hasLimitToFirst() || query.hasLimitToLast())
+    if ((query.hasLimitToFirst() || query.hasLimitToLast())
         && needsRefill(query.getLimitType(), keys.size(), previousResults, offset.getReadTime())) {
       return null;
     }

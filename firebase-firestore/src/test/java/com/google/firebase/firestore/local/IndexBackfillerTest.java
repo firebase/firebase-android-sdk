@@ -29,7 +29,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
-import android.util.Pair;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
@@ -455,7 +454,7 @@ public class IndexBackfillerTest {
     assertEquals(1, documentsProcessed);
 
     Target target = query("coll").filter(filter("foo", "==", 2)).toTarget();
-    List<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(target).first;
+    List<DocumentKey> matching = indexManager.getDocumentsMatchingTarget(target);
     assertTrue(matching.isEmpty());
   }
 
@@ -511,11 +510,11 @@ public class IndexBackfillerTest {
 
   private void verifyQueryResults(Query query, String... expectedKeys) {
     Target target = query.toTarget();
-    Pair<List<DocumentKey>, Boolean> actualKeys = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> actualKeys = indexManager.getDocumentsMatchingTarget(target);
     if (actualKeys == null) {
       assertEquals(0, expectedKeys.length);
     } else {
-      assertThat(actualKeys.first)
+      assertThat(actualKeys)
           .containsExactlyElementsIn(Arrays.stream(expectedKeys).map(TestUtil::key).toArray());
     }
   }

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.local.IndexManager.*;
 import static com.google.firebase.firestore.model.FieldIndex.*;
 import static com.google.firebase.firestore.model.FieldIndex.Segment.*;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -26,16 +27,11 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-import android.util.Pair;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -180,10 +176,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
   }
 
   private void validateIndex(Query query, boolean validateFullIndex) {
-    Pair<List<DocumentKey>, Boolean> result =
-        indexManager.getDocumentsMatchingTarget(query.toTarget());
-    assertNotNull(result);
-    boolean isFullIndex = result.second;
-    assertTrue(validateFullIndex == isFullIndex);
+    IndexStatus indexStatus = indexManager.canServeUsingIndex(query.toTarget());
+    assertEquals(indexStatus, validateFullIndex ? IndexStatus.FULL : IndexStatus.PARTIAL);
   }
 }

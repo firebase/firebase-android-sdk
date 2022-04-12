@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Target;
@@ -33,6 +32,21 @@ import java.util.List;
  * Collection Group queries.
  */
 public interface IndexManager {
+  /** Represents the index state as it relates to a particular target. */
+  public enum IndexStatus {
+    /** Indicates that no index could be found for serving the target. */
+    NONE,
+    /**
+     * Indicates that only a "partial index" could be found for serving the target. A partial index
+     * is one which does not have a segment for every filter/orderBy in the target.
+     */
+    PARTIAL,
+    /**
+     * Indicates that a "full index" could be found for serving the target. A full index is one
+     * which has a segment for every filter/orderBy in the target.
+     */
+    FULL
+  }
 
   /** Initializes the IndexManager. */
   void start();
@@ -84,31 +98,14 @@ public interface IndexManager {
   /** Returns the minimum offset for the given collection group. */
   IndexOffset getMinOffset(String collectionGroup);
 
-  /**
-   * Returns an index that can be used to serve the provided target, as well as the number of index
-   * segments that matched the target filters and orderBys. Returns {@code null} if no index is
-   * configured.
-   */
-  @Nullable
-  Pair<FieldIndex, Integer> getFieldIndexAndSegmentCount(Target target);
+  /** Returns the type of index (if any) that can be used to serve the given target */
+  IndexStatus canServeUsingIndex(Target target);
 
   /**
-   * Returns a list of documents that match the given target and whether or not a "full index" was
-   * used to generate this result. Returns {@code null} if the query cannot be served from an index.
-   *
-   * <p>Note: if a "full index" does not exist for this target, but a "partial index" can be used to
-   * find a superset of the results, it will be used.
-   *
-   * <p>For example: for querying `a==1 && b==1 LIMIT 10`, if `A ASC, B ASC` index exists (full
-   * index), the return value will contain documents that satisfy both `a==1` and `b==1` limited to
-   * 10 docs. If, however, we only have `A ASC` index (partial index), the return value will contain
-   * all the documents that satisfy `a==1`, but may or may not satisfy `b==1`. In such cases,
-   * `LIMIT`s are not applied. It is the caller's responsibility to perform a post-filter in such
-   * cases to ensure `b==1` is also satisfied and to limit the results. This mechanism (using a
-   * partial index and performing a post-filter) is still a performance improvement compared to full
-   * collection scans.
+   * Returns the documents that match the given target based on the provided index or {@code null}
+   * if the query cannot be served from an index.
    */
-  Pair<List<DocumentKey>, Boolean> getDocumentsMatchingTarget(Target target);
+  List<DocumentKey> getDocumentsMatchingTarget(Target target);
 
   /** Returns the next collection group to update. Returns {@code null} if no group exists. */
   @Nullable

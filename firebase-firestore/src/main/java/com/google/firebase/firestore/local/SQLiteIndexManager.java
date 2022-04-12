@@ -313,6 +313,22 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
+  public IndexStatus canServeUsingIndex(Target target) {
+    for (Target subTarget : getSubTargets(target)) {
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount == null) {
+        return IndexStatus.NONE;
+      }
+
+      Integer indexSegmentCount = indexAndSegmentCount.second;
+      if (indexSegmentCount < subTarget.getSegmentCount()) {
+        return IndexStatus.PARTIAL;
+      }
+    }
+    return IndexStatus.FULL;
+  }
+
+  @Override
   public IndexOffset getMinOffset(Target target) {
     List<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
@@ -445,12 +461,11 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public Pair<List<DocumentKey>, Boolean> getDocumentsMatchingTarget(Target target) {
+  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
     hardAssert(started, "IndexManager not started");
 
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
-    boolean isFullIndex = true;
 
     for (Target subTarget : getSubTargets(target)) {
       Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
@@ -459,11 +474,6 @@ final class SQLiteIndexManager implements IndexManager {
       }
 
       FieldIndex fieldIndex = indexAndSegmentCount.first;
-      Integer indexSegmentCount = indexAndSegmentCount.second;
-      if (isFullIndex && indexSegmentCount < subTarget.getSegmentCount()) {
-        isFullIndex = false;
-      }
-
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
       @Nullable Bound lowerBound = subTarget.getLowerBound(fieldIndex);
@@ -503,11 +513,7 @@ final class SQLiteIndexManager implements IndexManager {
     String queryString =
         "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
 
-    // If a partial index has been used, the SQL query may return a superset of documents that match
-    // the target (e.g. if the index doesn't include all the target's filters), or may return the
-    // correct set of documents in the wrong order (e.g. if the index doesn't include a segment for
-    // one of the orderBys). Therefore a LIMIT should not be applied in such cases.
-    if (target.getLimit() != -1 && isFullIndex) {
+    if (target.hasLimit()) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
 
@@ -520,7 +526,7 @@ final class SQLiteIndexManager implements IndexManager {
         row -> result.add(DocumentKey.fromPath(ResourcePath.fromString(row.getString(0)))));
 
     Logger.debug(TAG, "Index scan returned %s documents", result.size());
-    return new Pair<>(result, isFullIndex);
+    return result;
   }
 
   /**
@@ -620,8 +626,12 @@ final class SQLiteIndexManager implements IndexManager {
     return bindArgs;
   }
 
+  /**
+   * Returns an index that can be used to serve the provided target, as well as the number of index
+   * segments that matched the target filters and orderBys. Returns {@code null} if no index is
+   * configured.
+   */
   @Nullable
-  @Override
   public Pair<FieldIndex, Integer> getFieldIndexAndSegmentCount(Target target) {
     hardAssert(started, "IndexManager not started");
 
