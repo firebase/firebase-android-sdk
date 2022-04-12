@@ -18,19 +18,19 @@ import static com.google.firebase.firestore.model.FieldIndex.*;
 import static com.google.firebase.firestore.model.FieldIndex.Segment.*;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docMap;
+import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
-import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -50,7 +50,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
     MutableDocument doc1 = doc("coll/a", 1, map("foo", true));
     MutableDocument doc2 = doc("coll/b", 2, map("foo", true));
     MutableDocument doc3 = doc("coll/c", 3, map("foo", true));
-    MutableDocument doc4 = doc("coll/d", 3, map("foo", true));
+    MutableDocument doc4 = doc("coll/d", 3, map("foo", true)).setHasLocalMutations();
 
     indexManager.addFieldIndex(fieldIndex("coll", "foo", Kind.ASCENDING));
 
@@ -63,15 +63,29 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
     addMutation(setMutation("coll/d", map("foo", true)));
 
     Query queryWithFilter = query("coll").filter(filter("foo", "==", true));
-    ImmutableSortedMap<DocumentKey, Document> results =
-        expectOptimizedCollectionScan(
-            () ->
-                queryEngine.getDocumentsMatchingQuery(
-                    queryWithFilter, SnapshotVersion.NONE, DocumentKey.emptyKeySet()));
+    DocumentSet results =
+        expectOptimizedCollectionScan(() -> runQuery(queryWithFilter, SnapshotVersion.NONE));
 
-    assertTrue(results.containsKey(doc1.getKey()));
-    assertTrue(results.containsKey(doc2.getKey()));
-    assertTrue(results.containsKey(doc3.getKey()));
-    assertTrue(results.containsKey(doc4.getKey()));
+    assertEquals(docSet(queryWithFilter.comparator(), doc1, doc2, doc3, doc4), results);
+  }
+
+  @Test
+  @Ignore("b/226360573")
+  public void usesPartialIndexForLimitQueries() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("a", 1, "b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 1, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 2, "b", 3));
+    addDocument(doc1, doc2, doc3, doc4, doc5);
+
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc5));
+
+    Query query =
+        query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1)).limitToFirst(3);
+    DocumentSet result = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
+    assertEquals(docSet(query.comparator(), doc1), result);
   }
 }

@@ -15,12 +15,15 @@
 package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.ref;
 import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
 import static java.util.Arrays.asList;
@@ -688,5 +691,74 @@ public class QueryTest {
 
   private void assertCanonicalId(Query query, String expectedCanonicalId) {
     assertEquals(expectedCanonicalId, query.toTarget().getCanonicalId());
+  }
+
+  @Test
+  public void testOrQuery() {
+    MutableDocument doc1 = doc("collection/1", 0, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("collection/2", 0, map("a", 2, "b", 1));
+    MutableDocument doc3 = doc("collection/3", 0, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("collection/4", 0, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("collection/5", 0, map("a", 1, "b", 1));
+
+    // Two equalities: a==1 || b==1.
+    Query query1 =
+        query("collection").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+    assertQueryMatches(
+        query1,
+        /* match */ Arrays.asList(doc1, doc2, doc4, doc5),
+        /* not match */ Arrays.asList(doc3));
+
+    // with one inequality: a>2 || b==1.
+    Query query2 = query("collection").filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
+    assertQueryMatches(
+        query2,
+        /* match */ Arrays.asList(doc2, doc3, doc5),
+        /* not match */ Arrays.asList(doc1, doc4));
+
+    // (a==1 && b==0) || (a==3 && b==2)
+    Query query3 =
+        query("collection")
+            .filter(
+                orFilters(
+                    andFilters(filter("a", "==", 1), filter("b", "==", 0)),
+                    andFilters(filter("a", "==", 3), filter("b", "==", 2))));
+    assertQueryMatches(
+        query3,
+        /* match */ Arrays.asList(doc1, doc3),
+        /* not match */ Arrays.asList(doc2, doc4, doc5));
+
+    // a==1 && (b==0 || b==3).
+    Query query4 =
+        query("collection")
+            .filter(
+                andFilters(
+                    filter("a", "==", 1), orFilters(filter("b", "==", 0), filter("b", "==", 3))));
+    assertQueryMatches(
+        query4,
+        /* match */ Arrays.asList(doc1, doc4),
+        /* not match */ Arrays.asList(doc2, doc3, doc5));
+
+    // (a==2 || b==2) && (a==3 || b==3)
+    Query query5 =
+        query("collection")
+            .filter(
+                andFilters(
+                    orFilters(filter("a", "==", 2), filter("b", "==", 2)),
+                    orFilters(filter("a", "==", 3), filter("b", "==", 3))));
+    assertQueryMatches(
+        query5,
+        /* match */ Arrays.asList(doc3),
+        /* not match */ Arrays.asList(doc1, doc2, doc4, doc5));
+  }
+
+  private void assertQueryMatches(
+      Query query, List<MutableDocument> matching, List<MutableDocument> nonMatching) {
+    for (MutableDocument doc : matching) {
+      assertTrue(query.matches(doc));
+    }
+    for (MutableDocument doc : nonMatching) {
+      assertFalse(query.matches(doc));
+    }
   }
 }

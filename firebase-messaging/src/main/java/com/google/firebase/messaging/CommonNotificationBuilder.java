@@ -95,6 +95,7 @@ public final class CommonNotificationBuilder {
   // Do not instantiate.
   private CommonNotificationBuilder() {}
 
+  /** Creates a DisplayNotificationInfo from NotificationParams for a single Context. */
   static DisplayNotificationInfo createNotificationInfo(
       Context context, NotificationParams params) {
     Bundle manifestMetadata =
@@ -102,14 +103,17 @@ public final class CommonNotificationBuilder {
 
     return createNotificationInfo(
         context,
-        context.getPackageName(),
+        context,
         params,
         getOrCreateChannel(context, params.getNotificationChannelId(), manifestMetadata),
-        context.getResources(),
-        context.getPackageManager(),
         manifestMetadata);
   }
 
+  /**
+   * Legacy method that creates a DisplayNotificationInfo from NotificationParams that allows
+   * specifying components so the calling Context can be different from the Context used for the
+   * notification (resources, etc.).
+   */
   public static DisplayNotificationInfo createNotificationInfo(
       Context context,
       String pkgName,
@@ -118,8 +122,53 @@ public final class CommonNotificationBuilder {
       Resources appResources,
       PackageManager appPackageManager,
       Bundle manifestMetadata) {
+    return createNotificationInfo(
+        context,
+        context,
+        params,
+        channelId,
+        manifestMetadata,
+        pkgName,
+        appResources,
+        appPackageManager);
+  }
 
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId);
+  /**
+   * Creates a DisplayNotificationInfo from NotificationParams that allows specifying a calling
+   * Context to be used for creating PendingIntents and one Context that the notification is
+   * intended for (resources, package name, manifest data, etc.)
+   */
+  public static DisplayNotificationInfo createNotificationInfo(
+      Context callingContext,
+      Context appContext,
+      NotificationParams params,
+      String channelId,
+      Bundle manifestMetadata) {
+    String pkgName = appContext.getPackageName();
+    Resources appResources = appContext.getResources();
+    PackageManager appPackageManager = appContext.getPackageManager();
+    return createNotificationInfo(
+        callingContext,
+        appContext,
+        params,
+        channelId,
+        manifestMetadata,
+        pkgName,
+        appResources,
+        appPackageManager);
+  }
+
+  public static DisplayNotificationInfo createNotificationInfo(
+      Context callingContext,
+      Context appContext,
+      NotificationParams params,
+      String channelId,
+      Bundle manifestMetadata,
+      String pkgName,
+      Resources appResources,
+      PackageManager appPackageManager) {
+
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, channelId);
 
     String title =
         params.getPossiblyLocalizedString(
@@ -150,15 +199,16 @@ public final class CommonNotificationBuilder {
       builder.setSound(sound);
     }
 
-    builder.setContentIntent(createContentIntent(context, params, pkgName, appPackageManager));
+    builder.setContentIntent(
+        createContentIntent(callingContext, params, pkgName, appPackageManager));
 
-    PendingIntent deleteIntent = createDeleteIntent(context, params);
+    PendingIntent deleteIntent = createDeleteIntent(callingContext, appContext, params);
     if (deleteIntent != null) {
       builder.setDeleteIntent(deleteIntent);
     }
 
     Integer color =
-        getColor(context, params.getString(MessageNotificationKeys.COLOR), manifestMetadata);
+        getColor(appContext, params.getString(MessageNotificationKeys.COLOR), manifestMetadata);
     if (color != null) {
       builder.setColor(color);
     }
@@ -541,7 +591,8 @@ public final class CommonNotificationBuilder {
   }
 
   @Nullable
-  private static PendingIntent createDeleteIntent(Context context, NotificationParams params) {
+  private static PendingIntent createDeleteIntent(
+      Context callingContext, Context appContext, NotificationParams params) {
     if (!shouldUploadMetrics(params)) {
       return null;
     }
@@ -550,17 +601,18 @@ public final class CommonNotificationBuilder {
         new Intent(IntentActionKeys.NOTIFICATION_DISMISS)
             .putExtras(params.paramsForAnalyticsIntent());
 
-    return createMessagingPendingIntent(context, dismissIntent);
+    return createMessagingPendingIntent(callingContext, appContext, dismissIntent);
   }
 
   /** Create a PendingIntent to start the app's messaging service via FirebaseInstanceIdReceiver */
-  private static PendingIntent createMessagingPendingIntent(Context context, Intent intent) {
+  private static PendingIntent createMessagingPendingIntent(
+      Context callingContext, Context appContext, Intent intent) {
     return PendingIntent.getBroadcast(
-        context,
+        callingContext,
         generatePendingIntentRequestCode(),
         new Intent(ACTION_MESSAGING_EVENT)
             .setComponent(
-                new ComponentName(context, "com.google.firebase.iid.FirebaseInstanceIdReceiver"))
+                new ComponentName(appContext, "com.google.firebase.iid.FirebaseInstanceIdReceiver"))
             .putExtra(IntentKeys.WRAPPED_INTENT, intent),
         getPendingIntentFlags(PendingIntent.FLAG_ONE_SHOT));
   }

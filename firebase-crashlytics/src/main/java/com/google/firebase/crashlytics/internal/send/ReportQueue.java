@@ -21,7 +21,7 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
+import com.google.firebase.crashlytics.internal.settings.Settings;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -50,9 +50,9 @@ final class ReportQueue {
   ReportQueue(
       Transport<CrashlyticsReport> transport, Settings settings, OnDemandCounter onDemandCounter) {
     this(
-        settings.onDemandUploadRatePerMinute(),
-        settings.onDemandBackoffBase(),
-        (long) settings.onDemandBackoffStepDurationSeconds() * MS_PER_SECOND,
+        settings.onDemandUploadRatePerMinute,
+        settings.onDemandBackoffBase,
+        (long) settings.onDemandBackoffStepDurationSeconds * MS_PER_SECOND,
         transport,
         onDemandCounter);
   }

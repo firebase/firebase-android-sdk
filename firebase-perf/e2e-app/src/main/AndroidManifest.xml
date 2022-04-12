@@ -12,7 +12,7 @@
         android:usesCleartextTraffic="true"
         tools:ignore="HardcodedDebugMode,UnusedAttribute">
         <activity
-            android:name=".FragmentActivity"
+            android:name=".FirebasePerfFragmentsActivity"
             android:label="@string/title_activity_fragment"
             android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
         <activity
@@ -32,6 +32,9 @@
             android:value="true" />
         <meta-data
             android:name="sessions_sampling_percentage"
+            android:value="100.0" />
+        <meta-data
+            android:name="fragment_sampling_percentage"
             android:value="100.0" />
     </application>
 

@@ -15,63 +15,50 @@
 package com.google.firebase.crashlytics.internal.settings;
 
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import java.util.Locale;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 class SettingsV3JsonTransform implements SettingsJsonTransform {
 
-  private static final String CRASHLYTICS_APP_URL =
-      "https://update.crashlytics.com/spi/v1/platforms/android/apps";
-  private static final String CRASHLYTICS_APP_URL_FORMAT =
-      "https://update.crashlytics.com/spi/v1/platforms/android/apps/%s";
-  private static final String REPORTS_URL_FORMAT =
-      "https://reports.crashlytics.com/spi/v1/platforms/android/apps/%s/reports";
-  private static final String NDK_REPORTS_URL_FORMAT =
-      "https://reports.crashlytics.com/sdk-api/v1/platforms/android/apps/%s/minidumps";
-
   @Override
-  public SettingsData buildFromJson(CurrentTimeProvider currentTimeProvider, JSONObject json)
+  public Settings buildFromJson(CurrentTimeProvider currentTimeProvider, JSONObject json)
       throws JSONException {
-    final int settingsVersion =
+    int settingsVersion =
         json.optInt(
             SettingsJsonConstants.SETTINGS_VERSION, SettingsJsonConstants.SETTINGS_VERSION_DEFAULT);
-    final int cacheDuration =
+    int cacheDuration =
         json.optInt(
             SettingsJsonConstants.CACHE_DURATION_KEY,
             SettingsJsonConstants.SETTINGS_CACHE_DURATION_DEFAULT);
-    final double onDemandUploadRatePerMinute =
+    double onDemandUploadRatePerMinute =
         json.optDouble(
             SettingsJsonConstants.ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY,
             SettingsJsonConstants.SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT);
-    final double onDemandBackoffBase =
+    double onDemandBackoffBase =
         json.optDouble(
             SettingsJsonConstants.ON_DEMAND_BACKOFF_BASE_KEY,
             SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT);
-    final int onDemandBackoffStepDurationSeconds =
+    int onDemandBackoffStepDurationSeconds =
         json.optInt(
             SettingsJsonConstants.ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_KEY,
             SettingsJsonConstants.SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT);
 
-    final AppSettingsData appData =
-        buildAppDataFrom(
-            json.getJSONObject(SettingsJsonConstants.FABRIC_KEY),
-            json.getJSONObject(SettingsJsonConstants.APP_KEY));
-    final SessionSettingsData sessionData = defaultSessionData();
-    final FeaturesSettingsData featureData =
-        buildFeaturesSessionDataFrom(json.getJSONObject(SettingsJsonConstants.FEATURES_KEY));
+    // There's an "app" section that includes deprecated fields. We skip reading those.
 
-    final long expiresAtMillis = getExpiresAtFrom(currentTimeProvider, cacheDuration, json);
+    // "session" section is not returned in current Settings values.
+    Settings.SessionData sessionData =
+        json.has(SettingsJsonConstants.SESSION_KEY)
+            ? buildSessionDataFrom(json.getJSONObject(SettingsJsonConstants.SESSION_KEY))
+            : buildSessionDataFrom(new JSONObject());
+    Settings.FeatureFlagData featureFlagData =
+        buildFeatureFlagDataFrom(json.getJSONObject(SettingsJsonConstants.FEATURES_KEY));
 
-    return new SettingsData(
+    long expiresAtMillis = getExpiresAtFrom(currentTimeProvider, cacheDuration, json);
+
+    return new Settings(
         expiresAtMillis,
-        appData,
         sessionData,
-        featureData,
+        featureFlagData,
         settingsVersion,
         cacheDuration,
         onDemandUploadRatePerMinute,
@@ -79,61 +66,7 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
         onDemandBackoffStepDurationSeconds);
   }
 
-  @Override
-  public JSONObject toJson(SettingsData settingsData) throws JSONException {
-    return new JSONObject()
-        .put(SettingsJsonConstants.EXPIRES_AT_KEY, settingsData.expiresAtMillis)
-        .put(SettingsJsonConstants.CACHE_DURATION_KEY, settingsData.cacheDuration)
-        .put(SettingsJsonConstants.SETTINGS_VERSION, settingsData.settingsVersion)
-        .put(SettingsJsonConstants.FEATURES_KEY, toFeaturesJson(settingsData.featuresData))
-        .put(SettingsJsonConstants.APP_KEY, toAppJson(settingsData.appData))
-        .put(SettingsJsonConstants.FABRIC_KEY, toFabricJson(settingsData.appData));
-  }
-
-  private static AppSettingsData buildAppDataFrom(JSONObject fabricJson, JSONObject appJson)
-      throws JSONException {
-    final String status = appJson.getString(SettingsJsonConstants.APP_STATUS_KEY);
-    final boolean isNewApp = AppSettingsData.STATUS_NEW.equals(status);
-
-    final String bundleId = fabricJson.getString(SettingsJsonConstants.FABRIC_BUNDLE_ID);
-    final String organizationId =
-        fabricJson.getString(SettingsJsonConstants.FABRIC_ORGANIZATION_ID);
-
-    final String url =
-        isNewApp
-            ? CRASHLYTICS_APP_URL
-            : String.format(Locale.US, CRASHLYTICS_APP_URL_FORMAT, bundleId);
-    final String reportsUrl = String.format(Locale.US, REPORTS_URL_FORMAT, bundleId);
-    final String ndkReportsUrl = String.format(Locale.US, NDK_REPORTS_URL_FORMAT, bundleId);
-
-    final boolean updateRequired =
-        appJson.optBoolean(
-            SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY,
-            SettingsJsonConstants.APP_UPDATE_REQUIRED_DEFAULT);
-
-    final int reportUploadVariant =
-        appJson.optInt(
-            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY,
-            SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_DEFAULT);
-
-    final int nativeReportUploadVariant =
-        appJson.optInt(
-            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
-            SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_DEFAULT);
-
-    return new AppSettingsData(
-        status,
-        url,
-        reportsUrl,
-        ndkReportsUrl,
-        bundleId,
-        organizationId,
-        updateRequired,
-        reportUploadVariant,
-        nativeReportUploadVariant);
-  }
-
-  private static FeaturesSettingsData buildFeaturesSessionDataFrom(JSONObject json) {
+  private static Settings.FeatureFlagData buildFeatureFlagDataFrom(JSONObject json) {
     final boolean collectReports =
         json.optBoolean(
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_KEY,
@@ -144,61 +77,31 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.FEATURES_COLLECT_ANRS_KEY,
             SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT);
 
-    // TODO: Build support back for "collect logged exceptions"
-
-    return new FeaturesSettingsData(collectReports, collectAnrs);
+    return new Settings.FeatureFlagData(collectReports, collectAnrs);
   }
 
-  private static SessionSettingsData defaultSessionData() {
+  private static Settings.SessionData buildSessionDataFrom(JSONObject json) {
     final int maxCustomExceptionEvents =
-        SettingsJsonConstants.SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_DEFAULT;
+        json.optInt(
+            SettingsJsonConstants.SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_KEY,
+            SettingsJsonConstants.SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_DEFAULT);
     final int maxCompleteSessionsCount =
         SettingsJsonConstants.SETTINGS_MAX_COMPLETE_SESSIONS_COUNT_DEFAULT;
 
-    return new SessionSettingsData(maxCustomExceptionEvents, maxCompleteSessionsCount);
-  }
-
-  private JSONObject toFabricJson(AppSettingsData appData) throws JSONException {
-    final JSONObject json =
-        new JSONObject()
-            .put(SettingsJsonConstants.FABRIC_BUNDLE_ID, appData.bundleId)
-            .put(SettingsJsonConstants.FABRIC_ORGANIZATION_ID, appData.organizationId);
-
-    return json;
-  }
-
-  private JSONObject toAppJson(AppSettingsData appData) throws JSONException {
-    final JSONObject json =
-        new JSONObject()
-            .put(SettingsJsonConstants.APP_STATUS_KEY, appData.status)
-            .put(SettingsJsonConstants.APP_UPDATE_REQUIRED_KEY, appData.updateRequired)
-            .put(SettingsJsonConstants.APP_REPORT_UPLOAD_VARIANT_KEY, appData.reportUploadVariant)
-            .put(
-                SettingsJsonConstants.APP_NATIVE_REPORT_UPLOAD_VARIANT_KEY,
-                appData.nativeReportUploadVariant);
-
-    return json;
-  }
-
-  private JSONObject toFeaturesJson(FeaturesSettingsData features) throws JSONException {
-    return new JSONObject()
-        .put(SettingsJsonConstants.FEATURES_COLLECT_REPORTS_KEY, features.collectReports);
+    return new Settings.SessionData(maxCustomExceptionEvents, maxCompleteSessionsCount);
   }
 
   private static long getExpiresAtFrom(
       CurrentTimeProvider currentTimeProvider, long cacheDurationSeconds, JSONObject json) {
-    long expiresAtMillis = 0;
 
+    long expiresAtMillis;
     if (json.has(SettingsJsonConstants.EXPIRES_AT_KEY)) {
       // If the JSON we receive has an expires_at key, use that value
       expiresAtMillis = json.optLong(SettingsJsonConstants.EXPIRES_AT_KEY);
     } else {
-      // If not, construct a new one from the current time and the loaded cache duration
-      // (in seconds)
-      final long currentTimeMillis = currentTimeProvider.getCurrentTimeMillis();
-      expiresAtMillis = currentTimeMillis + (cacheDurationSeconds * 1000);
+      // If not, make a new one from the current time and the loaded cache duration (in seconds)
+      expiresAtMillis = currentTimeProvider.getCurrentTimeMillis() + (cacheDurationSeconds * 1000);
     }
-
     return expiresAtMillis;
   }
 }

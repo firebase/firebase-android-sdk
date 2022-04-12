@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.Values.isArray;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.LogicUtils.getDnfTerms;
 import static com.google.firebase.firestore.util.Util.diffCollections;
 import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
@@ -45,7 +46,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
-import com.google.firebase.firestore.util.LogicUtils;
 import com.google.firestore.admin.v1.Index;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
@@ -330,7 +330,7 @@ final class SQLiteIndexManager implements IndexManager {
     } else {
       // There is an implicit AND operation between all the filters stored in the target.
       List<Filter> dnf =
-          LogicUtils.DnfTransform(
+          getDnfTerms(
               new CompositeFilter(
                   target.getFilters(), StructuredQuery.CompositeFilter.Operator.AND));
       for (Filter term : dnf) {

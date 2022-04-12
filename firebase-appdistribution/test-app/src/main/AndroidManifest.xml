@@ -9,7 +9,7 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:supportsRtl="true"
       android:theme="@style/Theme.AppDistributionTestAppSample">
-    <activity android:name="com.googletest.firebase.appdistribution.testapp.MainActivity">
+    <activity android:name="com.googletest.firebase.appdistribution.testapp.MainActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
 

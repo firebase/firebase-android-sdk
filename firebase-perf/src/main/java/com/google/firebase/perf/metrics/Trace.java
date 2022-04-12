@@ -498,7 +498,7 @@ public class Trace extends AppStateUpdateHandler
   /** @hide */
   @VisibleForTesting
   @NonNull
-  String getName() {
+  public String getName() {
     return name;
   }
 

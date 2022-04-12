@@ -19,18 +19,17 @@ import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPositio
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static com.google.common.truth.Truth.assertThat;
 
-import android.app.Activity;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle.State;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.testing.fireperf.ui.fast.FastFragment;
 import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
 import com.google.firebase.testing.fireperf.ui.slow.SlowFragment;
@@ -48,8 +47,8 @@ import org.junit.runner.RunWith;
 public class FirebasePerformanceFragmentScreenTracesTest {
 
   @Rule
-  public ActivityScenarioRule<FragmentActivity> activityRule =
-      new ActivityScenarioRule<>(FragmentActivity.class);
+  public ActivityScenarioRule<FirebasePerfFragmentsActivity> activityRule =
+      new ActivityScenarioRule<>(FirebasePerfFragmentsActivity.class);
 
   @Test
   public void scrollAndCycleThroughAllFragments() throws InterruptedException {
@@ -57,7 +56,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
         .getScenario()
         .onActivity(
             activity -> {
-              ((AppCompatActivity) activity)
+              ((FragmentActivity) activity)
                   .getSupportFragmentManager()
                   .registerFragmentLifecycleCallbacks(
                       new FragmentManager.FragmentLifecycleCallbacks() {
@@ -99,7 +98,8 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     notify();
   }
 
-  static class NavigateAction implements ActivityScenario.ActivityAction {
+  static class NavigateAction
+      implements ActivityScenario.ActivityAction<FirebasePerfFragmentsActivity> {
     private final int destinationId;
 
     public NavigateAction(int destinationId) {
@@ -107,7 +107,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     }
 
     @Override
-    public void perform(Activity activity) {
+    public void perform(FirebasePerfFragmentsActivity activity) {
       NavController navController =
           Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
       navController.navigate(destinationId);

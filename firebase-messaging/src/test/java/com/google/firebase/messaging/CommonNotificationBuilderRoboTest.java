@@ -14,10 +14,13 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.messaging.ServiceStarter.ACTION_MESSAGING_EVENT;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Notification;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -27,7 +30,10 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import androidx.core.app.NotificationCompat;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.cloudmessaging.CloudMessagingReceiver.IntentActionKeys;
+import com.google.android.gms.cloudmessaging.CloudMessagingReceiver.IntentKeys;
 import com.google.firebase.messaging.CommonNotificationBuilder.DisplayNotificationInfo;
+import com.google.firebase.messaging.Constants.AnalyticsKeys;
 import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.testing.Bundles;
 import java.util.Arrays;
@@ -38,6 +44,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowPendingIntent;
 
 @LooperMode(LooperMode.Mode.LEGACY)
 @RunWith(RobolectricTestRunner.class)
@@ -45,7 +52,6 @@ public class CommonNotificationBuilderRoboTest {
   public static final String FCM_FALLBACK_NOTIFICATION_CHANNEL =
       "fcm_fallback_notification_channel";
   private static final String FCM_FALLBACK_NOTIFICATION_CHANNEL_NO_RESOURCE = "Misc";
-  private static final String PACKAGE_NAME = "test_package";
   private static final String KEY_PREFIX = "gcm.n.";
   private static final String KEY_TICKER = KEY_PREFIX + "ticker";
   private static final String KEY_VIBRATE_TIMINGS = KEY_PREFIX + "vibrate_timings";
@@ -62,10 +68,16 @@ public class CommonNotificationBuilderRoboTest {
   private static final int DEFAULTS_ALL_OFF = 0;
 
   private Context appContext;
+  private Context callingContext;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
     appContext = ApplicationProvider.getApplicationContext();
+
+    PackageInfo packageInfo = new PackageInfo();
+    packageInfo.packageName = "test.calling.package";
+    shadowOf(appContext.getPackageManager()).addPackage(packageInfo);
+    callingContext = appContext.createPackageContext("test.calling.package", 0);
   }
 
   @Test
@@ -459,12 +471,10 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_respectsChannelId() throws Exception {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundle.EMPTY),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().getChannelId()).isEqualTo("channelId");
@@ -497,15 +507,13 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_handlesNoArgLocalizedTitle() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
                     "fcm_no_args")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
@@ -518,17 +526,15 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_handlesLocalizedTitleWithArgs() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                        "fcm_2_args",
+                    "fcm_2_args",
                     MessageNotificationKeys.TITLE + MessageNotificationKeys.TEXT_ARGS_SUFFIX,
-                        "[\"one\", \"two\"]")),
+                    "[\"one\", \"two\"]")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
@@ -541,15 +547,13 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_handlesNoArgLocalizedBody() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
                     "fcm_no_args")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
@@ -562,17 +566,15 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_handlesLocalizedBodyWithArgs() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(
                 Bundles.of(
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_RESOURCE_SUFFIX,
-                        "fcm_2_args",
+                    "fcm_2_args",
                     MessageNotificationKeys.BODY + MessageNotificationKeys.TEXT_ARGS_SUFFIX,
-                        "[\"one\", \"two\"]")),
+                    "[\"one\", \"two\"]")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     // http://google3/javatests/com/google/android/gmscore/integ/tests_res/res/values/strings.xml?l=25-28&rcl=127925113
@@ -585,12 +587,10 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_smallIconSpecified() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundles.of(MessageNotificationKeys.ICON, "gcm_icon")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().icon)
@@ -601,12 +601,10 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_smallIconSpecifiedInMetadata() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundle.EMPTY),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundles.of(
                 CommonNotificationBuilder.METADATA_DEFAULT_ICON,
                 com.google.firebase.messaging.test.R.drawable.gcm_icon));
@@ -618,21 +616,19 @@ public class CommonNotificationBuilderRoboTest {
   @Test
   public void staticCreateNotificationInfo_noIconSpecifiedShouldUseAppIcon() {
     PackageInfo packageInfo = new PackageInfo();
-    packageInfo.packageName = PACKAGE_NAME;
+    packageInfo.packageName = appContext.getPackageName();
     packageInfo.applicationInfo = new ApplicationInfo();
-    packageInfo.applicationInfo.packageName = PACKAGE_NAME;
+    packageInfo.applicationInfo.packageName = appContext.getPackageName();
     packageInfo.applicationInfo.icon = com.google.firebase.messaging.test.R.drawable.gcm_icon2;
 
     shadowOf(appContext.getPackageManager()).installPackage(packageInfo);
 
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            PACKAGE_NAME,
             new NotificationParams(Bundle.EMPTY),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().icon)
@@ -642,21 +638,19 @@ public class CommonNotificationBuilderRoboTest {
   @Test
   public void staticCreateNotificationInfo_noAppIconShouldUseDefaultSystemIcon() {
     PackageInfo packageInfo = new PackageInfo();
-    packageInfo.packageName = PACKAGE_NAME;
+    packageInfo.packageName = appContext.getPackageName();
     packageInfo.applicationInfo = new ApplicationInfo();
-    packageInfo.applicationInfo.packageName = PACKAGE_NAME;
+    packageInfo.applicationInfo.packageName = appContext.getPackageName();
     packageInfo.applicationInfo.icon = 0; // Bad app icon!
 
     shadowOf(appContext.getPackageManager()).installPackage(packageInfo);
 
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            PACKAGE_NAME,
             new NotificationParams(Bundle.EMPTY),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().icon)
@@ -667,12 +661,10 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_defaultSoundSpecified_sound1Key() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundles.of(MessageNotificationKeys.SOUND, "default")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().sound)
@@ -683,12 +675,10 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_defaultSoundSpecified_sound2Key() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundles.of(MessageNotificationKeys.SOUND_2, "default")),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().sound)
@@ -699,14 +689,125 @@ public class CommonNotificationBuilderRoboTest {
   public void staticCreateNotificationInfo_noSoundSpecified() {
     DisplayNotificationInfo notificationInfo =
         CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
             appContext,
-            appContext.getPackageName(),
             new NotificationParams(Bundle.EMPTY),
             "channelId",
-            appContext.getResources(),
-            appContext.getPackageManager(),
             Bundle.EMPTY);
 
     assertThat(notificationInfo.notificationBuilder.build().sound).isNull();
+  }
+
+  @Test
+  public void createNotificationInfo_noContentIntentSpecified() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(Bundle.EMPTY),
+            "channelId",
+            Bundle.EMPTY);
+
+    assertThat(notificationInfo.notificationBuilder.build().contentIntent).isNull();
+  }
+
+  @Test
+  public void createNotificationInfo_clickAction() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(
+                Bundles.of(MessageNotificationKeys.CLICK_ACTION, "click.action")),
+            "channelId",
+            Bundle.EMPTY);
+
+    ShadowPendingIntent contentPendingIntent =
+        shadowOf(notificationInfo.notificationBuilder.build().contentIntent);
+    assertThat(contentPendingIntent.isActivityIntent()).isTrue();
+    assertThat(contentPendingIntent.getSavedContext()).isEqualTo(callingContext);
+    Intent contentIntent = contentPendingIntent.getSavedIntent();
+    assertThat(contentIntent.getPackage()).isEqualTo(appContext.getPackageName());
+    assertThat(contentIntent.getAction()).isEqualTo("click.action");
+  }
+
+  @Test
+  public void createNotificationInfo_link() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(Bundles.of(MessageNotificationKeys.LINK, "link")),
+            "channelId",
+            Bundle.EMPTY);
+
+    ShadowPendingIntent contentPendingIntent =
+        shadowOf(notificationInfo.notificationBuilder.build().contentIntent);
+    assertThat(contentPendingIntent.isActivityIntent()).isTrue();
+    assertThat(contentPendingIntent.getSavedContext()).isEqualTo(callingContext);
+    Intent contentIntent = contentPendingIntent.getSavedIntent();
+    assertThat(contentIntent.getPackage()).isEqualTo(appContext.getPackageName());
+    assertThat(contentIntent.getDataString()).isEqualTo("link");
+  }
+
+  @Test
+  public void createNotificationInfo_androidLink() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(
+                Bundles.of(
+                    MessageNotificationKeys.LINK,
+                    "link",
+                    MessageNotificationKeys.LINK_ANDROID,
+                    "androidLink")),
+            "channelId",
+            Bundle.EMPTY);
+
+    ShadowPendingIntent contentPendingIntent =
+        shadowOf(notificationInfo.notificationBuilder.build().contentIntent);
+    assertThat(contentPendingIntent.isActivityIntent()).isTrue();
+    assertThat(contentPendingIntent.getSavedContext()).isEqualTo(callingContext);
+    Intent contentIntent = contentPendingIntent.getSavedIntent();
+    assertThat(contentIntent.getPackage()).isEqualTo(appContext.getPackageName());
+    assertThat(contentIntent.getDataString()).isEqualTo("androidLink");
+  }
+
+  @Test
+  public void createNotificationInfo_deleteIntentWithoutAnalytics() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(Bundle.EMPTY),
+            "channelId",
+            Bundle.EMPTY);
+
+    assertThat(notificationInfo.notificationBuilder.build().deleteIntent).isNull();
+  }
+
+  @Test
+  public void createNotificationInfo_deleteIntentWithAnalytics() {
+    DisplayNotificationInfo notificationInfo =
+        CommonNotificationBuilder.createNotificationInfo(
+            callingContext,
+            appContext,
+            new NotificationParams(Bundles.of(AnalyticsKeys.ENABLED, "1")),
+            "channelId",
+            Bundle.EMPTY);
+
+    ShadowPendingIntent deletePendingIntent =
+        shadowOf(notificationInfo.notificationBuilder.build().deleteIntent);
+    assertThat(deletePendingIntent.isBroadcastIntent()).isTrue();
+    assertThat(deletePendingIntent.getSavedContext()).isEqualTo(callingContext);
+    Intent deleteIntent = deletePendingIntent.getSavedIntent();
+    assertThat(deleteIntent.getComponent())
+        .isEqualTo(
+            new ComponentName(appContext, "com.google.firebase.iid.FirebaseInstanceIdReceiver"));
+    assertThat(deleteIntent.getAction()).isEqualTo(ACTION_MESSAGING_EVENT);
+    Intent dismissIntent = deleteIntent.getParcelableExtra(IntentKeys.WRAPPED_INTENT);
+    assertThat(dismissIntent).isNotNull();
+    assertThat(dismissIntent.getAction()).isEqualTo(IntentActionKeys.NOTIFICATION_DISMISS);
   }
 }
