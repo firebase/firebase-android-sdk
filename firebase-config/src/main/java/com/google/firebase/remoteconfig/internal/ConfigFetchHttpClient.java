@@ -435,14 +435,14 @@ public class ConfigFetchHttpClient {
         containerBuilder.withPersonalizationMetadata(personalizationMetadata);
       }
 
-      Long templateVersionNumber = null;
+      String templateVersionNumber = null;
       try {
-        templateVersionNumber = fetchResponse.getLong(TEMPLATE_VERSION_NUMBER);
+        templateVersionNumber = fetchResponse.getString(TEMPLATE_VERSION_NUMBER);
       } catch (JSONException ex) {
         // Do nothing if template version number does not exist.
       }
       if (templateVersionNumber != null) {
-        containerBuilder.withTemplateVersionNumber(templateVersionNumber);
+        containerBuilder.withTemplateVersionNumber(Long.valueOf(templateVersionNumber));
       }
 
       return containerBuilder.build();

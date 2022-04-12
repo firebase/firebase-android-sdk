@@ -65,7 +65,9 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         String message;
         while ((message = reader.readLine()) != null) {
             logger.info(message);
-            this.fetchAndHandleCallbacks(this.FETCH_RETRY, this.configFetchHandler.getTemplateVersionNumber());
+            long currentTemplateVersion = this.configFetchHandler.getTemplateVersionNumber();
+            logger.info("Template version is " + currentTemplateVersion);
+            this.fetchAndHandleCallbacks(this.FETCH_RETRY, currentTemplateVersion);
         }
         reader.close();
     }
@@ -74,15 +76,22 @@ public class ConfigAsyncAutoFetch extends AsyncTask<String, Void, Void> {
         if (remainingAttempts == 0) {
             return;
         }
+        logger.info("Fetching...");
         Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
-        fetchTask.onSuccessTask((unusedFetchResponse) ->
+        fetchTask.onSuccessTask((fetchResponse) ->
         {
-            long newTemplateVersion
-                    = unusedFetchResponse.getFetchedConfigs().getTemplateVersionNumber();
+            logger.info("Fetch done...");
+            long newTemplateVersion = 0;
+            if (fetchResponse.getFetchedConfigs() != null) {
+                newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
+            }
+
             if (newTemplateVersion > currentVersion) {
                 // Execute callbacks for listener.
                 this.eventListener.onEvent();
             } else {
+                logger.info("Fetched template version is the same as SDK's current version." +
+                        " Retrying fetch.");
                 // Continue fetching until template version number if greater then current.
                 fetchAndHandleCallbacks(remainingAttempts - 1, currentVersion);
             }
