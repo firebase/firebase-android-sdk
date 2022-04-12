@@ -78,7 +78,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
     assertThat(activityRule.getScenario().getState())
         .isIn(Arrays.asList(State.CREATED, State.RESUMED));
-    activityRule.getScenario().moveToState(State.STARTED);
+    activityRule.getScenario().moveToState(State.CREATED);
   }
 
   private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
