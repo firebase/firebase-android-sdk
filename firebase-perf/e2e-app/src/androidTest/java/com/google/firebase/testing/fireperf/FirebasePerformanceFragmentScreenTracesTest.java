@@ -28,8 +28,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
-import androidx.test.filters.MediumTest;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.MediumTest;
 import com.google.firebase.testing.fireperf.ui.fast.FastFragment;
 import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
 import com.google.firebase.testing.fireperf.ui.slow.SlowFragment;
@@ -48,27 +48,27 @@ public class FirebasePerformanceFragmentScreenTracesTest {
 
   @Rule
   public ActivityScenarioRule<FirebasePerfFragmentsActivity> activityRule =
-          new ActivityScenarioRule<>(FirebasePerfFragmentsActivity.class);
+      new ActivityScenarioRule<>(FirebasePerfFragmentsActivity.class);
 
   @Test
   public void scrollAndCycleThroughAllFragments() throws InterruptedException {
     activityRule
-            .getScenario()
-            .onActivity(
-                    activity -> {
-                      ((FragmentActivity) activity)
-                              .getSupportFragmentManager()
-                              .registerFragmentLifecycleCallbacks(
-                                      new FragmentManager.FragmentLifecycleCallbacks() {
-                                        @Override
-                                        public void onFragmentResumed(
-                                                @NonNull FragmentManager fm, @NonNull Fragment f) {
-                                          super.onFragmentResumed(fm, f);
-                                          notifyNavigationLock();
-                                        }
-                                      },
-                                      true);
-                    });
+        .getScenario()
+        .onActivity(
+            activity -> {
+              ((FragmentActivity) activity)
+                  .getSupportFragmentManager()
+                  .registerFragmentLifecycleCallbacks(
+                      new FragmentManager.FragmentLifecycleCallbacks() {
+                        @Override
+                        public void onFragmentResumed(
+                            @NonNull FragmentManager fm, @NonNull Fragment f) {
+                          super.onFragmentResumed(fm, f);
+                          notifyNavigationLock();
+                        }
+                      },
+                      true);
+            });
     scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
     activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_fast));
     blockUntilNavigationDone();
@@ -77,7 +77,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     blockUntilNavigationDone();
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
     assertThat(activityRule.getScenario().getState())
-            .isIn(Arrays.asList(State.CREATED, State.RESUMED));
+        .isIn(Arrays.asList(State.CREATED, State.RESUMED));
     activityRule.getScenario().moveToState(State.CREATED);
   }
 
@@ -98,7 +98,8 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     notify();
   }
 
-  static class NavigateAction implements ActivityScenario.ActivityAction<FirebasePerfFragmentsActivity> {
+  static class NavigateAction
+      implements ActivityScenario.ActivityAction<FirebasePerfFragmentsActivity> {
     private final int destinationId;
 
     public NavigateAction(int destinationId) {
@@ -108,7 +109,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     @Override
     public void perform(FirebasePerfFragmentsActivity activity) {
       NavController navController =
-              Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
+          Navigation.findNavController(activity, R.id.nav_host_fragment_activity_fragment);
       navController.navigate(destinationId);
     }
   }
