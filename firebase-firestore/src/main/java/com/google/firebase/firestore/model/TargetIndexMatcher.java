@@ -163,7 +163,7 @@ public class TargetIndexMatcher {
     // filters and we do not need to map any segments to the target's inequality and orderBy
     // clauses.
     if (segmentIndex == segments.size()) {
-      return segmentIndex + 1;
+      return segmentIndex;
     }
 
     // If there is an inequality filter, the next segment must match both the filter and the first
@@ -184,7 +184,7 @@ public class TargetIndexMatcher {
       }
     }
 
-    return segmentIndex + 1;
+    return segmentIndex;
   }
 
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
