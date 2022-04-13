@@ -21,7 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.local.IndexManager.TargetIndexType;
+import com.google.firebase.firestore.local.IndexManager.IndexType;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -111,14 +111,14 @@ public class QueryEngine {
       return null;
     }
 
-    TargetIndexType targetIndexType = indexManager.hasIndex(target);
+    IndexType indexType = indexManager.getIndexType(target);
 
-    if (targetIndexType.equals(TargetIndexType.NONE)) {
+    if (indexType.equals(IndexType.NONE)) {
       // The target cannot be served from any index.
       return null;
     }
 
-    if (targetIndexType.equals(TargetIndexType.PARTIAL)) {
+    if (indexType.equals(IndexType.PARTIAL)) {
       // We cannot apply a limit for targets that are served using a partial index.
       // If a partial index will be used to serve the target, the query may return a superset of
       // documents that match the target (e.g. if the index doesn't include all the target's

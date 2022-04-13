@@ -524,7 +524,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
-    assertEquals(indexManager.hasIndex(query.toTarget()), IndexManager.TargetIndexType.NONE);
+    assertEquals(indexManager.getIndexType(query.toTarget()), IndexManager.IndexType.NONE);
     assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 

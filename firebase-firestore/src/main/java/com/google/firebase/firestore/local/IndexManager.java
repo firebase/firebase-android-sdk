@@ -33,7 +33,7 @@ import java.util.List;
  */
 public interface IndexManager {
   /** Represents the index state as it relates to a particular target. */
-  public enum TargetIndexType {
+  public enum IndexType {
     /** Indicates that no index could be found for serving the target. */
     NONE,
     /**
@@ -99,7 +99,7 @@ public interface IndexManager {
   IndexOffset getMinOffset(String collectionGroup);
 
   /** Returns the type of index (if any) that can be used to serve the given target */
-  TargetIndexType hasIndex(Target target);
+  IndexType getIndexType(Target target);
 
   /**
    * Returns the documents that match the given target based on the provided index or {@code null}
