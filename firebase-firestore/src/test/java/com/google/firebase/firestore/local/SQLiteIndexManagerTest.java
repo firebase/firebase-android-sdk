@@ -524,7 +524,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
-    assertNull(indexManager.getFieldIndex(query.toTarget()));
+    assertEquals(indexManager.getIndexType(query.toTarget()), IndexManager.IndexType.NONE);
     assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 
@@ -1002,7 +1002,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
     assertNotNull("Target cannot be served from index.", results);
     List<DocumentKey> keys =
         Arrays.stream(documents).map(TestUtil::key).collect(Collectors.toList());
