@@ -41,7 +41,7 @@ import javax.annotation.Nullable;
  * the result set is equivalent across all implementations.
  *
  * <p>The Query engine will use indexed-based execution if a user has configured any index that can
- * be used to execute query (via {@link FirebaseFirestore#setIndexConfiguation}). Otherwise, the
+ * be used to execute query (via {@link FirebaseFirestore#setIndexConfiguration}). Otherwise, the
  * engine will try to optimize the query by re-using a previously persisted query result. If that is
  * not possible, the query will be executed via a full collection scan.
  *
@@ -86,8 +86,7 @@ public class QueryEngine {
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(initialized, "initialize() not called");
 
-    ImmutableSortedMap<DocumentKey, Document> result =
-        performQueryUsingIndex(query, query.toTarget());
+    ImmutableSortedMap<DocumentKey, Document> result = performQueryUsingIndex(query);
     if (result != null) {
       return result;
     }
@@ -104,13 +103,13 @@ public class QueryEngine {
    * Performs an indexed query that evaluates the query based on a collection's persisted index
    * values. Returns {@code null} if an index is not available.
    */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
-      Query query, Target target) {
+  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(Query query) {
     if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
 
+    Target target = query.toTarget();
     IndexType indexType = indexManager.getIndexType(target);
 
     if (indexType.equals(IndexType.NONE)) {
