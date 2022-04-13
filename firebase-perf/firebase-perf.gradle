@@ -18,6 +18,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id 'kotlin-android'
 }
 
 firebaseLibrary {
@@ -90,6 +91,7 @@ android {
 }
 
 dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     // Firebase Deps
     implementation project(':firebase-common')
     implementation project(':firebase-components')

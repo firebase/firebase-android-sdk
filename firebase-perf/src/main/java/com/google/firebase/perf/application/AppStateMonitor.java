@@ -18,8 +18,13 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewTreeObserver;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -29,6 +34,7 @@ import com.google.firebase.perf.metrics.FrameMetricsCalculator;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.ttid.TimeToInitialDisplay;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
@@ -46,7 +52,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Trace timer implementation to send foreground and background session log. */
-public class AppStateMonitor implements ActivityLifecycleCallbacks {
+public class AppStateMonitor implements ActivityLifecycleCallbacks, ViewTreeObserver.OnDrawListener {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
   private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
@@ -161,6 +167,20 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
                 true);
       }
     }
+
+    TimeToInitialDisplay.registerTTID(activity.getWindow());
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+  private void timeToInitialDisplay(View decorView) {
+    if (decorView.getViewTreeObserver().isAlive() && decorView.isAttachedToWindow()) {
+      decorView.getViewTreeObserver().addOnDrawListener(this);
+    }
+  }
+
+  @Override
+  public void onDraw() {
+
   }
 
   @Override
