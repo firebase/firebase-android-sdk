@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS;
+import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
 import static com.google.firebase.firestore.model.Values.max;
 import static com.google.firebase.firestore.model.Values.min;
 
@@ -29,8 +31,10 @@ import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A Target represents the WatchTarget representation of a Query, which is used by the LocalStore
@@ -367,6 +371,37 @@ public final class Target {
   /** Returns the order of the document key component. */
   public Direction getKeyOrder() {
     return this.orderBys.get(this.orderBys.size() - 1).getDirection();
+  }
+
+  /** Returns the number of segments of a perfect index for this target. */
+  public int getSegmentCount() {
+    Set<FieldPath> fields = new HashSet<>();
+    boolean hasArraySegment = false;
+    for (Filter filter : filters) {
+      for (FieldFilter subFilter : filter.getFlattenedFilters()) {
+        // __name__ is not an explicit segment of any index, so we don't need to count it.
+        if (subFilter.getField().isKeyField()) {
+          continue;
+        }
+
+        // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filters must be counted separately. For instance,
+        // it is possible to have an index for "a ARRAY a ASC". Even though these are on the same
+        // field, they should be counted as two separate segments in an index.
+        if (subFilter.getOperator().equals(ARRAY_CONTAINS)
+            || subFilter.getOperator().equals(ARRAY_CONTAINS_ANY)) {
+          hasArraySegment = true;
+        } else {
+          fields.add(subFilter.getField());
+        }
+      }
+    }
+    for (OrderBy orderBy : orderBys) {
+      // __name__ is not an explicit segment of any index, so we don't need to count it.
+      if (!orderBy.getField().isKeyField()) {
+        fields.add(orderBy.getField());
+      }
+    }
+    return fields.size() + (hasArraySegment ? 1 : 0);
   }
 
   /** Returns a canonical string representing this target. */

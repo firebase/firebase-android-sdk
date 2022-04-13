@@ -16,13 +16,12 @@ package com.google.firebase.firestore.model;
 
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
-import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
@@ -570,13 +569,13 @@ public class TargetIndexMatcherTest {
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
-    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex) > 0);
   }
 
   private void validateDoesNotServeTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
-    assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
+    assertEquals(targetIndexMatcher.servedByIndex(expectedIndex), -1);
   }
 }
