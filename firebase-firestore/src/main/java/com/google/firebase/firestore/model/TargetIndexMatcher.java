@@ -134,11 +134,16 @@ public class TargetIndexMatcher {
    */
   public int servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
+    int numMatchingSegments = 0;
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
-    if (arraySegment != null && !hasMatchingEqualityFilter(arraySegment)) {
-      return -1;
+    if (arraySegment != null) {
+      if (hasMatchingEqualityFilter(arraySegment)) {
+        ++numMatchingSegments;
+      } else {
+        return -1;
+      }
     }
 
     Iterator<OrderBy> orderBys = this.orderBys.iterator();
@@ -146,7 +151,7 @@ public class TargetIndexMatcher {
     int segmentIndex = 0;
 
     // Process all equalities first. Equalities can appear out of order.
-    for (; segmentIndex < segments.size(); ++segmentIndex) {
+    for (; segmentIndex < segments.size(); ++segmentIndex, ++numMatchingSegments) {
       // We attempt to greedily match all segments to equality filters. If a filter matches an
       // index segment, we can mark the segment as used. Since it is not possible to use the same
       // field path in both an equality and inequality/oderBy clause, we do not have to consider the
@@ -163,7 +168,7 @@ public class TargetIndexMatcher {
     // filters and we do not need to map any segments to the target's inequality and orderBy
     // clauses.
     if (segmentIndex == segments.size()) {
-      return segmentIndex;
+      return numMatchingSegments;
     }
 
     // If there is an inequality filter, the next segment must match both the filter and the first
@@ -174,17 +179,18 @@ public class TargetIndexMatcher {
         return -1;
       }
       ++segmentIndex;
+      ++numMatchingSegments;
     }
 
     // All remaining segments need to represent the prefix of the target's orderBy.
-    for (; segmentIndex < segments.size(); ++segmentIndex) {
+    for (; segmentIndex < segments.size(); ++segmentIndex, ++numMatchingSegments) {
       FieldIndex.Segment segment = segments.get(segmentIndex);
       if (!orderBys.hasNext() || !matchesOrderBy(orderBys.next(), segment)) {
         return -1;
       }
     }
 
-    return segmentIndex;
+    return numMatchingSegments;
   }
 
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
