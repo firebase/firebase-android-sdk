@@ -628,7 +628,7 @@ final class SQLiteIndexManager implements IndexManager {
    * index is configured.
    */
   @Nullable
-  public FieldIndex getFieldIndex(Target target) {
+  private FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
