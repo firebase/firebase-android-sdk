@@ -49,6 +49,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class CrashlyticsController {
@@ -241,6 +242,8 @@ class CrashlyticsController {
     try {
       // TODO(mrober): Don't block the main thread ever for on-demand fatals.
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+    } catch (TimeoutException e) {
+      Logger.getLogger().e("Cannot send reports. Timed out while fetching settings.");
     } catch (Exception e) {
       Logger.getLogger().e("Error handling uncaught exception", e);
       // Nothing to do in this case.
