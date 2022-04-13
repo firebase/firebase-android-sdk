@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import android.text.TextUtils;
+import android.util.Pair;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -312,10 +313,29 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
+  public IndexType getIndexType(Target target) {
+    for (Target subTarget : getSubTargets(target)) {
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount == null) {
+        return IndexType.NONE;
+      }
+
+      Integer indexSegmentCount = indexAndSegmentCount.second;
+      if (indexSegmentCount < subTarget.getSegmentCount()) {
+        return IndexType.PARTIAL;
+      }
+    }
+    return IndexType.FULL;
+  }
+
+  @Override
   public IndexOffset getMinOffset(Target target) {
     List<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
-      fieldIndexes.add(getFieldIndex(subTarget));
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount != null) {
+        fieldIndexes.add(indexAndSegmentCount.first);
+      }
     }
     return getMinOffset(fieldIndexes);
   }
@@ -448,11 +468,12 @@ final class SQLiteIndexManager implements IndexManager {
     List<Object> bindings = new ArrayList<>();
 
     for (Target subTarget : getSubTargets(target)) {
-      FieldIndex fieldIndex = getFieldIndex(subTarget);
-      if (fieldIndex == null) {
+      Pair<FieldIndex, Integer> indexAndSegmentCount = getFieldIndexAndSegmentCount(subTarget);
+      if (indexAndSegmentCount == null) {
         return null;
       }
 
+      FieldIndex fieldIndex = indexAndSegmentCount.first;
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
       @Nullable Bound lowerBound = subTarget.getLowerBound(fieldIndex);
@@ -491,7 +512,8 @@ final class SQLiteIndexManager implements IndexManager {
 
     String queryString =
         "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
-    if (target.getLimit() != -1) {
+
+    if (target.hasLimit()) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
 
@@ -547,9 +569,6 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
     sql.append("ORDER BY directional_value, document_key ");
     sql.append(target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
-    if (target.getLimit() != -1) {
-      sql.append("LIMIT ").append(target.getLimit()).append(" ");
-    }
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
@@ -607,9 +626,13 @@ final class SQLiteIndexManager implements IndexManager {
     return bindArgs;
   }
 
+  /**
+   * Returns an index that can be used to serve the provided target, as well as the number of index
+   * segments that matched the target filters and orderBys. Returns {@code null} if no index is
+   * configured.
+   */
   @Nullable
-  @Override
-  public FieldIndex getFieldIndex(Target target) {
+  public Pair<FieldIndex, Integer> getFieldIndexAndSegmentCount(Target target) {
     hardAssert(started, "IndexManager not started");
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
@@ -623,21 +646,20 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    List<FieldIndex> matchingIndexes = new ArrayList<>();
+    // Return the index with the most number of segments.
+    int maxNumMatchingSegments = -1;
+    FieldIndex matchingIndex = null;
     for (FieldIndex fieldIndex : collectionIndexes) {
-      boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-      if (matches) {
-        matchingIndexes.add(fieldIndex);
+      int numMatchingSegments = targetIndexMatcher.servedByIndex(fieldIndex);
+      if (numMatchingSegments > maxNumMatchingSegments) {
+        maxNumMatchingSegments = numMatchingSegments;
+        matchingIndex = fieldIndex;
       }
     }
-
-    if (matchingIndexes.isEmpty()) {
+    if (maxNumMatchingSegments == -1) {
       return null;
     }
-
-    // Return the index with the most number of segments
-    return Collections.max(
-        matchingIndexes, (l, r) -> Integer.compare(l.getSegments().size(), r.getSegments().size()));
+    return new Pair<>(matchingIndex, maxNumMatchingSegments);
   }
 
   /**
