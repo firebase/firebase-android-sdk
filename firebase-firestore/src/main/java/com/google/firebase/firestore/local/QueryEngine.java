@@ -107,7 +107,7 @@ public class QueryEngine {
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
       Query query, Target target) {
     if (query.matchesAllDocuments()) {
-      // Don't use index queries that can be executed by scanning the collection.
+      // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
     }
 
@@ -154,7 +154,7 @@ public class QueryEngine {
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
     if (query.matchesAllDocuments()) {
-      // Don't use index queries that can be executed by scanning the collection.
+      // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
     }
 
