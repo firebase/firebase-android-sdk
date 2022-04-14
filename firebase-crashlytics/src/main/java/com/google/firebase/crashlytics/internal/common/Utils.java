@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static java.util.Objects.requireNonNull;
 
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
@@ -122,11 +121,7 @@ public final class Utils {
           return null;
         });
 
-    if (Looper.getMainLooper() == Looper.myLooper()) {
-      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
-    } else {
-      latch.await();
-    }
+    latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
 
     if (task.isSuccessful()) {
       return task.getResult();
