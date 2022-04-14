@@ -316,8 +316,8 @@ final class CctTransportBackend implements TransportBackend {
 
     int responseCode = connection.getResponseCode();
     Logging.i(LOG_TAG, "Status Code: %d", responseCode);
-    Logging.d(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
-    Logging.d(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
+    Logging.d(LOG_TAG, "Content-Type: %s", connection.getHeaderField("Content-Type"));
+    Logging.d(LOG_TAG, "Content-Encoding: %s", connection.getHeaderField("Content-Encoding"));
 
     if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
       String redirect = connection.getHeaderField("Location");
