@@ -24,6 +24,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.LANGUAGE_CODE;
@@ -56,6 +57,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -187,7 +189,7 @@ public class ConfigFetchHttpClientTest {
     // Custom user-defined headers.
     expectedHeaders.putAll(customHeaders);
 
-    fetch(FIRST_ETAG, /* userProperties= */ ImmutableMap.of(), customHeaders);
+    fetch(FIRST_ETAG, customHeaders);
 
     assertThat(fakeHttpURLConnection.getRequestHeaders()).isEqualTo(expectedHeaders);
   }
@@ -195,9 +197,13 @@ public class ConfigFetchHttpClientTest {
   @Test
   public void fetch_setsAllElementsOfRequestBody_sendsRequestBodyToServer() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
-    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+    Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
 
-    fetch(FIRST_ETAG, userProperties);
+    long firstOpenTimeEpochFromMillis = 1636146000000L;
+    // ISO-8601 value corresponding to 1636146000000 ms-from-epoch in UTC
+    String firstOpenTimeIsoString = "2021-11-05T21:00:00.000Z";
+
+    fetch(FIRST_ETAG, customUserProperties, Instant.ofEpochMilli(firstOpenTimeEpochFromMillis));
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(INSTANCE_ID)).isEqualTo(INSTALLATION_ID_STRING);
@@ -215,8 +221,23 @@ public class ConfigFetchHttpClientTest {
         .isEqualTo(Long.toString(packageInfo.getLongVersionCode()));
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
     assertThat(requestBody.get(SDK_VERSION)).isEqualTo(BuildConfig.VERSION_NAME);
+    assertThat(requestBody.get(FIRST_OPEN_TIME)).isEqualTo(firstOpenTimeIsoString);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
-        .isEqualTo(new JSONObject(userProperties).toString());
+        .isEqualTo(new JSONObject(customUserProperties).toString());
+  }
+
+  @Test
+  public void fetch_nullFirstOpenTime_fieldNotPresentInRequestBody() throws Exception {
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+    Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+
+    fetch(FIRST_ETAG, customUserProperties, null);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+
+    assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
+        .isEqualTo(new JSONObject(customUserProperties).toString());
+    assertThat(requestBody.isNull(FIRST_OPEN_TIME));
   }
 
   @Test
@@ -226,8 +247,7 @@ public class ConfigFetchHttpClientTest {
 
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
-    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
-    fetch(FIRST_ETAG, userProperties);
+    fetch(FIRST_ETAG);
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageTag);
@@ -242,8 +262,7 @@ public class ConfigFetchHttpClientTest {
 
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
-    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
-    fetch(FIRST_ETAG, userProperties);
+    fetch(FIRST_ETAG);
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
@@ -306,10 +325,12 @@ public class ConfigFetchHttpClientTest {
         /* analyticsUserProperties= */ ImmutableMap.of(),
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         /* currentTime= */ new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetch(String eTag, Map<String, String> userProperties) throws Exception {
+  private FetchResponse fetch(
+      String eTag, Map<String, String> userProperties, Instant firstOpenTime) throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
         INSTALLATION_ID_STRING,
@@ -317,19 +338,19 @@ public class ConfigFetchHttpClientTest {
         userProperties,
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
+        firstOpenTime,
         new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetch(
-      String eTag, Map<String, String> userProperties, Map<String, String> customHeaders)
-      throws Exception {
+  private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
         INSTALLATION_ID_STRING,
         INSTALLATION_AUTH_TOKEN_STRING,
-        userProperties,
+        /* analyticsUserProperties= */ ImmutableMap.of(),
         eTag,
         customHeaders,
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 
@@ -341,6 +362,7 @@ public class ConfigFetchHttpClientTest {
         /* analyticsUserProperties= */ ImmutableMap.of(),
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 
@@ -352,6 +374,7 @@ public class ConfigFetchHttpClientTest {
         /* analyticsUserProperties= */ ImmutableMap.of(),
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 

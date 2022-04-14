@@ -21,6 +21,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.LANGUAGE_CODE;
@@ -65,6 +66,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -163,6 +165,7 @@ public class ConfigFetchHttpClient {
    *     server uses this ETag to determine if there has been a change in the response body since
    *     the last fetch.
    * @param customHeaders custom HTTP headers that will be sent to the FRC server.
+   * @param firstOpenTime first time the app was opened. This value comes from Google Analytics.
    * @param currentTime the current time on the device that is performing the fetch.
    */
   // TODO(issues/263): Set custom headers in ConfigFetchHttpClient's constructor.
@@ -174,6 +177,7 @@ public class ConfigFetchHttpClient {
       Map<String, String> analyticsUserProperties,
       String lastFetchETag,
       Map<String, String> customHeaders,
+      Instant firstOpenTime,
       Date currentTime)
       throws FirebaseRemoteConfigException {
     setUpUrlConnection(urlConnection, lastFetchETag, installationAuthToken, customHeaders);
@@ -182,7 +186,8 @@ public class ConfigFetchHttpClient {
     JSONObject fetchResponse;
     try {
       byte[] requestBody =
-          createFetchRequestBody(installationId, installationAuthToken, analyticsUserProperties)
+          createFetchRequestBody(
+                  installationId, installationAuthToken, analyticsUserProperties, firstOpenTime)
               .toString()
               .getBytes("utf-8");
       setFetchRequestBody(urlConnection, requestBody);
@@ -292,7 +297,8 @@ public class ConfigFetchHttpClient {
   private JSONObject createFetchRequestBody(
       String installationId,
       String installationAuthToken,
-      Map<String, String> analyticsUserProperties)
+      Map<String, String> analyticsUserProperties,
+      Instant firstOpenTime)
       throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 
@@ -315,7 +321,7 @@ public class ConfigFetchHttpClient {
             : locale.toString();
     requestBodyMap.put(LANGUAGE_CODE, languageCode);
 
-    requestBodyMap.put(PLATFORM_VERSION, Integer.toString(android.os.Build.VERSION.SDK_INT));
+    requestBodyMap.put(PLATFORM_VERSION, Integer.toString(Build.VERSION.SDK_INT));
 
     requestBodyMap.put(TIME_ZONE, TimeZone.getDefault().getID());
 
@@ -335,6 +341,10 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(SDK_VERSION, BuildConfig.VERSION_NAME);
 
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
+
+    if (firstOpenTime != null) {
+      requestBodyMap.put(FIRST_OPEN_TIME, firstOpenTime.toString());
+    }
 
     return new JSONObject(requestBodyMap);
   }

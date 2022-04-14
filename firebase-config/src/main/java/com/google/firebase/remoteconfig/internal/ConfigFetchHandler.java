@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
+import org.joda.time.Instant;
 
 /**
  * A handler for fetch requests to the Firebase Remote Config backend.
@@ -78,6 +79,9 @@ public class ConfigFetchHandler {
    * <p>Defined here since {@link HttpURLConnection} does not provide this code.
    */
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
+
+  /** First Open time key in GA user-properties. */
+  @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
 
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
@@ -110,7 +114,6 @@ public class ConfigFetchHandler {
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
-
     this.customHttpHeaders = customHttpHeaders;
   }
 
@@ -311,6 +314,7 @@ public class ConfigFetchHandler {
               getUserProperties(),
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,
+              getFirstOpenTime(),
               currentTime);
 
       if (response.getLastFetchETag() != null) {
@@ -492,8 +496,8 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Returns the list of user properties in Analytics. If the Analytics SDK is not available,
-   * returns an empty list.
+   * Returns the list of custom user properties in Analytics. If the Analytics SDK is not available,
+   * this method returns an empty list.
    */
   @WorkerThread
   private Map<String, String> getUserProperties() {
@@ -508,6 +512,23 @@ public class ConfigFetchHandler {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
+  }
+
+  /**
+   * Returns first-open time from Analytics. If the Analytics SDK is not available, or if Analytics
+   * does not have first-open time for the app, this method returns null.
+   */
+  @WorkerThread
+  private Instant getFirstOpenTime() {
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector == null) {
+      return null;
+    }
+    Map<String, Object> userPropertiesMap = connector.getUserProperties(/*includeInternal=*/ true);
+
+    return userPropertiesMap.containsKey(FIRST_OPEN_TIME_KEY)
+        ? Instant.ofEpochMilli((long) userPropertiesMap.get(FIRST_OPEN_TIME_KEY))
+        : null;
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
