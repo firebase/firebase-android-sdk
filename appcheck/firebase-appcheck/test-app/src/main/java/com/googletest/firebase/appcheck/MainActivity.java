@@ -30,6 +30,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.ListResult;
@@ -42,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
   private FirebaseAppCheck firebaseAppCheck;
   private FirebaseStorage firebaseStorage;
   private AppCheckListener appCheckListener;
+  private Button installPlayIntegrityButton;
   private Button installSafetyNetButton;
   private Button installDebugButton;
   private Button getAppCheckTokenButton;
@@ -80,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void initViews() {
+    installPlayIntegrityButton = findViewById(R.id.install_play_integrity_app_check_button);
     installSafetyNetButton = findViewById(R.id.install_safety_net_app_check_button);
     installDebugButton = findViewById(R.id.install_debug_app_check_button);
     getAppCheckTokenButton = findViewById(R.id.exchange_app_check_button);
@@ -89,6 +92,17 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void setOnClickListeners() {
+    installPlayIntegrityButton.setOnClickListener(
+        new OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            firebaseAppCheck.installAppCheckProviderFactory(
+                PlayIntegrityAppCheckProviderFactory.getInstance());
+            Log.d(TAG, "Installed PlayIntegrityAppCheckProvider");
+            showToast("Installed PlayIntegrityAppCheckProvider.");
+          }
+        });
+
     installSafetyNetButton.setOnClickListener(
         new OnClickListener() {
           @Override
