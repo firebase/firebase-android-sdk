@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
@@ -103,8 +104,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
 
     addMutation(patchMutation("coll/4", map("a", 5)));
 
-    Query query =
-        query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1)).limitToFirst(3);
+    Query query = query("coll").orderBy(orderBy("a")).limitToFirst(3);
     DocumentSet result = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
     assertEquals(docSet(query.comparator(), doc1, doc2, doc4), result);
   }
