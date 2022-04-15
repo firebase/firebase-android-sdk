@@ -45,6 +45,7 @@ dependencies {
     implementation project(":appcheck:firebase-appcheck")
     implementation project(":appcheck:firebase-appcheck-debug")
     implementation project(":appcheck:firebase-appcheck-interop")
+    implementation project(":appcheck:firebase-appcheck-playintegrity")
     implementation project(":appcheck:firebase-appcheck-safetynet")
     implementation project(":firebase-storage")
 }
