@@ -147,34 +147,16 @@ public final class Query {
     return filters;
   }
 
-  /**
-   * The maximum number of results to return. If there is no limit on the query, then this will
-   * cause an assertion failure.
-   */
-  public long getLimitToFirst() {
-    hardAssert(hasLimitToFirst(), "Called getLimitToFirst when no limit was set");
+  /** The maximum number of results to return or {@link Target#NO_LIMIT} if there is no limit. */
+  public long getLimit() {
     return limit;
   }
 
-  public boolean hasLimitToFirst() {
-    return limitType == LimitType.LIMIT_TO_FIRST && limit != Target.NO_LIMIT;
-  }
-
-  /**
-   * The maximum number of last-matching results to return. If there is no limit on the query, then
-   * this will cause an assertion failure.
-   */
-  public long getLimitToLast() {
-    hardAssert(hasLimitToLast(), "Called getLimitToLast when no limit was set");
-    return limit;
-  }
-
-  public boolean hasLimitToLast() {
-    return limitType == LimitType.LIMIT_TO_LAST && limit != Target.NO_LIMIT;
+  public boolean hasLimit() {
+    return limit != Target.NO_LIMIT;
   }
 
   public LimitType getLimitType() {
-    hardAssert(hasLimitToLast() || hasLimitToFirst(), "Called getLimitType when no limit was set");
     return limitType;
   }
 

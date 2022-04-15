@@ -117,15 +117,14 @@ public class QueryEngine {
       return null;
     }
 
-    if (indexType.equals(IndexType.PARTIAL)) {
+    if (query.hasLimit() && indexType.equals(IndexType.PARTIAL)) {
       // We cannot apply a limit for targets that are served using a partial index.
       // If a partial index will be used to serve the target, the query may return a superset of
       // documents that match the target (e.g. if the index doesn't include all the target's
       // filters), or may return the correct set of documents in the wrong order (e.g. if the index
       // doesn't include a segment for one of the orderBys). Therefore a limit should not be applied
       // in such cases.
-      query = query.limitToFirst(Target.NO_LIMIT);
-      target = query.toTarget();
+      return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 
     List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
@@ -136,9 +135,12 @@ public class QueryEngine {
     IndexOffset offset = indexManager.getMinOffset(target);
 
     ImmutableSortedSet<Document> previousResults = applyQuery(query, indexedDocuments);
-    if ((query.hasLimitToFirst() || query.hasLimitToLast())
-        && needsRefill(query.getLimitType(), keys.size(), previousResults, offset.getReadTime())) {
-      return null;
+    if (needsRefill(query, keys.size(), previousResults, offset.getReadTime())) {
+      // A limit query whose boundaries change due to local edits can be re-run against the cache
+      // by excluding the limit. This ensures that all documents that match the query's filters are
+      // included in the result set. The SDK can then apply the limit once all local edits are
+      // incorporated.
+      return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 
     return appendRemainingResults(values(indexedDocuments), query, offset);
@@ -167,12 +169,7 @@ public class QueryEngine {
         localDocumentsView.getDocuments(remoteKeys);
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
-    if ((query.hasLimitToFirst() || query.hasLimitToLast())
-        && needsRefill(
-            query.getLimitType(),
-            remoteKeys.size(),
-            previousResults,
-            lastLimboFreeSnapshotVersion)) {
+    if (needsRefill(query, remoteKeys.size(), previousResults, lastLimboFreeSnapshotVersion)) {
       return null;
     }
 
@@ -211,7 +208,7 @@ public class QueryEngine {
    * Determines if a limit query needs to be refilled from cache, making it ineligible for
    * index-free execution.
    *
-   * @param limitType The type of limit query for refill calculation.
+   * @param query The query.
    * @param expectedDocumentCount The number of documents keys that matched the query at the last
    *     snapshot.
    * @param sortedPreviousResults The documents that match the query based on the previous result,
@@ -221,12 +218,17 @@ public class QueryEngine {
    *     synchronized.
    */
   private boolean needsRefill(
-      Query.LimitType limitType,
+      Query query,
       int expectedDocumentCount,
       ImmutableSortedSet<Document> sortedPreviousResults,
       SnapshotVersion limboFreeSnapshotVersion) {
-    // The query needs to be refilled if a previously matching document no longer matches.
+    if (!query.hasLimit()) {
+      // Queries without limits do not need to be refilled.
+      return false;
+    }
+
     if (expectedDocumentCount != sortedPreviousResults.size()) {
+      // The query needs to be refilled if a previously matching document no longer matches.
       return true;
     }
 
@@ -237,7 +239,7 @@ public class QueryEngine {
     // did not change and documents from cache will continue to be "rejected" by this boundary.
     // Therefore, we can ignore any modifications that don't affect the last document.
     Document documentAtLimitEdge =
-        limitType == Query.LimitType.LIMIT_TO_FIRST
+        query.getLimitType() == Query.LimitType.LIMIT_TO_FIRST
             ? sortedPreviousResults.getMaxEntry()
             : sortedPreviousResults.getMinEntry();
     if (documentAtLimitEdge == null) {
