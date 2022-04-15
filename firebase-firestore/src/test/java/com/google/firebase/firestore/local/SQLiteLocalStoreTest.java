@@ -237,7 +237,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     // The query engine first reads the documents by key and then re-runs the query without limit.
     assertRemoteDocumentsRead(/* byKey= */ 5, /* byCollection= */ 0);
-    assertOverlaysRead(/* byKey= */ 5, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertQueryReturned("coll/a", "coll/c");
   }
 
