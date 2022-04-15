@@ -102,7 +102,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
     indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4));
     indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc4));
 
-    addMutation(patchMutation("coll/4", map("a", 5)));
+    addMutation(patchMutation("coll/3", map("a", 5)));
 
     Query query = query("coll").orderBy(orderBy("a")).limitToFirst(3);
     DocumentSet result = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
