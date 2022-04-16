@@ -143,7 +143,7 @@ public class QueryEngine {
       return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
     }
 
-    return appendRemainingResults(values(indexedDocuments), query, offset);
+    return appendRemainingResults(previousResults, query, offset);
   }
 
   /**
