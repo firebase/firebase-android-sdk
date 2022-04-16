@@ -78,6 +78,4 @@ dependencies {
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "org.skyscreamer:jsonassert:1.5.0"
-
-    api 'joda-time:joda-time:2.10.14'
 }

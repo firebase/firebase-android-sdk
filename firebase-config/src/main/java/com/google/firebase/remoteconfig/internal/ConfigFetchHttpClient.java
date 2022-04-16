@@ -59,6 +59,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -66,7 +67,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -93,6 +93,9 @@ public class ConfigFetchHttpClient {
   private final String namespace;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
+
+  /** ISO-8601 UTC timestamp format. */
+  private static final String ISO_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
   /** Creates a client for {@link #fetch}ing data from the Firebase Remote Config server. */
   public ConfigFetchHttpClient(
@@ -177,7 +180,7 @@ public class ConfigFetchHttpClient {
       Map<String, String> analyticsUserProperties,
       String lastFetchETag,
       Map<String, String> customHeaders,
-      Instant firstOpenTime,
+      Long firstOpenTime,
       Date currentTime)
       throws FirebaseRemoteConfigException {
     setUpUrlConnection(urlConnection, lastFetchETag, installationAuthToken, customHeaders);
@@ -298,7 +301,7 @@ public class ConfigFetchHttpClient {
       String installationId,
       String installationAuthToken,
       Map<String, String> analyticsUserProperties,
-      Instant firstOpenTime)
+      Long firstOpenTime)
       throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 
@@ -343,10 +346,16 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
 
     if (firstOpenTime != null) {
-      requestBodyMap.put(FIRST_OPEN_TIME, firstOpenTime.toString());
+      requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));
     }
 
     return new JSONObject(requestBodyMap);
+  }
+
+  private String convertToISOString(long millisFromEpoch) {
+    SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN);
+    isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+    return isoDateFormat.format(millisFromEpoch);
   }
 
   private void setFetchRequestBody(HttpURLConnection urlConnection, byte[] requestBody)

@@ -52,7 +52,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import org.joda.time.Instant;
 
 /**
  * A handler for fetch requests to the Firebase Remote Config backend.
@@ -80,7 +79,10 @@ public class ConfigFetchHandler {
    */
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
-  /** First Open time key in GA user-properties. */
+  /**
+   * First-open-time key name in GA user-properties. First-open time is a predefined user-dimension
+   * automatically collected by GA.
+   */
   @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
 
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -519,16 +521,13 @@ public class ConfigFetchHandler {
    * does not have first-open time for the app, this method returns null.
    */
   @WorkerThread
-  private Instant getFirstOpenTime() {
+  private Long getFirstOpenTime() {
     AnalyticsConnector connector = this.analyticsConnector.get();
     if (connector == null) {
       return null;
     }
-    Map<String, Object> userPropertiesMap = connector.getUserProperties(/*includeInternal=*/ true);
 
-    return userPropertiesMap.containsKey(FIRST_OPEN_TIME_KEY)
-        ? Instant.ofEpochMilli((long) userPropertiesMap.get(FIRST_OPEN_TIME_KEY))
-        : null;
+    return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */

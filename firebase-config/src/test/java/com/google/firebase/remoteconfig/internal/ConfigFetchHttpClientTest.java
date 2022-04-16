@@ -57,7 +57,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
-import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -203,7 +202,7 @@ public class ConfigFetchHttpClientTest {
     // ISO-8601 value corresponding to 1636146000000 ms-from-epoch in UTC
     String firstOpenTimeIsoString = "2021-11-05T21:00:00.000Z";
 
-    fetch(FIRST_ETAG, customUserProperties, Instant.ofEpochMilli(firstOpenTimeEpochFromMillis));
+    fetch(FIRST_ETAG, customUserProperties, firstOpenTimeEpochFromMillis);
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(INSTANCE_ID)).isEqualTo(INSTALLATION_ID_STRING);
@@ -329,8 +328,8 @@ public class ConfigFetchHttpClientTest {
         /* currentTime= */ new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetch(
-      String eTag, Map<String, String> userProperties, Instant firstOpenTime) throws Exception {
+  private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
+      throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
         INSTALLATION_ID_STRING,

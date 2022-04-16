@@ -79,7 +79,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import org.joda.time.Instant;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -636,13 +635,13 @@ public class ConfigFetchHandlerTest {
     // Provide the mock Analytics SDK.
     AnalyticsConnector mockAnalyticsConnector = mock(AnalyticsConnector.class);
     fetchHandler = getNewFetchHandler(mockAnalyticsConnector);
-    long testFirstOpenTimeVal = 1636146000000L;
+    long firstOpenTime = 1636146000000L;
 
     Map<String, String> customUserProperties =
         ImmutableMap.of("up_key1", "up_val1", "up_key2", "up_val2");
     Map<String, Object> allUserProperties =
         ImmutableMap.of(
-            "up_key1", "up_val1", "up_key2", "up_val2", FIRST_OPEN_TIME_KEY, testFirstOpenTimeVal);
+            "up_key1", "up_val1", "up_key2", "up_val2", FIRST_OPEN_TIME_KEY, firstOpenTime);
     when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
         .thenReturn(ImmutableMap.copyOf(customUserProperties));
     when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ true))
@@ -652,8 +651,7 @@ public class ConfigFetchHandlerTest {
 
     assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
 
-    Instant expectedFirstOpenTime = Instant.ofEpochMilli(testFirstOpenTimeVal);
-    verifyBackendIsCalled(customUserProperties, expectedFirstOpenTime);
+    verifyBackendIsCalled(customUserProperties, firstOpenTime);
   }
 
   @Test
@@ -891,7 +889,7 @@ public class ConfigFetchHandlerTest {
             /* currentTime= */ any());
   }
 
-  private void verifyBackendIsCalled(Map<String, String> userProperties, Instant firstOpenTime)
+  private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
       throws Exception {
     verify(mockBackendFetchApiClient)
         .fetch(
