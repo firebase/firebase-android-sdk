@@ -17,6 +17,8 @@ package com.google.firebase.functions;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
@@ -26,7 +28,12 @@ public class HttpsCallableReference {
   private final FirebaseFunctions functionsClient;
 
   // The name of the HTTPS endpoint this reference refers to.
+  // Is null if url is set.
   private final String name;
+
+  // The url of the HTTPS endpoint this reference refers to.
+  // Is null if name is set.
+  private final URL url;
 
   // Options for how to do the HTTPS call.
   HttpsCallOptions options = new HttpsCallOptions();
@@ -35,6 +42,14 @@ public class HttpsCallableReference {
   HttpsCallableReference(FirebaseFunctions functionsClient, String name) {
     this.functionsClient = functionsClient;
     this.name = name;
+    this.url = null;
+  }
+
+  /** Creates a new reference with the given options. */
+  HttpsCallableReference(FirebaseFunctions functionsClient, URL url) {
+    this.functionsClient = functionsClient;
+    this.name = null;
+    this.url = url;
   }
 
   /**
@@ -80,7 +95,11 @@ public class HttpsCallableReference {
    */
   @NonNull
   public Task<HttpsCallableResult> call(@Nullable Object data) {
-    return functionsClient.call(name, data, options);
+    if (name != null) {
+      return functionsClient.call(name, data, options);
+    } else {
+      return functionsClient.call(url, data, options);
+    }
   }
 
   /**
@@ -99,7 +118,11 @@ public class HttpsCallableReference {
    */
   @NonNull
   public Task<HttpsCallableResult> call() {
-    return functionsClient.call(name, null, options);
+    if (name != null) {
+      return functionsClient.call(name, null, options);
+    } else {
+      return functionsClient.call(url, null, options);
+    }
   }
 
   /**
