@@ -28,23 +28,23 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class AppCheckTokenResponseTest {
 
-  private static final String ATTESTATION_TOKEN = "attestationToken";
-  private static final String TIME_TO_LIVE = "ttl";
+  private static final String APP_CHECK_TOKEN = "appCheckToken";
+  private static final String TIME_TO_LIVE = "3600s";
 
   @Test
   public void fromJsonString_expectDeserialized() throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(AppCheckTokenResponse.ATTESTATION_TOKEN_KEY, ATTESTATION_TOKEN);
+    jsonObject.put(AppCheckTokenResponse.TOKEN_KEY, APP_CHECK_TOKEN);
     jsonObject.put(AppCheckTokenResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
     AppCheckTokenResponse appCheckTokenResponse =
         AppCheckTokenResponse.fromJsonString(jsonObject.toString());
-    assertThat(appCheckTokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(appCheckTokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(appCheckTokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
   }
 
   @Test
-  public void fromJsonString_nullAttestationToken_throwsException() throws Exception {
+  public void fromJsonString_nullToken_throwsException() throws Exception {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(AppCheckTokenResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
@@ -56,7 +56,7 @@ public class AppCheckTokenResponseTest {
   @Test
   public void fromJsonString_nullTimeToLive_throwsException() throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(AppCheckTokenResponse.ATTESTATION_TOKEN_KEY, ATTESTATION_TOKEN);
+    jsonObject.put(AppCheckTokenResponse.TOKEN_KEY, APP_CHECK_TOKEN);
 
     assertThrows(
         NullPointerException.class,

@@ -50,7 +50,7 @@ import org.robolectric.annotation.Config;
 public class DebugAppCheckProviderTest {
 
   private static final String DEBUG_SECRET = "debugSecret";
-  private static final String ATTESTATION_TOKEN = "token";
+  private static final String APP_CHECK_TOKEN = "appCheckToken";
   private static final String TIME_TO_LIVE = "3600s";
   private static final String API_KEY = "apiKey";
   private static final String APP_ID = "appId";
@@ -128,7 +128,7 @@ public class DebugAppCheckProviderTest {
     when(mockNetworkClient.exchangeAttestationForAppCheckToken(
             any(), eq(NetworkClient.DEBUG), eq(mockRetryManager)))
         .thenReturn(mockAppCheckTokenResponse);
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     DebugAppCheckProvider provider =
@@ -141,7 +141,7 @@ public class DebugAppCheckProviderTest {
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
-    assertThat(token.getToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
   }
 
   @Test
