@@ -3,7 +3,7 @@ package com.google.firebase.functions {
 
   public class FirebaseFunctions {
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
-    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
