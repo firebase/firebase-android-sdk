@@ -169,7 +169,7 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void traceValidator_invalidCustomAttriubute_skipsAttribute() {
+  public void traceValidator_invalidCustomAttribute_marksPerfMetricInvalid() {
     TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
 
