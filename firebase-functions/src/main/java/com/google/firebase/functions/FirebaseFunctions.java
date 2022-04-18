@@ -275,7 +275,7 @@ public class FirebaseFunctions {
                 return Tasks.forException(task.getException());
               }
               HttpsCallableContext context = task.getResult();
-                URL url = getURL(name);
+              URL url = getURL(name);
               return call(url, data, context, options);
             });
   }
