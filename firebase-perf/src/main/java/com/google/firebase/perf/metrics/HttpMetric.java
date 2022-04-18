@@ -195,8 +195,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    String err =
-        PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
+    String err = PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
     if (err != null) {
       throw new IllegalArgumentException(err);
     }
