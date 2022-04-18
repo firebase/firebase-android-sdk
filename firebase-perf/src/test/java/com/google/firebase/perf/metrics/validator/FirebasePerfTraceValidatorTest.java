@@ -194,7 +194,7 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
 
     trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("value", "");
+    trace.clearCustomAttributes().putCustomAttributes("", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
 
     StringBuilder longString = new StringBuilder();

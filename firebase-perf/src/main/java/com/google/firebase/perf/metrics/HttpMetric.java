@@ -186,9 +186,6 @@ public class HttpMetric implements FirebasePerformanceAttributable {
       throw new IllegalArgumentException(
           "HttpMetric has been logged already so unable to modify attributes");
     }
-    if (key == null || value == null) {
-      throw new IllegalArgumentException("Attribute must not have null key or value.");
-    }
 
     if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {

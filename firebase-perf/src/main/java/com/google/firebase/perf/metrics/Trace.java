@@ -631,10 +631,6 @@ public class Trace extends AppStateUpdateHandler
           String.format(Locale.ENGLISH, "Trace '%s' has been stopped", name));
     }
 
-    if (key == null || value == null) {
-      throw new IllegalArgumentException("Attribute must not have null key or value.");
-    }
-
     if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
