@@ -56,7 +56,7 @@ public class SafetyNetAppCheckProviderTest {
   private static final String APP_ID = "appId";
   private static final String PROJECT_ID = "projectId";
   private static final String SAFETY_NET_TOKEN = "safetyNetToken";
-  private static final String ATTESTATION_TOKEN = "token";
+  private static final String APP_CHECK_TOKEN = "appCheckToken";
   private static final String TIME_TO_LIVE = "3600s";
 
   private FirebaseApp firebaseApp;
@@ -188,7 +188,7 @@ public class SafetyNetAppCheckProviderTest {
     when(mockNetworkClient.exchangeAttestationForAppCheckToken(
             any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager)))
         .thenReturn(mockAppCheckTokenResponse);
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     SafetyNetAppCheckProvider provider =
@@ -207,7 +207,7 @@ public class SafetyNetAppCheckProviderTest {
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
-    assertThat(token.getToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
   }
 
   @Test

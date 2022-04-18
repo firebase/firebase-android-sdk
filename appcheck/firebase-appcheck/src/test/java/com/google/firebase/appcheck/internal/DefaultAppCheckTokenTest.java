@@ -112,7 +112,7 @@ public class DefaultAppCheckTokenTest {
 
   @Test
   public void testConstructFromAppCheckTokenResponse_success() {
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(TOKEN_PAYLOAD);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(TOKEN_PAYLOAD);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE_ONE_HOUR);
 
     DefaultAppCheckToken defaultAppCheckToken =
@@ -124,7 +124,7 @@ public class DefaultAppCheckTokenTest {
 
   @Test
   public void testConstructFromAppCheckTokenResponse_withNanoSecondsDuration_success() {
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(TOKEN_PAYLOAD);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(TOKEN_PAYLOAD);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE_ONE_HOUR_PLUS_NANOS);
 
     DefaultAppCheckToken defaultAppCheckToken =
@@ -138,7 +138,7 @@ public class DefaultAppCheckTokenTest {
   public void testConstructFromAppCheckTokenResponse_invalidTimeToLiveFormat_fallbackToTokenClaims()
       throws Exception {
     String rawToken = constructFakeRawToken();
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(rawToken);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(rawToken);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(INVALID_TIME_TO_LIVE);
 
     DefaultAppCheckToken defaultAppCheckToken =
