@@ -205,8 +205,8 @@ public class FirebaseFunctions {
   }
 
   @NonNull
-  public HttpsCallableReference getHttpsCallableFromUrl(@NonNull String url) throws MalformedURLException {
-     return new HttpsCallableReference(this, new URL(url));
+  public HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url) {
+     return new HttpsCallableReference(this, url);
   }
 
   /**
