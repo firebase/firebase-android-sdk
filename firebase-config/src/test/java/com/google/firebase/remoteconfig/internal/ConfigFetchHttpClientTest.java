@@ -35,6 +35,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -236,7 +237,7 @@ public class ConfigFetchHttpClientTest {
 
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
         .isEqualTo(new JSONObject(customUserProperties).toString());
-    assertThat(requestBody.isNull(FIRST_OPEN_TIME));
+    assertFalse(requestBody.has(FIRST_OPEN_TIME));
   }
 
   @Test
