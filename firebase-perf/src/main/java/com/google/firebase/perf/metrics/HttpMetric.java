@@ -181,15 +181,16 @@ public class HttpMetric implements FirebasePerformanceAttributable {
     }
   }
 
-  private void checkAttribute(@Nullable String attribute, @Nullable String value) {
+  private void checkAttribute(@Nullable String key, @Nullable String value) {
     if (isStopped) {
       throw new IllegalArgumentException(
           "HttpMetric has been logged already so unable to modify attributes");
     }
-    if (attribute == null || value == null) {
+    if (key == null || value == null) {
       throw new IllegalArgumentException("Attribute must not have null key or value.");
     }
-    if (!customAttributesMap.containsKey(attribute)
+
+    if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
           String.format(
@@ -198,7 +199,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
     String err =
-        PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(attribute, value));
+        PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
     if (err != null) {
       throw new IllegalArgumentException(err);
     }

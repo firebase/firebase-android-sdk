@@ -169,7 +169,7 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void testInvalidCustomAttribute() {
+  public void traceValidator_invalidCustomAttriubute_skipsAttribute() {
     TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
 
@@ -187,6 +187,14 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
 
     trace = trace.clone();
     trace.clearCustomAttributes().putCustomAttributes("ga_test", "value");
+    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+
+    trace = trace.clone();
+    trace.clearCustomAttributes().putCustomAttributes("key", "");
+    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+
+    trace = trace.clone();
+    trace.clearCustomAttributes().putCustomAttributes("value", "");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
 
     StringBuilder longString = new StringBuilder();

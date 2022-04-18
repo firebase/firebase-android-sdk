@@ -28,6 +28,8 @@ import java.util.Map;
 /** An abstract class providing an interface to validate PerfMetric */
 public abstract class PerfMetricValidator {
 
+  private String format;
+
   /**
    * Creates a list of PerfMetricValidator classes based on the contents of PerfMetric
    *
@@ -143,9 +145,9 @@ public abstract class PerfMetricValidator {
   public static String validateAttribute(@NonNull Map.Entry<String, String> attribute) {
     String key = attribute.getKey();
     String value = attribute.getValue();
-    if (key == null) {
+    if (key == null || key.length() == 0) {
       return "Attribute key must not be null";
-    } else if (value == null) {
+    } else if (value == null || value.length() == 0) {
       return "Attribute value must not be null";
     } else if (key.length() > Constants.MAX_ATTRIBUTE_KEY_LENGTH) {
       return String.format(
