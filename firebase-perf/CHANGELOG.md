@@ -23,6 +23,7 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 
 *   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
 *   {{feature}} Added support for measuring screen performance metrics for "Activity Fragments" out-of-the-box.
+*   {{fixed}} Exclude custom attributes whose key/value length is 0.
 
 ## Released
 
