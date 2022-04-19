@@ -97,7 +97,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void addsDocuments() {
+  public void testAddsDocuments() {
     indexManager.addFieldIndex(fieldIndex("coll", "exists", Kind.ASCENDING));
     addDoc("coll/doc1", map("exists", 1));
     addDoc("coll/doc2", map());
