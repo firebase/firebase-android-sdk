@@ -68,29 +68,22 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   @Override
   public Task<AppCheckToken> getToken() {
     return getPlayIntegrityAttestation()
-        .continueWithTask(
-            task -> {
-              if (task.isSuccessful()) {
-                ExchangePlayIntegrityTokenRequest request =
-                    new ExchangePlayIntegrityTokenRequest(task.getResult().token());
-                return Tasks.call(
-                    backgroundExecutor,
-                    () ->
-                        networkClient.exchangeAttestationForAppCheckToken(
-                            request.toJsonString().getBytes(UTF_8),
-                            NetworkClient.PLAY_INTEGRITY,
-                            retryManager));
-              }
-              return Tasks.forException(task.getException());
+        .onSuccessTask(
+            integrityTokenResponse -> {
+              ExchangePlayIntegrityTokenRequest request =
+                  new ExchangePlayIntegrityTokenRequest(integrityTokenResponse.token());
+              return Tasks.call(
+                  backgroundExecutor,
+                  () ->
+                      networkClient.exchangeAttestationForAppCheckToken(
+                          request.toJsonString().getBytes(UTF_8),
+                          NetworkClient.PLAY_INTEGRITY,
+                          retryManager));
             })
-        .continueWithTask(
-            task -> {
-              if (task.isSuccessful()) {
-                return Tasks.forResult(
-                    DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-              }
-              // TODO: Surface more error details.
-              return Tasks.forException(task.getException());
+        .onSuccessTask(
+            appCheckTokenResponse -> {
+              return Tasks.forResult(
+                  DefaultAppCheckToken.constructFromAppCheckTokenResponse(appCheckTokenResponse));
             });
   }
 
@@ -105,17 +98,13 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
                 GeneratePlayIntegrityChallengeResponse.fromJsonString(
                     networkClient.generatePlayIntegrityChallenge(
                         generateChallengeRequest.toJsonString().getBytes(UTF_8), retryManager)));
-    return generateChallengeTask.continueWithTask(
-        task -> {
-          if (task.isSuccessful()) {
-            return integrityManager.requestIntegrityToken(
-                IntegrityTokenRequest.builder()
-                    .setCloudProjectNumber(Long.parseLong(projectNumber))
-                    .setNonce(task.getResult().getChallenge())
-                    .build());
-          }
-          // TODO: Surface more error details.
-          return Tasks.forException(task.getException());
+    return generateChallengeTask.onSuccessTask(
+        generatePlayIntegrityChallengeResponse -> {
+          return integrityManager.requestIntegrityToken(
+              IntegrityTokenRequest.builder()
+                  .setCloudProjectNumber(Long.parseLong(projectNumber))
+                  .setNonce(generatePlayIntegrityChallengeResponse.getChallenge())
+                  .build());
         });
   }
 }
