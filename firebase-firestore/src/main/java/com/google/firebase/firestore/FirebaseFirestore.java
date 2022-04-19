@@ -461,6 +461,7 @@ public class FirebaseFirestore {
    * @param updateFunction The function to execute within the transaction context.
    * @return The task returned from the updateFunction.
    */
+  @NonNull
   public <TResult> Task<TResult> runTransaction(
       @NonNull TransactionOptions options, @NonNull Transaction.Function<TResult> updateFunction) {
     checkNotNull(updateFunction, "Provided transaction update function must not be null.");

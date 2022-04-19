@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore;
 
+import androidx.annotation.NonNull;
+
 /**
  * Parameter for {@link FirebaseFirestore#runTransaction(TransactionOptions, Transaction.Function)}.
  */
@@ -39,7 +41,7 @@ public final class TransactionOptions {
      * Constructs a new {@code TransactionOptions} Builder based on an existing {@code
      * TransactionOptions} object.
      */
-    public Builder(TransactionOptions options) {
+    public Builder(@NonNull TransactionOptions options) {
       maxAttempts = options.maxAttempts;
     }
 
@@ -48,6 +50,7 @@ public final class TransactionOptions {
      *
      * @return this builder
      */
+    @NonNull
     public Builder setMaxAttempts(int maxAttempts) {
       if (maxAttempts < 1) throw new IllegalArgumentException("Max attempts must be at least 1");
       this.maxAttempts = maxAttempts;
@@ -59,6 +62,7 @@ public final class TransactionOptions {
      *
      * @return the built {@code TransactionOptions} object
      */
+    @NonNull
     public TransactionOptions build() {
       return new TransactionOptions(maxAttempts);
     }
