@@ -419,7 +419,7 @@ public class FirebaseFirestore {
    * @return The task returned from the updateFunction.
    */
   private <ResultT> Task<ResultT> runTransaction(
-      Transaction.Function<ResultT> updateFunction, Executor executor) {
+      TransactionOptions options, Transaction.Function<ResultT> updateFunction, Executor executor) {
     ensureClientConfigured();
 
     // We wrap the function they provide in order to
@@ -434,7 +434,7 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(wrappedUpdateFunction);
+    return client.transaction(options, wrappedUpdateFunction);
   }
 
   /**
@@ -448,9 +448,26 @@ public class FirebaseFirestore {
   @NonNull
   public <TResult> Task<TResult> runTransaction(
       @NonNull Transaction.Function<TResult> updateFunction) {
+    return runTransaction(TransactionOptions.DEFAULT, updateFunction);
+  }
+
+  /**
+   * Executes the given updateFunction and then attempts to commit the changes applied within the
+   * transaction. If any document read within the transaction has changed, the updateFunction will
+   * be retried. If it fails to commit after the maxmimum number of attempts specified in
+   * transactionOptions, the transaction will fail.
+   *
+   * @param options The function to execute within the transaction context.
+   * @param updateFunction The function to execute within the transaction context.
+   * @return The task returned from the updateFunction.
+   */
+  public <TResult> Task<TResult> runTransaction(
+      @NonNull TransactionOptions options, @NonNull Transaction.Function<TResult> updateFunction) {
     checkNotNull(updateFunction, "Provided transaction update function must not be null.");
     return runTransaction(
-        updateFunction, com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
+        options,
+        updateFunction,
+        com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
   }
 
   /**
