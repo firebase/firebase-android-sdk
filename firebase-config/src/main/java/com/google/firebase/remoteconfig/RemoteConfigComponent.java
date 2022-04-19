@@ -209,7 +209,7 @@ public class RemoteConfigComponent {
               fetchHandler,
               getHandler,
               metadataClient,
-                  getRealtimeClient(fetchHandler));
+                  getRealtimeClient(fetchHandler, namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesBackground.put(namespace, in);
@@ -260,8 +260,8 @@ public class RemoteConfigComponent {
   }
 
   @VisibleForTesting
-  synchronized ConfigRealtimeHTTPClient getRealtimeClient(ConfigFetchHandler configFetchHandler) {
-    return new ConfigRealtimeHTTPClient(this.firebaseApp, this.firebaseInstallations, configFetchHandler, this.context);
+  synchronized ConfigRealtimeHTTPClient getRealtimeClient(ConfigFetchHandler configFetchHandler, String namespace) {
+    return new ConfigRealtimeHTTPClient(this.firebaseApp, this.firebaseInstallations, configFetchHandler, this.context, namespace);
   }
 
   private ConfigGetParameterHandler getGetHandler(
@@ -333,7 +333,7 @@ public class RemoteConfigComponent {
     @Override
     public void onBackgroundStateChanged(boolean b) {
       for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
-        frc.handleAutomaticRealtime(b);
+        frc.setBackgroundState(b);
       }
     }
   }

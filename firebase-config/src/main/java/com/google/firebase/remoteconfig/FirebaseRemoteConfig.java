@@ -14,10 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
-import android.app.Application;
 import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,8 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executor;
 
 import org.json.JSONArray;
@@ -693,7 +688,11 @@ public class FirebaseRemoteConfig {
     return registration;
   }
 
-  public void handleAutomaticRealtime(boolean background) {
+  public void closeRealtime() {
+    this.configRealtimeHTTPClient.pauseRealtimeConnection();
+  }
+
+  public void setBackgroundState(boolean background) {
     this.configRealtimeHTTPClient.setBackgroundFlag(background);
     if (!background) {
       Log.i(this.TAG, "App is in foreground");
