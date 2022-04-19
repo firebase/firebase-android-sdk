@@ -17,7 +17,6 @@ package com.google.firebase.functions;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
-
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
