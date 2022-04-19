@@ -23,7 +23,6 @@ import com.google.firebase.perf.v1.PerfMetric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /** An abstract class providing an interface to validate PerfMetric */
 public abstract class PerfMetricValidator {
