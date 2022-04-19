@@ -23,7 +23,7 @@ import org.json.JSONObject;
  * Client-side model of the ExchangePlayIntegrityTokenRequest payload from the Firebase App Check
  * Token Exchange API.
  */
-public class ExchangePlayIntegrityTokenRequest {
+class ExchangePlayIntegrityTokenRequest {
 
   @VisibleForTesting static final String PLAY_INTEGRITY_TOKEN_KEY = "playIntegrityToken";
 

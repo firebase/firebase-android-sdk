@@ -15,9 +15,11 @@
 package com.google.firebase.appcheck.playintegrity.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
+import static com.google.android.gms.common.util.Strings.emptyToNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.FirebaseException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -25,7 +27,7 @@ import org.json.JSONObject;
  * Client-side model of the GeneratePlayIntegrityChallengeResponse payload from the Firebase App
  * Check Token Exchange API.
  */
-public class GeneratePlayIntegrityChallengeResponse {
+class GeneratePlayIntegrityChallengeResponse {
 
   @VisibleForTesting static final String CHALLENGE_KEY = "challenge";
   @VisibleForTesting static final String TIME_TO_LIVE_KEY = "ttl";
@@ -35,10 +37,13 @@ public class GeneratePlayIntegrityChallengeResponse {
 
   @NonNull
   public static GeneratePlayIntegrityChallengeResponse fromJsonString(@NonNull String jsonString)
-      throws JSONException {
+      throws FirebaseException, JSONException {
     JSONObject jsonObject = new JSONObject(jsonString);
-    String challenge = jsonObject.optString(CHALLENGE_KEY, null);
-    String timeToLive = jsonObject.optString(TIME_TO_LIVE_KEY, null);
+    String challenge = emptyToNull(jsonObject.optString(CHALLENGE_KEY));
+    String timeToLive = emptyToNull(jsonObject.optString(TIME_TO_LIVE_KEY));
+    if (challenge == null || timeToLive == null) {
+      throw new FirebaseException("Unexpected server response.");
+    }
     return new GeneratePlayIntegrityChallengeResponse(challenge, timeToLive);
   }
 

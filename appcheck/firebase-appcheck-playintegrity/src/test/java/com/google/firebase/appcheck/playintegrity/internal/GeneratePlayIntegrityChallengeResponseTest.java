@@ -17,6 +17,7 @@ package com.google.firebase.appcheck.playintegrity.internal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.firebase.FirebaseException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +49,7 @@ public class GeneratePlayIntegrityChallengeResponseTest {
     jsonObject.put(GeneratePlayIntegrityChallengeResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
     assertThrows(
-        NullPointerException.class,
+        FirebaseException.class,
         () -> GeneratePlayIntegrityChallengeResponse.fromJsonString(jsonObject.toString()));
   }
 
@@ -58,7 +59,7 @@ public class GeneratePlayIntegrityChallengeResponseTest {
     jsonObject.put(GeneratePlayIntegrityChallengeResponse.CHALLENGE_KEY, CHALLENGE);
 
     assertThrows(
-        NullPointerException.class,
+        FirebaseException.class,
         () -> GeneratePlayIntegrityChallengeResponse.fromJsonString(jsonObject.toString()));
   }
 }

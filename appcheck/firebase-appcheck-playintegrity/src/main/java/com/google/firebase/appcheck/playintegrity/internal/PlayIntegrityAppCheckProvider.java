@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.playintegrity.internal;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.play.core.integrity.IntegrityManager;
@@ -26,7 +25,6 @@ import com.google.android.play.core.integrity.IntegrityTokenResponse;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
-import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
@@ -71,34 +69,28 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   public Task<AppCheckToken> getToken() {
     return getPlayIntegrityAttestation()
         .continueWithTask(
-            new Continuation<IntegrityTokenResponse, Task<AppCheckTokenResponse>>() {
-              @Override
-              public Task<AppCheckTokenResponse> then(@NonNull Task<IntegrityTokenResponse> task) {
-                if (task.isSuccessful()) {
-                  ExchangePlayIntegrityTokenRequest request =
-                      new ExchangePlayIntegrityTokenRequest(task.getResult().token());
-                  return Tasks.call(
-                      backgroundExecutor,
-                      () ->
-                          networkClient.exchangeAttestationForAppCheckToken(
-                              request.toJsonString().getBytes(UTF_8),
-                              NetworkClient.PLAY_INTEGRITY,
-                              retryManager));
-                }
-                return Tasks.forException(task.getException());
+            task -> {
+              if (task.isSuccessful()) {
+                ExchangePlayIntegrityTokenRequest request =
+                    new ExchangePlayIntegrityTokenRequest(task.getResult().token());
+                return Tasks.call(
+                    backgroundExecutor,
+                    () ->
+                        networkClient.exchangeAttestationForAppCheckToken(
+                            request.toJsonString().getBytes(UTF_8),
+                            NetworkClient.PLAY_INTEGRITY,
+                            retryManager));
               }
+              return Tasks.forException(task.getException());
             })
         .continueWithTask(
-            new Continuation<AppCheckTokenResponse, Task<AppCheckToken>>() {
-              @Override
-              public Task<AppCheckToken> then(@NonNull Task<AppCheckTokenResponse> task) {
-                if (task.isSuccessful()) {
-                  return Tasks.forResult(
-                      DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-                }
-                // TODO: Surface more error details.
-                return Tasks.forException(task.getException());
+            task -> {
+              if (task.isSuccessful()) {
+                return Tasks.forResult(
+                    DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
               }
+              // TODO: Surface more error details.
+              return Tasks.forException(task.getException());
             });
   }
 
@@ -114,20 +106,16 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
                     networkClient.generatePlayIntegrityChallenge(
                         generateChallengeRequest.toJsonString().getBytes(UTF_8), retryManager)));
     return generateChallengeTask.continueWithTask(
-        new Continuation<GeneratePlayIntegrityChallengeResponse, Task<IntegrityTokenResponse>>() {
-          @Override
-          public Task<IntegrityTokenResponse> then(
-              @NonNull Task<GeneratePlayIntegrityChallengeResponse> task) {
-            if (task.isSuccessful()) {
-              return integrityManager.requestIntegrityToken(
-                  IntegrityTokenRequest.builder()
-                      .setCloudProjectNumber(Long.parseLong(projectNumber))
-                      .setNonce(task.getResult().getChallenge())
-                      .build());
-            }
-            // TODO: Surface more error details.
-            return Tasks.forException(task.getException());
+        task -> {
+          if (task.isSuccessful()) {
+            return integrityManager.requestIntegrityToken(
+                IntegrityTokenRequest.builder()
+                    .setCloudProjectNumber(Long.parseLong(projectNumber))
+                    .setNonce(task.getResult().getChallenge())
+                    .build());
           }
+          // TODO: Surface more error details.
+          return Tasks.forException(task.getException());
         });
   }
 }

@@ -12,24 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+/** @hide */
 package com.google.firebase.appcheck.playintegrity.internal;
-
-import androidx.annotation.NonNull;
-import org.json.JSONObject;
-
-/**
- * Client-side model of the GeneratePlayIntegrityChallengeRequest payload from the Firebase App
- * Check Token Exchange API.
- */
-class GeneratePlayIntegrityChallengeRequest {
-
-  public GeneratePlayIntegrityChallengeRequest() {}
-
-  @NonNull
-  public String toJsonString() {
-    JSONObject jsonObject = new JSONObject();
-
-    // GeneratePlayIntegrityChallenge takes an empty POST body since the app ID is in the URL.
-    return jsonObject.toString();
-  }
-}

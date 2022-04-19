@@ -19,6 +19,7 @@ import static com.google.android.gms.common.util.Strings.emptyToNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.FirebaseException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -35,10 +36,13 @@ public class AppCheckTokenResponse {
 
   @NonNull
   public static AppCheckTokenResponse fromJsonString(@NonNull String jsonString)
-      throws JSONException {
+      throws FirebaseException, JSONException {
     JSONObject jsonObject = new JSONObject(jsonString);
     String token = emptyToNull(jsonObject.optString(TOKEN_KEY));
     String timeToLive = emptyToNull(jsonObject.optString(TIME_TO_LIVE_KEY));
+    if (token == null || timeToLive == null) {
+      throw new FirebaseException("Unexpected server response.");
+    }
     return new AppCheckTokenResponse(token, timeToLive);
   }
 

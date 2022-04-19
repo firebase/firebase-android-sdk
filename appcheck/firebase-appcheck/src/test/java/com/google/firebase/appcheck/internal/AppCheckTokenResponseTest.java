@@ -17,6 +17,7 @@ package com.google.firebase.appcheck.internal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.firebase.FirebaseException;
 import org.json.JSONObject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,8 +50,7 @@ public class AppCheckTokenResponseTest {
     jsonObject.put(AppCheckTokenResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
     assertThrows(
-        NullPointerException.class,
-        () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
+        FirebaseException.class, () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
   }
 
   @Test
@@ -59,7 +59,6 @@ public class AppCheckTokenResponseTest {
     jsonObject.put(AppCheckTokenResponse.TOKEN_KEY, APP_CHECK_TOKEN);
 
     assertThrows(
-        NullPointerException.class,
-        () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
+        FirebaseException.class, () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
   }
 }
