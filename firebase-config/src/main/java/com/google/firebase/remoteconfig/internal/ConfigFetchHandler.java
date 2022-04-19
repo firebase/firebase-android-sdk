@@ -80,7 +80,7 @@ public class ConfigFetchHandler {
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
   /**
-   * First-open-time key name in GA user-properties. First-open time is a predefined user-dimension
+   * First-open time key name in GA user-properties. First-open time is a predefined user-dimension
    * automatically collected by GA.
    */
   @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
