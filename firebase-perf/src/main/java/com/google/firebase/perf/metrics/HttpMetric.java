@@ -181,7 +181,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
     }
   }
 
-  private void checkAttribute(@Nullable String key, @Nullable String value) {
+  private void checkAttribute(@NonNull String key, @NonNull String value) {
     if (isStopped) {
       throw new IllegalArgumentException(
           "HttpMetric has been logged already so unable to modify attributes");
@@ -195,10 +195,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    String err = PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
-    if (err != null) {
-      throw new IllegalArgumentException(err);
-    }
+    PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
   }
 
   /**

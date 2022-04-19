@@ -180,9 +180,10 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
 
   private boolean hasValidAttributes(Map<String, String> customAttributes) {
     for (Map.Entry<String, String> entry : customAttributes.entrySet()) {
-      String err = PerfMetricValidator.validateAttribute(entry);
-      if (err != null) {
-        logger.warn(err);
+      try {
+        PerfMetricValidator.validateAttribute(entry);
+      } catch (IllegalArgumentException exception) {
+        logger.warn(exception.getLocalizedMessage());
         return false;
       }
     }

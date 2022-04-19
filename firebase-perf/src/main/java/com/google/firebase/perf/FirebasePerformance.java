@@ -364,10 +364,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
 
-    String err = PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
-    if (err != null) {
-      throw new IllegalArgumentException(err);
-    }
+    PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
   }
 
   /**

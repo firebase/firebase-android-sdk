@@ -140,28 +140,27 @@ public abstract class PerfMetricValidator {
    *     it can't be used.
    */
   @Nullable
-  public static String validateAttribute(@NonNull Map.Entry<String, String> attribute) {
+  public static void validateAttribute(@NonNull Map.Entry<String, String> attribute) {
     String key = attribute.getKey();
     String value = attribute.getValue();
     if (key == null || key.length() == 0) {
-      return "Attribute key must not be null or empty";
+      throw new IllegalArgumentException("Attribute key must not be null or empty");
     } else if (value == null || value.length() == 0) {
-      return "Attribute value must not be null or empty";
+      throw new IllegalArgumentException("Attribute value must not be null or empty");
     } else if (key.length() > Constants.MAX_ATTRIBUTE_KEY_LENGTH) {
-      return String.format(
+      throw new IllegalArgumentException(String.format(
           Locale.US,
           "Attribute key length must not exceed %d characters",
-          Constants.MAX_ATTRIBUTE_KEY_LENGTH);
+          Constants.MAX_ATTRIBUTE_KEY_LENGTH));
     } else if (value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
-      return String.format(
+      throw new IllegalArgumentException(String.format(
           Locale.US,
           "Attribute value length must not exceed %d characters",
-          Constants.MAX_ATTRIBUTE_VALUE_LENGTH);
+          Constants.MAX_ATTRIBUTE_VALUE_LENGTH));
     } else if (!key.matches("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*")) {
-      return "Attribute key must start with letter, must only contain alphanumeric characters and"
-          + " underscore and must not start with \"firebase_\", \"google_\" and \"ga_";
+      throw new IllegalArgumentException("Attribute key must start with letter, must only contain alphanumeric characters and"
+          + " underscore and must not start with \"firebase_\", \"google_\" and \"ga_");
     }
-    return null;
   }
 
   public abstract boolean isValidPerfMetric();
