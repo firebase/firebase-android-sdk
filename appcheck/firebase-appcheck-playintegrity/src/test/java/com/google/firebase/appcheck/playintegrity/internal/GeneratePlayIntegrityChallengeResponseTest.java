@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.appcheck.internal;
+package com.google.firebase.appcheck.playintegrity.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
@@ -24,41 +24,42 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-/** Tests for {@link AppCheckTokenResponse}. */
+/** Tests for {@link GeneratePlayIntegrityChallengeResponse}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class AppCheckTokenResponseTest {
-
-  private static final String APP_CHECK_TOKEN = "appCheckToken";
+public class GeneratePlayIntegrityChallengeResponseTest {
+  private static final String CHALLENGE = "testChallenge";
   private static final String TIME_TO_LIVE = "3600s";
 
   @Test
   public void fromJsonString_expectDeserialized() throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(AppCheckTokenResponse.TOKEN_KEY, APP_CHECK_TOKEN);
-    jsonObject.put(AppCheckTokenResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
+    jsonObject.put(GeneratePlayIntegrityChallengeResponse.CHALLENGE_KEY, CHALLENGE);
+    jsonObject.put(GeneratePlayIntegrityChallengeResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
-    AppCheckTokenResponse appCheckTokenResponse =
-        AppCheckTokenResponse.fromJsonString(jsonObject.toString());
-    assertThat(appCheckTokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
-    assertThat(appCheckTokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
+    GeneratePlayIntegrityChallengeResponse generatePlayIntegrityChallengeResponse =
+        GeneratePlayIntegrityChallengeResponse.fromJsonString(jsonObject.toString());
+    assertThat(generatePlayIntegrityChallengeResponse.getChallenge()).isEqualTo(CHALLENGE);
+    assertThat(generatePlayIntegrityChallengeResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
   }
 
   @Test
-  public void fromJsonString_nullToken_throwsException() throws Exception {
+  public void fromJsonString_nullChallenge_throwsException() throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(AppCheckTokenResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
+    jsonObject.put(GeneratePlayIntegrityChallengeResponse.TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
     assertThrows(
-        FirebaseException.class, () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
+        FirebaseException.class,
+        () -> GeneratePlayIntegrityChallengeResponse.fromJsonString(jsonObject.toString()));
   }
 
   @Test
   public void fromJsonString_nullTimeToLive_throwsException() throws Exception {
     JSONObject jsonObject = new JSONObject();
-    jsonObject.put(AppCheckTokenResponse.TOKEN_KEY, APP_CHECK_TOKEN);
+    jsonObject.put(GeneratePlayIntegrityChallengeResponse.CHALLENGE_KEY, CHALLENGE);
 
     assertThrows(
-        FirebaseException.class, () -> AppCheckTokenResponse.fromJsonString(jsonObject.toString()));
+        FirebaseException.class,
+        () -> GeneratePlayIntegrityChallengeResponse.fromJsonString(jsonObject.toString()));
   }
 }

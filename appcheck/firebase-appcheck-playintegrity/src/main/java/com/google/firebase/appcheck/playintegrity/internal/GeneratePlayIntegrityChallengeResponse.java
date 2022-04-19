@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.appcheck.internal;
+package com.google.firebase.appcheck.playintegrity.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 import static com.google.android.gms.common.util.Strings.emptyToNull;
@@ -24,38 +24,40 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Client-side model of the AppCheckToken payload from the Firebase App Check Token Exchange API.
+ * Client-side model of the GeneratePlayIntegrityChallengeResponse payload from the Firebase App
+ * Check Token Exchange API.
  */
-public class AppCheckTokenResponse {
+class GeneratePlayIntegrityChallengeResponse {
 
-  @VisibleForTesting static final String TOKEN_KEY = "token";
+  @VisibleForTesting static final String CHALLENGE_KEY = "challenge";
   @VisibleForTesting static final String TIME_TO_LIVE_KEY = "ttl";
 
-  private String token;
+  private String challenge;
   private String timeToLive;
 
   @NonNull
-  public static AppCheckTokenResponse fromJsonString(@NonNull String jsonString)
+  public static GeneratePlayIntegrityChallengeResponse fromJsonString(@NonNull String jsonString)
       throws FirebaseException, JSONException {
     JSONObject jsonObject = new JSONObject(jsonString);
-    String token = emptyToNull(jsonObject.optString(TOKEN_KEY));
+    String challenge = emptyToNull(jsonObject.optString(CHALLENGE_KEY));
     String timeToLive = emptyToNull(jsonObject.optString(TIME_TO_LIVE_KEY));
-    if (token == null || timeToLive == null) {
+    if (challenge == null || timeToLive == null) {
       throw new FirebaseException("Unexpected server response.");
     }
-    return new AppCheckTokenResponse(token, timeToLive);
+    return new GeneratePlayIntegrityChallengeResponse(challenge, timeToLive);
   }
 
-  private AppCheckTokenResponse(@NonNull String token, @NonNull String timeToLive) {
-    checkNotNull(token);
+  private GeneratePlayIntegrityChallengeResponse(
+      @NonNull String challenge, @NonNull String timeToLive) {
+    checkNotNull(challenge);
     checkNotNull(timeToLive);
-    this.token = token;
+    this.challenge = challenge;
     this.timeToLive = timeToLive;
   }
 
   @NonNull
-  public String getToken() {
-    return token;
+  public String getChallenge() {
+    return challenge;
   }
 
   @NonNull
