@@ -79,6 +79,12 @@ public class ConfigFetchHandler {
    */
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
+  /**
+   * First-open time key name in GA user-properties. First-open time is a predefined user-dimension
+   * automatically collected by GA.
+   */
+  @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
+
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
 
@@ -110,7 +116,6 @@ public class ConfigFetchHandler {
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
-
     this.customHttpHeaders = customHttpHeaders;
   }
 
@@ -311,6 +316,7 @@ public class ConfigFetchHandler {
               getUserProperties(),
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,
+              getFirstOpenTime(),
               currentTime);
 
       if (response.getLastFetchETag() != null) {
@@ -492,8 +498,8 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Returns the list of user properties in Analytics. If the Analytics SDK is not available,
-   * returns an empty list.
+   * Returns the list of custom user properties in Analytics. If the Analytics SDK is not available,
+   * this method returns an empty list.
    */
   @WorkerThread
   private Map<String, String> getUserProperties() {
@@ -508,6 +514,20 @@ public class ConfigFetchHandler {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
+  }
+
+  /**
+   * Returns first-open time from Analytics. If the Analytics SDK is not available, or if Analytics
+   * does not have first-open time for the app, this method returns null.
+   */
+  @WorkerThread
+  private Long getFirstOpenTime() {
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector == null) {
+      return null;
+    }
+
+    return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */

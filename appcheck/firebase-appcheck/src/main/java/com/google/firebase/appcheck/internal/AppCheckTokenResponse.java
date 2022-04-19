@@ -19,40 +19,43 @@ import static com.google.android.gms.common.util.Strings.emptyToNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.FirebaseException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Client-side model of the AttestationTokenResponse payload from the Firebase App Check Token
- * Exchange API.
+ * Client-side model of the AppCheckToken payload from the Firebase App Check Token Exchange API.
  */
 public class AppCheckTokenResponse {
 
-  @VisibleForTesting static final String ATTESTATION_TOKEN_KEY = "attestationToken";
+  @VisibleForTesting static final String TOKEN_KEY = "token";
   @VisibleForTesting static final String TIME_TO_LIVE_KEY = "ttl";
 
-  private String attestationToken;
+  private String token;
   private String timeToLive;
 
   @NonNull
   public static AppCheckTokenResponse fromJsonString(@NonNull String jsonString)
-      throws JSONException {
+      throws FirebaseException, JSONException {
     JSONObject jsonObject = new JSONObject(jsonString);
-    String attestationToken = emptyToNull(jsonObject.optString(ATTESTATION_TOKEN_KEY));
+    String token = emptyToNull(jsonObject.optString(TOKEN_KEY));
     String timeToLive = emptyToNull(jsonObject.optString(TIME_TO_LIVE_KEY));
-    return new AppCheckTokenResponse(attestationToken, timeToLive);
+    if (token == null || timeToLive == null) {
+      throw new FirebaseException("Unexpected server response.");
+    }
+    return new AppCheckTokenResponse(token, timeToLive);
   }
 
-  private AppCheckTokenResponse(@NonNull String attestationToken, @NonNull String timeToLive) {
-    checkNotNull(attestationToken);
+  private AppCheckTokenResponse(@NonNull String token, @NonNull String timeToLive) {
+    checkNotNull(token);
     checkNotNull(timeToLive);
-    this.attestationToken = attestationToken;
+    this.token = token;
     this.timeToLive = timeToLive;
   }
 
   @NonNull
-  public String getAttestationToken() {
-    return attestationToken;
+  public String getToken() {
+    return token;
   }
 
   @NonNull

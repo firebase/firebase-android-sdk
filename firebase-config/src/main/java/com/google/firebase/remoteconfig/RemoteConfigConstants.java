@@ -48,7 +48,8 @@ public final class RemoteConfigConstants {
     RequestFieldKey.APP_VERSION,
     RequestFieldKey.PACKAGE_NAME,
     RequestFieldKey.SDK_VERSION,
-    RequestFieldKey.ANALYTICS_USER_PROPERTIES
+    RequestFieldKey.ANALYTICS_USER_PROPERTIES,
+    RequestFieldKey.FIRST_OPEN_TIME
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface RequestFieldKey {
@@ -64,6 +65,7 @@ public final class RemoteConfigConstants {
     String PACKAGE_NAME = "packageName";
     String SDK_VERSION = "sdkVersion";
     String ANALYTICS_USER_PROPERTIES = "analyticsUserProperties";
+    String FIRST_OPEN_TIME = "firstOpenTime";
   }
 
   /** Keys of fields in the Fetch response body from the Firebase Remote Config server. */

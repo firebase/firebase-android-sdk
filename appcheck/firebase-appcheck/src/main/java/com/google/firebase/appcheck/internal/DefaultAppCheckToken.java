@@ -77,14 +77,13 @@ public final class DefaultAppCheckToken extends AppCheckToken {
     } catch (NumberFormatException e) {
       // If parsing the duration string returned by the server fails for any reason, fall back to
       // computing the timeToLive from the token claims directly.
-      Map<String, Object> claimsMap =
-          TokenParser.parseTokenClaims(tokenResponse.getAttestationToken());
+      Map<String, Object> claimsMap = TokenParser.parseTokenClaims(tokenResponse.getToken());
       long iat = getLongFromClaimsSafely(claimsMap, ISSUED_AT_KEY);
       long exp = getLongFromClaimsSafely(claimsMap, EXPIRATION_TIME_KEY);
       expiresInMillis = (exp - iat) * ONE_SECOND_MILLIS;
     }
 
-    return new DefaultAppCheckToken(tokenResponse.getAttestationToken(), expiresInMillis);
+    return new DefaultAppCheckToken(tokenResponse.getToken(), expiresInMillis);
   }
 
   @NonNull

@@ -33,7 +33,7 @@ import java.util.List;
  */
 public interface IndexManager {
   /** Represents the index state as it relates to a particular target. */
-  public enum IndexType {
+  enum IndexType {
     /** Indicates that no index could be found for serving the target. */
     NONE,
     /**

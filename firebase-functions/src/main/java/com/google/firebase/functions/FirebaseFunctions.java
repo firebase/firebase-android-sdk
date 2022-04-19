@@ -204,6 +204,12 @@ public class FirebaseFunctions {
     return new HttpsCallableReference(this, name);
   }
 
+  /** Returns a reference to the Callable HTTPS trigger with the provided url. */
+  @NonNull
+  public HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url) {
+    return new HttpsCallableReference(this, url);
+  }
+
   /**
    * Returns the URL for a particular function.
    *
@@ -270,7 +276,29 @@ public class FirebaseFunctions {
                 return Tasks.forException(task.getException());
               }
               HttpsCallableContext context = task.getResult();
-              return call(name, data, context, options);
+              URL url = getURL(name);
+              return call(url, data, context, options);
+            });
+  }
+
+  /**
+   * Calls a Callable HTTPS trigger endpoint.
+   *
+   * @param url The url of the HTTPS trigger
+   * @param data Parameters to pass to the function. Can be anything encodable as JSON.
+   * @return A Task that will be completed when the request is complete.
+   */
+  Task<HttpsCallableResult> call(URL url, @Nullable Object data, HttpsCallOptions options) {
+    return providerInstalled
+        .getTask()
+        .continueWithTask(task -> contextProvider.getContext())
+        .continueWithTask(
+            task -> {
+              if (!task.isSuccessful()) {
+                return Tasks.forException(task.getException());
+              }
+              HttpsCallableContext context = task.getResult();
+              return call(url, data, context, options);
             });
   }
 
@@ -283,12 +311,11 @@ public class FirebaseFunctions {
    * @return A Task that will be completed when the request is complete.
    */
   private Task<HttpsCallableResult> call(
-      @NonNull String name,
+      @NonNull URL url,
       @Nullable Object data,
       HttpsCallableContext context,
       HttpsCallOptions options) {
-    Preconditions.checkNotNull(name, "name cannot be null");
-    URL url = getURL(name);
+    Preconditions.checkNotNull(url, "url cannot be null");
 
     Map<String, Object> body = new HashMap<>();
 
