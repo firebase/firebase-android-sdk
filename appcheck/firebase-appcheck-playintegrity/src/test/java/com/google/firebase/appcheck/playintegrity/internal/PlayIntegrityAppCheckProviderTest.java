@@ -54,7 +54,7 @@ import org.robolectric.annotation.Config;
 public class PlayIntegrityAppCheckProviderTest {
 
   private static final String PROJECT_NUMBER = "123456";
-  private static final String ATTESTATION_TOKEN = "token";
+  private static final String APP_CHECK_TOKEN = "appCheckToken";
   private static final String TIME_TO_LIVE = "3600s";
   private static final String CHALLENGE = "testChallenge";
   private static final String INTEGRITY_TOKEN = "integrityToken";
@@ -74,7 +74,7 @@ public class PlayIntegrityAppCheckProviderTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     when(mockIntegrityTokenResponse.token()).thenReturn(INTEGRITY_TOKEN);
-    when(mockAppCheckTokenResponse.getAttestationToken()).thenReturn(ATTESTATION_TOKEN);
+    when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
   }
 
@@ -108,7 +108,7 @@ public class PlayIntegrityAppCheckProviderTest {
 
     AppCheckToken token = task.getResult();
     assertThat(token).isInstanceOf(DefaultAppCheckToken.class);
-    assertThat(token.getToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(token.getToken()).isEqualTo(APP_CHECK_TOKEN);
 
     verify(mockNetworkClient).generatePlayIntegrityChallenge(any(), eq(mockRetryManager));
 
