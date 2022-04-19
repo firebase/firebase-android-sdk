@@ -1,6 +1,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -14,11 +15,17 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
+
+import org.json.JSONObject;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -34,20 +41,20 @@ public class ConfigRealtimeHTTPClient {
     private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
             "X-Goog-Firebase-Installations-Auth";
     private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
-    private static final String REALTIME_URL_STRING = "http://10.0.2.2:8080";
+    
+    private static final String TEST_REALTIME_URL_STRING = "http://10.0.2.2:8080";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
-    private boolean firstConnection = true;
-    private boolean isInBackground = false;
 
     private final ConfigFetchHandler configFetchHandler;
     private final FirebaseApp firebaseApp;
     private final FirebaseInstallationsApi firebaseInstallations;
     private final Context context;
+    private final String namespace;
 
     // Retry parameters
     private final Timer timer;
     private final int ORIGINAL_RETRIES = 7;
-    private final long RETRY_TIME_SECONDS = 10000;
+    private final long RETRY_TIME_SECONDS;
     private long RETRY_MULTIPLIER;
     private int RETRIES_REMAINING;
     private final Random random;
@@ -56,26 +63,38 @@ public class ConfigRealtimeHTTPClient {
     private URL realtimeURL;
     private HttpURLConnection httpURLConnection;
     private EventListener eventListener;
+    private boolean firstConnection = true;
+    private boolean isInBackground = false;
 
     public ConfigRealtimeHTTPClient(FirebaseApp firebaseApp,
                                     FirebaseInstallationsApi firebaseInstallations,
                                     ConfigFetchHandler configFetchHandler,
-                                    Context context) {
+                                    Context context,
+                                    String namespace) {
         this.firebaseApp = firebaseApp;
         this.configFetchHandler = configFetchHandler;
         this.firebaseInstallations = firebaseInstallations;
         this.context = context;
+        this.namespace = namespace;
 
         // Retry parameters
         this.random = new Random();
         this.timer = new Timer();
         this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
+        this.RETRY_TIME_SECONDS = this.random.nextInt(10000) + 10000;
+        this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
 
         try {
-            this.realtimeURL = new URL(this.REALTIME_URL_STRING);
+            this.realtimeURL = new URL(this.TEST_REALTIME_URL_STRING);
         } catch (MalformedURLException ex) {
             logger.info("URL is malformed");
         }
+    }
+
+    private String getRealtimeURL(String namespace) {
+        return String.format(REALTIME_REGEX_URL,
+                extractProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+                namespace);
     }
 
     /**
@@ -138,34 +157,52 @@ public class ConfigRealtimeHTTPClient {
         httpURLConnection.setRequestProperty("Content-Type", "application/json");
         httpURLConnection.setRequestProperty("Accept", "application/json");
     }
-    
-    private void setRequestParams(HttpURLConnection httpURLConnection) throws ProtocolException {
+
+    private JSONObject createRequestBody() {
+        Map<String, String> body = new HashMap<>();
+//        body.put("project",
+//                extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
+         body.put("project", "299394317711");
+        body.put("namespace", this.namespace);
+        body.put("lastKnownVersionNumber",
+                Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
+        return new JSONObject(body);
+    }
+
+    private void setRequestParams(HttpURLConnection httpURLConnection) throws IOException {
         httpURLConnection.setRequestMethod("POST");
-//                    this.httpURLConnection.setRequestProperty("project", "299394317711");
-        httpURLConnection.setRequestProperty(
-                "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
-        httpURLConnection.setRequestProperty("namespace", "firebase");
-        httpURLConnection.setRequestProperty(
-                "lastKnownVersionNumber", Long.toString(this.configFetchHandler.getTemplateVersionNumber()));
+        byte[] body = createRequestBody().toString().getBytes("utf-8");
+        OutputStream outputStream = new BufferedOutputStream(httpURLConnection.getOutputStream());
+        outputStream.write(body);
+        outputStream.flush();
+        outputStream.close();
+    }
+
+    private boolean canMakeConnection() {
+        return !isInBackground && eventListener != null && this.httpURLConnection == null;
     }
 
     // Try to reopen HTTP connection after a random amount of time
     private void retryHTTPConnection() {
-        if (!isInBackground && this.RETRIES_REMAINING > 0) {
+        if (this.canMakeConnection() && this.RETRIES_REMAINING > 0) {
             this.RETRIES_REMAINING--;
             this.RETRY_MULTIPLIER++;
-            this.pauseRealtimeConnection();
-            logger.info("Retrying in "
-                    + (this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER) + " seconds");
+            long backOffTime = this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER;
+            logger.info(String.format("Retrying in %d seconds", backOffTime));
             this.timer.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     logger.info("Retrying Realtime connection.");
                     startRealtimeConnection();
                 }
-            }, (this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER));
+            }, backOffTime);
         } else {
             logger.info("No retries remaining. Restart app.");
+            if (this.RETRIES_REMAINING == 0) {
+                this.eventListener.onError(
+                        new FirebaseRemoteConfigClientException("Can't open the connection")
+                );
+            }
         }
     }
 
@@ -181,7 +218,8 @@ public class ConfigRealtimeHTTPClient {
                 NetworkInfo[] networkInfos = connectivityManager.getAllNetworkInfo();
                 for (NetworkInfo networkInfo : networkInfos) {
                     String networkName = networkInfo.getTypeName();
-                    if (networkName.equalsIgnoreCase("WIFI") || networkName.equalsIgnoreCase("MOBILE")) {
+                    if (networkName.equalsIgnoreCase("WIFI")
+                            || networkName.equalsIgnoreCase("MOBILE")) {
                         if (networkInfo.isAvailable()) {
                             this.realtimeClient.startRealtimeConnection();
                         }
@@ -195,12 +233,19 @@ public class ConfigRealtimeHTTPClient {
         EventListener retryCallback = new EventListener() {
             @Override
             public void onEvent() {
+                pauseRealtimeConnection();
                 retryHTTPConnection();
+            }
+
+            @Override
+            public void onError(Exception error) {
+                eventListener.onError(error);
             }
         };
         logger.info("Starting autofetch...");
         new ConfigAsyncAutoFetch(
-                this.httpURLConnection, this.configFetchHandler, this.eventListener, retryCallback).execute();
+                this.httpURLConnection, this.configFetchHandler, this.eventListener, retryCallback
+        ).execute();
     }
     
     public void setBackgroundFlag(boolean isInBackground) {
@@ -209,27 +254,24 @@ public class ConfigRealtimeHTTPClient {
 
     // Open HTTP connection and listen for messages asyncly
     public void startRealtimeConnection() {
-//        if (firstConnection) {
-//            this.retryOnEveryNetworkConnection(this);
-//            this.firstConnection = false;
-//        }
+        if (firstConnection) {
+            this.retryOnEveryNetworkConnection(this);
+            this.firstConnection = false;
+        }
 
-        if (!isInBackground && this.eventListener != null) {
+        if (canMakeConnection()) {
             logger.info("Realtime connecting...");
             try {
-                if (this.httpURLConnection == null) {
-                    logger.info("Realtime starting up...");
-                    this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
-                    this.setCommonRequestHeaders(this.httpURLConnection);
-                    this.setRequestParams(this.httpURLConnection);
+                this.httpURLConnection = (HttpURLConnection) this.realtimeURL.openConnection();
+                this.setCommonRequestHeaders(this.httpURLConnection);
+                this.setRequestParams(this.httpURLConnection);
 
-                    this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
-                    this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
-                    startAsyncAutofetch();
-                }
-                logger.info("Realtime connection started.");
+                this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
+                this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
+                startAsyncAutofetch();
             } catch (IOException ex) {
-                logger.info("Can't start http connection");
+                logger.info(String.format("Can't start http connection due to %s", ex.toString()));
+                pauseRealtimeConnection();
                 this.retryHTTPConnection();
             }
         }
@@ -254,7 +296,7 @@ public class ConfigRealtimeHTTPClient {
         this.eventListener = null;
     }
 
-    public class ListenerRegistration {
+    public static class ListenerRegistration {
         private final ConfigRealtimeHTTPClient client;
 
         public ListenerRegistration (
@@ -264,13 +306,14 @@ public class ConfigRealtimeHTTPClient {
 
         public void remove() {
             this.client.removeRealtimeEventListener();
-            this.client.pauseRealtimeConnection();
         }
     }
 
     // Event Listener interface to be used by developers.
     public interface EventListener {
-        // Call back for when Real Time.
+        // Call back for when Realtime fetches.
         void onEvent();
+
+        void onError(Exception error);
     }
 }
