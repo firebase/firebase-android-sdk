@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.Keep;
@@ -209,7 +211,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    String err = PerfMetricValidator.validateTraceName(name);
+    String err = validateTraceName(name);
 
     if (err != null) {
       logger.error("Cannot start trace '%s'. Trace name is invalid.(%s)", name, err);
@@ -326,7 +328,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @Keep
   public void incrementMetric(@NonNull String metricName, long incrementBy) {
-    String err = PerfMetricValidator.validateMetricName(metricName);
+    String err = validateMetricName(metricName);
     if (err != null) {
       logger.error("Cannot increment metric '%s'. Metric name is invalid.(%s)", metricName, err);
       return;
@@ -382,7 +384,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @Keep
   public void putMetric(@NonNull String metricName, long value) {
-    String err = PerfMetricValidator.validateMetricName(metricName);
+    String err = validateMetricName(metricName);
     if (err != null) {
       logger.error(
           "Cannot set value for metric '%s'. Metric name is invalid.(%s)", metricName, err);
@@ -639,7 +641,7 @@ public class Trace extends AppStateUpdateHandler
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
+    validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
   }
 
   /**
