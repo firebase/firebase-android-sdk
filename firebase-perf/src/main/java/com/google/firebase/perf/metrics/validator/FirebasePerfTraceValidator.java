@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics.validator;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -144,7 +146,7 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
         return false;
       }
     }
-    if (!hasValidAttributes(trace.getCustomAttributesMap())) {
+    if (!areAllAttributesValid(trace.getCustomAttributesMap())) {
       return false;
     }
     return true;
@@ -178,10 +180,10 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     return true;
   }
 
-  private boolean hasValidAttributes(Map<String, String> customAttributes) {
+  private boolean areAllAttributesValid(Map<String, String> customAttributes) {
     for (Map.Entry<String, String> entry : customAttributes.entrySet()) {
       try {
-        PerfMetricValidator.validateAttribute(entry);
+        validateAttribute(entry.getKey(), entry.getValue());
       } catch (IllegalArgumentException exception) {
         logger.warn(exception.getLocalizedMessage());
         return false;

@@ -135,14 +135,13 @@ public abstract class PerfMetricValidator {
   /**
    * Checks whether the given map entry fits key/value constraints for a Trace Attribute.
    *
-   * @param attribute A key/value pair for an Attribute
+   * @param key Key for the Attribute
+   * @param value Value for the Attribute
    * @return null if the entry can be used as an Attribute, if not, an error string explaining why
    *     it can't be used.
    */
   @Nullable
-  public static void validateAttribute(@NonNull Map.Entry<String, String> attribute) {
-    String key = attribute.getKey();
-    String value = attribute.getValue();
+  public static void validateAttribute(@NonNull String key, @NonNull String value) {
     if (key == null || key.length() == 0) {
       throw new IllegalArgumentException("Attribute key must not be null or empty");
     }

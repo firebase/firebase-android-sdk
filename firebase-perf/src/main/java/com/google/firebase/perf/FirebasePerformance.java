@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -364,7 +366,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
 
-    PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
+    validateAttribute(key, value);
   }
 
   /**

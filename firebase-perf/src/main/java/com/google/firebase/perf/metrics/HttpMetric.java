@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.perf.FirebasePerformance.HttpMethod;
@@ -195,7 +197,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
+    validateAttribute(key, value);
   }
 
   /**

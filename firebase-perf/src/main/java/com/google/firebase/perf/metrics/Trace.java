@@ -641,7 +641,7 @@ public class Trace extends AppStateUpdateHandler
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
+    validateAttribute(key, value);
   }
 
   /**
