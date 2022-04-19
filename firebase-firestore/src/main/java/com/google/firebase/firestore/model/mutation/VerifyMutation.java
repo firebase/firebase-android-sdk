@@ -66,4 +66,9 @@ public final class VerifyMutation extends Mutation {
       MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
+
+  @Override
+  public @Nullable FieldMask getFieldMask() {
+    return null;
+  }
 }

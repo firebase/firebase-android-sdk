@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.network;
+package com.google.firebase.crashlytics.internal.settings;
 
 import static org.mockito.Mockito.*;
 
@@ -24,7 +24,6 @@ import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
 import com.google.firebase.crashlytics.internal.network.InspectableHttpGetRequest;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;

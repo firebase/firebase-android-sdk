@@ -32,6 +32,21 @@ import java.util.List;
  * Collection Group queries.
  */
 public interface IndexManager {
+  /** Represents the index state as it relates to a particular target. */
+  enum IndexType {
+    /** Indicates that no index could be found for serving the target. */
+    NONE,
+    /**
+     * Indicates that only a "partial index" could be found for serving the target. A partial index
+     * is one which does not have a segment for every filter/orderBy in the target.
+     */
+    PARTIAL,
+    /**
+     * Indicates that a "full index" could be found for serving the target. A full index is one
+     * which has a segment for every filter/orderBy in the target.
+     */
+    FULL
+  }
 
   /** Initializes the IndexManager. */
   void start();
@@ -83,12 +98,8 @@ public interface IndexManager {
   /** Returns the minimum offset for the given collection group. */
   IndexOffset getMinOffset(String collectionGroup);
 
-  /**
-   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
-   * index is configured.
-   */
-  @Nullable
-  FieldIndex getFieldIndex(Target target);
+  /** Returns the type of index (if any) that can be used to serve the given target */
+  IndexType getIndexType(Target target);
 
   /**
    * Returns the documents that match the given target based on the provided index or {@code null}

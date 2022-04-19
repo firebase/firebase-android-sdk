@@ -312,10 +312,30 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
+  public IndexType getIndexType(Target target) {
+    IndexType result = IndexType.FULL;
+    for (Target subTarget : getSubTargets(target)) {
+      FieldIndex index = getFieldIndex(subTarget);
+      if (index == null) {
+        result = IndexType.NONE;
+        break;
+      }
+
+      if (index.getSegments().size() < subTarget.getSegmentCount()) {
+        result = IndexType.PARTIAL;
+      }
+    }
+    return result;
+  }
+
+  @Override
   public IndexOffset getMinOffset(Target target) {
     List<FieldIndex> fieldIndexes = new ArrayList<>();
     for (Target subTarget : getSubTargets(target)) {
-      fieldIndexes.add(getFieldIndex(subTarget));
+      FieldIndex index = getFieldIndex(subTarget);
+      if (index != null) {
+        fieldIndexes.add(index);
+      }
     }
     return getMinOffset(fieldIndexes);
   }
@@ -491,7 +511,8 @@ final class SQLiteIndexManager implements IndexManager {
 
     String queryString =
         "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
-    if (target.getLimit() != -1) {
+
+    if (target.hasLimit()) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
 
@@ -547,9 +568,6 @@ final class SQLiteIndexManager implements IndexManager {
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
     sql.append("ORDER BY directional_value, document_key ");
     sql.append(target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
-    if (target.getLimit() != -1) {
-      sql.append("LIMIT ").append(target.getLimit()).append(" ");
-    }
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
@@ -607,9 +625,12 @@ final class SQLiteIndexManager implements IndexManager {
     return bindArgs;
   }
 
+  /**
+   * Returns an index that can be used to serve the provided target. Returns {@code null} if no
+   * index is configured.
+   */
   @Nullable
-  @Override
-  public FieldIndex getFieldIndex(Target target) {
+  private FieldIndex getFieldIndex(Target target) {
     hardAssert(started, "IndexManager not started");
 
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
@@ -623,21 +644,17 @@ final class SQLiteIndexManager implements IndexManager {
       return null;
     }
 
-    List<FieldIndex> matchingIndexes = new ArrayList<>();
+    // Return the index with the most number of segments.
+    FieldIndex matchingIndex = null;
     for (FieldIndex fieldIndex : collectionIndexes) {
       boolean matches = targetIndexMatcher.servedByIndex(fieldIndex);
-      if (matches) {
-        matchingIndexes.add(fieldIndex);
+      if (matches
+          && (matchingIndex == null
+              || fieldIndex.getSegments().size() > matchingIndex.getSegments().size())) {
+        matchingIndex = fieldIndex;
       }
     }
-
-    if (matchingIndexes.isEmpty()) {
-      return null;
-    }
-
-    // Return the index with the most number of segments
-    return Collections.max(
-        matchingIndexes, (l, r) -> Integer.compare(l.getSegments().size(), r.getSegments().size()));
+    return matchingIndex;
   }
 
   /**

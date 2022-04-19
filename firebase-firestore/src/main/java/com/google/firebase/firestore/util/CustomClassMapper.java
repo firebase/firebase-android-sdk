@@ -17,6 +17,7 @@ package com.google.firebase.firestore.util;
 import static com.google.firebase.firestore.util.ApiUtil.invoke;
 import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
+import android.net.Uri;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentId;
@@ -38,6 +39,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -172,6 +175,8 @@ public class CustomClassMapper {
         || o instanceof DocumentReference
         || o instanceof FieldValue) {
       return o;
+    } else if (o instanceof Uri || o instanceof URI || o instanceof URL) {
+      return o.toString();
     } else {
       Class<T> clazz = (Class<T>) o.getClass();
       BeanMapper<T> mapper = loadOrCreateBeanMapperForClass(clazz);

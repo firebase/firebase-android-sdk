@@ -42,7 +42,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
   }
 
   public void testDevelopmentPlatformInfo_withFlutter_returnsPlatformAndNoVersion() {
-    Context context = getContext(); // has asset in DevelopmentPlatformProvider.FLUTTER_ASSETS_PATH
+    Context context = getContext(); // has asset DevelopmentPlatformProvider.FLUTTER_ASSET_FILE
 
     DevelopmentPlatformProvider provider = new DevelopmentPlatformProvider(context);
 

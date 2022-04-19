@@ -12,44 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.crashlytics.internal.settings.model;
+package com.google.firebase.crashlytics.internal.settings;
 
-/** Immutable value object capturing the data needed to make an App-related SPI web request. */
-public class AppRequestData {
+import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
 
-  public final String organizationId;
+/** Immutable value object capturing the data needed to make an settings query SPI web request. */
+class SettingsRequest {
   public final String googleAppId;
-  public final String appId;
+  public final String deviceModel;
+  public final String osBuildVersion;
+  public final String osDisplayVersion;
+  public final InstallIdProvider installIdProvider;
+  public final String instanceId;
   public final String displayVersion;
   public final String buildVersion;
-
-  public final String instanceIdentifier;
-  public final String name;
   public final int source;
-  public final String minSdkVersion;
-  public final String builtSdkVersion;
 
-  public AppRequestData(
-      String organizationId,
+  public SettingsRequest(
       String googleAppId,
-      String appId,
+      String deviceModel,
+      String osBuildVersion,
+      String osDisplayVersion,
+      InstallIdProvider installIdProvider,
+      String instanceId,
       String displayVersion,
       String buildVersion,
-      String instanceIdentifier,
-      String name,
-      int source,
-      String minSdkVersion,
-      String builtSdkVersion) {
-    this.organizationId = organizationId;
+      int source) {
     this.googleAppId = googleAppId;
-    this.appId = appId;
+    this.deviceModel = deviceModel;
+    this.osBuildVersion = osBuildVersion;
+    this.osDisplayVersion = osDisplayVersion;
+    this.installIdProvider = installIdProvider;
+    this.instanceId = instanceId;
     this.displayVersion = displayVersion;
     this.buildVersion = buildVersion;
-
-    this.instanceIdentifier = instanceIdentifier;
-    this.name = name;
     this.source = source;
-    this.minSdkVersion = minSdkVersion;
-    this.builtSdkVersion = builtSdkVersion;
   }
 }

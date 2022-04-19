@@ -15,8 +15,8 @@
 package com.google.firebase.appcheck.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appcheck.internal.AppCheckTokenResponse.ATTESTATION_TOKEN_KEY;
 import static com.google.firebase.appcheck.internal.AppCheckTokenResponse.TIME_TO_LIVE_KEY;
+import static com.google.firebase.appcheck.internal.AppCheckTokenResponse.TOKEN_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.CODE_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.ERROR_KEY;
 import static com.google.firebase.appcheck.internal.HttpErrorResponse.MESSAGE_KEY;
@@ -66,9 +66,9 @@ public class NetworkClientTest {
           .setProjectId(PROJECT_ID)
           .build();
   private static final String SAFETY_NET_EXPECTED_URL =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
+      "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangeSafetyNetToken?key=apiKey";
   private static final String DEBUG_EXPECTED_URL =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
+      "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:exchangeDebugToken?key=apiKey";
   private static final String PLAY_INTEGRITY_CHALLENGE_EXPECTED_URL =
       "https://firebaseappcheck.googleapis.com/v1/projects/projectId/apps/appId:generatePlayIntegrityChallenge?key=apiKey";
   private static final String PLAY_INTEGRITY_EXCHANGE_EXPECTED_URL =
@@ -76,7 +76,7 @@ public class NetworkClientTest {
   private static final String JSON_REQUEST = "jsonRequest";
   private static final int SUCCESS_CODE = 200;
   private static final int ERROR_CODE = 404;
-  private static final String ATTESTATION_TOKEN = "token";
+  private static final String APP_CHECK_TOKEN = "token";
   private static final String TIME_TO_LIVE = "3600s";
   private static final String ERROR_MESSAGE = "error message";
   private static final String HEART_BEAT_HEADER_TEST = "test-header";
@@ -127,7 +127,7 @@ public class NetworkClientTest {
     AppCheckTokenResponse tokenResponse =
         networkClient.exchangeAttestationForAppCheckToken(
             JSON_REQUEST.getBytes(), NetworkClient.SAFETY_NET, mockRetryManager);
-    assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(tokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
     URL expectedUrl = new URL(SAFETY_NET_EXPECTED_URL);
@@ -177,7 +177,7 @@ public class NetworkClientTest {
     AppCheckTokenResponse tokenResponse =
         networkClient.exchangeAttestationForAppCheckToken(
             JSON_REQUEST.getBytes(), NetworkClient.DEBUG, mockRetryManager);
-    assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(tokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
     URL expectedUrl = new URL(DEBUG_EXPECTED_URL);
@@ -228,7 +228,7 @@ public class NetworkClientTest {
     AppCheckTokenResponse tokenResponse =
         networkClient.exchangeAttestationForAppCheckToken(
             JSON_REQUEST.getBytes(), NetworkClient.PLAY_INTEGRITY, mockRetryManager);
-    assertThat(tokenResponse.getAttestationToken()).isEqualTo(ATTESTATION_TOKEN);
+    assertThat(tokenResponse.getToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(tokenResponse.getTimeToLive()).isEqualTo(TIME_TO_LIVE);
 
     URL expectedUrl = new URL(PLAY_INTEGRITY_EXCHANGE_EXPECTED_URL);
@@ -382,7 +382,7 @@ public class NetworkClientTest {
 
   private static JSONObject createAttestationResponse() throws Exception {
     JSONObject responseBodyJson = new JSONObject();
-    responseBodyJson.put(ATTESTATION_TOKEN_KEY, ATTESTATION_TOKEN);
+    responseBodyJson.put(TOKEN_KEY, APP_CHECK_TOKEN);
     responseBodyJson.put(TIME_TO_LIVE_KEY, TIME_TO_LIVE);
 
     return responseBodyJson;

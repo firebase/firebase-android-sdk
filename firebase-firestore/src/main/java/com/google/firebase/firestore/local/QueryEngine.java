@@ -21,6 +21,7 @@ import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.local.IndexManager.IndexType;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -40,7 +41,7 @@ import javax.annotation.Nullable;
  * the result set is equivalent across all implementations.
  *
  * <p>The Query engine will use indexed-based execution if a user has configured any index that can
- * be used to execute query (via {@link FirebaseFirestore#setIndexConfiguation}). Otherwise, the
+ * be used to execute query (via {@link FirebaseFirestore#setIndexConfiguration}). Otherwise, the
  * engine will try to optimize the query by re-using a previously persisted query result. If that is
  * not possible, the query will be executed via a full collection scan.
  *
@@ -85,8 +86,7 @@ public class QueryEngine {
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(initialized, "initialize() not called");
 
-    ImmutableSortedMap<DocumentKey, Document> result =
-        performQueryUsingIndex(query, query.toTarget());
+    ImmutableSortedMap<DocumentKey, Document> result = performQueryUsingIndex(query);
     if (result != null) {
       return result;
     }
@@ -103,17 +103,33 @@ public class QueryEngine {
    * Performs an indexed query that evaluates the query based on a collection's persisted index
    * values. Returns {@code null} if an index is not available.
    */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
-      Query query, Target target) {
+  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(Query query) {
     if (query.matchesAllDocuments()) {
       // Don't use index queries that can be executed by scanning the collection.
       return null;
     }
 
-    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
-    if (keys == null) {
+    Target target = query.toTarget();
+    IndexType indexType = indexManager.getIndexType(target);
+
+    if (indexType.equals(IndexType.NONE)) {
+      // The target cannot be served from any index.
       return null;
     }
+
+    if (indexType.equals(IndexType.PARTIAL)) {
+      // We cannot apply a limit for targets that are served using a partial index.
+      // If a partial index will be used to serve the target, the query may return a superset of
+      // documents that match the target (e.g. if the index doesn't include all the target's
+      // filters), or may return the correct set of documents in the wrong order (e.g. if the index
+      // doesn't include a segment for one of the orderBys). Therefore a limit should not be applied
+      // in such cases.
+      query = query.limitToFirst(Target.NO_LIMIT);
+      target = query.toTarget();
+    }
+
+    List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
+    hardAssert(keys != null, "index manager must return results for partial and full indexes.");
 
     ImmutableSortedMap<DocumentKey, Document> indexedDocuments =
         localDocumentsView.getDocuments(keys);

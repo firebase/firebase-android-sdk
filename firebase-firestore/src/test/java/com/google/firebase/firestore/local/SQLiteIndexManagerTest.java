@@ -524,7 +524,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   public void testNoMatchingFilter() {
     setUpSingleValueFilter();
     Query query = query("coll").filter(filter("unknown", "==", true));
-    assertNull(indexManager.getFieldIndex(query.toTarget()));
+    assertEquals(indexManager.getIndexType(query.toTarget()), IndexManager.IndexType.NONE);
     assertNull(indexManager.getDocumentsMatchingTarget(query.toTarget()));
   }
 
@@ -980,6 +980,99 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     verifySequenceNumber(indexManager, "coll3", 0);
   }
 
+  @Test
+  public void testPartialIndexAndFullIndex() throws Exception {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "c", Kind.ASCENDING, "d", Kind.ASCENDING));
+
+    Query query1 = query("coll").filter(filter("a", "==", 1));
+    validateIsFullIndex(query1);
+
+    Query query2 = query("coll").filter(filter("b", "==", 1));
+    validateIsFullIndex(query2);
+
+    Query query3 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("a"));
+    validateIsFullIndex(query3);
+
+    Query query4 = query("coll").filter(filter("b", "==", 1)).orderBy(orderBy("b"));
+    validateIsFullIndex(query4);
+
+    Query query5 = query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1));
+    validateIsPartialIndex(query5);
+
+    Query query6 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("b"));
+    validateIsPartialIndex(query6);
+
+    Query query7 = query("coll").filter(filter("b", "==", 1)).orderBy(orderBy("a"));
+    validateIsPartialIndex(query7);
+
+    Query query8 = query("coll").filter(filter("c", "==", 1)).filter(filter("d", "==", 1));
+    validateIsFullIndex(query8);
+
+    Query query9 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", "==", 1))
+            .orderBy(orderBy("c"));
+    validateIsFullIndex(query9);
+
+    Query query10 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", "==", 1))
+            .orderBy(orderBy("d"));
+    validateIsFullIndex(query10);
+
+    Query query11 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", "==", 1))
+            .orderBy(orderBy("c"))
+            .orderBy(orderBy("d"));
+    validateIsFullIndex(query11);
+
+    Query query12 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", "==", 1))
+            .orderBy(orderBy("d"))
+            .orderBy(orderBy("c"));
+    validateIsFullIndex(query12);
+
+    Query query13 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", "==", 1))
+            .orderBy(orderBy("e"));
+    validateIsPartialIndex(query13);
+
+    Query query14 = query("coll").filter(filter("c", "==", 1)).filter(filter("d", "<=", 1));
+    validateIsFullIndex(query14);
+
+    Query query15 =
+        query("coll")
+            .filter(filter("c", "==", 1))
+            .filter(filter("d", ">", 1))
+            .orderBy(orderBy("d"));
+    validateIsFullIndex(query15);
+  }
+
+  private void validateIsPartialIndex(Query query) {
+    validateIndex(query, false);
+  }
+
+  private void validateIsFullIndex(Query query) {
+    validateIndex(query, true);
+  }
+
+  private void validateIndex(Query query, boolean validateFullIndex) {
+    IndexManager.IndexType indexType = indexManager.getIndexType(query.toTarget());
+    assertEquals(
+        indexType,
+        validateFullIndex ? IndexManager.IndexType.FULL : IndexManager.IndexType.PARTIAL);
+  }
+
   private void verifySequenceNumber(
       IndexManager indexManager, String collectionGroup, int expectedSequnceNumber) {
     assertEquals(
@@ -1002,7 +1095,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
   private void verifyResults(Query query, String... documents) {
     Target target = query.toTarget();
-    Iterable<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
+    List<DocumentKey> results = indexManager.getDocumentsMatchingTarget(target);
     assertNotNull("Target cannot be served from index.", results);
     List<DocumentKey> keys =
         Arrays.stream(documents).map(TestUtil::key).collect(Collectors.toList());

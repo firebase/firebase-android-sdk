@@ -52,9 +52,9 @@ public class NetworkClient {
   private static final String TAG = NetworkClient.class.getName();
 
   private static final String SAFETY_NET_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
+      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
   private static final String DEBUG_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1beta/projects/%s/apps/%s:exchangeDebugToken?key=%s";
+      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeDebugToken?key=%s";
   private static final String PLAY_INTEGRITY_EXCHANGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangePlayIntegrityToken?key=%s";
   private static final String PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE =

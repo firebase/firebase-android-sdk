@@ -3,9 +3,13 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # Unreleased
-- [changed] Fixed an issue in the experimental index engine that might have
+- [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
+
+# 24.1.1
+- [fixed] Fixed an issue in the experimental index engine that might have
   caused Firestore to exclude document results for limit queries with local
   modifications.
+- [changed] Firestore can now serialize Objects with `android.net.Uri`s.
 
 # 24.1.0
 - [feature] Added experimental support for indexed query execution. Indexes can

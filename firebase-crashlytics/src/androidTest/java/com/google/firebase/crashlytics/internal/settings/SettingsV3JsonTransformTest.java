@@ -21,10 +21,6 @@ import static org.mockito.Mockito.when;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.FeaturesSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SessionSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
 import java.io.IOException;
 import java.io.InputStream;
 import org.json.JSONException;
@@ -45,93 +41,46 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
   }
 
   public void testFirebaseSettingsTransform() throws Exception {
-    final JSONObject testJson = getTestJSON("firebase_settings.json");
+    JSONObject testJson = getTestJSON("firebase_settings.json");
+    Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
 
-    final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
-
-    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, false);
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, false);
   }
 
   public void testFirebaseSettingsTransform_newApp() throws Exception {
-    final JSONObject testJson = getTestJSON("firebase_settings_new.json");
+    JSONObject testJson = getTestJSON("firebase_settings_new.json");
+    Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
 
-    final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
-
-    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, true);
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, true);
   }
 
   public void testFirebaseSettingsTransform_collectAnrs() throws Exception {
-    final JSONObject testJson = getTestJSON("firebase_settings_collect_anrs.json");
+    JSONObject testJson = getTestJSON("firebase_settings_collect_anrs.json");
+    Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
 
-    final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
-
-    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, false, true);
-  }
-
-  public void testToJsonAndBackSurvival() throws IOException, JSONException {
-    final JSONObject testJson = getTestJSON("firebase_settings.json");
-
-    final SettingsData settingsData = transform.buildFromJson(mockCurrentTimeProvider, testJson);
-
-    final SettingsData roundtrippedSettingsData =
-        transform.buildFromJson(mockCurrentTimeProvider, transform.toJson(settingsData));
-
-    verifySettingsDataObject(mockCurrentTimeProvider, roundtrippedSettingsData);
-  }
-
-  private void assertAppData(AppSettingsData appData, boolean isAppNew) {
-    assertEquals(isAppNew ? "new" : "activated", appData.status);
-    assertEquals(
-        isAppNew
-            ? "https://update.crashlytics.com/spi/v1/platforms/android/apps"
-            : "https://update.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test",
-        appData.url);
-    assertEquals(
-        "https://reports.crashlytics.com/spi/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/reports",
-        appData.reportsUrl);
-    assertEquals(
-        "https://reports.crashlytics.com/sdk-api/v1/platforms/android/apps/com.google.firebase.crashlytics.sdk.test/minidumps",
-        appData.ndkReportsUrl);
-    assertTrue(appData.updateRequired);
-    assertEquals(2, appData.reportUploadVariant);
-    assertEquals(2, appData.nativeReportUploadVariant);
-  }
-
-  private void assertSettingsData(SessionSettingsData settingsData) {
-    assertEquals(8, settingsData.maxCustomExceptionEvents);
-    assertEquals(4, settingsData.maxCompleteSessionsCount);
-  }
-
-  private void assertFeaturesData(FeaturesSettingsData featuresSettingsData, boolean collectAnrs) {
-    assertTrue(featuresSettingsData.collectReports);
-    assertEquals(featuresSettingsData.collectAnrs, collectAnrs);
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, false, true);
   }
 
   private void verifySettingsDataObject(
-      CurrentTimeProvider mockCurrentTimeProvider, SettingsData settingsData) {
-    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, false);
-  }
-
-  private void verifySettingsDataObject(
-      CurrentTimeProvider mockCurrentTimeProvider, SettingsData settingsData, boolean isAppNew) {
-    verifySettingsDataObject(mockCurrentTimeProvider, settingsData, isAppNew, false);
+      CurrentTimeProvider mockCurrentTimeProvider, Settings settings, boolean isAppNew) {
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, isAppNew, false);
   }
 
   private void verifySettingsDataObject(
       CurrentTimeProvider mockCurrentTimeProvider,
-      SettingsData settingsData,
+      Settings settings,
       boolean isAppNew,
       boolean collectAnrs) {
-    assertEquals(7200010, settingsData.expiresAtMillis);
+    assertEquals(7200010, settings.expiresAtMillis);
 
-    assertEquals(3, settingsData.settingsVersion);
-    assertEquals(7200, settingsData.cacheDuration);
+    assertEquals(3, settings.settingsVersion);
+    assertEquals(7200, settings.cacheDuration);
 
-    assertAppData(settingsData.appData, isAppNew);
+    assertEquals(8, settings.sessionData.maxCustomExceptionEvents);
+    assertEquals(4, settings.sessionData.maxCompleteSessionsCount);
 
-    assertFeaturesData(settingsData.featuresData, collectAnrs);
-
-    assertSettingsData(settingsData.sessionData);
+    assertTrue(settings.featureFlagData.collectReports);
+    assertEquals(settings.featureFlagData.collectAnrs, collectAnrs);
 
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();
   }

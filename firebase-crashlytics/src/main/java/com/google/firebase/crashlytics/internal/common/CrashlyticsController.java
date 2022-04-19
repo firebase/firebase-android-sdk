@@ -35,8 +35,8 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import com.google.firebase.crashlytics.internal.settings.SettingsDataProvider;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
+import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -49,6 +49,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 class CrashlyticsController {
@@ -85,7 +86,7 @@ class CrashlyticsController {
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
-  private SettingsDataProvider settingsProvider = null;
+  private SettingsProvider settingsProvider = null;
 
   // A promise that will be resolved when unsent reports are found on the device, and
   // send/deleteUnsentReports can be called to decide how to deal with them.
@@ -140,7 +141,7 @@ class CrashlyticsController {
   void enableExceptionHandling(
       String sessionIdentifier,
       Thread.UncaughtExceptionHandler defaultHandler,
-      SettingsDataProvider settingsProvider) {
+      SettingsProvider settingsProvider) {
     this.settingsProvider = settingsProvider;
     // This must be called before installing the controller with
     // Thread.setDefaultUncaughtExceptionHandler to ensure that we are ready to handle
@@ -150,7 +151,7 @@ class CrashlyticsController {
         new CrashlyticsUncaughtExceptionHandler.CrashListener() {
           @Override
           public void onUncaughtException(
-              @NonNull SettingsDataProvider settingsDataProvider,
+              @NonNull SettingsProvider settingsDataProvider,
               @NonNull Thread thread,
               @NonNull Throwable ex) {
             handleUncaughtException(settingsDataProvider, thread, ex);
@@ -163,14 +164,14 @@ class CrashlyticsController {
   }
 
   void handleUncaughtException(
-      @NonNull SettingsDataProvider settingsDataProvider,
+      @NonNull SettingsProvider settingsProvider,
       @NonNull final Thread thread,
       @NonNull final Throwable ex) {
-    handleUncaughtException(settingsDataProvider, thread, ex, /*isOnDemand=*/ false);
+    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ false);
   }
 
   synchronized void handleUncaughtException(
-      @NonNull SettingsDataProvider settingsDataProvider,
+      @NonNull SettingsProvider settingsProvider,
       @NonNull final Thread thread,
       @NonNull final Throwable ex,
       boolean isOnDemand) {
@@ -203,7 +204,7 @@ class CrashlyticsController {
                     ex, thread, currentSessionId, timestampSeconds);
 
                 doWriteAppExceptionMarker(timestampMillis);
-                doCloseSessions(settingsDataProvider);
+                doCloseSessions(settingsProvider);
                 doOpenSession(new CLSUUID(idManager).toString());
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
@@ -214,16 +215,15 @@ class CrashlyticsController {
 
                 Executor executor = backgroundWorker.getExecutor();
 
-                return settingsDataProvider
-                    .getAppSettings()
+                return settingsProvider
+                    .getSettingsAsync()
                     .onSuccessTask(
                         executor,
-                        new SuccessContinuation<AppSettingsData, Void>() {
+                        new SuccessContinuation<Settings, Void>() {
                           @NonNull
                           @Override
-                          public Task<Void> then(@Nullable AppSettingsData appSettingsData)
-                              throws Exception {
-                            if (appSettingsData == null) {
+                          public Task<Void> then(@Nullable Settings settings) throws Exception {
+                            if (settings == null) {
                               Logger.getLogger()
                                   .w(
                                       "Received null app settings, cannot send reports at crash time.");
@@ -242,6 +242,8 @@ class CrashlyticsController {
     try {
       // TODO(mrober): Don't block the main thread ever for on-demand fatals.
       Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+    } catch (TimeoutException e) {
+      Logger.getLogger().e("Cannot send reports. Timed out while fetching settings.");
     } catch (Exception e) {
       Logger.getLogger().e("Error handling uncaught exception", e);
       // Nothing to do in this case.
@@ -325,7 +327,7 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  Task<Void> submitAllReports(Task<AppSettingsData> appSettingsDataTask) {
+  Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
@@ -364,12 +366,12 @@ class CrashlyticsController {
 
                         Executor executor = backgroundWorker.getExecutor();
 
-                        return appSettingsDataTask.onSuccessTask(
+                        return settingsDataTask.onSuccessTask(
                             executor,
-                            new SuccessContinuation<AppSettingsData, Void>() {
+                            new SuccessContinuation<Settings, Void>() {
                               @NonNull
                               @Override
-                              public Task<Void> then(@Nullable AppSettingsData appSettingsData)
+                              public Task<Void> then(@Nullable Settings appSettingsData)
                                   throws Exception {
                                 if (appSettingsData == null) {
                                   Logger.getLogger()
@@ -507,9 +509,9 @@ class CrashlyticsController {
    * <p>This method can not be called while the {@link CrashlyticsCore} settings lock is held. It
    * will result in a deadlock!
    *
-   * @param settingsDataProvider
+   * @param settingsProvider
    */
-  boolean finalizeSessions(SettingsDataProvider settingsDataProvider) {
+  boolean finalizeSessions(SettingsProvider settingsProvider) {
     backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
@@ -519,7 +521,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true, settingsDataProvider);
+      doCloseSessions(true, settingsProvider);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -555,16 +557,15 @@ class CrashlyticsController {
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
-  void doCloseSessions(SettingsDataProvider settingsDataProvider) {
-    doCloseSessions(false, settingsDataProvider);
+  void doCloseSessions(SettingsProvider settingsProvider) {
+    doCloseSessions(false, settingsProvider);
   }
 
   /**
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doCloseSessions(
-      boolean skipCurrentSession, SettingsDataProvider settingsDataProvider) {
+  private void doCloseSessions(boolean skipCurrentSession, SettingsProvider settingsProvider) {
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.
@@ -578,7 +579,7 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (settingsDataProvider.getSettings().getFeaturesData().collectAnrs) {
+    if (settingsProvider.getSettingsSync().featureFlagData.collectAnrs) {
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
     } else {
       Logger.getLogger().v("ANR feature disabled.");
