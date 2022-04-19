@@ -182,13 +182,15 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
 
   @Test
   public void traceValidator_customAttributeWithGooglePrefix_marksPerfMetricInvalid() {
-    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("google_test", "value");
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("google_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
   @Test
   public void traceValidator_customAttributeWithFirebasePrefix_marksPerfMetricInvalid() {
-    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("firebase_test", "value");
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("firebase_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
@@ -223,7 +225,8 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     for (int i = 0; i <= Constants.MAX_ATTRIBUTE_KEY_LENGTH; i++) {
       longString.append("a");
     }
-    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes(longString.toString(), "value");
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes(longString.toString(), "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
@@ -234,10 +237,11 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     for (int i = 0; i <= Constants.MAX_ATTRIBUTE_VALUE_LENGTH; i++) {
       longString.append("a");
     }
-    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("key", longString.toString());
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("key", longString.toString());
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
-  
+
   @Test
   public void testIsValid() {
     TraceMetric.Builder trace = createValidTraceMetric().putCounters("counter", 2);
