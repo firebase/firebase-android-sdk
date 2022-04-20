@@ -72,7 +72,7 @@ public abstract class TransportContext {
    *
    * @hide
    */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public TransportContext withPriority(Priority priority) {
     return builder()
         .setBackendName(getBackendName())
@@ -89,7 +89,7 @@ public abstract class TransportContext {
     public abstract Builder setExtras(@Nullable byte[] extras);
 
     /** @hide */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract Builder setPriority(Priority priority);
 
     public abstract TransportContext build();
