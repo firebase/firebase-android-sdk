@@ -220,6 +220,142 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     assertThat(result.isAvailable()).isFalse();
   }
 
+  @Test
+  public void snapshot_invokedAfterStartBeforeStop_doesNotThrow() {
+    FrameMetricsAggregator fma = new FrameMetricsAggregator();
+    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
+    recorder.start();
+    recorder.snapshot();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void snapshot_invokedBeforeStart_throwsIllegalStateException() {
+    FrameMetricsAggregator fma = new FrameMetricsAggregator();
+    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
+    recorder.snapshot();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void snapshot_invokedAfterStop_throwsIllegalStateException() {
+    FrameMetricsAggregator fma = new FrameMetricsAggregator();
+    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
+    try {
+      recorder.start();
+      recorder.stop();
+    } catch (Exception ignored) {
+    }
+    recorder.snapshot();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void snapshot_sparseIntArrayIsNull_throwsIllegalStateException() {
+    doReturn(null).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    try {
+      recorder.start();
+    } catch (Exception ignored) {
+    }
+    recorder.snapshot();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void snapshot_sparseIntArrayTotalIndexIsNull_throwsIllegalStateException() {
+    SparseIntArray[] arr = new SparseIntArray[1];
+    arr[FrameMetricsAggregator.TOTAL_INDEX] = null;
+    doReturn(arr).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    try {
+      recorder.start();
+    } catch (Exception ignored) {
+    }
+    recorder.snapshot();
+  }
+
+  @Test
+  public void snapshot_validSparseIntArray_returnsCorrectFrameMetrics() {
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
+    SparseIntArray sparseIntArray = new SparseIntArray();
+    sparseIntArray.append(5, 3);
+    sparseIntArray.append(20, 2);
+    sparseIntArray.append(800, 5);
+    SparseIntArray[] arr = new SparseIntArray[1];
+    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
+
+    doReturn(arr).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    recorder.start();
+    PerfFrameMetrics metrics = recorder.snapshot();
+
+    // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
+    assertThat(metrics.getTotalFrames()).isEqualTo(10);
+    assertThat(metrics.getSlowFrames()).isEqualTo(7);
+    assertThat(metrics.getFrozenFrames()).isEqualTo(5);
+  }
+
+  @Test
+  public void snapshot_validSparseIntArrayWithoutFrozenFrames_returnsCorrectFrameMetrics() {
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
+    SparseIntArray sparseIntArray = new SparseIntArray();
+    sparseIntArray.append(5, 3);
+    sparseIntArray.append(20, 2);
+    SparseIntArray[] arr = new SparseIntArray[1];
+    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
+
+    doReturn(arr).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    recorder.start();
+    PerfFrameMetrics metrics = recorder.snapshot();
+
+    // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
+    assertThat(metrics.getTotalFrames()).isEqualTo(5);
+    assertThat(metrics.getSlowFrames()).isEqualTo(2);
+    assertThat(metrics.getFrozenFrames()).isEqualTo(0);
+  }
+
+  @Test
+  public void snapshot_validSparseIntArrayWithoutSlowFrames_returnsCorrectFrameMetrics() {
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
+    SparseIntArray sparseIntArray = new SparseIntArray();
+    sparseIntArray.append(5, 3);
+    sparseIntArray.append(701, 2);
+    SparseIntArray[] arr = new SparseIntArray[1];
+    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
+
+    doReturn(arr).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    recorder.start();
+    PerfFrameMetrics metrics = recorder.snapshot();
+
+    // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
+    assertThat(metrics.getTotalFrames()).isEqualTo(5);
+    assertThat(metrics.getSlowFrames()).isEqualTo(2);
+    assertThat(metrics.getFrozenFrames()).isEqualTo(2);
+  }
+
+  @Test
+  public void
+      snapshot_validSparseIntArrayWithoutSlowFramesOrFrozenFrames_returnsCorrectFrameMetrics() {
+    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
+    // 700ms. The key value pair means (duration, num_of_samples).
+    SparseIntArray sparseIntArray = new SparseIntArray();
+    sparseIntArray.append(5, 3);
+    SparseIntArray[] arr = new SparseIntArray[1];
+    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
+
+    doReturn(arr).when(fma).getMetrics();
+    doCallRealMethod().when(recorder).snapshot();
+    recorder.start();
+    PerfFrameMetrics metrics = recorder.snapshot();
+
+    // we should expect 3 total frames, 0 slow frames, and 0 frozen frames.
+    assertThat(metrics.getTotalFrames()).isEqualTo(3);
+    assertThat(metrics.getSlowFrames()).isEqualTo(0);
+    assertThat(metrics.getFrozenFrames()).isEqualTo(0);
+  }
+
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
     ActivityController<Activity> fakeActivityController = Robolectric.buildActivity(Activity.class);
 

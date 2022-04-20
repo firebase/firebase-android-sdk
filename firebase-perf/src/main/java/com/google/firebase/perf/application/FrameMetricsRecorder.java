@@ -20,7 +20,6 @@ import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.FrameMetricsCalculator;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Optional;
 import java.util.HashMap;
