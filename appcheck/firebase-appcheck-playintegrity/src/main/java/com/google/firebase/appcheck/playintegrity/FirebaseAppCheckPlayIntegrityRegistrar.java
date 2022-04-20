@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * {@link ComponentRegistrar} for setting up FirebaseAppCheck safety net's dependency injections in
+ * {@link ComponentRegistrar} for setting up FirebaseAppCheck play integrity's dependency injections in
  * Firebase Android Components.
  *
  * @hide
