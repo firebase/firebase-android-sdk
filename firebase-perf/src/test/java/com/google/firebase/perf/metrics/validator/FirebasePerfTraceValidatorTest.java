@@ -220,17 +220,25 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
 
   @Test
   public void traceValidator_customAttributeWithLongKey_marksPerfMetricInvalid() {
+
+    StringBuilder longString = new StringBuilder();
+    for (int i = 0; i <= Constants.MAX_ATTRIBUTE_KEY_LENGTH; i++) {
+      longString.append("a");
+    }
     TraceMetric.Builder trace =
-        createValidTraceMetric()
-            .putCustomAttributes("a".repeat(Constants.MAX_ATTRIBUTE_KEY_LENGTH + 1), "value");
+        createValidTraceMetric().putCustomAttributes(longString.toString(), "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
   @Test
   public void traceValidator_customAttributeWithLongValue_marksPerfMetricInvalid() {
+
+    StringBuilder longString = new StringBuilder();
+    for (int i = 0; i <= Constants.MAX_ATTRIBUTE_VALUE_LENGTH; i++) {
+      longString.append("a");
+    }
     TraceMetric.Builder trace =
-        createValidTraceMetric()
-            .putCustomAttributes("key", "a".repeat(Constants.MAX_ATTRIBUTE_VALUE_LENGTH + 1));
+        createValidTraceMetric().putCustomAttributes("key", longString.toString());
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
