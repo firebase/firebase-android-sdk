@@ -497,11 +497,11 @@ public final class Query {
         // We need to swap the cursors to match the now-flipped query ordering.
         Bound newStartAt =
             this.endAt != null
-                ? new Bound(this.endAt.getPosition(), !this.endAt.isInclusive())
+                ? new Bound(this.endAt.getPosition(), this.endAt.isInclusive())
                 : null;
         Bound newEndAt =
             this.startAt != null
-                ? new Bound(this.startAt.getPosition(), !this.startAt.isInclusive())
+                ? new Bound(this.startAt.getPosition(), this.startAt.isInclusive())
                 : null;
 
         this.memoizedTarget =

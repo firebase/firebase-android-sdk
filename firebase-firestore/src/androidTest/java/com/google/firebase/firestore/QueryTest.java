@@ -157,6 +157,43 @@ public class QueryTest {
   }
 
   @Test
+  public void testLimitToLastQueriesWithCursors() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a", "sort", 0),
+                "b", map("k", "b", "sort", 1),
+                "c", map("k", "c", "sort", 1),
+                "d", map("k", "d", "sort", 2)));
+
+    Query query = collection.limitToLast(3).orderBy("sort").endBefore(2);
+    QuerySnapshot set = waitFor(query.get());
+    List<Map<String, Object>> data = querySnapshotToValues(set);
+    assertEquals(
+        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 1L)),
+        data);
+
+    query = collection.limitToLast(3).orderBy("sort").endAt(1);
+    set = waitFor(query.get());
+    data = querySnapshotToValues(set);
+    assertEquals(
+        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 1L)),
+        data);
+
+    query = collection.limitToLast(3).orderBy("sort").startAt(2);
+    set = waitFor(query.get());
+    data = querySnapshotToValues(set);
+    assertEquals(asList(map("k", "d", "sort", 2L)), data);
+
+    query = collection.limitToLast(3).orderBy("sort").startAfter(-1);
+    set = waitFor(query.get());
+    data = querySnapshotToValues(set);
+    assertEquals(
+        asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 1L), map("k", "d", "sort", 2L)),
+        data);
+  }
+
+  @Test
   public void testKeyOrderIsDescendingForDescendingInequality() {
     CollectionReference collection =
         testCollectionWithDocs(
