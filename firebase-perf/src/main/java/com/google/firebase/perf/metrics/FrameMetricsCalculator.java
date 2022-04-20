@@ -49,6 +49,13 @@ public class FrameMetricsCalculator {
     public int getTotalFrames() {
       return totalFrames;
     }
+
+    public PerfFrameMetrics subtract(PerfFrameMetrics b) {
+      int newTotalFrames = this.totalFrames - b.getTotalFrames();
+      int newSlowFrames = this.slowFrames - b.getSlowFrames();
+      int newFrozenFrames = this.frozenFrames - b.getFrozenFrames();
+      return new PerfFrameMetrics(newTotalFrames, newSlowFrames, newFrozenFrames);
+    }
   }
 
   /**
