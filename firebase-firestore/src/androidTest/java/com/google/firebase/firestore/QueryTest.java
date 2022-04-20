@@ -185,6 +185,13 @@ public class QueryTest {
     data = querySnapshotToValues(set);
     assertEquals(asList(map("k", "d", "sort", 2L)), data);
 
+    query = collection.limitToLast(3).orderBy("sort").startAfter(0);
+    set = waitFor(query.get());
+    data = querySnapshotToValues(set);
+    assertEquals(
+        asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 1L), map("k", "d", "sort", 2L)),
+        data);
+
     query = collection.limitToLast(3).orderBy("sort").startAfter(-1);
     set = waitFor(query.get());
     data = querySnapshotToValues(set);
