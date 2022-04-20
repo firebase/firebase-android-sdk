@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.Keep;
@@ -25,7 +27,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionAwareObject;
 import com.google.firebase.perf.session.SessionManager;
@@ -35,7 +36,6 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import java.lang.ref.WeakReference;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -209,7 +209,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    String err = PerfMetricValidator.validateTraceName(name);
+    String err = validateTraceName(name);
 
     if (err != null) {
       logger.error("Cannot start trace '%s'. Trace name is invalid.(%s)", name, err);
@@ -326,7 +326,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @Keep
   public void incrementMetric(@NonNull String metricName, long incrementBy) {
-    String err = PerfMetricValidator.validateMetricName(metricName);
+    String err = validateMetricName(metricName);
     if (err != null) {
       logger.error("Cannot increment metric '%s'. Metric name is invalid.(%s)", metricName, err);
       return;
@@ -382,7 +382,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @Keep
   public void putMetric(@NonNull String metricName, long value) {
-    String err = PerfMetricValidator.validateMetricName(metricName);
+    String err = validateMetricName(metricName);
     if (err != null) {
       logger.error(
           "Cannot set value for metric '%s'. Metric name is invalid.(%s)", metricName, err);
@@ -630,6 +630,7 @@ public class Trace extends AppStateUpdateHandler
       throw new IllegalArgumentException(
           String.format(Locale.ENGLISH, "Trace '%s' has been stopped", name));
     }
+
     if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
@@ -638,10 +639,7 @@ public class Trace extends AppStateUpdateHandler
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    String err = PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
-    if (err != null) {
-      throw new IllegalArgumentException(err);
-    }
+    validateAttribute(key, value);
   }
 
   /**
