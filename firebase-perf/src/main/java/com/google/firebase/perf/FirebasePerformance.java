@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -34,7 +36,6 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
-import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
@@ -44,7 +45,6 @@ import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -364,10 +364,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
 
-    String err = PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(key, value));
-    if (err != null) {
-      throw new IllegalArgumentException(err);
-    }
+    validateAttribute(key, value);
   }
 
   /**

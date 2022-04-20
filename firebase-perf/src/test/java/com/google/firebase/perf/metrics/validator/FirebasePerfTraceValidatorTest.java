@@ -169,47 +169,77 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void testInvalidCustomAttribute() {
+  public void traceValidator_customAttributeWithUnderscorePrefix_marksPerfMetricInvalid() {
     TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
 
-    trace = createValidTraceMetric();
-    trace.clearCustomAttributes().putCustomAttributes("0_test", "value");
+  @Test
+  public void traceValidator_customAttributeWithNumberPrefix_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("0_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
 
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("google_test", "value");
+  @Test
+  public void traceValidator_customAttributeWithGooglePrefix_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("google_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
 
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("firebase_test", "value");
+  @Test
+  public void traceValidator_customAttributeWithFirebasePrefix_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("firebase_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
 
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("ga_test", "value");
+  @Test
+  public void traceValidator_customAttributeWithGAPrefix_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("ga_test", "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
+
+  @Test
+  public void traceValidator_customAttributeEmptyValue_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("key", "");
+    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
+
+  @Test
+  public void traceValidator_customAttributeEmptyKey_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("", "value");
+    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
+
+  @Test
+  public void traceValidator_customAttributeEmptyKeyAndValue_marksPerfMetricInvalid() {
+    TraceMetric.Builder trace = createValidTraceMetric().putCustomAttributes("", "");
+    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
+
+  @Test
+  public void traceValidator_customAttributeWithLongKey_marksPerfMetricInvalid() {
 
     StringBuilder longString = new StringBuilder();
     for (int i = 0; i <= Constants.MAX_ATTRIBUTE_KEY_LENGTH; i++) {
       longString.append("a");
     }
-
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes(longString.toString(), "value");
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes(longString.toString(), "value");
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
+  }
 
-    longString = new StringBuilder();
+  @Test
+  public void traceValidator_customAttributeWithLongValue_marksPerfMetricInvalid() {
+
+    StringBuilder longString = new StringBuilder();
     for (int i = 0; i <= Constants.MAX_ATTRIBUTE_VALUE_LENGTH; i++) {
       longString.append("a");
     }
-
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("key", longString.toString());
+    TraceMetric.Builder trace =
+        createValidTraceMetric().putCustomAttributes("key", longString.toString());
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
-
-    trace = trace.clone();
-    trace.clearCustomAttributes().putCustomAttributes("test", "value");
-    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isTrue();
   }
 
   @Test

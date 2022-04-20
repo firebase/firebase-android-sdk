@@ -23,7 +23,6 @@ import com.google.firebase.perf.v1.PerfMetric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 /** An abstract class providing an interface to validate PerfMetric */
 public abstract class PerfMetricValidator {
@@ -135,33 +134,41 @@ public abstract class PerfMetricValidator {
   /**
    * Checks whether the given map entry fits key/value constraints for a Trace Attribute.
    *
-   * @param attribute A key/value pair for an Attribute
+   * @param key Key for the Attribute
+   * @param value Value for the Attribute
    * @return null if the entry can be used as an Attribute, if not, an error string explaining why
    *     it can't be used.
    */
-  @Nullable
-  public static String validateAttribute(@NonNull Map.Entry<String, String> attribute) {
-    String key = attribute.getKey();
-    String value = attribute.getValue();
-    if (key == null) {
-      return "Attribute key must not be null";
-    } else if (value == null) {
-      return "Attribute value must not be null";
-    } else if (key.length() > Constants.MAX_ATTRIBUTE_KEY_LENGTH) {
-      return String.format(
-          Locale.US,
-          "Attribute key length must not exceed %d characters",
-          Constants.MAX_ATTRIBUTE_KEY_LENGTH);
-    } else if (value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
-      return String.format(
-          Locale.US,
-          "Attribute value length must not exceed %d characters",
-          Constants.MAX_ATTRIBUTE_VALUE_LENGTH);
-    } else if (!key.matches("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*")) {
-      return "Attribute key must start with letter, must only contain alphanumeric characters and"
-          + " underscore and must not start with \"firebase_\", \"google_\" and \"ga_";
+  public static void validateAttribute(@NonNull String key, @NonNull String value) {
+    if (key == null || key.length() == 0) {
+      throw new IllegalArgumentException("Attribute key must not be null or empty");
     }
-    return null;
+
+    if (value == null || value.length() == 0) {
+      throw new IllegalArgumentException("Attribute value must not be null or empty");
+    }
+
+    if (key.length() > Constants.MAX_ATTRIBUTE_KEY_LENGTH) {
+      throw new IllegalArgumentException(
+          String.format(
+              Locale.US,
+              "Attribute key length must not exceed %d characters",
+              Constants.MAX_ATTRIBUTE_KEY_LENGTH));
+    }
+
+    if (value.length() > Constants.MAX_ATTRIBUTE_VALUE_LENGTH) {
+      throw new IllegalArgumentException(
+          String.format(
+              Locale.US,
+              "Attribute value length must not exceed %d characters",
+              Constants.MAX_ATTRIBUTE_VALUE_LENGTH));
+    }
+
+    if (!key.matches("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*")) {
+      throw new IllegalArgumentException(
+          "Attribute key must start with letter, must only contain alphanumeric characters and"
+              + " underscore and must not start with \"firebase_\", \"google_\" and \"ga_");
+    }
   }
 
   public abstract boolean isValidPerfMetric();

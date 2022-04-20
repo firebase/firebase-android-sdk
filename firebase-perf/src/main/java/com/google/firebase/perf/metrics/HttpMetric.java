@@ -14,18 +14,18 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.perf.FirebasePerformance.HttpMethod;
 import com.google.firebase.perf.FirebasePerformanceAttributable;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.validator.PerfMetricValidator;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import java.net.URL;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -181,15 +181,13 @@ public class HttpMetric implements FirebasePerformanceAttributable {
     }
   }
 
-  private void checkAttribute(@Nullable String attribute, @Nullable String value) {
+  private void checkAttribute(@NonNull String key, @NonNull String value) {
     if (isStopped) {
       throw new IllegalArgumentException(
           "HttpMetric has been logged already so unable to modify attributes");
     }
-    if (attribute == null || value == null) {
-      throw new IllegalArgumentException("Attribute must not have null key or value.");
-    }
-    if (!customAttributesMap.containsKey(attribute)
+
+    if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
       throw new IllegalArgumentException(
           String.format(
@@ -197,11 +195,7 @@ public class HttpMetric implements FirebasePerformanceAttributable {
               "Exceeds max limit of number of attributes - %d",
               Constants.MAX_TRACE_CUSTOM_ATTRIBUTES));
     }
-    String err =
-        PerfMetricValidator.validateAttribute(new AbstractMap.SimpleEntry<>(attribute, value));
-    if (err != null) {
-      throw new IllegalArgumentException(err);
-    }
+    validateAttribute(key, value);
   }
 
   /**
