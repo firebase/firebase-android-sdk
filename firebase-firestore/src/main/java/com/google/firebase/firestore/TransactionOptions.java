@@ -17,7 +17,8 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 
 /**
- * Parameter for {@link FirebaseFirestore#runTransaction(TransactionOptions, Transaction.Function)}.
+ * Options to customize transaction behavior for {@link
+ * FirebaseFirestore#runTransaction(TransactionOptions, Transaction.Function)}.
  */
 public final class TransactionOptions {
 
@@ -46,9 +47,12 @@ public final class TransactionOptions {
     }
 
     /**
-     * Set maximum number of attempts to commit, after which transaction fails. Default is 5.
+     * Set maximum number of attempts to commit, after which transaction fails.
      *
-     * @return this builder
+     * <p>The default value is 5. Setting the value to less than 1 will result in an {@link
+     * IllegalArgumentException}.
+     *
+     * @return This builder
      */
     @NonNull
     public Builder setMaxAttempts(int maxAttempts) {
@@ -60,7 +64,7 @@ public final class TransactionOptions {
     /**
      * Build the {@code TransactionOptions} object.
      *
-     * @return the built {@code TransactionOptions} object
+     * @return The built {@code TransactionOptions} object
      */
     @NonNull
     public TransactionOptions build() {
@@ -71,7 +75,7 @@ public final class TransactionOptions {
   /**
    * Get maximum number of attempts to commit, after which transaction fails. Default is 5.
    *
-   * @return maximum number of attempts
+   * @return The maximum number of attempts
    */
   public int getMaxAttempts() {
     return maxAttempts;

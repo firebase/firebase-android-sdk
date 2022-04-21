@@ -152,6 +152,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.nio.ByteBuffer);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> runBatch(@NonNull com.google.firebase.firestore.WriteBatch.Function);
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
+    method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.TransactionOptions, @NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
     method public static void setLoggingEnabled(boolean);
@@ -385,6 +386,17 @@ package com.google.firebase.firestore {
 
   public static interface Transaction.Function<TResult> {
     method @Nullable public TResult apply(@NonNull com.google.firebase.firestore.Transaction) throws com.google.firebase.firestore.FirebaseFirestoreException;
+  }
+
+  public final class TransactionOptions {
+    method public int getMaxAttempts();
+  }
+
+  public static final class TransactionOptions.Builder {
+    ctor public TransactionOptions.Builder();
+    ctor public TransactionOptions.Builder(@NonNull com.google.firebase.firestore.TransactionOptions);
+    method @NonNull public com.google.firebase.firestore.TransactionOptions build();
+    method @NonNull public com.google.firebase.firestore.TransactionOptions.Builder setMaxAttempts(int);
   }
 
   public class WriteBatch {

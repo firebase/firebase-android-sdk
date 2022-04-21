@@ -405,9 +405,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Executes the given updateFunction and then attempts to commit the changes applied within the
-   * transaction. If any document read within the transaction has changed, the updateFunction will
-   * be retried. If it fails to commit after 5 attempts, the transaction will fail.
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after 5 attempts, the transaction will
+   * fail.
    *
    * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
    * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
@@ -438,9 +439,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Executes the given updateFunction and then attempts to commit the changes applied within the
-   * transaction. If any document read within the transaction has changed, the updateFunction will
-   * be retried. If it fails to commit after 5 attempts, the transaction will fail.
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after 5 attempts, the transaction will
+   * fail.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @return The task returned from the updateFunction.
@@ -452,12 +454,12 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Executes the given updateFunction and then attempts to commit the changes applied within the
-   * transaction. If any document read within the transaction has changed, the updateFunction will
-   * be retried. If it fails to commit after the maxmimum number of attempts specified in
-   * transactionOptions, the transaction will fail.
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after the maxmimum number of attempts
+   * specified in transactionOptions, the transaction will fail.
    *
-   * @param options The function to execute within the transaction context.
+   * @param options The transaction options for controlling execution.
    * @param updateFunction The function to execute within the transaction context.
    * @return The task returned from the updateFunction.
    */
