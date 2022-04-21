@@ -141,7 +141,7 @@ public class TransportRuntime implements TransportInternal {
     return Collections.singleton(Encoding.of("proto"));
   }
 
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public Uploader getUploader() {
     return uploader;
   }
