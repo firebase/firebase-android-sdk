@@ -16,12 +16,12 @@ package com.google.firebase.perf.application;
 
 import android.app.Activity;
 import android.util.SparseIntArray;
-import androidx.annotation.NonNull;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Constants;
+import com.google.firebase.perf.util.Optional;
 import java.util.WeakHashMap;
 
 /**
@@ -72,16 +72,16 @@ public class FrameMetricsRecorder {
    *
    * @return FrameMetrics accumulated during the current recording
    */
-  public PerfFrameMetrics stop() {
+  public Optional<PerfFrameMetrics> stop() {
     if (!isRecording) {
       logger.error("Cannot stop because no recording was started");
-      return null;
+      return Optional.absent();
     }
-    PerfFrameMetrics data = this.snapshot();
+    Optional<PerfFrameMetrics> data = this.snapshot();
     try {
       fma.remove(activity);
-    } catch (IllegalArgumentException ignored) {
-      logger.error("View not hardware accelerated. Unable to collect FrameMetrics.");
+    } catch (IllegalArgumentException err) {
+      logger.debug("View not hardware accelerated. Unable to collect FrameMetrics. %s", err);
     }
     fma.reset();
     isRecording = false;
@@ -95,16 +95,21 @@ public class FrameMetricsRecorder {
    */
   public void startSubTrace(Object key) {
     if (!isRecording) {
-      logger.error("Cannot start sub-trace because FrameMetricsAggregator is not recording");
+      logger.warn("Cannot start sub-trace because FrameMetricsAggregator is not recording");
       return;
     }
     if (subTraceMap.containsKey(key)) {
-      logger.error(
+      logger.warn(
           "Cannot start sub-trace because one is already ongoing with the key %s",
           key.getClass().getSimpleName());
       return;
     }
-    subTraceMap.put(key, this.snapshot());
+    Optional<PerfFrameMetrics> snapshot = this.snapshot();
+    if (!snapshot.isAvailable()) {
+      logger.warn("startSubTrace(key): snapshot() failed");
+      return;
+    }
+    subTraceMap.put(key, snapshot.get());
   }
 
   /**
@@ -113,20 +118,24 @@ public class FrameMetricsRecorder {
    * @param key the UI state associated with the sub-trace to be stopped
    * @return FrameMetrics accumulated during this sub-trace
    */
-  public PerfFrameMetrics stopSubTrace(Object key) {
+  public Optional<PerfFrameMetrics> stopSubTrace(Object key) {
     if (!isRecording) {
       logger.error("Cannot stop sub-trace because FrameMetricsAggregator is not recording");
-      return null;
+      return Optional.absent();
     }
     if (!subTraceMap.containsKey(key)) {
       logger.error(
           "Sub-trace associated with key %s was not started or does not exist",
           key.getClass().getSimpleName());
-      return null;
+      return Optional.absent();
     }
     PerfFrameMetrics snapshotStart = subTraceMap.remove(key);
-    PerfFrameMetrics snapshotEnd = this.snapshot();
-    return snapshotEnd.subtract(snapshotStart);
+    Optional<PerfFrameMetrics> snapshotEnd = this.snapshot();
+    if (!snapshotEnd.isAvailable()) {
+      logger.error("stopSubTrace(key): snapshot() failed");
+      return Optional.absent();
+    }
+    return Optional.of(snapshotEnd.get().subtract(snapshotStart));
   }
 
   /**
@@ -135,18 +144,20 @@ public class FrameMetricsRecorder {
    *
    * @return the frame metrics
    */
-  protected @NonNull PerfFrameMetrics snapshot() {
+  protected Optional<PerfFrameMetrics> snapshot() {
     if (!isRecording) {
-      throw new IllegalStateException("No recording has been started.");
+      logger.warn("No recording has been started.");
+      return Optional.absent();
     }
     SparseIntArray[] arr = this.fma.getMetrics();
     if (arr == null) {
-      throw new IllegalStateException("FrameMetricsAggregator.mMetrics is uninitialized.");
+      logger.warn("FrameMetricsAggregator.mMetrics is uninitialized.");
+      return Optional.absent();
     }
     SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
     if (frameTimes == null) {
-      throw new IllegalStateException(
-          "FrameMetricsAggregator.mMetrics[TOTAL_INDEX] is uninitialized.");
+      logger.warn("FrameMetricsAggregator.mMetrics[TOTAL_INDEX] is uninitialized.");
+      return Optional.absent();
     }
     int totalFrames = 0;
     int slowFrames = 0;
@@ -166,6 +177,6 @@ public class FrameMetricsRecorder {
       }
     }
     // Only incrementMetric if corresponding metric is non-zero.
-    return new PerfFrameMetrics(totalFrames, slowFrames, frozenFrames);
+    return Optional.of(new PerfFrameMetrics(totalFrames, slowFrames, frozenFrames));
   }
 }

@@ -32,6 +32,7 @@ import android.view.WindowManager;
 import androidx.core.app.FrameMetricsAggregator;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
+import com.google.firebase.perf.util.Optional;
 import java.util.List;
 import java.util.WeakHashMap;
 import org.junit.Assert;
@@ -55,6 +56,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   @Mock private FrameMetricsAggregator fma;
   @Mock private PerfFrameMetrics frameMetrics1;
   @Mock private PerfFrameMetrics frameMetrics2;
+  @Mock private PerfFrameMetrics frameMetrics3;
 
   @Spy private final WeakHashMap<Object, PerfFrameMetrics> subTraceMap = new WeakHashMap<>();
 
@@ -149,7 +151,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void startSubTrace_whenSameSubTraceWithGivenKeyIsAlreadyOngoing_fails() {
-    doReturn(frameMetrics1).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
     ArgumentCaptor<Object> objectCaptor = ArgumentCaptor.forClass(Object.class);
     Object uiState1 = new Object();
     Object uiState2 = new Object();
@@ -167,14 +169,14 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void startSubTrace_whenSucceeds_putsNewEntryInMap() {
-    doReturn(frameMetrics1).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
     Object uiState1 = new Object();
     Object uiState2 = new Object();
     recorder.start();
     recorder.startSubTrace(uiState1);
     Assert.assertSame(frameMetrics1, subTraceMap.get(uiState1));
 
-    doReturn(frameMetrics2).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
     recorder.startSubTrace(uiState2);
     Assert.assertSame(frameMetrics2, subTraceMap.get(uiState2));
   }
@@ -197,7 +199,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void stopSubTrace_whenNoSubTraceWithGivenKeyExists_fails() {
-    doReturn(frameMetrics1).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
     Object uiState1 = new Object();
     Object uiState2 = new Object();
     subTraceMap.put(uiState2, frameMetrics2);
@@ -209,7 +211,8 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void stopSubTrace_whenSucceeds_removesEntryInMap() {
-    doReturn(frameMetrics2).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
+    doReturn(frameMetrics3).when(frameMetrics2).subtract(frameMetrics1);
     Object uiState1 = new Object();
     recorder.start();
     subTraceMap.put(uiState1, frameMetrics1);
@@ -223,14 +226,14 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   public void stopSubTrace_whenSucceeds_returnsDifferenceBetweenSnapshots() {
     recorder.start();
     Object uiState1 = new Object();
-    doReturn(frameMetrics1).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
     recorder.startSubTrace(uiState1);
 
-    doReturn(frameMetrics2).when(recorder).snapshot();
+    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
     PerfFrameMetrics difference = mock(PerfFrameMetrics.class);
     doReturn(difference).when(frameMetrics2).subtract(argThat(arg -> arg == frameMetrics1));
 
-    PerfFrameMetrics result = recorder.stopSubTrace(uiState1);
+    PerfFrameMetrics result = recorder.stopSubTrace(uiState1).get();
     Assert.assertSame(difference, result);
   }
 
@@ -242,15 +245,16 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.snapshot();
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_invokedBeforeStart_throwsIllegalStateException() {
+  @Test
+  public void snapshot_invokedBeforeStart_fails() {
     FrameMetricsAggregator fma = new FrameMetricsAggregator();
     FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_invokedAfterStop_throwsIllegalStateException() {
+  @Test
+  public void snapshot_invokedAfterStop_fails() {
     FrameMetricsAggregator fma = new FrameMetricsAggregator();
     FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
     try {
@@ -258,22 +262,24 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
       recorder.stop();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_sparseIntArrayIsNull_throwsIllegalStateException() {
+  @Test
+  public void snapshot_sparseIntArrayIsNull_fails() {
     doReturn(null).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     try {
       recorder.start();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_sparseIntArrayTotalIndexIsNull_throwsIllegalStateException() {
+  @Test
+  public void snapshot_sparseIntArrayTotalIndexIsNull_fails() {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = null;
     doReturn(arr).when(fma).getMetrics();
@@ -282,7 +288,8 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
       recorder.start();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
   @Test
@@ -299,7 +306,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(10);
@@ -320,7 +327,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -341,7 +348,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -362,7 +369,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3 total frames, 0 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(3);
@@ -393,6 +400,6 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
    */
   private void stubSnapshotToDoNothing() {
     PerfFrameMetrics genericFrameMetricsMock = mock(PerfFrameMetrics.class);
-    doReturn(genericFrameMetricsMock).when(recorder).snapshot();
+    doReturn(Optional.of(genericFrameMetricsMock)).when(recorder).snapshot();
   }
 }
