@@ -23,7 +23,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.wrap;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.model.FieldIndex;
@@ -151,10 +150,14 @@ public class TargetTest {
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.ASCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
-    assertNull(lowerBound);
+    assertEquals(1, lowerBound.getPosition().size());
+    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.MIN_VALUE));
+    assertTrue(lowerBound.isInclusive());
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    assertEquals(1, upperBound.getPosition().size());
+    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.MAX_VALUE));
+    assertTrue(upperBound.isInclusive());
   }
 
   @Test
@@ -179,7 +182,9 @@ public class TargetTest {
     verifyBound(lowerBound, true, "bar");
 
     Bound upperBound = target.getUpperBound(index);
-    assertNull(upperBound);
+    assertEquals(1, upperBound.getPosition().size());
+    assertTrue(Values.equals(upperBound.getPosition().get(0), Values.MAX_VALUE));
+    assertTrue(upperBound.isInclusive());
   }
 
   @Test
@@ -253,7 +258,9 @@ public class TargetTest {
     FieldIndex index = fieldIndex("c", "foo", FieldIndex.Segment.Kind.ASCENDING);
 
     Bound lowerBound = target.getLowerBound(index);
-    assertNull(lowerBound);
+    assertEquals(1, lowerBound.getPosition().size());
+    assertTrue(Values.equals(lowerBound.getPosition().get(0), Values.MIN_VALUE));
+    assertTrue(lowerBound.isInclusive());
 
     Bound upperBound = target.getUpperBound(index);
     verifyBound(upperBound, true, "bar");

@@ -16,8 +16,10 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS;
 import static com.google.firebase.firestore.core.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
-import static com.google.firebase.firestore.model.Values.max;
-import static com.google.firebase.firestore.model.Values.min;
+import static com.google.firebase.firestore.model.Values.MAX_VALUE;
+import static com.google.firebase.firestore.model.Values.MIN_VALUE;
+import static com.google.firebase.firestore.model.Values.lowerBoundCompare;
+import static com.google.firebase.firestore.model.Values.upperBoundCompare;
 
 import android.util.Pair;
 import androidx.annotation.Nullable;
@@ -182,9 +184,8 @@ public final class Target {
 
   /**
    * Returns a lower bound of field values that can be used as a starting point to scan the index
-   * defined by {@code fieldIndex}. Returns {@code null} if no lower bound exists.
+   * defined by {@code fieldIndex}. Returns {@link Values#MIN_VALUE} if no lower bound exists.
    */
-  @Nullable
   public Bound getLowerBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
@@ -196,11 +197,6 @@ public final class Target {
               ? getAscendingBound(segment, startAt)
               : getDescendingBound(segment, startAt);
 
-      if (segmentBound.first == null) {
-        // No lower bound exists
-        return null;
-      }
-
       values.add(segmentBound.first);
       inclusive &= segmentBound.second;
     }
@@ -210,9 +206,9 @@ public final class Target {
 
   /**
    * Returns an upper bound of field values that can be used as an ending point when scanning the
-   * index defined by {@code fieldIndex}. Returns {@code null} if no upper bound exists.
+   * index defined by {@code fieldIndex}. Returns {@link Values#MAX_VALUE} if no upper bound exists.
    */
-  public @Nullable Bound getUpperBound(FieldIndex fieldIndex) {
+  public Bound getUpperBound(FieldIndex fieldIndex) {
     List<Value> values = new ArrayList<>();
     boolean inclusive = true;
 
@@ -222,11 +218,6 @@ public final class Target {
           segment.getKind().equals(FieldIndex.Segment.Kind.ASCENDING)
               ? getDescendingBound(segment, endAt)
               : getAscendingBound(segment, endAt);
-
-      if (segmentBound.first == null) {
-        // No upper bound exists
-        return null;
-      }
 
       values.add(segmentBound.first);
       inclusive &= segmentBound.second;
@@ -244,12 +235,12 @@ public final class Target {
    */
   private Pair<Value, Boolean> getAscendingBound(
       FieldIndex.Segment segment, @Nullable Bound bound) {
-    Value segmentValue = null;
+    Value segmentValue = MIN_VALUE;
     boolean segmentInclusive = true;
 
     // Process all filters to find a value for the current field segment
     for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-      Value filterValue = null;
+      Value filterValue = MIN_VALUE;
       boolean filterInclusive = true;
 
       switch (fieldFilter.getOperator()) {
@@ -274,7 +265,7 @@ public final class Target {
           // Remaining filters cannot be used as bound.
       }
 
-      if (max(segmentValue, filterValue) == filterValue) {
+      if (lowerBoundCompare(segmentValue, segmentInclusive, filterValue, filterInclusive) < 0) {
         segmentValue = filterValue;
         segmentInclusive = filterInclusive;
       }
@@ -287,7 +278,8 @@ public final class Target {
         OrderBy orderBy = this.orderBys.get(i);
         if (orderBy.getField().equals(segment.getFieldPath())) {
           Value cursorValue = bound.getPosition().get(i);
-          if (max(segmentValue, cursorValue) == cursorValue) {
+          if (lowerBoundCompare(segmentValue, segmentInclusive, cursorValue, bound.isInclusive())
+              < 0) {
             segmentValue = cursorValue;
             segmentInclusive = bound.isInclusive();
           }
@@ -308,12 +300,12 @@ public final class Target {
    */
   private Pair<Value, Boolean> getDescendingBound(
       FieldIndex.Segment segment, @Nullable Bound bound) {
-    Value segmentValue = null;
+    Value segmentValue = MAX_VALUE;
     boolean segmentInclusive = true;
 
     // Process all filters to find a value for the current field segment
     for (FieldFilter fieldFilter : getFieldFiltersForPath(segment.getFieldPath())) {
-      Value filterValue = null;
+      Value filterValue = MAX_VALUE;
       boolean filterInclusive = true;
 
       switch (fieldFilter.getOperator()) {
@@ -339,7 +331,7 @@ public final class Target {
           // Remaining filters cannot be used as bound.
       }
 
-      if (min(segmentValue, filterValue) == filterValue) {
+      if (upperBoundCompare(segmentValue, segmentInclusive, filterValue, filterInclusive) > 0) {
         segmentValue = filterValue;
         segmentInclusive = filterInclusive;
       }
@@ -352,7 +344,8 @@ public final class Target {
         OrderBy orderBy = this.orderBys.get(i);
         if (orderBy.getField().equals(segment.getFieldPath())) {
           Value cursorValue = bound.getPosition().get(i);
-          if (min(segmentValue, cursorValue) == cursorValue) {
+          if (upperBoundCompare(segmentValue, segmentInclusive, cursorValue, bound.isInclusive())
+              > 0) {
             segmentValue = cursorValue;
             segmentInclusive = bound.isInclusive();
           }
