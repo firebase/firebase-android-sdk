@@ -228,15 +228,16 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.snapshot();
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_invokedBeforeStart_throwsIllegalStateException() {
+  @Test
+  public void snapshot_invokedBeforeStart_fails() {
     FrameMetricsAggregator fma = new FrameMetricsAggregator();
     FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_invokedAfterStop_throwsIllegalStateException() {
+  @Test
+  public void snapshot_invokedAfterStop_fails() {
     FrameMetricsAggregator fma = new FrameMetricsAggregator();
     FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
     try {
@@ -244,22 +245,24 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
       recorder.stop();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_sparseIntArrayIsNull_throwsIllegalStateException() {
+  @Test
+  public void snapshot_sparseIntArrayIsNull_fails() {
     doReturn(null).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     try {
       recorder.start();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void snapshot_sparseIntArrayTotalIndexIsNull_throwsIllegalStateException() {
+  @Test
+  public void snapshot_sparseIntArrayTotalIndexIsNull_fails() {
     SparseIntArray[] arr = new SparseIntArray[1];
     arr[FrameMetricsAggregator.TOTAL_INDEX] = null;
     doReturn(arr).when(fma).getMetrics();
@@ -268,7 +271,8 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
       recorder.start();
     } catch (Exception ignored) {
     }
-    recorder.snapshot();
+    Optional<PerfFrameMetrics> result = recorder.snapshot();
+    Assert.assertFalse(result.isAvailable());
   }
 
   @Test
@@ -285,7 +289,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(10);
@@ -306,7 +310,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -327,7 +331,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(5);
@@ -348,7 +352,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     doReturn(arr).when(fma).getMetrics();
     doCallRealMethod().when(recorder).snapshot();
     recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot();
+    PerfFrameMetrics metrics = recorder.snapshot().get();
 
     // we should expect 3 total frames, 0 slow frames, and 0 frozen frames.
     assertThat(metrics.getTotalFrames()).isEqualTo(3);
