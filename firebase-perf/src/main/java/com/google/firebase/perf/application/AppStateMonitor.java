@@ -32,6 +32,7 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
+import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.ScreenTraceUtil;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -53,9 +54,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       "androidx.core.app.FrameMetricsAggregator";
 
   private static volatile AppStateMonitor instance;
-  private static boolean hasFrameMetricsAggregator = false;
+  private final boolean hasFrameMetricsAggregator;
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
+  private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
   private final Map<String, Long> metricToCountMap = new HashMap<>();
   private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
@@ -67,8 +69,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final TransportManager transportManager;
   private final ConfigResolver configResolver;
   private final Clock clock;
-
-  private FrameMetricsAggregator frameMetricsAggregator;
 
   private Timer resumeTime; // The time app comes to foreground
   private Timer stopTime; // The time app goes to background
@@ -94,18 +94,18 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
         transportManager,
         clock,
         ConfigResolver.getInstance(),
-        hasFrameMetricsAggregatorClass() ? new FrameMetricsAggregator() : null);
+        hasFrameMetricsAggregatorClass());
   }
 
   AppStateMonitor(
       TransportManager transportManager,
       Clock clock,
       ConfigResolver configResolver,
-      FrameMetricsAggregator frameMetricsAggregator) {
+      boolean hasFrameMetricsAggregator) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.configResolver = configResolver;
-    this.frameMetricsAggregator = frameMetricsAggregator;
+    this.hasFrameMetricsAggregator = hasFrameMetricsAggregator;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
@@ -152,12 +152,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
+      FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity);
       if (activity instanceof FragmentActivity) {
         FragmentActivity fragmentActivity = (FragmentActivity) activity;
         fragmentActivity
             .getSupportFragmentManager()
             .registerFragmentLifecycleCallbacks(
-                new FragmentStateMonitor(clock, transportManager, this, frameMetricsAggregator),
+                new FragmentStateMonitor(clock, transportManager, this, recorder),
                 true);
       }
     }
@@ -167,10 +168,27 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityDestroyed(Activity activity) {}
 
   @Override
-  public synchronized void onActivityStarted(Activity activity) {}
+  public synchronized void onActivityStarted(Activity activity) {
+    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
+      // Starts recording frame metrics for this activity.
+      /**
+       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
+       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
+       */
+      activityToRecorderMap.get(activity).start();
+      // Start the Trace
+      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
+      screenTrace.start();
+      activityToScreenTraceMap.put(activity, screenTrace);
+    }
+  }
 
   @Override
   public synchronized void onActivityStopped(Activity activity) {
+    if (isScreenTraceSupported()) {
+      sendScreenTrace(activity);
+    }
+
     // Last activity has its onActivityStopped called, the app goes to background.
     if (activityToResumedMap.containsKey(activity)) {
       activityToResumedMap.remove(activity);
@@ -210,20 +228,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       // case 3: app already in foreground, current activity is replaced by another activity, or the
       // current activity was paused then resumed without onStop, for example by an AlertDialog
       activityToResumedMap.put(activity, true);
-    }
-
-    // Screen trace is after session update so the sessionId is not added twice to the Trace
-    if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
-      // Starts recording frame metrics for this activity.
-      /**
-       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
-       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
-       */
-      frameMetricsAggregator.add(activity);
-      // Start the Trace
-      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
-      screenTrace.start();
-      activityToScreenTraceMap.put(activity, screenTrace);
     }
   }
 
@@ -315,14 +319,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public void onActivityPaused(Activity activity) {}
 
-  /** Stops screen trace right after onPause because of b/210055697 */
-  @Override
-  public void onActivityPostPaused(@NonNull Activity activity) {
-    if (isScreenTraceSupported()) {
-      sendScreenTrace(activity);
-    }
-  }
-
   /**
    * Send screen trace. If hardware acceleration is not enabled, all frame metrics will be zero and
    * the trace will not be sent.
@@ -339,30 +335,12 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     activityToScreenTraceMap.remove(activity);
 
-    int totalFrames = 0;
-    int slowFrames = 0;
-    int frozenFrames = 0;
-    /**
-     * Resets the metrics data and returns the currently-collected metrics. Note that {@link
-     * FrameMetricsAggregator#reset()} will not stop recording for the activity. The reason of using
-     * {@link FrameMetricsAggregator#reset()} is that {@link
-     * FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
-     * disabled activities.
-     */
-    try {
-      frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException ignored) {
-      logger.debug("View not hardware accelerated. Unable to collect screen trace.");
-    }
-    FrameMetricsCalculator.PerfFrameMetrics perfFrameMetrics =
-        FrameMetricsCalculator.calculateFrameMetrics(frameMetricsAggregator.reset());
-    if (perfFrameMetrics.getTotalFrames() == 0
-        && perfFrameMetrics.getSlowFrames() == 0
-        && perfFrameMetrics.getFrozenFrames() == 0) {
-      // All metrics are zero, no need to send screen trace.
+    Optional<FrameMetricsCalculator.PerfFrameMetrics> perfFrameMetrics = activityToRecorderMap.get(activity).stop();
+    if (!perfFrameMetrics.isAvailable()) {
+      logger.warn("Failed to record frame data for %s", activity.getClass().getSimpleName());
       return;
     }
-    ScreenTraceUtil.addFrameCounters(screenTrace, perfFrameMetrics);
+    ScreenTraceUtil.addFrameCounters(screenTrace, perfFrameMetrics.get());
     // Stop and record trace
     screenTrace.stop();
   }
@@ -418,10 +396,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private static boolean hasFrameMetricsAggregatorClass() {
     try {
       Class<?> initializerClass = Class.forName(FRAME_METRICS_AGGREGATOR_CLASSNAME);
-      hasFrameMetricsAggregator = true;
       return true;
     } catch (ClassNotFoundException e) {
-      hasFrameMetricsAggregator = false;
       return false;
     }
   }

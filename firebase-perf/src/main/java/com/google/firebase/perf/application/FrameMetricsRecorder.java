@@ -95,6 +95,10 @@ public class FrameMetricsRecorder {
       fragmentSnapshotMap.clear();
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
+    /**
+     * {@link FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
+     * disabled activities.
+     */
     try {
       frameMetricsAggregator.remove(activity);
     } catch (IllegalArgumentException err) {
