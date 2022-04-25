@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * Provides FrameMetrics data from an Activity's Window. Encapsulates FrameMetricsAggregator.
  *
- * <p>Note: each recorder holds a reference to an Activity, so it is very important to dereference
- * each recorder before the associated Activity is destroyed.
+ * <p>IMPORTANT: each recorder holds a reference to an Activity, so it is very important to
+ * dereference each recorder at or before its Activity's onDestroy. Similar for Fragments.
  */
 public class FrameMetricsRecorder {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
