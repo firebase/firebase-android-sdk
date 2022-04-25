@@ -15,6 +15,7 @@
 package com.google.firebase.perf.application;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -30,6 +31,7 @@ import android.app.Activity;
 import android.util.SparseIntArray;
 import android.view.WindowManager;
 import androidx.core.app.FrameMetricsAggregator;
+import androidx.fragment.app.Fragment;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Optional;
@@ -83,16 +85,16 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
   @Test
   public void start_callsFrameMetricsAggregator() {
-    verify(fma, times(0)).add(nullable(Activity.class));
+    verify(fma, times(0)).add(any());
     recorder.start();
-    verify(fma, times(1)).add(nullable(Activity.class));
+    verify(fma, times(1)).add(any());
   }
 
   @Test
   public void start_whileAlreadyStarted_fails() {
     recorder.start();
     recorder.start();
-    verify(fma, times(1)).add(nullable(Activity.class));
+    verify(fma, times(1)).add(any());
   }
 
   @Test
@@ -101,7 +103,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.start();
     recorder.stop();
     recorder.start();
-    verify(fma, times(2)).add(nullable(Activity.class));
+    verify(fma, times(2)).add(any());
   }
 
   @Test
@@ -109,7 +111,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     stubSnapshotToDoNothing();
     recorder.start();
     recorder.stop();
-    verify(fma, times(1)).remove(nullable(Activity.class));
+    verify(fma, times(1)).remove(any());
     verify(fma, times(1)).reset();
   }
 
@@ -117,12 +119,12 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   public void stop_whileNotStarted_fails() {
     stubSnapshotToDoNothing();
     recorder.stop();
-    verify(fma, times(0)).remove(nullable(Activity.class));
+    verify(fma, times(0)).remove(any());
     verify(fma, times(0)).reset();
     recorder.start();
     recorder.stop();
     recorder.stop();
-    verify(fma, times(1)).remove(nullable(Activity.class));
+    verify(fma, times(1)).remove(any());
     verify(fma, times(1)).reset();
   }
 
@@ -141,12 +143,12 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     stubSnapshotToDoNothing();
     Object uiState = new Object();
     recorder.startSubTrace(uiState);
-    verify(subTraceMap, times(0)).put(nullable(Object.class), nullable(PerfFrameMetrics.class));
+    verify(subTraceMap, times(0)).put(any(), any());
 
     recorder.start();
     recorder.stop();
     recorder.startSubTrace(uiState);
-    verify(subTraceMap, times(0)).put(nullable(Object.class), nullable(PerfFrameMetrics.class));
+    verify(subTraceMap, times(0)).put(any(), any());
   }
 
   @Test
@@ -184,28 +186,28 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   @Test
   public void stopSubTrace_whenNotRecording_fails() {
     stubSnapshotToDoNothing();
-    Object uiState = new Object();
-    subTraceMap.put(uiState, frameMetrics1);
-    Assert.assertTrue(subTraceMap.containsKey(uiState));
+    Fragment fragment = new Fragment();
+    subTraceMap.put(fragment, frameMetrics1);
+    Assert.assertTrue(subTraceMap.containsKey(fragment));
 
-    recorder.stopSubTrace(uiState);
+    recorder.stopSubTrace(fragment);
     verify(subTraceMap, times(0)).remove(nullable(Object.class));
 
     recorder.start();
     recorder.stop();
-    recorder.startSubTrace(uiState);
+    recorder.startSubTrace(fragment);
     verify(subTraceMap, times(0)).remove(nullable(Object.class));
   }
 
   @Test
   public void stopSubTrace_whenNoSubTraceWithGivenKeyExists_fails() {
     doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    Object uiState1 = new Object();
-    Object uiState2 = new Object();
-    subTraceMap.put(uiState2, frameMetrics2);
+    Fragment fragment1 = new Fragment();
+    Fragment fragment2 = new Fragment();
+    subTraceMap.put(fragment2, frameMetrics2);
 
     recorder.start();
-    recorder.stopSubTrace(uiState1);
+    recorder.stopSubTrace(fragment1);
     verify(subTraceMap, times(0)).remove(nullable(Object.class));
   }
 
@@ -213,11 +215,11 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   public void stopSubTrace_whenSucceeds_removesEntryInMap() {
     doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
     doReturn(frameMetrics3).when(frameMetrics2).subtract(frameMetrics1);
-    Object uiState1 = new Object();
+    Fragment fragment1 = new Fragment();
     recorder.start();
-    subTraceMap.put(uiState1, frameMetrics1);
+    subTraceMap.put(fragment1, frameMetrics1);
     Assert.assertEquals(1, subTraceMap.size());
-    recorder.stopSubTrace(uiState1);
+    recorder.stopSubTrace(fragment1);
 
     Assert.assertEquals(0, subTraceMap.size());
   }
@@ -225,15 +227,15 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   @Test
   public void stopSubTrace_whenSucceeds_returnsDifferenceBetweenSnapshots() {
     recorder.start();
-    Object uiState1 = new Object();
+    Fragment fragment1 = new Fragment();
     doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    recorder.startSubTrace(uiState1);
+    recorder.startSubTrace(fragment1);
 
     doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
     PerfFrameMetrics difference = mock(PerfFrameMetrics.class);
     doReturn(difference).when(frameMetrics2).subtract(argThat(arg -> arg == frameMetrics1));
 
-    PerfFrameMetrics result = recorder.stopSubTrace(uiState1).get();
+    PerfFrameMetrics result = recorder.stopSubTrace(fragment1).get();
     Assert.assertSame(difference, result);
   }
 

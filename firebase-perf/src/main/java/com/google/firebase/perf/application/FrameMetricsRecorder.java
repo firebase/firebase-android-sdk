@@ -17,6 +17,7 @@ package com.google.firebase.perf.application;
 import android.app.Activity;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
+import androidx.fragment.app.Fragment;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
@@ -28,19 +29,21 @@ import java.util.WeakHashMap;
  * Provides FrameMetrics data from an Activity's Window. Encapsulates FrameMetricsAggregator.
  *
  * <p>Note: each recorder holds a reference to an Activity, so it is very important to dereference
- * each recorder before the associated Activity is destroyed
+ * each recorder before the associated Activity is destroyed.
  */
 public class FrameMetricsRecorder {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
+
   private final Activity activity;
-  private final FrameMetricsAggregator fma;
+  private final FrameMetricsAggregator frameMetricsAggregator;
   private final WeakHashMap<Object, PerfFrameMetrics> subTraceMap;
+
   private boolean isRecording = false;
 
   /**
-   * Creates a recorder for a specific activity
+   * Creates a recorder for a specific activity.
    *
-   * @param activity the activity that the recorder is collecting data from
+   * @param activity the activity that the recorder is collecting data from.
    */
   public FrameMetricsRecorder(Activity activity) {
     this(activity, new FrameMetricsAggregator(), new WeakHashMap<>());
@@ -52,44 +55,45 @@ public class FrameMetricsRecorder {
       FrameMetricsAggregator frameMetricsAggregator,
       WeakHashMap<Object, PerfFrameMetrics> subTraceMap) {
     this.activity = activity;
-    this.fma = frameMetricsAggregator;
+    this.frameMetricsAggregator = frameMetricsAggregator;
     this.subTraceMap = subTraceMap;
   }
 
-  /** Starts recording FrameMetrics for the activity window */
+  /** Starts recording FrameMetrics for the activity window. */
   public void start() {
     if (isRecording) {
-      logger.error(
+      logger.warn(
           "FrameMetricsAggregator is already recording %s", activity.getClass().getSimpleName());
       return;
     }
-    fma.add(activity);
+    frameMetricsAggregator.add(activity);
     isRecording = true;
   }
 
   /**
-   * Stops recording FrameMetrics for the activity window
+   * Stops recording FrameMetrics for the activity window.
    *
-   * @return FrameMetrics accumulated during the current recording
+   * @return FrameMetrics accumulated during the current recording.
    */
   public Optional<PerfFrameMetrics> stop() {
     if (!isRecording) {
-      logger.error("Cannot stop because no recording was started");
+      logger.warn("Cannot stop because no recording was started");
       return Optional.absent();
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
-      fma.remove(activity);
+      frameMetricsAggregator.remove(activity);
     } catch (IllegalArgumentException err) {
       logger.debug("View not hardware accelerated. Unable to collect FrameMetrics. %s", err);
+      return Optional.absent();
     }
-    fma.reset();
+    frameMetricsAggregator.reset();
     isRecording = false;
     return data;
   }
 
   /**
-   * Starts a sub-trace in the current recording
+   * Starts a sub-trace in the current recording.
    *
    * @param key a UI state to associate this sub-trace with. e.g.) fragment
    */
@@ -106,25 +110,25 @@ public class FrameMetricsRecorder {
     }
     Optional<PerfFrameMetrics> snapshot = this.snapshot();
     if (!snapshot.isAvailable()) {
-      logger.warn("startSubTrace(key): snapshot() failed");
+      logger.warn("startSubTrace(%s): snapshot() failed", key.getClass().getSimpleName());
       return;
     }
     subTraceMap.put(key, snapshot.get());
   }
 
   /**
-   * Stops the sub-trace associated with the given UI state
+   * Stops the sub-trace associated with the given UI state.
    *
-   * @param key the UI state associated with the sub-trace to be stopped
-   * @return FrameMetrics accumulated during this sub-trace
+   * @param key the UI state associated with the sub-trace to be stopped.
+   * @return FrameMetrics accumulated during this sub-trace.
    */
-  public Optional<PerfFrameMetrics> stopSubTrace(Object key) {
+  public Optional<PerfFrameMetrics> stopSubTrace(Fragment key) {
     if (!isRecording) {
-      logger.error("Cannot stop sub-trace because FrameMetricsAggregator is not recording");
+      logger.warn("Cannot stop sub-trace because FrameMetricsAggregator is not recording");
       return Optional.absent();
     }
     if (!subTraceMap.containsKey(key)) {
-      logger.error(
+      logger.warn(
           "Sub-trace associated with key %s was not started or does not exist",
           key.getClass().getSimpleName());
       return Optional.absent();
@@ -132,7 +136,7 @@ public class FrameMetricsRecorder {
     PerfFrameMetrics snapshotStart = subTraceMap.remove(key);
     Optional<PerfFrameMetrics> snapshotEnd = this.snapshot();
     if (!snapshotEnd.isAvailable()) {
-      logger.error("stopSubTrace(key): snapshot() failed");
+      logger.warn("stopSubTrace(%s): snapshot() failed", key.getClass().getSimpleName());
       return Optional.absent();
     }
     return Optional.of(snapshotEnd.get().subtract(snapshotStart));
@@ -142,14 +146,14 @@ public class FrameMetricsRecorder {
    * Calculate total frames, slow frames, and frozen frames from SparseIntArray[] recorded by {@link
    * FrameMetricsAggregator}.
    *
-   * @return the frame metrics
+   * @return {@link PerfFrameMetrics} at the time of snapshot.
    */
   protected Optional<PerfFrameMetrics> snapshot() {
     if (!isRecording) {
       logger.warn("No recording has been started.");
       return Optional.absent();
     }
-    SparseIntArray[] arr = this.fma.getMetrics();
+    SparseIntArray[] arr = this.frameMetricsAggregator.getMetrics();
     if (arr == null) {
       logger.warn("FrameMetricsAggregator.mMetrics is uninitialized.");
       return Optional.absent();
