@@ -14,7 +14,7 @@
 
 package com.google.firebase.perf.metrics.validator;
 
-import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.validateAttribute;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;

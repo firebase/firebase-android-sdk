@@ -14,7 +14,9 @@
 
 package com.google.firebase.perf.metrics;
 
-import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.*;
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.validateAttribute;
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.validateMetricName;
+import static com.google.firebase.perf.metrics.validator.PerfMetricValidator.validateTraceName;
 
 import android.os.Parcel;
 import android.os.Parcelable;
