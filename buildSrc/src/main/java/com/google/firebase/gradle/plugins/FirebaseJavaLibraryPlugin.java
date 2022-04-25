@@ -84,9 +84,9 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                         }
                       }
                     }));
-
-    setupApiInformationAnalysis(project);
-
+    if (library.runApiInformation) {
+      setupApiInformationAnalysis(project);
+    }
     project.getTasks().register("firebaseLint", task -> task.dependsOn("lint"));
     Coverage.apply(library);
   }

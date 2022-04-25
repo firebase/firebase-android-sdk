@@ -42,6 +42,9 @@ public class FirebaseLibraryExtension {
   /** Indicates whether the library has public javadoc. */
   public boolean publishJavadoc = true;
 
+  /** Indicates whether the apiInformation is run for this project. */
+  public boolean runApiInformation = false;
+
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
