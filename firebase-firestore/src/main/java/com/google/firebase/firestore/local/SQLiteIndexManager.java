@@ -475,8 +475,8 @@ final class SQLiteIndexManager implements IndexManager {
 
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
-      @Nullable Bound lowerBound = subTarget.getLowerBound(fieldIndex);
-      @Nullable Bound upperBound = subTarget.getUpperBound(fieldIndex);
+      Bound lowerBound = subTarget.getLowerBound(fieldIndex);
+      Bound upperBound = subTarget.getUpperBound(fieldIndex);
 
       if (Logger.isDebugEnabled()) {
         Logger.debug(
@@ -490,9 +490,9 @@ final class SQLiteIndexManager implements IndexManager {
       }
 
       Object[] lowerBoundEncoded = encodeBound(fieldIndex, subTarget, lowerBound);
-      String lowerBoundOp = lowerBound != null && lowerBound.isInclusive() ? ">=" : ">";
+      String lowerBoundOp = lowerBound.isInclusive() ? ">=" : ">";
       Object[] upperBoundEncoded = encodeBound(fieldIndex, subTarget, upperBound);
-      String upperBoundOp = upperBound != null && upperBound.isInclusive() ? "<=" : "<";
+      String upperBoundOp = upperBound.isInclusive() ? "<=" : "<";
       Object[] notInEncoded = encodeValues(fieldIndex, subTarget, notInValues);
 
       Object[] subQueryAndBindings =
@@ -536,9 +536,9 @@ final class SQLiteIndexManager implements IndexManager {
       Target target,
       int indexId,
       @Nullable List<Value> arrayValues,
-      @Nullable Object[] lowerBounds,
+      Object[] lowerBounds,
       String lowerBoundOp,
-      @Nullable Object[] upperBounds,
+      Object[] upperBounds,
       String upperBoundOp,
       @Nullable Object[] notIn) {
     // The number of total statements we union together. This is similar to a distributed normal
@@ -546,9 +546,7 @@ final class SQLiteIndexManager implements IndexManager {
     // ARRAY_CONTAINS or ARRAY_CONTAINS_ANY filter combined with the values from the query bounds.
     int statementCount =
         (arrayValues != null ? arrayValues.size() : 1)
-            * max(
-                lowerBounds != null ? lowerBounds.length : 1,
-                upperBounds != null ? upperBounds.length : 1);
+            * max(lowerBounds.length, upperBounds.length);
 
     // Build the statement. We always include the lower bound, and optionally include an array value
     // and an upper bound.
@@ -556,12 +554,8 @@ final class SQLiteIndexManager implements IndexManager {
     statement.append("SELECT document_key, directional_value FROM index_entries ");
     statement.append("WHERE index_id = ? AND uid = ? ");
     statement.append("AND array_value = ? ");
-    if (lowerBounds != null) {
-      statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
-    }
-    if (upperBounds != null) {
-      statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
-    }
+    statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
+    statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
 
     // Create the UNION statement by repeating the above generated statement. We can then add
     // ordering and a limit clause.
@@ -592,10 +586,11 @@ final class SQLiteIndexManager implements IndexManager {
       int statementCount,
       int indexId,
       @Nullable List<Value> arrayValues,
-      @Nullable Object[] lowerBounds,
-      @Nullable Object[] upperBounds,
+      Object[] lowerBounds,
+      Object[] upperBounds,
       @Nullable Object[] notInValues) {
-    int bindsPerStatement = 3 + (lowerBounds != null ? 1 : 0) + (upperBounds != null ? 1 : 0);
+    // Every SQL statement we union together have 5 binds, see generateQueryAndBindings.
+    int bindsPerStatement = 5;
     int statementsPerArrayValue = statementCount / (arrayValues != null ? arrayValues.size() : 1);
 
     Object[] bindArgs =
@@ -610,12 +605,8 @@ final class SQLiteIndexManager implements IndexManager {
               ? encodeSingleElement(arrayValues.get(i / statementsPerArrayValue))
               : EMPTY_BYTES_VALUE;
 
-      if (lowerBounds != null) {
-        bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
-      }
-      if (upperBounds != null) {
-        bindArgs[offset++] = upperBounds[i % statementsPerArrayValue];
-      }
+      bindArgs[offset++] = lowerBounds[i % statementsPerArrayValue];
+      bindArgs[offset++] = upperBounds[i % statementsPerArrayValue];
     }
     if (notInValues != null) {
       for (Object notInValue : notInValues) {
@@ -712,9 +703,7 @@ final class SQLiteIndexManager implements IndexManager {
    * Encodes the given bounds according to the specification in {@code target}. For IN queries, a
    * list of possible values is returned.
    */
-  private @Nullable Object[] encodeBound(
-      FieldIndex fieldIndex, Target target, @Nullable Bound bound) {
-    if (bound == null) return null;
+  private Object[] encodeBound(FieldIndex fieldIndex, Target target, Bound bound) {
     return encodeValues(fieldIndex, target, bound.getPosition());
   }
 

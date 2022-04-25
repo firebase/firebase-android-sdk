@@ -604,6 +604,26 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testCursorsDoNoExpandResultSet() {
+    indexManager.addFieldIndex(fieldIndex("coll", "c", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "c", Kind.DESCENDING));
+
+    addDoc("coll/val1", map("a", 1, "b", 1, "c", 3));
+    addDoc("coll/val2", map("a", 2, "b", 2, "c", 2));
+
+    Query query =
+        query("coll").filter(filter("c", ">", 2)).orderBy(orderBy("c")).startAt(bound(true, 2));
+    verifyResults(query, "coll/val1");
+
+    query =
+        query("coll")
+            .filter(filter("c", "<", 3))
+            .orderBy(orderBy("c", "desc"))
+            .startAt(bound(true, 3));
+    verifyResults(query, "coll/val2");
+  }
+
+  @Test
   public void testAdvancedQueries() {
     // This test compares local query results with those received from the Java Server SDK.
 
