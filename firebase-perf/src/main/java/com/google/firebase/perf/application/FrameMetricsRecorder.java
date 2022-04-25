@@ -85,7 +85,8 @@ public class FrameMetricsRecorder {
     try {
       frameMetricsAggregator.remove(activity);
     } catch (IllegalArgumentException err) {
-      logger.debug("View not hardware accelerated. Unable to collect FrameMetrics. %s", err);
+      logger.debug(
+          "View not hardware accelerated. Unable to collect FrameMetrics. %s", err.toString());
       return Optional.absent();
     }
     frameMetricsAggregator.reset();
