@@ -23,7 +23,8 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Optional;
-import java.util.WeakHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Provides FrameMetrics data from an Activity's Window. Encapsulates FrameMetricsAggregator.
@@ -36,7 +37,7 @@ public class FrameMetricsRecorder {
 
   private final Activity activity;
   private final FrameMetricsAggregator frameMetricsAggregator;
-  private final WeakHashMap<Object, PerfFrameMetrics> subTraceMap;
+  private final Map<Fragment, PerfFrameMetrics> subTraceMap;
 
   private boolean isRecording = false;
 
@@ -46,14 +47,14 @@ public class FrameMetricsRecorder {
    * @param activity the activity that the recorder is collecting data from.
    */
   public FrameMetricsRecorder(Activity activity) {
-    this(activity, new FrameMetricsAggregator(), new WeakHashMap<>());
+    this(activity, new FrameMetricsAggregator(), new HashMap<>());
   }
 
   @VisibleForTesting
   FrameMetricsRecorder(
       Activity activity,
       FrameMetricsAggregator frameMetricsAggregator,
-      WeakHashMap<Object, PerfFrameMetrics> subTraceMap) {
+      Map<Fragment, PerfFrameMetrics> subTraceMap) {
     this.activity = activity;
     this.frameMetricsAggregator = frameMetricsAggregator;
     this.subTraceMap = subTraceMap;
@@ -97,7 +98,7 @@ public class FrameMetricsRecorder {
    *
    * @param key a UI state to associate this sub-trace with. e.g.) fragment
    */
-  public void startSubTrace(Object key) {
+  public void startSubTrace(Fragment key) {
     if (!isRecording) {
       logger.warn("Cannot start sub-trace because FrameMetricsAggregator is not recording");
       return;

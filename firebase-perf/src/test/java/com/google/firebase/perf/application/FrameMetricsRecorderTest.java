@@ -17,7 +17,6 @@ package com.google.firebase.perf.application;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
@@ -35,8 +34,8 @@ import androidx.fragment.app.Fragment;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Optional;
+import java.util.HashMap;
 import java.util.List;
-import java.util.WeakHashMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +59,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   @Mock private PerfFrameMetrics frameMetrics2;
   @Mock private PerfFrameMetrics frameMetrics3;
 
-  @Spy private final WeakHashMap<Object, PerfFrameMetrics> subTraceMap = new WeakHashMap<>();
+  @Spy private final HashMap<Fragment, PerfFrameMetrics> subTraceMap = new HashMap<>();
 
   @Before
   public void setUp() {
@@ -141,46 +140,46 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   @Test
   public void startSubTrace_whenNotRecording_fails() {
     stubSnapshotToDoNothing();
-    Object uiState = new Object();
-    recorder.startSubTrace(uiState);
+    Fragment fragment = new Fragment();
+    recorder.startSubTrace(fragment);
     verify(subTraceMap, times(0)).put(any(), any());
 
     recorder.start();
     recorder.stop();
-    recorder.startSubTrace(uiState);
+    recorder.startSubTrace(fragment);
     verify(subTraceMap, times(0)).put(any(), any());
   }
 
   @Test
   public void startSubTrace_whenSameSubTraceWithGivenKeyIsAlreadyOngoing_fails() {
     doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    ArgumentCaptor<Object> objectCaptor = ArgumentCaptor.forClass(Object.class);
-    Object uiState1 = new Object();
-    Object uiState2 = new Object();
+    ArgumentCaptor<Fragment> fragmentArgumentCaptor = ArgumentCaptor.forClass(Fragment.class);
+    Fragment fragment1 = new Fragment();
+    Fragment fragment2 = new Fragment();
 
     recorder.start();
-    recorder.startSubTrace(uiState1);
-    verify(subTraceMap, times(1)).put(objectCaptor.capture(), nullable(PerfFrameMetrics.class));
-    Assert.assertSame(frameMetrics1, subTraceMap.get(uiState1));
-    Assert.assertSame(uiState1, objectCaptor.getValue());
-    Assert.assertNotSame(uiState2, objectCaptor.getValue());
+    recorder.startSubTrace(fragment1);
+    verify(subTraceMap, times(1)).put(fragmentArgumentCaptor.capture(), any());
+    Assert.assertSame(frameMetrics1, subTraceMap.get(fragment1));
+    Assert.assertSame(fragment1, fragmentArgumentCaptor.getValue());
+    Assert.assertNotSame(fragment2, fragmentArgumentCaptor.getValue());
 
-    recorder.startSubTrace(uiState1);
-    verify(subTraceMap, times(1)).put(nullable(Object.class), nullable(PerfFrameMetrics.class));
+    recorder.startSubTrace(fragment1);
+    verify(subTraceMap, times(1)).put(any(), any());
   }
 
   @Test
   public void startSubTrace_whenSucceeds_putsNewEntryInMap() {
     doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    Object uiState1 = new Object();
-    Object uiState2 = new Object();
+    Fragment fragment1 = new Fragment();
+    Fragment fragment2 = new Fragment();
     recorder.start();
-    recorder.startSubTrace(uiState1);
-    Assert.assertSame(frameMetrics1, subTraceMap.get(uiState1));
+    recorder.startSubTrace(fragment1);
+    Assert.assertSame(frameMetrics1, subTraceMap.get(fragment1));
 
     doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
-    recorder.startSubTrace(uiState2);
-    Assert.assertSame(frameMetrics2, subTraceMap.get(uiState2));
+    recorder.startSubTrace(fragment2);
+    Assert.assertSame(frameMetrics2, subTraceMap.get(fragment2));
   }
 
   @Test
@@ -191,12 +190,12 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     Assert.assertTrue(subTraceMap.containsKey(fragment));
 
     recorder.stopSubTrace(fragment);
-    verify(subTraceMap, times(0)).remove(nullable(Object.class));
+    verify(subTraceMap, times(0)).remove(any());
 
     recorder.start();
     recorder.stop();
     recorder.startSubTrace(fragment);
-    verify(subTraceMap, times(0)).remove(nullable(Object.class));
+    verify(subTraceMap, times(0)).remove(any());
   }
 
   @Test
@@ -208,7 +207,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
     recorder.start();
     recorder.stopSubTrace(fragment1);
-    verify(subTraceMap, times(0)).remove(nullable(Object.class));
+    verify(subTraceMap, times(0)).remove(any());
   }
 
   @Test

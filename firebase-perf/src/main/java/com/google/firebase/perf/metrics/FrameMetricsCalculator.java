@@ -50,6 +50,12 @@ public class FrameMetricsCalculator {
       return totalFrames;
     }
 
+    /**
+     * Subtracts frame-time counts of the argument object from the current object.
+     *
+     * @param b the subtrahend PerfFrameMetrics object.
+     * @return difference of this and the argument.
+     */
     public PerfFrameMetrics subtract(PerfFrameMetrics b) {
       int newTotalFrames = this.totalFrames - b.getTotalFrames();
       int newSlowFrames = this.slowFrames - b.getSlowFrames();
