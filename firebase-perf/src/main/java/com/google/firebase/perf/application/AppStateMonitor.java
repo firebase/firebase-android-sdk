@@ -20,7 +20,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
@@ -57,7 +56,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final boolean hasFrameMetricsAggregator;
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
-  private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap = new WeakHashMap<>();
+  private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap =
+      new WeakHashMap<>();
+  private final WeakHashMap<Activity, FragmentStateMonitor> activityToFragmentStateMonitorMap =
+      new WeakHashMap<>();
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
   private final Map<String, Long> metricToCountMap = new HashMap<>();
   private final Set<WeakReference<AppStateCallback>> appStateSubscribers = new HashSet<>();
@@ -90,11 +92,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
-    this(
-        transportManager,
-        clock,
-        ConfigResolver.getInstance(),
-        hasFrameMetricsAggregatorClass());
+    this(transportManager, clock, ConfigResolver.getInstance(), hasFrameMetricsAggregatorClass());
   }
 
   AppStateMonitor(
@@ -153,19 +151,29 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity);
+      activityToRecorderMap.put(activity, recorder);
       if (activity instanceof FragmentActivity) {
+        FragmentStateMonitor fragmentStateMonitor =
+            new FragmentStateMonitor(clock, transportManager, this, recorder);
+        activityToFragmentStateMonitorMap.put(activity, fragmentStateMonitor);
         FragmentActivity fragmentActivity = (FragmentActivity) activity;
         fragmentActivity
             .getSupportFragmentManager()
-            .registerFragmentLifecycleCallbacks(
-                new FragmentStateMonitor(clock, transportManager, this, recorder),
-                true);
+            .registerFragmentLifecycleCallbacks(fragmentStateMonitor, true);
       }
     }
   }
 
   @Override
-  public void onActivityDestroyed(Activity activity) {}
+  public void onActivityDestroyed(Activity activity) {
+    activityToRecorderMap.remove(activity);
+    if (activityToFragmentStateMonitorMap.containsKey(activity)) {
+      FragmentActivity fragmentActivity = (FragmentActivity) activity;
+      fragmentActivity
+          .getSupportFragmentManager()
+          .unregisterFragmentLifecycleCallbacks(activityToFragmentStateMonitorMap.remove(activity));
+    }
+  }
 
   @Override
   public synchronized void onActivityStarted(Activity activity) {
@@ -326,18 +334,16 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @param activity activity object.
    */
   private void sendScreenTrace(Activity activity) {
-    if (!activityToScreenTraceMap.containsKey(activity)) {
-      return;
-    }
     Trace screenTrace = activityToScreenTraceMap.get(activity);
     if (screenTrace == null) {
       return;
     }
     activityToScreenTraceMap.remove(activity);
 
-    Optional<FrameMetricsCalculator.PerfFrameMetrics> perfFrameMetrics = activityToRecorderMap.get(activity).stop();
+    Optional<FrameMetricsCalculator.PerfFrameMetrics> perfFrameMetrics =
+        activityToRecorderMap.get(activity).stop();
     if (!perfFrameMetrics.isAvailable()) {
-      logger.warn("Failed to record frame data for %s", activity.getClass().getSimpleName());
+      logger.warn("Failed to record frame data for %s.", activity.getClass().getSimpleName());
       return;
     }
     ScreenTraceUtil.addFrameCounters(screenTrace, perfFrameMetrics.get());

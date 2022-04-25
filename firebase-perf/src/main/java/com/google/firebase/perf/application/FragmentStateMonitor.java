@@ -15,7 +15,6 @@
 package com.google.firebase.perf.application;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -98,8 +97,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
       logger.warn("onFragmentPaused: recorder failed to trace %s", f.getClass().getSimpleName());
       return;
     }
-    ScreenTraceUtil.addFrameCounters(
-        fragmentTrace, data.get());
+    ScreenTraceUtil.addFrameCounters(fragmentTrace, data.get());
     fragmentTrace.stop();
   }
 

@@ -23,10 +23,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.util.SparseIntArray;
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,7 +43,6 @@ import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
-import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.WeakHashMap;
 import org.junit.Assert;
 import org.junit.Before;
@@ -80,7 +77,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   private static final String longFragmentName =
       "_st_NeverGonnaGiveYouUpNeverGonnaLetYouDownNeverGonnaRunAroundAndDesertYouNeverGonnaMakeYouCryNeverGonnaSayGoodbyeNeverGonnaTellALieAndHurtYou";
 
-
   /**
    * Array of SparseIntArray to mock the return value from {@link
    * FrameMetricsAggregator#getMetrics()}
@@ -97,11 +93,12 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
 
-//    ConfigResolver configResolver = ConfigResolver.getInstance();
-//    configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
-//    ConfigResolver spyConfigResolver = spy(configResolver);
+    //    ConfigResolver configResolver = ConfigResolver.getInstance();
+    //    configResolver.setDeviceCacheManager(new DeviceCacheManager(new
+    // FakeDirectExecutorService()));
+    //    ConfigResolver spyConfigResolver = spy(configResolver);
     doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();
-//    this.configResolver = spyConfigResolver;
+    //    this.configResolver = spyConfigResolver;
 
     // fmaMetrics1 should have 1+3+1=5 total frames, 3+1=4 slow frames, and 1 frozen frames.
     SparseIntArray sparseIntArray = new SparseIntArray();
@@ -198,7 +195,8 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   public void lifecycleCallbacks_cleansUpMap_duringActivityTransitions() {
     // Simulate call order of activity + fragment lifecycle events
     Bundle savedInstanceState = mock(Bundle.class);
-    AppStateMonitor appStateMonitor = new AppStateMonitor(mockTransportManager, clock, configResolver, true);
+    AppStateMonitor appStateMonitor =
+        new AppStateMonitor(mockTransportManager, clock, configResolver, true);
     FragmentStateMonitor fragmentMonitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();

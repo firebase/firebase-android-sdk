@@ -96,8 +96,8 @@ public class FrameMetricsRecorder {
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     /**
-     * {@link FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware acceleration
-     * disabled activities.
+     * {@link FrameMetricsAggregator#remove(Activity)} will throw exceptions for hardware
+     * acceleration disabled activities.
      */
     try {
       frameMetricsAggregator.remove(activity);
