@@ -682,6 +682,11 @@ public class FirebaseRemoteConfig {
    * */
   public ConfigRealtimeHTTPClient.ListenerRegistration setOnConfigUpdateListener(
           ConfigRealtimeHTTPClient.EventListener realtimeEventListener) {
+    if (realtimeEventListener == null) {
+      Log.e(TAG, "Invalid event listener");
+      return null;
+    }
+
     ConfigRealtimeHTTPClient.ListenerRegistration registration
             = this.configRealtimeHTTPClient.setRealtimeEventListener(realtimeEventListener);
     this.configRealtimeHTTPClient.startRealtimeConnection();
@@ -689,13 +694,14 @@ public class FirebaseRemoteConfig {
   }
 
   public void closeRealtime() {
+    this.configRealtimeHTTPClient.removeRealtimeEventListener();
     this.configRealtimeHTTPClient.pauseRealtimeConnection();
   }
 
   public void setBackgroundState(boolean background) {
     this.configRealtimeHTTPClient.setBackgroundFlag(background);
     if (!background) {
-      Log.i(this.TAG, "App is in foreground");
+      Log.i(TAG, "App is in foreground");
       this.configRealtimeHTTPClient.startRealtimeConnection();
     }
   }
