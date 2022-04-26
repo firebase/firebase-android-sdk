@@ -14,14 +14,10 @@
 
 package com.google.firebase.perf.application;
 
+import static androidx.core.app.FrameMetricsAggregator.TOTAL_INDEX;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -36,14 +32,11 @@ import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.util.Optional;
 import java.util.HashMap;
 import java.util.List;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
@@ -51,26 +44,26 @@ import org.robolectric.android.controller.ActivityController;
 /** Unit tests for {@link com.google.firebase.perf.application.FrameMetricsRecorder}. */
 @RunWith(RobolectricTestRunner.class)
 public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
+  private final int[][] frameTimesDefault = {{1, 1}, {17, 1}, {800, 1}};
+  private final int[][] frameTimes1 = {{1, 1}, {17, 3}, {800, 1}};
+  private final int[][] frameTimes2 = {{1, 5}, {18, 5}, {800, 4}};
+
   private Activity activity;
   private FrameMetricsRecorder recorder;
 
   @Mock private FrameMetricsAggregator fma;
-  @Mock private PerfFrameMetrics frameMetrics1;
-  @Mock private PerfFrameMetrics frameMetrics2;
-  @Mock private PerfFrameMetrics frameMetrics3;
-
-  @Spy private final HashMap<Fragment, PerfFrameMetrics> subTraceMap = new HashMap<>();
 
   @Before
   public void setUp() {
     initMocks(this);
     activity = createFakeActivity(true);
-    recorder = spy(new FrameMetricsRecorder(activity, fma, subTraceMap));
+    recorder = new FrameMetricsRecorder(activity, fma, new HashMap<>());
+    stubFrameMetricsAggregatorData(fma, frameTimesDefault);
   }
 
+  /** FrameMetricsAggregator misuse prevention tests. Only 1 Activity per FMA. */
   @Test
-  public void eachInstance_usesOneAndTheSameActivityInFrameMetricsAggregator_always() {
-    stubSnapshotToDoNothing();
+  public void frameMetricsAggregator_shouldOnlyUseTheSameSingleActivity() {
     ArgumentCaptor<Activity> activityCaptor = ArgumentCaptor.forClass(Activity.class);
     recorder.start();
     recorder.stop();
@@ -79,26 +72,18 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     verify(fma, times(2)).add(activityCaptor.capture());
     verify(fma, times(2)).remove(activityCaptor.capture());
     List<Activity> activities = activityCaptor.getAllValues();
-    Assert.assertTrue(activities.stream().allMatch(a -> a == activity));
+    assertThat(activities.stream().allMatch(a -> a == activity)).isTrue();
   }
 
   @Test
-  public void start_callsFrameMetricsAggregator() {
-    verify(fma, times(0)).add(any());
-    recorder.start();
-    verify(fma, times(1)).add(any());
-  }
-
-  @Test
-  public void start_whileAlreadyStarted_fails() {
+  public void start_whileAlreadyStarted_doesNotCallFMATwice() {
     recorder.start();
     recorder.start();
     verify(fma, times(1)).add(any());
   }
 
   @Test
-  public void start_afterPreviousEnded_succeeds() {
-    stubSnapshotToDoNothing();
+  public void start_afterPreviousEnded_doesCallFMASuccessfully() {
     recorder.start();
     recorder.stop();
     recorder.start();
@@ -106,276 +91,126 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void stop_callsFrameMetricsAggregator() {
-    stubSnapshotToDoNothing();
-    recorder.start();
-    recorder.stop();
-    verify(fma, times(1)).remove(any());
-    verify(fma, times(1)).reset();
+  public void stop_whileNotStarted_returnsEmptyResult() {
+    Optional<PerfFrameMetrics> result;
+    result = recorder.stop();
+    assertThat(result.isAvailable()).isFalse();
   }
 
   @Test
-  public void stop_whileNotStarted_fails() {
-    stubSnapshotToDoNothing();
-    recorder.stop();
-    verify(fma, times(0)).remove(any());
-    verify(fma, times(0)).reset();
+  public void stop_calledTwice_returnsEmptyResult() {
+    Optional<PerfFrameMetrics> result;
     recorder.start();
     recorder.stop();
-    recorder.stop();
-    verify(fma, times(1)).remove(any());
-    verify(fma, times(1)).reset();
+    result = recorder.stop();
+    assertThat(result.isAvailable()).isFalse();
   }
 
   @Test
-  public void stop_snapshotsFrameMetricsAggregator_beforeReset() {
-    stubSnapshotToDoNothing();
+  public void startAndStop_calledInCorrectOrder_returnsValidResult() {
+    Optional<PerfFrameMetrics> result;
     recorder.start();
-    recorder.stop();
-    InOrder orderVerifier = inOrder(recorder, fma);
-    orderVerifier.verify(recorder).snapshot();
-    orderVerifier.verify(fma).reset();
+    result = recorder.stop();
+    assertThat(result.isAvailable()).isTrue();
+    assertThat(result.get()).isEqualTo(new PerfFrameMetrics(3, 2, 1));
   }
 
   @Test
-  public void startSubTrace_whenNotRecording_fails() {
-    stubSnapshotToDoNothing();
+  public void startAndStopSubTrace_activityRecordingNeverStarted_returnsEmptyResult() {
     Fragment fragment = new Fragment();
+    Optional<PerfFrameMetrics> result;
+
+    stubFrameMetricsAggregatorData(fma, frameTimes1);
     recorder.startSubTrace(fragment);
-    verify(subTraceMap, times(0)).put(any(), any());
+    stubFrameMetricsAggregatorData(fma, frameTimes2);
+    result = recorder.stopSubTrace(fragment);
+    assertThat(result.isAvailable()).isFalse();
+  }
+
+  @Test
+  public void startAndStopSubTrace_activityRecordingHasEnded_returnsEmptyResult() {
+    Fragment fragment = new Fragment();
+    Optional<PerfFrameMetrics> result;
 
     recorder.start();
     recorder.stop();
+    stubFrameMetricsAggregatorData(fma, frameTimes1);
     recorder.startSubTrace(fragment);
-    verify(subTraceMap, times(0)).put(any(), any());
+    stubFrameMetricsAggregatorData(fma, frameTimes2);
+    result = recorder.stopSubTrace(fragment);
+    assertThat(result.isAvailable()).isFalse();
   }
 
   @Test
-  public void startSubTrace_whenSameSubTraceWithGivenKeyIsAlreadyOngoing_fails() {
-    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    ArgumentCaptor<Fragment> fragmentArgumentCaptor = ArgumentCaptor.forClass(Fragment.class);
-    Fragment fragment1 = new Fragment();
-    Fragment fragment2 = new Fragment();
+  public void startAndStopSubTrace_whenCalledTwice_ignoresSecondCall() {
+    Fragment fragment = new Fragment();
+    Optional<PerfFrameMetrics> result1;
+    Optional<PerfFrameMetrics> result2;
 
+    // Happens only when we hook on to the same instance of fragment twice. Very unlikely.
     recorder.start();
-    recorder.startSubTrace(fragment1);
-    verify(subTraceMap, times(1)).put(fragmentArgumentCaptor.capture(), any());
-    Assert.assertSame(frameMetrics1, subTraceMap.get(fragment1));
-    Assert.assertSame(fragment1, fragmentArgumentCaptor.getValue());
-    Assert.assertNotSame(fragment2, fragmentArgumentCaptor.getValue());
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 1}, {17, 1}, {800, 1}}); // 3, 2, 1
+    recorder.startSubTrace(fragment);
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 2}, {17, 3}, {800, 2}}); // 7, 5, 2
+    recorder.startSubTrace(fragment);
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 5}, {17, 4}, {800, 5}}); // 14, 9, 5
+    result1 = recorder.stopSubTrace(fragment);
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 6}, {17, 5}, {800, 5}}); // 16, 10, 5
+    result2 = recorder.stopSubTrace(fragment);
 
-    recorder.startSubTrace(fragment1);
-    verify(subTraceMap, times(1)).put(any(), any());
+    // total = 14 - 3 = 11, slow = 9 - 2 = 7, frozen = 5 - 1 = 4
+    assertThat(result1.get()).isEqualTo(new PerfFrameMetrics(11, 7, 4));
+    assertThat(result2.isAvailable()).isFalse();
   }
 
   @Test
-  public void startSubTrace_whenSucceeds_putsNewEntryInMap() {
-    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
+  public void stopAndStopSubTrace_whenNoSubTraceWithGivenKeyExists_returnsEmptyResult() {
     Fragment fragment1 = new Fragment();
     Fragment fragment2 = new Fragment();
-    recorder.start();
-    recorder.startSubTrace(fragment1);
-    Assert.assertSame(frameMetrics1, subTraceMap.get(fragment1));
+    Optional<PerfFrameMetrics> result;
 
-    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
+    recorder.start();
+
+    recorder.startSubTrace(fragment1);
+    result = recorder.stopSubTrace(fragment2);
+
+    assertThat(result.isAvailable()).isFalse();
+  }
+
+  @Test
+  public void startAndStopSubTrace_duringActivityRecording_returnsValidResult() {
+    Fragment fragment = new Fragment();
+    Optional<PerfFrameMetrics> result;
+    recorder.start();
+    stubFrameMetricsAggregatorData(fma, frameTimes1);
+    recorder.startSubTrace(fragment);
+    stubFrameMetricsAggregatorData(fma, frameTimes2);
+    result = recorder.stopSubTrace(fragment);
+    assertThat(result.isAvailable()).isTrue();
+    // frameTimes2 - frameTimes1
+    assertThat(result.get()).isEqualTo(new PerfFrameMetrics(9, 5, 3));
+  }
+
+  @Test
+  public void startAndStopSubTrace_whenTwoSubTracesOverlap_returnsCorrectResults() {
+    Fragment fragment1 = new Fragment();
+    Fragment fragment2 = new Fragment();
+    Optional<PerfFrameMetrics> subTrace1;
+    Optional<PerfFrameMetrics> subTrace2;
+    recorder.start();
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 1}, {17, 1}, {800, 1}}); // 3, 2, 1
+    recorder.startSubTrace(fragment1);
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 2}, {17, 3}, {800, 2}}); // 7, 5, 2
     recorder.startSubTrace(fragment2);
-    Assert.assertSame(frameMetrics2, subTraceMap.get(fragment2));
-  }
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 5}, {17, 4}, {800, 5}}); // 14, 9, 5
+    subTrace1 = recorder.stopSubTrace(fragment1);
+    stubFrameMetricsAggregatorData(fma, new int[][] {{1, 6}, {17, 5}, {800, 5}}); // 16, 10, 5
+    subTrace2 = recorder.stopSubTrace(fragment2);
 
-  @Test
-  public void stopSubTrace_whenNotRecording_fails() {
-    stubSnapshotToDoNothing();
-    Fragment fragment = new Fragment();
-    subTraceMap.put(fragment, frameMetrics1);
-    Assert.assertTrue(subTraceMap.containsKey(fragment));
-
-    recorder.stopSubTrace(fragment);
-    verify(subTraceMap, times(0)).remove(any());
-
-    recorder.start();
-    recorder.stop();
-    recorder.startSubTrace(fragment);
-    verify(subTraceMap, times(0)).remove(any());
-  }
-
-  @Test
-  public void stopSubTrace_whenNoSubTraceWithGivenKeyExists_fails() {
-    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    Fragment fragment1 = new Fragment();
-    Fragment fragment2 = new Fragment();
-    subTraceMap.put(fragment2, frameMetrics2);
-
-    recorder.start();
-    recorder.stopSubTrace(fragment1);
-    verify(subTraceMap, times(0)).remove(any());
-  }
-
-  @Test
-  public void stopSubTrace_whenSucceeds_removesEntryInMap() {
-    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
-    doReturn(frameMetrics3).when(frameMetrics2).subtract(frameMetrics1);
-    Fragment fragment1 = new Fragment();
-    recorder.start();
-    subTraceMap.put(fragment1, frameMetrics1);
-    Assert.assertEquals(1, subTraceMap.size());
-    recorder.stopSubTrace(fragment1);
-
-    Assert.assertEquals(0, subTraceMap.size());
-  }
-
-  @Test
-  public void stopSubTrace_whenSucceeds_returnsDifferenceBetweenSnapshots() {
-    recorder.start();
-    Fragment fragment1 = new Fragment();
-    doReturn(Optional.of(frameMetrics1)).when(recorder).snapshot();
-    recorder.startSubTrace(fragment1);
-
-    doReturn(Optional.of(frameMetrics2)).when(recorder).snapshot();
-    PerfFrameMetrics difference = mock(PerfFrameMetrics.class);
-    doReturn(difference).when(frameMetrics2).subtract(argThat(arg -> arg == frameMetrics1));
-
-    PerfFrameMetrics result = recorder.stopSubTrace(fragment1).get();
-    Assert.assertSame(difference, result);
-  }
-
-  @Test
-  public void snapshot_invokedAfterStartBeforeStop_doesNotThrow() {
-    FrameMetricsAggregator fma = new FrameMetricsAggregator();
-    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
-    recorder.start();
-    recorder.snapshot();
-  }
-
-  @Test
-  public void snapshot_invokedBeforeStart_fails() {
-    FrameMetricsAggregator fma = new FrameMetricsAggregator();
-    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
-    Optional<PerfFrameMetrics> result = recorder.snapshot();
-    Assert.assertFalse(result.isAvailable());
-  }
-
-  @Test
-  public void snapshot_invokedAfterStop_fails() {
-    FrameMetricsAggregator fma = new FrameMetricsAggregator();
-    FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity, fma, subTraceMap);
-    try {
-      recorder.start();
-      recorder.stop();
-    } catch (Exception ignored) {
-    }
-    Optional<PerfFrameMetrics> result = recorder.snapshot();
-    Assert.assertFalse(result.isAvailable());
-  }
-
-  @Test
-  public void snapshot_sparseIntArrayIsNull_fails() {
-    doReturn(null).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    try {
-      recorder.start();
-    } catch (Exception ignored) {
-    }
-    Optional<PerfFrameMetrics> result = recorder.snapshot();
-    Assert.assertFalse(result.isAvailable());
-  }
-
-  @Test
-  public void snapshot_sparseIntArrayTotalIndexIsNull_fails() {
-    SparseIntArray[] arr = new SparseIntArray[1];
-    arr[FrameMetricsAggregator.TOTAL_INDEX] = null;
-    doReturn(arr).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    try {
-      recorder.start();
-    } catch (Exception ignored) {
-    }
-    Optional<PerfFrameMetrics> result = recorder.snapshot();
-    Assert.assertFalse(result.isAvailable());
-  }
-
-  @Test
-  public void snapshot_validSparseIntArray_returnsCorrectFrameMetrics() {
-    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
-    // 700ms. The key value pair means (duration, num_of_samples).
-    SparseIntArray sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(5, 3);
-    sparseIntArray.append(20, 2);
-    sparseIntArray.append(800, 5);
-    SparseIntArray[] arr = new SparseIntArray[1];
-    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
-
-    doReturn(arr).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot().get();
-
-    // we should expect 3+2+5=10 total frames, 2+5=7 slow frames, and 5 frozen frames.
-    assertThat(metrics.getTotalFrames()).isEqualTo(10);
-    assertThat(metrics.getSlowFrames()).isEqualTo(7);
-    assertThat(metrics.getFrozenFrames()).isEqualTo(5);
-  }
-
-  @Test
-  public void snapshot_validSparseIntArrayWithoutFrozenFrames_returnsCorrectFrameMetrics() {
-    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
-    // 700ms. The key value pair means (duration, num_of_samples).
-    SparseIntArray sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(5, 3);
-    sparseIntArray.append(20, 2);
-    SparseIntArray[] arr = new SparseIntArray[1];
-    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
-
-    doReturn(arr).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot().get();
-
-    // we should expect 3+2=5 total frames, 2 slow frames, and 0 frozen frames.
-    assertThat(metrics.getTotalFrames()).isEqualTo(5);
-    assertThat(metrics.getSlowFrames()).isEqualTo(2);
-    assertThat(metrics.getFrozenFrames()).isEqualTo(0);
-  }
-
-  @Test
-  public void snapshot_validSparseIntArrayWithoutSlowFrames_returnsCorrectFrameMetrics() {
-    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
-    // 700ms. The key value pair means (duration, num_of_samples).
-    SparseIntArray sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(5, 3);
-    sparseIntArray.append(701, 2);
-    SparseIntArray[] arr = new SparseIntArray[1];
-    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
-
-    doReturn(arr).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot().get();
-
-    // we should expect 3+2=5 total frames, 0+2=2 slow frames, and 2 frozen frames.
-    assertThat(metrics.getTotalFrames()).isEqualTo(5);
-    assertThat(metrics.getSlowFrames()).isEqualTo(2);
-    assertThat(metrics.getFrozenFrames()).isEqualTo(2);
-  }
-
-  @Test
-  public void
-      snapshot_validSparseIntArrayWithoutSlowFramesOrFrozenFrames_returnsCorrectFrameMetrics() {
-    // Slow frames have duration greater than 16ms and frozen frames have duration greater than
-    // 700ms. The key value pair means (duration, num_of_samples).
-    SparseIntArray sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(5, 3);
-    SparseIntArray[] arr = new SparseIntArray[1];
-    arr[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
-
-    doReturn(arr).when(fma).getMetrics();
-    doCallRealMethod().when(recorder).snapshot();
-    recorder.start();
-    PerfFrameMetrics metrics = recorder.snapshot().get();
-
-    // we should expect 3 total frames, 0 slow frames, and 0 frozen frames.
-    assertThat(metrics.getTotalFrames()).isEqualTo(3);
-    assertThat(metrics.getSlowFrames()).isEqualTo(0);
-    assertThat(metrics.getFrozenFrames()).isEqualTo(0);
+    // total = 14 - 3 = 11, slow = 9 - 2 = 7, frozen = 5 - 1 = 4
+    assertThat(subTrace1.get()).isEqualTo(new PerfFrameMetrics(11, 7, 4));
+    // total = 16 - 7 = 9, slow = 10 - 5 = 5, frozen = 5 - 2 = 3
+    assertThat(subTrace2.get()).isEqualTo(new PerfFrameMetrics(9, 5, 3));
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
@@ -396,11 +231,21 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     return fakeActivityController.start().get();
   }
 
-  /**
-   * stop() and stopSubTrace() depends on snapshot(), so stub snapshot() to test them independently
-   */
-  private void stubSnapshotToDoNothing() {
-    PerfFrameMetrics genericFrameMetricsMock = mock(PerfFrameMetrics.class);
-    doReturn(Optional.of(genericFrameMetricsMock)).when(recorder).snapshot();
+  private static SparseIntArray createFrameMetricsAggregatorData(int[][] frameTimes) {
+    SparseIntArray sparseIntArray = new SparseIntArray();
+    for (int[] bucket : frameTimes) {
+      sparseIntArray.append(bucket[0], bucket[1]);
+    }
+    return sparseIntArray;
+  }
+
+  private static void stubFrameMetricsAggregatorData(
+      FrameMetricsAggregator mockFMA, int[][] frameTimes) {
+    SparseIntArray totalIndexValue = createFrameMetricsAggregatorData(frameTimes);
+    SparseIntArray[] mMetrics = new SparseIntArray[9];
+    mMetrics[TOTAL_INDEX] = totalIndexValue;
+    doReturn(mMetrics).when(mockFMA).getMetrics();
+    doReturn(mMetrics).when(mockFMA).remove(any());
+    doReturn(mMetrics).when(mockFMA).reset();
   }
 }

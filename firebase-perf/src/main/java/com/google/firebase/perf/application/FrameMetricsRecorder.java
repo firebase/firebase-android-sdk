@@ -20,8 +20,8 @@ import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
-import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
@@ -80,6 +80,10 @@ public class FrameMetricsRecorder {
     if (!isRecording) {
       logger.warn("Cannot stop because no recording was started");
       return Optional.absent();
+    }
+    if (!subTraceMap.isEmpty()) {
+      logger.warn(
+          "Sub-traces are still ongoing! Sub-traces should be stopped first before stopping Activity screen trace.");
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
@@ -150,7 +154,7 @@ public class FrameMetricsRecorder {
    *
    * @return {@link PerfFrameMetrics} at the time of snapshot.
    */
-  protected Optional<PerfFrameMetrics> snapshot() {
+  private Optional<PerfFrameMetrics> snapshot() {
     if (!isRecording) {
       logger.warn("No recording has been started.");
       return Optional.absent();
@@ -165,24 +169,6 @@ public class FrameMetricsRecorder {
       logger.warn("FrameMetricsAggregator.mMetrics[TOTAL_INDEX] is uninitialized.");
       return Optional.absent();
     }
-    int totalFrames = 0;
-    int slowFrames = 0;
-    int frozenFrames = 0;
-
-    for (int i = 0; i < frameTimes.size(); i++) {
-      int frameTime = frameTimes.keyAt(i);
-      int numFrames = frameTimes.valueAt(i);
-      totalFrames += numFrames;
-      if (frameTime > Constants.FROZEN_FRAME_TIME) {
-        // Frozen frames mean the app appear frozen.  The recommended thresholds is 700ms
-        frozenFrames += numFrames;
-      }
-      if (frameTime > Constants.SLOW_FRAME_TIME) {
-        // Slow frames are anything above 16ms (i.e. 60 frames/second)
-        slowFrames += numFrames;
-      }
-    }
-    // Only incrementMetric if corresponding metric is non-zero.
-    return Optional.of(new PerfFrameMetrics(totalFrames, slowFrames, frozenFrames));
+    return Optional.of(FrameMetricsCalculator.calculateFrameMetrics(arr));
   }
 }

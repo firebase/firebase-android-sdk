@@ -51,16 +51,26 @@ public class FrameMetricsCalculator {
     }
 
     /**
-     * Subtracts frame-time counts of the argument object from the current object.
+     * Subtracts frame-time counts of the argument object (that) from the current object (this).
      *
-     * @param b the subtrahend PerfFrameMetrics object.
+     * @param that the subtrahend PerfFrameMetrics object.
      * @return difference of this and the argument.
      */
-    public PerfFrameMetrics subtract(PerfFrameMetrics b) {
-      int newTotalFrames = this.totalFrames - b.getTotalFrames();
-      int newSlowFrames = this.slowFrames - b.getSlowFrames();
-      int newFrozenFrames = this.frozenFrames - b.getFrozenFrames();
+    public PerfFrameMetrics subtract(PerfFrameMetrics that) {
+      int newTotalFrames = this.totalFrames - that.getTotalFrames();
+      int newSlowFrames = this.slowFrames - that.getSlowFrames();
+      int newFrozenFrames = this.frozenFrames - that.getFrozenFrames();
       return new PerfFrameMetrics(newTotalFrames, newSlowFrames, newFrozenFrames);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      PerfFrameMetrics that = (PerfFrameMetrics) o;
+      return totalFrames == that.totalFrames
+          && slowFrames == that.slowFrames
+          && frozenFrames == that.frozenFrames;
     }
   }
 
