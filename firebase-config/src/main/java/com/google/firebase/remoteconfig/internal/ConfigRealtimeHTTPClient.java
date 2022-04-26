@@ -8,6 +8,9 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
+
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -29,6 +32,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,9 +57,11 @@ public class ConfigRealtimeHTTPClient {
     private final FirebaseInstallationsApi firebaseInstallations;
     private final Context context;
     private final String namespace;
+    private final Executor executor;
 
     // Retry parameters
     private final Timer timer;
+    private final ScheduledExecutorService scheduledExecutorService;
     private final int ORIGINAL_RETRIES = 7;
     private final long RETRY_TIME_SECONDS;
     private long RETRY_MULTIPLIER;
@@ -70,16 +79,19 @@ public class ConfigRealtimeHTTPClient {
                                     FirebaseInstallationsApi firebaseInstallations,
                                     ConfigFetchHandler configFetchHandler,
                                     Context context,
-                                    String namespace) {
+                                    String namespace,
+                                    Executor executor) {
         this.firebaseApp = firebaseApp;
         this.configFetchHandler = configFetchHandler;
         this.firebaseInstallations = firebaseInstallations;
         this.context = context;
         this.namespace = namespace;
+        this.executor = executor;
 
         // Retry parameters
         this.random = new Random();
         this.timer = new Timer();
+        this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         this.RETRY_MULTIPLIER = this.random.nextInt(10) + 1;
         this.RETRY_TIME_SECONDS = this.random.nextInt(10000) + 10000;
         this.RETRIES_REMAINING = this.ORIGINAL_RETRIES;
@@ -189,16 +201,18 @@ public class ConfigRealtimeHTTPClient {
             this.RETRY_MULTIPLIER++;
             long backOffTime = this.RETRY_TIME_SECONDS * this.RETRY_MULTIPLIER;
             logger.info(String.format("Retrying in %d seconds", backOffTime));
-            this.timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    logger.info("Retrying Realtime connection.");
-                    startRealtimeConnection();
-                }
-            }, backOffTime);
+            this.scheduledExecutorService.schedule(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            logger.info("Retrying Realtime connection.");
+                            startRealtimeConnection();
+                        }
+                    }
+            , backOffTime, TimeUnit.MILLISECONDS);
         } else {
-            logger.info("No retries remaining. Restart app.");
-            if (this.RETRIES_REMAINING == 0) {
+            logger.info("Can't create Realtime stream. Restart app.");
+            if (this.eventListener != null) {
                 this.eventListener.onError(
                         new FirebaseRemoteConfigClientException("Can't open the connection")
                 );
@@ -207,8 +221,7 @@ public class ConfigRealtimeHTTPClient {
     }
 
     private void retryOnEveryNetworkConnection(ConfigRealtimeHTTPClient realtimeHTTPClient) {
-        Timer retryTimer = new Timer();
-        retryTimer.scheduleAtFixedRate(new TimerTask() {
+        this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             final ConnectivityManager connectivityManager
                     = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
             final ConfigRealtimeHTTPClient realtimeClient = realtimeHTTPClient;
@@ -226,7 +239,7 @@ public class ConfigRealtimeHTTPClient {
                     }
                 }
             }
-        }, 5000, 5 * (60*1000));
+        }, 5000, 5 * (60*1000), TimeUnit.MILLISECONDS);
     }
     
     private void startAsyncAutofetch() {
@@ -239,13 +252,16 @@ public class ConfigRealtimeHTTPClient {
 
             @Override
             public void onError(Exception error) {
-                eventListener.onError(error);
+                if (eventListener != null) {
+                    eventListener.onError(error);
+                }
             }
         };
         logger.info("Starting autofetch...");
-        new ConfigAsyncAutoFetch(
-                this.httpURLConnection, this.configFetchHandler, this.eventListener, retryCallback
-        ).execute();
+        ConfigAsyncAutoFetch autoFetch = new ConfigAsyncAutoFetch(
+                this.httpURLConnection, this.configFetchHandler,
+                this.eventListener, retryCallback, this.executor, this.scheduledExecutorService);
+        autoFetch.beginAutoFetch();
     }
     
     public void setBackgroundFlag(boolean isInBackground) {
@@ -292,8 +308,10 @@ public class ConfigRealtimeHTTPClient {
         return new ListenerRegistration(this);
     }
 
-    public void removeRealtimeEventListener() {
+    public EventListener removeRealtimeEventListener() {
+        EventListener oldEventListener = this.eventListener;
         this.eventListener = null;
+        return oldEventListener;
     }
 
     public static class ListenerRegistration {

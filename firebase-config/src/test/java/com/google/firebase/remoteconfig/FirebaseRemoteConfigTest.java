@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,6 +63,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHTTPClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,6 +81,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -131,6 +134,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
   @Mock private ConfigMetadataClient metadataClient;
+  @Mock private ConfigRealtimeHTTPClient mockRealtimeClient;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
@@ -193,8 +197,8 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
-
+            metadataClient,
+                mockRealtimeClient);
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
         FirebaseApp.getInstance()
@@ -1039,6 +1043,41 @@ public final class FirebaseRemoteConfigTest {
             });
   }
 
+  @Test
+  public void realtime_addListener_success() {
+    ConfigRealtimeHTTPClient.EventListener eventListener = getEmptyEventListener();
+    Mockito.doNothing().when(mockRealtimeClient).startRealtimeConnection();
+
+    frc.setOnConfigUpdateListener(eventListener);
+    verify(mockRealtimeClient).setRealtimeEventListener(eventListener);
+    verify(mockRealtimeClient).startRealtimeConnection();
+  }
+
+  @Test
+  public void realtime_addListener_fail() {
+    Mockito.doNothing().when(mockRealtimeClient).startRealtimeConnection();
+
+
+    ConfigRealtimeHTTPClient.ListenerRegistration registration
+            = frc.setOnConfigUpdateListener(null);
+    assertThat(registration).isNull();
+    verify(mockRealtimeClient, never()).setRealtimeEventListener(null);
+    verify(mockRealtimeClient, never()).startRealtimeConnection();
+  }
+
+  @Test
+  public void realtime_removeListener_success() {
+    ConfigRealtimeHTTPClient.EventListener eventListener = getEmptyEventListener();
+    Mockito.doNothing().when(mockRealtimeClient).startRealtimeConnection();
+    when(mockRealtimeClient.setRealtimeEventListener(eventListener)).thenReturn(
+            new ConfigRealtimeHTTPClient.ListenerRegistration(mockRealtimeClient));
+
+    ConfigRealtimeHTTPClient.ListenerRegistration registration
+            = frc.setOnConfigUpdateListener(eventListener);
+    registration.remove();
+    verify(mockRealtimeClient).removeRealtimeEventListener();
+  }
+
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
@@ -1114,5 +1153,19 @@ public final class FirebaseRemoteConfigTest {
             .setApplicationId(APP_ID)
             .setProjectId(PROJECT_ID)
             .build());
+  }
+
+  private ConfigRealtimeHTTPClient.EventListener getEmptyEventListener() {
+    return new ConfigRealtimeHTTPClient.EventListener() {
+      @Override
+      public void onEvent() {
+
+      }
+
+      @Override
+      public void onError(Exception error) {
+
+      }
+    };
   }
 }
