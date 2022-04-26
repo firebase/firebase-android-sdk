@@ -56,7 +56,7 @@ public class FrameMetricsCalculator {
      * @param that the subtrahend PerfFrameMetrics object.
      * @return difference of this and the argument.
      */
-    public PerfFrameMetrics subtract(PerfFrameMetrics that) {
+    public PerfFrameMetrics deltaFrameMetricsFromSnapshot(PerfFrameMetrics that) {
       int newTotalFrames = this.totalFrames - that.getTotalFrames();
       int newSlowFrames = this.slowFrames - that.getSlowFrames();
       int newFrozenFrames = this.frozenFrames - that.getFrozenFrames();

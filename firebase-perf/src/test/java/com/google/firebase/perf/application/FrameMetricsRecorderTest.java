@@ -82,8 +82,8 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     assertThat(result2.isAvailable()).isFalse();
 
     assertThat(result1.get().getTotalFrames()).isEqualTo(1 + 3 + 1);
-    assertThat(result1.get().getTotalFrames()).isEqualTo(3 + 1);
-    assertThat(result1.get().getTotalFrames()).isEqualTo(1);
+    assertThat(result1.get().getSlowFrames()).isEqualTo(3 + 1);
+    assertThat(result1.get().getFrozenFrames()).isEqualTo(1);
   }
 
   @Test
@@ -101,9 +101,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     Fragment fragment = new Fragment();
 
     stubFrameMetricsAggregatorData(fma, frameTimes1);
-    recorder.startSubTrace(fragment);
+    recorder.startFragment(fragment);
     stubFrameMetricsAggregatorData(fma, frameTimes2);
-    Optional<PerfFrameMetrics> result = recorder.stopSubTrace(fragment);
+    Optional<PerfFrameMetrics> result = recorder.stopFragment(fragment);
     assertThat(result.isAvailable()).isFalse();
   }
 
@@ -114,9 +114,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.start();
     recorder.stop();
     stubFrameMetricsAggregatorData(fma, frameTimes1);
-    recorder.startSubTrace(fragment);
+    recorder.startFragment(fragment);
     stubFrameMetricsAggregatorData(fma, frameTimes2);
-    Optional<PerfFrameMetrics> result = recorder.stopSubTrace(fragment);
+    Optional<PerfFrameMetrics> result = recorder.stopFragment(fragment);
     assertThat(result.isAvailable()).isFalse();
   }
 
@@ -131,13 +131,13 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     // comments are in this format: total frames, slow frames, frozen frames
     recorder.start();
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 1}, {17, 1}, {800, 1}}); // 3, 2, 1
-    recorder.startSubTrace(fragment);
+    recorder.startFragment(fragment);
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 2}, {17, 3}, {800, 2}}); // ignored
-    recorder.startSubTrace(fragment); // this call is ignored
+    recorder.startFragment(fragment); // this call is ignored
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 5}, {17, 4}, {800, 5}}); // 14, 9, 5
-    Optional<PerfFrameMetrics> result1 = recorder.stopSubTrace(fragment);
+    Optional<PerfFrameMetrics> result1 = recorder.stopFragment(fragment);
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 6}, {17, 5}, {800, 5}}); // ignored
-    Optional<PerfFrameMetrics> result2 = recorder.stopSubTrace(fragment); // this call is ignored
+    Optional<PerfFrameMetrics> result2 = recorder.stopFragment(fragment); // this call is ignored
 
     // total = 14 - 3 = 11, slow = 9 - 2 = 7, frozen = 5 - 1 = 4
     assertThat(result1.get().getTotalFrames()).isEqualTo(14 - 3);
@@ -153,8 +153,8 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
 
     recorder.start();
 
-    recorder.startSubTrace(fragment1);
-    Optional<PerfFrameMetrics> result = recorder.stopSubTrace(fragment2);
+    recorder.startFragment(fragment1);
+    Optional<PerfFrameMetrics> result = recorder.stopFragment(fragment2);
 
     assertThat(result.isAvailable()).isFalse();
   }
@@ -164,9 +164,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     Fragment fragment = new Fragment();
     recorder.start();
     stubFrameMetricsAggregatorData(fma, frameTimes1);
-    recorder.startSubTrace(fragment);
+    recorder.startFragment(fragment);
     stubFrameMetricsAggregatorData(fma, frameTimes2);
-    Optional<PerfFrameMetrics> result = recorder.stopSubTrace(fragment);
+    Optional<PerfFrameMetrics> result = recorder.stopFragment(fragment);
     assertThat(result.isAvailable()).isTrue();
     // frameTimes2 - frameTimes1
     assertThat(result.get().getTotalFrames()).isEqualTo(9);
@@ -181,13 +181,13 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.start();
     // comments are in this format: total frames, slow frames, frozen frames
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 1}, {17, 1}, {800, 1}}); // 3, 2, 1
-    recorder.startSubTrace(fragment1);
+    recorder.startFragment(fragment1);
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 2}, {17, 3}, {800, 2}}); // 7, 5, 2
-    recorder.startSubTrace(fragment2);
+    recorder.startFragment(fragment2);
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 5}, {17, 4}, {800, 5}}); // 14, 9, 5
-    Optional<PerfFrameMetrics> subTrace1 = recorder.stopSubTrace(fragment1);
+    Optional<PerfFrameMetrics> subTrace1 = recorder.stopFragment(fragment1);
     stubFrameMetricsAggregatorData(fma, new int[][] {{1, 6}, {17, 5}, {800, 5}}); // 16, 10, 5
-    Optional<PerfFrameMetrics> subTrace2 = recorder.stopSubTrace(fragment2);
+    Optional<PerfFrameMetrics> subTrace2 = recorder.stopFragment(fragment2);
 
     // 3rd snapshot - 1st snapshot
     assertThat(subTrace1.get().getTotalFrames()).isEqualTo(14 - 3);

@@ -31,13 +31,20 @@ import java.util.Map;
  *
  * <p>IMPORTANT: each recorder holds a reference to an Activity, so it is very important to
  * dereference each recorder at or before its Activity's onDestroy. Similar for Fragments.
+ *
+ * <p>Relationship of Fragment recording to Activity recording is like a stopwatch. The stopwatch
+ * itself is for the Activity, Fragments traces are laps in the stopwatch. Stopwatch can only ever
+ * be for the Activity by-definition because "frames" refer to a frame for a window, and
+ * FrameMetrics can only come from an Activity's Window. Fragment traces are laps in the stopwatch,
+ * because the frame metrics data is still for the Activity window, fragment traces are just
+ * intervals in the Activity frames recording that has the name "fragment X" attached to them.
  */
 public class FrameMetricsRecorder {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   private final Activity activity;
   private final FrameMetricsAggregator frameMetricsAggregator;
-  private final Map<Fragment, PerfFrameMetrics> subTraceMap;
+  private final Map<Fragment, PerfFrameMetrics> fragmentSnapshotMap;
 
   private boolean isRecording = false;
 
@@ -57,7 +64,7 @@ public class FrameMetricsRecorder {
       Map<Fragment, PerfFrameMetrics> subTraceMap) {
     this.activity = activity;
     this.frameMetricsAggregator = frameMetricsAggregator;
-    this.subTraceMap = subTraceMap;
+    this.fragmentSnapshotMap = subTraceMap;
   }
 
   /** Starts recording FrameMetrics for the activity window. */
@@ -81,9 +88,9 @@ public class FrameMetricsRecorder {
       logger.warn("Cannot stop because no recording was started");
       return Optional.absent();
     }
-    if (!subTraceMap.isEmpty()) {
+    if (!fragmentSnapshotMap.isEmpty()) {
       logger.warn(
-          "Sub-traces are still ongoing! Sub-traces should be stopped first before stopping Activity screen trace.");
+          "Sub-recordings are still ongoing! Sub-recordings should be stopped first before stopping Activity screen trace.");
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
@@ -99,57 +106,61 @@ public class FrameMetricsRecorder {
   }
 
   /**
-   * Starts a sub-trace in the current recording.
+   * Starts a Fragment sub-recording in the current Activity recording. Fragments are sub-recordings
+   * due to the way frame metrics work: frame metrics can only comes from an activity's window. An
+   * analogy for sub-recording is a lap in a stopwatch.
    *
-   * @param key a UI state to associate this sub-trace with. e.g.) fragment
+   * @param fragment a Fragment to associate this sub-trace with.
    */
-  public void startSubTrace(Fragment key) {
+  public void startFragment(Fragment fragment) {
     if (!isRecording) {
-      logger.warn("Cannot start sub-trace because FrameMetricsAggregator is not recording");
+      logger.warn("Cannot start sub-recording because FrameMetricsAggregator is not recording");
       return;
     }
-    if (subTraceMap.containsKey(key)) {
+    if (fragmentSnapshotMap.containsKey(fragment)) {
       logger.warn(
-          "Cannot start sub-trace because one is already ongoing with the key %s",
-          key.getClass().getSimpleName());
+          "Cannot start sub-recording because one is already ongoing with the key %s",
+          fragment.getClass().getSimpleName());
       return;
     }
     Optional<PerfFrameMetrics> snapshot = this.snapshot();
     if (!snapshot.isAvailable()) {
-      logger.warn("startSubTrace(%s): snapshot() failed", key.getClass().getSimpleName());
+      logger.warn("startFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
       return;
     }
-    subTraceMap.put(key, snapshot.get());
+    fragmentSnapshotMap.put(fragment, snapshot.get());
   }
 
   /**
-   * Stops the sub-trace associated with the given UI state.
+   * Stops the sub-recording associated with the given Fragment. Fragments are sub-recordings due to
+   * the way frame metrics work: frame metrics can only comes from an activity's window. An analogy
+   * for sub-recording is a lap in a stopwatch.
    *
-   * @param key the UI state associated with the sub-trace to be stopped.
-   * @return FrameMetrics accumulated during this sub-trace.
+   * @param fragment the Fragment associated with the sub-recording to be stopped.
+   * @return FrameMetrics accumulated during this sub-recording.
    */
-  public Optional<PerfFrameMetrics> stopSubTrace(Fragment key) {
+  public Optional<PerfFrameMetrics> stopFragment(Fragment fragment) {
     if (!isRecording) {
-      logger.warn("Cannot stop sub-trace because FrameMetricsAggregator is not recording");
+      logger.warn("Cannot stop sub-recording because FrameMetricsAggregator is not recording");
       return Optional.absent();
     }
-    if (!subTraceMap.containsKey(key)) {
+    if (!fragmentSnapshotMap.containsKey(fragment)) {
       logger.warn(
-          "Sub-trace associated with key %s was not started or does not exist",
-          key.getClass().getSimpleName());
+          "Sub-recording associated with key %s was not started or does not exist",
+          fragment.getClass().getSimpleName());
       return Optional.absent();
     }
-    PerfFrameMetrics snapshotStart = subTraceMap.remove(key);
+    PerfFrameMetrics snapshotStart = fragmentSnapshotMap.remove(fragment);
     Optional<PerfFrameMetrics> snapshotEnd = this.snapshot();
     if (!snapshotEnd.isAvailable()) {
-      logger.warn("stopSubTrace(%s): snapshot() failed", key.getClass().getSimpleName());
+      logger.warn("stopFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
       return Optional.absent();
     }
-    return Optional.of(snapshotEnd.get().subtract(snapshotStart));
+    return Optional.of(snapshotEnd.get().deltaFrameMetricsFromSnapshot(snapshotStart));
   }
 
   /**
-   * Calculate total frames, slow frames, and frozen frames from SparseIntArray[] recorded by {@link
+   * Snapshots total frames, slow frames, and frozen frames from SparseIntArray[] recorded by {@link
    * FrameMetricsAggregator}.
    *
    * @return {@link PerfFrameMetrics} at the time of snapshot.
