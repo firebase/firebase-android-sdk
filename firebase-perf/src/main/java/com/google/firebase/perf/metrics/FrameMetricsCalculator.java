@@ -62,16 +62,6 @@ public class FrameMetricsCalculator {
       int newFrozenFrames = this.frozenFrames - that.getFrozenFrames();
       return new PerfFrameMetrics(newTotalFrames, newSlowFrames, newFrozenFrames);
     }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      PerfFrameMetrics that = (PerfFrameMetrics) o;
-      return totalFrames == that.totalFrames
-          && slowFrames == that.slowFrames
-          && frozenFrames == that.frozenFrames;
-    }
   }
 
   /**

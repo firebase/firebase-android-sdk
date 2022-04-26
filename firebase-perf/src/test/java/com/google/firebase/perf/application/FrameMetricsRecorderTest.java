@@ -112,7 +112,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     recorder.start();
     result = recorder.stop();
     assertThat(result.isAvailable()).isTrue();
-    assertThat(result.get()).isEqualTo(new PerfFrameMetrics(3, 2, 1));
+    assertThat(result.get().getTotalFrames()).isEqualTo(3);
+    assertThat(result.get().getSlowFrames()).isEqualTo(2);
+    assertThat(result.get().getFrozenFrames()).isEqualTo(1);
   }
 
   @Test
@@ -159,7 +161,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     result2 = recorder.stopSubTrace(fragment);
 
     // total = 14 - 3 = 11, slow = 9 - 2 = 7, frozen = 5 - 1 = 4
-    assertThat(result1.get()).isEqualTo(new PerfFrameMetrics(11, 7, 4));
+    assertThat(result1.get().getTotalFrames()).isEqualTo(11);
+    assertThat(result1.get().getSlowFrames()).isEqualTo(7);
+    assertThat(result1.get().getFrozenFrames()).isEqualTo(4);
     assertThat(result2.isAvailable()).isFalse();
   }
 
@@ -188,7 +192,9 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     result = recorder.stopSubTrace(fragment);
     assertThat(result.isAvailable()).isTrue();
     // frameTimes2 - frameTimes1
-    assertThat(result.get()).isEqualTo(new PerfFrameMetrics(9, 5, 3));
+    assertThat(result.get().getTotalFrames()).isEqualTo(9);
+    assertThat(result.get().getSlowFrames()).isEqualTo(5);
+    assertThat(result.get().getFrozenFrames()).isEqualTo(3);
   }
 
   @Test
@@ -208,9 +214,13 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     subTrace2 = recorder.stopSubTrace(fragment2);
 
     // total = 14 - 3 = 11, slow = 9 - 2 = 7, frozen = 5 - 1 = 4
-    assertThat(subTrace1.get()).isEqualTo(new PerfFrameMetrics(11, 7, 4));
+    assertThat(subTrace1.get().getTotalFrames()).isEqualTo(11);
+    assertThat(subTrace1.get().getSlowFrames()).isEqualTo(7);
+    assertThat(subTrace1.get().getFrozenFrames()).isEqualTo(4);
     // total = 16 - 7 = 9, slow = 10 - 5 = 5, frozen = 5 - 2 = 3
-    assertThat(subTrace2.get()).isEqualTo(new PerfFrameMetrics(9, 5, 3));
+    assertThat(subTrace2.get().getTotalFrames()).isEqualTo(9);
+    assertThat(subTrace2.get().getSlowFrames()).isEqualTo(5);
+    assertThat(subTrace2.get().getFrozenFrames()).isEqualTo(3);
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
