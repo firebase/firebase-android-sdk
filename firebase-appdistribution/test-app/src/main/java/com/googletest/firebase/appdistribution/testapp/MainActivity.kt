@@ -122,13 +122,15 @@ class MainActivity : AppCompatActivity() {
             executorService.execute {
                 firebaseAppDistribution
                     .checkForNewRelease()
-                    .addOnSuccessListener { release = it }
+                    .addOnSuccessListener {
+                        release = it
+                        setupUI(
+                            isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+                            isUpdateAvailable = release != null,
+                            release = release)
+                    }
                     .addOnFailureListener { failureListener(it) }
             }
-            setupUI(
-                isSignedIn = firebaseAppDistribution.isTesterSignedIn,
-                isUpdateAvailable = release != null,
-                release = release)
         }
 
         signOutButton.setOnClickListener {
