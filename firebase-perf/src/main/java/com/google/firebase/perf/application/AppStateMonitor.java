@@ -166,7 +166,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   @Override
   public void onActivityDestroyed(Activity activity) {
+    // Dereference FrameMetricsRecorder from the map because it holds an Activity reference
     activityToRecorderMap.remove(activity);
+    // Dereference FragmentStateMonitor because it holds a FrameMetricsRecorder reference
     if (activityToFragmentStateMonitorMap.containsKey(activity)) {
       FragmentActivity fragmentActivity = (FragmentActivity) activity;
       fragmentActivity
