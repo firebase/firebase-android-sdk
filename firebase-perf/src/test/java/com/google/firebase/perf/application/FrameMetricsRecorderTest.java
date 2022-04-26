@@ -57,6 +57,7 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     stubFrameMetricsAggregatorData(fma, frameTimesDefault);
   }
 
+  /** FrameMetricsAggregator misuse prevention tests. Only 1 Activity per FMA. */
   @Test
   public void stop_whileNotStarted_returnsEmptyResult() {
     // nothing ever started
