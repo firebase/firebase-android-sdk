@@ -48,6 +48,7 @@ public class ConfigRealtimeHTTPClient {
     private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
             "X-Goog-Firebase-Installations-Auth";
     private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
+
     private static final String TEST_REALTIME_URL_STRING = "http://10.0.2.2:8080";
     private static final Logger logger = Logger.getLogger("Real_Time_RC");
 

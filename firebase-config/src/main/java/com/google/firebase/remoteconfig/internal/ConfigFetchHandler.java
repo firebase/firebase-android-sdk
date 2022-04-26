@@ -52,7 +52,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
 
 /**
  * A handler for fetch requests to the Firebase Remote Config backend.
@@ -88,7 +87,6 @@ public class ConfigFetchHandler {
 
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
-  private static final Logger logger = Logger.getLogger("Real_Time_RC");
 
   private final Executor executor;
   private final Clock clock;
@@ -327,7 +325,6 @@ public class ConfigFetchHandler {
               customHttpHeaders,
               getFirstOpenTime(),
               currentTime);
-
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
