@@ -123,6 +123,7 @@ public class ConfigAsyncAutoFetch {
             if (newTemplateVersion > currentVersion) {
                 if (this.eventListener != null) {
                     // Execute callbacks for listener.
+                    logger.info("executing callback");
                     this.eventListener.onEvent();
                 }
             } else {
