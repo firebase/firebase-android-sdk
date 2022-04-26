@@ -95,9 +95,14 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 }
               });
     }
-    if (firebaseLibrary.runApiInformation) {
-      setupApiInformationAnalysis(project, android);
-    }
+
+    project.afterEvaluate(
+        p -> {
+          if (!firebaseLibrary.runApiInformation) {
+            return;
+          }
+          setupApiInformationAnalysis(project, android);
+        });
 
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab, android));
 

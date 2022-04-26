@@ -19,7 +19,7 @@ plugins {
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
-    runApiInformation = false
+    runApiInformation = true
 }
 
 java {
