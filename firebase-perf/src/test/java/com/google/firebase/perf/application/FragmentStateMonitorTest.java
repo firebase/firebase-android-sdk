@@ -20,7 +20,6 @@ import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,7 +30,6 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.SparseIntArray;
 import android.view.WindowManager;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
@@ -55,7 +53,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
@@ -199,9 +196,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         3, (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
   }
 
-  /**
-   * Simulate call order of activity + fragment lifecycle events
-   */
+  /** Simulate call order of activity + fragment lifecycle events */
   @Test
   public void lifecycleCallbacks_cleansUpMap_duringActivityTransitions() {
     Bundle savedInstanceState = mock(Bundle.class);
@@ -260,45 +255,19 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
   }
 
-  /************ FrameMetrics Collection Tests ****************/
-
-  @Test
-  public void onFragmentPaused_processFrameMetrics_beforeReset() {
-    // Simulate call order of activity + fragment lifecycle events
-    AppStateMonitor appStateMonitor =
-        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, true));
-    FragmentStateMonitor fragmentMonitor =
-        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();
-    doReturn(true).when(appStateMonitor).isScreenTraceSupported();
-    // Activity_A onCreate registers FragmentStateMonitor, then:
-    appStateMonitor.onActivityStarted(activity);
-    fragmentMonitor.onFragmentStarted(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityResumed(activity);
-    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityPaused(activity);
-    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityStopped(activity);
-    fragmentMonitor.onFragmentStopped(mockFragmentManager, mockFragment);
-    // reset() is only called after fragment is done collecting its metrics
-    InOrder orderVerifier = inOrder(recorder);
-    orderVerifier.verify(recorder, times(1)).stopFragment(any());
-    orderVerifier.verify(recorder, times(1)).stop();
-  }
-
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
     ActivityController<Activity> fakeActivityController = Robolectric.buildActivity(Activity.class);
 
     if (isHardwareAccelerated) {
       fakeActivityController
-              .get()
-              .getWindow()
-              .addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+          .get()
+          .getWindow()
+          .addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
     } else {
       fakeActivityController
-              .get()
-              .getWindow()
-              .clearFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+          .get()
+          .getWindow()
+          .clearFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
     }
 
     return fakeActivityController.start().get();
