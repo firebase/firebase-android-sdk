@@ -76,7 +76,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
           Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
     }
     fragmentToTraceMap.put(f, fragmentTrace);
-    activityFramesRecorder.startSubTrace(f);
+    activityFramesRecorder.startFragment(f);
   }
 
   @Override
@@ -92,7 +92,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     Trace fragmentTrace = fragmentToTraceMap.get(f);
     fragmentToTraceMap.remove(f);
 
-    Optional<PerfFrameMetrics> data = activityFramesRecorder.stopSubTrace(f);
+    Optional<PerfFrameMetrics> data = activityFramesRecorder.stopFragment(f);
     if (!data.isAvailable()) {
       logger.warn("onFragmentPaused: recorder failed to trace %s", f.getClass().getSimpleName());
       return;
