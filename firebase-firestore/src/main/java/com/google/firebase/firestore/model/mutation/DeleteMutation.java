@@ -19,10 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
-import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.MutableDocument;
 
 /** Represents a Delete operation */
 public final class DeleteMutation extends Mutation {
@@ -55,12 +52,11 @@ public final class DeleteMutation extends Mutation {
   }
 
   @Override
-  public MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
-    verifyKeyMatches(maybeDoc);
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
+    verifyKeyMatches(document);
 
     hardAssert(
-        mutationResult.getTransformResults() == null,
+        mutationResult.getTransformResults().isEmpty(),
         "Transform results received by DeleteMutation.");
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
@@ -68,25 +64,24 @@ public final class DeleteMutation extends Mutation {
 
     // We store the deleted document at the commit version of the delete. Any document version
     // that the server sends us before the delete was applied is discarded
-    return new NoDocument(getKey(), mutationResult.getVersion(), /*hasCommittedMutations=*/ true);
+    document.convertToNoDocument(mutationResult.getVersion()).setHasCommittedMutations();
   }
 
-  @Nullable
   @Override
-  public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
-    verifyKeyMatches(maybeDoc);
+  public @Nullable FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+    verifyKeyMatches(document);
 
-    if (!this.getPrecondition().isValidFor(maybeDoc)) {
-      return maybeDoc;
+    if (getPrecondition().isValidFor(document)) {
+      document.convertToNoDocument(document.getVersion()).setHasLocalMutations();
+      return null;
     }
 
-    return new NoDocument(getKey(), SnapshotVersion.NONE, /*hasCommittedMutations=*/ false);
+    return previousMask;
   }
 
-  @Nullable
   @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
+  public @Nullable FieldMask getFieldMask() {
     return null;
   }
 }

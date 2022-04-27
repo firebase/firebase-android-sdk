@@ -15,13 +15,15 @@
 package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
-import com.google.firebase.database.core.AuthTokenProvider;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.RepoInfo;
+import com.google.firebase.database.core.TokenProvider;
+import com.google.firebase.inject.Deferred;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,16 +38,16 @@ class FirebaseDatabaseComponent {
   private final Map<RepoInfo, FirebaseDatabase> instances = new HashMap<>();
 
   private final FirebaseApp app;
-  private final AuthTokenProvider authProvider;
+  private final TokenProvider authProvider;
+  private final TokenProvider appCheckProvider;
 
-  FirebaseDatabaseComponent(@NonNull FirebaseApp app, @Nullable InternalAuthProvider authProvider) {
+  FirebaseDatabaseComponent(
+      @NonNull FirebaseApp app,
+      Deferred<InternalAuthProvider> authProvider,
+      Deferred<InternalAppCheckTokenProvider> appCheckProvider) {
     this.app = app;
-
-    if (authProvider != null) {
-      this.authProvider = AndroidAuthTokenProvider.forAuthenticatedAccess(authProvider);
-    } else {
-      this.authProvider = AndroidAuthTokenProvider.forUnauthenticatedAccess();
-    }
+    this.authProvider = new AndroidAuthTokenProvider(authProvider);
+    this.appCheckProvider = new AndroidAppCheckTokenProvider(appCheckProvider);
   }
 
   /** Provides instances of Firebase Database for the given RepoInfo */
@@ -62,6 +64,7 @@ class FirebaseDatabaseComponent {
       }
       config.setFirebaseApp(app);
       config.setAuthTokenProvider(authProvider);
+      config.setAppCheckTokenProvider(appCheckProvider);
 
       database = new FirebaseDatabase(app, repo, config);
       instances.put(repo, database);

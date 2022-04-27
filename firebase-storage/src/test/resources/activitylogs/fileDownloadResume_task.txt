@@ -2,36 +2,47 @@
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:0
+  totalBytes:-1
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:0
+  totalBytes:-1
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:262144
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:269083
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:531227
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:538102
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:800246
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:807123
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:1069267
+  totalBytes:1076408
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:1076408
+  totalBytes:1076408
 onSuccess:
   exceptionMessage:<none>
   bytesDownloaded:1076408
+  totalBytes:1076408
 onComplete:Success=
 true
 done.

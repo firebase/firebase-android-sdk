@@ -14,23 +14,26 @@
 
 plugins {
     id 'firebase-library'
+    id 'LicenseResolverPlugin'
 }
 
 firebaseLibrary {
-    testLab.enabled = true
+    testLab {
+        enabled = true
+        device 'model=redfin,version=30'
+    }
 }
-
-def androidVersion = 28
 
 android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion 30
+    testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion androidVersion
+        targetSdkVersion 30
         versionName version
 
         multiDexEnabled true
@@ -49,26 +52,45 @@ android {
     }
 }
 
+thirdPartyLicenses {
+    add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE"
+}
+
 dependencies {
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
+
+    implementation project(':encoders:firebase-encoders')
+    implementation project(':encoders:firebase-encoders-json')
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
-    implementation ('com.google.firebase:firebase-iid:19.0.0') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
-    implementation 'com.google.firebase:firebase-iid-interop:17.0.0'
-    implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
-    implementation "com.google.android.gms:play-services-tasks:17.0.0"
+    implementation project(':firebase-components')
+    implementation project(':transport:transport-api')
+    implementation project(':transport:transport-runtime')
+    implementation project(':transport:transport-backend-cct')
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+    implementation 'com.google.firebase:firebase-measurement-connector:18.0.2'
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
-    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation 'org.robolectric:robolectric:4.2'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:1.10.19'
+    annotationProcessor project(":encoders:firebase-encoders-processor")
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'androidx.test:runner:1.4.0'
+    testImplementation 'androidx.test:core:1.4.0'
+    testImplementation "org.robolectric:robolectric:4.5"
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:3.4.3'
+
+
+    androidTestImplementation project(':encoders:firebase-encoders-json')
+    androidTestImplementation 'androidx.test:runner:1.4.0'
+    androidTestImplementation 'androidx.test:core:1.4.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'org.mockito:mockito-core:3.4.3'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
-    androidTestImplementation 'com.google.protobuf:protobuf-java:2.4.1'
+    androidTestImplementation 'com.google.protobuf:protobuf-java:3.14.0'
 }

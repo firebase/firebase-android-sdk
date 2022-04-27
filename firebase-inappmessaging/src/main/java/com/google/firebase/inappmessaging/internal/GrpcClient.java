@@ -18,6 +18,7 @@ import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppS
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.InAppMessagingSdkServingGrpc.InAppMessagingSdkServingBlockingStub;
+import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 /**
@@ -35,6 +36,6 @@ public class GrpcClient {
   }
 
   public FetchEligibleCampaignsResponse fetchEligibleCampaigns(FetchEligibleCampaignsRequest req) {
-    return stub.fetchEligibleCampaigns(req);
+    return stub.withDeadlineAfter(30000, TimeUnit.MILLISECONDS).fetchEligibleCampaigns(req);
   }
 }

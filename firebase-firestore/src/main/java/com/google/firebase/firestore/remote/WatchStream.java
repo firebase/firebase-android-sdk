@@ -62,6 +62,7 @@ public class WatchStream
         workerQueue,
         TimerId.LISTEN_STREAM_CONNECTION_BACKOFF,
         TimerId.LISTEN_STREAM_IDLE,
+        TimerId.HEALTH_CHECK_TIMEOUT,
         listener);
     this.serializer = serializer;
   }

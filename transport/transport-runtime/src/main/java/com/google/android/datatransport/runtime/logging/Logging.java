@@ -24,30 +24,51 @@ public final class Logging {
   }
 
   public static void d(String tag, String message) {
-    Log.d(getTag(tag), message);
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.DEBUG)) {
+      Log.d(tag, message);
+    }
   }
 
   public static void d(String tag, String message, Object arg1) {
-    Log.d(getTag(tag), String.format(message, arg1));
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.DEBUG)) {
+      Log.d(tag, String.format(message, arg1));
+    }
   }
 
   public static void d(String tag, String message, Object arg1, Object arg2) {
-    Log.d(getTag(tag), String.format(message, arg1, arg2));
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.DEBUG)) {
+      Log.d(tag, String.format(message, arg1, arg2));
+    }
   }
 
   public static void d(String tag, String message, Object... args) {
-    Log.d(getTag(tag), String.format(message, args));
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.DEBUG)) {
+      Log.d(tag, String.format(message, args));
+    }
   }
 
-  public static void i(String tag, String message) {
-    Log.i(getTag(tag), message);
+  public static void i(String tag, String message, Object arg1) {
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.INFO)) {
+      Log.i(tag, String.format(message, arg1));
+    }
   }
 
   public static void e(String tag, String message, Throwable e) {
-    Log.e(getTag(tag), message, e);
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.ERROR)) {
+      Log.e(tag, message, e);
+    }
   }
 
   public static void w(String tag, String message, Object arg1) {
-    Log.w(getTag(tag), String.format(message, arg1));
+    tag = getTag(tag);
+    if (Log.isLoggable(tag, Log.WARN)) {
+      Log.w(tag, String.format(message, arg1));
+    }
   }
 }

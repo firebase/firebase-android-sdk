@@ -19,13 +19,14 @@ import static com.google.firebase.inappmessaging.display.internal.FiamAnimator.P
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
+import android.content.Intent;
+import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -53,7 +54,6 @@ import com.google.firebase.inappmessaging.model.ImageOnlyMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.MessageType;
 import com.google.firebase.inappmessaging.model.ModalMessage;
-import com.squareup.picasso.Callback;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,18 +67,14 @@ import javax.inject.Provider;
  * <p>Firebase In-App Messaging Display will automatically initialize, start listening for events,
  * and display eligible in-app messages.
  *
- * <p>This feature uses a Firebase Instance ID token to:
+ * <p>This feature uses a Firebase Installation ID token to:
  *
  * <ul>
  *   <li>identify the app instance
  *   <li>fetch messages from the Firebase backend
  *   <li>send usage metrics to the Firebase backend.
  * </ul>
- *
- * <p>To delete the Instance ID and the data associated with it, see {@link
- * com.google.firebase.iid.FirebaseInstanceId#deleteInstanceId}.
  */
-@Keep
 @FirebaseAppScope
 public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
   static final long IMPRESSION_THRESHOLD_MILLIS = 5 * 1000; // 5 seconds is a valid impression
@@ -100,6 +96,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
+
+  @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
   FirebaseInAppMessagingDisplay(
@@ -129,7 +127,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    * FirebaseApp#getInstance()}
    */
   @NonNull
-  @Keep
   public static FirebaseInAppMessagingDisplay getInstance() {
     return FirebaseApp.getInstance().get(FirebaseInAppMessagingDisplay.class);
   }
@@ -143,7 +140,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void testMessage(
       Activity activity,
       InAppMessage inAppMessage,
@@ -158,7 +154,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void setFiamListener(FiamListener listener) {
     this.fiamListener = listener;
   }
@@ -168,76 +163,69 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    *
    * @hide
    */
-  @Keep
   public void clearFiamListener() {
     this.fiamListener = null;
   }
 
   /**
-   * Clears fiam listener
+   * Bind FIAM listener on Activity resume.
    *
    * @hide
    */
-  @Keep
-  @Override
-  public void onActivityStarted(final Activity activity) {
-    super.onActivityStarted(activity);
-    // Register FIAM listener with the headless sdk.
-    headlessInAppMessaging.setMessageDisplayComponent(
-        (iam, cb) -> {
-          // When we are in the middle of showing a message, we ignore other notifications these
-          // messages will be fired when the corresponding events happen the next time.
-          if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
-            Logging.logd("Active FIAM exists. Skipping trigger");
-            return;
-          }
-          inAppMessage = iam;
-          callbacks = cb;
-          showActiveFiam(activity);
-        });
-  }
-
-  /**
-   * Clear fiam listener on activity paused
-   *
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityPaused(Activity activity) {
-    // clear all state scoped to activity and dismiss fiam
-    headlessInAppMessaging.clearDisplayListener();
-    imageLoader.cancelTag(activity.getClass());
-    removeDisplayedFiam(activity);
-    super.onActivityPaused(activity);
-  }
-
-  /**
-   * Clear fiam listener on activity destroyed
-   *
-   * @hide
-   */
-  @Keep
-  @Override
-  public void onActivityDestroyed(Activity activity) {
-    // clear all state scoped to activity and dismiss fiam
-    headlessInAppMessaging.clearDisplayListener();
-    imageLoader.cancelTag(activity.getClass());
-    removeDisplayedFiam(activity);
-    super.onActivityDestroyed(activity);
-  }
-
-  /**
-   * Clear fiam listener on activity resumed
-   *
-   * @hide
-   */
-  @Keep
   @Override
   public void onActivityResumed(Activity activity) {
     super.onActivityResumed(activity);
+    bindFiamToActivity(activity);
+  }
+
+  /**
+   * Clear FIAM listener on activity paused
+   *
+   * @hide
+   */
+  @Override
+  public void onActivityPaused(Activity activity) {
+    unbindFiamFromActivity(activity);
+    headlessInAppMessaging.removeAllListeners();
+    super.onActivityPaused(activity);
+  }
+
+  private void bindFiamToActivity(Activity activity) {
+    // If we have no currently bound activity or are currently bound to a different activity then
+    // bind to this new activity.
+    if (currentlyBoundActivityName == null
+        || !currentlyBoundActivityName.equals(activity.getLocalClassName())) {
+      Logging.logi("Binding to activity: " + activity.getLocalClassName());
+      headlessInAppMessaging.setMessageDisplayComponent(
+          (iam, cb) -> {
+            // When we are in the middle of showing a message, we ignore other notifications these
+            // messages will be fired when the corresponding events happen the next time.
+            if (inAppMessage != null || headlessInAppMessaging.areMessagesSuppressed()) {
+              Logging.logd("Active FIAM exists. Skipping trigger");
+              return;
+            }
+            inAppMessage = iam;
+            callbacks = cb;
+            showActiveFiam(activity);
+          });
+      // set the current activity to be the one passed in so that we know not to bind again to the
+      // same activity
+      currentlyBoundActivityName = activity.getLocalClassName();
+    }
     if (inAppMessage != null) {
       showActiveFiam(activity);
+    }
+  }
+
+  private void unbindFiamFromActivity(Activity activity) {
+    // If we are attempting to unbind from an activity, first check to see that we are currently
+    // bound to it
+    if (currentlyBoundActivityName != null
+        && currentlyBoundActivityName.equals(activity.getLocalClassName())) {
+      Logging.logi("Unbinding from activity: " + activity.getLocalClassName());
+      headlessInAppMessaging.clearDisplayListener();
+      removeDisplayedFiam(activity);
+      currentlyBoundActivityName = null;
     }
   }
 
@@ -317,26 +305,20 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         };
 
     Map<Action, View.OnClickListener> actionListeners = new HashMap<>();
-    // If the message has an action, but not an action url, we dismiss when the action
-    // button is
-    // clicked;
     for (Action action : extractActions(inAppMessage)) {
-
       final View.OnClickListener actionListener;
-
       // TODO: need an onclick listener per action
+      // If the message has an action and an action url, set up an intent to handle the url
       if (action != null && !TextUtils.isEmpty(action.getActionUrl())) {
         actionListener =
             new View.OnClickListener() {
               @Override
               public void onClick(View v) {
                 if (callbacks != null) {
+                  Logging.logi("Calling callback for click action");
                   callbacks.messageClicked(action);
                 }
-                final CustomTabsIntent i =
-                    new CustomTabsIntent.Builder().setShowTitle(true).build();
-
-                i.launchUrl(activity, Uri.parse(action.getActionUrl()));
+                launchUriIntent(activity, Uri.parse(action.getActionUrl()));
                 notifyFiamClick();
                 // Ensure that we remove the displayed FIAM, and ensure that on re-load, the message
                 // isn't re-displayed
@@ -346,7 +328,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
               }
             };
       } else {
-        Logging.loge("No action url found for action.");
+        Logging.logi("No action url found for action. Treating as dismiss.");
         actionListener = dismissListener;
       }
       actionListeners.put(action, actionListener);
@@ -363,7 +345,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
         activity,
         bindingWrapper,
         extractImageData(inAppMessage),
-        new Callback() {
+        new FiamImageLoader.Callback() {
           @Override
           public void onSuccess() {
             // Setup dismiss on touch outside
@@ -497,7 +479,10 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void loadNullableImage(
-      Activity activity, BindingWrapper fiam, ImageData imageData, Callback callback) {
+      Activity activity,
+      BindingWrapper fiam,
+      ImageData imageData,
+      FiamImageLoader.Callback callback) {
     if (isValidImageData(imageData)) {
       imageLoader
           .load(imageData.getImageUrl())
@@ -521,6 +506,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
   private void removeDisplayedFiam(Activity activity) {
     if (windowManager.isFiamDisplayed()) {
+      imageLoader.cancelTag(activity.getClass());
       windowManager.destroy(activity);
       cancelTimers();
     }
@@ -547,5 +533,44 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     if (fiamListener != null) {
       fiamListener.onFiamDismiss();
     }
+  }
+
+  private void launchUriIntent(Activity activity, Uri uri) {
+    if (ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
+      // If we can launch a chrome view, try that.
+      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
+      Intent intent = customTabsIntent.intent;
+      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      customTabsIntent.launchUrl(activity, uri);
+    } else {
+      // If we can't launch a chrome view try to launch anything that can handle a URL.
+      Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+      ResolveInfo info = activity.getPackageManager().resolveActivity(browserIntent, 0);
+      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      if (info != null) {
+        activity.startActivity(browserIntent);
+      } else {
+        // If the device can't resolve a url then log, but don't crash.
+        Logging.loge("Device cannot resolve intent for: " + Intent.ACTION_VIEW);
+      }
+    }
+  }
+
+  private boolean supportsCustomTabs(Activity activity) {
+    Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
+    customTabIntent.setPackage("com.android.chrome");
+    List<ResolveInfo> resolveInfos =
+        activity.getPackageManager().queryIntentServices(customTabIntent, 0);
+    return resolveInfos != null && !resolveInfos.isEmpty();
+  }
+
+  private boolean ishttpOrHttpsUri(Uri uri) {
+    if (uri == null) {
+      return false;
+    }
+    String scheme = uri.getScheme();
+    return scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https"));
   }
 }

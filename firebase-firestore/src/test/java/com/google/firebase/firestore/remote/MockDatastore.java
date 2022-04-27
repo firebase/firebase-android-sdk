@@ -17,15 +17,18 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
+import androidx.annotation.Nullable;
+import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.spec.SpecTestCase;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
+import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -214,16 +217,30 @@ public class MockDatastore extends Datastore {
   private int writeStreamRequestCount;
   private int watchStreamRequestCount;
 
-  public MockDatastore(AsyncQueue workerQueue, Context context) {
+  public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue, Context context) {
     super(
-        new DatabaseInfo(
-            DatabaseId.forDatabase("project", "database"), "persistenceKey", "host", false),
+        databaseInfo,
         workerQueue,
         new EmptyCredentialsProvider(),
+        new EmptyAppCheckTokenProvider(),
         context,
         null);
     this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
   }
+
+  @Override
+  FirestoreChannel initializeChannel(
+      DatabaseInfo databaseInfo,
+      AsyncQueue workerQueue,
+      CredentialsProvider<User> authCredentialsProvider,
+      CredentialsProvider<String> appCheckTokenProvider,
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
+    return null;
+  }
+
+  @Override
+  void shutdown() {}
 
   @Override
   WatchStream createWatchStream(WatchStream.Callback listener) {

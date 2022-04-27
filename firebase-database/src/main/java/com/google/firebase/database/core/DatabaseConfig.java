@@ -105,8 +105,12 @@ public class DatabaseConfig extends Context {
     this.runLoop = runLoop;
   }
 
-  public void setAuthTokenProvider(AuthTokenProvider provider) {
+  public void setAuthTokenProvider(TokenProvider provider) {
     this.authTokenProvider = provider;
+  }
+
+  public void setAppCheckTokenProvider(TokenProvider provider) {
+    this.appCheckTokenProvider = provider;
   }
 
   /**

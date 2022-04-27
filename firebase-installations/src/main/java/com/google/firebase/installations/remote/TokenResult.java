@@ -18,7 +18,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
-/** This class represents a set of values describing a FIS Auth Token Result. */
+/**
+ * This class represents a set of values describing a FIS Auth Token Result.
+ *
+ * @hide
+ */
 @AutoValue
 public abstract class TokenResult {
 

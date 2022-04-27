@@ -17,21 +17,21 @@ package com.google.firebase.firestore.core;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firebase.firestore.util.ExponentialBackoff;
+import com.google.firebase.firestore.util.Function;
 
 /** TransactionRunner encapsulates the logic needed to run and retry transactions with backoff. */
 public class TransactionRunner<TResult> {
-  private static final int RETRY_COUNT = 5;
+  public static final int DEFAULT_MAX_ATTEMPTS_COUNT = 5;
   private AsyncQueue asyncQueue;
   private RemoteStore remoteStore;
   private Function<Transaction, Task<TResult>> updateFunction;
-  private int retriesLeft;
+  private int attemptsRemaining;
 
   private ExponentialBackoff backoff;
   private TaskCompletionSource<TResult> taskSource = new TaskCompletionSource<>();
@@ -44,7 +44,7 @@ public class TransactionRunner<TResult> {
     this.asyncQueue = asyncQueue;
     this.remoteStore = remoteStore;
     this.updateFunction = updateFunction;
-    this.retriesLeft = RETRY_COUNT;
+    this.attemptsRemaining = DEFAULT_MAX_ATTEMPTS_COUNT;
 
     backoff = new ExponentialBackoff(asyncQueue, TimerId.RETRY_TRANSACTION);
   }
@@ -56,6 +56,7 @@ public class TransactionRunner<TResult> {
   }
 
   private void runWithBackoff() {
+    attemptsRemaining -= 1;
     backoff.backoffAndRun(
         () -> {
           final Transaction transaction = remoteStore.createTransaction();
@@ -84,8 +85,7 @@ public class TransactionRunner<TResult> {
   }
 
   private void handleTransactionError(Task task) {
-    if (retriesLeft > 0 && isRetryableTransactionError(task.getException())) {
-      retriesLeft -= 1;
+    if (attemptsRemaining > 0 && isRetryableTransactionError(task.getException())) {
       runWithBackoff();
     } else {
       taskSource.setException(task.getException());

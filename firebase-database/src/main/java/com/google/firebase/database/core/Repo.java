@@ -16,6 +16,9 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
@@ -23,6 +26,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.InternalHelpers;
 import com.google.firebase.database.MutableData;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.annotations.NotNull;
@@ -52,10 +56,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 public class Repo implements PersistentConnection.Delegate {
 
   private static final String INTERRUPT_REASON = "repo_interrupt";
+  private static final int GET_TIMEOUT_MS = 3000;
 
   private final RepoInfo repoInfo;
   private final OffsetClock serverClock = new OffsetClock(new DefaultClock(), 0);
@@ -109,9 +115,7 @@ public class Repo implements PersistentConnection.Delegate {
         .getAuthTokenProvider()
         .addTokenChangeListener(
             ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
-            new AuthTokenProvider.TokenChangeListener() {
-              // TODO: Remove this once AndroidAuthTokenProvider is updated to call the
-              // other overload.
+            new TokenProvider.TokenChangeListener() {
               @Override
               public void onTokenChange() {
                 operationLogger.debug("Auth token changed, triggering auth token refresh");
@@ -122,6 +126,26 @@ public class Repo implements PersistentConnection.Delegate {
               public void onTokenChange(String token) {
                 operationLogger.debug("Auth token changed, triggering auth token refresh");
                 connection.refreshAuthToken(token);
+              }
+            });
+
+    this.ctx
+        .getAppCheckTokenProvider()
+        .addTokenChangeListener(
+            ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
+            new TokenProvider.TokenChangeListener() {
+              @Override
+              public void onTokenChange() {
+                operationLogger.debug(
+                    "App check token changed, triggering app check token refresh");
+                connection.refreshAppCheckToken();
+              }
+
+              @Override
+              public void onTokenChange(String token) {
+                operationLogger.debug(
+                    "App check token changed, triggering app check token refresh");
+                connection.refreshAppCheckToken(token);
               }
             });
 
@@ -227,14 +251,14 @@ public class Repo implements PersistentConnection.Delegate {
       }
       lastWriteId = write.getWriteId();
       nextWriteId = write.getWriteId() + 1;
-      Node existing = serverSyncTree.calcCompleteEventCache(write.getPath(), new ArrayList<>());
       if (write.isOverwrite()) {
         if (operationLogger.logsDebug()) {
           operationLogger.debug("Restoring overwrite with id " + write.getWriteId());
         }
         connection.put(write.getPath().asList(), write.getOverwrite().getValue(true), onComplete);
         Node resolved =
-            ServerValues.resolveDeferredValueSnapshot(write.getOverwrite(), existing, serverValues);
+            ServerValues.resolveDeferredValueSnapshot(
+                write.getOverwrite(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserOverwrite(
             write.getPath(),
             write.getOverwrite(),
@@ -248,7 +272,8 @@ public class Repo implements PersistentConnection.Delegate {
         }
         connection.merge(write.getPath().asList(), write.getMerge().getValue(true), onComplete);
         CompoundWrite resolved =
-            ServerValues.resolveDeferredValueMerge(write.getMerge(), existing, serverValues);
+            ServerValues.resolveDeferredValueMerge(
+                write.getMerge(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserMerge(
             write.getPath(), write.getMerge(), resolved, write.getWriteId(), /*persist=*/ false);
       }
@@ -277,6 +302,11 @@ public class Repo implements PersistentConnection.Delegate {
   public void scheduleNow(Runnable r) {
     ctx.requireStarted();
     ctx.getRunLoop().scheduleNow(r);
+  }
+
+  public void scheduleDelayed(Runnable r, long millis) {
+    ctx.requireStarted();
+    ctx.getRunLoop().schedule(r, millis);
   }
 
   public void postEvent(Runnable r) {
@@ -461,6 +491,78 @@ public class Repo implements PersistentConnection.Delegate {
     this.rerunTransactions(affectedPath);
   }
 
+  /**
+   * The purpose of `getValue` is to return the latest known value satisfying `query`.
+   *
+   * <p>If the client is connected, this method will probe for in-memory cached values (active
+   * listeners). If none are found, the client will reach out to the server and ask for the most
+   * up-to-date value.
+   *
+   * <p>If the client is not connected, this method will check for in-memory cached values (active
+   * listeners). If none are found, the client will initiate a time-limited connection attempt to
+   * the server so that it can ask for the latest value. If the client is unable to connect, it will
+   * fall-back to the persistence cache value.
+   *
+   * <p>If, after exhausting all possible options (active-listener cache, server request,
+   * persistence cache), the client is unable to provide a guess for the latest value for a query,
+   * it will surface an "offline" error.
+   *
+   * <p>Note that `getValue` updates the client's persistence cache whenever it's able to retrieve a
+   * new server value. It does this by installing a short-lived tracked query.
+   *
+   * @param query - The query to surface a value for.
+   */
+  public Task<DataSnapshot> getValue(Query query) {
+    TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    this.scheduleNow(
+        new Runnable() {
+          @Override
+          public void run() {
+            // Always check active-listener in-memory caches first. These are always at least as
+            // up to date as the persistence cache.
+            Node serverValue = serverSyncTree.getServerValue(query.getSpec());
+            if (serverValue != null) {
+              source.setResult(
+                  InternalHelpers.createDataSnapshot(
+                      query.getRef(), IndexedNode.from(serverValue)));
+              return;
+            }
+            serverSyncTree.setQueryActive(query.getSpec());
+            final DataSnapshot persisted = serverSyncTree.persistenceServerCache(query);
+            if (persisted.exists()) {
+              // Prefer the locally persisted value if the server is not responsive.
+              scheduleDelayed(() -> source.trySetResult(persisted), GET_TIMEOUT_MS);
+            }
+            connection
+                .get(query.getPath().asList(), query.getSpec().getParams().getWireProtocolParams())
+                .addOnCompleteListener(
+                    ((DefaultRunLoop) ctx.getRunLoop()).getExecutorService(),
+                    (@NonNull Task<Object> task) -> {
+                      if (source.getTask().isComplete()) {
+                        return;
+                      }
+                      if (!task.isSuccessful()) {
+                        if (persisted.exists()) {
+                          source.setResult(persisted);
+                        } else {
+                          source.setException(Objects.requireNonNull(task.getException()));
+                        }
+                      } else {
+                        Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
+                        postEvents(
+                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        source.setResult(
+                            InternalHelpers.createDataSnapshot(
+                                query.getRef(),
+                                IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                      }
+                      serverSyncTree.setQueryInactive(query.getSpec());
+                    });
+          }
+        });
+    return source.getTask();
+  }
+
   public void updateChildren(
       final Path path,
       CompoundWrite updates,
@@ -483,9 +585,8 @@ public class Repo implements PersistentConnection.Delegate {
 
     // Start with our existing data and merge each child into it.
     Map<String, Object> serverValues = ServerValues.generateServerValues(serverClock);
-    Node existing = serverSyncTree.calcCompleteEventCache(path, new ArrayList<>());
     CompoundWrite resolved =
-        ServerValues.resolveDeferredValueMerge(updates, existing, serverValues);
+        ServerValues.resolveDeferredValueMerge(updates, serverSyncTree, path, serverValues);
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
@@ -607,8 +708,8 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   @Override
-  public void onAuthStatus(boolean authOk) {
-    onServerInfoUpdate(Constants.DOT_INFO_AUTHENTICATED, authOk);
+  public void onConnectionStatus(boolean connectionOk) {
+    onServerInfoUpdate(Constants.DOT_INFO_AUTHENTICATED, connectionOk);
   }
 
   public void onServerInfoUpdate(ChildKey key, Object value) {
@@ -642,7 +743,7 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public void keepSynced(QuerySpec query, boolean keep) {
-    assert query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO);
+    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
 
     serverSyncTree.keepSynced(query, keep);
   }
@@ -920,7 +1021,7 @@ public class Repo implements PersistentConnection.Delegate {
     List<TransactionData> queue = node.getValue();
     if (queue != null) {
       queue = buildTransactionQueue(node);
-      assert queue.size() > 0; // Sending zero length transaction queue
+      hardAssert(queue.size() > 0); // Sending zero length transaction queue
 
       Boolean allRun = true;
       for (TransactionData transaction : queue) {
@@ -959,8 +1060,9 @@ public class Repo implements PersistentConnection.Delegate {
     }
 
     for (TransactionData txn : queue) {
-      assert txn.status
-          == TransactionStatus.RUN; // sendTransactionQueue: items in queue should all be run.'
+      hardAssert(
+          txn.status
+              == TransactionStatus.RUN); // sendTransactionQueue: items in queue should all be run.'
       txn.status = TransactionStatus.SENT;
       txn.retryCount++;
       Path relativePath = Path.getRelative(path, txn.path);
@@ -1116,7 +1218,7 @@ public class Repo implements PersistentConnection.Delegate {
       DatabaseError abortReason = null;
       List<Event> events = new ArrayList<Event>();
 
-      assert relativePath != null; // rerunTransactionQueue: relativePath should not be null.
+      hardAssert(relativePath != null); // rerunTransactionQueue: relativePath should not be null.
 
       if (transaction.status == TransactionStatus.NEEDS_ABORT) {
         abortTransaction = true;
@@ -1321,14 +1423,15 @@ public class Repo implements PersistentConnection.Delegate {
         if (transaction.status == TransactionStatus.SENT_NEEDS_ABORT) {
           // No-op. Already marked
         } else if (transaction.status == TransactionStatus.SENT) {
-          assert lastSent == i - 1; // All SENT items should be at beginning of queue.
+          hardAssert(lastSent == i - 1); // All SENT items should be at beginning of queue.
           lastSent = i;
           // Mark transaction for abort when it comes back.
           transaction.status = TransactionStatus.SENT_NEEDS_ABORT;
           transaction.abortReason = abortError;
         } else {
-          assert transaction.status
-              == TransactionStatus.RUN; // Unexpected transaction status in abort
+          hardAssert(
+              transaction.status
+                  == TransactionStatus.RUN); // Unexpected transaction status in abort
           // We can abort this immediately.
           removeEventCallback(
               new ValueEventRegistration(

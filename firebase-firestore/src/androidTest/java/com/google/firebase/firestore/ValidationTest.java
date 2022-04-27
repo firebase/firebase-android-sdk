@@ -15,6 +15,12 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.Filter.and;
+import static com.google.firebase.firestore.Filter.equalTo;
+import static com.google.firebase.firestore.Filter.greaterThan;
+import static com.google.firebase.firestore.Filter.inArray;
+import static com.google.firebase.firestore.Filter.notInArray;
+import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testAlternateFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -39,6 +45,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -410,30 +417,6 @@ public class ValidationTest {
   }
 
   @Test
-  public void queriesWithNullOrNaNFiltersOtherThanEqualityFail() {
-    CollectionReference collection = testCollection();
-    expectError(
-        () -> collection.whereGreaterThan("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContains("a", null),
-        "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContainsAny("a", null),
-        "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
-    expectError(
-        () -> collection.whereIn("a", null),
-        "Invalid Query. A non-empty array is required for 'in' filters.");
-
-    expectError(
-        () -> collection.whereGreaterThan("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
-    expectError(
-        () -> collection.whereArrayContains("a", Double.NaN),
-        "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
-  }
-
-  @Test
   public void queriesCannotBeCreatedFromDocumentsMissingSortValues() {
     CollectionReference collection = testCollectionWithDocs(map("f", map("k", "f", "nosort", 1.0)));
 
@@ -461,37 +444,40 @@ public class ValidationTest {
     TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
     TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
 
-    collection.addSnapshotListener(
-        (snapshot, error) -> {
-          assertNotNull(snapshot);
+    ListenerRegistration listenerRegistration =
+        collection.addSnapshotListener(
+            (snapshot, error) -> {
+              assertNotNull(snapshot);
 
-          // Skip the initial empty snapshot.
-          if (snapshot.isEmpty()) return;
+              // Skip the initial empty snapshot.
+              if (snapshot.isEmpty()) return;
 
-          assertThat(snapshot.getDocuments()).hasSize(1);
-          DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
+              assertThat(snapshot.getDocuments()).hasSize(1);
+              DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
 
-          if (snapshot.getMetadata().hasPendingWrites()) {
-            // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able to
-            // query by it.
-            assertThrows(
-                IllegalArgumentException.class,
-                () ->
-                    collection
-                        .orderBy("timestamp")
-                        .endAt(docSnap)
-                        .addSnapshotListener((snapshot2, error2) -> {}));
-            offlineCallbackDone.setResult(null);
-          } else {
-            // Online snapshot. Since the server timestamp is committed, we should be able to query
-            // by it.
-            collection
-                .orderBy("timestamp")
-                .endAt(docSnap)
-                .addSnapshotListener((snapshot2, error2) -> {});
-            onlineCallbackDone.setResult(null);
-          }
-        });
+              if (snapshot.getMetadata().hasPendingWrites()) {
+                // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able
+                // to query by it.
+                assertThrows(
+                    IllegalArgumentException.class,
+                    () ->
+                        collection
+                            .orderBy("timestamp")
+                            .endAt(docSnap)
+                            .addSnapshotListener((snapshot2, error2) -> {}));
+                // Use `trySetResult` since the callbacks fires twice if the WatchStream
+                // acknowledges the Write before the WriteStream.
+                offlineCallbackDone.trySetResult(null);
+              } else {
+                // Online snapshot. Since the server timestamp is committed, we should be able to
+                // query by it.
+                collection
+                    .orderBy("timestamp")
+                    .endAt(docSnap)
+                    .addSnapshotListener((snapshot2, error2) -> {});
+                onlineCallbackDone.trySetResult(null);
+              }
+            });
 
     DocumentReference document = collection.document();
     document.set(map("timestamp", FieldValue.serverTimestamp()));
@@ -499,6 +485,8 @@ public class ValidationTest {
 
     waitFor(collection.firestore.getClient().enableNetwork());
     waitFor(onlineCallbackDone.getTask());
+
+    listenerRegistration.remove();
   }
 
   @Test
@@ -536,8 +524,9 @@ public class ValidationTest {
   public void queriesWithDifferentInequalityFieldsFail() {
     expectError(
         () -> testCollection().whereGreaterThan("x", 32).whereLessThan("y", "cat"),
-        "All where filters other than whereEqualTo() must be on the same field. But you "
-            + "have filters on 'x' and 'y'");
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -552,6 +541,20 @@ public class ValidationTest {
     expectError(() -> collection.orderBy("y").whereGreaterThan("x", 32), reason);
     expectError(() -> collection.whereGreaterThan("x", 32).orderBy("y").orderBy("x"), reason);
     expectError(() -> collection.orderBy("y").orderBy("x").whereGreaterThan("x", 32), reason);
+    expectError(() -> collection.orderBy("y").orderBy("x").whereNotEqualTo("x", 32), reason);
+  }
+
+  @Test
+  public void queriesWithMultipleNotEqualAndInequalitiesFail() {
+    expectError(
+        () -> testCollection().whereNotEqualTo("x", 32).whereNotEqualTo("x", 33),
+        "Invalid Query. You cannot use more than one '!=' filter.");
+
+    expectError(
+        () -> testCollection().whereNotEqualTo("x", 32).whereGreaterThan("y", 33),
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'x' and 'y'");
   }
 
   @Test
@@ -573,6 +576,21 @@ public class ValidationTest {
                 .whereArrayContainsAny("foo", asList(1, 2))
                 .whereArrayContains("foo", 1),
         "Invalid Query. You cannot use 'array_contains' filters with 'array_contains_any' filters.");
+
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereArrayContains("foo", 1),
+        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
+  }
+
+  @Test
+  public void queriesWithNotEqualAndNotInFiltersFail() {
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotEqualTo("foo", 1),
+        "Invalid Query. You cannot use '!=' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereNotEqualTo("foo", 1).whereNotIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with '!=' filters.");
   }
 
   @Test
@@ -580,6 +598,12 @@ public class ValidationTest {
     expectError(
         () -> testCollection().whereIn("foo", asList(1, 2)).whereIn("bar", asList(1, 2)),
         "Invalid Query. You cannot use more than one 'in' filter.");
+
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, "
+            + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
+            + "same field. But you have filters on 'foo' and 'bar'");
 
     expectError(
         () ->
@@ -602,6 +626,28 @@ public class ValidationTest {
                 .whereArrayContainsAny("foo", asList(1, 2)),
         "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
 
+    expectError(
+        () ->
+            testCollection()
+                .whereArrayContainsAny("foo", asList(1, 2))
+                .whereNotIn("bar", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'array_contains_any' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereNotIn("bar", asList(1, 2))
+                .whereArrayContainsAny("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereNotIn("bar", asList(1, 2)).whereIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'in' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereIn("bar", asList(1, 2)).whereNotIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'in' filters.");
+
     // This is redundant with the above tests, but makes sure our validation doesn't get confused.
     expectError(
         () ->
@@ -617,7 +663,23 @@ public class ValidationTest {
                 .whereArrayContains("foo", 1)
                 .whereIn("bar", asList(1, 2))
                 .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereNotIn("bar", asList(1, 2))
+                .whereArrayContains("foo", 1)
+                .whereArrayContainsAny("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereArrayContains("foo", 1)
+                .whereIn("foo", asList(1, 2))
+                .whereNotIn("bar", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'array_contains' filters.");
   }
 
   @Test
@@ -649,6 +711,10 @@ public class ValidationTest {
         "Invalid Query. A non-empty array is required for 'in' filters.");
 
     expectError(
+        () -> testCollection().whereNotIn("bar", asList()),
+        "Invalid Query. A non-empty array is required for 'not_in' filters.");
+
+    expectError(
         () -> testCollection().whereArrayContainsAny("bar", asList()),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
 
@@ -659,25 +725,14 @@ public class ValidationTest {
 
     expectError(
         // The 10 element max includes duplicates.
+        () -> testCollection().whereNotIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
+        "Invalid Query. 'not_in' filters support a maximum of 10 elements in the value array.");
+
+    expectError(
+        // The 10 element max includes duplicates.
         () ->
             testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", null)),
-        "Invalid Query. 'in' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", null)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'null' in the value array.");
-
-    expectError(
-        () -> testCollection().whereIn("bar", asList("foo", Double.NaN)),
-        "Invalid Query. 'in' filters cannot contain 'NaN' in the value array.");
-
-    expectError(
-        () -> testCollection().whereArrayContainsAny("bar", asList("foo", Float.NaN)),
-        "Invalid Query. 'array_contains_any' filters cannot contain 'NaN' in the value array.");
   }
 
   @Test
@@ -767,21 +822,79 @@ public class ValidationTest {
         reason);
   }
 
+  @Test
+  public void testInvalidQueryFilters() {
+    CollectionReference collection = testCollection();
+
+    // Multiple inequalities, one of which is inside a nested composite filter.
+    String reason =
+        "All where filters with an inequality (notEqualTo, notIn, lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the same field. But you have filters on 'c' and 'r'";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), greaterThan("c", "d")),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(greaterThan("r", "s")),
+        reason);
+
+    // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
+    reason =
+        "Invalid query. You have an inequality where filter (whereLessThan(), whereGreaterThan(), etc.) on field 'c' and so you must also have 'c' as your first orderBy() field, but your first orderBy() is currently on field 'r' instead.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), greaterThan("c", "d")),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .orderBy("r"),
+        reason);
+
+    // Conflicting operations within a composite filter.
+    reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection.where(
+                or(
+                    and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                    and(equalTo("e", "f"), notInArray("c", Arrays.asList("f", "g"))))),
+        reason);
+
+    // Conflicting operations between a field filter and a composite filter.
+    reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(notInArray("i", Arrays.asList("j", "k"))),
+        reason);
+
+    // Conflicting operations between two composite filters.
+    reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(
+                    or(
+                        and(equalTo("i", "j"), notInArray("l", Arrays.asList("m", "n"))),
+                        and(equalTo("o", "p"), equalTo("q", "r")))),
+        reason);
+  }
+
   // Helpers
 
   /** Performs a write using each write API and makes sure it succeeds. */
   private static void expectWriteSuccess(Object data) {
     expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each update API and makes sure it succeeds. */
-  private static void expectUpdateSuccess(Map<String, Object> data) {
-    expectWriteSuccess(data, /*includeSets=*/ false, /*includeUpdates=*/ true);
-  }
-
-  /** Performs a write using each set API and makes sure it succeeds. */
-  private static void expectSetSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ false);
   }
 
   /**

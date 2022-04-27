@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright 2021 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+
+  <string name="signin_dialog_title">Enable new build alerts</string>
+  <string name="singin_dialog_message">Get in-app alerts when new builds are ready to test.</string>
+  <string name="singin_yes_button">Turn on</string>
+  <string name="singin_no_button">Not now</string>
+  <string name="no_update_available">No new release available, try calling checkForUpdate.</string>
+  <string name="update_dialog_title">New Version Available</string>
+  <string name="update_yes_button">Update</string>
+  <string name="update_no_button">Cancel</string>
+  <string name="downloading_app_update">Downloading in-app update...</string>
+  <string name="download_completed">Download completed</string>
+  <string name="download_failed">Download failed</string>
+  <string name="download_pending">Download pending</string>
+  <string name="install_failed">Install failed</string>
+  <string name="install_canceled">Install canceled</string>
+  <string name="update_canceled">Update canceled </string>
+  <string name="notifications_channel_name">App Distribution App Update Downloads</string>
+  <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
+  <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
+  <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
+  <string name="unknown_sources_yes_button">Settings</string>
+</resources>

@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.internal;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
+import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener;
@@ -47,10 +48,12 @@ public class DeveloperListenerManager {
   public static DeveloperListenerManager instance = new DeveloperListenerManager();
   private Map<FirebaseInAppMessagingClickListener, ClicksExecutorAndListener>
       registeredClickListeners = new HashMap<>();
+  private Map<FirebaseInAppMessagingDismissListener, DismissExecutorAndListener>
+      registeredDismissListeners = new HashMap<>();
   private Map<FirebaseInAppMessagingDisplayErrorListener, ErrorsExecutorAndListener>
-      registeredErrorListeners = new HashMap<>();;
+      registeredErrorListeners = new HashMap<>();
   private Map<FirebaseInAppMessagingImpressionListener, ImpressionExecutorAndListener>
-      registeredImpressionListeners = new HashMap<>();;
+      registeredImpressionListeners = new HashMap<>();
 
   private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
   private static final ThreadPoolExecutor CALLBACK_QUEUE_EXECUTOR =
@@ -93,6 +96,14 @@ public class DeveloperListenerManager {
     }
   }
 
+  public void messageDismissed(InAppMessage inAppMessage) {
+    for (DismissExecutorAndListener listener : registeredDismissListeners.values()) {
+      listener
+          .withExecutor(CALLBACK_QUEUE_EXECUTOR)
+          .execute(() -> listener.getListener().messageDismissed(inAppMessage));
+    }
+  }
+
   // pass through from FirebaseInAppMessaging public api
   public void addImpressionListener(FirebaseInAppMessagingImpressionListener impressionListener) {
     registeredImpressionListeners.put(
@@ -101,6 +112,11 @@ public class DeveloperListenerManager {
 
   public void addClickListener(FirebaseInAppMessagingClickListener clickListener) {
     registeredClickListeners.put(clickListener, new ClicksExecutorAndListener(clickListener));
+  }
+
+  public void addDismissListener(FirebaseInAppMessagingDismissListener dismissListener) {
+    registeredDismissListeners.put(
+        dismissListener, new DismissExecutorAndListener(dismissListener));
   }
 
   public void addDisplayErrorListener(
@@ -122,6 +138,12 @@ public class DeveloperListenerManager {
         clickListener, new ClicksExecutorAndListener(clickListener, executor));
   }
 
+  public void addDismissListener(
+      FirebaseInAppMessagingDismissListener dismissListener, Executor executor) {
+    registeredDismissListeners.put(
+        dismissListener, new DismissExecutorAndListener(dismissListener, executor));
+  }
+
   public void addDisplayErrorListener(
       FirebaseInAppMessagingDisplayErrorListener displayErrorListener, Executor executor) {
     registeredErrorListeners.put(
@@ -141,6 +163,12 @@ public class DeveloperListenerManager {
   public void removeDisplayErrorListener(
       FirebaseInAppMessagingDisplayErrorListener displayErrorListener) {
     registeredErrorListeners.remove(displayErrorListener);
+  }
+
+  public void removeAllListeners() {
+    registeredClickListeners.clear();
+    registeredImpressionListeners.clear();
+    registeredErrorListeners.clear();
   }
 
   /** The thread factory for Storage threads. */
@@ -182,7 +210,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ImpressionExecutorAndListener
+  private static class ImpressionExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingImpressionListener> {
     FirebaseInAppMessagingImpressionListener listener;
 
@@ -203,7 +231,7 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ClicksExecutorAndListener
+  private static class ClicksExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingClickListener> {
     FirebaseInAppMessagingClickListener listener;
 
@@ -223,7 +251,27 @@ public class DeveloperListenerManager {
     }
   }
 
-  private class ErrorsExecutorAndListener
+  private static class DismissExecutorAndListener
+      extends ExecutorAndListener<FirebaseInAppMessagingDismissListener> {
+    FirebaseInAppMessagingDismissListener listener;
+
+    public DismissExecutorAndListener(FirebaseInAppMessagingDismissListener listener, Executor e) {
+      super(e);
+      this.listener = listener;
+    }
+
+    public DismissExecutorAndListener(FirebaseInAppMessagingDismissListener listener) {
+      super(null);
+      this.listener = listener;
+    }
+
+    @Override
+    public FirebaseInAppMessagingDismissListener getListener() {
+      return listener;
+    }
+  }
+
+  private static class ErrorsExecutorAndListener
       extends ExecutorAndListener<FirebaseInAppMessagingDisplayErrorListener> {
     FirebaseInAppMessagingDisplayErrorListener listener;
 

@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,9 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
-import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
@@ -86,8 +84,8 @@ public class Transaction {
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
-            : firestore.getDataConverter().parseSetData(data);
+            ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
+            : firestore.getUserDataReader().parseSetData(data);
     transaction.set(documentRef.getKey(), parsed);
     return this;
   }
@@ -104,7 +102,7 @@ public class Transaction {
   @NonNull
   public Transaction update(
       @NonNull DocumentReference documentRef, @NonNull Map<String, Object> data) {
-    ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
+    ParsedUpdateData parsedData = firestore.getUserDataReader().parseUpdateData(data);
     return update(documentRef, parsedData);
   }
 
@@ -127,7 +125,7 @@ public class Transaction {
       Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, field, value, moreFieldsAndValues));
@@ -152,7 +150,7 @@ public class Transaction {
       Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, fieldPath, value, moreFieldsAndValues));
@@ -195,17 +193,17 @@ public class Transaction {
               if (!task.isSuccessful()) {
                 throw task.getException();
               }
-              List<MaybeDocument> docs = task.getResult();
+              List<MutableDocument> docs = task.getResult();
               if (docs.size() != 1) {
                 throw fail("Mismatch in docs returned from document lookup.");
               }
-              MaybeDocument doc = docs.get(0);
-              if (doc instanceof Document) {
+              MutableDocument doc = docs.get(0);
+              if (doc.isFoundDocument()) {
                 return DocumentSnapshot.fromDocument(
-                    firestore, (Document) doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
-              } else if (doc instanceof NoDocument) {
+                    firestore, doc, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+              } else if (doc.isNoDocument()) {
                 return DocumentSnapshot.fromNoDocument(
-                    firestore, doc.getKey(), /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+                    firestore, doc.getKey(), /*fromCache=*/ false);
               } else {
                 throw fail(
                     "BatchGetDocumentsRequest returned unexpected document type: "

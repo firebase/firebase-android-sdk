@@ -15,13 +15,10 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettingsWithSnapshotTimestampsEnabled;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.util.Util.autoId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -29,11 +26,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
@@ -218,7 +213,7 @@ public class FieldsTest {
   }
 
   @Test
-  public void testTimestampsInSnapshots() {
+  public void testTimestampsAreTruncated() {
     Timestamp originalTimestamp = new Timestamp(100, 123456789);
     // Timestamps are currently truncated to microseconds after being written to the database.
     Timestamp truncatedTimestamp =
@@ -239,43 +234,5 @@ public class FieldsTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> nestedObject = (Map<String, Object>) data.get("nested");
     assertThat(nestedObject.get("timestamp2")).isEqualTo(readNestedTimestamp);
-  }
-
-  private static DocumentReference createDocWithTimestampsDisabled() {
-    FirebaseFirestoreSettings settings = newTestSettingsWithSnapshotTimestampsEnabled(false);
-    return testFirestore(settings).collection(autoId()).document();
-  }
-
-  @Test
-  public void testTimestampsInSnapshotsLegacyBehaviorForTimestamps() {
-    Timestamp timestamp = new Timestamp(100, 123456789);
-
-    DocumentReference docRef = createDocWithTimestampsDisabled();
-    waitFor(docRef.set(objectWithTimestamp(timestamp)));
-    DocumentSnapshot snapshot = waitFor(docRef.get());
-    Map<String, Object> data = snapshot.getData();
-
-    assertThat(snapshot.get("timestamp")).isInstanceOf(Date.class);
-    assertThat(data.get("timestamp")).isInstanceOf(Date.class);
-    assertThat(snapshot.get("timestamp")).isEqualTo(timestamp.toDate());
-    assertThat(data.get("timestamp")).isEqualTo(timestamp.toDate());
-
-    assertThat(snapshot.get("nested.timestamp2")).isInstanceOf(Date.class);
-    assertThat(snapshot.get("nested.timestamp2")).isEqualTo(timestamp.toDate());
-    @SuppressWarnings("unchecked")
-    Map<String, Object> nestedObject = (Map<String, Object>) data.get("nested");
-    assertThat(nestedObject).isNotNull();
-    assertThat(nestedObject.get("timestamp2")).isEqualTo(timestamp.toDate());
-  }
-
-  @Test
-  public void testTimestampsInSnapshotsLegacyBehaviorForServerTimestamps() {
-    DocumentReference docRef = createDocWithTimestampsDisabled();
-    waitFor(docRef.set(map("timestamp", FieldValue.serverTimestamp())));
-    DocumentSnapshot snapshot = waitFor(docRef.get());
-    assertThat(snapshot.get("timestamp", ServerTimestampBehavior.ESTIMATE))
-        .isInstanceOf(Date.class);
-    assertThat(snapshot.getData(ServerTimestampBehavior.ESTIMATE).get("timestamp"))
-        .isInstanceOf(Date.class);
   }
 }

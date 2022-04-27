@@ -18,10 +18,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.util.SparseArray;
 import com.google.firebase.firestore.core.ListenSequence;
+import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
 import com.google.firebase.firestore.util.Consumer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Provides LRU garbage collection functionality for MemoryPersistence. */
@@ -115,17 +117,17 @@ class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
 
   @Override
   public int removeOrphanedDocuments(long upperBound) {
-    int count = 0;
     MemoryRemoteDocumentCache cache = persistence.getRemoteDocumentCache();
-    for (MaybeDocument doc : cache.getDocuments()) {
+    List<DocumentKey> docsToRemove = new ArrayList<>();
+    for (Document doc : cache.getDocuments()) {
       DocumentKey key = doc.getKey();
       if (!isPinned(key, upperBound)) {
-        cache.remove(key);
+        docsToRemove.add(key);
         orphanedSequenceNumbers.remove(key);
-        count++;
       }
     }
-    return count;
+    cache.removeAll(docsToRemove);
+    return docsToRemove.size();
   }
 
   @Override

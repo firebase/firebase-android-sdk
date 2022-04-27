@@ -14,22 +14,21 @@
 
 package com.google.firebase.abt;
 
-import static com.google.firebase.abt.FirebaseABTesting.OriginService.REMOTE_CONFIG;
+import static com.google.firebase.abt.AbtExperimentInfo.validateAbtExperimentInfo;
 
 import android.content.Context;
-import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.analytics.connector.AnalyticsConnector.ConditionalUserProperty;
+import com.google.firebase.inject.Provider;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -52,42 +51,36 @@ import java.util.Set;
  */
 public class FirebaseABTesting {
 
-  @VisibleForTesting
-  static final String ABT_PREFERENCES = "com.google.firebase.abt";
+  @VisibleForTesting static final String ABT_PREFERENCES = "com.google.firebase.abt";
 
   @VisibleForTesting
   static final String ORIGIN_LAST_KNOWN_START_TIME_KEY_FORMAT = "%s_lastKnownExperimentStartTime";
 
-  /**
-   * The App's Firebase Analytics client.
-   */
-  private final AnalyticsConnector analyticsConnector;
+  /** The App's Firebase Analytics client. */
+  private final Provider<AnalyticsConnector> analyticsConnector;
 
-  /**
-   * The name of an ABT client.
-   */
+  /** The name of an ABT client. */
   private final String originService;
 
   /**
    * Select keys of fields in the experiment descriptions returned from the Firebase Remote Config
    * server.
    */
-  @StringDef({REMOTE_CONFIG})
+  @StringDef({OriginService.REMOTE_CONFIG, OriginService.INAPP_MESSAGING})
   @Retention(RetentionPolicy.SOURCE)
   public @interface OriginService {
 
-    /**
-     * Must match the origin code in Google Analytics for Firebase.
-     */
+    /** Must match the origin code in Google Analytics for Firebase. */
     String REMOTE_CONFIG = "frc";
+
+    String INAPP_MESSAGING = "fiam";
   }
 
   /**
    * Maximum number of conditional user properties allowed for the origin service. Null until
    * retrieved from Analytics.
    */
-  @Nullable
-  private Integer maxUserProperties;
+  @Nullable private Integer maxUserProperties;
 
   /**
    * Creates an instance of the ABT class for the specified App and origin service.
@@ -97,7 +90,7 @@ public class FirebaseABTesting {
    */
   public FirebaseABTesting(
       Context unusedAppContext,
-      AnalyticsConnector analyticsConnector,
+      Provider<AnalyticsConnector> analyticsConnector,
       @OriginService String originService) {
     this.analyticsConnector = analyticsConnector;
     this.originService = originService;
@@ -111,16 +104,16 @@ public class FirebaseABTesting {
    *
    * <p>Note: This is a blocking call and should only be called from a worker thread.
    *
-   * <p>The maps of {@code replacementExperiments} must be in the format defined by the ABT
-   * service. The current SDK's format for experiment maps is specified in {@link
+   * <p>The maps of {@code replacementExperiments} must be in the format defined by the ABT service.
+   * The current SDK's format for experiment maps is specified in {@link
    * AbtExperimentInfo#fromMap(Map)}.
    *
    * @param replacementExperiments list of experiment info {@link Map}s, where each map contains the
-   * identifiers and metadata of a distinct experiment that is currently running. If the value is
-   * null, this method is a no-op.
+   *     identifiers and metadata of a distinct experiment that is currently running. If the value
+   *     is null, this method is a no-op.
    * @throws IllegalArgumentException If {@code replacementExperiments} is null.
    * @throws AbtException If there is no Analytics SDK or if any experiment map in {@code
-   * replacementExperiments} could not be parsed.
+   *     replacementExperiments} could not be parsed.
    */
   @WorkerThread
   public void replaceAllExperiments(List<Map<String, String>> replacementExperiments)
@@ -173,6 +166,54 @@ public class FirebaseABTesting {
   }
 
   /**
+   * Sets an experiment to be active in GA metrics reporting by setting a null triggering condition
+   * on the provided experiment. This results in the experiment being active as if it was triggered
+   * by the triggering condition event being seen in GA.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @param activeExperiment The {@link AbtExperimentInfo} that should be set as active in GA.
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public void reportActiveExperiment(AbtExperimentInfo activeExperiment) throws AbtException {
+    throwAbtExceptionIfAnalyticsIsNull();
+    validateAbtExperimentInfo(activeExperiment);
+    ArrayList<AbtExperimentInfo> activeExperimentList = new ArrayList<>();
+
+    // Remove trigger event if it exists, this sets the experiment to active.
+    Map<String, String> activeExperimentMap = activeExperiment.toStringMap();
+    activeExperimentMap.remove(AbtExperimentInfo.TRIGGER_EVENT_KEY);
+
+    // Add experiment to GA
+    activeExperimentList.add(AbtExperimentInfo.fromMap(activeExperimentMap));
+    addExperiments(activeExperimentList);
+  }
+
+  /**
+   * Cleans up all experiments which are active in GA but not currently running. This method is
+   * meant to be used to ensure all running experiments should indeed be running.
+   *
+   * <p>Note: This is a blocking call and therefore should be called from a worker thread.
+   *
+   * @param runningExperiments the currently running {@link AbtExperimentInfo}s, any active
+   *     experiment that is not in this list will be removed from GA reporting.
+   * @throws AbtException If there is no Analytics SDK.
+   */
+  @WorkerThread
+  public void validateRunningExperiments(List<AbtExperimentInfo> runningExperiments)
+      throws AbtException {
+    throwAbtExceptionIfAnalyticsIsNull();
+    Set<String> runningExperimentIds = new HashSet<>();
+    for (AbtExperimentInfo runningExperiment : runningExperiments) {
+      runningExperimentIds.add(runningExperiment.getExperimentId());
+    }
+    List<ConditionalUserProperty> experimentsToRemove =
+        getExperimentsToRemove(getAllExperimentsInAnalytics(), runningExperimentIds);
+    removeExperiments(experimentsToRemove);
+  }
+
+  /**
    * Replaces the origin's list of experiments in the App with {@code replacementExperiments}. If
    * {@code replacementExperiments} is an empty list, then all the origin's experiments in the App
    * are removed.
@@ -180,11 +221,11 @@ public class FirebaseABTesting {
    * <p>The replacement is done as follows:
    *
    * <ol>
-   * <li>Any experiment in the origin's list that is not in {@code replacementExperiments} is
-   * removed.
-   * <li>Any experiment in {@code replacementExperiments} that is not already in the origin's list
-   * is added. If the origin's list has the maximum number of experiments allowed and an experiment
-   * needs to be added, the oldest experiment in the list is removed.
+   *   <li>Any experiment in the origin's list that is not in {@code replacementExperiments} is
+   *       removed.
+   *   <li>Any experiment in {@code replacementExperiments} that is not already in the origin's list
+   *       is added. If the origin's list has the maximum number of experiments allowed and an
+   *       experiment needs to be added, the oldest experiment in the list is removed.
    * </ol>
    *
    * <p>Experiments in {@code replacementExperiments} that have previously been discarded will be
@@ -192,8 +233,8 @@ public class FirebaseABTesting {
    * last start time seen by this instance and it does not exist in the origin's list.
    *
    * @param replacementExperiments list of {@link AbtExperimentInfo}s, each containing the
-   * identifiers and metadata of a distinct experiment that is currently running. Must contain at
-   * least one valid experiment.
+   *     identifiers and metadata of a distinct experiment that is currently running. Must contain
+   *     at least one valid experiment.
    * @throws AbtException If there is no Analytics SDK.
    */
   private void replaceAllExperimentsWith(List<AbtExperimentInfo> replacementExperiments)
@@ -224,9 +265,7 @@ public class FirebaseABTesting {
     addExperiments(experimentsToAdd);
   }
 
-  /**
-   * Returns this origin's experiments in Analytics that are no longer assigned to this App.
-   */
+  /** Returns this origin's experiments in Analytics that are no longer assigned to this App. */
   private ArrayList<ConditionalUserProperty> getExperimentsToRemove(
       List<ConditionalUserProperty> experimentsInAnalytics, Set<String> replacementExperimentIds) {
 
@@ -255,9 +294,7 @@ public class FirebaseABTesting {
     return experimentsToAdd;
   }
 
-  /**
-   * Adds the given experiments to the origin's list in Analytics.
-   */
+  /** Adds the given experiments to the origin's list in Analytics. */
   private void addExperiments(List<AbtExperimentInfo> experimentsToAdd) {
 
     Deque<ConditionalUserProperty> dequeOfExperimentsInAnalytics =
@@ -297,11 +334,11 @@ public class FirebaseABTesting {
   }
 
   private void addExperimentToAnalytics(ConditionalUserProperty experiment) {
-    analyticsConnector.setConditionalUserProperty(experiment);
+    analyticsConnector.get().setConditionalUserProperty(experiment);
   }
 
   private void throwAbtExceptionIfAnalyticsIsNull() throws AbtException {
-    if (analyticsConnector == null) {
+    if (analyticsConnector.get() == null) {
       throw new AbtException(
           "The Analytics SDK is not available. "
               + "Please check that the Analytics SDK is included in your app dependencies.");
@@ -314,14 +351,16 @@ public class FirebaseABTesting {
    * breaking, or if the underlying Analytics clear method is failing.
    */
   private void removeExperimentFromAnalytics(String experimentId) {
-    analyticsConnector.clearConditionalUserProperty(
-        experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
+    analyticsConnector
+        .get()
+        .clearConditionalUserProperty(
+            experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
   }
 
   @WorkerThread
   private int getMaxUserPropertiesInAnalytics() {
     if (maxUserProperties == null) {
-      maxUserProperties = analyticsConnector.getMaxUserProperties(originService);
+      maxUserProperties = analyticsConnector.get().getMaxUserProperties(originService);
     }
     return maxUserProperties;
   }
@@ -334,7 +373,8 @@ public class FirebaseABTesting {
    */
   @WorkerThread
   private List<ConditionalUserProperty> getAllExperimentsInAnalytics() {
-    return analyticsConnector.getConditionalUserProperties(
-        originService, /*propertyNamePrefix=*/ "");
+    return analyticsConnector
+        .get()
+        .getConditionalUserProperties(originService, /*propertyNamePrefix=*/ "");
   }
 }

@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.api.internal.TaskApiCall;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelableSerializer;
@@ -39,6 +40,7 @@ import com.google.firebase.dynamiclinks.DynamicLink.Builder;
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
 import com.google.firebase.dynamiclinks.ShortDynamicLink;
 import com.google.firebase.dynamiclinks.internal.FirebaseDynamicLinksImpl.CreateShortDynamicLinkImpl;
+import com.google.firebase.inject.Provider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +49,6 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 /** Test {@link FirebaseDynamicLinksImpl}. */
 @RunWith(RobolectricTestRunner.class)
@@ -72,7 +73,11 @@ public class FirebaseDynamicLinksImplTest {
 
   private static final String ANALYTICS_FDL_ORIGIN = "fdl";
 
-  @Mock private AnalyticsConnector mockAnalytics;
+  private final AnalyticsValidator fakeAppMeasurement =
+      FakeConnectorComponent.getAnalyticsValidator();
+  private final Provider<AnalyticsConnector> mockAnalytics =
+      FakeConnectorComponent::getAnalyticsConnector;
+
   @Mock private DynamicLinksApi mockGoogleApi;
   @Mock private TaskCompletionSource<PendingDynamicLinkData> mockCompletionSource;
   @Mock private TaskCompletionSource<ShortDynamicLink> mockShortFDLCompletionSource;
@@ -90,18 +95,20 @@ public class FirebaseDynamicLinksImplTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    fakeAppMeasurement.reset();
     FirebaseApp.clearInstancesForTest();
     FirebaseOptions.Builder firebaseOptionsBuilder =
         new FirebaseOptions.Builder().setApplicationId("application_id").setApiKey("api_key");
     firebaseApp =
-        FirebaseApp.initializeApp(RuntimeEnvironment.application, firebaseOptionsBuilder.build());
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(), firebaseOptionsBuilder.build());
     // Create uri with properly escaped query params.
     updateAppUri =
         Uri.parse("market://details?id=com.google.android.gm&min_version=10")
             .buildUpon()
             .appendQueryParameter("url", "http://example.google.com")
             .build();
-    api = new FirebaseDynamicLinksImpl(mockGoogleApi, mockAnalytics);
+    api = new FirebaseDynamicLinksImpl(mockGoogleApi, firebaseApp, mockAnalytics);
   }
 
   @Test
@@ -153,6 +160,13 @@ public class FirebaseDynamicLinksImplTest {
   }
 
   @Test
+  public void testGetDynamicLink_NullIntent() {
+    api.getDynamicLink((Intent) null);
+    verify(mockGoogleApi)
+        .doWrite(ArgumentMatchers.<TaskApiCall<DynamicLinksClient, PendingDynamicLinkData>>any());
+  }
+
+  @Test
   public void testGetDynamicLink_IntentWithDynamicLinkData() {
     Bundle extensions = new Bundle();
     extensions.putString(PARAMETER, VALUE);
@@ -194,6 +208,10 @@ public class FirebaseDynamicLinksImplTest {
     DynamicLinkData data = genDynamicLinkData(scionParams);
     callbacks.onGetDynamicLink(Status.RESULT_SUCCESS, data);
     verify(mockCompletionSource).setResult(any(PendingDynamicLinkData.class));
+    AnalyticsValidator.LoggedEvent event = fakeAppMeasurement.getLoggedEvents().get(0);
+    assertEquals(ANALYTICS_FDL_ORIGIN, event.getOrigin());
+    assertEquals(SCION_EVENT_NAME, event.getName());
+    assertEquals(scionParams, event.getParams());
   }
 
   @Test
@@ -201,7 +219,7 @@ public class FirebaseDynamicLinksImplTest {
     // Make sure that a result is returned even if scion is not linked.
     FirebaseDynamicLinksImpl.DynamicLinkCallbacks callbacks =
         new FirebaseDynamicLinksImpl.DynamicLinkCallbacks(
-            /* analytics= */ null, mockCompletionSource);
+            /* analytics= */ () -> null, mockCompletionSource);
     DynamicLinkData data = genDynamicLinkData(new Bundle());
     callbacks.onGetDynamicLink(Status.RESULT_SUCCESS, data);
     verify(mockCompletionSource).setResult(any(PendingDynamicLinkData.class));

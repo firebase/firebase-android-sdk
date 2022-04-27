@@ -24,10 +24,8 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -78,7 +76,7 @@ public class Transaction {
    * Takes a set of keys and asynchronously attempts to fetch all the documents from the backend,
    * ignoring any local changes.
    */
-  public Task<List<MaybeDocument>> lookup(List<DocumentKey> keys) {
+  public Task<List<MutableDocument>> lookup(List<DocumentKey> keys) {
     ensureCommitNotCalled();
 
     if (mutations.size() != 0) {
@@ -93,7 +91,7 @@ public class Transaction {
             Executors.DIRECT_EXECUTOR,
             task -> {
               if (task.isSuccessful()) {
-                for (MaybeDocument doc : task.getResult()) {
+                for (MutableDocument doc : task.getResult()) {
                   recordVersion(doc);
                 }
               }
@@ -103,7 +101,7 @@ public class Transaction {
 
   /** Stores a set mutation for the given key and value, to be committed when commit() is called. */
   public void set(DocumentKey key, ParsedSetData data) {
-    write(data.toMutationList(key, precondition(key)));
+    write(Collections.singletonList(data.toMutation(key, precondition(key))));
     writtenDocs.add(key);
   }
 
@@ -113,7 +111,7 @@ public class Transaction {
    */
   public void update(DocumentKey key, ParsedUpdateData data) {
     try {
-      write(data.toMutationList(key, preconditionForUpdate(key)));
+      write(Collections.singletonList(data.toMutation(key, preconditionForUpdate(key))));
     } catch (FirebaseFirestoreException e) {
       lastWriteError = e;
     }
@@ -171,15 +169,15 @@ public class Transaction {
     return executor;
   }
 
-  private void recordVersion(MaybeDocument doc) throws FirebaseFirestoreException {
+  private void recordVersion(MutableDocument doc) throws FirebaseFirestoreException {
     SnapshotVersion docVersion;
-    if (doc instanceof Document) {
+    if (doc.isFoundDocument()) {
       docVersion = doc.getVersion();
-    } else if (doc instanceof NoDocument) {
+    } else if (doc.isNoDocument()) {
       // For nonexistent docs, we must use precondition with version 0 when we overwrite them.
       docVersion = SnapshotVersion.NONE;
     } else {
-      throw fail("Unexpected document type in transaction: " + doc.getClass().getCanonicalName());
+      throw fail("Unexpected document type in transaction: " + doc);
     }
 
     if (readVersions.containsKey(doc.getKey())) {

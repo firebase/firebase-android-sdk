@@ -15,8 +15,16 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.Nullable;
+import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.ResourcePath;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +35,11 @@ class MemoryIndexManager implements IndexManager {
   private final MemoryCollectionParentIndex collectionParentsIndex =
       new MemoryCollectionParentIndex();
 
+  public MemoryIndexManager() {}
+
+  @Override
+  public void start() {}
+
   @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
     collectionParentsIndex.add(collectionPath);
@@ -35,6 +48,67 @@ class MemoryIndexManager implements IndexManager {
   @Override
   public List<ResourcePath> getCollectionParents(String collectionId) {
     return collectionParentsIndex.getEntries(collectionId);
+  }
+
+  @Override
+  public void addFieldIndex(FieldIndex index) {
+    // Field indices are not supported with memory persistence.
+  }
+
+  @Override
+  public void deleteFieldIndex(FieldIndex index) {
+    // Field indices are not supported with memory persistence.
+  }
+
+  @Override
+  @Nullable
+  public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
+    // Field indices are not supported with memory persistence.
+    return null;
+  }
+
+  @Nullable
+  @Override
+  public String getNextCollectionGroupToUpdate() {
+    // Field indices are not supported with memory persistence.
+    return null;
+  }
+
+  @Override
+  public void updateCollectionGroup(String collectionGroup, IndexOffset offset) {
+    // Field indices are not supported with memory persistence.
+  }
+
+  @Override
+  public Collection<FieldIndex> getFieldIndexes(String collectionGroup) {
+    // Field indices are not supported with memory persistence.
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<FieldIndex> getFieldIndexes() {
+    // Field indices are not supported with memory persistence.
+    return Collections.emptyList();
+  }
+
+  @Override
+  public IndexOffset getMinOffset(Target target) {
+    return IndexOffset.NONE;
+  }
+
+  @Override
+  public IndexOffset getMinOffset(String collectionGroup) {
+    return IndexOffset.NONE;
+  }
+
+  @Override
+  public IndexType getIndexType(Target target) {
+    return IndexType.NONE;
+  }
+
+  @Override
+  public void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents) {
+    // Field indices are not supported with memory persistence.
   }
 
   /**

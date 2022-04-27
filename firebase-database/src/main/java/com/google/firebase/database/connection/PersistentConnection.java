@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.connection;
 
+import com.google.android.gms.tasks.Task;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public interface PersistentConnection {
 
     void onDisconnect();
 
-    void onAuthStatus(boolean authOk);
+    void onConnectionStatus(boolean connectionOk);
 
     void onServerInfoUpdate(Map<String, Object> updates);
   }
@@ -45,6 +46,12 @@ public interface PersistentConnection {
 
   void refreshAuthToken(String token);
 
+  // AppCheck
+
+  void refreshAppCheckToken();
+
+  void refreshAppCheckToken(String token);
+
   // Listens
 
   void listen(
@@ -55,6 +62,10 @@ public interface PersistentConnection {
       RequestResultCallback onComplete);
 
   void unlisten(List<String> path, Map<String, Object> queryParams);
+
+  // Get
+
+  Task<Object> get(List<String> path, Map<String, Object> queryParams);
 
   // Writes
 

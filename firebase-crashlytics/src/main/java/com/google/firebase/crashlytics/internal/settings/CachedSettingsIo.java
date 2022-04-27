@@ -14,10 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
-import android.content.Context;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.persistence.FileStoreImpl;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -30,14 +29,14 @@ import org.json.JSONObject;
 public class CachedSettingsIo {
   private static final String SETTINGS_CACHE_FILENAME = "com.crashlytics.settings.json";
 
-  private final Context context;
+  private final File cachedSettingsFile;
 
-  public CachedSettingsIo(Context context) {
-    this.context = context;
+  public CachedSettingsIo(FileStore fileStore) {
+    this.cachedSettingsFile = fileStore.getCommonFile(SETTINGS_CACHE_FILENAME);
   }
 
   private File getSettingsFile() {
-    return new File(new FileStoreImpl(context).getFilesDir(), SETTINGS_CACHE_FILENAME);
+    return cachedSettingsFile;
   }
 
   /**
@@ -45,7 +44,7 @@ public class CachedSettingsIo {
    *     cached data could be found, or an error occurred.
    */
   public JSONObject readCachedSettings() {
-    Logger.getLogger().d(Logger.TAG, "Reading cached settings...");
+    Logger.getLogger().d("Checking for cached settings...");
 
     FileInputStream fis = null;
     JSONObject toReturn = null;
@@ -59,10 +58,10 @@ public class CachedSettingsIo {
 
         toReturn = new JSONObject(settingsStr);
       } else {
-        Logger.getLogger().d(Logger.TAG, "No cached settings found.");
+        Logger.getLogger().v("Settings file does not exist.");
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Failed to fetch cached settings", e);
+      Logger.getLogger().e("Failed to fetch cached settings", e);
     } finally {
       CommonUtils.closeOrLog(fis, "Error while closing settings cache file.");
     }
@@ -78,7 +77,7 @@ public class CachedSettingsIo {
    * @param settingsJson JSON data to write to the cache
    */
   public void writeCachedSettings(long expiresAtMillis, JSONObject settingsJson) {
-    Logger.getLogger().d(Logger.TAG, "Writing settings to cache file...");
+    Logger.getLogger().v("Writing settings to cache file...");
 
     if (settingsJson != null) {
       FileWriter writer = null;
@@ -90,7 +89,7 @@ public class CachedSettingsIo {
         writer.write(settingsJson.toString());
         writer.flush();
       } catch (Exception e) {
-        Logger.getLogger().e(Logger.TAG, "Failed to cache settings", e);
+        Logger.getLogger().e("Failed to cache settings", e);
       } finally {
         CommonUtils.closeOrLog(writer, "Failed to close settings writer.");
       }

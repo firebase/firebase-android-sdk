@@ -14,12 +14,22 @@
 
 package com.google.firebase.database.core.utilities;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+import static com.google.firebase.database.core.utilities.Utilities.tryParseInt;
+
+import com.google.firebase.database.snapshot.ChildKey;
 import java.util.Random;
 
 public class PushIdGenerator {
 
   private static final String PUSH_CHARS =
       "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+
+  private static final char MIN_PUSH_CHAR = '-';
+
+  private static final char MAX_PUSH_CHAR = 'z';
+
+  private static final int MAX_KEY_LEN = 786;
 
   private static final Random randGen = new Random();
 
@@ -37,7 +47,7 @@ public class PushIdGenerator {
       timeStampChars[i] = PUSH_CHARS.charAt((int) (now % 64));
       now = now / 64;
     }
-    assert (now == 0);
+    hardAssert(now == 0);
 
     result.append(timeStampChars);
 
@@ -51,8 +61,80 @@ public class PushIdGenerator {
     for (int i = 0; i < 12; i++) {
       result.append(PUSH_CHARS.charAt(lastRandChars[i]));
     }
-    assert (result.length() == 20);
+    hardAssert(result.length() == 20);
     return result.toString();
+  }
+
+  // `key` is assumed to be non-empty.
+  public static final String predecessor(String key) {
+    Validation.validateNullableKey(key);
+    Integer num = tryParseInt(key);
+    if (num != null) {
+      if (num == Integer.MIN_VALUE) {
+        return ChildKey.MIN_KEY_NAME;
+      }
+      return String.valueOf(num - 1);
+    }
+    StringBuilder next = new StringBuilder(key);
+    if (next.charAt(next.length() - 1) == MIN_PUSH_CHAR) {
+      if (next.length() == 1) {
+        return String.valueOf(Integer.MAX_VALUE);
+      }
+      // If the last character is the smallest possible character, then the next
+      // smallest string is the prefix of `key` without it.
+      return next.substring(0, next.length() - 1);
+    }
+    // Replace the last character with it's immediate predecessor, and fill the
+    // suffix of the key with MAX_PUSH_CHAR. This is the lexicographically largest
+    // possible key smaller than `key`.
+    next.setCharAt(
+        next.length() - 1,
+        PUSH_CHARS.charAt(PUSH_CHARS.indexOf(next.charAt(next.length() - 1)) - 1));
+    return next.append(
+            new String(new char[MAX_KEY_LEN - next.length()]).replace("\0", "" + MAX_PUSH_CHAR))
+        .toString();
+  }
+
+  public static final String successor(String key) {
+    Validation.validateNullableKey(key);
+    Integer num = tryParseInt(key);
+    if (num != null) {
+      if (num == Integer.MAX_VALUE) {
+        // See https://firebase.google.com/docs/database/web/lists-of-data#data-order
+        return String.valueOf(MIN_PUSH_CHAR);
+      }
+      return String.valueOf(num + 1);
+    }
+    StringBuilder next = new StringBuilder(key);
+
+    if (next.length() < MAX_KEY_LEN) {
+      // If this key doesn't have all possible character slots filled,
+      // the lexicographical successor is the same string with the smallest
+      // possible character appended to the end.
+      next.append(MIN_PUSH_CHAR);
+      return next.toString();
+    }
+
+    int i = next.length() - 1;
+    while (i >= 0 && next.charAt(i) == MAX_PUSH_CHAR) {
+      i--;
+    }
+
+    // `successor` was called on the lexicographically largest possible key, so return the
+    // maxName, which sorts larger than all keys.
+    if (i == -1) {
+      return ChildKey.MAX_KEY_NAME;
+    }
+
+    // `i` now points to the last character in `key` that is < MAX_PUSH_CHAR,
+    // where all characters in `key.substring(i + 1, key.length)` are MAX_PUSH_CHAR.
+    // The lexicographical successor is attained by increment this character, and
+    // returning the prefix of `key` up to and including it.
+    char source = next.charAt(i);
+    char sourcePlusOne = PUSH_CHARS.charAt(PUSH_CHARS.indexOf(source) + 1);
+    next.replace(i, i + 1, String.valueOf(sourcePlusOne));
+
+    return next.substring(0, i + 1);
   }
 
   private static void incrementArray() {

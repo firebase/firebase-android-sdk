@@ -278,7 +278,8 @@ final class SQLiteTargetCache implements TargetCache {
     }
   }
 
-  private void removeMatchingKeysForTargetId(int targetId) {
+  @Override
+  public void removeMatchingKeysForTargetId(int targetId) {
     db.execute("DELETE FROM target_documents WHERE target_id = ?", targetId);
   }
 

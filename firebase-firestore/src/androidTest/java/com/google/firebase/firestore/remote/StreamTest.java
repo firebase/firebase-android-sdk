@@ -29,10 +29,11 @@ import static org.mockito.Mockito.verify;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
+import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -113,6 +114,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     final WriteStream writeStream = datastore.createWriteStream(callback);
@@ -138,6 +140,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             mockGrpcProvider);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
@@ -160,6 +163,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     final WriteStream[] writeStreamWrapper = new WriteStream[1];
@@ -207,6 +211,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
@@ -287,6 +292,7 @@ public class StreamTest {
             IntegrationTestUtil.testEnvDatabaseInfo(),
             testQueue,
             mockCredentialsProvider,
+            new EmptyAppCheckTokenProvider(),
             ApplicationProvider.getApplicationContext(),
             null);
     StreamStatusCallback callback = new StreamStatusCallback();
@@ -305,5 +311,28 @@ public class StreamTest {
     assertThat(mockCredentialsProvider.observedStates())
         .containsExactly("getToken", "invalidateToken", "getToken", "getToken")
         .inOrder();
+  }
+
+  @Test
+  public void testTokenIsNotInvalidatedOnceStreamIsHealthy() throws Exception {
+    AsyncQueue testQueue = new AsyncQueue();
+    MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
+    Datastore datastore =
+        new Datastore(
+            IntegrationTestUtil.testEnvDatabaseInfo(),
+            testQueue,
+            mockCredentialsProvider,
+            new EmptyAppCheckTokenProvider(),
+            ApplicationProvider.getApplicationContext(),
+            null);
+    StreamStatusCallback callback = new StreamStatusCallback();
+    WriteStream writeStream = datastore.createWriteStream(callback);
+    waitForWriteStreamOpen(testQueue, writeStream, callback);
+    testQueue.runDelayedTasksUntil(TimerId.HEALTH_CHECK_TIMEOUT);
+
+    // Simulate callback from GRPC with an unauthenticated error -- this should NOT invalidate the
+    // token.
+    testQueue.runSync(() -> writeStream.handleServerClose(Status.UNAUTHENTICATED));
+    assertThat(mockCredentialsProvider.observedStates()).containsExactly("getToken");
   }
 }

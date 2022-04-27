@@ -31,12 +31,7 @@ import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
-import com.google.firebase.crashlytics.internal.settings.model.AppSettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.Settings;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
-import com.google.firebase.crashlytics.internal.settings.network.DefaultSettingsSpiCall;
-import com.google.firebase.crashlytics.internal.settings.network.SettingsSpiCall;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -44,7 +39,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Implements the logic of when to use cached settings, and when to load them from the network. */
-public class SettingsController implements SettingsDataProvider {
+public class SettingsController implements SettingsProvider {
   private static final String PREFS_BUILD_INSTANCE_IDENTIFIER = "existing_instance_identifier";
 
   private static final String SETTINGS_URL_FORMAT =
@@ -61,7 +56,7 @@ public class SettingsController implements SettingsDataProvider {
   private final DataCollectionArbiter dataCollectionArbiter;
 
   private final AtomicReference<Settings> settings = new AtomicReference<>();
-  private final AtomicReference<TaskCompletionSource<AppSettingsData>> appSettingsData =
+  private final AtomicReference<TaskCompletionSource<Settings>> settingsTask =
       new AtomicReference<>(new TaskCompletionSource<>());
 
   SettingsController(
@@ -90,16 +85,16 @@ public class SettingsController implements SettingsDataProvider {
       HttpRequestFactory httpRequestFactory,
       String versionCode,
       String versionName,
-      String urlEndpoint,
+      FileStore fileStore,
       DataCollectionArbiter dataCollectionArbiter) {
 
     final String installerPackageName = idManager.getInstallerPackageName();
     final CurrentTimeProvider currentTimeProvider = new SystemCurrentTimeProvider();
     final SettingsJsonParser settingsJsonParser = new SettingsJsonParser(currentTimeProvider);
-    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(context);
+    final CachedSettingsIo cachedSettingsIo = new CachedSettingsIo(fileStore);
     final String settingsUrl = String.format(Locale.US, SETTINGS_URL_FORMAT, googleAppId);
     final SettingsSpiCall settingsSpiCall =
-        new DefaultSettingsSpiCall(urlEndpoint, settingsUrl, httpRequestFactory);
+        new DefaultSettingsSpiCall(settingsUrl, httpRequestFactory);
 
     final String deviceModel = idManager.getModelName();
     final String osBuildVersion = idManager.getOsBuildVersionString();
@@ -131,17 +126,22 @@ public class SettingsController implements SettingsDataProvider {
         dataCollectionArbiter);
   }
 
-  /** Gets the best available settings that have been loaded. */
-  public Settings getSettings() {
-    return settings.get();
+  /**
+   * Returns a Task that will be resolved with SettingsData, once it has been fetched from the
+   * network or loaded from the cache.
+   */
+  @Override
+  public Task<Settings> getSettingsAsync() {
+    return settingsTask.get().getTask();
   }
 
   /**
-   * Returns a Task that will be resolved with AppSettingsData, once it has been fetched from the
+   * Returns a Task that will be resolved with SettingsData, once it has been fetched from the
    * network or loaded from the cache.
    */
-  public Task<AppSettingsData> getAppSettings() {
-    return appSettingsData.get().getTask();
+  @Override
+  public Settings getSettingsSync() {
+    return settings.get();
   }
 
   /**
@@ -165,10 +165,10 @@ public class SettingsController implements SettingsDataProvider {
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
-      final SettingsData cachedSettings = getCachedSettingsData(cacheBehavior);
+      final Settings cachedSettings = getCachedSettingsData(cacheBehavior);
       if (cachedSettings != null) {
         settings.set(cachedSettings);
-        appSettingsData.get().trySetResult(cachedSettings.getAppSettingsData());
+        settingsTask.get().trySetResult(cachedSettings);
         return Tasks.forResult(null);
       }
     }
@@ -178,16 +178,16 @@ public class SettingsController implements SettingsDataProvider {
     // This has been true in production for some time, though, so no rush to "fix" it.
 
     // The cached settings are too old, so if there are expired settings, use those for now.
-    final SettingsData expiredSettings =
+    final Settings expiredSettings =
         getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION);
     if (expiredSettings != null) {
       settings.set(expiredSettings);
-      appSettingsData.get().trySetResult(expiredSettings.getAppSettingsData());
+      settingsTask.get().trySetResult(expiredSettings);
     }
 
     // Kick off fetching fresh settings.
     return dataCollectionArbiter
-        .waitForDataCollectionPermission()
+        .waitForDataCollectionPermission(executor)
         .onSuccessTask(
             executor,
             new SuccessContinuation<Void, Void>() {
@@ -200,10 +200,10 @@ public class SettingsController implements SettingsDataProvider {
                     settingsSpiCall.invoke(settingsRequest, dataCollectionToken);
 
                 if (settingsJson != null) {
-                  final SettingsData fetchedSettings =
+                  final Settings fetchedSettings =
                       settingsJsonParser.parseSettingsJson(settingsJson);
                   cachedSettingsIo.writeCachedSettings(
-                      fetchedSettings.getExpiresAtMillis(), settingsJson);
+                      fetchedSettings.expiresAtMillis, settingsJson);
                   logSettings(settingsJson, "Loaded settings: ");
 
                   setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
@@ -211,14 +211,8 @@ public class SettingsController implements SettingsDataProvider {
                   // Update the regular settings.
                   settings.set(fetchedSettings);
 
-                  // Signal the app settings on any Tasks that already exist, and then replace the
-                  // task so
-                  // that any new callers get the new app settings instead of any old ones.
-                  appSettingsData.get().trySetResult(fetchedSettings.getAppSettingsData());
-                  TaskCompletionSource<AppSettingsData> fetchedAppSettings =
-                      new TaskCompletionSource<>();
-                  fetchedAppSettings.trySetResult(fetchedSettings.getAppSettingsData());
-                  appSettingsData.set(fetchedAppSettings);
+                  // Signal the Task that we have a new valid settings
+                  settingsTask.get().trySetResult(fetchedSettings);
                 }
 
                 return Tasks.forResult(null);
@@ -226,44 +220,44 @@ public class SettingsController implements SettingsDataProvider {
             });
   }
 
-  private SettingsData getCachedSettingsData(SettingsCacheBehavior cacheBehavior) {
-    SettingsData toReturn = null;
+  private Settings getCachedSettingsData(SettingsCacheBehavior cacheBehavior) {
+    Settings toReturn = null;
 
     try {
       if (!SettingsCacheBehavior.SKIP_CACHE_LOOKUP.equals(cacheBehavior)) {
         final JSONObject settingsJson = cachedSettingsIo.readCachedSettings();
 
         if (settingsJson != null) {
-          final SettingsData settingsData = settingsJsonParser.parseSettingsJson(settingsJson);
+          final Settings settings = settingsJsonParser.parseSettingsJson(settingsJson);
 
-          if (settingsData != null) {
+          if (settings != null) {
             logSettings(settingsJson, "Loaded cached settings: ");
 
             final long currentTimeMillis = currentTimeProvider.getCurrentTimeMillis();
 
             if (SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION.equals(cacheBehavior)
-                || !settingsData.isExpired(currentTimeMillis)) {
-              toReturn = settingsData;
-              Logger.getLogger().d(Logger.TAG, "Returning cached settings.");
+                || !settings.isExpired(currentTimeMillis)) {
+              toReturn = settings;
+              Logger.getLogger().v("Returning cached settings.");
             } else {
-              Logger.getLogger().d(Logger.TAG, "Cached settings have expired.");
+              Logger.getLogger().v("Cached settings have expired.");
             }
           } else {
-            Logger.getLogger().e(Logger.TAG, "Failed to parse cached settings data.", null);
+            Logger.getLogger().e("Failed to parse cached settings data.", null);
           }
         } else {
-          Logger.getLogger().d(Logger.TAG, "No cached settings data found.");
+          Logger.getLogger().d("No cached settings data found.");
         }
       }
     } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Failed to get cached settings", e);
+      Logger.getLogger().e("Failed to get cached settings", e);
     }
 
     return toReturn;
   }
 
   private void logSettings(JSONObject json, String message) throws JSONException {
-    Logger.getLogger().d(Logger.TAG, message + json.toString());
+    Logger.getLogger().d(message + json.toString());
   }
 
   private String getStoredBuildInstanceIdentifier() {

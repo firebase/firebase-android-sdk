@@ -14,13 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_ID_KEY;
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_START_TIME_KEY;
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_TIME_TO_LIVE_KEY;
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_TRIGGER_EVENT_KEY;
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_TRIGGER_TIMEOUT_KEY;
-import static com.google.firebase.remoteconfig.internal.LegacyConfigsHandler.EXPERIMENT_VARIANT_ID_KEY;
-
 import java.sql.Date;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -32,6 +25,13 @@ import org.json.JSONObject;
  * @author Miraziz Yusupov
  */
 public class AbtExperimentHelper {
+  private static final String EXPERIMENT_ID_KEY = "experimentId";
+  private static final String EXPERIMENT_VARIANT_ID_KEY = "variantId";
+  private static final String EXPERIMENT_START_TIME_KEY = "experimentStartTime";
+  private static final String EXPERIMENT_TRIGGER_EVENT_KEY = "triggerEvent";
+  private static final String EXPERIMENT_TRIGGER_TIMEOUT_KEY = "triggerTimeoutMillis";
+  private static final String EXPERIMENT_TIME_TO_LIVE_KEY = "timeToLiveMillis";
+
   /**
    * Returns a {@link JSONArray} containing a list of {@link JSONObject}s representing ABT
    * experiments.

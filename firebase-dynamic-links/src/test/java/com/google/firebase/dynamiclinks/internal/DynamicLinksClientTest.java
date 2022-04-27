@@ -22,6 +22,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.internal.ClientSettings;
@@ -33,7 +34,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class DynamicLinksClientTest {
@@ -73,7 +73,7 @@ public class DynamicLinksClientTest {
 
     client =
         new DynamicLinksClient(
-            RuntimeEnvironment.application,
+            ApplicationProvider.getApplicationContext(),
             Looper.getMainLooper(),
             clientSettings,
             CONNECTED_LISTENER,

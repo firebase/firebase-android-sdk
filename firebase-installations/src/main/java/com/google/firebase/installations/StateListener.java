@@ -27,5 +27,5 @@ interface StateListener {
    * Returns {@code true} if an exception is thrown while registering a Firebase Installation,
    * {@code false} otherwise.
    */
-  boolean onException(PersistedInstallationEntry persistedInstallationEntry, Exception exception);
+  boolean onException(Exception exception);
 }

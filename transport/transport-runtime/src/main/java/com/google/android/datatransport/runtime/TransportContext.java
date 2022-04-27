@@ -32,6 +32,17 @@ public abstract class TransportContext {
   public abstract byte[] getExtras();
 
   /**
+   * CCT and FLG are unified into one CctTransportBackend: - it sends request to FLG if the extras
+   * is not null. - it sends request to CCT if the extras is null
+   *
+   * <p>We will only upload {@link
+   * com.google.android.datatransport.runtime.firebase.transport.ClientMetrics} to FLG server.
+   */
+  public boolean shouldUploadClientHealthMetrics() {
+    return getExtras() != null;
+  }
+
+  /**
    * Priority of the event.
    *
    * <p>For internal use by the library and backend implementations. Not for use by users of the
@@ -61,7 +72,7 @@ public abstract class TransportContext {
    *
    * @hide
    */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public TransportContext withPriority(Priority priority) {
     return builder()
         .setBackendName(getBackendName())
@@ -78,7 +89,7 @@ public abstract class TransportContext {
     public abstract Builder setExtras(@Nullable byte[] extras);
 
     /** @hide */
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public abstract Builder setPriority(Priority priority);
 
     public abstract TransportContext build();

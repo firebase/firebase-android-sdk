@@ -318,7 +318,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /**
    * Returns the current state of the task. This method will return state at any point of the tasks
-   * execution and may not be the final result..
+   * execution and may not be the final result.
    */
   @NonNull
   public ResultT getSnapshot() {

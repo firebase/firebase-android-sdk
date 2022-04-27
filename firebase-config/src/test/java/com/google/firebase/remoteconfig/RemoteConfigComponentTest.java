@@ -18,28 +18,28 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiments;
+import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.DEFAULT_NAMESPACE;
-import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
 import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +47,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -58,15 +57,15 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class RemoteConfigComponentTest {
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String DUMMY_API_KEY = "api_key";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   @Mock private FirebaseApp mockFirebaseApp;
-  @Mock private FirebaseInstanceId mockFirebaseIid;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseABTesting mockFirebaseAbt;
   @Mock private AnalyticsConnector mockAnalyticsConnector;
-  @Mock private LegacyConfigsHandler mockLegacyConfigsHandler;
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
@@ -82,7 +81,7 @@ public class RemoteConfigComponentTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    context = RuntimeEnvironment.application;
+    context = ApplicationProvider.getApplicationContext();
     directExecutor = MoreExecutors.newDirectExecutorService();
 
     defaultApp = initializeFirebaseApp(context);
@@ -90,12 +89,6 @@ public class RemoteConfigComponentTest {
     when(mockFirebaseApp.getOptions())
         .thenReturn(new FirebaseOptions.Builder().setApplicationId(APP_ID).build());
     when(mockFirebaseApp.getName()).thenReturn(FirebaseApp.DEFAULT_APP_NAME);
-  }
-
-  @Test
-  public void constructor_callsLegacyConfigHandler() {
-    getNewFrcComponent();
-    verify(mockLegacyConfigsHandler).saveLegacyConfigsIfNecessary();
   }
 
   @Test
@@ -134,7 +127,7 @@ public class RemoteConfigComponentTest {
         getNewFrcComponent()
             .getFetchHandler(DEFAULT_NAMESPACE, mockFetchedCache, mockMetadataClient);
 
-    assertThat(fetchHandler.getAnalyticsConnector()).isNull();
+    assertThat(fetchHandler.getAnalyticsConnector().get()).isNull();
   }
 
   @Test
@@ -142,16 +135,15 @@ public class RemoteConfigComponentTest {
       getFrcBackendApiClient_fetchTimeoutIsNotSet_buildsConfigFetchHttpClientWithDefaultConnectionTimeout() {
 
     RemoteConfigComponent frcComponent = defaultApp.get(RemoteConfigComponent.class);
-    when(mockMetadataClient.getFetchTimeoutInSeconds())
-        .thenReturn(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    when(mockMetadataClient.getFetchTimeoutInSeconds()).thenReturn(CONNECTION_TIMEOUT_IN_SECONDS);
 
     ConfigFetchHttpClient frcBackendClient =
         frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
-    assertThat(actualConnectTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
-    assertThat(actualReadTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualConnectTimeout).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualReadTimeout).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   @Test
@@ -160,17 +152,17 @@ public class RemoteConfigComponentTest {
 
     RemoteConfigComponent frcComponent = defaultApp.get(RemoteConfigComponent.class);
 
-    long customNetworkConnectionTimeoutInSeconds = 2 * NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+    long customConnectionTimeoutInSeconds = 2 * CONNECTION_TIMEOUT_IN_SECONDS;
     when(mockMetadataClient.getFetchTimeoutInSeconds())
-        .thenReturn(customNetworkConnectionTimeoutInSeconds);
+        .thenReturn(customConnectionTimeoutInSeconds);
 
     ConfigFetchHttpClient frcBackendClient =
         frcComponent.getFrcBackendApiClient(DUMMY_API_KEY, DEFAULT_NAMESPACE, mockMetadataClient);
 
     int actualConnectTimeout = getConnectTimeoutInSeconds(frcBackendClient);
     int actualReadTimeout = getReadTimeoutInSeconds(frcBackendClient);
-    assertThat(actualConnectTimeout).isEqualTo(customNetworkConnectionTimeoutInSeconds);
-    assertThat(actualReadTimeout).isEqualTo(NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(actualConnectTimeout).isEqualTo(customConnectionTimeoutInSeconds);
+    assertThat(actualReadTimeout).isEqualTo(customConnectionTimeoutInSeconds);
   }
 
   private RemoteConfigComponent getNewFrcComponent() {
@@ -178,10 +170,9 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockAnalyticsConnector,
-        mockLegacyConfigsHandler,
+        () -> mockAnalyticsConnector,
         /* loadGetDefault= */ true);
   }
 
@@ -190,10 +181,9 @@ public class RemoteConfigComponentTest {
         context,
         directExecutor,
         mockFirebaseApp,
-        mockFirebaseIid,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
-        mockAnalyticsConnector,
-        mockLegacyConfigsHandler,
+        () -> mockAnalyticsConnector,
         /* loadGetDefault= */ false);
   }
 
@@ -202,6 +192,7 @@ public class RemoteConfigComponentTest {
     return frcComponent.get(
         mockFirebaseApp,
         namespace,
+        mockFirebaseInstallations,
         mockFirebaseAbt,
         directExecutor,
         mockFetchedCache,
@@ -237,6 +228,11 @@ public class RemoteConfigComponentTest {
     FirebaseApp.clearInstancesForTest();
 
     return FirebaseApp.initializeApp(
-        context, new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build());
   }
 }

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.repeatSequence;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -29,13 +30,13 @@ import android.database.sqlite.SQLiteStatement;
 import android.database.sqlite.SQLiteTransactionListener;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.common.base.Function;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.FileUtil;
+import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Supplier;
 import java.io.File;
@@ -54,6 +55,11 @@ import java.util.List;
  * helper routines that make dealing with SQLite much more pleasant.
  */
 public final class SQLitePersistence extends Persistence {
+  /**
+   * The maximum number of bind args for a single statement. Set to 900 instead of 999 for safety.
+   */
+  public static final int MAX_ARGS = 900;
+
   /**
    * Creates the database name that is used to identify the database to be used with a Firestore
    * instance. Note that this needs to stay stable across releases. The database is uniquely
@@ -77,10 +83,10 @@ public final class SQLitePersistence extends Persistence {
     }
   }
 
-  private final SQLiteOpenHelper opener;
+  private final OpenHelper opener;
   private final LocalSerializer serializer;
   private final SQLiteTargetCache targetCache;
-  private final SQLiteIndexManager indexManager;
+  private final SQLiteBundleCache bundleCache;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
   private final SQLiteLruReferenceDelegate referenceDelegate;
   private final SQLiteTransactionListener transactionListener =
@@ -108,15 +114,18 @@ public final class SQLitePersistence extends Persistence {
       DatabaseId databaseId,
       LocalSerializer serializer,
       LruGarbageCollector.Params params) {
-    this(serializer, params, new OpenHelper(context, databaseName(persistenceKey, databaseId)));
+    this(
+        serializer,
+        params,
+        new OpenHelper(context, serializer, databaseName(persistenceKey, databaseId)));
   }
 
   public SQLitePersistence(
-      LocalSerializer serializer, LruGarbageCollector.Params params, SQLiteOpenHelper openHelper) {
+      LocalSerializer serializer, LruGarbageCollector.Params params, OpenHelper openHelper) {
     this.opener = openHelper;
     this.serializer = serializer;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
-    this.indexManager = new SQLiteIndexManager(this);
+    this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
     this.referenceDelegate = new SQLiteLruReferenceDelegate(this, params);
   }
@@ -162,8 +171,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  MutationQueue getMutationQueue(User user) {
-    return new SQLiteMutationQueue(this, serializer, user);
+  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
+    return new SQLiteMutationQueue(this, serializer, user, indexManager);
   }
 
   @Override
@@ -172,8 +181,23 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  IndexManager getIndexManager() {
-    return indexManager;
+  IndexManager getIndexManager(User user) {
+    return new SQLiteIndexManager(this, serializer, user);
+  }
+
+  @Override
+  BundleCache getBundleCache() {
+    return bundleCache;
+  }
+
+  @Override
+  DocumentOverlayCache getDocumentOverlayCache(User user) {
+    return new SQLiteDocumentOverlayCache(this, this.serializer, user);
+  }
+
+  @Override
+  OverlayMigrationManager getOverlayMigrationManager() {
+    return new SQLiteOverlayMigrationManager(this);
   }
 
   @Override
@@ -272,12 +296,21 @@ public final class SQLitePersistence extends Persistence {
    * this happens naturally during onConfigure. On pre-Jelly Bean devices all other methods ensure
    * that the configuration is applied before any action is taken.
    */
-  private static class OpenHelper extends SQLiteOpenHelper {
+  @VisibleForTesting
+  static class OpenHelper extends SQLiteOpenHelper {
 
+    private final LocalSerializer serializer;
     private boolean configured;
 
-    OpenHelper(Context context, String databaseName) {
-      super(context, databaseName, null, SQLiteSchema.VERSION);
+    private OpenHelper(Context context, LocalSerializer serializer, String databaseName) {
+      this(context, serializer, databaseName, SQLiteSchema.VERSION);
+    }
+
+    @VisibleForTesting
+    OpenHelper(
+        Context context, LocalSerializer serializer, String databaseName, int schemaVersion) {
+      super(context, databaseName, null, schemaVersion);
+      this.serializer = serializer;
     }
 
     @Override
@@ -303,13 +336,15 @@ public final class SQLitePersistence extends Persistence {
     @Override
     public void onCreate(SQLiteDatabase db) {
       ensureConfigured(db);
-      new SQLiteSchema(db).runMigrations(0);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(0);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
       ensureConfigured(db);
-      new SQLiteSchema(db).runMigrations(oldVersion);
+      SQLiteSchema schema = new SQLiteSchema(db, serializer);
+      schema.runSchemaUpgrades(oldVersion);
     }
 
     @Override
@@ -470,18 +505,12 @@ public final class SQLitePersistence extends Persistence {
      * @return The number of rows processed (either zero or one).
      */
     int first(Consumer<Cursor> consumer) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         if (cursor.moveToFirst()) {
           consumer.accept(cursor);
           return 1;
         }
         return 0;
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
@@ -495,30 +524,18 @@ public final class SQLitePersistence extends Persistence {
      */
     @Nullable
     <T> T firstValue(Function<Cursor, T> function) {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         if (cursor.moveToFirst()) {
           return function.apply(cursor);
         }
         return null;
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
     /** Runs the query and returns true if the result was nonempty. */
     boolean isEmpty() {
-      Cursor cursor = null;
-      try {
-        cursor = startQuery();
+      try (Cursor cursor = startQuery()) {
         return !cursor.moveToFirst();
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
       }
     }
 
@@ -641,23 +658,27 @@ public final class SQLitePersistence extends Persistence {
       return argsIter.hasNext();
     }
 
+    private Object[] getNextSubqueryArgs() {
+      List<Object> subqueryArgs = new ArrayList<>(argsHead);
+      for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
+        subqueryArgs.add(argsIter.next());
+      }
+      return subqueryArgs.toArray();
+    }
+
     /** Performs the next subquery and returns a {@link Query} object for method chaining. */
     Query performNextSubquery() {
       ++subqueriesPerformed;
+      Object[] subqueryArgs = getNextSubqueryArgs();
+      return db.query(head + repeatSequence("?", subqueryArgs.length, ", ") + tail)
+          .binding(subqueryArgs);
+    }
 
-      List<Object> subqueryArgs = new ArrayList<>(argsHead);
-      StringBuilder placeholdersBuilder = new StringBuilder();
-      for (int i = 0; argsIter.hasNext() && i < LIMIT - argsHead.size(); i++) {
-        if (i > 0) {
-          placeholdersBuilder.append(", ");
-        }
-        placeholdersBuilder.append("?");
-
-        subqueryArgs.add(argsIter.next());
-      }
-      String placeholders = placeholdersBuilder.toString();
-
-      return db.query(head + placeholders + tail).binding(subqueryArgs.toArray());
+    /** Executes the next subquery. */
+    void executeNextSubquery() {
+      ++subqueriesPerformed;
+      Object[] subqueryArgs = getNextSubqueryArgs();
+      db.execute(head + repeatSequence("?", subqueryArgs.length, ", ") + tail, subqueryArgs);
     }
 
     /** How many subqueries were performed. */

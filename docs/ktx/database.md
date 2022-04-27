@@ -80,3 +80,21 @@ val messages: List<Message> = snapshot.getValue(typeIndicator)
 val snapshot: DocumentSnapshot = ...
 val messages: List<Message> = snapshot.getValue<List<@JvmSuppressWildcards Message>>()
 ```
+
+### Convert a MutableData to a POJO in a Transaction
+
+**Kotlin**
+```kotlin
+override fun doTransaction(mutableData: MutableData): Transaction.Result {
+    val post = mutableData.getValue(Post::class.java)
+    // ...
+}
+```
+
+**Kotlin + KTX**
+```kotlin
+override fun doTransaction(mutableData: MutableData): Transaction.Result {
+    val post = mutableData.getValue<Post>()
+    // ...
+}
+```

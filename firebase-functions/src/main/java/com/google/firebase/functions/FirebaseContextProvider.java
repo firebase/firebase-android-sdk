@@ -14,38 +14,65 @@
 
 package com.google.firebase.functions;
 
-import androidx.annotation.Nullable;
+import android.util.Log;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** A ContextProvider that uses FirebaseAuth to get the token. */
 class FirebaseContextProvider implements ContextProvider {
-  @Nullable private final Provider<InternalAuthProvider> tokenProvider;
+  private final String TAG = "FirebaseContextProvider";
+
+  private final Provider<InternalAuthProvider> tokenProvider;
   private final Provider<FirebaseInstanceIdInternal> instanceId;
+  private final AtomicReference<InternalAppCheckTokenProvider> appCheckRef =
+      new AtomicReference<>();
 
   FirebaseContextProvider(
-      @Nullable Provider<InternalAuthProvider> tokenProvider,
-      Provider<FirebaseInstanceIdInternal> instanceId) {
+      Provider<InternalAuthProvider> tokenProvider,
+      Provider<FirebaseInstanceIdInternal> instanceId,
+      Deferred<InternalAppCheckTokenProvider> appCheckDeferred) {
     this.tokenProvider = tokenProvider;
     this.instanceId = instanceId;
+    appCheckDeferred.whenAvailable(
+        p -> {
+          InternalAppCheckTokenProvider appCheck = p.get();
+          appCheckRef.set(appCheck);
+
+          appCheck.addAppCheckTokenListener(
+              unused -> {
+                // Do nothing; we just need to register a listener so that the App Check SDK knows
+                // to auto-refresh the token.
+              });
+        });
   }
 
   @Override
   public Task<HttpsCallableContext> getContext() {
+    Task<String> authToken = getAuthToken();
+    Task<String> appCheckToken = getAppCheckToken();
+    return Tasks.whenAll(authToken, appCheckToken)
+        .onSuccessTask(
+            v ->
+                Tasks.forResult(
+                    new HttpsCallableContext(
+                        authToken.getResult(),
+                        instanceId.get().getToken(),
+                        appCheckToken.getResult())));
+  }
 
-    if (tokenProvider == null) {
-      TaskCompletionSource<HttpsCallableContext> tcs = new TaskCompletionSource<>();
-      tcs.setResult(new HttpsCallableContext(null, instanceId.get().getToken()));
-      return tcs.getTask();
+  private Task<String> getAuthToken() {
+    InternalAuthProvider auth = tokenProvider.get();
+    if (auth == null) {
+      return Tasks.forResult(null);
     }
-
-    return tokenProvider
-        .get()
-        .getAccessToken(false)
+    return auth.getAccessToken(false)
         .continueWith(
             task -> {
               String authToken = null;
@@ -59,10 +86,26 @@ class FirebaseContextProvider implements ContextProvider {
               } else {
                 authToken = task.getResult().getToken();
               }
+              return authToken;
+            });
+  }
 
-              String instanceIdToken = instanceId.get().getToken();
-
-              return new HttpsCallableContext(authToken, instanceIdToken);
+  private Task<String> getAppCheckToken() {
+    InternalAppCheckTokenProvider appCheck = appCheckRef.get();
+    if (appCheck == null) {
+      return Tasks.forResult(null);
+    }
+    return appCheck
+        .getToken(false)
+        .onSuccessTask(
+            result -> {
+              if (result.getError() != null) {
+                // If there was an error getting the App Check token, do NOT send the placeholder
+                // token. Only valid App Check tokens should be sent to the functions backend.
+                Log.w(TAG, "Error getting App Check token. Error: " + result.getError());
+                return Tasks.forResult(null);
+              }
+              return Tasks.forResult(result.getToken());
             });
   }
 }

@@ -17,29 +17,26 @@ package com.google.firebase.crashlytics.internal.network;
 import java.util.Collections;
 import java.util.Map;
 
-/** Factory for building {@link HttpRequest} objects. */
+/** Factory for building {@link HttpGetRequest} objects. */
 public class HttpRequestFactory {
 
   public HttpRequestFactory() {}
 
   /**
-   * @param method HTTP method to be used in the returned {@link HttpRequest}.
-   * @param url {@link String} URL to be used in the returned {@link HttpRequest}
-   * @return {@link HttpRequest} configured with the provided HTTP method and URL
+   * @param url {@link String} URL to be used in the returned {@link HttpGetRequest}
+   * @return {@link HttpGetRequest} configured for the URL
    */
-  public HttpRequest buildHttpRequest(HttpMethod method, String url) {
-    return buildHttpRequest(method, url, Collections.<String, String>emptyMap());
+  public HttpGetRequest buildHttpGetRequest(String url) {
+    return buildHttpGetRequest(url, Collections.<String, String>emptyMap());
   }
 
   /**
-   * @param method HTTP method to be used in the returned {@link HttpRequest}.
-   * @param url {@link String} URL to be used in the returned {@link HttpRequest}
+   * @param url {@link String} URL to be used in the returned {@link HttpGetRequest}
    * @param queryParams {@link Map} of {@link String} key/value pairs to be used as query parameters
    *     in the request.
-   * @return {@link HttpRequest} configured with the provided HTTP method and URL
+   * @return {@link HttpGetRequest} configured for the URL
    */
-  public HttpRequest buildHttpRequest(
-      HttpMethod method, String url, Map<String, String> queryParams) {
-    return new HttpRequest(method, url, queryParams);
+  public HttpGetRequest buildHttpGetRequest(String url, Map<String, String> queryParams) {
+    return new HttpGetRequest(url, queryParams);
   }
 }

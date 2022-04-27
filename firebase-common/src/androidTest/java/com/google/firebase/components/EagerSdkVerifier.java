@@ -14,24 +14,22 @@
 
 package com.google.firebase.components;
 
-import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.inject.Provider;
-
 public class EagerSdkVerifier {
-  private final Lazy<FirebaseAuth> authLazy;
-  private final Lazy<AnalyticsConnector> analyticsLazy;
+  private final InitializationTracker initializationTracker;
 
-  EagerSdkVerifier(Provider<FirebaseAuth> authLazy, Provider<AnalyticsConnector> analyticsLazy) {
-    this.authLazy = (Lazy<FirebaseAuth>) authLazy;
-    this.analyticsLazy = (Lazy<AnalyticsConnector>) analyticsLazy;
+  public EagerSdkVerifier(InitializationTracker initializationTracker) {
+    this.initializationTracker = initializationTracker;
   }
 
-  public boolean isAuthInitialized() {
-    return authLazy.isInitialized();
+  public boolean isLazyInitialized() {
+    return initializationTracker.isInitialized(LazyComponent.class);
   }
 
-  public boolean isAnalyticsInitialized() {
-    return analyticsLazy.isInitialized();
+  public boolean isEagerInitialized() {
+    return initializationTracker.isInitialized(EagerComponent.class);
+  }
+
+  public boolean isEagerInDefaultAppInitialized() {
+    return initializationTracker.isInitialized(EagerInDefaultAppComponent.class);
   }
 }

@@ -14,8 +14,14 @@
 
 package com.google.firebase.firestore.spec;
 
+import com.google.firebase.firestore.core.ComponentProvider;
+import com.google.firebase.firestore.core.MemoryComponentProvider;
+import com.google.firebase.firestore.local.LocalSerializer;
+import com.google.firebase.firestore.local.LruGarbageCollector;
+import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.local.PersistenceTestHelpers;
+import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import java.util.Set;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -33,11 +39,23 @@ public class MemorySpecTest extends SpecTestCase {
   }
 
   @Override
-  Persistence getPersistence(boolean garbageCollectionEnabled) {
-    if (garbageCollectionEnabled) {
-      return PersistenceTestHelpers.createEagerGCMemoryPersistence();
-    } else {
-      return PersistenceTestHelpers.createLRUMemoryPersistence();
-    }
+  protected MemoryComponentProvider initializeComponentProvider(
+      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
+    MemoryComponentProvider provider =
+        new MemoryComponentProvider() {
+          @Override
+          protected Persistence createPersistence(Configuration configuration) {
+            if (garbageCollectionEnabled) {
+              return MemoryPersistence.createEagerGcMemoryPersistence();
+            } else {
+              DatabaseId databaseId = DatabaseId.forProject("projectId");
+              LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
+              return MemoryPersistence.createLruGcMemoryPersistence(
+                  LruGarbageCollector.Params.Default(), serializer);
+            }
+          }
+        };
+    provider.initialize(configuration);
+    return provider;
   }
 }

@@ -15,6 +15,7 @@
 package com.google.firebase.storage;
 
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -26,14 +27,13 @@ import java.io.StringReader;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.robolectric.Robolectric;
-import org.robolectric.RuntimeEnvironment;
 
 /** Test helpers. */
 public class TestUtil {
 
   static FirebaseApp createApp() {
     return FirebaseApp.initializeApp(
-        RuntimeEnvironment.application.getApplicationContext(),
+        ApplicationProvider.getApplicationContext(),
         new FirebaseOptions.Builder()
             .setApiKey("fooey")
             .setApplicationId("fooey")

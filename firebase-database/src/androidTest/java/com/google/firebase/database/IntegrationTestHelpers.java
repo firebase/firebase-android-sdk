@@ -14,6 +14,7 @@
 
 package com.google.firebase.database;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -21,6 +22,7 @@ import static org.junit.Assert.fail;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Context;
@@ -109,7 +111,7 @@ public class IntegrationTestHelpers {
     }
     int remainingLength = size - builder.length();
     builder.append(pattern.substring(0, remainingLength));
-    assert builder.length() == size : "The string size did not match the expected size";
+    hardAssert(builder.length() == size, "The string size did not match the expected size");
     return NodeFromJSON(builder.toString());
   }
 
@@ -205,7 +207,7 @@ public class IntegrationTestHelpers {
       t = runLoop.caughtException.getAndSet(null);
       if (t != null) {
         t.printStackTrace();
-        fail("Found error on run loop");
+        fail("Found error on run loop: " + t);
       }
     }
   }
@@ -260,7 +262,17 @@ public class IntegrationTestHelpers {
     config.setEventTarget(new TestEventTarget());
     config.setRunLoop(runLoop);
     config.setFirebaseApp(FirebaseApp.getInstance());
-    config.setAuthTokenProvider(AndroidAuthTokenProvider.forUnauthenticatedAccess());
+    config.setAuthTokenProvider(
+        new AndroidAuthTokenProvider(
+            never -> {
+              // Auth is not available in our integration tests
+            }));
+    config.setAppCheckTokenProvider(
+        new AndroidAppCheckTokenProvider(
+            never -> {
+              // AppCheck is not available in our integration tests
+            }));
+    config.setSessionPersistenceKey(UUID.randomUUID().toString());
     return config;
   }
 

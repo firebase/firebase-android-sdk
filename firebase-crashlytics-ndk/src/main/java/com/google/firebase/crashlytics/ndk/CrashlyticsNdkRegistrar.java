@@ -15,12 +15,12 @@
 package com.google.firebase.crashlytics.ndk;
 
 import android.content.Context;
-import com.crashlytics.android.ndk.BuildConfig;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +39,9 @@ public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
 
   private CrashlyticsNativeComponent buildCrashlyticsNdk(ComponentContainer container) {
     Context context = container.get(Context.class);
-    return FirebaseCrashlyticsNdk.create(context);
+    // The signal handler is installed immediately for non-Unity apps. For Unity apps, it will
+    // be installed when the Firebase Unity SDK explicitly calls installSignalHandler().
+    boolean installHandlerDuringPrepSession = !DevelopmentPlatformProvider.isUnity(context);
+    return FirebaseCrashlyticsNdk.create(context, installHandlerDuringPrepSession);
   }
 }

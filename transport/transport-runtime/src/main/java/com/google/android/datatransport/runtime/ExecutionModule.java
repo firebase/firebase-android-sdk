@@ -25,6 +25,6 @@ abstract class ExecutionModule {
   @Singleton
   @Provides
   static Executor executor() {
-    return Executors.newSingleThreadExecutor();
+    return new SafeLoggingExecutor(Executors.newSingleThreadExecutor());
   }
 }

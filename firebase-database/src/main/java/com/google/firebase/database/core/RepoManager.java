@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.core;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.FirebaseDatabase;
@@ -73,6 +74,18 @@ public class RepoManager {
   private final Map<Context, Map<String, Repo>> repos = new HashMap<Context, Map<String, Repo>>();
 
   public RepoManager() {}
+
+  /** Remove all active instances. */
+  @VisibleForTesting
+  public static void clear() {
+    instance.clearRepos();
+  }
+
+  private void clearRepos() {
+    synchronized (repos) {
+      repos.clear();
+    }
+  }
 
   private Repo getLocalRepo(Context ctx, RepoInfo info) throws DatabaseException {
     ctx.freeze(); // No-op if it's already frozen

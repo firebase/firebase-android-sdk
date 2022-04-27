@@ -29,7 +29,7 @@ ext {
 
   /** Recursively renames build scripts to ${project.name}.gradle. */
   renameBuildScripts = {ProjectDescriptor project ->
-    project.buildFileName = project.parent ? "${project.name}.gradle" : 'root-project.gradle'
+    project.buildFileName = project.parent ? "${project.name}.gradle" : 'build.gradle'
 
     project.children.each {
       renameBuildScripts(it)

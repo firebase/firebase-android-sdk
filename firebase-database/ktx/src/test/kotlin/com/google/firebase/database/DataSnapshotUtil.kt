@@ -28,3 +28,14 @@ fun createDataSnapshot(data: Any?, db: FirebaseDatabase): DataSnapshot {
     val node = NodeUtilities.NodeFromJSON(data)
     return DataSnapshot(ref, IndexedNode.from(node))
 }
+
+/**
+ * Creates a custom MutableData.
+ *
+ * This method is a workaround that enables the creation of a custom
+ * MutableData using package-private methods.
+ */
+fun createMutableData(data: Any?): MutableData {
+    val node = NodeUtilities.NodeFromJSON(data)
+    return MutableData(node)
+}

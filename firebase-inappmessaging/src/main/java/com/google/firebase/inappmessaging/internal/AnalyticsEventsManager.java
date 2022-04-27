@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -97,6 +98,8 @@ public class AnalyticsEventsManager {
     AnalyticsFlowableSubscriber() {}
 
     @Override
+    // fiam uses an AnalyticsConnector proxy that is Deferred-aware so it's safe to suppress.
+    @SuppressLint("InvalidDeferredApiUse")
     public void subscribe(FlowableEmitter<String> emitter) {
       Logging.logd("Subscribing to analytics events.");
       handle =

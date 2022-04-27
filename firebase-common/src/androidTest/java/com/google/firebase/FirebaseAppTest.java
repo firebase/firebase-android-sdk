@@ -17,6 +17,8 @@ package com.google.firebase;
 import static com.google.android.gms.common.util.Base64Utils.decodeUrlSafeNoPadding;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -37,9 +39,7 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.common.base.Defaults;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.components.EagerSdkVerifier;
-import com.google.firebase.components.InitTracker;
 import com.google.firebase.components.TestComponentOne;
 import com.google.firebase.components.TestComponentTwo;
 import com.google.firebase.components.TestUserAgentDependentComponent;
@@ -142,10 +142,15 @@ public class FirebaseAppTest {
 
     // After sorting the user agents are expected to be {"fire-android/", "fire-auth/x.y.z",
     // "fire-core/x.y.z", "test-component/1.2.3"}
-    assertThat(actualUserAgent[0]).contains("fire-analytics");
-    assertThat(actualUserAgent[1]).contains("fire-android");
-    assertThat(actualUserAgent[2]).contains("fire-auth");
-    assertThat(actualUserAgent[3]).contains("fire-core");
+    assertThat(actualUserAgent[0]).contains("android-installer");
+    assertThat(actualUserAgent[1]).contains("android-min-sdk/14");
+    assertThat(actualUserAgent[2]).contains("android-platform");
+    assertThat(actualUserAgent[3]).contains("android-target-sdk");
+    assertThat(actualUserAgent[4]).contains("device-brand");
+    assertThat(actualUserAgent[5]).contains("device-model");
+    assertThat(actualUserAgent[6]).contains("device-name");
+    assertThat(actualUserAgent[7]).contains("fire-android");
+    assertThat(actualUserAgent[8]).contains("fire-core");
   }
 
   @Test
@@ -267,7 +272,8 @@ public class FirebaseAppTest {
       int modifiers = method.getModifiers();
       if (Modifier.isPublic(modifiers) && !Modifier.isStatic(modifiers)) {
         try {
-          if (!allowedToCallAfterDelete.contains(method.getName())) {
+          if (!allowedToCallAfterDelete.contains(method.getName())
+              && !(method.getName().contains("$"))) {
             invokePublicInstanceMethodWithDefaultValues(firebaseApp, method);
             fail("Method expected to throw, but didn't " + method.getName());
           }
@@ -302,7 +308,7 @@ public class FirebaseAppTest {
   // Order of test cases matters.
   @Test(expected = IllegalStateException.class)
   public void testMissingInit() {
-    FirebaseAuth.getInstance();
+    FirebaseApp.getInstance();
   }
 
   @Test
@@ -311,10 +317,9 @@ public class FirebaseAppTest {
     assertThat(firebaseApp.isDefaultApp()).isFalse();
 
     EagerSdkVerifier sdkVerifier = firebaseApp.get(EagerSdkVerifier.class);
-    assertThat(sdkVerifier.isAuthInitialized()).isTrue();
-
-    // Analytics is only initialized for the default app.
-    assertThat(sdkVerifier.isAnalyticsInitialized()).isFalse();
+    assertThat(sdkVerifier.isEagerInitialized()).isTrue();
+    assertThat(sdkVerifier.isEagerInDefaultAppInitialized()).isFalse();
+    assertThat(sdkVerifier.isLazyInitialized()).isFalse();
   }
 
   @Test
@@ -324,8 +329,9 @@ public class FirebaseAppTest {
     assertThat(firebaseApp.isDefaultApp()).isTrue();
 
     EagerSdkVerifier sdkVerifier = firebaseApp.get(EagerSdkVerifier.class);
-    assertThat(sdkVerifier.isAuthInitialized()).isTrue();
-    assertThat(sdkVerifier.isAnalyticsInitialized()).isTrue();
+    assertThat(sdkVerifier.isEagerInitialized()).isTrue();
+    assertThat(sdkVerifier.isEagerInDefaultAppInitialized()).isTrue();
+    assertThat(sdkVerifier.isLazyInitialized()).isFalse();
   }
 
   @Test
@@ -370,25 +376,44 @@ public class FirebaseAppTest {
     isUserUnlocked.set(false);
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
 
-    InitTracker tracker = firebaseApp.get(InitTracker.class);
     EagerSdkVerifier sdkVerifier = firebaseApp.get(EagerSdkVerifier.class);
 
-    // APIs are not initialized.
-    assertThat(tracker.isInitialized()).isFalse();
-
-    assertThat(sdkVerifier.isAuthInitialized()).isFalse();
-    assertThat(sdkVerifier.isAnalyticsInitialized()).isFalse();
+    assertThat(sdkVerifier.isEagerInitialized()).isFalse();
+    assertThat(sdkVerifier.isEagerInDefaultAppInitialized()).isFalse();
+    assertThat(sdkVerifier.isLazyInitialized()).isFalse();
 
     // User unlocks the device.
     isUserUnlocked.set(true);
     Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
     localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
 
-    // APIs are initialized.
-    assertThat(tracker.isInitialized()).isTrue();
+    assertThat(sdkVerifier.isEagerInitialized()).isTrue();
+    assertThat(sdkVerifier.isEagerInDefaultAppInitialized()).isTrue();
+    assertThat(sdkVerifier.isLazyInitialized()).isFalse();
+  }
 
-    assertThat(sdkVerifier.isAuthInitialized()).isTrue();
-    assertThat(sdkVerifier.isAnalyticsInitialized()).isTrue();
+  @Test
+  public void testDirectBoot_shouldPreserveDataCollectionAfterUnlock() {
+    Context mockContext = createForwardingMockContext();
+
+    isUserUnlocked.set(false);
+    FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
+    assert (firebaseApp != null);
+    firebaseApp.setDataCollectionDefaultEnabled(false);
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    // User unlocks the device.
+    isUserUnlocked.set(true);
+    Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
+    localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
+
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(true);
+    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
+    firebaseApp.setDataCollectionDefaultEnabled(false);
+    assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
+    // Because default is true.
+    firebaseApp.setDataCollectionDefaultEnabled(null);
+    assertTrue(firebaseApp.isDataCollectionDefaultEnabled());
   }
 
   /** Returns mock context that forwards calls to targetContext and localBroadcastManager. */

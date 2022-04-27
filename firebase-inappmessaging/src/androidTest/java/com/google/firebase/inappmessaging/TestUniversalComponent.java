@@ -18,7 +18,6 @@ import com.google.firebase.inappmessaging.internal.injection.components.Universa
 import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
-import com.google.firebase.inappmessaging.internal.injection.modules.ForegroundFlowableModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProtoStorageClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.RateLimitModule;
@@ -31,14 +30,13 @@ import javax.inject.Singleton;
     modules = {
       // Test modules
       TestGrpcModule.class,
-      TestForegroundNotifierModule.class,
+      TestForegroundFlowableModule.class,
       TestSystemClockModule.class,
 
       // Real modules
       AnalyticsEventsModule.class,
       SchedulerModule.class,
       ApplicationModule.class,
-      ForegroundFlowableModule.class,
       ProgrammaticContextualTriggerFlowableModule.class,
       ProtoStorageClientModule.class,
       RateLimitModule.class,

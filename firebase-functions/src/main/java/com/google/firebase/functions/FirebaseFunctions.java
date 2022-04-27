@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -56,6 +57,9 @@ public class FirebaseFunctions {
    */
   private static boolean providerInstallStarted = false;
 
+  // The FirebaseApp instance
+  private final FirebaseApp app;
+
   // The network client to use for HTTPS requests.
   private final OkHttpClient client;
 
@@ -71,16 +75,42 @@ public class FirebaseFunctions {
   // The region to use for all function references.
   private final String region;
 
+  // A custom domain for the http trigger, such as "https://mydomain.com"
+  @Nullable private final String customDomain;
+
   // The format to use for constructing urls from region, projectId, and name.
   private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
+  // Emulator settings
+  @Nullable private EmulatedServiceSettings emulatorSettings;
+
   FirebaseFunctions(
-      Context context, String projectId, String region, ContextProvider contextProvider) {
+      FirebaseApp app,
+      Context context,
+      String projectId,
+      String regionOrCustomDomain,
+      ContextProvider contextProvider) {
+    this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
     this.projectId = Preconditions.checkNotNull(projectId);
-    this.region = Preconditions.checkNotNull(region);
+
+    boolean isRegion;
+    try {
+      new URL(regionOrCustomDomain);
+      isRegion = false;
+    } catch (MalformedURLException malformedURLException) {
+      isRegion = true;
+    }
+
+    if (isRegion) {
+      this.region = regionOrCustomDomain;
+      this.customDomain = null;
+    } else {
+      this.region = "us-central1";
+      this.customDomain = regionOrCustomDomain;
+    }
 
     maybeInstallProviders(context);
   }
@@ -123,20 +153,22 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the given app and region.
+   * Creates a Cloud Functions client with the given app and region or custom domain.
    *
    * @param app The app for the Firebase project.
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as {@code
+   *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull FirebaseApp app, @NonNull String region) {
+  public static FirebaseFunctions getInstance(
+      @NonNull FirebaseApp app, @NonNull String regionOrCustomDomain) {
     Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.");
-    Preconditions.checkNotNull(region);
+    Preconditions.checkNotNull(regionOrCustomDomain);
 
     FunctionsMultiResourceComponent component = app.get(FunctionsMultiResourceComponent.class);
     Preconditions.checkNotNull(component, "Functions component does not exist.");
 
-    return component.get(region);
+    return component.get(regionOrCustomDomain);
   }
 
   /**
@@ -150,13 +182,14 @@ public class FirebaseFunctions {
   }
 
   /**
-   * Creates a Cloud Functions client with the default app and given region.
+   * Creates a Cloud Functions client with the default app and given region or custom domain.
    *
-   * @param region The region for the HTTPS trigger, such as "us-central1".
+   * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as {@code
+   *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull String region) {
-    return getInstance(FirebaseApp.getInstance(), region);
+  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
+    return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain);
   }
 
   /** Creates a Cloud Functions client with the default app. */
@@ -171,6 +204,12 @@ public class FirebaseFunctions {
     return new HttpsCallableReference(this, name);
   }
 
+  /** Returns a reference to the Callable HTTPS trigger with the provided url. */
+  @NonNull
+  public HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url) {
+    return new HttpsCallableReference(this, url);
+  }
+
   /**
    * Returns the URL for a particular function.
    *
@@ -179,7 +218,22 @@ public class FirebaseFunctions {
    */
   @VisibleForTesting
   URL getURL(String function) {
+    EmulatedServiceSettings emulatorSettings = this.emulatorSettings;
+    if (emulatorSettings != null) {
+      urlFormat =
+          "http://"
+              + emulatorSettings.getHost()
+              + ":"
+              + emulatorSettings.getPort()
+              + "/%2$s/%1$s/%3$s";
+    }
+
     String str = String.format(urlFormat, region, projectId, function);
+
+    if (customDomain != null && emulatorSettings == null) {
+      str = customDomain + "/" + function;
+    }
+
     try {
       return new URL(str);
     } catch (MalformedURLException mfe) {
@@ -187,15 +241,22 @@ public class FirebaseFunctions {
     }
   }
 
-  /**
-   * Changes this instance to point to a Cloud Functions emulator running locally. See
-   * https://firebase.google.com/docs/functions/local-emulator
-   *
-   * @param origin The origin of the local emulator, such as "http://10.0.2.2:5005".
-   */
+  /** @deprecated Use {@link #useEmulator(String, int)} to connect to the emulator. */
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";
+  }
+
+  /**
+   * Modifies this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any functions operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 5001)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
   /**
@@ -215,7 +276,29 @@ public class FirebaseFunctions {
                 return Tasks.forException(task.getException());
               }
               HttpsCallableContext context = task.getResult();
-              return call(name, data, context, options);
+              URL url = getURL(name);
+              return call(url, data, context, options);
+            });
+  }
+
+  /**
+   * Calls a Callable HTTPS trigger endpoint.
+   *
+   * @param url The url of the HTTPS trigger
+   * @param data Parameters to pass to the function. Can be anything encodable as JSON.
+   * @return A Task that will be completed when the request is complete.
+   */
+  Task<HttpsCallableResult> call(URL url, @Nullable Object data, HttpsCallOptions options) {
+    return providerInstalled
+        .getTask()
+        .continueWithTask(task -> contextProvider.getContext())
+        .continueWithTask(
+            task -> {
+              if (!task.isSuccessful()) {
+                return Tasks.forException(task.getException());
+              }
+              HttpsCallableContext context = task.getResult();
+              return call(url, data, context, options);
             });
   }
 
@@ -228,12 +311,11 @@ public class FirebaseFunctions {
    * @return A Task that will be completed when the request is complete.
    */
   private Task<HttpsCallableResult> call(
-      @NonNull String name,
+      @NonNull URL url,
       @Nullable Object data,
       HttpsCallableContext context,
       HttpsCallOptions options) {
-    Preconditions.checkNotNull(name, "name cannot be null");
-    URL url = getURL(name);
+    Preconditions.checkNotNull(url, "url cannot be null");
 
     Map<String, Object> body = new HashMap<>();
 
@@ -250,6 +332,9 @@ public class FirebaseFunctions {
     }
     if (context.getInstanceIdToken() != null) {
       request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
+    }
+    if (context.getAppCheckToken() != null) {
+      request = request.header("X-Firebase-AppCheck", context.getAppCheckToken());
     }
 
     OkHttpClient callClient = options.apply(client);

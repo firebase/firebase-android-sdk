@@ -19,11 +19,11 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.Module;
 import dagger.Provides;
 
@@ -34,15 +34,15 @@ import dagger.Provides;
  */
 @Module
 public class TransportClientModule {
-  private static final String TRANSPORT_NAME = "731";
+  private static final String TRANSPORT_NAME = "FIREBASE_INAPPMESSAGING";
 
   @Provides
   @FirebaseAppScope
-  static MetricsLoggerClient providesApiClient(
+  static MetricsLoggerClient providesMetricsLoggerClient(
       FirebaseApp app,
       TransportFactory transportFactory,
       AnalyticsConnector analyticsConnector,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       Clock clock,
       DeveloperListenerManager developerListenerManager) {
     Transport<byte[]> transport =
@@ -51,7 +51,7 @@ public class TransportClientModule {
         bytes -> transport.send(Event.ofData(bytes)),
         analyticsConnector,
         app,
-        firebaseInstanceId,
+        firebaseInstallations,
         clock,
         developerListenerManager);
   }

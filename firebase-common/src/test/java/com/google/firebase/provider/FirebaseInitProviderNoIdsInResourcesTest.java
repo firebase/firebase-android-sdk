@@ -19,6 +19,7 @@ import static org.junit.Assert.fail;
 
 import android.content.Context;
 import android.content.pm.ProviderInfo;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.testing.FirebaseAppRule;
@@ -27,7 +28,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 /** Unit tests for {@link FirebaseInitProvider} without IDs from resources. */
 @RunWith(RobolectricTestRunner.class)
@@ -42,7 +42,7 @@ public class FirebaseInitProviderNoIdsInResourcesTest {
   @Before
   public void setUp() {
     firebaseInitProvider = new FirebaseInitProvider();
-    targetContext = RuntimeEnvironment.application.getApplicationContext();
+    targetContext = ApplicationProvider.getApplicationContext();
   }
 
   @Rule public FirebaseAppRule firebaseAppRule = new FirebaseAppRule();

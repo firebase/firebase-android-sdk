@@ -15,7 +15,6 @@
 package com.google.firebase.encoders.reflective;
 
 import androidx.annotation.NonNull;
-import com.google.firebase.encoders.EncodingException;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import java.io.IOException;
@@ -39,8 +38,7 @@ public class ReflectiveObjectEncoder implements ObjectEncoder<Object> {
   }
 
   @Override
-  public void encode(@NonNull Object obj, @NonNull ObjectEncoderContext ctx)
-      throws EncodingException, IOException {
+  public void encode(@NonNull Object obj, @NonNull ObjectEncoderContext ctx) throws IOException {
 
     @SuppressWarnings("unchecked")
     ObjectEncoder<Object> encoder = getEncoder((Class<Object>) obj.getClass());

@@ -19,27 +19,33 @@ import java.util.concurrent.ScheduledExecutorService;
 
 public class ConnectionContext {
   private final ScheduledExecutorService executorService;
-  private final ConnectionAuthTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider appCheckTokenProvider;
   private final Logger logger;
   private final boolean persistenceEnabled;
   private final String clientSdkVersion;
   private final String userAgent;
+  private final String applicationId;
   private final String sslCacheDirectory;
 
   public ConnectionContext(
       Logger logger,
-      ConnectionAuthTokenProvider authTokenProvider,
+      ConnectionTokenProvider authTokenProvider,
+      ConnectionTokenProvider appCheckTokenProvider,
       ScheduledExecutorService executorService,
       boolean persistenceEnabled,
       String clientSdkVersion,
       String userAgent,
+      String applicationId,
       String sslCacheDirectory) {
     this.logger = logger;
     this.authTokenProvider = authTokenProvider;
+    this.appCheckTokenProvider = appCheckTokenProvider;
     this.executorService = executorService;
     this.persistenceEnabled = persistenceEnabled;
     this.clientSdkVersion = clientSdkVersion;
     this.userAgent = userAgent;
+    this.applicationId = applicationId;
     this.sslCacheDirectory = sslCacheDirectory;
   }
 
@@ -47,8 +53,12 @@ public class ConnectionContext {
     return this.logger;
   }
 
-  public ConnectionAuthTokenProvider getAuthTokenProvider() {
+  public ConnectionTokenProvider getAuthTokenProvider() {
     return this.authTokenProvider;
+  }
+
+  public ConnectionTokenProvider getAppCheckTokenProvider() {
+    return this.appCheckTokenProvider;
   }
 
   public ScheduledExecutorService getExecutorService() {
@@ -69,5 +79,9 @@ public class ConnectionContext {
 
   public String getSslCacheDirectory() {
     return sslCacheDirectory;
+  }
+
+  public String getApplicationId() {
+    return applicationId;
   }
 }

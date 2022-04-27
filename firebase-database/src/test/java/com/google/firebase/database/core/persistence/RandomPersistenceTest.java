@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.core.persistence;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -116,7 +117,7 @@ public class RandomPersistenceTest {
     if (operation.getSource().isTagged()) {
       Tag tag =
           tagMap.get(new QuerySpec(operation.getPath(), operation.getSource().getQueryParams()));
-      assert tag != null;
+      hardAssert(tag != null);
       switch (operation.getType()) {
         case ListenComplete:
           {

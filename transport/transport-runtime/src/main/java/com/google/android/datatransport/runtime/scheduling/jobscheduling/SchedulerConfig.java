@@ -65,6 +65,8 @@ public abstract class SchedulerConfig {
 
   private static final long ONE_SECOND = 1000;
 
+  private static final long BACKOFF_LOG_BASE = 10000;
+
   public static SchedulerConfig getDefault(Clock clock) {
     return SchedulerConfig.builder()
         .addConfig(
@@ -135,8 +137,18 @@ public abstract class SchedulerConfig {
     long timeDiff = minTimestamp - getClock().getTime();
     ConfigValue config = getValues().get(priority);
 
-    long delay = Math.max(((long) Math.pow(2, attemptNumber - 1)) * config.getDelta(), timeDiff);
+    long delay = Math.max(adjustedExponentialBackoff(attemptNumber, config.getDelta()), timeDiff);
     return Math.min(delay, config.getMaxAllowedDelay());
+  }
+
+  private long adjustedExponentialBackoff(int attemptNumber, long delta) {
+    int attemptCoefficient = attemptNumber - 1;
+    long deltaOr2 = delta > 1 ? delta : 2;
+
+    double logValue = Math.log(BACKOFF_LOG_BASE) / Math.log(deltaOr2 * attemptCoefficient);
+    double logRegularized = Math.max(1, logValue);
+
+    return (long) (Math.pow(3, attemptCoefficient) * delta * logRegularized);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

@@ -1,0 +1,8 @@
+<resources>
+  <string name="app_name">App Check Test Application</string>
+  <string name="install_play_integrity_app_check_button_text">Install PlayIntegrityAppCheckProvider</string>
+  <string name="install_safety_net_app_check_button_text">Install SafetyNetAppCheckProvider</string>
+  <string name="install_debug_app_check_button_text">Install DebugAppCheckProvider</string>
+  <string name="exchange_app_check_button_text">Exchange attestation for App Check token</string>
+  <string name="storage_list_files_button_text">List Cloud Storage files with App Check token</string>
+</resources>

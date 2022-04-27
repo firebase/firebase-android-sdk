@@ -85,7 +85,7 @@ firestore.setFirestoreSettings(settings)
 **Kotlin + KTX**
 ```kotlin
 firestore.firestoreSettings = firestoreSettings {
-    host = "http://10.0.0.2:8080"
+    host = "http://10.0.2.2:8080"
     isSslEnabled = false
     isPersistenceEnabled = false
 }

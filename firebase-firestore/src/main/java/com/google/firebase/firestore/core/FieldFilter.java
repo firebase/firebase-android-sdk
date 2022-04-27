@@ -18,19 +18,42 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.Value;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /** Represents a filter to be applied to query. */
 public class FieldFilter extends Filter {
+  public enum Operator {
+    LESS_THAN("<"),
+    LESS_THAN_OR_EQUAL("<="),
+    EQUAL("=="),
+    NOT_EQUAL("!="),
+    GREATER_THAN(">"),
+    GREATER_THAN_OR_EQUAL(">="),
+    ARRAY_CONTAINS("array_contains"),
+    ARRAY_CONTAINS_ANY("array_contains_any"),
+    IN("in"),
+    NOT_IN("not_in");
+
+    private final String text;
+
+    Operator(String text) {
+      this.text = text;
+    }
+
+    @Override
+    public String toString() {
+      return text;
+    }
+  }
+
   private final Operator operator;
 
-  private final FieldValue value;
+  private final Value value;
 
   private final FieldPath field;
 
@@ -38,7 +61,7 @@ public class FieldFilter extends Filter {
    * Creates a new filter that compares fields and values. Only intended to be called from
    * Filter.create().
    */
-  protected FieldFilter(FieldPath field, Operator operator, FieldValue value) {
+  protected FieldFilter(FieldPath field, Operator operator, Value value) {
     this.field = field;
     this.operator = operator;
     this.value = value;
@@ -48,12 +71,11 @@ public class FieldFilter extends Filter {
     return operator;
   }
 
-  @Override
   public FieldPath getField() {
     return field;
   }
 
-  public FieldValue getValue() {
+  public Value getValue() {
     return value;
   }
 
@@ -63,44 +85,26 @@ public class FieldFilter extends Filter {
    * <p>Note that if the relation operator is EQUAL and the value is null or NaN, this will return
    * the appropriate NullFilter or NaNFilter class instead of a FieldFilter.
    */
-  public static FieldFilter create(FieldPath path, Operator operator, FieldValue value) {
+  public static FieldFilter create(FieldPath path, Operator operator, Value value) {
     if (path.isKeyField()) {
       if (operator == Operator.IN) {
-        hardAssert(
-            value instanceof ArrayValue,
-            "Comparing on key with IN, but the value was not an ArrayValue");
-        return new KeyFieldInFilter(path, (ArrayValue) value);
+        return new KeyFieldInFilter(path, value);
+      } else if (operator == Operator.NOT_IN) {
+        return new KeyFieldNotInFilter(path, value);
       } else {
-        hardAssert(
-            value instanceof ReferenceValue,
-            "Comparing on key, but filter value not a ReferenceValue");
         hardAssert(
             operator != Operator.ARRAY_CONTAINS && operator != Operator.ARRAY_CONTAINS_ANY,
             operator.toString() + "queries don't make sense on document keys");
-        return new KeyFieldFilter(path, operator, (ReferenceValue) value);
+        return new KeyFieldFilter(path, operator, value);
       }
-    } else if (value.equals(NullValue.nullValue())) {
-      if (operator != Filter.Operator.EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. Null supports only equality comparisons (via whereEqualTo()).");
-      }
-      return new FieldFilter(path, operator, value);
-    } else if (value.equals(DoubleValue.NaN)) {
-      if (operator != Filter.Operator.EQUAL) {
-        throw new IllegalArgumentException(
-            "Invalid Query. NaN supports only equality comparisons (via whereEqualTo()).");
-      }
-      return new FieldFilter(path, operator, value);
     } else if (operator == Operator.ARRAY_CONTAINS) {
       return new ArrayContainsFilter(path, value);
     } else if (operator == Operator.IN) {
-      hardAssert(value instanceof ArrayValue, "IN filter has invalid value: " + value.toString());
-      return new InFilter(path, (ArrayValue) value);
+      return new InFilter(path, value);
     } else if (operator == Operator.ARRAY_CONTAINS_ANY) {
-      hardAssert(
-          value instanceof ArrayValue,
-          "ARRAY_CONTAINS_ANY filter has invalid value: " + value.toString());
-      return new ArrayContainsAnyFilter(path, (ArrayValue) value);
+      return new ArrayContainsAnyFilter(path, value);
+    } else if (operator == Operator.NOT_IN) {
+      return new NotInFilter(path, value);
     } else {
       return new FieldFilter(path, operator, value);
     }
@@ -108,11 +112,15 @@ public class FieldFilter extends Filter {
 
   @Override
   public boolean matches(Document doc) {
-    FieldValue other = doc.getField(field);
+    Value other = doc.getField(field);
+    // Types do not have to match in NOT_EQUAL filters.
+    if (operator == Operator.NOT_EQUAL) {
+      return other != null && this.matchesComparison(Values.compare(other, value));
+    }
     // Only compare types with matching backend order (such as double and int).
     return other != null
-        && value.typeOrder() == other.typeOrder()
-        && this.matchesComparison(other.compareTo(value));
+        && Values.typeOrder(other) == Values.typeOrder(value)
+        && this.matchesComparison(Values.compare(other, value));
   }
 
   protected boolean matchesComparison(int comp) {
@@ -123,6 +131,8 @@ public class FieldFilter extends Filter {
         return comp <= 0;
       case EQUAL:
         return comp == 0;
+      case NOT_EQUAL:
+        return comp != 0;
       case GREATER_THAN:
         return comp > 0;
       case GREATER_THAN_OR_EQUAL:
@@ -137,7 +147,9 @@ public class FieldFilter extends Filter {
             Operator.LESS_THAN,
             Operator.LESS_THAN_OR_EQUAL,
             Operator.GREATER_THAN,
-            Operator.GREATER_THAN_OR_EQUAL)
+            Operator.GREATER_THAN_OR_EQUAL,
+            Operator.NOT_EQUAL,
+            Operator.NOT_IN)
         .contains(operator);
   }
 
@@ -145,12 +157,32 @@ public class FieldFilter extends Filter {
   public String getCanonicalId() {
     // TODO: Technically, this won't be unique if two values have the same description,
     // such as the int 3 and the string "3". So we should add the types in here somehow, too.
-    return getField().canonicalString() + getOperator().toString() + getValue().toString();
+    return getField().canonicalString() + getOperator().toString() + Values.canonicalId(getValue());
+  }
+
+  @Override
+  public List<FieldFilter> getFlattenedFilters() {
+    // This is already a field filter, so we return a list of size one.
+    return Collections.singletonList(this);
+  }
+
+  @Override
+  public List<Filter> getFilters() {
+    // This is the only filter within this object, so we return a list of size one.
+    return Collections.singletonList(this);
+  }
+
+  @Override
+  public FieldPath getFirstInequalityField() {
+    if (isInequality()) {
+      return getField();
+    }
+    return null;
   }
 
   @Override
   public String toString() {
-    return field.canonicalString() + " " + operator + " " + value;
+    return getCanonicalId();
   }
 
   @Override

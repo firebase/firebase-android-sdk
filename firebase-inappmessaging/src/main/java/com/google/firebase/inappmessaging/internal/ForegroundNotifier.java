@@ -14,17 +14,19 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
 import android.os.Handler;
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.subjects.BehaviorSubject;
 
 /**
- * The {@link ForegroundNotifier} notifies listeners set via {@link #setListener(Listener)} when an
+ * The {@link ForegroundNotifier} notifies listeners via {@link #foregroundFlowable()} when an
  * application comes to the foreground.
- *
- * <p>This class is necessary because we are unable to use Android architecture components. See
- * discussion in cl/172370669
  *
  * <p>Supported foreground scenarios
  *
@@ -39,7 +41,7 @@ import android.os.Handler;
  *
  * <ul>
  *   <li>When an app is foregrounded for the first time after app icon is clicked, it is moved to
- *       the foreground state and listener is notified
+ *       the foreground state and an event is published
  *   <li>When any activity in the app is paused and {@link #onActivityPaused(Activity)} callback is
  *       received, the app is considered to be paused until the next activity starts and the {@link
  *       #onActivityResumed(Activity)} callback is received. A runnable is simultaneously scheduled
@@ -48,8 +50,8 @@ import android.os.Handler;
  *       the {@link #onActivityResumed(Activity)}, the app never went out of view for the user and
  *       is considered to have never gone to the background. The runnable is removed and the app
  *       remains in the foreground.
- *   <li>Similar to the first step, listener is notified in the {@link #onActivityResumed(Activity)}
- *       callback if the app was deemed to be in the background</>
+ *   <li>Similar to the first step, an event is published in the {@link
+ *       #onActivityResumed(Activity)} callback if the app was deemed to be in the background</>
  * </ul>
  *
  * @hide
@@ -58,15 +60,12 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   public static final long DELAY_MILLIS = 1000;
   private final Handler handler = new Handler();
   private boolean foreground = false, paused = true;
-  private Listener listener;
   private Runnable check;
+  private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
-  public void setListener(Listener listener) {
-    this.listener = listener;
-  }
-
-  public void removeListener(Listener listener) {
-    this.listener = null;
+  /** @return a {@link ConnectableFlowable} representing a stream of foreground events */
+  public ConnectableFlowable<String> foregroundFlowable() {
+    return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }
 
   @Override
@@ -81,7 +80,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
 
     if (wasBackground) {
       Logging.logi("went foreground");
-      listener.onForeground();
+      foregroundSubject.onNext(ON_FOREGROUND);
     }
   }
 
@@ -94,7 +93,7 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
     }
 
     handler.postDelayed(
-        check = () -> foreground = (foreground && paused) ? false : foreground, DELAY_MILLIS);
+        check = () -> foreground = (!foreground || !paused) && foreground, DELAY_MILLIS);
   }
 
   @Override
@@ -111,9 +110,4 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
-
-  /** Listener to receive callbacks when app comes to the foreground */
-  public interface Listener {
-    void onForeground();
-  }
 }

@@ -60,6 +60,7 @@ public abstract class TargetCacheTestCase {
   public void setUp() {
     persistence = getPersistence();
     targetCache = persistence.getTargetCache();
+    persistence.getRemoteDocumentCache().setIndexManager(new MemoryIndexManager());
     previousSequenceNumber = 1000;
   }
 

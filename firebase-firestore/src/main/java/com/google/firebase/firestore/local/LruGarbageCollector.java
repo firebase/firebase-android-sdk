@@ -111,23 +111,25 @@ public class LruGarbageCollector {
    * This class is responsible for the scheduling of LRU garbage collection. It handles checking
    * whether or not GC is enabled, as well as which delay to use before the next run.
    */
-  public class Scheduler {
+  public class GCScheduler implements Scheduler {
     private final AsyncQueue asyncQueue;
     private final LocalStore localStore;
     private boolean hasRun = false;
     @Nullable private AsyncQueue.DelayedTask gcTask;
 
-    public Scheduler(AsyncQueue asyncQueue, LocalStore localStore) {
+    public GCScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
       this.asyncQueue = asyncQueue;
       this.localStore = localStore;
     }
 
+    @Override
     public void start() {
       if (params.minBytesThreshold != Params.COLLECTION_DISABLED) {
         scheduleGC();
       }
     }
 
+    @Override
     public void stop() {
       if (gcTask != null) {
         gcTask.cancel();
@@ -157,8 +159,8 @@ public class LruGarbageCollector {
   }
 
   /** A helper method to create a new scheduler. */
-  public Scheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
-    return new Scheduler(asyncQueue, localStore);
+  public GCScheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
+    return new GCScheduler(asyncQueue, localStore);
   }
 
   /** Given a percentile of target to collect, returns the number of targets to collect. */

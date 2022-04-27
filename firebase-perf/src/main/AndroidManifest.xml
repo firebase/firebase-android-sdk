@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright 2020 Google Inc. All Rights Reserved. -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.google.firebase.perf">
+
+  <uses-permission android:name="android.permission.INTERNET"/>
+
+  <application>
+    <provider
+      android:authorities="${applicationId}.firebaseperfprovider"
+      android:exported="false"
+      android:initOrder="101"
+      android:name="com.google.firebase.perf.provider.FirebasePerfProvider"/>
+
+    <service
+      android:exported="false"
+      android:name="com.google.firebase.components.ComponentDiscoveryService">
+
+      <meta-data
+        android:name="com.google.firebase.components:com.google.firebase.perf.FirebasePerfRegistrar"
+        android:value="com.google.firebase.components.ComponentRegistrar"/>
+    </service>
+  </application>
+
+  <!-- line to test for static disable of the Firebase Perf SDK -->
+  <!-- <meta-data android:name="firebase_performance_collection_enabled" android:value="false" /> -->
+</manifest>

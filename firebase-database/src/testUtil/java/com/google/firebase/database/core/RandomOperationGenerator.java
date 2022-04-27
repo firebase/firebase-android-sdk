@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.operation.AckUserWrite;
 import com.google.firebase.database.core.operation.ListenComplete;
 import com.google.firebase.database.core.operation.Merge;
@@ -285,7 +287,7 @@ public class RandomOperationGenerator {
   private Operation getAck() {
     WriteOp op = this.writeOpForLastUpdate;
     WriteOp frontOp = outstandingWrites.remove();
-    assert op == frontOp : "The write op should be the front of the queue";
+    hardAssert(op == frontOp, "The write op should be the front of the queue");
     writeTree.removeWrite(op.writeId);
     this.writeOpForLastUpdate = null;
     return getAckForWrite(op.operation, /*revert=*/ false);
@@ -296,7 +298,7 @@ public class RandomOperationGenerator {
       Overwrite overwrite = (Overwrite) writeOp;
       return new AckUserWrite(overwrite.getPath(), new ImmutableTree<Boolean>(true), revert);
     } else {
-      assert (writeOp.getType() == Operation.OperationType.Merge);
+      hardAssert(writeOp.getType() == Operation.OperationType.Merge);
       Merge merge = (Merge) writeOp;
       ImmutableTree<Boolean> affectedTree = ImmutableTree.emptyInstance();
       for (Map.Entry<Path, Node> entry : merge.getChildren()) {
@@ -465,7 +467,8 @@ public class RandomOperationGenerator {
         merge.getChildren().childCompoundWrites().entrySet()) {
       ChildKey key = entry.getKey();
       CompoundWrite childWrite = entry.getValue();
-      assert childWrite.rootWrite() != null : "This is a deep overwrite, which is not supported";
+      hardAssert(
+          childWrite.rootWrite() != null, "This is a deep overwrite, which is not supported");
       map.put(key, childWrite.rootWrite());
     }
     return map;
@@ -485,7 +488,7 @@ public class RandomOperationGenerator {
   }
 
   private static Operation userOperationToServerOperation(Operation operation) {
-    assert operation.getSource().isFromUser();
+    hardAssert(operation.getSource().isFromUser());
     switch (operation.getType()) {
       case Overwrite:
         {

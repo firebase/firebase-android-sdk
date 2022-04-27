@@ -121,14 +121,6 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     assertEquals("2147483647", CommonUtils.padWithZerosToMaxIntWidth(Integer.MAX_VALUE));
   }
 
-  public void testStringsEqualIncludingNull() {
-    assertTrue(CommonUtils.stringsEqualIncludingNull("ABC", "ABC"));
-    assertTrue(CommonUtils.stringsEqualIncludingNull(null, null));
-    assertFalse(CommonUtils.stringsEqualIncludingNull(null, "ABC"));
-    assertFalse(CommonUtils.stringsEqualIncludingNull("ABC", null));
-    assertFalse(CommonUtils.stringsEqualIncludingNull("ABC", "DEF"));
-  }
-
   public void testSha1() {
     String source = "sha1 test";
     String result = CommonUtils.sha1(source);

@@ -14,15 +14,11 @@
 
 package com.google.firebase.inappmessaging.internal.injection.modules;
 
-import static io.reactivex.BackpressureStrategy.BUFFER;
-
 import android.app.Application;
 import com.google.firebase.inappmessaging.internal.ForegroundNotifier;
-import com.google.firebase.inappmessaging.internal.InAppMessageStreamManager;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import dagger.Module;
 import dagger.Provides;
-import io.reactivex.Flowable;
 import io.reactivex.flowables.ConnectableFlowable;
 import javax.inject.Singleton;
 
@@ -38,20 +34,12 @@ public class ForegroundFlowableModule {
   @Provides
   @Singleton
   @AppForeground
-  public ConnectableFlowable<String> providesAppForegroundEventStream(
-      Application application, ForegroundNotifier foreground) {
-    application.registerActivityLifecycleCallbacks(foreground);
+  public ConnectableFlowable<String> providesAppForegroundEventStream(Application application) {
+    ForegroundNotifier notifier = new ForegroundNotifier();
+    ConnectableFlowable<String> foregroundFlowable = notifier.foregroundFlowable();
+    foregroundFlowable.connect();
 
-    ConnectableFlowable<String> flowable =
-        Flowable.<String>create(
-                e ->
-                    foreground.setListener(() -> e.onNext(InAppMessageStreamManager.ON_FOREGROUND)),
-                BUFFER)
-            .publish();
-
-    flowable.connect();
-    // We ignore the subscription since this connected flowable is expected to last the lifetime of
-    // the app.
-    return flowable;
+    application.registerActivityLifecycleCallbacks(notifier);
+    return foregroundFlowable;
   }
 }

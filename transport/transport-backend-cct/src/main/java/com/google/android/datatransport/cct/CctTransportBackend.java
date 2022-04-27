@@ -17,9 +17,11 @@ package com.google.android.datatransport.cct;
 import static com.google.android.datatransport.runtime.retries.Retries.retry;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.telephony.TelephonyManager;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
@@ -27,7 +29,6 @@ import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
-import com.google.android.datatransport.cct.internal.JsonBatchedLogRequestEncoder;
 import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.android.datatransport.cct.internal.LogResponse;
@@ -42,22 +43,24 @@ import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.EncodingException;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.GZIPInputStream;
@@ -69,6 +72,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;
+  private static final int INVALID_VERSION_CODE = -1;
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
   private static final String GZIP_CONTENT_ENCODING = "gzip";
@@ -87,11 +91,16 @@ final class CctTransportBackend implements TransportBackend {
   private static final String KEY_OS_BUILD = "os-uild";
   private static final String KEY_MANUFACTURER = "manufacturer";
   private static final String KEY_FINGERPRINT = "fingerprint";
+  private static final String KEY_LOCALE = "locale";
+  private static final String KEY_COUNTRY = "country";
+  private static final String KEY_MCC_MNC = "mcc_mnc";
   private static final String KEY_TIMEZONE_OFFSET = "tz-offset";
+  private static final String KEY_APPLICATION_BUILD = "application_build";
 
-  private final DataEncoder dataEncoder = JsonBatchedLogRequestEncoder.createJsonEncoder();
+  private final DataEncoder dataEncoder = BatchedLogRequest.createDataEncoder();
 
   private final ConnectivityManager connectivityManager;
+  private final Context applicationContext;
   final URL endPoint;
   private final Clock uptimeClock;
   private final Clock wallTimeClock;
@@ -107,6 +116,7 @@ final class CctTransportBackend implements TransportBackend {
 
   CctTransportBackend(
       Context applicationContext, Clock wallTimeClock, Clock uptimeClock, int readTimeout) {
+    this.applicationContext = applicationContext;
     this.connectivityManager =
         (ConnectivityManager) applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
     this.endPoint = parseUrlOrThrow(CCTDestination.DEFAULT_END_POINT);
@@ -119,12 +129,29 @@ final class CctTransportBackend implements TransportBackend {
     this(applicationContext, wallTimeClock, uptimeClock, READ_TIME_OUT);
   }
 
+  private static TelephonyManager getTelephonyManager(Context context) {
+    return (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+  }
+
+  private static int getPackageVersionCode(Context context) {
+    try {
+      int packageVersionCode =
+          context
+              .getPackageManager()
+              .getPackageInfo(context.getPackageName(), /* flags= */ 0)
+              .versionCode;
+      return packageVersionCode;
+    } catch (PackageManager.NameNotFoundException e) {
+      Logging.e(LOG_TAG, "Unable to find version code for package", e);
+    }
+    return INVALID_VERSION_CODE;
+  }
+
   @Override
   public EventInternal decorate(EventInternal eventInternal) {
     NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
-    return eventInternal
-        .toBuilder()
+    return eventInternal.toBuilder()
         .addMetadata(KEY_SDK_VERSION, Build.VERSION.SDK_INT)
         .addMetadata(KEY_MODEL, Build.MODEL)
         .addMetadata(KEY_HARDWARE, Build.HARDWARE)
@@ -136,6 +163,11 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_TIMEZONE_OFFSET, getTzOffset())
         .addMetadata(KEY_NETWORK_TYPE, getNetTypeValue(networkInfo))
         .addMetadata(KEY_MOBILE_SUBTYPE, getNetSubtypeValue(networkInfo))
+        .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
+        .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
+        .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
+        .addMetadata(
+            KEY_APPLICATION_BUILD, Integer.toString(getPackageVersionCode(applicationContext)))
         .build();
   }
 
@@ -182,7 +214,7 @@ final class CctTransportBackend implements TransportBackend {
               .setRequestUptimeMs(uptimeClock.getTime())
               .setClientInfo(
                   ClientInfo.builder()
-                      .setClientType(ClientInfo.ClientType.ANDROID)
+                      .setClientType(ClientInfo.ClientType.ANDROID_FIREBASE)
                       .setAndroidClientInfo(
                           AndroidClientInfo.builder()
                               .setSdkVersion(firstEvent.getInteger(KEY_SDK_VERSION))
@@ -193,12 +225,16 @@ final class CctTransportBackend implements TransportBackend {
                               .setOsBuild(firstEvent.get(KEY_OS_BUILD))
                               .setManufacturer(firstEvent.get(KEY_MANUFACTURER))
                               .setFingerprint(firstEvent.get(KEY_FINGERPRINT))
+                              .setCountry(firstEvent.get(KEY_COUNTRY))
+                              .setLocale(firstEvent.get(KEY_LOCALE))
+                              .setMccMnc(firstEvent.get(KEY_MCC_MNC))
+                              .setApplicationBuild(firstEvent.get(KEY_APPLICATION_BUILD))
                               .build())
                       .build());
 
       // set log source to either its numeric value or its name.
       try {
-        requestBuilder.setSource(Integer.valueOf(entry.getKey()));
+        requestBuilder.setSource(Integer.parseInt(entry.getKey()));
       } catch (NumberFormatException ex) {
         requestBuilder.setSource(entry.getKey());
       }
@@ -247,7 +283,7 @@ final class CctTransportBackend implements TransportBackend {
 
   private HttpResponse doSend(HttpRequest request) throws IOException {
 
-    Logging.d(LOG_TAG, "Making request to: %s", request.url);
+    Logging.i(LOG_TAG, "Making request to: %s", request.url);
     HttpURLConnection connection = (HttpURLConnection) request.url.openConnection();
     connection.setConnectTimeout(CONNECTION_TIME_OUT);
     connection.setReadTimeout(readTimeout);
@@ -264,50 +300,49 @@ final class CctTransportBackend implements TransportBackend {
       connection.setRequestProperty(API_KEY_HEADER_KEY, request.apiKey);
     }
 
-    WritableByteChannel channel = Channels.newChannel(connection.getOutputStream());
-    try {
-      ByteArrayOutputStream output = new ByteArrayOutputStream();
-      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(output);
-
-      try {
-        dataEncoder.encode(request.requestBody, new OutputStreamWriter(gzipOutputStream));
-      } catch (EncodingException | IOException e) {
-        Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
-        return new HttpResponse(400, null, 0);
-      } finally {
-        gzipOutputStream.close();
-      }
-      channel.write(ByteBuffer.wrap(output.toByteArray()));
-      int responseCode = connection.getResponseCode();
-      Logging.i(LOG_TAG, "Status Code: " + responseCode);
-      Logging.i(LOG_TAG, "Content-Type: " + connection.getHeaderField("Content-Type"));
-      Logging.i(LOG_TAG, "Content-Encoding: " + connection.getHeaderField("Content-Encoding"));
-
-      if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
-        String redirect = connection.getHeaderField("Location");
-        return new HttpResponse(responseCode, new URL(redirect), 0);
-      }
-      if (responseCode != 200) {
-        return new HttpResponse(responseCode, null, 0);
-      }
-
-      InputStream inputStream;
-      String contentEncoding = connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY);
-      if (contentEncoding != null && contentEncoding.equals(GZIP_CONTENT_ENCODING)) {
-        inputStream = new GZIPInputStream(connection.getInputStream());
-      } else {
-        inputStream = connection.getInputStream();
-      }
-      try {
-        long nextRequestMillis =
-            LogResponse.fromJson(new InputStreamReader(inputStream)).getNextRequestWaitMillis();
-        return new HttpResponse(responseCode, null, nextRequestMillis);
-      } finally {
-        inputStream.close();
-      }
-    } finally {
-      channel.close();
+    try (OutputStream conn = connection.getOutputStream();
+        OutputStream outputStream = new GZIPOutputStream(conn)) {
+      // note: it's very important to use a BufferedWriter for efficient use of resources as the
+      // JsonWriter often writes one character at a time.
+      dataEncoder.encode(
+          request.requestBody, new BufferedWriter(new OutputStreamWriter(outputStream)));
+    } catch (ConnectException | UnknownHostException e) {
+      Logging.e(LOG_TAG, "Couldn't open connection, returning with 500", e);
+      return new HttpResponse(500, null, 0);
+    } catch (EncodingException | IOException e) {
+      Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
+      return new HttpResponse(400, null, 0);
     }
+
+    int responseCode = connection.getResponseCode();
+    Logging.i(LOG_TAG, "Status Code: %d", responseCode);
+    Logging.d(LOG_TAG, "Content-Type: %s", connection.getHeaderField("Content-Type"));
+    Logging.d(LOG_TAG, "Content-Encoding: %s", connection.getHeaderField("Content-Encoding"));
+
+    if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
+      String redirect = connection.getHeaderField("Location");
+      return new HttpResponse(responseCode, new URL(redirect), 0);
+    }
+    if (responseCode != 200) {
+      return new HttpResponse(responseCode, null, 0);
+    }
+
+    try (InputStream connStream = connection.getInputStream();
+        InputStream inputStream =
+            maybeUnGzip(connStream, connection.getHeaderField(CONTENT_ENCODING_HEADER_KEY))) {
+      long nextRequestMillis =
+          LogResponse.fromJson(new BufferedReader(new InputStreamReader(inputStream)))
+              .getNextRequestWaitMillis();
+      return new HttpResponse(responseCode, null, nextRequestMillis);
+    }
+  }
+
+  private static InputStream maybeUnGzip(InputStream input, String contentEncoding)
+      throws IOException {
+    if (GZIP_CONTENT_ENCODING.equals(contentEncoding)) {
+      return new GZIPInputStream(input);
+    }
+    return input;
   }
 
   @Override
@@ -352,6 +387,8 @@ final class CctTransportBackend implements TransportBackend {
         return BackendResponse.ok(response.nextRequestMillis);
       } else if (response.code >= 500 || response.code == 404) {
         return BackendResponse.transientError();
+      } else if (response.code == 400) {
+        return BackendResponse.invalidPayload();
       } else {
         return BackendResponse.fatalError();
       }

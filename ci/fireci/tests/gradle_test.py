@@ -28,13 +28,13 @@ from . import scripts
 class GradleTest(unittest.TestCase):
 
   @in_tempdir
-  def test_when_gradle_suceeds_should_not_throw(self):
+  def test_when_gradle_succeeds_should_not_throw(self):
     create_artifacts(
         Artifact('gradlew', content=scripts.with_exit(0), mode=0o744))
-    self.assertEqual(gradle.run('tasks'), 0)
+    self.assertEqual(gradle.run('tasks').returncode, 0)
 
   @in_tempdir
-  def test_when_gradle_suceeds_should_not_throw(self):
+  def test_when_gradle_fails_should_throw(self):
     create_artifacts(
         Artifact('gradlew', content=scripts.with_exit(1), mode=0o744))
     self.assertRaises(subprocess.CalledProcessError,
@@ -54,4 +54,4 @@ class GradleTest(unittest.TestCase):
                 }),
             mode=0o744,
         ))
-    self.assertEqual(gradle.run(*args, gradle_opts=gradle_opts), 0)
+    self.assertEqual(gradle.run(*args, gradle_opts=gradle_opts).returncode, 0)

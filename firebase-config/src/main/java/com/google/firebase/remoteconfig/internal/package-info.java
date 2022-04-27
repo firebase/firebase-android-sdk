@@ -13,7 +13,4 @@
 // limitations under the License.
 
 /** @hide */
-
 package com.google.firebase.remoteconfig.internal;
-
-

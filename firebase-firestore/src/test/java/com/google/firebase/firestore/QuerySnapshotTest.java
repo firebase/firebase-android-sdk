@@ -32,8 +32,9 @@ import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentSet;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -86,7 +87,7 @@ public class QuerySnapshotTest {
         .thenReturn(new FirebaseFirestoreSettings.Builder().build());
 
     ObjectValue objectData =
-        ObjectValue.fromMap(map("timestamp", new ServerTimestampValue(Timestamp.now(), null)));
+        ObjectValue.fromMap(map("timestamp", ServerTimestamps.valueOf(Timestamp.now(), null)));
     QuerySnapshot foo = TestUtil.querySnapshot("foo", map(), map("a", objectData), true, false);
 
     List<POJO> docs = foo.toObjects(POJO.class);
@@ -100,15 +101,14 @@ public class QuerySnapshotTest {
 
   @Test
   public void testIncludeMetadataChanges() {
-    Document doc1Old =
-        doc("foo/bar", 1, wrapObject("a", "b"), Document.DocumentState.LOCAL_MUTATIONS);
-    Document doc1New = doc("foo/bar", 1, wrapObject("a", "b"), Document.DocumentState.SYNCED);
+    MutableDocument doc1Old = doc("foo/bar", 1, wrapObject("a", "b")).setHasLocalMutations();
+    MutableDocument doc1New = doc("foo/bar", 1, wrapObject("a", "b"));
 
-    Document doc2Old = doc("foo/baz", 1, wrapObject("a", "b"), Document.DocumentState.SYNCED);
-    Document doc2New = doc("foo/baz", 1, wrapObject("a", "c"), Document.DocumentState.SYNCED);
+    MutableDocument doc2Old = doc("foo/baz", 1, wrapObject("a", "b"));
+    MutableDocument doc2New = doc("foo/baz", 1, wrapObject("a", "c"));
 
-    DocumentSet oldDocuments = docSet(Document.keyComparator(), doc1Old, doc2Old);
-    DocumentSet newDocuments = docSet(Document.keyComparator(), doc1New, doc2New);
+    DocumentSet oldDocuments = docSet(Document.KEY_COMPARATOR, doc1Old, doc2Old);
+    DocumentSet newDocuments = docSet(Document.KEY_COMPARATOR, doc1New, doc2New);
 
     List<DocumentViewChange> documentChanges =
         Arrays.asList(

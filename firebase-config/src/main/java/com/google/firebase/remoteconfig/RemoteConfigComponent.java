@@ -26,14 +26,15 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
-import com.google.firebase.remoteconfig.internal.LegacyConfigsHandler;
+import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -60,7 +61,7 @@ public class RemoteConfigComponent {
   /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
   /** Timeout for the call to the Firebase Remote Config servers in second. */
-  public static final long NETWORK_CONNECTION_TIMEOUT_IN_SECONDS = 60;
+  public static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
   private static final String FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX = "frc";
   private static final String PREFERENCES_FILE_NAME = "settings";
@@ -76,9 +77,9 @@ public class RemoteConfigComponent {
   private final Context context;
   private final ExecutorService executorService;
   private final FirebaseApp firebaseApp;
-  private final FirebaseInstanceId firebaseInstanceId;
+  private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
-  @Nullable private final AnalyticsConnector analyticsConnector;
+  @Nullable private final Provider<AnalyticsConnector> analyticsConnector;
 
   private final String appId;
 
@@ -89,17 +90,16 @@ public class RemoteConfigComponent {
   RemoteConfigComponent(
       Context context,
       FirebaseApp firebaseApp,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector) {
+      Provider<AnalyticsConnector> analyticsConnector) {
     this(
         context,
         Executors.newCachedThreadPool(),
         firebaseApp,
-        firebaseInstanceId,
+        firebaseInstallations,
         firebaseAbt,
         analyticsConnector,
-        new LegacyConfigsHandler(context, firebaseApp.getOptions().getApplicationId()),
         /* loadGetDefault= */ true);
   }
 
@@ -109,15 +109,14 @@ public class RemoteConfigComponent {
       Context context,
       ExecutorService executorService,
       FirebaseApp firebaseApp,
-      FirebaseInstanceId firebaseInstanceId,
+      FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
-      @Nullable AnalyticsConnector analyticsConnector,
-      LegacyConfigsHandler legacyConfigsHandler,
+      Provider<AnalyticsConnector> analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
     this.executorService = executorService;
     this.firebaseApp = firebaseApp;
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
 
@@ -129,7 +128,6 @@ public class RemoteConfigComponent {
     if (loadGetDefault) {
       // Loads the default namespace's configs from disk on App startup.
       Tasks.call(executorService, this::getDefault);
-      Tasks.call(executorService, legacyConfigsHandler::saveLegacyConfigsIfNecessary);
     }
   }
 
@@ -153,16 +151,25 @@ public class RemoteConfigComponent {
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
     ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+
+    ConfigGetParameterHandler getHandler = getGetHandler(activatedCacheClient, defaultsCacheClient);
+    Personalization personalization =
+        getPersonalization(firebaseApp, namespace, analyticsConnector);
+    if (personalization != null) {
+      getHandler.addListener(personalization::logArmActive);
+    }
+
     return get(
         firebaseApp,
         namespace,
+        firebaseInstallations,
         firebaseAbt,
         executorService,
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
         getFetchHandler(namespace, fetchedCacheClient, metadataClient),
-        getGetHandler(activatedCacheClient, defaultsCacheClient),
+        getHandler,
         metadataClient);
   }
 
@@ -170,6 +177,7 @@ public class RemoteConfigComponent {
   synchronized FirebaseRemoteConfig get(
       FirebaseApp firebaseApp,
       String namespace,
+      FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       Executor executor,
       ConfigCacheClient fetchedClient,
@@ -183,6 +191,7 @@ public class RemoteConfigComponent {
           new FirebaseRemoteConfig(
               context,
               firebaseApp,
+              firebaseInstallations,
               isAbtSupported(firebaseApp, namespace) ? firebaseAbt : null,
               executor,
               fetchedClient,
@@ -203,15 +212,6 @@ public class RemoteConfigComponent {
   }
 
   private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
-    return getCacheClient(context, appId, namespace, configStoreType);
-  }
-
-  /**
-   * The {@link LegacyConfigsHandler} needs access to multiple cache clients, and the simplest way
-   * to provide it access is to keep this method public and static.
-   */
-  public static ConfigCacheClient getCacheClient(
-      Context context, String appId, String namespace, String configStoreType) {
     String fileName =
         String.format(
             "%s_%s_%s_%s.json",
@@ -229,16 +229,16 @@ public class RemoteConfigComponent {
         appId,
         apiKey,
         namespace,
-        metadataClient.getFetchTimeoutInSeconds(),
-        NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+        /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
+        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
   }
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
       String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
     return new ConfigFetchHandler(
-        firebaseInstanceId,
-        isPrimaryApp(firebaseApp) ? analyticsConnector : null,
+        firebaseInstallations,
+        isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
         executorService,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
@@ -250,7 +250,8 @@ public class RemoteConfigComponent {
 
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(activatedCacheClient, defaultsCacheClient);
+    return new ConfigGetParameterHandler(
+        executorService, activatedCacheClient, defaultsCacheClient);
   }
 
   @VisibleForTesting
@@ -261,6 +262,15 @@ public class RemoteConfigComponent {
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, PREFERENCES_FILE_NAME);
     SharedPreferences preferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
     return new ConfigMetadataClient(preferences);
+  }
+
+  @Nullable
+  private static Personalization getPersonalization(
+      FirebaseApp firebaseApp, String namespace, Provider<AnalyticsConnector> analyticsConnector) {
+    if (isPrimaryApp(firebaseApp) && namespace.equals(DEFAULT_NAMESPACE)) {
+      return new Personalization(analyticsConnector);
+    }
+    return null;
   }
 
   /**

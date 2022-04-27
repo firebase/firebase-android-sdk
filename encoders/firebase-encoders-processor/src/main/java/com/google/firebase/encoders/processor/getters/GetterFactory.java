@@ -15,13 +15,17 @@
 package com.google.firebase.encoders.processor.getters;
 
 import com.google.firebase.encoders.annotations.Encodable;
+import com.google.firebase.encoders.annotations.ExtraProperty;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -109,7 +113,31 @@ public final class GetterFactory {
 
     return Optional.of(
         Getter.create(
-            fieldName.get(), getterExpression, returnType, field != null && field.inline()));
+            fieldName.get(),
+            inferDescriptors(element),
+            getterExpression,
+            returnType,
+            field != null && field.inline()));
+  }
+
+  private Set<AnnotationDescriptor> inferDescriptors(ExecutableElement element) {
+    Set<AnnotationDescriptor> annotationDescriptors = new HashSet<>();
+    for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+      ExtraProperty extraProperty =
+          annotationMirror.getAnnotationType().asElement().getAnnotation(ExtraProperty.class);
+      if (extraProperty == null) {
+        continue;
+      }
+      List<AnnotationProperty> annotationValues =
+          annotationMirror.getElementValues().entrySet().stream()
+              .map(
+                  e ->
+                      AnnotationProperty.create(
+                          e.getKey().getSimpleName().toString(), e.getValue()))
+              .collect(Collectors.toList());
+      annotationDescriptors.add(AnnotationDescriptor.create(annotationMirror, annotationValues));
+    }
+    return annotationDescriptors;
   }
 
   private TypeMirror resolveTypeArguments(DeclaredType ownerType, TypeMirror genericType) {
@@ -140,6 +168,14 @@ public final class GetterFactory {
             String.format(
                 "Could not infer type of %s in %s. Is it a non-static inner class in a generic class?",
                 genericType, ownerType));
+        return genericType;
+      }
+      if (ownerType.getTypeArguments().get(index) instanceof TypeVariable) {
+        messager.printMessage(
+            Diagnostic.Kind.WARNING,
+            String.format(
+                "%s is a generic type, make sure you register encoders for types of %s that you plan to use.",
+                ownerType, genericType));
         return genericType;
       }
       return resolveTypeArguments(ownerType, ownerType.getTypeArguments().get(index));

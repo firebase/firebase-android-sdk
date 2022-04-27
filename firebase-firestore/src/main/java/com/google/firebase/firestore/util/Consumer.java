@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.util;
 
 /** A port of {@link java.util.function.Consumer}, a generic consumer of values. */
-// TODO: could also just use com.google.common.base.Receiver
 public interface Consumer<T> {
 
   /** Accepts a received object. */

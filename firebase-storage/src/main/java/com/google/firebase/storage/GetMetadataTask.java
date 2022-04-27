@@ -50,13 +50,14 @@ class GetMetadataTask implements Runnable {
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
   @Override
   public void run() {
     final NetworkRequest request =
-        new GetMetadataNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp());
+        new GetMetadataNetworkRequest(mStorageRef.getStorageReferenceUri(), mStorageRef.getApp());
 
     mSender.sendWithExponentialBackoff(request);
     if (request.isResultSuccess()) {

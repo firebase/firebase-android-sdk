@@ -20,7 +20,8 @@ import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firebase.firestore.model.Values;
+import com.google.firestore.v1.Value;
 import java.util.List;
 
 /**
@@ -37,58 +38,77 @@ import java.util.List;
  */
 public final class Bound {
 
-  /** Whether this bound is just before or just after the provided position */
-  private final boolean before;
+  /**
+   * Whether this bound includes the provided position (e.g. for {#code startAt()} or {#code
+   * endAt()})
+   */
+  private final boolean inclusive;
 
   /** The index position of this bound */
-  private final List<FieldValue> position;
+  private final List<Value> position;
 
-  public Bound(List<FieldValue> position, boolean before) {
+  public Bound(List<Value> position, boolean inclusive) {
     this.position = position;
-    this.before = before;
+    this.inclusive = inclusive;
   }
 
-  public List<FieldValue> getPosition() {
+  public List<Value> getPosition() {
     return position;
   }
 
-  public boolean isBefore() {
-    return before;
+  /**
+   * Whether the bound includes the documents that lie directly on the bound. Returns {@code true}
+   * for {@code startAt()} and {@code endAt()} and false for {@code startAfter()} and {@code
+   * endBefore()}.
+   */
+  public boolean isInclusive() {
+    return inclusive;
   }
 
-  public String canonicalString() {
+  public String positionString() {
     // TODO: Make this collision robust.
     StringBuilder builder = new StringBuilder();
-    if (before) {
-      builder.append("b:");
-    } else {
-      builder.append("a:");
-    }
-    for (FieldValue indexComponent : position) {
-      builder.append(indexComponent.toString());
+    boolean first = true;
+    for (Value indexComponent : position) {
+      if (!first) {
+        builder.append(",");
+      }
+      first = false;
+      builder.append(Values.canonicalId(indexComponent));
     }
     return builder.toString();
   }
 
   /** Returns true if a document sorts before a bound using the provided sort order. */
   public boolean sortsBeforeDocument(List<OrderBy> orderBy, Document document) {
+    int comparison = compareToDocument(orderBy, document);
+    return inclusive ? comparison <= 0 : comparison < 0;
+  }
+
+  /** Returns true if a document sorts after a bound using the provided sort order. */
+  public boolean sortsAfterDocument(List<OrderBy> orderBy, Document document) {
+    int comparison = compareToDocument(orderBy, document);
+    return inclusive ? comparison >= 0 : comparison > 0;
+  }
+
+  private int compareToDocument(List<OrderBy> orderBy, Document document) {
     hardAssert(position.size() <= orderBy.size(), "Bound has more components than query's orderBy");
     int comparison = 0;
     for (int i = 0; i < position.size(); i++) {
       OrderBy orderByComponent = orderBy.get(i);
-      FieldValue component = position.get(i);
+      Value component = position.get(i);
       if (orderByComponent.field.equals(FieldPath.KEY_PATH)) {
-        Object refValue = component.value();
         hardAssert(
-            refValue instanceof DocumentKey,
+            Values.isReferenceValue(component),
             "Bound has a non-key value where the key path is being used %s",
             component);
-        comparison = ((DocumentKey) refValue).compareTo(document.getKey());
+        comparison =
+            DocumentKey.fromName(component.getReferenceValue()).compareTo(document.getKey());
       } else {
-        FieldValue docValue = document.getField(orderByComponent.getField());
+        Value docValue = document.getField(orderByComponent.getField());
         hardAssert(
             docValue != null, "Field should exist since document matched the orderBy already.");
-        comparison = component.compareTo(docValue);
+        comparison = Values.compare(component, docValue);
       }
 
       if (orderByComponent.getDirection().equals(Direction.DESCENDING)) {
@@ -99,8 +119,7 @@ public final class Bound {
         break;
       }
     }
-
-    return before ? comparison <= 0 : comparison < 0;
+    return comparison;
   }
 
   @Override
@@ -114,18 +133,29 @@ public final class Bound {
 
     Bound bound = (Bound) o;
 
-    return before == bound.before && position.equals(bound.position);
+    return inclusive == bound.inclusive && position.equals(bound.position);
   }
 
   @Override
   public int hashCode() {
-    int result = (before ? 1 : 0);
+    int result = (inclusive ? 1 : 0);
     result = 31 * result + position.hashCode();
     return result;
   }
 
   @Override
   public String toString() {
-    return "Bound{before=" + before + ", position=" + position + '}';
+    StringBuilder builder = new StringBuilder();
+    builder.append("Bound(inclusive=");
+    builder.append(inclusive);
+    builder.append(", position=");
+    for (int i = 0; i < position.size(); i++) {
+      if (i > 0) {
+        builder.append(" and ");
+      }
+      builder.append(Values.canonicalId(position.get(i)));
+    }
+    builder.append(")");
+    return builder.toString();
   }
 }

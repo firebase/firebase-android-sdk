@@ -14,25 +14,32 @@
 
 package com.google.firebase.remoteconfig;
 
+import static androidx.test.ext.truth.os.BundleSubject.assertThat;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiment;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_BOOLEAN;
-import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_BYTE_ARRAY;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
-import static com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler.FRC_BYTE_ARRAY_ENCODING;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
+import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,13 +52,19 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +73,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,7 +81,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -82,9 +95,11 @@ import org.skyscreamer.jsonassert.JSONAssert;
     shadows = {ShadowPreconditions.class})
 public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   private static final String FIREPERF_NAMESPACE = "fireperf";
+  private static final String PERSONALIZATION_NAMESPACE = "personalization";
 
   private static final String STRING_KEY = "string_key";
   private static final String BOOLEAN_KEY = "boolean_key";
@@ -94,9 +109,21 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
+  private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_TOKEN =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      InstallationTokenResult.builder()
+          .setToken(INSTALLATION_TOKEN)
+          .setTokenCreationTimestamp(1)
+          .setTokenExpirationTimestamp(1)
+          .build();
+
   // We use a HashMap so that Mocking is easier.
   private static final HashMap<String, Object> DEFAULTS_MAP = new HashMap<>();
   private static final HashMap<String, String> DEFAULTS_STRING_MAP = new HashMap<>();
+
+  @Mock private AnalyticsConnector mockAnalyticsConnector;
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -114,9 +141,12 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseRemoteConfigInfo mockFrcInfo;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
+  @Mock private Provider<AnalyticsConnector> mockAnalyticsConnectorProvider;
 
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
+  private FirebaseRemoteConfig personalizationFrc;
   private ConfigContainer firstFetchedContainer;
   private ConfigContainer secondFetchedContainer;
 
@@ -137,8 +167,13 @@ public final class FirebaseRemoteConfigTest {
     MockitoAnnotations.initMocks(this);
 
     Executor directExecutor = MoreExecutors.directExecutor();
-    Context context = RuntimeEnvironment.application;
+    Context context = ApplicationProvider.getApplicationContext();
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
+
+    Personalization personalization = new Personalization(mockAnalyticsConnectorProvider);
+    ConfigGetParameterHandler parameterHandler =
+        new ConfigGetParameterHandler(directExecutor, mockActivatedCache, mockDefaultsCache);
+    parameterHandler.addListener(personalization::logArmActive);
 
     // Catch all to avoid NPEs (the getters should never return null).
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
@@ -150,6 +185,7 @@ public final class FirebaseRemoteConfigTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstallations,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -166,6 +202,7 @@ public final class FirebaseRemoteConfigTest {
             .get(
                 firebaseApp,
                 FIREPERF_NAMESPACE,
+                mockFirebaseInstallations,
                 /*firebaseAbt=*/ null,
                 directExecutor,
                 mockFireperfFetchedCache,
@@ -174,6 +211,23 @@ public final class FirebaseRemoteConfigTest {
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
                 RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+
+    personalizationFrc =
+        FirebaseApp.getInstance()
+            .get(RemoteConfigComponent.class)
+            .get(
+                firebaseApp,
+                PERSONALIZATION_NAMESPACE,
+                mockFirebaseInstallations,
+                /*firebaseAbt=*/ null,
+                directExecutor,
+                mockFetchedCache,
+                mockActivatedCache,
+                mockDefaultsCache,
+                mockFetchHandler,
+                parameterHandler,
+                RemoteConfigComponent.getMetadataClient(
+                    context, APP_ID, PERSONALIZATION_NAMESPACE));
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -197,6 +251,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadActivatedCacheWithIncompleteTask();
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -210,6 +265,7 @@ public final class FirebaseRemoteConfigTest {
     loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
     loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
     loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
 
@@ -351,22 +407,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void fetchAndActivate_hasNoAbtExperiments_sendsEmptyListToAbt() throws Exception {
-    loadFetchHandlerWithResponse();
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-
-    loadCacheWithConfig(mockFetchedCache, containerWithNoAbtExperiments);
-    cachePutReturnsConfig(mockActivatedCache, containerWithNoAbtExperiments);
-
-    Task<Boolean> task = frc.fetchAndActivate();
-
-    assertWithMessage("fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @Test
   public void fetchAndActivate_callToAbtFails_activateStillSucceeds() throws Exception {
     loadFetchHandlerWithResponse();
     ConfigContainer containerWithAbtExperiments =
@@ -434,187 +474,6 @@ public final class FirebaseRemoteConfigTest {
     Task<Boolean> task = fireperfFrc.fetchAndActivate();
 
     assertWithMessage("2p fetchAndActivate() failed!").that(getTaskResult(task)).isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-
-    assertWithMessage("activateFetched() succeeded with no fetched values!")
-        .that(frc.activateFetched())
-        .isFalse();
-
-    verify(mockActivatedCache, never()).put(any());
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_staleFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFetchedCache, firstFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-
-    assertWithMessage("activateFetched() succeeded with stale fetched values!")
-        .that(frc.activateFetched())
-        .isFalse();
-
-    verify(mockActivatedCache, never()).put(any());
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_freshFetchedConfigs_activatesAndClearsFetched() {
-    loadCacheWithConfig(mockFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forResult(secondFetchedContainer));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFetchedCache).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fileWriteFails_doesNotClearFetchedAndReturnsTrue() {
-    loadCacheWithConfig(mockFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forException(new IOException("Should have handled disk error.")));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_hasNoAbtExperiments_sendsEmptyListToAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-    loadCacheWithConfig(mockFetchedCache, containerWithNoAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithNoAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithNoAbtExperiments));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    verify(mockFirebaseAbt).replaceAllExperiments(ImmutableList.of());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_callToAbtFails_activateStillSucceeds() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    doThrow(new AbtException("Abt failure!")).when(mockFirebaseAbt).replaceAllExperiments(any());
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_hasAbtExperiments_sendsExperimentsToAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFetchedCache, containerWithAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    assertWithMessage("activateFetched() failed!").that(frc.activateFetched()).isTrue();
-
-    List<Map<String, String>> expectedExperimentInfoMaps =
-        toExperimentInfoMaps(containerWithAbtExperiments.getAbtExperiments());
-    verify(mockFirebaseAbt).replaceAllExperiments(expectedExperimentInfoMaps);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
-
-    assertWithMessage("activateFetched(fireperf) succeeded with no fetched values!")
-        .that(fireperfFrc.activateFetched())
-        .isFalse();
-
-    verify(mockFireperfActivatedCache, never()).put(any());
-    verify(mockFireperfFetchedCache, never()).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched_fireperfNamespace_freshFetchedConfigs_activatesAndClearsFetched() {
-    loadCacheWithConfig(mockFireperfFetchedCache, secondFetchedContainer);
-    loadCacheWithConfig(mockFireperfActivatedCache, firstFetchedContainer);
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(secondFetchedContainer))
-        .thenReturn(Tasks.forResult(secondFetchedContainer));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
-
-    verify(mockFireperfActivatedCache).putWithoutWaitingForDiskWrite(secondFetchedContainer);
-    verify(mockFireperfFetchedCache).clear();
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithNoAbtExperiments =
-        ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithNoAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(containerWithNoAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithNoAbtExperiments));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
-
-    verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void activateFetched2p_hasAbtExperiments_doesNotCallAbt() throws Exception {
-    ConfigContainer containerWithAbtExperiments =
-        ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments())
-            .build();
-    loadCacheWithConfig(mockFireperfFetchedCache, containerWithAbtExperiments);
-
-    // When the fetched values are activated, they should be put into the activated cache.
-    when(mockFireperfActivatedCache.putWithoutWaitingForDiskWrite(containerWithAbtExperiments))
-        .thenReturn(Tasks.forResult(containerWithAbtExperiments));
-
-    assertWithMessage("activateFetched(fireperf) failed!")
-        .that(fireperfFrc.activateFetched())
-        .isTrue();
 
     verify(mockFirebaseAbt, never()).replaceAllExperiments(any());
   }
@@ -815,6 +674,36 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
+    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+
+    Task<Boolean> activateTask = fireperfFrc.activate();
+
+    assertWithMessage("activate(fireperf) succeeded with no fetched values!")
+        .that(activateTask.getResult())
+        .isFalse();
+
+    verify(mockFireperfActivatedCache, never()).put(any());
+    verify(mockFireperfFetchedCache, never()).clear();
+  }
+
+  @Test
+  public void activate_fireperfNamespace_freshFetchedConfigs_activatesAndClearsFetched() {
+    loadCacheWithConfig(mockFireperfFetchedCache, secondFetchedContainer);
+    loadCacheWithConfig(mockFireperfActivatedCache, firstFetchedContainer);
+    // When the fetched values are activated, they should be put into the activated cache.
+    cachePutReturnsConfig(mockFireperfActivatedCache, secondFetchedContainer);
+
+    Task<Boolean> activateTask = fireperfFrc.activate();
+
+    assertWithMessage("activate(fireperf) failed!").that(activateTask.getResult()).isTrue();
+
+    verify(mockFireperfActivatedCache).put(secondFetchedContainer);
+    verify(mockFireperfFetchedCache).clear();
+  }
+
+  @Test
   public void fetch_hasNoErrors_taskReturnsSuccess() {
     when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
 
@@ -938,41 +827,6 @@ public final class FirebaseRemoteConfigTest {
     assertThat(fireperfFrc.getBoolean(BOOLEAN_KEY)).isTrue();
   }
 
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_keyDoesNotExist_returnsDefaultValue() {
-    when(mockGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-
-    assertThat(frc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_keyExists_returnsRemoteValue() {
-    byte[] remoteValue = "remote value".getBytes(FRC_BYTE_ARRAY_ENCODING);
-    when(mockGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(remoteValue);
-
-    assertThat(frc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(remoteValue);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_fireperfNamespace_keyDoesNotExist_returnsDefaultValue() {
-    when(mockFireperfGetHandler.getByteArray(BYTE_ARRAY_KEY))
-        .thenReturn(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-
-    assertThat(fireperfFrc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(DEFAULT_VALUE_FOR_BYTE_ARRAY);
-  }
-
-  @SuppressWarnings("deprecation")
-  @Test
-  public void getByteArray_fireperfNamespace_keyExists_returnsRemoteValue() {
-    byte[] remoteValue = "remote value".getBytes(FRC_BYTE_ARRAY_ENCODING);
-    when(mockFireperfGetHandler.getByteArray(BYTE_ARRAY_KEY)).thenReturn(remoteValue);
-
-    assertThat(fireperfFrc.getByteArray(BYTE_ARRAY_KEY)).isEqualTo(remoteValue);
-  }
-
   @Test
   public void getDouble_keyDoesNotExist_returnsDefaultValue() {
     when(mockGetHandler.getDouble(DOUBLE_KEY)).thenReturn(DEFAULT_VALUE_FOR_DOUBLE);
@@ -1050,7 +904,6 @@ public final class FirebaseRemoteConfigTest {
     when(mockFrcInfo.getConfigSettings())
         .thenReturn(
             new FirebaseRemoteConfigSettings.Builder()
-                .setDeveloperModeEnabled(true)
                 .setFetchTimeoutInSeconds(fetchTimeoutInSeconds)
                 .setMinimumFetchIntervalInSeconds(minimumFetchIntervalInSeconds)
                 .build());
@@ -1059,22 +912,10 @@ public final class FirebaseRemoteConfigTest {
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(fetchTimeInMillis);
     assertThat(info.getLastFetchStatus()).isEqualTo(lastFetchStatus);
-    assertThat(info.getConfigSettings().isDeveloperModeEnabled()).isEqualTo(true);
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
         .isEqualTo(fetchTimeoutInSeconds);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(minimumFetchIntervalInSeconds);
-  }
-
-  @Test
-  public void setDefaults_withMap_setsDefaults() throws Exception {
-    frc.setDefaults(ImmutableMap.copyOf(DEFAULTS_MAP));
-
-    ConfigContainer defaultsContainer = newDefaultsContainer(DEFAULTS_STRING_MAP);
-    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-    JSONAssert.assertEquals(defaultsContainer.toString(), captor.getValue().toString(), false);
   }
 
   @Test
@@ -1103,28 +944,11 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void setConfigSettings_updatesMetadata() {
-    long fetchTimeout = 13L;
-    long minimumFetchInterval = 666L;
-    FirebaseRemoteConfigSettings frcSettings =
-        new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
-            .setFetchTimeoutInSeconds(fetchTimeout)
-            .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
-            .build();
-
-    frc.setConfigSettings(frcSettings);
-
-    verify(metadataClient).setConfigSettingsWithoutWaitingOnDiskWrite(frcSettings);
-  }
-
-  @Test
   public void setConfigSettingsAsync_updatesMetadata() {
     long fetchTimeout = 13L;
     long minimumFetchInterval = 666L;
     FirebaseRemoteConfigSettings frcSettings =
         new FirebaseRemoteConfigSettings.Builder()
-            .setDeveloperModeEnabled(true)
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build();
@@ -1133,6 +957,86 @@ public final class FirebaseRemoteConfigTest {
 
     assertThat(setterTask.isSuccessful()).isTrue();
     verify(metadataClient).setConfigSettings(frcSettings);
+  }
+
+  @Test
+  public void personalization_hasMetadata_successful() throws Exception {
+    List<Bundle> fakeLogs = new ArrayList<>();
+    when(mockAnalyticsConnectorProvider.get()).thenReturn(null).thenReturn(mockAnalyticsConnector);
+    doAnswer(invocation -> fakeLogs.add(invocation.getArgument(2)))
+        .when(mockAnalyticsConnector)
+        .logEvent(
+            eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
+            eq(Personalization.EXTERNAL_EVENT),
+            any(Bundle.class));
+
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(new JSONObject("{key1: 'value1', key2: 'value2', key3: 'value3'}"))
+            .withFetchTime(new Date(1))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    "{key1: {personalizationId: 'id1', choiceId: '1'}, key2: {personalizationId: 'id2', choiceId: '2'}}"))
+            .build();
+
+    when(mockFetchHandler.fetch())
+        .thenReturn(
+            Tasks.forResult(FetchResponse.forBackendUpdatesFetched(configContainer, "Etag")));
+
+    when(mockActivatedCache.getBlocking()).thenReturn(configContainer);
+
+    personalizationFrc
+        .fetchAndActivate()
+        .addOnCompleteListener(
+            success -> {
+              personalizationFrc.getString("key1");
+              personalizationFrc.getString("key2");
+
+              // Since the first time we tried to get the Analytics connector we got `null` (not
+              // available) we should only get the values for the second `getString` call.
+              verify(mockAnalyticsConnector, times(1))
+                  .logEvent(
+                      eq(Personalization.ANALYTICS_ORIGIN_PERSONALIZATION),
+                      eq(Personalization.EXTERNAL_EVENT),
+                      any(Bundle.class));
+              assertThat(fakeLogs).hasSize(1);
+
+              assertThat(fakeLogs.get(0))
+                  .string(EXTERNAL_PERSONALIZATION_ID_PARAM)
+                  .isEqualTo("id2");
+              assertThat(fakeLogs.get(0)).string(EXTERNAL_ARM_VALUE_PARAM).isEqualTo("value2");
+            });
+  }
+
+  @Test
+  public void personalization_hasMetadata_successful_without_analytics() throws Exception {
+    List<Bundle> fakeLogs = new ArrayList<>();
+    when(mockAnalyticsConnectorProvider.get()).thenReturn(null);
+
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(new JSONObject("{key1: 'value1', key2: 'value2'}"))
+            .withFetchTime(new Date(1))
+            .withPersonalizationMetadata(
+                new JSONObject("{key1: {personalizationId: 'id1', choiceId: '1'}}"))
+            .build();
+
+    when(mockFetchHandler.fetch())
+        .thenReturn(
+            Tasks.forResult(FetchResponse.forBackendUpdatesFetched(configContainer, "Etag")));
+
+    when(mockActivatedCache.getBlocking()).thenReturn(configContainer);
+
+    personalizationFrc
+        .fetchAndActivate()
+        .addOnCompleteListener(
+            success -> {
+              personalizationFrc.getString("key1");
+              personalizationFrc.getString("key2");
+              verify(mockAnalyticsConnector, never())
+                  .logEvent(anyString(), anyString(), any(Bundle.class));
+              assertThat(fakeLogs).isEmpty();
+            });
   }
 
   private static void loadCacheWithConfig(
@@ -1166,9 +1070,16 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(firstFetchedContainerResponse));
   }
 
+  private void loadInstanceIdAndToken() {
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
+  }
+
   private static int getResourceId(String xmlResourceName) {
-    Resources r = RuntimeEnvironment.application.getResources();
-    return r.getIdentifier(xmlResourceName, "xml", RuntimeEnvironment.application.getPackageName());
+    Resources r = ApplicationProvider.getApplicationContext().getResources();
+    return r.getIdentifier(
+        xmlResourceName, "xml", ApplicationProvider.getApplicationContext().getPackageName());
   }
 
   private static ConfigContainer newDefaultsContainer(Map<String, String> configsMap)
@@ -1197,6 +1108,11 @@ public final class FirebaseRemoteConfigTest {
     FirebaseApp.clearInstancesForTest();
 
     return FirebaseApp.initializeApp(
-        context, new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build());
   }
 }

@@ -1,3 +1,11 @@
+# 19.2.2
+- [fixed] Fixed an issue that caused the SDK to report incorrect values for
+  "getTotalByteCount()" after a download was paused and resumed.
+
+# 19.2.1
+- [fixed] Fixed an issue that caused the SDK to crash if the download location
+  was deleted before the download completed. Instead, the download now fails.
+
 # 19.0.2
 - [fixed] Fixed an encoding issue in `list()/listAll()` that caused us to miss
   entries for folders that contained special characters.

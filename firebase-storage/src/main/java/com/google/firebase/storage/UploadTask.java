@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
@@ -61,6 +62,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   // Active, current mutable state.
   private final AtomicLong mBytesUploaded = new AtomicLong(0);
   @Nullable private final InternalAuthProvider mAuthProvider;
+  @Nullable private final InternalAppCheckTokenProvider mAppCheckProvider;
   private int mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
   private ExponentialBackoffSender mSender;
   private boolean mIsStreamOwned;
@@ -81,6 +83,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
     this.mAuthProvider = storage.getAuthProvider();
+    this.mAppCheckProvider = storage.getAppCheckProvider();
     this.mUri = null;
     this.mStreamBuffer =
         new AdaptiveStreamBuffer(new ByteArrayInputStream(bytes), PREFERRED_CHUNK_SIZE);
@@ -89,7 +92,8 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     mSender =
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
-            storage.getAuthProvider(),
+            mAuthProvider,
+            mAppCheckProvider,
             storage.getMaxDownloadRetryTimeMillis());
   }
 
@@ -103,12 +107,14 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
     this.mAuthProvider = storage.getAuthProvider();
+    this.mAppCheckProvider = storage.getAppCheckProvider();
     this.mUri = file;
     InputStream inputStream = null;
     mSender =
         new ExponentialBackoffSender(
             mStorageRef.getApp().getApplicationContext(),
             mAuthProvider,
+            mAppCheckProvider,
             storage.getMaxUploadRetryTimeMillis());
     long size = -1;
     try {
@@ -163,6 +169,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     this.mStorageRef = targetRef;
     this.mMetadata = metadata;
     this.mAuthProvider = storage.getAuthProvider();
+    this.mAppCheckProvider = storage.getAppCheckProvider();
     this.mStreamBuffer = new AdaptiveStreamBuffer(stream, PREFERRED_CHUNK_SIZE);
     this.mIsStreamOwned = false;
     this.mUri = null;
@@ -170,6 +177,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         new ExponentialBackoffSender(
             mStorageRef.getApp().getApplicationContext(),
             mAuthProvider,
+            mAppCheckProvider,
             mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
   }
 
@@ -260,7 +268,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     }
     NetworkRequest startRequest =
         new ResumableUploadStartRequest(
-            mStorageRef.getStorageUri(),
+            mStorageRef.getStorageReferenceUri(),
             mStorageRef.getApp(),
             mMetadata != null ? mMetadata.createJSONObject() : null,
             mimeType);
@@ -345,7 +353,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
-            mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
+            mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mUploadUri);
 
     if (RESUMABLE_FINAL_STATUS.equals(mServerStatus)) {
       return false;
@@ -409,7 +417,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
 
       NetworkRequest uploadRequest =
           new ResumableUploadByteRequest(
-              mStorageRef.getStorageUri(),
+              mStorageRef.getStorageReferenceUri(),
               mStorageRef.getApp(),
               mUploadUri,
               mStreamBuffer.get(),
@@ -459,7 +467,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
 
   private boolean send(NetworkRequest request) {
     request.performRequest(
-        Util.getCurrentAuthToken(mAuthProvider), mStorageRef.getApp().getApplicationContext());
+        Util.getCurrentAuthToken(mAuthProvider),
+        Util.getCurrentAppCheckToken(mAppCheckProvider),
+        mStorageRef.getApp().getApplicationContext());
     return processResultValid(request);
   }
 
@@ -484,7 +494,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     if (mUploadUri != null) {
       cancelRequest =
           new ResumableUploadCancelRequest(
-              mStorageRef.getStorageUri(), mStorageRef.getApp(), mUploadUri);
+              mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mUploadUri);
     }
 
     if (cancelRequest != null) {
@@ -496,6 +506,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
                 public void run() {
                   finalCancelRequest.performRequest(
                       Util.getCurrentAuthToken(mAuthProvider),
+                      Util.getCurrentAppCheckToken(mAppCheckProvider),
                       mStorageRef.getApp().getApplicationContext());
                 }
               });

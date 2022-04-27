@@ -84,11 +84,12 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
             () -> {
-              HttpsCallableContext context = new HttpsCallableContext("token", null);
+              HttpsCallableContext context = new HttpsCallableContext("token", null, null);
               return Tasks.forResult(context);
             });
 
@@ -104,15 +105,37 @@ public class CallTest {
     // Override the normal token provider to simulate FirebaseAuth being logged in.
     FirebaseFunctions functions =
         new FirebaseFunctions(
+            app,
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
             () -> {
-              HttpsCallableContext context = new HttpsCallableContext(null, "iid");
+              HttpsCallableContext context = new HttpsCallableContext(null, "iid", null);
               return Tasks.forResult(context);
             });
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
+    Task<HttpsCallableResult> result = function.call(new HashMap<>());
+    Object actual = Tasks.await(result).getData();
+
+    assertEquals(new HashMap<>(), actual);
+  }
+
+  @Test
+  public void testAppCheck() throws InterruptedException, ExecutionException {
+    // Override the normal token provider to simulate FirebaseAuth being logged in.
+    FirebaseFunctions functions =
+        new FirebaseFunctions(
+            app,
+            app.getApplicationContext(),
+            app.getOptions().getProjectId(),
+            "us-central1",
+            () -> {
+              HttpsCallableContext context = new HttpsCallableContext(null, null, "appCheck");
+              return Tasks.forResult(context);
+            });
+
+    HttpsCallableReference function = functions.getHttpsCallable("appCheckTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
     Object actual = Tasks.await(result).getData();
 

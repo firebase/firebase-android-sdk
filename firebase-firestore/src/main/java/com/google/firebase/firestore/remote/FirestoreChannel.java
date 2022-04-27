@@ -23,6 +23,7 @@ import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -32,31 +33,43 @@ import io.grpc.ForwardingClientCall;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Wrapper class around io.grpc.Channel that adds headers, exception handling and simplifies
  * invoking RPCs.
+ *
+ * @hide
  */
-class FirestoreChannel {
+public class FirestoreChannel {
+
+  /** Listen to changes inside runStreamingResponseRpc */
+  public abstract static class StreamingListener<T> {
+    public StreamingListener() {}
+
+    public void onMessage(T message) {}
+
+    public void onClose(Status status) {}
+  }
 
   private static final Metadata.Key<String> X_GOOG_API_CLIENT_HEADER =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER);
 
   private static final Metadata.Key<String> RESOURCE_PREFIX_HEADER =
       Metadata.Key.of("google-cloud-resource-prefix", Metadata.ASCII_STRING_MARSHALLER);
+  private static final Metadata.Key<String> X_GOOG_REQUEST_PARAMS_HEADER =
+      Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER);
 
-  // TODO: The gRPC version is determined using a package manifest, which is not available
-  // to us at build time or runtime (it's empty when building in google3). So for now we omit the
-  // version of grpc.
-  private static final String X_GOOG_API_CLIENT_VALUE =
-      "gl-java/ fire/" + BuildConfig.VERSION_NAME + " grpc/";
+  /** The client language reported via the X_GOOG_API_CLIENT_HEADER. */
+  // Note: there is no good way to get the Java language version on Android
+  // (System.getProperty("java.version") returns "0", for example).
+  private static volatile String clientLanguage = "gl-java/";
 
   /** The async worker queue that is used to dispatch events. */
   private final AsyncQueue asyncQueue;
 
-  private final CredentialsProvider credentialsProvider;
+  private final CredentialsProvider<User> authProvider;
+
+  private final CredentialsProvider<String> appCheckProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
   private final GrpcCallProvider callProvider;
@@ -69,14 +82,17 @@ class FirestoreChannel {
   FirestoreChannel(
       AsyncQueue asyncQueue,
       Context context,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
-    this.credentialsProvider = credentialsProvider;
+    this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
 
-    FirestoreCallCredentials firestoreHeaders = new FirestoreCallCredentials(credentialsProvider);
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
     this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
 
     DatabaseId databaseId = databaseInfo.getDatabaseId();
@@ -175,36 +191,28 @@ class FirestoreChannel {
   }
 
   /** Creates and starts a streaming response RPC. */
-  <ReqT, RespT> Task<List<RespT>> runStreamingResponseRpc(
-      MethodDescriptor<ReqT, RespT> method, ReqT request) {
-    TaskCompletionSource<List<RespT>> tcs = new TaskCompletionSource<>();
-
+  <ReqT, RespT> void runStreamingResponseRpc(
+      MethodDescriptor<ReqT, RespT> method,
+      ReqT request,
+      FirestoreChannel.StreamingListener<RespT> callback) {
     callProvider
         .createClientCall(method)
         .addOnCompleteListener(
             asyncQueue.getExecutor(),
             result -> {
               ClientCall<ReqT, RespT> call = result.getResult();
-
-              List<RespT> results = new ArrayList<>();
-
               call.start(
                   new ClientCall.Listener<RespT>() {
                     @Override
                     public void onMessage(RespT message) {
-                      results.add(message);
-
+                      callback.onMessage(message);
                       // Make sure next message can be delivered
                       call.request(1);
                     }
 
                     @Override
                     public void onClose(Status status, Metadata trailers) {
-                      if (status.isOk()) {
-                        tcs.setResult(results);
-                      } else {
-                        tcs.setException(exceptionFromStatus(status));
-                      }
+                      callback.onClose(status);
                     }
                   },
                   requestHeaders());
@@ -215,8 +223,6 @@ class FirestoreChannel {
               call.sendMessage(request);
               call.halfClose();
             });
-
-    return tcs.getTask();
   }
 
   /** Creates and starts a single response RPC. */
@@ -278,15 +284,28 @@ class FirestoreChannel {
   }
 
   public void invalidateToken() {
-    credentialsProvider.invalidateToken();
+    authProvider.invalidateToken();
+    appCheckProvider.invalidateToken();
+  }
+
+  public static void setClientLanguage(String languageToken) {
+    clientLanguage = languageToken;
+  }
+
+  private String getGoogApiClientValue() {
+    return String.format("%s fire/%s grpc/", clientLanguage, BuildConfig.VERSION_NAME);
   }
 
   /** Returns the default headers for requests to the backend. */
   private Metadata requestHeaders() {
     Metadata headers = new Metadata();
-    headers.put(X_GOOG_API_CLIENT_HEADER, X_GOOG_API_CLIENT_VALUE);
-    // This header is used to improve routing and project isolation by the backend.
+    headers.put(X_GOOG_API_CLIENT_HEADER, getGoogApiClientValue());
+    // These headers are used to improve routing and project isolation by the backend.
+    // TODO(b/199767712): We are keeping RESOURCE_PREFIX_HEADER until Emulators can be released
+    // with cl/428820046. Currently blocked because Emulators are now built with Java 11 from
+    // Google3.
     headers.put(RESOURCE_PREFIX_HEADER, this.resourcePrefixValue);
+    headers.put(X_GOOG_REQUEST_PARAMS_HEADER, this.resourcePrefixValue);
     if (metadataProvider != null) {
       metadataProvider.updateMetadata(headers);
     }

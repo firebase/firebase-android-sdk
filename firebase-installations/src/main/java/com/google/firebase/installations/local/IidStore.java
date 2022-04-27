@@ -23,6 +23,7 @@ import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
@@ -35,15 +36,18 @@ import org.json.JSONObject;
 
 /**
  * Read existing iid only for default (first initialized) instance of this firebase application.*
+ *
+ * @hide
  */
 public class IidStore {
   private static final String IID_SHARED_PREFS_NAME = "com.google.android.gms.appid";
   private static final String STORE_KEY_PUB = "|S||P|";
   private static final String STORE_KEY_ID = "|S|id";
   private static final String STORE_KEY_TOKEN = "|T|";
-  private static final String DEFAULT_SCOPE = "|*";
+  private static final String STORE_KEY_SEPARATOR = "|";
   private static final String JSON_TOKEN_KEY = "token";
   private static final String JSON_ENCODED_PREFIX = "{";
+  private static final String[] ALLOWABLE_SCOPES = new String[] {"*", "FCM", "GCM", ""};
 
   @GuardedBy("iidPrefs")
   private final SharedPreferences iidPrefs;
@@ -57,6 +61,12 @@ public class IidStore {
             .getSharedPreferences(IID_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
 
     defaultSenderId = getDefaultSenderId(firebaseApp);
+  }
+
+  @VisibleForTesting
+  public IidStore(@NonNull SharedPreferences iidPrefs, @Nullable String defaultSenderId) {
+    this.iidPrefs = iidPrefs;
+    this.defaultSenderId = defaultSenderId;
   }
 
   private static String getDefaultSenderId(FirebaseApp app) {
@@ -83,23 +93,22 @@ public class IidStore {
     return projectNumber;
   }
 
-  private String createTokenKey(@NonNull String senderId) {
-    return STORE_KEY_TOKEN + senderId + DEFAULT_SCOPE;
+  private String createTokenKey(@NonNull String senderId, @NonNull String scope) {
+    return STORE_KEY_TOKEN + senderId + STORE_KEY_SEPARATOR + scope;
   }
 
   @Nullable
   public String readToken() {
     synchronized (iidPrefs) {
-      String token = iidPrefs.getString(createTokenKey(defaultSenderId), null);
-      if (token.isEmpty()) {
-        return null;
+      for (String scope : ALLOWABLE_SCOPES) {
+        String tokenKey = createTokenKey(defaultSenderId, scope);
+        String token = iidPrefs.getString(tokenKey, null);
+        if (token != null && !token.isEmpty()) {
+          return token.startsWith(JSON_ENCODED_PREFIX) ? parseIidTokenFromJson(token) : token;
+        }
       }
 
-      if (token.startsWith(JSON_ENCODED_PREFIX)) {
-        return parseIidTokenFromJson(token);
-      }
-      // Legacy value, token is whole string
-      return token;
+      return null;
     }
   }
 
@@ -167,6 +176,11 @@ public class IidStore {
 
     byte[] derPub = publicKey.getEncoded();
     try {
+      // FirebaseInstallations SDK uses the SHA1 hash for backwards compatibility with the legacy
+      // InstanceID SDK. The SHA1 hash is used to access Instance IDs stored on the device and not
+      // for any security relevant process. This is a one-time step that allows migration of old
+      // client identifiers. Cryptographic security is not needed here so potential hash collisions
+      // are not a problem.
       MessageDigest md = MessageDigest.getInstance("SHA1");
 
       byte[] digest = md.digest(derPub);

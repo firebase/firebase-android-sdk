@@ -18,13 +18,13 @@ package com.google.firebase.storage;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class StorageRegistrarTest {
@@ -32,7 +32,7 @@ public class StorageRegistrarTest {
   public void getComponents_publishesLibVersionComponent() {
     FirebaseApp app =
         FirebaseApp.initializeApp(
-            RuntimeEnvironment.application.getApplicationContext(),
+            ApplicationProvider.getApplicationContext(),
             new FirebaseOptions.Builder()
                 .setApplicationId("1:196403931065:android:60949756fbe381ea")
                 .build());

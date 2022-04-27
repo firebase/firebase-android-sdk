@@ -14,18 +14,18 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A mutation that modifies fields of the document at the given key with the given values. The
@@ -45,7 +45,16 @@ public final class PatchMutation extends Mutation {
 
   public PatchMutation(
       DocumentKey key, ObjectValue value, FieldMask mask, Precondition precondition) {
-    super(key, precondition);
+    this(key, value, mask, precondition, new ArrayList<>());
+  }
+
+  public PatchMutation(
+      DocumentKey key,
+      ObjectValue value,
+      FieldMask mask,
+      Precondition precondition,
+      List<FieldTransform> fieldTransforms) {
+    super(key, precondition, fieldTransforms);
     this.value = value;
     this.mask = mask;
   }
@@ -60,7 +69,9 @@ public final class PatchMutation extends Mutation {
     }
 
     PatchMutation that = (PatchMutation) o;
-    return hasSameKeyAndPrecondition(that) && value.equals(that.value);
+    return hasSameKeyAndPrecondition(that)
+        && value.equals(that.value)
+        && getFieldTransforms().equals(that.getFieldTransforms());
   }
 
   @Override
@@ -90,77 +101,76 @@ public final class PatchMutation extends Mutation {
    * Returns the mask to apply to {@link #getValue}, where only fields that are in both the
    * fieldMask and the value will be updated.
    */
-  public FieldMask getMask() {
+  @Override
+  public FieldMask getFieldMask() {
     return mask;
   }
 
   @Override
-  public MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
-    verifyKeyMatches(maybeDoc);
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
+    verifyKeyMatches(document);
 
-    hardAssert(
-        mutationResult.getTransformResults() == null,
-        "Transform results received by PatchMutation.");
-
-    if (!this.getPrecondition().isValidFor(maybeDoc)) {
+    if (!this.getPrecondition().isValidFor(document)) {
       // Since the mutation was not rejected, we know that the precondition matched on the backend.
       // We therefore must not have the expected version of the document in our cache and return an
       // UnknownDocument with the known updateTime.
-      return new UnknownDocument(this.getKey(), mutationResult.getVersion());
+      document.convertToUnknownDocument(mutationResult.getVersion());
+      return;
     }
 
-    SnapshotVersion version = mutationResult.getVersion();
-    ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, newData);
+    Map<FieldPath, Value> transformResults =
+        serverTransformResults(document, mutationResult.getTransformResults());
+    ObjectValue value = document.getData();
+    value.setAll(getPatch());
+    value.setAll(transformResults);
+    document
+        .convertToFoundDocument(mutationResult.getVersion(), document.getData())
+        .setHasCommittedMutations();
   }
 
-  @Nullable
   @Override
-  public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
-    verifyKeyMatches(maybeDoc);
+  public @Nullable FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+    verifyKeyMatches(document);
 
-    if (!getPrecondition().isValidFor(maybeDoc)) {
-      return maybeDoc;
+    if (!getPrecondition().isValidFor(document)) {
+      return previousMask;
     }
 
-    SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    ObjectValue newData = patchDocument(maybeDoc);
-    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, newData);
-  }
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    Map<FieldPath, Value> patches = getPatch();
+    ObjectValue value = document.getData();
+    value.setAll(patches);
+    value.setAll(transformResults);
+    document
+        .convertToFoundDocument(document.getVersion(), document.getData())
+        .setHasLocalMutations();
 
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return null;
-  }
-
-  /**
-   * Patches the data of document if available or creates a new document. Note that this does not
-   * check whether or not the precondition of this patch holds.
-   */
-  private ObjectValue patchDocument(@Nullable MaybeDocument maybeDoc) {
-    ObjectValue data;
-    if (maybeDoc instanceof Document) {
-      data = ((Document) maybeDoc).getData();
-    } else {
-      data = ObjectValue.emptyObject();
+    if (previousMask == null) {
+      return null;
     }
-    return patchObject(data);
+
+    HashSet<FieldPath> mergedMaskSet = new HashSet<>(previousMask.getMask());
+    mergedMaskSet.addAll(this.mask.getMask());
+    mergedMaskSet.addAll(getFieldTransformPaths());
+    return FieldMask.fromSet(mergedMaskSet);
   }
 
-  private ObjectValue patchObject(ObjectValue obj) {
+  private List<FieldPath> getFieldTransformPaths() {
+    List<FieldPath> result = new ArrayList<>();
+    for (FieldTransform fieldTransform : getFieldTransforms()) {
+      result.add(fieldTransform.getFieldPath());
+    }
+    return result;
+  }
+
+  private Map<FieldPath, Value> getPatch() {
+    Map<FieldPath, Value> result = new HashMap<>();
     for (FieldPath path : mask.getMask()) {
       if (!path.isEmpty()) {
-        FieldValue newValue = value.get(path);
-        if (newValue == null) {
-          obj = obj.delete(path);
-        } else {
-          obj = obj.set(path, newValue);
-        }
+        result.put(path, value.get(path));
       }
     }
-    return obj;
+    return result;
   }
 }

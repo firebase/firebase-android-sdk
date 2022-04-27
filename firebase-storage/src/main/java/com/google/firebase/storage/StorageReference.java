@@ -29,6 +29,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.internal.Slashes;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -685,5 +686,10 @@ public class StorageReference implements Comparable<StorageReference> {
     // mStorageUri contains a reference to the GCS bucket as well as the fully qualified path
     // of this reference.
     return mStorageUri.compareTo(other.mStorageUri);
+  }
+
+  @NonNull
+  StorageReferenceUri getStorageReferenceUri() {
+    return new StorageReferenceUri(mStorageUri, mFirebaseStorage.getEmulatorSettings());
   }
 }

@@ -17,7 +17,6 @@ package com.google.android.datatransport.cct.internal;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.io.IOException;
 import java.io.Reader;
@@ -33,7 +32,7 @@ public abstract class LogResponse {
     return new AutoValue_LogResponse(nextRequestWaitMillis);
   }
 
-  @Nullable
+  @NonNull
   public static LogResponse fromJson(@NonNull Reader reader) throws IOException {
     JsonReader jsonReader = new JsonReader(reader);
     try {

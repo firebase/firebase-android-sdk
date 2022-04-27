@@ -43,6 +43,7 @@ package com.google.firebase.storage {
     method public void setMaxDownloadRetryTimeMillis(long);
     method public void setMaxOperationRetryTimeMillis(long);
     method public void setMaxUploadRetryTimeMillis(long);
+    method public void useEmulator(@NonNull String, int);
   }
 
   public final class ListResult {

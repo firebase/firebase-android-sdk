@@ -19,10 +19,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build.VERSION;
 import android.text.TextUtils;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.developers.mobile.targeting.proto.ClientSignalsProto.ClientSignals;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpressionList;
@@ -43,17 +41,11 @@ import javax.annotation.Nullable;
 @FirebaseAppScope
 public class ApiClient {
 
-  private static final String DATA_COLLECTION_DISABLED_ERROR =
-      "Automatic data collection is disabled, not attempting campaign fetch from service.";
-  private static final String IID_NOT_INITIALIZED_ERROR =
-      "FirebaseInstanceId not yet initialized, not attempting campaign fetch from service.";
   private static final String FETCHING_CAMPAIGN_MESSAGE = "Fetching campaigns from service.";
 
   private final Lazy<GrpcClient> grpcClient;
   private final FirebaseApp firebaseApp;
   private final Application application;
-  private final FirebaseInstanceId firebaseInstanceId;
-  private final DataCollectionHelper dataCollectionHelper;
   private final Clock clock;
   private final ProviderInstaller providerInstaller;
 
@@ -61,39 +53,18 @@ public class ApiClient {
       Lazy<GrpcClient> grpcClient,
       FirebaseApp firebaseApp,
       Application application,
-      FirebaseInstanceId firebaseInstanceId,
-      DataCollectionHelper dataCollectionHelper,
       Clock clock,
       ProviderInstaller providerInstaller) {
     this.grpcClient = grpcClient;
     this.firebaseApp = firebaseApp;
     this.application = application;
-    this.firebaseInstanceId = firebaseInstanceId;
-    this.dataCollectionHelper = dataCollectionHelper;
     this.clock = clock;
     this.providerInstaller = providerInstaller;
   }
 
-  @VisibleForTesting
-  static FetchEligibleCampaignsResponse createCacheExpiringResponse() {
-    // Within the cache, we use '0' as a special case to 'never' expire. '1' is used when we want to
-    // retry the getFiams call on subsequent event triggers, and force the cache to always expire
-    return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
-  }
-
-  FetchEligibleCampaignsResponse getFiams(CampaignImpressionList impressionList) {
-    if (!dataCollectionHelper.isAutomaticDataCollectionEnabled()) {
-      Logging.logi(DATA_COLLECTION_DISABLED_ERROR);
-      return createCacheExpiringResponse();
-    }
-
-    if (!isFirebaseTokenInitialized()) {
-      Logging.logi(IID_NOT_INITIALIZED_ERROR);
-      return createCacheExpiringResponse();
-    }
-
+  FetchEligibleCampaignsResponse getFiams(
+      InstallationIdResult installationIdResult, CampaignImpressionList impressionList) {
     Logging.logi(FETCHING_CAMPAIGN_MESSAGE);
-
     providerInstaller.install();
 
     return withCacheExpirationSafeguards(
@@ -105,7 +76,7 @@ public class ApiClient {
                     .setProjectNumber(firebaseApp.getOptions().getGcmSenderId())
                     .addAllAlreadySeenCampaigns(impressionList.getAlreadySeenCampaignsList())
                     .setClientSignals(getClientSignals())
-                    .setRequestingClientApp(getClientAppInfo())
+                    .setRequestingClientApp(getClientAppInfo(installationIdResult))
                     .build()));
   }
 
@@ -138,26 +109,12 @@ public class ApiClient {
     return clientSignals.build();
   }
 
-  private boolean isFirebaseTokenInitialized() {
-    return !TextUtils.isEmpty(firebaseInstanceId.getToken())
-        && !TextUtils.isEmpty(firebaseInstanceId.getId());
-  }
-
-  private ClientAppInfo getClientAppInfo() {
-    ClientAppInfo.Builder builder =
-        ClientAppInfo.newBuilder().setGmpAppId(firebaseApp.getOptions().getApplicationId());
-
-    String instanceId = firebaseInstanceId.getId();
-    if (!TextUtils.isEmpty(instanceId)) {
-      builder.setAppInstanceId(instanceId);
-    }
-
-    String instanceToken = firebaseInstanceId.getToken();
-    if (!TextUtils.isEmpty(instanceToken)) {
-      builder.setAppInstanceIdToken(instanceToken);
-    }
-
-    return builder.build();
+  private ClientAppInfo getClientAppInfo(InstallationIdResult installationIdResult) {
+    return ClientAppInfo.newBuilder()
+        .setGmpAppId(firebaseApp.getOptions().getApplicationId())
+        .setAppInstanceId(installationIdResult.installationId())
+        .setAppInstanceIdToken(installationIdResult.installationTokenResult().getToken())
+        .build();
   }
 
   @Nullable

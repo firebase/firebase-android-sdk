@@ -16,6 +16,7 @@ package com.google.android.datatransport.runtime;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -35,13 +36,19 @@ import com.google.android.datatransport.runtime.backends.BackendRegistry;
 import com.google.android.datatransport.runtime.backends.BackendRequest;
 import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
+import com.google.android.datatransport.runtime.scheduling.persistence.SQLiteEventStore;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -76,6 +83,12 @@ public class UploaderIntegrationTest {
                 invocation -> invocation.<EventInternal>getArgument(0).toBuilder().build());
   }
 
+  @After
+  public void tearDown() {
+    component.getEventStore().clearDb();
+    component.getEventStore().resetClientMetrics();
+  }
+
   private String generateBackendName() {
     return UUID.randomUUID().toString().replace("-", "");
   }
@@ -108,14 +121,12 @@ public class UploaderIntegrationTest {
     transport.send(stringEvent);
     verify(mockBackend, times(2))
         .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
-    verify(spyScheduler, times(1)).schedule(any(), eq(2));
+    verify(spyScheduler, times(1)).schedule(any(), eq(2), anyBoolean());
     Iterable<PersistedEvent> eventList = store.loadBatch(transportContext);
     assertThat(eventList).isNotEmpty();
     for (PersistedEvent persistedEvent : eventList) {
       assertThat(persistedEvent.getEvent()).isEqualTo(expectedEvent);
     }
-
-    assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
   }
 
   @Test
@@ -183,7 +194,6 @@ public class UploaderIntegrationTest {
         .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
     verify(spyScheduler, times(0)).schedule(any(), eq(2));
     assertThat(store.loadBatch(transportContext)).isEmpty();
-    assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
   }
 
   @Test
@@ -203,6 +213,61 @@ public class UploaderIntegrationTest {
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent = Event.ofTelemetry("TelemetryData");
+
+    transport.send(stringEvent);
+    verify(spyScheduler, times(1)).schedule(any(), eq(2));
+    assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
+  }
+
+  @Test
+  public void uploader_invalidPayload_shouldNotReschedule() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+    String mockBackendName = generateBackendName();
+    byte[] mockExtras = "extras".getBytes(Charset.defaultCharset());
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, mockExtras))
+            .getTransport(testTransport, String.class, String::getBytes);
+    transport.send(Event.ofTelemetry("TelemetryData"));
+
+    verify(spyScheduler, times(0)).schedule(any(), eq(2));
+
+    List<LogSourceMetrics> logSourceMetrics = store.loadClientMetrics().getLogSourceMetricsList();
+    assertThat(logSourceMetrics).hasSize(1);
+    LogSourceMetrics metrics = logSourceMetrics.get(0);
+    List<LogEventDropped> logEventDroppedList = metrics.getLogEventDroppedList();
+    assertThat(logEventDroppedList).hasSize(1);
+    LogEventDropped logEventDropped = logEventDroppedList.get(0);
+    assertThat(logEventDropped.getEventsDroppedCount()).isEqualTo(1);
+    assertThat(logEventDropped.getReason()).isEqualTo(LogEventDropped.Reason.INVALID_PAYLOD);
+  }
+
+  @Test
+  public void uploader_withPendingClientMetricsAndSuccessfulUpload_shouldResetCounters() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+    String anotherTransport = "anotherTransport";
+    store.recordLogEventDropped(20, LogEventDropped.Reason.CACHE_FULL, testTransport);
+    store.recordLogEventDropped(1, LogEventDropped.Reason.MAX_RETRIES_REACHED, testTransport);
+    store.recordLogEventDropped(1, LogEventDropped.Reason.INVALID_PAYLOD, anotherTransport);
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(2);
+
+    String mockBackendName = generateBackendName();
+    byte[] mockExtras = "extras".getBytes(Charset.defaultCharset());
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1));
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, mockExtras))
+            .getTransport(testTransport, String.class, String::getBytes);
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(3)
@@ -212,8 +277,142 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    transport.send(stringEvent);
-    verify(spyScheduler, times(1)).schedule(any(), eq(2));
-    assertThat(store.getNextCallTime(transportContext)).isEqualTo(0);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    transport.send(Event.ofTelemetry("TelemetryData"));
+    verify(mockBackend, times(1))
+        .send(
+            eq(
+                BackendRequest.builder()
+                    .setEvents(Arrays.asList(expectedEvent, metricsEvent))
+                    .setExtras(mockExtras)
+                    .build()));
+
+    verify(spyScheduler, times(0)).schedule(any(), eq(2));
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).isEmpty();
+  }
+
+  @Test
+  public void uploader_withPendingClientMetricsAndInvalidPayload_shouldNotResetCounters() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+    String anotherTransport = "anotherTransport";
+    store.recordLogEventDropped(1, LogEventDropped.Reason.INVALID_PAYLOD, anotherTransport);
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
+
+    String mockBackendName = generateBackendName();
+    byte[] mockExtras = "extras".getBytes(Charset.defaultCharset());
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, mockExtras))
+            .getTransport(testTransport, String.class, String::getBytes);
+    EventInternal expectedEvent =
+        EventInternal.builder()
+            .setEventMillis(3)
+            .setUptimeMillis(1)
+            .setTransportName(testTransport)
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
+            .build();
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    transport.send(Event.ofTelemetry("TelemetryData"));
+    verify(mockBackend, times(1))
+        .send(
+            eq(
+                BackendRequest.builder()
+                    .setEvents(Arrays.asList(expectedEvent, metricsEvent))
+                    .setExtras(mockExtras)
+                    .build()));
+
+    verify(spyScheduler, times(0)).schedule(any(), eq(2));
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(2);
+  }
+
+  @Test
+  public void uploader_withPendingClientMetricsAndFatalError_shouldNotResetCounters() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+    String anotherTransport = "anotherTransport";
+    store.recordLogEventDropped(1, LogEventDropped.Reason.INVALID_PAYLOD, anotherTransport);
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
+
+    String mockBackendName = generateBackendName();
+    byte[] mockExtras = "extras".getBytes(Charset.defaultCharset());
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, mockExtras))
+            .getTransport(testTransport, String.class, String::getBytes);
+    EventInternal expectedEvent =
+        EventInternal.builder()
+            .setEventMillis(3)
+            .setUptimeMillis(1)
+            .setTransportName(testTransport)
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
+            .build();
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    transport.send(Event.ofTelemetry("TelemetryData"));
+    verify(mockBackend, times(1))
+        .send(
+            eq(
+                BackendRequest.builder()
+                    .setEvents(Arrays.asList(expectedEvent, metricsEvent))
+                    .setExtras(mockExtras)
+                    .build()));
+
+    verify(spyScheduler, times(0)).schedule(any(), eq(2));
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
+  }
+
+  @Test
+  public void
+      uploader_withPendingClientMetricsAndSuccessfulUploadButNotLegacyTarget_shouldNotResetCounters() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+    String anotherTransport = "anotherTransport";
+    store.recordLogEventDropped(1, LogEventDropped.Reason.INVALID_PAYLOD, anotherTransport);
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
+
+    String mockBackendName = generateBackendName();
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1));
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, null))
+            .getTransport(testTransport, String.class, String::getBytes);
+    EventInternal expectedEvent =
+        EventInternal.builder()
+            .setEventMillis(3)
+            .setUptimeMillis(1)
+            .setTransportName(testTransport)
+            .setEncodedPayload(
+                new EncodedPayload(
+                    PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
+            .build();
+
+    transport.send(Event.ofTelemetry("TelemetryData"));
+    verify(mockBackend, times(1))
+        .send(eq(BackendRequest.create(Collections.singletonList(expectedEvent))));
+
+    verify(spyScheduler, times(0)).schedule(any(), eq(2));
+
+    assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
   }
 }

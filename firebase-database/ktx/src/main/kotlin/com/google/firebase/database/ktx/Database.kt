@@ -16,12 +16,12 @@ package com.google.firebase.database.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.GenericTypeIndicator
-import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.MutableData
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -46,6 +46,16 @@ FirebaseDatabase.getInstance(app, url)
  * use the type `T`, and not `? extends T`.
  */
 inline fun <reified T> DataSnapshot.getValue(): T? {
+    return getValue(object : GenericTypeIndicator<T>() {})
+}
+
+/**
+ * Returns the content of the MutableData converted to a POJO.
+ *
+ * Supports generics like List<> or Map<>. Use @JvmSuppressWildcards to force the compiler to
+ * use the type `T`, and not `? extends T`.
+ */
+inline fun <reified T> MutableData.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
 }
 

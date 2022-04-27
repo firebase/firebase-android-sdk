@@ -14,31 +14,33 @@
 
 package com.google.firebase.remoteconfig.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.app
+import com.google.firebase.ktx.initialize
+import com.google.firebase.platforminfo.UserAgentPublisher
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 import com.google.firebase.remoteconfig.createRemoteConfig
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
-import com.google.common.util.concurrent.MoreExecutors
-import com.google.firebase.ktx.app
-import com.google.firebase.ktx.initialize
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.robolectric.RobolectricTestRunner
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+const val APP_ID = "1:14368190084:android:09cb977358c6f241"
+const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
 
 const val EXISTING_APP = "existing"
 
@@ -59,7 +61,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -68,7 +70,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -127,6 +129,7 @@ class ConfigTests : BaseTestCase() {
         val remoteConfig = createRemoteConfig(
             context = null,
             firebaseApp = Firebase.app(EXISTING_APP),
+            firebaseInstallations = mock(FirebaseInstallationsApi::class.java),
             firebaseAbt = null,
             executor = directExecutor,
             fetchedConfigsCache = mock(ConfigCacheClient::class.java),
@@ -138,5 +141,14 @@ class ConfigTests : BaseTestCase() {
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
         assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+    }
+}
+
+@RunWith(RobolectricTestRunner::class)
+class LibraryVersionTest : BaseTestCase() {
+    @Test
+    fun `library version should be registered with runtime`() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
 }

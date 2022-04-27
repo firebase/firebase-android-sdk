@@ -33,4 +33,12 @@ public class TestWorkScheduler implements WorkScheduler {
     }
     uploader.get().upload(transportContext, attemptNumber, () -> {});
   }
+
+  @Override
+  public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {
+    if (attemptNumber > 2) {
+      return;
+    }
+    uploader.get().upload(transportContext, attemptNumber, () -> {});
+  }
 }

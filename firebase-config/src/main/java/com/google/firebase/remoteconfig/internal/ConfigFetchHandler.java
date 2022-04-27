@@ -35,7 +35,9 @@ import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
@@ -77,8 +79,14 @@ public class ConfigFetchHandler {
    */
   @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
 
-  private final FirebaseInstanceId firebaseInstanceId;
-  @Nullable private final AnalyticsConnector analyticsConnector;
+  /**
+   * First-open time key name in GA user-properties. First-open time is a predefined user-dimension
+   * automatically collected by GA.
+   */
+  @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
+
+  private final FirebaseInstallationsApi firebaseInstallations;
+  private final Provider<AnalyticsConnector> analyticsConnector;
 
   private final Executor executor;
   private final Clock clock;
@@ -91,8 +99,8 @@ public class ConfigFetchHandler {
 
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
-      FirebaseInstanceId firebaseInstanceId,
-      @Nullable AnalyticsConnector analyticsConnector,
+      FirebaseInstallationsApi firebaseInstallations,
+      Provider<AnalyticsConnector> analyticsConnector,
       Executor executor,
       Clock clock,
       Random randomGenerator,
@@ -100,7 +108,7 @@ public class ConfigFetchHandler {
       ConfigFetchHttpClient frcBackendApiClient,
       ConfigMetadataClient frcMetadata,
       Map<String, String> customHttpHeaders) {
-    this.firebaseInstanceId = firebaseInstanceId;
+    this.firebaseInstallations = firebaseInstallations;
     this.analyticsConnector = analyticsConnector;
     this.executor = executor;
     this.clock = clock;
@@ -108,7 +116,6 @@ public class ConfigFetchHandler {
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
-
     this.customHttpHeaders = customHttpHeaders;
   }
 
@@ -149,15 +156,13 @@ public class ConfigFetchHandler {
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
   public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
-    long fetchIntervalInSeconds =
-        frcMetadata.isDeveloperModeEnabled() ? 0L : minimumFetchIntervalInSeconds;
-
     return fetchedConfigsCache
         .get()
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
-                fetchIfCacheExpiredAndNotThrottled(cachedFetchConfigsTask, fetchIntervalInSeconds));
+                fetchIfCacheExpiredAndNotThrottled(
+                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds));
   }
 
   /**
@@ -188,7 +193,33 @@ public class ConfigFetchHandler {
                   createThrottledMessage(backoffEndTime.getTime() - currentTime.getTime()),
                   backoffEndTime.getTime()));
     } else {
-      fetchResponseTask = fetchFromBackendAndCacheResponse(currentTime);
+      Task<String> installationIdTask = firebaseInstallations.getId();
+      Task<InstallationTokenResult> installationAuthTokenTask =
+          firebaseInstallations.getToken(false);
+      fetchResponseTask =
+          Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
+              .continueWithTask(
+                  executor,
+                  (completedInstallationsTasks) -> {
+                    if (!installationIdTask.isSuccessful()) {
+                      return Tasks.forException(
+                          new FirebaseRemoteConfigClientException(
+                              "Firebase Installations failed to get installation ID for fetch.",
+                              installationIdTask.getException()));
+                    }
+
+                    if (!installationAuthTokenTask.isSuccessful()) {
+                      return Tasks.forException(
+                          new FirebaseRemoteConfigClientException(
+                              "Firebase Installations failed to get installation auth token for fetch.",
+                              installationAuthTokenTask.getException()));
+                    }
+
+                    String installationId = installationIdTask.getResult();
+                    String installationToken = installationAuthTokenTask.getResult().getToken();
+                    return fetchFromBackendAndCacheResponse(
+                        installationId, installationToken, currentTime);
+                  });
     }
 
     return fetchResponseTask.continueWithTask(
@@ -246,9 +277,10 @@ public class ConfigFetchHandler {
    * Fetches configs from the FRC backend. If there are any updates, writes the configs to the
    * {@code fetchedConfigsCache}.
    */
-  private Task<FetchResponse> fetchFromBackendAndCacheResponse(Date fetchTime) {
+  private Task<FetchResponse> fetchFromBackendAndCacheResponse(
+      String installationId, String installationToken, Date fetchTime) {
     try {
-      FetchResponse fetchResponse = fetchFromBackend(fetchTime);
+      FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -270,18 +302,21 @@ public class ConfigFetchHandler {
    *     error connecting to the server.
    */
   @WorkerThread
-  private FetchResponse fetchFromBackend(Date currentTime) throws FirebaseRemoteConfigException {
+  private FetchResponse fetchFromBackend(
+      String installationId, String installationToken, Date currentTime)
+      throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
 
       FetchResponse response =
           frcBackendApiClient.fetch(
               urlConnection,
-              firebaseInstanceId.getId(),
-              firebaseInstanceId.getToken(),
+              installationId,
+              installationToken,
               getUserProperties(),
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,
+              getFirstOpenTime(),
               currentTime);
 
       if (response.getLastFetchETag() != null) {
@@ -463,27 +498,41 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Returns the list of user properties in Analytics. If the Analytics SDK is not available,
-   * returns an empty list.
+   * Returns the list of custom user properties in Analytics. If the Analytics SDK is not available,
+   * this method returns an empty list.
    */
   @WorkerThread
   private Map<String, String> getUserProperties() {
     Map<String, String> userPropertiesMap = new HashMap<>();
-    if (analyticsConnector == null) {
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector == null) {
       return userPropertiesMap;
     }
 
     for (Map.Entry<String, Object> userPropertyEntry :
-        analyticsConnector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
+        connector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
   }
 
+  /**
+   * Returns first-open time from Analytics. If the Analytics SDK is not available, or if Analytics
+   * does not have first-open time for the app, this method returns null.
+   */
+  @WorkerThread
+  private Long getFirstOpenTime() {
+    AnalyticsConnector connector = this.analyticsConnector.get();
+    if (connector == null) {
+      return null;
+    }
+
+    return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
+  }
+
   /** Used to verify that the fetch handler is getting Analytics as expected. */
   @VisibleForTesting
-  @Nullable
-  public AnalyticsConnector getAnalyticsConnector() {
+  public Provider<AnalyticsConnector> getAnalyticsConnector() {
     return analyticsConnector;
   }
 

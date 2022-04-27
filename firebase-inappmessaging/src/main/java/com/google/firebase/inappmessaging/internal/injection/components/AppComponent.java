@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.internal.injection.components;
 
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
+import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.DisplayCallbacksFactory;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
@@ -41,6 +42,9 @@ public interface AppComponent {
 
   @Component.Builder
   interface Builder {
+    @BindsInstance
+    Builder abtIntegrationHelper(AbtIntegrationHelper integrationHelper);
+
     Builder apiClientModule(ApiClientModule module);
 
     Builder grpcClientModule(GrpcClientModule module);

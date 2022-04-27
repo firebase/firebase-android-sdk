@@ -75,13 +75,16 @@ class Connection implements WebsocketConnection.Delegate {
       HostInfo hostInfo,
       String cachedHost,
       Delegate delegate,
-      String optLastSessionId) {
+      String optLastSessionId,
+      String appCheckToken) {
     long connId = connectionIds++;
     this.hostInfo = hostInfo;
     this.delegate = delegate;
     this.logger = new LogWrapper(context.getLogger(), "Connection", "conn_" + connId);
     this.state = State.REALTIME_CONNECTING;
-    this.conn = new WebsocketConnection(context, hostInfo, cachedHost, this, optLastSessionId);
+    this.conn =
+        new WebsocketConnection(
+            context, hostInfo, cachedHost, appCheckToken, this, optLastSessionId);
   }
 
   public void open() {

@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,7 +84,9 @@ public class ConfigGetParameterHandlerTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    getHandler = new ConfigGetParameterHandler(mockActivatedCache, mockDefaultsCache);
+    getHandler =
+        new ConfigGetParameterHandler(
+            MoreExecutors.directExecutor(), mockActivatedCache, mockDefaultsCache);
   }
 
   @Test

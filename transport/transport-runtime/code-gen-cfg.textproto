@@ -1,0 +1,5 @@
+# proto-file: firebase-android-sdk/transport/transport-runtime/src/main/proto/client_analytics.proto
+# proto-message: ClientMetrics
+
+vendor_package: "com.google.android.datatransport.runtime"
+include: "firebase.transport.ClientMetrics"

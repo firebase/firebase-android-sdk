@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="fcm_fallback_notification_channel_label">Miscellaneous</string>
+</resources>

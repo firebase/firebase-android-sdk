@@ -1,0 +1,111 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package firebase.inappmessaging;
+
+option java_package = "com.google.firebase.inappmessaging";
+option java_outer_classname = "ExperimentPayloadProto";
+
+// A lighter version of ExperimentPayload that describes an experiment
+// by only its experimentId. To be used when we don't need
+// to know all the details about the experiment, such as when sending a
+// list of all ongoing experiments.
+message ExperimentLite {
+    // A string of max length 22 characters.
+    // Format: _exp_<origin prefix>_<experiment_id>
+    // Required field.
+    string experiment_id = 1;
+}
+
+// ABT Payload for Firebase Namespace.
+message ExperimentPayload {
+    // A string of max length 22 characters.
+    // Format: _exp_<origin prefix>_<experiment_id>
+    // This is referred to as the tracking id and is different from the
+    // experiment id which is used internally by ABT.
+    // Required field.
+    string experiment_id = 1;
+
+    // A string which has numbers from 0-10.
+    // Required field.
+    string variant_id = 2;
+
+    // Epoch time in milliseconds when the experiment was started; > 0.
+    // Required field.
+    int64 experiment_start_time_millis = 3;
+
+    // The Scion event that causes the experiment to transition to ON state.
+    string trigger_event = 4;
+
+    // Duration in milliseconds that the experiment can stay in STANDBY state.
+    // Valid range is from 1ms to 6 months (current max defined by Scion).
+    // If the value is outside this range the setExperiment call on the client
+    // will fail.
+    // Required field
+    int64 trigger_timeout_millis = 5;
+
+    // Duration in milliseconds that the experiment can stay in ON state (an
+    // experiment becomes ON when it has been triggered, or when it has no
+    // trigger event).
+    // Corresponds to the attribution time in the ABT UI.
+    // Valid range is from 1ms to 6 months (current max defined by Scion).
+    // If the value is outside this range the setExperiment call on the client
+    // will fail.
+    // Required field
+    int64 time_to_live_millis = 6;
+
+    // The event logged when impact service sets the experiment.
+    // Max length = 32 chars
+    string set_event_to_log = 7;
+
+    // The event logged when an experiment goes to the ON state.
+    // Max length = 32 chars
+    string activate_event_to_log = 8;
+
+    // The event logged when an experiment is cleared.
+    // Max length = 32 chars
+    string clear_event_to_log = 9;
+
+    // The event logged when an experiment times out after trigger_timeout_millis
+    // milliseconds.
+    // Max length = 32 chars
+    string timeout_event_to_log = 10;
+
+    // The event logged when an experiment times out after time_to_live_millis
+    // milliseconds.
+    // Max length = 32 chars
+    string ttl_expiry_event_to_log = 11;
+
+    // Policy to use when there are more experiments than the Scion client can
+    // support on a single App for a single service.
+    // As of October 2016, we allow 3 experiments per instance per service
+    // (i.e. 3 each for Config and Notifications).
+    enum ExperimentOverflowPolicy {
+        POLICY_UNSPECIFIED = 0;
+        // Discard oldest experiments (by experiment_start_time) first.
+        DISCARD_OLDEST = 1;
+        // Ignore newest experiments first.
+        IGNORE_NEWEST = 2;
+    }
+    // The overflow policy enum for this experiment payload.
+    ExperimentOverflowPolicy overflow_policy = 12;
+
+    // A list of all other ongoing (started, and not yet stopped) experiments
+    // at the time this experiment was started.
+    // Does not include this experiment; only the others.
+    repeated ExperimentLite ongoing_experiments = 13;
+}
+

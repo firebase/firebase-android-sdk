@@ -234,7 +234,7 @@ public class SynchronousConnection implements PersistentConnection.Delegate {
   }
 
   @Override
-  public void onAuthStatus(boolean authOk) {
+  public void onConnectionStatus(boolean connectOk) {
     // ignore
   }
 

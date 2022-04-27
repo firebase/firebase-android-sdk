@@ -14,8 +14,12 @@
 
 #include <cstddef>
 #include <atomic>
+#include <cerrno>
+#include <string>
 #include <unistd.h>
 #include <sys/types.h>
+
+#include "handler/handler_main.h"
 
 #include "crashlytics/config.h"
 
@@ -26,12 +30,14 @@
 #include "crashlytics/entry.h"
 #include "crashlytics/handler/install.h"
 #include "crashlytics/handler/detail/context.h"
+#include "crashlytics/detail/supplementary_file.h"
 #include "system/log.h"
 
-#include <android/asset_manager.h>
-#include <android/asset_manager_jni.h>
-#include <android/configuration.h>
-#include <android/sensor.h>
+extern "C" {
+
+extern int CrashpadHandlerMain(int argc, char* argv[]);
+
+}
 
 namespace google { namespace crashlytics { namespace entry {
 
@@ -40,7 +46,7 @@ namespace google { namespace crashlytics { namespace entry {
 namespace jni {
 
 const JNINativeMethod methods[] = {
-    { "nativeInit", "(Ljava/lang/String;Ljava/lang/Object;)Z", reinterpret_cast<void *>(JNI_Init) }
+    { "nativeInit", "([Ljava/lang/String;Ljava/lang/Object;)Z", reinterpret_cast<void *>(JNI_Init) }
 };
 
 //! We need to store the JVM environment to facilitate custom keys and logging, as they call back into
@@ -86,21 +92,6 @@ const char* data_path(JNIEnv* env, jstring path)
     return env->GetStringUTFChars(path, NULL);
 }
 
-AAssetManager* asset_manager_from(JNIEnv* env, jobject asset_manager)
-{
-    return AAssetManager_fromJava(env, asset_manager);
-}
-
-ASensorManager* sensor_manager()
-{
-    return ASensorManager_getInstance();
-}
-
-AConfiguration* configuration()
-{
-    return AConfiguration_new();
-}
-
 constexpr const char* ndk_path()
 {
     return "com/google/firebase/crashlytics/ndk/JniNativeApi";
@@ -114,6 +105,7 @@ bool register_natives(JavaVM* jvm)
         }
     }
 
+    DEBUG_OUT("Couldn't find %s and its necessary methods", ndk_path());
     return false;
 }
 
@@ -121,7 +113,7 @@ bool register_natives(JavaVM* jvm)
 
 #endif // CRASHLYTICS_INCLUDE_JNI_ENTRY
 
-}}}
+}}} // namepsace google::crashlytics::entry
 
 #if defined (CRASHLYTICS_INCLUDE_JNI_ENTRY)
 
@@ -130,14 +122,27 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     return google::crashlytics::entry::jni::register_natives(vm) ? JNI_VERSION_1_6 : -1;
 }
 
-jboolean JNI_Init(JNIEnv* env, jobject obj, jstring path, jobject asset_manager)
+constexpr int path_ordinal() { return 2; }
+constexpr int classpath_ordinal() { return 0; }
+constexpr int libpath_ordinal() { return 1; }
+
+jboolean JNI_Init(JNIEnv* env, jobject obj, jobjectArray pathsArray, jobject asset_manager)
 {
+    jstring path = static_cast<jstring>(
+        env->GetObjectArrayElement(pathsArray, path_ordinal()));
+
+    jstring classpath = static_cast<jstring>(
+        env->GetObjectArrayElement(pathsArray,classpath_ordinal()));
+
+    jstring lib_path = static_cast<jstring>(
+        env->GetObjectArrayElement(pathsArray, libpath_ordinal()));
+
     bool installed = google::crashlytics::handler::install_handlers({
             google::crashlytics::entry::jni::this_pid(),
             google::crashlytics::entry::jni::data_path(env, path),
-            google::crashlytics::entry::jni::asset_manager_from(env, asset_manager),
-            google::crashlytics::entry::jni::sensor_manager(),
-            google::crashlytics::entry::jni::configuration()
+            env,
+            env->GetStringUTFChars(classpath, 0),
+            env->GetStringUTFChars(lib_path, 0)
     });
 
     LOGD("Initializing native crash handling %s.", installed ? "successful" : "failed");

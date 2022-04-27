@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
-import com.google.firebase.firestore.model.Document;
+import com.google.firebase.firestore.model.MutableDocument;
 import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,7 +33,7 @@ public class DocumentViewChangeSetTest {
 
   @Test
   public void testDocumentViewChangeConstructor() {
-    Document doc1 = doc("a/b", 0, EMPTY_MAP);
+    MutableDocument doc1 = doc("a/b", 0, EMPTY_MAP);
     Type type = Type.MODIFIED;
     DocumentViewChange change = DocumentViewChange.create(type, doc1);
     assertEquals(change.getDocument(), doc1);
@@ -44,15 +44,15 @@ public class DocumentViewChangeSetTest {
   public void testTrack() {
     DocumentViewChangeSet set = new DocumentViewChangeSet();
 
-    Document added = doc("a/1", 0, EMPTY_MAP);
-    Document removed = doc("a/2", 0, EMPTY_MAP);
-    Document modified = doc("a/3", 0, EMPTY_MAP);
+    MutableDocument added = doc("a/1", 0, EMPTY_MAP);
+    MutableDocument removed = doc("a/2", 0, EMPTY_MAP);
+    MutableDocument modified = doc("a/3", 0, EMPTY_MAP);
 
-    Document addedThenModified = doc("b/1", 0, EMPTY_MAP);
-    Document addedThenRemoved = doc("b/2", 0, EMPTY_MAP);
-    Document removedThenAdded = doc("b/3", 0, EMPTY_MAP);
-    Document modifiedThenRemoved = doc("b/4", 0, EMPTY_MAP);
-    Document modifiedThenModified = doc("b/5", 0, EMPTY_MAP);
+    MutableDocument addedThenModified = doc("b/1", 0, EMPTY_MAP);
+    MutableDocument addedThenRemoved = doc("b/2", 0, EMPTY_MAP);
+    MutableDocument removedThenAdded = doc("b/3", 0, EMPTY_MAP);
+    MutableDocument modifiedThenRemoved = doc("b/4", 0, EMPTY_MAP);
+    MutableDocument modifiedThenModified = doc("b/5", 0, EMPTY_MAP);
 
     set.addChange(DocumentViewChange.create(Type.ADDED, added));
     set.addChange(DocumentViewChange.create(Type.REMOVED, removed));

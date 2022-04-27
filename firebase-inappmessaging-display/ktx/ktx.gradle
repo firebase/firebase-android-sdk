@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-inappmessaging-display')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
 }
 
@@ -38,6 +38,7 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
+
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -45,8 +46,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-inappmessaging')
+    implementation project(':firebase-inappmessaging:ktx')
     implementation project(':firebase-inappmessaging-display')
     implementation 'androidx.annotation:annotation:1.1.0'
 
@@ -56,4 +59,5 @@ dependencies {
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
+    testImplementation 'androidx.test:core:1.2.0'
 }

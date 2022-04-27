@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore.remote;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -75,6 +75,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
         workerQueue,
         TimerId.WRITE_STREAM_CONNECTION_BACKOFF,
         TimerId.WRITE_STREAM_IDLE,
+        TimerId.HEALTH_CHECK_TIMEOUT,
         listener);
     this.serializer = serializer;
   }

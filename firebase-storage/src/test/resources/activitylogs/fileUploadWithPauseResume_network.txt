@@ -3,6 +3,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=image.j
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Header-Content-Type,text/plain
 setRequestProperty:X-Goog-Upload-Command,start
@@ -36,6 +37,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=image.j
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Offset,0
 setRequestProperty:X-Goog-Upload-Command,upload
@@ -65,6 +67,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=image.j
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Offset,262144
 setRequestProperty:X-Goog-Upload-Command,upload
@@ -94,6 +97,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=image.j
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Command,query
 setRequestProperty:Content-Length,0
@@ -122,6 +126,7 @@ Url:https://firebasestorage.googleapis.com/v0/b/fooey.appspot.com/o?name=image.j
 setRequestMethod:POST
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setRequestProperty:X-Goog-Upload-Protocol,resumable
 setRequestProperty:X-Goog-Upload-Offset,786432
 setRequestProperty:X-Goog-Upload-Command,upload, finalize

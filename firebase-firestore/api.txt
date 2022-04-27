@@ -146,11 +146,17 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings getFirestoreSettings();
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance();
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Query> getNamedQuery(@NonNull String);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.io.InputStream);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull byte[]);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.nio.ByteBuffer);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> runBatch(@NonNull com.google.firebase.firestore.WriteBatch.Function);
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
+    method public void useEmulator(@NonNull String, int);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> waitForPendingWrites();
   }
 
@@ -183,7 +189,6 @@ package com.google.firebase.firestore {
   }
 
   public final class FirebaseFirestoreSettings {
-    method public boolean areTimestampsInSnapshotsEnabled();
     method public long getCacheSizeBytes();
     method @NonNull public String getHost();
     method public boolean isPersistenceEnabled();
@@ -203,7 +208,6 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(@NonNull String);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
-    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setTimestampsInSnapshotsEnabled(boolean);
   }
 
   public class GeoPoint implements java.lang.Comparable<com.google.firebase.firestore.GeoPoint> {
@@ -220,9 +224,58 @@ package com.google.firebase.firestore {
     method public void remove();
   }
 
+  public class LoadBundleTask extends com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> {
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull com.google.android.gms.tasks.OnCanceledListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnCanceledListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCanceledListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnCanceledListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnCompleteListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnCompleteListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull com.google.android.gms.tasks.OnFailureListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnFailureListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnFailureListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnFailureListener);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.firebase.firestore.LoadBundleTask addOnProgressListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.OnProgressListener<com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.LoadBundleTaskProgress> addOnSuccessListener(@NonNull android.app.Activity, @NonNull com.google.android.gms.tasks.OnSuccessListener<? super com.google.firebase.firestore.LoadBundleTaskProgress>);
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWith(@NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWith(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWithTask(@NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,com.google.android.gms.tasks.Task<TContinuationResult>>);
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> continueWithTask(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.Continuation<com.google.firebase.firestore.LoadBundleTaskProgress,com.google.android.gms.tasks.Task<TContinuationResult>>);
+    method @Nullable public Exception getException();
+    method @NonNull public com.google.firebase.firestore.LoadBundleTaskProgress getResult();
+    method @NonNull public <X extends java.lang.Throwable> com.google.firebase.firestore.LoadBundleTaskProgress getResult(@NonNull Class<X>) throws X;
+    method public boolean isCanceled();
+    method public boolean isComplete();
+    method public boolean isSuccessful();
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
+    method @NonNull public <TContinuationResult> com.google.android.gms.tasks.Task<TContinuationResult> onSuccessTask(@NonNull java.util.concurrent.Executor, @NonNull com.google.android.gms.tasks.SuccessContinuation<com.google.firebase.firestore.LoadBundleTaskProgress,TContinuationResult>);
+  }
+
+  public final class LoadBundleTaskProgress {
+    method public long getBytesLoaded();
+    method public int getDocumentsLoaded();
+    method @Nullable public Exception getException();
+    method @NonNull public com.google.firebase.firestore.LoadBundleTaskProgress.TaskState getTaskState();
+    method public long getTotalBytes();
+    method public int getTotalDocuments();
+  }
+
+  public enum LoadBundleTaskProgress.TaskState {
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState ERROR;
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState RUNNING;
+    enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState SUCCESS;
+  }
+
   public enum MetadataChanges {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges EXCLUDE;
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
+  }
+
+  public interface OnProgressListener<ProgressT> {
+    method public void onProgress(@NonNull ProgressT);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
@@ -269,6 +322,10 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.Query whereLessThan(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull String, @NonNull Object);
     method @NonNull public com.google.firebase.firestore.Query whereLessThanOrEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @NonNull Object);
+    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull String, @Nullable Object);
+    method @NonNull public com.google.firebase.firestore.Query whereNotEqualTo(@NonNull com.google.firebase.firestore.FieldPath, @Nullable Object);
+    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull String, @NonNull java.util.List<?>);
+    method @NonNull public com.google.firebase.firestore.Query whereNotIn(@NonNull com.google.firebase.firestore.FieldPath, @NonNull java.util.List<?>);
   }
 
   public enum Query.Direction {

@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
+/** @hide */
 @AutoValue
 public abstract class InstallationResponse {
 

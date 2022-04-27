@@ -16,6 +16,9 @@ package com.google.firebase.database.connection;
 
 import static com.google.firebase.database.connection.ConnectionUtils.hardAssert;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.connection.util.RetryHelper;
 import com.google.firebase.database.logging.LogWrapper;
 import com.google.firebase.database.util.GAuthToken;
@@ -27,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,11 +41,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     void onResponse(Map<String, Object> response);
   }
 
-  private static class ListenQuerySpec {
+  private static class QuerySpec {
     private final List<String> path;
     private final Map<String, Object> queryParams;
 
-    public ListenQuerySpec(List<String> path, Map<String, Object> queryParams) {
+    public QuerySpec(List<String> path, Map<String, Object> queryParams) {
       this.path = path;
       this.queryParams = queryParams;
     }
@@ -49,11 +53,11 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public boolean equals(Object o) {
       if (this == o) return true;
-      if (!(o instanceof ListenQuerySpec)) {
+      if (!(o instanceof QuerySpec)) {
         return false;
       }
 
-      ListenQuerySpec that = (ListenQuerySpec) o;
+      QuerySpec that = (QuerySpec) o;
 
       if (!path.equals(that.path)) {
         return false;
@@ -76,13 +80,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   private static class OutstandingListen {
     private final RequestResultCallback resultCallback;
-    private final ListenQuerySpec query;
+    private final QuerySpec query;
     private final ListenHashProvider hashFunction;
     private final Long tag;
 
     private OutstandingListen(
         RequestResultCallback callback,
-        ListenQuerySpec query,
+        QuerySpec query,
         Long tag,
         ListenHashProvider hashFunction) {
       this.resultCallback = callback;
@@ -91,7 +95,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       this.tag = tag;
     }
 
-    public ListenQuerySpec getQuery() {
+    public QuerySpec getQuery() {
       return query;
     }
 
@@ -106,6 +110,40 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     @Override
     public String toString() {
       return query.toString() + " (Tag: " + this.tag + ")";
+    }
+  }
+
+  private static class OutstandingGet {
+    private final Map<String, Object> request;
+    private final ConnectionRequestCallback onComplete;
+    private boolean sent;
+
+    private OutstandingGet(
+        String action, Map<String, Object> request, ConnectionRequestCallback onComplete) {
+      this.request = request;
+      this.onComplete = onComplete;
+      this.sent = false;
+    }
+
+    private ConnectionRequestCallback getOnComplete() {
+      return onComplete;
+    }
+
+    private Map<String, Object> getRequest() {
+      return request;
+    }
+
+    /**
+     * Mark this OutstandingGet as sent. Essentially compare-and-set on the `sent` member.
+     *
+     * @return true if the OustandingGet wasn't already sent, false if it was.
+     */
+    private boolean markSent() {
+      if (sent) {
+        return false;
+      }
+      sent = true;
+      return true;
     }
   }
 
@@ -196,10 +234,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String REQUEST_COMPOUND_HASH_PATHS = "ps";
   private static final String REQUEST_COMPOUND_HASH_HASHES = "hs";
   private static final String REQUEST_CREDENTIAL = "cred";
+  private static final String REQUEST_APPCHECK_TOKEN = "token";
   private static final String REQUEST_AUTHVAR = "authvar";
   private static final String REQUEST_ACTION = "a";
   private static final String REQUEST_ACTION_STATS = "s";
   private static final String REQUEST_ACTION_QUERY = "q";
+  private static final String REQUEST_ACTION_GET = "g";
   private static final String REQUEST_ACTION_PUT = "p";
   private static final String REQUEST_ACTION_MERGE = "m";
   private static final String REQUEST_ACTION_QUERY_UNLISTEN = "n";
@@ -207,8 +247,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String REQUEST_ACTION_ONDISCONNECT_MERGE = "om";
   private static final String REQUEST_ACTION_ONDISCONNECT_CANCEL = "oc";
   private static final String REQUEST_ACTION_AUTH = "auth";
+  private static final String REQUEST_ACTION_APPCHECK = "appcheck";
   private static final String REQUEST_ACTION_GAUTH = "gauth";
   private static final String REQUEST_ACTION_UNAUTH = "unauth";
+  private static final String REQUEST_ACTION_UNAPPCHECK = "unappcheck";
   private static final String RESPONSE_FOR_REQUEST = "b";
   private static final String SERVER_ASYNC_ACTION = "a";
   private static final String SERVER_ASYNC_PAYLOAD = "b";
@@ -216,6 +258,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String SERVER_ASYNC_DATA_MERGE = "m";
   private static final String SERVER_ASYNC_DATA_RANGE_MERGE = "rm";
   private static final String SERVER_ASYNC_AUTH_REVOKED = "ac";
+  private static final String SERVER_ASYNC_APP_CHECK_REVOKED = "apc";
   private static final String SERVER_ASYNC_LISTEN_CANCELLED = "c";
   private static final String SERVER_ASYNC_SECURITY_DEBUG = "sd";
   private static final String SERVER_DATA_UPDATE_PATH = "p";
@@ -226,14 +269,18 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private static final String SERVER_DATA_TAG = "t";
   private static final String SERVER_DATA_WARNINGS = "w";
   private static final String SERVER_RESPONSE_DATA = "d";
+  private static final String INVALID_APP_CHECK_TOKEN = "Invalid appcheck token";
 
   /** Delay after which a established connection is considered successful */
   private static final long SUCCESSFUL_CONNECTION_ESTABLISHED_DELAY = 30 * 1000;
 
   private static final long IDLE_TIMEOUT = 60 * 1000;
 
-  /** If auth fails repeatedly, we'll assume something is wrong and log a warning / back off. */
-  private static final long INVALID_AUTH_TOKEN_THRESHOLD = 3;
+  /**
+   * If auth or appcheck fails repeatedly, we'll assume something is wrong and log a warning / back
+   * off.
+   */
+  private static final long INVALID_TOKEN_THRESHOLD = 3;
 
   private static final String SERVER_KILL_INTERRUPT_REASON = "server_kill";
   private static final String IDLE_INTERRUPT_REASON = "connection_idle";
@@ -250,17 +297,22 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Connection realtime;
   private ConnectionState connectionState = ConnectionState.Disconnected;
   private long writeCounter = 0;
+  private long readCounter = 0;
   private long requestCounter = 0;
   private Map<Long, ConnectionRequestCallback> requestCBHash;
 
   private List<OutstandingDisconnect> onDisconnectRequestQueue;
   private Map<Long, OutstandingPut> outstandingPuts;
+  private Map<Long, OutstandingGet> outstandingGets;
 
-  private Map<ListenQuerySpec, OutstandingListen> listens;
+  private Map<QuerySpec, OutstandingListen> listens;
   private String authToken;
   private boolean forceAuthTokenRefresh;
+  private String appCheckToken;
+  private boolean forceAppCheckTokenRefresh;
   private final ConnectionContext context;
-  private final ConnectionAuthTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider authTokenProvider;
+  private final ConnectionTokenProvider appCheckTokenProvider;
   private final ScheduledExecutorService executorService;
   private final LogWrapper logger;
   private final RetryHelper retryHelper;
@@ -269,6 +321,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private long currentGetTokenAttempt = 0;
 
   private int invalidAuthTokenCount = 0;
+  private int invalidAppCheckTokenCount = 0;
 
   private ScheduledFuture<?> inactivityTimer = null;
   private long lastWriteTimestamp;
@@ -280,10 +333,12 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     this.context = context;
     this.executorService = context.getExecutorService();
     this.authTokenProvider = context.getAuthTokenProvider();
+    this.appCheckTokenProvider = context.getAppCheckTokenProvider();
     this.hostInfo = info;
-    this.listens = new HashMap<ListenQuerySpec, OutstandingListen>();
+    this.listens = new HashMap<QuerySpec, OutstandingListen>();
     this.requestCBHash = new HashMap<Long, ConnectionRequestCallback>();
     this.outstandingPuts = new HashMap<Long, OutstandingPut>();
+    this.outstandingGets = new ConcurrentHashMap<Long, OutstandingGet>();
     this.onDisconnectRequestQueue = new ArrayList<OutstandingDisconnect>();
     this.retryHelper =
         new RetryHelper.Builder(this.executorService, context.getLogger(), "ConnectionRetryHelper")
@@ -310,7 +365,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendConnectStats();
     }
 
-    restoreAuth();
+    restoreTokens();
     this.firstConnection = false;
     this.lastSessionId = sessionId;
     delegate.onConnect();
@@ -328,7 +383,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       ListenHashProvider currentHashFn,
       Long tag,
       RequestResultCallback listener) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("Listening on " + query);
     // TODO: Fix this somehow?
     // hardAssert(query.isDefault() || !query.loadsAllData(), "listen() called for non-default but
@@ -342,6 +397,41 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       sendListen(outstandingListen);
     }
     doIdleCheck();
+  }
+
+  @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public Task<Object> get(List<String> path, Map<String, Object> queryParams) {
+    QuerySpec query = new QuerySpec(path, queryParams);
+    TaskCompletionSource<Object> source = new TaskCompletionSource<>();
+
+    long readId = this.readCounter++;
+
+    Map<String, Object> request = new HashMap<String, Object>();
+    request.put(REQUEST_PATH, ConnectionUtils.pathToString(query.path));
+    request.put(REQUEST_QUERIES, query.queryParams);
+
+    OutstandingGet outstandingGet =
+        new OutstandingGet(
+            REQUEST_ACTION_GET,
+            request,
+            response -> {
+              String status = (String) response.get(REQUEST_STATUS);
+              if (status.equals("ok")) {
+                Object body = response.get(SERVER_DATA_UPDATE_BODY);
+                delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
+                source.setResult(body);
+              } else {
+                source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));
+              }
+            });
+    outstandingGets.put(readId, outstandingGet);
+
+    if (canSendReads()) {
+      sendGet(readId);
+    }
+    doIdleCheck();
+    return source.getTask();
   }
 
   @Override
@@ -447,16 +537,26 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
 
   @Override
   public void onKill(String reason) {
-    if (logger.logsDebug())
-      logger.debug(
-          "Firebase Database connection was forcefully killed by the server. Will not attempt reconnect. Reason: "
+    if (reason.equals(INVALID_APP_CHECK_TOKEN)
+        && invalidAppCheckTokenCount < INVALID_TOKEN_THRESHOLD) {
+      invalidAppCheckTokenCount++;
+      logger.warn(
+          "Detected invalid AppCheck token. Reconnecting ("
+              + (INVALID_TOKEN_THRESHOLD - invalidAppCheckTokenCount)
+              + " attempts remaining)");
+    } else {
+      logger.warn(
+          "Firebase Database connection was forcefully killed by the server. Will not attempt"
+              + " reconnect. Reason: "
               + reason);
-    interrupt(SERVER_KILL_INTERRUPT_REASON);
+
+      interrupt(SERVER_KILL_INTERRUPT_REASON);
+    }
   }
 
   @Override
   public void unlisten(List<String> path, Map<String, Object> queryParams) {
-    ListenQuerySpec query = new ListenQuerySpec(path, queryParams);
+    QuerySpec query = new QuerySpec(path, queryParams);
     if (logger.logsDebug()) logger.debug("unlistening on " + query);
 
     // TODO: fix this by understanding query params?
@@ -487,6 +587,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private boolean canSendWrites() {
+    return connectionState == ConnectionState.Connected;
+  }
+
+  private boolean canSendReads() {
     return connectionState == ConnectionState.Connected;
   }
 
@@ -588,43 +692,63 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     }
   }
 
+  @Override
+  public void refreshAppCheckToken() {
+    logger.debug("App check token refresh requested");
+
+    // By using interrupt instead of closing the connection we make sure there are no race
+    // conditions with other fetch token attempts (interrupt/resume is expected to handle those
+    // correctly)
+    interrupt(TOKEN_REFRESH_INTERRUPT_REASON);
+    resume(TOKEN_REFRESH_INTERRUPT_REASON);
+  }
+
+  @Override
+  public void refreshAppCheckToken(String token) {
+    logger.debug("App check token refreshed.");
+    this.appCheckToken = token;
+    if (connected()) {
+      if (token != null) {
+        upgradeAppCheck();
+      } else {
+        sendUnAppCheck();
+      }
+    }
+  }
+
   private void tryScheduleReconnect() {
     if (shouldReconnect()) {
       hardAssert(
           this.connectionState == ConnectionState.Disconnected,
           "Not in disconnected state: %s",
           this.connectionState);
-      final boolean forceRefresh = this.forceAuthTokenRefresh;
+      final boolean forceAuthTokenRefresh = this.forceAuthTokenRefresh;
+      final boolean forceAppCheckTokenRefresh = this.forceAppCheckTokenRefresh;
       logger.debug("Scheduling connection attempt");
       this.forceAuthTokenRefresh = false;
+      this.forceAppCheckTokenRefresh = false;
       retryHelper.retry(
-          new Runnable() {
-            @Override
-            public void run() {
-              logger.debug("Trying to fetch auth token");
-              hardAssert(
-                  connectionState == ConnectionState.Disconnected,
-                  "Not in disconnected state: %s",
-                  connectionState);
-              connectionState = ConnectionState.GettingToken;
-              currentGetTokenAttempt++;
-              final long thisGetTokenAttempt = currentGetTokenAttempt;
-              authTokenProvider.getToken(
-                  forceRefresh,
-                  new ConnectionAuthTokenProvider.GetTokenCallback() {
-                    @Override
-                    public void onSuccess(String token) {
+          () -> {
+            hardAssert(
+                connectionState == ConnectionState.Disconnected,
+                "Not in disconnected state: %s",
+                connectionState);
+            connectionState = ConnectionState.GettingToken;
+            currentGetTokenAttempt++;
+            final long thisGetTokenAttempt = currentGetTokenAttempt;
+
+            Task<String> authToken = fetchAuthToken(forceAuthTokenRefresh);
+            Task<String> appCheckToken = fetchAppCheckToken(forceAppCheckTokenRefresh);
+
+            Tasks.whenAll(authToken, appCheckToken)
+                .addOnSuccessListener(
+                    executorService,
+                    aVoid -> {
                       if (thisGetTokenAttempt == currentGetTokenAttempt) {
-                        // Someone could have interrupted us while fetching the token,
-                        // marking the connection as Disconnected
                         if (connectionState == ConnectionState.GettingToken) {
                           logger.debug("Successfully fetched token, opening connection");
-                          openNetworkConnection(token);
-                        } else {
-                          hardAssert(
-                              connectionState == ConnectionState.Disconnected,
-                              "Expected connection state disconnected, but was %s",
-                              connectionState);
+                          openNetworkConnection(authToken.getResult(), appCheckToken.getResult());
+                        } else if (connectionState == ConnectionState.Disconnected) {
                           logger.debug(
                               "Not opening connection after token refresh, "
                                   + "because connection was set to disconnected");
@@ -634,10 +758,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                             "Ignoring getToken result, because this was not the "
                                 + "latest attempt.");
                       }
-                    }
-
-                    @Override
-                    public void onError(String error) {
+                    })
+                .addOnFailureListener(
+                    executorService,
+                    error -> {
                       if (thisGetTokenAttempt == currentGetTokenAttempt) {
                         connectionState = ConnectionState.Disconnected;
                         logger.debug("Error fetching token: " + error);
@@ -647,27 +771,66 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                             "Ignoring getToken error, because this was not the "
                                 + "latest attempt.");
                       }
-                    }
-                  });
-            }
+                    });
           });
     }
   }
 
-  public void openNetworkConnection(String token) {
+  private Task<String> fetchAuthToken(boolean forceAuthTokenRefresh) {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    logger.debug("Trying to fetch auth token");
+    authTokenProvider.getToken(
+        forceAuthTokenRefresh,
+        new ConnectionTokenProvider.GetTokenCallback() {
+          @Override
+          public void onSuccess(String token) {
+            taskCompletionSource.setResult(token);
+          }
+
+          @Override
+          public void onError(String error) {
+            taskCompletionSource.setException(new Exception(error));
+          }
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  private Task<String> fetchAppCheckToken(boolean forceAppCheckTokenRefresh) {
+    TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
+    logger.debug("Trying to fetch app check token");
+
+    appCheckTokenProvider.getToken(
+        forceAppCheckTokenRefresh,
+        new ConnectionTokenProvider.GetTokenCallback() {
+          @Override
+          public void onSuccess(String token) {
+            taskCompletionSource.setResult(token);
+          }
+
+          @Override
+          public void onError(String error) {
+            taskCompletionSource.setException(new Exception(error));
+          }
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  public void openNetworkConnection(String authToken, String appCheckToken) {
     hardAssert(
         this.connectionState == ConnectionState.GettingToken,
         "Trying to open network connection while in the wrong state: %s",
         this.connectionState);
     // User might have logged out. Positive auth status is handled after authenticating with
     // the server
-    if (token == null) {
-      this.delegate.onAuthStatus(false);
+    if (authToken == null) {
+      this.delegate.onConnectionStatus(false);
     }
-    this.authToken = token;
+    this.authToken = authToken;
+    this.appCheckToken = appCheckToken;
     this.connectionState = ConnectionState.Connecting;
     realtime =
-        new Connection(this.context, this.hostInfo, this.cachedHost, this, this.lastSessionId);
+        new Connection(
+            this.context, this.hostInfo, this.cachedHost, this, this.lastSessionId, appCheckToken);
     realtime.open();
   }
 
@@ -731,7 +894,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     sendAction(REQUEST_ACTION_QUERY_UNLISTEN, request, null);
   }
 
-  private OutstandingListen removeListen(ListenQuerySpec query) {
+  private OutstandingListen removeListen(QuerySpec query) {
     if (logger.logsDebug()) logger.debug("removing query " + query);
     if (!listens.containsKey(query)) {
       if (logger.logsDebug())
@@ -749,8 +912,8 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private Collection<OutstandingListen> removeListens(List<String> path) {
     if (logger.logsDebug()) logger.debug("removing all listens at path " + path);
     List<OutstandingListen> removedListens = new ArrayList<OutstandingListen>();
-    for (Map.Entry<ListenQuerySpec, OutstandingListen> entry : listens.entrySet()) {
-      ListenQuerySpec query = entry.getKey();
+    for (Map.Entry<QuerySpec, OutstandingListen> entry : listens.entrySet()) {
+      QuerySpec query = entry.getKey();
       OutstandingListen listen = entry.getValue();
       if (query.path.equals(path)) {
         removedListens.add(listen);
@@ -810,6 +973,10 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
       String status = (String) body.get(REQUEST_STATUS);
       String reason = (String) body.get(SERVER_DATA_UPDATE_BODY);
       onAuthRevoked(status, reason);
+    } else if (action.equals(SERVER_ASYNC_APP_CHECK_REVOKED)) {
+      String status = (String) body.get(REQUEST_STATUS);
+      String reason = (String) body.get(SERVER_DATA_UPDATE_BODY);
+      onAppCheckRevoked(status, reason);
     } else if (action.equals(SERVER_ASYNC_SECURITY_DEBUG)) {
       onSecurityDebugPacket(body);
     } else {
@@ -836,9 +1003,15 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     logger.debug("Auth token revoked: " + errorCode + " (" + errorMessage + ")");
     this.authToken = null;
     this.forceAuthTokenRefresh = true;
-    this.delegate.onAuthStatus(false);
+    this.delegate.onConnectionStatus(false);
     // Close connection and reconnect
     this.realtime.close();
+  }
+
+  private void onAppCheckRevoked(String errorCode, String errorMessage) {
+    logger.debug("App check token revoked: " + errorCode + " (" + errorMessage + ")");
+    this.appCheckToken = null;
+    this.forceAppCheckTokenRefresh = true;
   }
 
   private void onSecurityDebugPacket(Map<String, Object> message) {
@@ -850,31 +1023,31 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     sendAuthHelper(/*restoreStateAfterComplete=*/ false);
   }
 
+  private void upgradeAppCheck() {
+    sendAppCheckTokenHelper(/*restoreStateAfterComplete=*/ false);
+  }
+
   private void sendAuthAndRestoreState() {
     sendAuthHelper(/*restoreStateAfterComplete=*/ true);
   }
 
   private void sendAuthHelper(final boolean restoreStateAfterComplete) {
     hardAssert(connected(), "Must be connected to send auth, but was: %s", this.connectionState);
-    hardAssert(this.authToken != null, "Auth token must be set to authenticate!");
+    if (logger.logsDebug()) logger.debug("Sending auth.");
 
     ConnectionRequestCallback onComplete =
         new ConnectionRequestCallback() {
           @Override
           public void onResponse(Map<String, Object> response) {
-            connectionState = ConnectionState.Connected;
-
             String status = (String) response.get(REQUEST_STATUS);
             if (status.equals("ok")) {
+              connectionState = ConnectionState.Connected;
               invalidAuthTokenCount = 0;
-              delegate.onAuthStatus(true);
-              if (restoreStateAfterComplete) {
-                restoreState();
-              }
+              sendAppCheckTokenHelper(restoreStateAfterComplete);
             } else {
               authToken = null;
               forceAuthTokenRefresh = true;
-              delegate.onAuthStatus(false);
+              delegate.onConnectionStatus(false);
               String reason = (String) response.get(SERVER_RESPONSE_DATA);
               logger.debug("Authentication failed: " + status + " (" + reason + ")");
               realtime.close();
@@ -884,7 +1057,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                 // retry period since oauth tokens will report as "invalid" if they're
                 // just expired. Plus there may be transient issues that resolve themselves.
                 invalidAuthTokenCount++;
-                if (invalidAuthTokenCount >= INVALID_AUTH_TOKEN_THRESHOLD) {
+                if (invalidAuthTokenCount >= INVALID_TOKEN_THRESHOLD) {
                   // Set a long reconnect delay because recovery is unlikely.
                   retryHelper.setMaxDelay();
                   logger.warn(
@@ -914,28 +1087,69 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     }
   }
 
+  private void sendAppCheckTokenHelper(final boolean restoreStateAfterComplete) {
+    if (appCheckToken == null) {
+      restoreState();
+      return;
+    }
+
+    hardAssert(connected(), "Must be connected to send auth, but was: %s", this.connectionState);
+    if (logger.logsDebug()) logger.debug("Sending app check.");
+
+    ConnectionRequestCallback onComplete =
+        response -> {
+          String status = (String) response.get(REQUEST_STATUS);
+          if (status.equals("ok")) {
+            invalidAppCheckTokenCount = 0;
+          } else {
+            appCheckToken = null;
+            forceAppCheckTokenRefresh = true;
+            String reason = (String) response.get(SERVER_RESPONSE_DATA);
+            logger.debug("App check failed: " + status + " (" + reason + ")");
+            // Note: We don't close the connection as the developer may not have
+            // enforcement enabled. The backend closes connections with enforcements.
+          }
+
+          if (restoreStateAfterComplete) {
+            restoreState();
+          }
+        };
+
+    Map<String, Object> request = new HashMap<>();
+    hardAssert(appCheckToken != null, "App check token must be set!");
+    request.put(REQUEST_APPCHECK_TOKEN, appCheckToken);
+    sendSensitive(REQUEST_ACTION_APPCHECK, /*isSensitive=*/ true, request, onComplete);
+  }
+
   private void sendUnauth() {
     hardAssert(connected(), "Must be connected to send unauth.");
     hardAssert(authToken == null, "Auth token must not be set.");
     sendAction(REQUEST_ACTION_UNAUTH, Collections.<String, Object>emptyMap(), null);
   }
 
-  private void restoreAuth() {
-    if (logger.logsDebug()) logger.debug("calling restore state");
+  private void sendUnAppCheck() {
+    hardAssert(connected(), "Must be connected to send unauth.");
+    hardAssert(appCheckToken == null, "App check token must not be set.");
+    sendAction(REQUEST_ACTION_UNAPPCHECK, Collections.<String, Object>emptyMap(), null);
+  }
+
+  private void restoreTokens() {
+    if (logger.logsDebug()) logger.debug("calling restore tokens");
 
     hardAssert(
         this.connectionState == ConnectionState.Connecting,
-        "Wanted to restore auth, but was in wrong state: %s",
+        "Wanted to restore tokens, but was in wrong state: %s",
         this.connectionState);
 
-    if (authToken == null) {
-      if (logger.logsDebug()) logger.debug("Not restoring auth because token is null.");
-      this.connectionState = ConnectionState.Connected;
-      restoreState();
-    } else {
+    if (authToken != null) {
       if (logger.logsDebug()) logger.debug("Restoring auth.");
       this.connectionState = ConnectionState.Authenticating;
       sendAuthAndRestoreState();
+    } else {
+      if (logger.logsDebug()) logger.debug("Not restoring auth because auth token is null.");
+      this.connectionState = ConnectionState.Connected;
+      // Send our appcheck token (if we have one), then restore state.
+      sendAppCheckTokenHelper(true);
     }
   }
 
@@ -970,6 +1184,14 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
           disconnect.getOnComplete());
     }
     onDisconnectRequestQueue.clear();
+
+    if (logger.logsDebug()) logger.debug("Restoring reads.");
+    // Restore gets
+    ArrayList<Long> outstandingGetKeys = new ArrayList<Long>(outstandingGets.keySet());
+    Collections.sort(outstandingGetKeys);
+    for (Long getId : outstandingGetKeys) {
+      sendGet(getId);
+    }
   }
 
   private void handleTimestamp(long timestamp) {
@@ -1010,8 +1232,9 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   private void sendPut(final long putId) {
-    assert canSendWrites()
-        : "sendPut called when we can't send writes (we're disconnected or writes are paused).";
+    hardAssert(
+        canSendWrites(),
+        "sendPut called when we can't send writes (we're disconnected or writes are paused).");
     final OutstandingPut put = outstandingPuts.get(putId);
     final RequestResultCallback onComplete = put.getOnComplete();
     final String action = put.getAction();
@@ -1044,6 +1267,33 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
                     "Ignoring on complete for put " + putId + " because it was removed already.");
             }
             doIdleCheck();
+          }
+        });
+  }
+
+  private void sendGet(final Long readId) {
+    hardAssert(canSendReads(), "sendGet called when we can't send gets");
+    OutstandingGet get = outstandingGets.get(readId);
+    if (!get.markSent()) {
+      if (logger.logsDebug()) {
+        logger.debug("get" + readId + " cancelled, ignoring.");
+        return;
+      }
+    }
+    sendAction(
+        REQUEST_ACTION_GET,
+        get.getRequest(),
+        new ConnectionRequestCallback() {
+          @Override
+          public void onResponse(Map<String, Object> response) {
+            OutstandingGet currentGet = outstandingGets.get(readId);
+            if (currentGet == get) {
+              outstandingGets.remove(readId);
+              get.getOnComplete().onResponse(response);
+            } else if (logger.logsDebug()) {
+              logger.debug(
+                  "Ignoring on complete for get " + readId + " because it was removed already.");
+            }
           }
         });
   }
@@ -1135,7 +1385,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   }
 
   @SuppressWarnings("unchecked")
-  private void warnOnListenerWarnings(List<String> warnings, ListenQuerySpec query) {
+  private void warnOnListenerWarnings(List<String> warnings, QuerySpec query) {
     if (warnings.contains("no_index")) {
       String indexSpec = "\".indexOn\": \"" + query.queryParams.get("i") + '\"';
       logger.warn(
@@ -1215,6 +1465,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
    */
   private boolean isIdle() {
     return this.listens.isEmpty()
+        && this.outstandingGets.isEmpty()
         && this.requestCBHash.isEmpty()
         && !this.hasOnDisconnects
         && this.outstandingPuts.isEmpty();

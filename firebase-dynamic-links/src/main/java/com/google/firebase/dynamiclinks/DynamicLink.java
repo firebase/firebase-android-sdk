@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -94,10 +94,8 @@ public final class DynamicLink {
     public Builder(FirebaseDynamicLinksImpl firebaseDynamicLinks) {
       firebaseDynamicLinksImpl = firebaseDynamicLinks;
       builderParameters = new Bundle();
-      if (FirebaseApp.getInstance() != null) {
-        builderParameters.putString(
-            KEY_API_KEY, FirebaseApp.getInstance().getOptions().getApiKey());
-      }
+      builderParameters.putString(
+          KEY_API_KEY, firebaseDynamicLinks.getFirebaseApp().getOptions().getApiKey());
       fdlParameters = new Bundle();
       builderParameters.putBundle(KEY_DYNAMIC_LINK_PARAMETERS, fdlParameters);
     }
@@ -114,7 +112,7 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the long Dynamic link set to this DynamicLink. */
+    /** @return the long Dynamic link associated with this DynamicLink. */
     @NonNull
     public Uri getLongLink() {
       Uri longLink = fdlParameters.getParcelable(KEY_DYNAMIC_LINK);
@@ -138,7 +136,7 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the deep link set to this DynamicLink. */
+    /** @return the deep link associated with this DynamicLink. */
     @NonNull
     public Uri getLink() {
       Uri link = fdlParameters.getParcelable(KEY_LINK);
@@ -191,11 +189,7 @@ public final class DynamicLink {
     /** @return the deep link set to this DynamicLink. */
     @NonNull
     public String getDomainUriPrefix() {
-      String domainUriPrefix = builderParameters.getString(KEY_DOMAIN_URI_PREFIX);
-      if (domainUriPrefix == null) {
-        domainUriPrefix = "";
-      }
-      return domainUriPrefix;
+      return builderParameters.getString(KEY_DOMAIN_URI_PREFIX, "");
     }
 
     /**
@@ -383,7 +377,7 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the iPad parameters ID of the app. */
+      /** @return the link to open on Android if the app isn't installed. */
       @NonNull
       public Uri getFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
@@ -453,7 +447,7 @@ public final class DynamicLink {
       /**
        * Create iOS parameters builder.
        *
-       * @param bundleId The parameters ID of the iOS app to use to open the link. The app must be
+       * @param bundleId The bundle ID of the iOS app to use to open the link. The app must be
        *     connected to your project from the Overview page of the Firebase console.
        */
       public Builder(@NonNull String bundleId) {
@@ -475,8 +469,8 @@ public final class DynamicLink {
       }
 
       /**
-       * Sets the app's custom URL scheme, if defined to be something other than your app's
-       * parameters ID.
+       * Sets the app's custom URL scheme, if defined to be something other than your app's bundle
+       * ID.
        *
        * @param customScheme The app's custom URL scheme.
        */
@@ -489,11 +483,7 @@ public final class DynamicLink {
       /** @return the app's custom URL scheme. */
       @NonNull
       public String getCustomScheme() {
-        String customScheme = parameters.getString(KEY_IOS_CUSTOM_SCHEME);
-        if (customScheme == null) {
-          customScheme = "";
-        }
-        return customScheme;
+        return parameters.getString(KEY_IOS_CUSTOM_SCHEME, "");
       }
 
       /**
@@ -521,10 +511,10 @@ public final class DynamicLink {
       }
 
       /**
-       * Sets the parameters ID of the iOS app to use on iPads to open the link. The app must be
+       * Sets the bundle ID of the iOS app to use on iPads to open the link. The app must be
        * connected to your project from the Overview page of the Firebase console.
        *
-       * @param bundleId The iPad parameters ID of the app.
+       * @param bundleId The iPad bundle ID of the app.
        */
       @NonNull
       public IosParameters.Builder setIpadBundleId(@NonNull String bundleId) {
@@ -532,14 +522,10 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the iPad parameters ID of the app. */
+      /** @return the iPad bundle ID of the app. */
       @NonNull
       public String getIpadBundleId() {
-        String bundleId = parameters.getString(KEY_IPAD_BUNDLE_ID);
-        if (bundleId == null) {
-          bundleId = "";
-        }
-        return bundleId;
+        return parameters.getString(KEY_IPAD_BUNDLE_ID, "");
       }
 
       /**
@@ -558,11 +544,7 @@ public final class DynamicLink {
        */
       @NonNull
       public String getAppStoreId() {
-        String appStoreId = parameters.getString(KEY_IOS_APP_STORE_ID);
-        if (appStoreId == null) {
-          appStoreId = "";
-        }
-        return appStoreId;
+        return parameters.getString(KEY_IOS_APP_STORE_ID, "");
       }
 
       /**
@@ -579,11 +561,7 @@ public final class DynamicLink {
       /** @return the minimum version of your app that can open the link. */
       @NonNull
       public String getMinimumVersion() {
-        String minVersion = parameters.getString(KEY_IOS_MINIMUM_VERSION);
-        if (minVersion == null) {
-          minVersion = "";
-        }
-        return minVersion;
+        return parameters.getString(KEY_IOS_MINIMUM_VERSION, "");
       }
 
       /**
@@ -660,11 +638,7 @@ public final class DynamicLink {
       /** @return the campaign source. */
       @NonNull
       public String getSource() {
-        String source = parameters.getString(KEY_UTM_SOURCE);
-        if (source == null) {
-          source = "";
-        }
-        return source;
+        return parameters.getString(KEY_UTM_SOURCE, "");
       }
 
       /**
@@ -682,11 +656,7 @@ public final class DynamicLink {
       /** @return the campaign medium. */
       @NonNull
       public String getMedium() {
-        String medium = parameters.getString(KEY_UTM_MEDIUM);
-        if (medium == null) {
-          medium = "";
-        }
-        return medium;
+        return parameters.getString(KEY_UTM_MEDIUM, "");
       }
 
       /**
@@ -704,11 +674,7 @@ public final class DynamicLink {
       /** @return the campaign name. */
       @NonNull
       public String getCampaign() {
-        String campaign = parameters.getString(KEY_UTM_CAMPAIGN);
-        if (campaign == null) {
-          campaign = "";
-        }
-        return campaign;
+        return parameters.getString(KEY_UTM_CAMPAIGN, "");
       }
 
       /**
@@ -725,11 +691,7 @@ public final class DynamicLink {
       /** @return the campaign term. */
       @NonNull
       public String getTerm() {
-        String term = parameters.getString(KEY_UTM_TERM);
-        if (term == null) {
-          term = "";
-        }
-        return term;
+        return parameters.getString(KEY_UTM_TERM, "");
       }
 
       /**
@@ -747,11 +709,7 @@ public final class DynamicLink {
       /** @return the campaign content. */
       @NonNull
       public String getContent() {
-        String content = parameters.getString(KEY_UTM_CONTENT);
-        if (content == null) {
-          content = "";
-        }
-        return content;
+        return parameters.getString(KEY_UTM_CONTENT, "");
       }
 
       /**
@@ -808,11 +766,7 @@ public final class DynamicLink {
       /** @return the provider token. */
       @NonNull
       public String getProviderToken() {
-        String providerToken = parameters.getString(KEY_ITUNES_CONNECT_PT);
-        if (providerToken == null) {
-          providerToken = "";
-        }
-        return providerToken;
+        return parameters.getString(KEY_ITUNES_CONNECT_PT, "");
       }
 
       /**
@@ -830,11 +784,7 @@ public final class DynamicLink {
       /** @return the affiliate token. */
       @NonNull
       public String getAffiliateToken() {
-        String affiliateToken = parameters.getString(KEY_ITUNES_CONNECT_AT);
-        if (affiliateToken == null) {
-          affiliateToken = "";
-        }
-        return affiliateToken;
+        return parameters.getString(KEY_ITUNES_CONNECT_AT, "");
       }
 
       /**
@@ -853,11 +803,7 @@ public final class DynamicLink {
       /** @return the campaign token. */
       @NonNull
       public String getCampaignToken() {
-        String campaignToken = parameters.getString(KEY_ITUNES_CONNECT_CT);
-        if (campaignToken == null) {
-          campaignToken = "";
-        }
-        return campaignToken;
+        return parameters.getString(KEY_ITUNES_CONNECT_CT, "");
       }
 
       /**
@@ -912,11 +858,7 @@ public final class DynamicLink {
       /** @return the meta-tag title. */
       @NonNull
       public String getTitle() {
-        String title = parameters.getString(KEY_SOCIAL_TITLE);
-        if (title == null) {
-          title = "";
-        }
-        return title;
+        return parameters.getString(KEY_SOCIAL_TITLE, "");
       }
 
       /**
@@ -933,11 +875,7 @@ public final class DynamicLink {
       /** @return the meta-tag description. */
       @NonNull
       public String getDescription() {
-        String description = parameters.getString(KEY_SOCIAL_DESCRIPTION);
-        if (description == null) {
-          description = "";
-        }
-        return description;
+        return parameters.getString(KEY_SOCIAL_DESCRIPTION, "");
       }
 
       /**

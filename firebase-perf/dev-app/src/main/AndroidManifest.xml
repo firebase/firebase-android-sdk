@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Copyright 2020 Google Inc. All Rights Reserved. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.googletest.firebase.perf.testapp">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="m">
+        <activity
+            android:name=".FragmentActivity"
+            android:exported="false"
+            android:label="@string/title_activity_fragment"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
+        <activity
+            android:name=".PerfTestActivity"
+            android:label="Perf Test App">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".AnotherActivity"
+            android:exported="true" />
+
+        <meta-data
+            android:name="firebase_performance_logcat_enabled"
+            android:value="true" />
+        <meta-data
+            android:name="sessions_sampling_percentage"
+            android:value="100.0" />
+        <meta-data
+            android:name="fragment_sampling_percentage"
+            android:value="100.0" />
+
+        <receiver
+            android:name=".FirebasePerfTestReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.googletest.firebase.perf.testapp.ACTION_START" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name=".FirebasePerfTestService"
+            android:exported="true" />
+
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+    </application>
+
+</manifest>

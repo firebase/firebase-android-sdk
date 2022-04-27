@@ -2,9 +2,11 @@
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:0
+  totalBytes:-1
 onProgressUpdate:
   exceptionMessage:<none>
   bytesDownloaded:0
+  totalBytes:-1
 onCanceled:
 onComplete:Success=
 false

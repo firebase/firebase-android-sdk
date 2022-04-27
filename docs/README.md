@@ -12,6 +12,7 @@ This repository includes the following Firebase SDKs for Android:
   * `firebase-firestore`
   * `firebase-functions`
   * `firebase-inappmessaging-display`
+  * `firebase-perf`
   * `firebase-storage`
 
 For more information on building the SDKs from source or contributing,
@@ -24,6 +25,8 @@ that allow you to write more idiomatic Kotlin code when using Firebase
 in your app:
 
   * [`firebase-common`](ktx/common.md)
+  * [`firebase-crashlytics`](ktx/crashlytics.md)
+  * [`firebase-dynamic-links`](ktx/dynamic-links.md)
   * [`firebase-firestore`](ktx/firestore.md)
   * [`firebase-functions`](ktx/functions.md)
   * [`firebase-inappmessaging`](ktx/inappmessaging.md)

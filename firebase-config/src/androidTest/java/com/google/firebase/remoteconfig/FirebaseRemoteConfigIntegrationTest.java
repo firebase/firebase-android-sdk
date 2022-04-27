@@ -30,6 +30,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -45,12 +46,12 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.skyscreamer.jsonassert.JSONAssert;
 
 @RunWith(AndroidJUnit4.class)
 public class FirebaseRemoteConfigIntegrationTest {
-  private static final String API_KEY = "api_key";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
   @Mock private ConfigCacheClient mockFetchedCache;
   @Mock private ConfigCacheClient mockActivatedCache;
@@ -63,6 +64,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
 
   @Mock private FirebaseABTesting mockFirebaseAbt;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private FirebaseRemoteConfig frc;
 
   // We use a HashMap so that Mocking is easier.
@@ -82,7 +84,11 @@ public class FirebaseRemoteConfigIntegrationTest {
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
             context,
-            new FirebaseOptions.Builder().setApiKey(API_KEY).setApplicationId(APP_ID).build());
+            new FirebaseOptions.Builder()
+                .setApiKey(API_KEY)
+                .setApplicationId(APP_ID)
+                .setProjectId(PROJECT_ID)
+                .build());
 
     // Catch all to avoid NPEs (the getters should never return null).
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
@@ -94,6 +100,7 @@ public class FirebaseRemoteConfigIntegrationTest {
         new FirebaseRemoteConfig(
             context,
             firebaseApp,
+            mockFirebaseInstallations,
             mockFirebaseAbt,
             directExecutor,
             mockFetchedCache,
@@ -102,19 +109,6 @@ public class FirebaseRemoteConfigIntegrationTest {
             mockFetchHandler,
             mockGetHandler,
             metadataClient);
-  }
-
-  @Test
-  public void setDefaults_goodXml_setsDefaults() throws Exception {
-    ConfigContainer goodDefaultsXmlContainer = newDefaultsContainer(DEFAULTS_MAP);
-
-    frc.setDefaults(getResourceId("frc_good_defaults"));
-
-    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
-    JSONAssert.assertEquals(
-        captor.getValue().toString(), goodDefaultsXmlContainer.toString(), false);
   }
 
   @Test
@@ -132,27 +126,29 @@ public class FirebaseRemoteConfigIntegrationTest {
   }
 
   @Test
-  public void setDefaults_emptyXml_setsEmptyDefaults() throws Exception {
+  public void setDefaultsAsync_emptyXml_setsEmptyDefaults() throws Exception {
     ConfigContainer emptyDefaultsXmlContainer = newDefaultsContainer(ImmutableMap.of());
+    cachePutReturnsConfig(mockDefaultsCache, emptyDefaultsXmlContainer);
 
-    frc.setDefaults(getResourceId("frc_empty_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_empty_defaults"));
+    Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
+    verify(mockDefaultsCache).put(captor.capture());
     assertThat(captor.getValue()).isEqualTo(emptyDefaultsXmlContainer);
   }
 
   @Test
-  public void setDefaults_badXml_ignoresBadEntries() throws Exception {
+  public void setDefaultsAsync_badXml_ignoresBadEntries() throws Exception {
     ConfigContainer badDefaultsXmlContainer =
         newDefaultsContainer(ImmutableMap.of("second_default_key", "second_default_value"));
+    cachePutReturnsConfig(mockDefaultsCache, badDefaultsXmlContainer);
 
-    frc.setDefaults(getResourceId("frc_bad_defaults"));
+    Task<Void> task = frc.setDefaultsAsync(getResourceId("frc_bad_defaults"));
+    Tasks.await(task);
 
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
-    verify(mockDefaultsCache).putWithoutWaitingForDiskWrite(captor.capture());
-
+    verify(mockDefaultsCache).put(captor.capture());
     assertThat(captor.getValue()).isEqualTo(badDefaultsXmlContainer);
   }
 

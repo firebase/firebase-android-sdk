@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core.view;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.CompoundWrite;
 import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.WriteTreeRef;
@@ -76,7 +78,7 @@ public class ViewProcessor {
                     optCompleteCache,
                     accumulator);
           } else {
-            assert overwrite.getSource().isFromServer();
+            hardAssert(overwrite.getSource().isFromServer());
             // We filter the node if it's a tagged update or the node has been previously filtered
             // and the update is not at the root in which case it is ok (and necessary) to mark the
             // node unfiltered again
@@ -109,7 +111,7 @@ public class ViewProcessor {
                     optCompleteCache,
                     accumulator);
           } else {
-            assert merge.getSource().isFromServer();
+            hardAssert(merge.getSource().isFromServer());
             // We filter the node if it's a tagged update or the node has been previously filtered
             boolean filterServerNode =
                 merge.getSource().isTagged() || oldViewCache.getServerCache().isFiltered();
@@ -196,8 +198,9 @@ public class ViewProcessor {
       IndexedNode newEventCache;
       if (changePath.isEmpty()) {
         // TODO: figure out how this plays with "sliding ack windows"
-        assert viewCache.getServerCache().isFullyInitialized()
-            : "If change path is empty, we must have complete server data";
+        hardAssert(
+            viewCache.getServerCache().isFullyInitialized(),
+            "If change path is empty, we must have complete server data");
         Node nodeWithLocalWrites;
         if (viewCache.getServerCache().isFiltered()) {
           // We need to special case this, because we need to only apply writes to complete
@@ -218,7 +221,8 @@ public class ViewProcessor {
       } else {
         ChildKey childKey = changePath.getFront();
         if (childKey.isPriorityChildName()) {
-          assert changePath.size() == 1 : "Can't have a priority with additional path components";
+          hardAssert(
+              changePath.size() == 1, "Can't have a priority with additional path components");
           Node oldEventNode = oldEventSnap.getNode();
           Node serverNode = viewCache.getServerCache().getNode();
           // we might have overwrites for this priority
@@ -295,7 +299,8 @@ public class ViewProcessor {
     } else if (serverFilter.filtersNodes() && !oldServerSnap.isFiltered()) {
       // we want to filter the server node, but we didn't filter the server node yet, so simulate a
       // full update
-      assert !changePath.isEmpty() : "An empty path should have been caught in the other branch";
+      hardAssert(
+          !changePath.isEmpty(), "An empty path should have been caught in the other branch");
       ChildKey childKey = changePath.getFront();
       Path updatePath = changePath.popFront();
       Node newChild =
@@ -421,7 +426,7 @@ public class ViewProcessor {
     // TODO: I consider an item "in view" if cacheHasChild is true, which checks both the server
     // and event snap.  I'm not sure if this will result in edge cases when a child is in one but
     // not the other.
-    assert changedChildren.rootWrite() == null : "Can't have a merge that is an overwrite";
+    hardAssert(changedChildren.rootWrite() == null, "Can't have a merge that is an overwrite");
     ViewCache currentViewCache = viewCache;
     for (Map.Entry<Path, Node> entry : changedChildren) {
       Path writePath = path.child(entry.getKey());
@@ -475,7 +480,7 @@ public class ViewProcessor {
     // and event snap.  I'm not sure if this will result in edge cases when a child is in one but
     // not the other.
     ViewCache curViewCache = viewCache;
-    assert changedChildren.rootWrite() == null : "Can't have a merge that is an overwrite";
+    hardAssert(changedChildren.rootWrite() == null, "Can't have a merge that is an overwrite");
     CompoundWrite actualMerge;
     if (path.isEmpty()) {
       actualMerge = changedChildren;

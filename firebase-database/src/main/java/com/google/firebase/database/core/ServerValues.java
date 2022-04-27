@@ -14,7 +14,10 @@
 
 package com.google.firebase.database.core;
 
+import com.google.firebase.database.core.ValueProvider.DeferredValueProvider;
+import com.google.firebase.database.core.ValueProvider.ExistingValueProvider;
 import com.google.firebase.database.core.utilities.Clock;
+import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.snapshot.ChildKey;
 import com.google.firebase.database.snapshot.ChildrenNode;
 import com.google.firebase.database.snapshot.Node;
@@ -34,8 +37,8 @@ public class ServerValues {
     return values;
   }
 
-  public static Object resolveDeferredValue(
-      Object value, Node existing, Map<String, Object> serverValues) {
+  public static Object resolveDeferredLeafValue(
+      Object value, ValueProvider existing, Map<String, Object> serverValues) {
     if (!(value instanceof Map)) {
       return value;
     }
@@ -47,7 +50,7 @@ public class ServerValues {
     Object op = mapValue.get(NAME_SUBKEY_SERVERVALUE);
     Object res = null;
     if (op instanceof String) {
-      res = resolveScalarDeferredValue((String) op, existing, serverValues);
+      res = resolveScalarDeferredValue((String) op, serverValues);
     } else if (op instanceof Map) {
       res = resolveComplexDeferredValue((Map) op, existing, serverValues);
     }
@@ -57,8 +60,7 @@ public class ServerValues {
     return res;
   }
 
-  static Object resolveScalarDeferredValue(
-      String op, Node existing, Map<String, Object> serverValues) {
+  static Object resolveScalarDeferredValue(String op, Map<String, Object> serverValues) {
     if (NAME_OP_TIMESTAMP.equals(op) && serverValues.containsKey(op)) {
       return serverValues.get(op);
     }
@@ -66,7 +68,7 @@ public class ServerValues {
   }
 
   static Object resolveComplexDeferredValue(
-      Map<String, Object> op, Node existing, Map<String, Object> serverValues) {
+      Map<String, Object> op, ValueProvider existing, Map<String, Object> serverValues) {
     // Only supported complex op so far
     if (!op.containsKey(NAME_OP_INCREMENT)) {
       return null;
@@ -80,11 +82,12 @@ public class ServerValues {
     Number increment = (Number) incrObject;
 
     // Incrementing a non-number sets the value to the incremented amount
-    if (!(existing.isLeafNode() && existing.getValue() instanceof Number)) {
+    Node existingNode = existing.node();
+    if (!(existingNode.isLeafNode() && existingNode.getValue() instanceof Number)) {
       return increment;
     }
 
-    Number existingVal = (Number) existing.getValue();
+    Number existingVal = (Number) existingNode.getValue();
     if (canBeRepresentedAsLong(increment) && canBeRepresentedAsLong(existingVal)) {
       long x = increment.longValue();
       long y = existingVal.longValue();
@@ -99,32 +102,29 @@ public class ServerValues {
     return increment.doubleValue() + existingVal.doubleValue();
   }
 
-  public static SparseSnapshotTree resolveDeferredValueTree(
-      SparseSnapshotTree tree, Node existing, final Map<String, Object> serverValues) {
-    final SparseSnapshotTree resolvedTree = new SparseSnapshotTree();
-    tree.forEachTree(
-        new Path(""),
-        new SparseSnapshotTree.SparseSnapshotTreeVisitor() {
-          @Override
-          public void visitTree(Path prefixPath, Node tree) {
-            resolvedTree.remember(
-                prefixPath,
-                resolveDeferredValueSnapshot(tree, existing.getChild(prefixPath), serverValues));
-          }
-        });
-    return resolvedTree;
+  public static Node resolveDeferredValueSnapshot(
+      Node data, Node existing, final Map<String, Object> serverValues) {
+    return resolveDeferredValueSnapshot(data, new ExistingValueProvider(existing), serverValues);
   }
 
   public static Node resolveDeferredValueSnapshot(
-      Node data, Node existing, final Map<String, Object> serverValues) {
-    Object priorityVal =
-        resolveDeferredValue(data.getPriority().getValue(), existing.getPriority(), serverValues);
-    Node priority = PriorityUtilities.parsePriority(priorityVal);
+      Node data, SyncTree syncTree, Path path, final Map<String, Object> serverValues) {
+    return resolveDeferredValueSnapshot(
+        data, new DeferredValueProvider(syncTree, path), serverValues);
+  }
 
+  private static Node resolveDeferredValueSnapshot(
+      Node data, ValueProvider existing, final Map<String, Object> serverValues) {
+    Object rawPriority = data.getPriority().getValue();
+    Object priority =
+        resolveDeferredLeafValue(
+            rawPriority,
+            existing.getImmediateChild(ChildKey.fromString(".priority")),
+            serverValues);
     if (data.isLeafNode()) {
-      Object value = resolveDeferredValue(data.getValue(), existing, serverValues);
-      if (!value.equals(data.getValue()) || !priority.equals(data.getPriority())) {
-        return NodeUtilities.NodeFromJSON(value, priority);
+      Object value = resolveDeferredLeafValue(data.getValue(), existing, serverValues);
+      if (!value.equals(data.getValue()) || !Utilities.equals(priority, rawPriority)) {
+        return NodeUtilities.NodeFromJSON(value, PriorityUtilities.parsePriority(priority));
       }
       return data;
     } else if (data.isEmpty()) {
@@ -145,7 +145,7 @@ public class ServerValues {
             }
           });
       if (!holder.getRootNode().getPriority().equals(priority)) {
-        return holder.getRootNode().updatePriority(priority);
+        return holder.getRootNode().updatePriority(PriorityUtilities.parsePriority(priority));
       } else {
         return holder.getRootNode();
       }
@@ -153,14 +153,14 @@ public class ServerValues {
   }
 
   public static CompoundWrite resolveDeferredValueMerge(
-      CompoundWrite merge, Node existing, final Map<String, Object> serverValues) {
+      CompoundWrite merge, SyncTree syncTree, Path path, final Map<String, Object> serverValues) {
     CompoundWrite write = CompoundWrite.emptyWrite();
     for (Map.Entry<Path, Node> entry : merge) {
+      ValueProvider deferredValue = new DeferredValueProvider(syncTree, path.child(entry.getKey()));
       write =
           write.addWrite(
               entry.getKey(),
-              resolveDeferredValueSnapshot(
-                  entry.getValue(), existing.getChild(entry.getKey()), serverValues));
+              resolveDeferredValueSnapshot(entry.getValue(), deferredValue, serverValues));
     }
     return write;
   }

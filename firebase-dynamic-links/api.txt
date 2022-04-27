@@ -128,6 +128,7 @@ package com.google.firebase.dynamiclinks {
     method @Nullable public android.net.Uri getLink();
     method public int getMinimumAppVersion();
     method @Nullable public android.content.Intent getUpdateAppIntent(@NonNull android.content.Context);
+    method @NonNull public android.os.Bundle getUtmParameters();
   }
 
   public interface ShortDynamicLink {

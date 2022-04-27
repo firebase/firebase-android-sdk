@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.abt.FirebaseABTesting.OriginService;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.inject.Provider;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,13 +38,11 @@ public class AbtComponent {
   private final Map<String, FirebaseABTesting> abtOriginInstances = new HashMap<>();
 
   private final Context appContext;
-  private final AnalyticsConnector analyticsConnector;
+  private final Provider<AnalyticsConnector> analyticsConnector;
 
-  /**
-   * Firebase ABT Component constructor.
-   */
+  /** Firebase ABT Component constructor. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-  protected AbtComponent(Context appContext, AnalyticsConnector analyticsConnector) {
+  protected AbtComponent(Context appContext, Provider<AnalyticsConnector> analyticsConnector) {
     this.appContext = appContext;
     this.analyticsConnector = analyticsConnector;
   }

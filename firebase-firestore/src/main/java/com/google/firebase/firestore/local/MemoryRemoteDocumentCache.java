@@ -17,16 +17,15 @@ package com.google.firebase.firestore.local;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.util.Pair;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,99 +34,107 @@ import java.util.Map;
 final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
-  private ImmutableSortedMap<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> docs;
+  private ImmutableSortedMap<DocumentKey, Document> docs;
+  /** Manages the collection group index. */
+  private IndexManager indexManager;
 
-  private final MemoryPersistence persistence;
-
-  MemoryRemoteDocumentCache(MemoryPersistence persistence) {
-    docs = ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    this.persistence = persistence;
+  MemoryRemoteDocumentCache() {
+    docs = emptyDocumentMap();
   }
 
   @Override
-  public void add(MaybeDocument document, SnapshotVersion readTime) {
+  public void setIndexManager(IndexManager indexManager) {
+    this.indexManager = indexManager;
+  }
+
+  @Override
+  public void add(MutableDocument document, SnapshotVersion readTime) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
     hardAssert(
         !readTime.equals(SnapshotVersion.NONE),
         "Cannot add document to the RemoteDocumentCache with a read time of zero");
-    docs = docs.insert(document.getKey(), new Pair<>(document, readTime));
+    docs = docs.insert(document.getKey(), document.mutableCopy().setReadTime(readTime));
 
-    persistence.getIndexManager().addToCollectionParentIndex(document.getKey().getPath().popLast());
+    indexManager.addToCollectionParentIndex(document.getKey().getCollectionPath());
   }
 
   @Override
-  public void remove(DocumentKey key) {
-    docs = docs.remove(key);
-  }
+  public void removeAll(Collection<DocumentKey> keys) {
+    hardAssert(indexManager != null, "setIndexManager() not called");
 
-  @Nullable
-  @Override
-  public MaybeDocument get(DocumentKey key) {
-    Pair<MaybeDocument, SnapshotVersion> entry = docs.get(key);
-    return entry != null ? entry.first : null;
-  }
-
-  @Override
-  public Map<DocumentKey, MaybeDocument> getAll(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MaybeDocument> result = new HashMap<>();
-
+    ImmutableSortedMap<DocumentKey, Document> deletedDocs = emptyDocumentMap();
     for (DocumentKey key : keys) {
-      // Make sure each key has a corresponding entry, which is null in case the document is not
-      // found.
+      docs = docs.remove(key);
+      deletedDocs =
+          deletedDocs.insert(key, MutableDocument.newNoDocument(key, SnapshotVersion.NONE));
+    }
+    indexManager.updateIndexEntries(deletedDocs);
+  }
+
+  @Override
+  public MutableDocument get(DocumentKey key) {
+    Document doc = docs.get(key);
+    return doc != null ? doc.mutableCopy() : MutableDocument.newInvalidDocument(key);
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
+    Map<DocumentKey, MutableDocument> result = new HashMap<>();
+    for (DocumentKey key : keys) {
       result.put(key, get(key));
     }
-
     return result;
   }
 
   @Override
-  public ImmutableSortedMap<DocumentKey, Document> getAllDocumentsMatchingQuery(
-      Query query, SnapshotVersion sinceReadTime) {
-    hardAssert(
-        !query.isCollectionGroupQuery(),
-        "CollectionGroup queries should be handled in LocalDocumentsView");
-    ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
+  public Map<DocumentKey, MutableDocument> getAll(
+      String collectionGroup, IndexOffset offset, int limit) {
+    // This method should only be called from the IndexBackfiller if SQLite is enabled.
+    throw new UnsupportedOperationException("getAll(String, IndexOffset, int) is not supported.");
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
+    Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
     // we need to match the query against.
-    ResourcePath queryPath = query.getPath();
-    DocumentKey prefix = DocumentKey.fromPath(queryPath.append(""));
-    Iterator<Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>>> iterator =
-        docs.iteratorFrom(prefix);
+    DocumentKey prefix = DocumentKey.fromPath(collection.append(""));
+    Iterator<Map.Entry<DocumentKey, Document>> iterator = docs.iteratorFrom(prefix);
 
     while (iterator.hasNext()) {
-      Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>> entry = iterator.next();
+      Map.Entry<DocumentKey, Document> entry = iterator.next();
+      Document doc = entry.getValue();
 
       DocumentKey key = entry.getKey();
-      if (!queryPath.isPrefixOf(key.getPath())) {
+      if (!collection.isPrefixOf(key.getPath())) {
+        // We are now scanning the next collection. Abort.
         break;
       }
 
-      MaybeDocument maybeDoc = entry.getValue().first;
-      if (!(maybeDoc instanceof Document)) {
+      if (key.getPath().length() > collection.length() + 1) {
+        // Exclude entries from subcollections.
         continue;
       }
 
-      SnapshotVersion readTime = entry.getValue().second;
-      if (readTime.compareTo(sinceReadTime) <= 0) {
+      if (IndexOffset.fromDocument(doc).compareTo(offset) <= 0) {
+        // The document sorts before the offset.
         continue;
       }
 
-      Document doc = (Document) maybeDoc;
-      if (query.matches(doc)) {
-        result = result.insert(doc.getKey(), doc);
-      }
+      result.put(doc.getKey(), doc.mutableCopy());
     }
 
     return result;
   }
 
-  Iterable<MaybeDocument> getDocuments() {
+  Iterable<Document> getDocuments() {
     return new DocumentIterable();
   }
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MaybeDocument doc : new DocumentIterable()) {
+    for (Document doc : new DocumentIterable()) {
       count += serializer.encodeMaybeDocument(doc).getSerializedSize();
     }
     return count;
@@ -136,21 +143,21 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   /**
    * A proxy that exposes an iterator over the current set of documents in the RemoteDocumentCache.
    */
-  private class DocumentIterable implements Iterable<MaybeDocument> {
+  private class DocumentIterable implements Iterable<Document> {
     @NonNull
     @Override
-    public Iterator<MaybeDocument> iterator() {
-      Iterator<Map.Entry<DocumentKey, Pair<MaybeDocument, SnapshotVersion>>> iterator =
+    public Iterator<Document> iterator() {
+      Iterator<Map.Entry<DocumentKey, Document>> iterator =
           MemoryRemoteDocumentCache.this.docs.iterator();
-      return new Iterator<MaybeDocument>() {
+      return new Iterator<Document>() {
         @Override
         public boolean hasNext() {
           return iterator.hasNext();
         }
 
         @Override
-        public MaybeDocument next() {
-          return iterator.next().getValue().first;
+        public Document next() {
+          return iterator.next().getValue();
         }
       };
     }

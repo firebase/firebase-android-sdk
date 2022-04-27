@@ -31,10 +31,10 @@ import static org.mockito.Mockito.when;
 
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.DismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -44,6 +44,7 @@ import com.google.firebase.inappmessaging.internal.FakeAnalyticsConnector.Logged
 import com.google.firebase.inappmessaging.internal.FakeAnalyticsConnector.LoggedUserProperty;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient.EngagementMetricsLoggerInterface;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +63,8 @@ public class MetricsLoggerClientTest {
   private static final long NOW = PAST + 100000;
 
   private static final String APPLICATION_ID = "APPLICATION_ID";
-  private static final String INSTANCE_ID = "instance_id";
+  private static final String INSTALLATION_ID = "instance_id";
+  private static final String INSTALLATION_TOKEN = "instance_token";
   private static final String PROJECT_NUMBER = "project_number";
 
   private final FirebaseOptions firebaseOptions =
@@ -75,7 +77,7 @@ public class MetricsLoggerClientTest {
 
   @Mock FirebaseApp firebaseApp;
   @Captor ArgumentCaptor<byte[]> byteArrayCaptor;
-  @Mock private FirebaseInstanceId firebaseInstanceId;
+  @Mock private FirebaseInstallationsApi firebaseInstallations;
   @Mock private MetricsLoggerClient metricsLoggerClient;
   @Mock private EngagementMetricsLoggerInterface engagementMetricsLoggerInterface;
   @Mock private AnalyticsConnector analyticsConnector;
@@ -88,7 +90,7 @@ public class MetricsLoggerClientTest {
     MockitoAnnotations.initMocks(this);
     when(firebaseApp.getName()).thenReturn("app1");
     when(firebaseApp.getOptions()).thenReturn(firebaseOptions);
-    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
+    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
     clock = new FakeClock(NOW);
     analytics = new FakeAnalyticsConnector();
     FakeAnalyticsConnector.resetState();
@@ -97,7 +99,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analyticsConnector,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
   }
@@ -109,12 +111,11 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             null,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
-
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
@@ -125,7 +126,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             null,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -140,7 +141,7 @@ public class MetricsLoggerClientTest {
             engagementMetricsLoggerInterface,
             analyticsConnector,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -191,7 +192,7 @@ public class MetricsLoggerClientTest {
 
     CampaignAnalytics campaignAnalytics =
         CampaignAnalytics.parser().parseFrom(byteArrayCaptor.getValue());
-    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTANCE_ID);
+    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTALLATION_ID);
   }
 
   @Test
@@ -261,7 +262,7 @@ public class MetricsLoggerClientTest {
 
     CampaignAnalytics campaignAnalytics =
         CampaignAnalytics.parser().parseFrom(byteArrayCaptor.getValue());
-    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTANCE_ID);
+    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTALLATION_ID);
   }
 
   @Test
@@ -337,7 +338,7 @@ public class MetricsLoggerClientTest {
 
     CampaignAnalytics campaignAnalytics =
         CampaignAnalytics.parser().parseFrom(byteArrayCaptor.getValue());
-    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTANCE_ID);
+    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTALLATION_ID);
   }
 
   @Test
@@ -417,6 +418,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
+  public void logDismiss_notifiesListeners() {
+    metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.CLICK);
+
+    verify(developerListenerManager, times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
+  }
+
+  @Test
   public void logDismiss_setsCampaignId() throws InvalidProtocolBufferException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
@@ -449,7 +457,7 @@ public class MetricsLoggerClientTest {
 
     CampaignAnalytics campaignAnalytics =
         CampaignAnalytics.parser().parseFrom(byteArrayCaptor.getValue());
-    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTANCE_ID);
+    assertThat(campaignAnalytics.getClientApp().getFirebaseInstanceId()).isEqualTo(INSTALLATION_ID);
   }
 
   @Test
@@ -514,15 +522,14 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_sendsCorrectScionEventWithParams()
-      throws InvalidProtocolBufferException {
+  public void logImpression_sendsCorrectScionEventWithParams() {
     FakeAnalyticsConnector analytics = new FakeAnalyticsConnector();
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -543,13 +550,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logClick_sendsCorrectScionEventName() throws InvalidProtocolBufferException {
+  public void logClick_sendsCorrectScionEventName() {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -563,13 +570,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismisssendsCorrectScionEventName() throws InvalidProtocolBufferException {
+  public void logDismisssendsCorrectScionEventName() {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -583,13 +590,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_sendsEventParams() throws InvalidProtocolBufferException {
+  public void logEvent_sendsEventParams() {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -612,13 +619,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_addsConversionTrackingOnAction() throws InvalidProtocolBufferException {
+  public void logEvent_addsConversionTrackingOnAction() {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 
@@ -639,14 +646,13 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_addsConversionTrackingOnClickWhenNoAction()
-      throws InvalidProtocolBufferException {
+  public void logEvent_addsConversionTrackingOnClickWhenNoAction() {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
             analytics,
             firebaseApp,
-            firebaseInstanceId,
+            firebaseInstallations,
             clock,
             developerListenerManager);
 

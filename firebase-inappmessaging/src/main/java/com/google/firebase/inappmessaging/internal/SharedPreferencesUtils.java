@@ -51,6 +51,19 @@ public class SharedPreferencesUtils {
   }
 
   /**
+   * Helper method for clearing the value in the app's stored preferences.
+   *
+   * @param preference the preference key.
+   */
+  public void clearPreference(String preference) {
+    Application application = (Application) firebaseApp.getApplicationContext();
+    SharedPreferences.Editor preferencesEditor =
+        application.getSharedPreferences(PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE).edit();
+    preferencesEditor.remove(preference);
+    preferencesEditor.apply();
+  }
+
+  /**
    * Helper method for getting a boolean value from the apps stored preferences.
    *
    * @param preference the preference key.

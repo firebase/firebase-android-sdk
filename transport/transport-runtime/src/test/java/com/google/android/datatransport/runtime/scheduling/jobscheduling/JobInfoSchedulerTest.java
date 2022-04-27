@@ -22,6 +22,7 @@ import android.app.job.JobScheduler;
 import android.content.Context;
 import android.os.PersistableBundle;
 import android.util.Base64;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -31,7 +32,6 @@ import java.nio.charset.Charset;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 @Config(sdk = {LOLLIPOP})
@@ -46,13 +46,38 @@ public class JobInfoSchedulerTest {
   private static final TransportContext UNMETERED_TRANSPORT_CONTEXT =
       TransportContext.builder().setBackendName("backend1").setPriority(Priority.VERY_LOW).build();
 
-  private final Context context = RuntimeEnvironment.application;
+  private final Context context = ApplicationProvider.getApplicationContext();
   private final EventStore store = new InMemoryEventStore();
   private final JobScheduler jobScheduler =
       (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
   private final SchedulerConfig config = SchedulerConfig.getDefault(() -> 1);
   private final JobInfoScheduler scheduler = new JobInfoScheduler(context, store, config);
+
+  @Test
+  public void schedule_secondAttemptThenForce() {
+    store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
+    scheduler.schedule(TRANSPORT_CONTEXT, 2);
+    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    PersistableBundle bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+    assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(2);
+    // Schedule again with force set to true.
+    scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
+    assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
+    jobInfo = jobScheduler.getAllPendingJobs().get(0);
+    bundle = jobInfo.getExtras();
+    assertThat(jobInfo.getId()).isEqualTo(jobId);
+    assertThat(bundle.get(JobInfoScheduler.BACKEND_NAME))
+        .isEqualTo(TRANSPORT_CONTEXT.getBackendName());
+    //  Earlier job should be overwritten with the newly scheduled job.
+    assertThat(bundle.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
+  }
 
   @Test
   public void schedule_longWaitTimeFirstAttempt() {

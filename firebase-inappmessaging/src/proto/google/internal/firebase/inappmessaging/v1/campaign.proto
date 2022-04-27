@@ -21,7 +21,7 @@ option java_outer_classname = "CampaignProto";
 
 import "firebase/inappmessaging/proto/messages.proto";
 import "firebase/inappmessaging/proto/common_types.proto";
-import "developers/mobile/abt/proto/experiment_payload.proto";
+import "firebase/inappmessaging/proto/experiment_payload.proto";
 
 // User-specified properties for rolling out an experimental campaign into a new
 // standard campaign.
@@ -94,6 +94,17 @@ message VanillaCampaignPayload {
 message ExperimentalCampaignPayload {
   // Campaign id
   string campaign_id = 1;
-  // payload is sent for scion tracking of the experiment
-  developers.mobile.abt.ExperimentPayload experiment_payload = 2;
+  // payload is sent for scion tracking of the experiment this is provied by ABT
+  .firebase.inappmessaging.ExperimentPayload experiment_payload = 2;
+  // FIAM configured start time of the experiment - we use long vs Timestamp
+  // here to minimize the size of the bundles sent back to the sdk clients
+  int64 campaign_start_time_millis = 3;
+  // FIAM configured end time of the experiment - we use long vs Timestamp here
+  // to minimize the size of the bundles sent back to the sdk clients. Note that
+  // for an experiment the end time is defined by whichever is earliest of
+  // (campaign end time, experiment time to live)
+  int64 campaign_end_time_millis = 4;
+  // The display name for the campaign given by the campaign creator.
+  // we need it for generating fiam campaign analytic events on client SDK side
+  string campaign_name = 5;
 }

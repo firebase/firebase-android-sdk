@@ -5,6 +5,7 @@ setRequestMethod:DELETE
 setRequestProperty:X-Firebase-Storage-Version,Android/[No Gmscore]
 setRequestProperty:Content-Length,0
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getResponseCode:204

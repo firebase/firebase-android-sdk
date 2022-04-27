@@ -14,8 +14,7 @@
 
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
-import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
-
+import android.content.Context;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import dagger.Binds;
 import dagger.Module;
@@ -35,6 +34,7 @@ public abstract class TestEventStoreModule {
         .setLoadBatchSize(LOAD_BATCH_SIZE)
         .setCriticalSectionEnterTimeoutMs(LOCK_TIME_OUT_MS)
         .setEventCleanUpAge(60 * 1000)
+        .setMaxBlobByteSizePerRow(80 * 1000)
         .build();
   }
 
@@ -44,9 +44,24 @@ public abstract class TestEventStoreModule {
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
+  @Binds
+  abstract ClientHealthMetricsStore clientHealthMetricsStore(SQLiteEventStore store);
+
   @Provides
   @Named("SCHEMA_VERSION")
   static int schemaVersion() {
-    return SCHEMA_VERSION;
+    return SchemaManager.SCHEMA_VERSION;
+  }
+
+  @Provides
+  @Named("SQLITE_DB_NAME")
+  static String dbName() {
+    return SchemaManager.DB_NAME;
+  }
+
+  @Provides
+  @Named("PACKAGE_NAME")
+  static String packageName(Context context) {
+    return context.getPackageName();
   }
 }

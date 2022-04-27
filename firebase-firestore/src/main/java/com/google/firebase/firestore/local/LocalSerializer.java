@@ -18,22 +18,26 @@ import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.bundle.BundledQuery;
+import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.UnknownDocument;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.admin.v1.Index;
+import com.google.firestore.v1.DocumentTransform.FieldTransform;
+import com.google.firestore.v1.Write;
+import com.google.firestore.v1.Write.Builder;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /** Serializer for values stored in the LocalStore. */
 public final class LocalSerializer {
@@ -45,35 +49,27 @@ public final class LocalSerializer {
   }
 
   /** Encodes a MaybeDocument model to the equivalent protocol buffer for local storage. */
-  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(MaybeDocument document) {
+  com.google.firebase.firestore.proto.MaybeDocument encodeMaybeDocument(Document document) {
     com.google.firebase.firestore.proto.MaybeDocument.Builder builder =
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder();
 
-    if (document instanceof NoDocument) {
-      NoDocument noDocument = (NoDocument) document;
-      builder.setNoDocument(encodeNoDocument(noDocument));
-      builder.setHasCommittedMutations(noDocument.hasCommittedMutations());
-    } else if (document instanceof Document) {
-      Document existingDocument = (Document) document;
-      // Use the memoized encoded form if it exists.
-      if (existingDocument.getProto() != null) {
-        builder.setDocument(existingDocument.getProto());
-      } else {
-        builder.setDocument(encodeDocument(existingDocument));
-      }
-      builder.setHasCommittedMutations(existingDocument.hasCommittedMutations());
-    } else if (document instanceof UnknownDocument) {
-      builder.setUnknownDocument(encodeUnknownDocument((UnknownDocument) document));
-      builder.setHasCommittedMutations(true);
+    if (document.isNoDocument()) {
+      builder.setNoDocument(encodeNoDocument(document));
+    } else if (document.isFoundDocument()) {
+      builder.setDocument(encodeDocument(document));
+    } else if (document.isUnknownDocument()) {
+      builder.setUnknownDocument(encodeUnknownDocument(document));
     } else {
-      throw fail("Unknown document type %s", document.getClass().getCanonicalName());
+      throw fail("Cannot encode invalid document %s", document);
     }
+
+    builder.setHasCommittedMutations(document.hasCommittedMutations());
 
     return builder.build();
   }
 
   /** Decodes a MaybeDocument proto to the equivalent model. */
-  MaybeDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument proto) {
+  MutableDocument decodeMaybeDocument(com.google.firebase.firestore.proto.MaybeDocument proto) {
     switch (proto.getDocumentTypeCase()) {
       case DOCUMENT:
         return decodeDocument(proto.getDocument(), proto.getHasCommittedMutations());
@@ -97,34 +93,25 @@ public final class LocalSerializer {
     com.google.firestore.v1.Document.Builder builder =
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
-
-    ObjectValue value = document.getData();
-    for (Map.Entry<String, FieldValue> entry : value.getInternalValue()) {
-      builder.putFields(entry.getKey(), rpcSerializer.encodeValue(entry.getValue()));
-    }
-
+    builder.putAllFields(document.getData().getFieldsMap());
     Timestamp updateTime = document.getVersion().getTimestamp();
     builder.setUpdateTime(rpcSerializer.encodeTimestamp(updateTime));
     return builder.build();
   }
 
   /** Decodes a Document proto to the equivalent model. */
-  private Document decodeDocument(
+  private MutableDocument decodeDocument(
       com.google.firestore.v1.Document document, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(document.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(document.getUpdateTime());
-    return new Document(
-        key,
-        version,
-        hasCommittedMutations
-            ? Document.DocumentState.COMMITTED_MUTATIONS
-            : Document.DocumentState.SYNCED,
-        document,
-        rpcSerializer::decodeValue);
+    MutableDocument result =
+        MutableDocument.newFoundDocument(
+            key, version, ObjectValue.fromMap(document.getFieldsMap()));
+    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
   /** Encodes a NoDocument value to the equivalent proto. */
-  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(NoDocument document) {
+  private com.google.firebase.firestore.proto.NoDocument encodeNoDocument(Document document) {
     com.google.firebase.firestore.proto.NoDocument.Builder builder =
         com.google.firebase.firestore.proto.NoDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -133,16 +120,17 @@ public final class LocalSerializer {
   }
 
   /** Decodes a NoDocument proto to the equivalent model. */
-  private NoDocument decodeNoDocument(
+  private MutableDocument decodeNoDocument(
       com.google.firebase.firestore.proto.NoDocument proto, boolean hasCommittedMutations) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getReadTime());
-    return new NoDocument(key, version, hasCommittedMutations);
+    MutableDocument result = MutableDocument.newNoDocument(key, version);
+    return hasCommittedMutations ? result.setHasCommittedMutations() : result;
   }
 
   /** Encodes a UnknownDocument value to the equivalent proto. */
   private com.google.firebase.firestore.proto.UnknownDocument encodeUnknownDocument(
-      UnknownDocument document) {
+      Document document) {
     com.google.firebase.firestore.proto.UnknownDocument.Builder builder =
         com.google.firebase.firestore.proto.UnknownDocument.newBuilder();
     builder.setName(rpcSerializer.encodeKey(document.getKey()));
@@ -151,11 +139,11 @@ public final class LocalSerializer {
   }
 
   /** Decodes a UnknownDocument proto to the equivalent model. */
-  private UnknownDocument decodeUnknownDocument(
+  private MutableDocument decodeUnknownDocument(
       com.google.firebase.firestore.proto.UnknownDocument proto) {
     DocumentKey key = rpcSerializer.decodeKey(proto.getName());
     SnapshotVersion version = rpcSerializer.decodeVersion(proto.getVersion());
-    return new UnknownDocument(key, version);
+    return MutableDocument.newUnknownDocument(key, version);
   }
 
   /** Encodes a MutationBatch model for local storage in the mutation queue. */
@@ -184,11 +172,34 @@ public final class LocalSerializer {
     for (int i = 0; i < baseMutationsCount; i++) {
       baseMutations.add(rpcSerializer.decodeMutation(batch.getBaseWrites(i)));
     }
-    int mutationsCount = batch.getWritesCount();
-    List<Mutation> mutations = new ArrayList<>(mutationsCount);
-    for (int i = 0; i < mutationsCount; i++) {
-      mutations.add(rpcSerializer.decodeMutation(batch.getWrites(i)));
+
+    List<Mutation> mutations = new ArrayList<>(batch.getWritesCount());
+
+    // Squash old transform mutations into existing patch or set mutations. The replacement of
+    // representing `transforms` with `update_transforms` on the SDK means that old `transform`
+    // mutations stored in IndexedDB need to be updated to `update_transforms`.
+    // TODO(b/174608374): Remove this code once we perform a schema migration.
+    for (int i = 0; i < batch.getWritesCount(); ++i) {
+      Write currentMutation = batch.getWrites(i);
+      boolean hasTransform =
+          i + 1 < batch.getWritesCount() && batch.getWrites(i + 1).hasTransform();
+      if (hasTransform) {
+        hardAssert(
+            batch.getWrites(i).hasUpdate(),
+            "TransformMutation should be preceded by a patch or set mutation");
+        Builder newMutationBuilder = Write.newBuilder(currentMutation);
+        Write transformMutation = batch.getWrites(i + 1);
+        for (FieldTransform fieldTransform :
+            transformMutation.getTransform().getFieldTransformsList()) {
+          newMutationBuilder.addUpdateTransforms(fieldTransform);
+        }
+        mutations.add(rpcSerializer.decodeMutation(newMutationBuilder.build()));
+        ++i;
+      } else {
+        mutations.add(rpcSerializer.decodeMutation(currentMutation));
+      }
     }
+
     return new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
   }
 
@@ -250,5 +261,78 @@ public final class LocalSerializer {
         version,
         lastLimboFreeSnapshotVersion,
         resumeToken);
+  }
+
+  public com.google.firestore.bundle.BundledQuery encodeBundledQuery(BundledQuery bundledQuery) {
+    com.google.firestore.v1.Target.QueryTarget queryTarget =
+        rpcSerializer.encodeQueryTarget(bundledQuery.getTarget());
+
+    com.google.firestore.bundle.BundledQuery.Builder result =
+        com.google.firestore.bundle.BundledQuery.newBuilder();
+    result.setLimitType(
+        bundledQuery.getLimitType().equals(LimitType.LIMIT_TO_FIRST)
+            ? com.google.firestore.bundle.BundledQuery.LimitType.FIRST
+            : com.google.firestore.bundle.BundledQuery.LimitType.LAST);
+    result.setParent(queryTarget.getParent());
+    result.setStructuredQuery(queryTarget.getStructuredQuery());
+
+    return result.build();
+  }
+
+  public BundledQuery decodeBundledQuery(com.google.firestore.bundle.BundledQuery bundledQuery) {
+    LimitType limitType =
+        bundledQuery.getLimitType().equals(com.google.firestore.bundle.BundledQuery.LimitType.FIRST)
+            ? LimitType.LIMIT_TO_FIRST
+            : LimitType.LIMIT_TO_LAST;
+    Target target =
+        rpcSerializer.decodeQueryTarget(
+            bundledQuery.getParent(), bundledQuery.getStructuredQuery());
+
+    return new BundledQuery(target, limitType);
+  }
+
+  public Index encodeFieldIndexSegments(List<FieldIndex.Segment> segments) {
+    Index.Builder index = Index.newBuilder();
+    // The Mobile SDKs treat all indices as collection group indices, as we run all collection group
+    // queries against each collection separately.
+    index.setQueryScope(Index.QueryScope.COLLECTION_GROUP);
+
+    for (FieldIndex.Segment segment : segments) {
+      Index.IndexField.Builder indexField = Index.IndexField.newBuilder();
+      indexField.setFieldPath(segment.getFieldPath().canonicalString());
+      if (segment.getKind() == FieldIndex.Segment.Kind.CONTAINS) {
+        indexField.setArrayConfig(Index.IndexField.ArrayConfig.CONTAINS);
+      } else if (segment.getKind() == FieldIndex.Segment.Kind.ASCENDING) {
+        indexField.setOrder(Index.IndexField.Order.ASCENDING);
+      } else {
+        indexField.setOrder(Index.IndexField.Order.DESCENDING);
+      }
+      index.addFields(indexField);
+    }
+
+    return index.build();
+  }
+
+  public List<FieldIndex.Segment> decodeFieldIndexSegments(Index index) {
+    List<FieldIndex.Segment> result = new ArrayList<>();
+    for (Index.IndexField field : index.getFieldsList()) {
+      FieldPath fieldPath = FieldPath.fromServerFormat(field.getFieldPath());
+      FieldIndex.Segment.Kind kind =
+          field.getValueModeCase().equals(Index.IndexField.ValueModeCase.ARRAY_CONFIG)
+              ? FieldIndex.Segment.Kind.CONTAINS
+              : (field.getOrder().equals(Index.IndexField.Order.ASCENDING)
+                  ? FieldIndex.Segment.Kind.ASCENDING
+                  : FieldIndex.Segment.Kind.DESCENDING);
+      result.add(FieldIndex.Segment.create(fieldPath, kind));
+    }
+    return result;
+  }
+
+  public Mutation decodeMutation(Write mutation) {
+    return rpcSerializer.decodeMutation(mutation);
+  }
+
+  public Write encodeMutation(Mutation mutation) {
+    return rpcSerializer.encodeMutation(mutation);
   }
 }

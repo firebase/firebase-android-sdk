@@ -19,10 +19,10 @@ package com.google.firebase.firestore.testutil;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.common.truth.Truth.assert_;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
+import com.google.firebase.firestore.util.Preconditions;
 import java.util.Comparator;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -70,7 +70,7 @@ import javax.annotation.Nullable;
  * @author bmaurer@google.com (Ben Maurer)
  */
 public class ComparatorTester {
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private final @Nullable Comparator comparator;
 
   /** The items that we are checking, stored as a sorted set of equivalence classes. */
@@ -185,19 +185,20 @@ public class ComparatorTester {
     if (comparator == null) {
       try {
         compare(obj, null);
-        assert_().fail("Expected NullPointerException in %s.compare(null)", obj);
+        assert_().withMessage("Expected NullPointerException in %s.compare(null)", obj).fail();
       } catch (NullPointerException expected) {
         // TODO(cpovirk): Consider accepting JavaScriptException under GWT
       }
     }
   }
 
-  @SuppressWarnings("unchecked")
   private void testClassCast(Object obj) {
     if (comparator == null) {
       try {
         compare(obj, ICanNotBeCompared.INSTANCE);
-        assert_().fail("Expected ClassCastException in %s.compareTo(otherObject)", obj);
+        assert_()
+            .withMessage("Expected ClassCastException in %s.compareTo(otherObject)", obj)
+            .fail();
       } catch (ClassCastException expected) {
       }
     }

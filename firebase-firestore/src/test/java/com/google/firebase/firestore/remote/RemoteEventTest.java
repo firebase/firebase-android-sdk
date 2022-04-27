@@ -33,9 +33,8 @@ import static org.junit.Assert.fail;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -146,8 +145,8 @@ public class RemoteEventTest {
   public void testWillAccumulateDocumentAddedAndRemovedEvents() {
     Map<Integer, TargetData> targetMap = activeQueries(1, 2, 3, 4, 5, 6);
 
-    Document existingDoc = doc("docs/1", 1, map("value", 1));
-    Document newDoc = doc("docs/2", 2, map("value", 2));
+    MutableDocument existingDoc = doc("docs/1", 1, map("value", 1));
+    MutableDocument newDoc = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 =
         new DocumentChange(asList(1, 2, 3), asList(4, 5, 6), existingDoc.getKey(), existingDoc);
@@ -188,8 +187,8 @@ public class RemoteEventTest {
   public void testWillIgnoreEventsForPendingTargets() {
     Map<Integer, TargetData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
-    Document doc2 = doc("docs/2", 2, map("value", 2));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
 
     // We're waiting for the watch and unwatch ack
     Map<Integer, Integer> outstanding = new HashMap<>();
@@ -216,7 +215,7 @@ public class RemoteEventTest {
   public void testWillIgnoreEventsForRemovedTargets() {
     Map<Integer, TargetData> targetMap = activeQueries();
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
 
     // We're waiting for the unwatch ack
     Map<Integer, Integer> outstanding = new HashMap<>();
@@ -238,9 +237,9 @@ public class RemoteEventTest {
   public void testWillKeepResetMappingEvenWithUpdates() {
     Map<Integer, TargetData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
-    Document doc2 = doc("docs/2", 2, map("value", 2));
-    Document doc3 = doc("docs/3", 3, map("value", 3));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
+    MutableDocument doc3 = doc("docs/3", 3, map("value", 3));
 
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     // Reset stream, ignoring doc1
@@ -303,8 +302,8 @@ public class RemoteEventTest {
   public void testWillHandleTargetAddAndRemovalInSameBatch() {
     Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
-    Document doc1a = doc("docs/1", 1, map("value", 1));
-    Document doc1b = doc("docs/1", 1, map("value", 2));
+    MutableDocument doc1a = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc1b = doc("docs/1", 1, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1), asList(2), doc1a.getKey(), doc1a);
     WatchChange change2 = new DocumentChange(asList(2), asList(1), doc1b.getKey(), doc1b);
@@ -345,8 +344,8 @@ public class RemoteEventTest {
   public void testTargetAddedChangeWillResetPreviousState() {
     Map<Integer, TargetData> targetMap = activeQueries(1, 3);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
-    Document doc2 = doc("docs/2", 2, map("value", 2));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1, 3), asList(2), doc1.getKey(), doc1);
     WatchChange change2 = new WatchTargetChange(WatchTargetChangeType.Current, asList(1, 2, 3));
@@ -413,8 +412,8 @@ public class RemoteEventTest {
   public void testExistenceFilterMismatchClearsTarget() {
     Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
-    Document doc2 = doc("docs/2", 2, map("value", 2));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
 
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
@@ -466,7 +465,7 @@ public class RemoteEventTest {
     WatchTargetChange markCurrent = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
     aggregator.handleTargetChange(markCurrent);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     DocumentChange addDoc = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
     aggregator.handleDocumentChange(addDoc);
 
@@ -493,10 +492,10 @@ public class RemoteEventTest {
   public void testDocumentUpdate() {
     Map<Integer, TargetData> targetMap = activeQueries(1);
 
-    Document doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
     WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
 
-    Document doc2 = doc("docs/2", 2, map("value", 2));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
     WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
 
     WatchChangeAggregator aggregator =
@@ -509,17 +508,17 @@ public class RemoteEventTest {
 
     targetMetadataProvider.setSyncedKeys(targetMap.get(1), keySet(doc1.getKey(), doc2.getKey()));
 
-    NoDocument deletedDoc1 = deletedDoc("docs/1", 3);
+    MutableDocument deletedDoc1 = deletedDoc("docs/1", 3);
     DocumentChange change3 =
         new DocumentChange(asList(1), emptyList(), deletedDoc1.getKey(), deletedDoc1);
     aggregator.handleDocumentChange(change3);
 
-    Document updatedDoc2 = doc("docs/2", 3, map("value", 3));
+    MutableDocument updatedDoc2 = doc("docs/2", 3, map("value", 3));
     DocumentChange change4 =
         new DocumentChange(asList(1), emptyList(), updatedDoc2.getKey(), updatedDoc2);
     aggregator.handleDocumentChange(change4);
 
-    Document doc3 = doc("docs/3", 3, map("value", 3));
+    MutableDocument doc3 = doc("docs/3", 3, map("value", 3));
     DocumentChange change5 = new DocumentChange(asList(1), emptyList(), doc3.getKey(), doc3);
     aggregator.handleDocumentChange(change5);
 
@@ -611,7 +610,7 @@ public class RemoteEventTest {
     DocumentKey synthesized = key("docs/2");
     assertNull(event.getDocumentUpdates().get(synthesized));
 
-    NoDocument expected = deletedDoc("foo/doc", 3);
+    MutableDocument expected = deletedDoc("foo/doc", 3);
     assertEquals(expected, event.getDocumentUpdates().get(expected.getKey()));
     assertTrue(event.getResolvedLimboDocuments().contains(expected.getKey()));
   }
@@ -645,19 +644,19 @@ public class RemoteEventTest {
   public void testSeparatesUpdates() {
     Map<Integer, TargetData> targetMap = activeQueries(1);
 
-    Document newDoc = doc("docs/new", 1, map("key", "value"));
+    MutableDocument newDoc = doc("docs/new", 1, map("key", "value"));
     DocumentChange newDocChange =
         new DocumentChange(asList(1), emptyList(), newDoc.getKey(), newDoc);
 
-    Document existingDoc = doc("docs/existing", 1, map("some", "data"));
+    MutableDocument existingDoc = doc("docs/existing", 1, map("some", "data"));
     DocumentChange existingDocChange =
         new DocumentChange(asList(1), emptyList(), existingDoc.getKey(), existingDoc);
 
-    NoDocument deletedDoc = deletedDoc("docs/deleted", 1);
+    MutableDocument deletedDoc = deletedDoc("docs/deleted", 1);
     DocumentChange deletedDocChange =
         new DocumentChange(asList(1), emptyList(), deletedDoc.getKey(), deletedDoc);
 
-    NoDocument missingDoc = deletedDoc("docs/missing  ", 1);
+    MutableDocument missingDoc = deletedDoc("docs/missing  ", 1);
     DocumentChange missingDocChange =
         new DocumentChange(asList(1), emptyList(), missingDoc.getKey(), missingDoc);
 
@@ -683,9 +682,9 @@ public class RemoteEventTest {
     listens.putAll(activeLimboQueries("doc/2", 2));
 
     // Add 3 docs: 1 is limbo and non-limbo, 2 is limbo-only, 3 is non-limbo
-    Document doc1 = doc("docs/1", 1, map("key", "value"));
-    Document doc2 = doc("docs/2", 1, map("key", "value"));
-    Document doc3 = doc("docs/3", 1, map("key", "value"));
+    MutableDocument doc1 = doc("docs/1", 1, map("key", "value"));
+    MutableDocument doc2 = doc("docs/2", 1, map("key", "value"));
+    MutableDocument doc3 = doc("docs/3", 1, map("key", "value"));
 
     // Target 2 is a limbo target
     DocumentChange docChange1 = new DocumentChange(asList(1, 2), emptyList(), doc1.getKey(), doc1);

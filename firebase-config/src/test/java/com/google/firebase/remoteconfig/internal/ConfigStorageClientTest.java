@@ -18,18 +18,21 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 
 import android.content.Context;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -49,7 +52,7 @@ public class ConfigStorageClientTest {
 
   @Before
   public void setUp() throws Exception {
-    context = RuntimeEnvironment.application.getApplicationContext();
+    context = ApplicationProvider.getApplicationContext();
 
     ConfigStorageClient.clearInstancesForTest();
     storageClient = ConfigStorageClient.getInstance(context, FILE_NAME);
@@ -77,6 +80,38 @@ public class ConfigStorageClientTest {
   public void read_validContainer_returnsContainer() throws Exception {
     storageClient.write(configContainer);
     Preconditions.checkArgument(getFileAsString().equals(configContainer.toString()));
+
+    ConfigContainer container = storageClient.read();
+    assertThat(container).isEqualTo(configContainer);
+  }
+
+  @Test
+  public void read_validContainerWithPersonalization_returnsContainer() throws Exception {
+    ConfigContainer configWithPersonalization =
+        ConfigContainer.newBuilder(configContainer)
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    "{long_param: {personalizationId: 'id1'}, "
+                        + "string_param: {personalizationId: 'id2'}}"))
+            .build();
+    storageClient.write(configWithPersonalization);
+    Preconditions.checkArgument(getFileAsString().equals(configWithPersonalization.toString()));
+
+    ConfigContainer container = storageClient.read();
+    assertThat(container).isEqualTo(configWithPersonalization);
+  }
+
+  @Test
+  public void read_validContainerWithoutPersonalization_returnsContainer() throws Exception {
+    // Configs written by SDK versions <20.0.1 do not contain personalization metadata.
+    // Since the serialized configContainer contains personalization metadata, we manually remove it
+    // and write the config to disk directly to test.
+    JSONObject configJSON = new JSONObject(configContainer.toString());
+    configJSON.remove(ConfigContainer.PERSONALIZATION_METADATA_KEY);
+
+    try (FileOutputStream outputStream = context.openFileOutput(FILE_NAME, Context.MODE_PRIVATE)) {
+      outputStream.write(configJSON.toString().getBytes(StandardCharsets.UTF_8));
+    }
 
     ConfigContainer container = storageClient.read();
     assertThat(container).isEqualTo(configContainer);

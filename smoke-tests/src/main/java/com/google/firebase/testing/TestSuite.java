@@ -14,6 +14,7 @@
 
 package com.google.firebase.testing;
 
+import com.google.firebase.crashlytics.CrashlyticsTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -25,12 +26,12 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
   BuildOnlyTest.class,
+  CrashlyticsTest.class,
   DatabaseTest.class,
   DynamicLinksTest.class,
   FirestoreTest.class,
   FunctionsTest.class,
   RemoteConfigTest.class,
-  SmartReplyTest.class,
   StorageTest.class,
 })
 public final class TestSuite {}

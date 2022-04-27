@@ -22,16 +22,12 @@ package com.google.firebase.abt;
  */
 public class AbtException extends Exception {
 
-  /**
-   * Creates an ABT exception with the given message.
-   */
+  /** Creates an ABT exception with the given message. */
   public AbtException(String message) {
     super(message);
   }
 
-  /**
-   * Creates an ABT exception with the given message and cause.
-   */
+  /** Creates an ABT exception with the given message and cause. */
   public AbtException(String message, Exception cause) {
     super(message, cause);
   }

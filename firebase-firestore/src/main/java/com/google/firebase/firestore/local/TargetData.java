@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.SnapshotVersion;

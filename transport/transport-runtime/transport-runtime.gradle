@@ -13,7 +13,40 @@
 // limitations under the License.
 
 plugins {
+    id "com.google.protobuf"
     id 'firebase-library'
+    id 'firebase-vendor'
+}
+
+// add a dependency on the protoc plugin's fat jar to make it available to protobuf below.
+configurations.create("protobuild")
+dependencies {
+    protobuild project(path: ":encoders:protoc-gen-firebase-encoders", configuration: "shadow")
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    plugins {
+        firebaseEncoders {
+            path = configurations.protobuild.asPath
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.dependsOn configurations.protobuild
+            task.inputs.file 'code-gen-cfg.textproto'
+            task.plugins {
+                firebaseEncoders {
+                    option file('code-gen-cfg.textproto').path
+                }
+            }
+            task.builtins {
+                remove java
+            }
+        }
+    }
 }
 
 firebaseLibrary {
@@ -35,48 +68,68 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     sourceSets {
+        main {
+            proto {
+                srcDir 'src/main/proto'
+            }
+        }
         androidTest {
             aidl {
                 srcDir 'src/androidTest/aidl'
             }
         }
     }
-    testOptions.unitTests.includeAndroidResources = true
+    testOptions.unitTests {
+        includeAndroidResources = true
+    }
+}
+
+thirdPartyLicenses {
+    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {
     implementation project(':transport:transport-api')
-    implementation 'com.google.dagger:dagger:2.24'
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'javax.inject:javax.inject:1'
+    implementation project(":encoders:firebase-encoders")
+    implementation project(":encoders:firebase-encoders-proto")
+    annotationProcessor project(":encoders:firebase-encoders-processor")
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    vendor ('com.google.dagger:dagger:2.27') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
 
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
+
+    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation 'androidx.test.ext:junit:1.1.1'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
     androidTestImplementation 'junit:junit:4.13-beta-3'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
 
-    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 }

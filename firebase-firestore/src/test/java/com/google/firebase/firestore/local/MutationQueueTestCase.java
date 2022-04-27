@@ -70,7 +70,10 @@ public abstract class MutationQueueTestCase {
   public void setUp() {
     persistence = getPersistence();
     persistence.getReferenceDelegate().setInMemoryPins(new ReferenceSet());
-    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED);
+    IndexManager indexManager = persistence.getIndexManager(User.UNAUTHENTICATED);
+    indexManager.start();
+    persistence.getRemoteDocumentCache().setIndexManager(indexManager);
+    mutationQueue = persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager);
     mutationQueue.start();
   }
 

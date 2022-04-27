@@ -96,6 +96,7 @@ package com.google.firebase.database {
     method public void setLogLevel(@NonNull com.google.firebase.database.Logger.Level);
     method public void setPersistenceCacheSizeBytes(long);
     method public void setPersistenceEnabled(boolean);
+    method public void useEmulator(@NonNull String, int);
   }
 
   public abstract class GenericTypeIndicator<T> {
@@ -161,12 +162,19 @@ package com.google.firebase.database {
     method @NonNull public com.google.firebase.database.Query endAt(@Nullable String, @Nullable String);
     method @NonNull public com.google.firebase.database.Query endAt(double, @Nullable String);
     method @NonNull public com.google.firebase.database.Query endAt(boolean, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(double);
+    method @NonNull public com.google.firebase.database.Query endBefore(boolean);
+    method @NonNull public com.google.firebase.database.Query endBefore(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query endBefore(boolean, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(double);
     method @NonNull public com.google.firebase.database.Query equalTo(boolean);
     method @NonNull public com.google.firebase.database.Query equalTo(@Nullable String, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(double, @Nullable String);
     method @NonNull public com.google.firebase.database.Query equalTo(boolean, @Nullable String);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.database.DataSnapshot> get();
     method @NonNull public com.google.firebase.database.DatabaseReference getRef();
     method public void keepSynced(boolean);
     method @NonNull public com.google.firebase.database.Query limitToFirst(int);
@@ -177,6 +185,12 @@ package com.google.firebase.database {
     method @NonNull public com.google.firebase.database.Query orderByValue();
     method public void removeEventListener(@NonNull com.google.firebase.database.ValueEventListener);
     method public void removeEventListener(@NonNull com.google.firebase.database.ChildEventListener);
+    method @NonNull public com.google.firebase.database.Query startAfter(@Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(double);
+    method @NonNull public com.google.firebase.database.Query startAfter(boolean);
+    method @NonNull public com.google.firebase.database.Query startAfter(@Nullable String, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(double, @Nullable String);
+    method @NonNull public com.google.firebase.database.Query startAfter(boolean, @Nullable String);
     method @NonNull public com.google.firebase.database.Query startAt(@Nullable String);
     method @NonNull public com.google.firebase.database.Query startAt(double);
     method @NonNull public com.google.firebase.database.Query startAt(boolean);
@@ -187,6 +201,8 @@ package com.google.firebase.database {
 
   public class ServerValue {
     ctor public ServerValue();
+    method @NonNull public static final Object increment(long);
+    method @NonNull public static final Object increment(double);
     field @NonNull public static final java.util.Map<java.lang.String,java.lang.String> TIMESTAMP;
   }
 

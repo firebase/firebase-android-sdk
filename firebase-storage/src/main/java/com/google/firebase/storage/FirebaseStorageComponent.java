@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.inject.Provider;
 import java.util.HashMap;
@@ -29,11 +30,15 @@ class FirebaseStorageComponent {
 
   private final FirebaseApp app;
   @Nullable private final Provider<InternalAuthProvider> authProvider;
+  @Nullable private final Provider<InternalAppCheckTokenProvider> appCheckProvider;
 
   FirebaseStorageComponent(
-      @NonNull FirebaseApp app, @Nullable Provider<InternalAuthProvider> authProvider) {
+      @NonNull FirebaseApp app,
+      @Nullable Provider<InternalAuthProvider> authProvider,
+      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider) {
     this.app = app;
     this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
   }
 
   /** Provides instances of Firebase Storage for given bucket names. */
@@ -41,7 +46,7 @@ class FirebaseStorageComponent {
   synchronized FirebaseStorage get(@Nullable String bucketName) {
     FirebaseStorage storage = instances.get(bucketName);
     if (storage == null) {
-      storage = new FirebaseStorage(bucketName, app, authProvider);
+      storage = new FirebaseStorage(bucketName, app, authProvider, appCheckProvider);
       instances.put(bucketName, storage);
     }
     return storage;

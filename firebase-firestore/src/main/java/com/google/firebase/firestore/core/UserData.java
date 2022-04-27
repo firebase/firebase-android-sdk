@@ -19,15 +19,14 @@ import static java.util.Collections.unmodifiableList;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.FieldTransform;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -335,23 +334,32 @@ public class UserData {
       this.fieldTransforms = fieldTransforms;
     }
 
-    public List<Mutation> toMutationList(DocumentKey key, Precondition precondition) {
-      ArrayList<Mutation> mutations = new ArrayList<>();
+    public ObjectValue getData() {
+      return data;
+    }
+
+    @Nullable
+    public FieldMask getFieldMask() {
+      return fieldMask;
+    }
+
+    public List<FieldTransform> getFieldTransforms() {
+      return fieldTransforms;
+    }
+
+    public Mutation toMutation(DocumentKey key, Precondition precondition) {
       if (fieldMask != null) {
-        mutations.add(new PatchMutation(key, data, fieldMask, precondition));
+        return new PatchMutation(key, data, fieldMask, precondition, fieldTransforms);
       } else {
-        mutations.add(new SetMutation(key, data, precondition));
+        return new SetMutation(key, data, precondition, fieldTransforms);
       }
-      if (!fieldTransforms.isEmpty()) {
-        mutations.add(new TransformMutation(key, fieldTransforms));
-      }
-      return mutations;
     }
   }
 
   /** The result of parsing "update" data (i.e. for an updateData call). */
   public static class ParsedUpdateData {
     private final ObjectValue data;
+    // The fieldMask does not include document transforms.
     private final FieldMask fieldMask;
     private final List<FieldTransform> fieldTransforms;
 
@@ -361,17 +369,20 @@ public class UserData {
       this.fieldTransforms = fieldTransforms;
     }
 
+    public ObjectValue getData() {
+      return data;
+    }
+
+    public FieldMask getFieldMask() {
+      return fieldMask;
+    }
+
     public List<FieldTransform> getFieldTransforms() {
       return fieldTransforms;
     }
 
-    public List<Mutation> toMutationList(DocumentKey key, Precondition precondition) {
-      ArrayList<Mutation> mutations = new ArrayList<>();
-      mutations.add(new PatchMutation(key, data, fieldMask, precondition));
-      if (!fieldTransforms.isEmpty()) {
-        mutations.add(new TransformMutation(key, fieldTransforms));
-      }
-      return mutations;
+    public Mutation toMutation(DocumentKey key, Precondition precondition) {
+      return new PatchMutation(key, data, fieldMask, precondition, fieldTransforms);
     }
   }
 }

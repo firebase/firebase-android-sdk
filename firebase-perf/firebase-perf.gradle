@@ -1,0 +1,128 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+plugins {
+    id 'firebase-library'
+    id 'com.google.protobuf'
+}
+
+firebaseLibrary {
+    publishJavadoc = true
+    // Disabling Test Lab as there are no instrumentation tests for the SDK currently.
+    // When we add instrumentation tests in the future, this needs to be enabled.
+    testLab.enabled = false // Runs SDK Instrumentation Tests on Firebase Test Lab.
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:$protocVersion"
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java { option 'lite' }
+            }
+        }
+    }
+}
+
+android {
+    compileSdkVersion project.targetSdkVersion
+
+    lintOptions {
+        abortOnError true
+    }
+
+    defaultConfig {
+        // Note: To control the values of the auto-generated BuildConfig.java file (or any static
+        // final field) in the Unit Test (with ReflectionHelpers.setStaticField()) we need to avoid
+        // Java compiler inlining the value of the static final field with a code that accesses the
+        // field. This can be done by making the value a result of a method call, even a dummy one.
+        // This is why we are using String.valueOf() or Boolean.valueOf() in "buildConfigField()".
+        //
+        // Refer:
+        //  - http://stackoverflow.com/q/14102000
+        //  - https://stackoverflow.com/q/42130730
+        // TODO(b/166645747): Remove all non-public references from the codebase before open sourcing.
+        buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF\")")
+        buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(false)")
+        buildConfigField("String", "FIREPERF_VERSION_NAME", "String.valueOf(\"" + property("version") + "\")")
+
+        if (project.hasProperty("fireperfBuildForAutopush")) {
+            // This allows the SDK to be built for "Autopush" env when the mentioned flag
+            // (-PfireperfBuildForAutopush) is passed in the gradle build command (of either the
+            // SDK or the Test App).
+            buildConfigField("String", "TRANSPORT_LOG_SRC", "String.valueOf(\"FIREPERF_AUTOPUSH\")")
+            buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(true)")
+        }
+
+        minSdkVersion 16
+        multiDexEnabled true
+        targetSdkVersion project.targetSdkVersion
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+    // Firebase Deps
+    implementation project(':firebase-common')
+    implementation project(':firebase-components')
+    implementation project(':firebase-config')
+    implementation project(':firebase-installations-interop')
+    implementation project(':protolite-well-known-types')
+    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    runtimeOnly project(':firebase-installations')
+    implementation project(':transport:transport-api')
+    runtimeOnly project(':firebase-datatransport')
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
+
+    // Google Deps
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation "androidx.annotation:annotation:1.1.0"
+
+    // 3rd Party Deps
+    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+    compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
+    implementation 'com.google.dagger:dagger:2.27'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
+
+    // Unit Test Deps
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.28.2'
+    testImplementation 'org.mockito:mockito-inline:2.13.0'
+    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
+        exclude group: 'com.google.protobuf', module: 'protobuf-java'
+    }
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
+    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation 'androidx.test:rules:1.2.0'
+}

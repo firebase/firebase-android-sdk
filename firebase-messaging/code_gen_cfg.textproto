@@ -1,0 +1,9 @@
+# code_gen_cfg.textproto
+# proto-file: google3/third_party/firebase/android/encoders/protoc_gen/proto/config.proto
+# proto-message: CodeGenConfig
+
+# all types will be vendored in this package
+vendor_package: "com.google.firebase.messaging"
+
+# marks a type as a "root" message
+include: "reporting.MessagingClientEventExtension"

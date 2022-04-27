@@ -21,6 +21,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -53,7 +54,6 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
@@ -309,8 +309,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
@@ -332,8 +331,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "empty.dat");
@@ -374,8 +372,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task =
@@ -402,8 +399,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task =
@@ -429,8 +425,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<Void> task = TestUploadHelper.fileUploadQueuedCancel(taskOutput, sourceFile);
@@ -466,8 +461,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
@@ -490,8 +484,7 @@ public class UploadTest {
     InputStream imageStream = classLoader.getResourceAsStream(filename);
     Uri sourceFile = Uri.parse("file://" + filename);
 
-    ContentResolver resolver =
-        RuntimeEnvironment.application.getApplicationContext().getContentResolver();
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
@@ -583,7 +576,8 @@ public class UploadTest {
 
     ConnectivityManager connectivityManager =
         (ConnectivityManager)
-            RuntimeEnvironment.application.getSystemService(Context.CONNECTIVITY_SERVICE);
+            ApplicationProvider.getApplicationContext()
+                .getSystemService(Context.CONNECTIVITY_SERVICE);
     final NetworkInfo originalNetwork = connectivityManager.getActiveNetworkInfo();
 
     try {

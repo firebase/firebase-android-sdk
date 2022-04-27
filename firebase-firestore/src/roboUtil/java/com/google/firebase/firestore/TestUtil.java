@@ -27,8 +27,9 @@ import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +55,7 @@ public class TestUtil {
   public static DocumentSnapshot documentSnapshot(
       String path, Map<String, Object> data, boolean isFromCache) {
     if (data == null) {
-      return DocumentSnapshot.fromNoDocument(
-          FIRESTORE, key(path), isFromCache, /*hasPendingWrites=*/ false);
+      return DocumentSnapshot.fromNoDocument(FIRESTORE, key(path), isFromCache);
     } else {
       return DocumentSnapshot.fromDocument(
           FIRESTORE, doc(path, 1L, data), isFromCache, /*hasPendingWrites=*/ false);
@@ -84,42 +84,28 @@ public class TestUtil {
       Map<String, ObjectValue> docsToAdd,
       boolean hasPendingWrites,
       boolean isFromCache) {
-    DocumentSet oldDocuments = docSet(Document.keyComparator());
+    DocumentSet oldDocuments = docSet(Document.KEY_COMPARATOR);
     ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      oldDocuments =
-          oldDocuments.add(
-              doc(
-                  docKey,
-                  1L,
-                  pair.getValue(),
-                  hasPendingWrites
-                      ? Document.DocumentState.SYNCED
-                      : Document.DocumentState.LOCAL_MUTATIONS));
-
+      MutableDocument doc = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
+        doc.setHasCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
+      oldDocuments = oldDocuments.add(doc);
     }
-    DocumentSet newDocuments = docSet(Document.keyComparator());
+    DocumentSet newDocuments = docSet(Document.KEY_COMPARATOR);
     List<DocumentViewChange> documentChanges = new ArrayList<>();
     for (Map.Entry<String, ObjectValue> pair : docsToAdd.entrySet()) {
       String docKey = path + "/" + pair.getKey();
-      Document docToAdd =
-          doc(
-              docKey,
-              1L,
-              pair.getValue(),
-              hasPendingWrites
-                  ? Document.DocumentState.SYNCED
-                  : Document.DocumentState.LOCAL_MUTATIONS);
-      newDocuments = newDocuments.add(docToAdd);
-      documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
-
+      MutableDocument docToAdd = doc(docKey, 1L, pair.getValue());
       if (hasPendingWrites) {
+        docToAdd.setHasCommittedMutations();
         mutatedKeys = mutatedKeys.insert(key(docKey));
       }
+      newDocuments = newDocuments.add(docToAdd);
+      documentChanges.add(DocumentViewChange.create(Type.ADDED, docToAdd));
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(

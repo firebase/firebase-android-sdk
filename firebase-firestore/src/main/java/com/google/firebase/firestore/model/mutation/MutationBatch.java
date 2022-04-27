@@ -18,11 +18,14 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.local.OverlayedDocument;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.SnapshotVersion;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -75,21 +78,10 @@ public final class MutationBatch {
    * Applies all the mutations in this MutationBatch to the specified document to create a new
    * remote document.
    *
-   * @param documentKey The key of the document to apply mutations to.
-   * @param maybeDoc The document to apply mutations to.
+   * @param document The document to apply mutations to.
    * @param batchResult The result of applying the MutationBatch to the backend.
    */
-  @Nullable
-  public MaybeDocument applyToRemoteDocument(
-      DocumentKey documentKey, @Nullable MaybeDocument maybeDoc, MutationBatchResult batchResult) {
-    if (maybeDoc != null) {
-      hardAssert(
-          maybeDoc.getKey().equals(documentKey),
-          "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
-          documentKey,
-          maybeDoc.getKey());
-    }
-
+  public void applyToRemoteDocument(MutableDocument document, MutationBatchResult batchResult) {
     int size = mutations.size();
     List<MutationResult> mutationResults = batchResult.getMutationResults();
     hardAssert(
@@ -100,61 +92,71 @@ public final class MutationBatch {
 
     for (int i = 0; i < size; i++) {
       Mutation mutation = mutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
+      if (mutation.getKey().equals(document.getKey())) {
         MutationResult mutationResult = mutationResults.get(i);
-        maybeDoc = mutation.applyToRemoteDocument(maybeDoc, mutationResult);
+        mutation.applyToRemoteDocument(document, mutationResult);
       }
     }
-    return maybeDoc;
   }
 
-  /** Computes the local view of a document given all the mutations in this batch. */
-  @Nullable
-  public MaybeDocument applyToLocalView(DocumentKey documentKey, @Nullable MaybeDocument maybeDoc) {
-    if (maybeDoc != null) {
-      hardAssert(
-          maybeDoc.getKey().equals(documentKey),
-          "applyToRemoteDocument: key %s doesn't match maybeDoc key %s",
-          documentKey,
-          maybeDoc.getKey());
-    }
-
+  /**
+   * Computes the local view of a document given all the mutations in this batch.
+   *
+   * @param mutatedFields The document to be mutated.
+   * @param mutatedFields Fields that are already mutated before applying the current one.
+   * @return An {@link FieldMask} representing all the fields that are mutated.
+   */
+  public FieldMask applyToLocalView(MutableDocument document, @Nullable FieldMask mutatedFields) {
     // First, apply the base state. This allows us to apply non-idempotent transform against a
     // consistent set of values.
     for (int i = 0; i < baseMutations.size(); i++) {
       Mutation mutation = baseMutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, maybeDoc, localWriteTime);
+      if (mutation.getKey().equals(document.getKey())) {
+        mutatedFields = mutation.applyToLocalView(document, mutatedFields, localWriteTime);
       }
     }
-
-    MaybeDocument baseDoc = maybeDoc;
 
     // Second, apply all user-provided mutations.
     for (int i = 0; i < mutations.size(); i++) {
       Mutation mutation = mutations.get(i);
-      if (mutation.getKey().equals(documentKey)) {
-        maybeDoc = mutation.applyToLocalView(maybeDoc, baseDoc, localWriteTime);
+      if (mutation.getKey().equals(document.getKey())) {
+        mutatedFields = mutation.applyToLocalView(document, mutatedFields, localWriteTime);
       }
     }
-    return maybeDoc;
+
+    return mutatedFields;
   }
 
-  /** Computes the local view for all provided documents given the mutations in this batch. */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyToLocalDocumentSet(
-      ImmutableSortedMap<DocumentKey, MaybeDocument> maybeDocumentMap) {
+  /**
+   * Computes the local view for all provided documents given the mutations in this batch. Returns a
+   * {@code DocumentKey} to {@code Mutation} map which can be used to replace all the mutation
+   * applications.
+   */
+  public Map<DocumentKey, Mutation> applyToLocalDocumentSet(
+      Map<DocumentKey, OverlayedDocument> documentMap,
+      Set<DocumentKey> documentsWithoutRemoteVersion) {
     // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the mutations first
-    // (as done in `applyToLocalView(DocumentKey k, MaybeDoc d)`), we can reduce the complexity to
+    // (as done in `applyToLocalView(MutableDocument d)`), we can reduce the complexity to
     // O(n).
-
-    ImmutableSortedMap<DocumentKey, MaybeDocument> mutatedDocuments = maybeDocumentMap;
+    Map<DocumentKey, Mutation> overlays = new HashMap<>();
     for (DocumentKey key : getKeys()) {
-      MaybeDocument mutatedDocument = applyToLocalView(key, mutatedDocuments.get(key));
-      if (mutatedDocument != null) {
-        mutatedDocuments = mutatedDocuments.insert(mutatedDocument.getKey(), mutatedDocument);
+      // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
+      // remove this cast.
+      MutableDocument document = (MutableDocument) documentMap.get(key).getDocument();
+      FieldMask mutatedFields = applyToLocalView(document, documentMap.get(key).getMutatedFields());
+      // Set mutationFields to null if the document is only from local mutations, this creates
+      // a Set(or Delete) mutation, instead of trying to create a patch mutation as the overlay.
+      mutatedFields = documentsWithoutRemoteVersion.contains(key) ? null : mutatedFields;
+      Mutation overlay = Mutation.calculateOverlayMutation(document, mutatedFields);
+      if (overlay != null) {
+        overlays.put(key, overlay);
+      }
+      if (!document.isValidDocument()) {
+        document.convertToNoDocument(SnapshotVersion.NONE);
       }
     }
-    return mutatedDocuments;
+
+    return overlays;
   }
 
   @Override

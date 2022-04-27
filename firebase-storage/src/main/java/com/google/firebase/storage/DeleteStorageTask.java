@@ -48,13 +48,14 @@ import com.google.firebase.storage.network.NetworkRequest;
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
             storage.getAuthProvider(),
+            storage.getAppCheckProvider(),
             storage.getMaxDownloadRetryTimeMillis());
   }
 
   @Override
   public void run() {
     final NetworkRequest request =
-        new DeleteNetworkRequest(mStorageRef.getStorageUri(), mStorageRef.getApp());
+        new DeleteNetworkRequest(mStorageRef.getStorageReferenceUri(), mStorageRef.getApp());
     mSender.sendWithExponentialBackoff(request);
     request.completeTask(mPendingResult, null);
   }

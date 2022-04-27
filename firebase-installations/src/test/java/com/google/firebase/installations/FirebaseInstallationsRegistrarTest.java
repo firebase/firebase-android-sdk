@@ -14,6 +14,8 @@
 
 package com.google.firebase.installations;
 
+import static com.google.firebase.installations.FirebaseInstallationsTest.TEST_API_KEY;
+import static com.google.firebase.installations.FirebaseInstallationsTest.TEST_PROJECT_ID;
 import static org.junit.Assert.assertNotNull;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -37,12 +39,20 @@ public class FirebaseInstallationsRegistrarTest {
     FirebaseApp defaultApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("1:123456789:android:abcdef").build());
+            new FirebaseOptions.Builder()
+                .setApplicationId("1:123456789:android:abcdef")
+                .setApiKey(TEST_API_KEY)
+                .setProjectId(TEST_PROJECT_ID)
+                .build());
 
     FirebaseApp anotherApp =
         FirebaseApp.initializeApp(
             ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder().setApplicationId("1:987654321:android:abcdef").build(),
+            new FirebaseOptions.Builder()
+                .setApplicationId("1:987654321:android:abcdef")
+                .setApiKey(TEST_API_KEY)
+                .setProjectId(TEST_PROJECT_ID)
+                .build(),
             "firebase_app_1");
 
     FirebaseInstallations defaultFirebaseInstallation = FirebaseInstallations.getInstance();

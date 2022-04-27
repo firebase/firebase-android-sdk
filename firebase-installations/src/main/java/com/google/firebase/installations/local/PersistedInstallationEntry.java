@@ -22,6 +22,8 @@ import com.google.firebase.installations.local.PersistedInstallation.Registratio
 /**
  * This class represents a persisted fid entry in {@link PersistedInstallation}, which contains a
  * few Firebase Installation attributes and the persisted status of this entry.
+ *
+ * @hide
  */
 @AutoValue
 public abstract class PersistedInstallationEntry {

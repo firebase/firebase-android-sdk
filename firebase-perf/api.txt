@@ -1,0 +1,76 @@
+// Signature format: 2.0
+package com.google.firebase.perf {
+
+  public class FirebasePerformance {
+    method @NonNull public static com.google.firebase.perf.FirebasePerformance getInstance();
+    method public boolean isPerformanceCollectionEnabled();
+    method @NonNull public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(@NonNull String, @NonNull @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
+    method @NonNull public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(@NonNull java.net.URL, @NonNull @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
+    method @NonNull public com.google.firebase.perf.metrics.Trace newTrace(@NonNull String);
+    method public void setPerformanceCollectionEnabled(boolean);
+    method @NonNull public static com.google.firebase.perf.metrics.Trace startTrace(@NonNull String);
+    field public static final int MAX_ATTRIBUTE_KEY_LENGTH = 40; // 0x28
+    field public static final int MAX_ATTRIBUTE_VALUE_LENGTH = 100; // 0x64
+    field public static final int MAX_TRACE_CUSTOM_ATTRIBUTES = 5; // 0x5
+    field public static final int MAX_TRACE_NAME_LENGTH = 100; // 0x64
+  }
+
+  @StringDef({com.google.firebase.perf.FirebasePerformance.HttpMethod.GET, com.google.firebase.perf.FirebasePerformance.HttpMethod.PUT, com.google.firebase.perf.FirebasePerformance.HttpMethod.POST, com.google.firebase.perf.FirebasePerformance.HttpMethod.DELETE, com.google.firebase.perf.FirebasePerformance.HttpMethod.HEAD, com.google.firebase.perf.FirebasePerformance.HttpMethod.PATCH, com.google.firebase.perf.FirebasePerformance.HttpMethod.OPTIONS, com.google.firebase.perf.FirebasePerformance.HttpMethod.TRACE, com.google.firebase.perf.FirebasePerformance.HttpMethod.CONNECT}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface FirebasePerformance.HttpMethod {
+    field public static final String CONNECT = "CONNECT";
+    field public static final String DELETE = "DELETE";
+    field public static final String GET = "GET";
+    field public static final String HEAD = "HEAD";
+    field public static final String OPTIONS = "OPTIONS";
+    field public static final String PATCH = "PATCH";
+    field public static final String POST = "POST";
+    field public static final String PUT = "PUT";
+    field public static final String TRACE = "TRACE";
+  }
+
+}
+
+package com.google.firebase.perf.metrics {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface AddTrace {
+    method public abstract boolean enabled() default true;
+    method public abstract String name();
+  }
+
+  public class HttpMetric {
+    method @Nullable public String getAttribute(@NonNull String);
+    method @NonNull public java.util.Map<java.lang.String,java.lang.String> getAttributes();
+    method public void putAttribute(@NonNull String, @NonNull String);
+    method public void removeAttribute(@NonNull String);
+    method public void setHttpResponseCode(int);
+    method public void setRequestPayloadSize(long);
+    method public void setResponseContentType(@Nullable String);
+    method public void setResponsePayloadSize(long);
+    method public void start();
+    method public void stop();
+    field public static final int MAX_ATTRIBUTE_KEY_LENGTH = 40; // 0x28
+    field public static final int MAX_ATTRIBUTE_VALUE_LENGTH = 100; // 0x64
+    field public static final int MAX_TRACE_CUSTOM_ATTRIBUTES = 5; // 0x5
+    field public static final int MAX_TRACE_NAME_LENGTH = 100; // 0x64
+  }
+
+  public class Trace implements android.os.Parcelable {
+    method @Keep public int describeContents();
+    method @Keep @Nullable public String getAttribute(@NonNull String);
+    method @Keep @NonNull public java.util.Map<java.lang.String,java.lang.String> getAttributes();
+    method @Keep public long getLongMetric(@NonNull String);
+    method @Keep public void incrementMetric(@NonNull String, long);
+    method @Keep public void putAttribute(@NonNull String, @NonNull String);
+    method @Keep public void putMetric(@NonNull String, long);
+    method @Keep public void removeAttribute(@NonNull String);
+    method @Keep public void start();
+    method @Keep public void stop();
+    method @Keep public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @Keep public static final android.os.Parcelable.Creator<com.google.firebase.perf.metrics.Trace> CREATOR;
+    field public static final int MAX_ATTRIBUTE_KEY_LENGTH = 40; // 0x28
+    field public static final int MAX_ATTRIBUTE_VALUE_LENGTH = 100; // 0x64
+    field public static final int MAX_TRACE_CUSTOM_ATTRIBUTES = 5; // 0x5
+    field public static final int MAX_TRACE_NAME_LENGTH = 100; // 0x64
+  }
+
+}
+

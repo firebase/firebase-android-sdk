@@ -28,6 +28,12 @@ import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.GlobalMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.android.datatransport.runtime.firebase.transport.LogSourceMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.StorageMetrics;
+import com.google.android.datatransport.runtime.firebase.transport.TimeWindow;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationException;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
@@ -35,6 +41,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -45,15 +52,18 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 /** {@link EventStore} implementation backed by a SQLite database. */
 @Singleton
 @WorkerThread
-public class SQLiteEventStore implements EventStore, SynchronizationGuard {
+public class SQLiteEventStore
+    implements EventStore, SynchronizationGuard, ClientHealthMetricsStore {
+
   private static final String LOG_TAG = "SQLiteEventStore";
 
-  static final int MAX_RETRIES = 10;
+  static final int MAX_RETRIES = 16;
 
   private static final int LOCK_RETRY_BACK_OFF_MILLIS = 50;
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
@@ -62,21 +72,25 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
+  private final Lazy<String> packageName;
 
   @Inject
   SQLiteEventStore(
       @WallTime Clock wallClock,
       @Monotonic Clock clock,
       EventStoreConfig config,
-      SchemaManager schemaManager) {
+      SchemaManager schemaManager,
+      @Named("PACKAGE_NAME") Lazy<String> packageName) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
     this.monotonicClock = clock;
     this.config = config;
+    this.packageName = packageName;
   }
 
-  private SQLiteDatabase getDb() {
+  @VisibleForTesting
+  SQLiteDatabase getDb() {
     return retryIfDbLocked(
         schemaManager::getWritableDatabase,
         ex -> {
@@ -100,20 +114,43 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               // TODO(vkryachko): come up with a more sophisticated algorithm for limiting disk
               // space.
               if (isStorageAtLimit()) {
+                recordLogEventDropped(
+                    1, LogEventDropped.Reason.CACHE_FULL, event.getTransportName());
                 return -1L;
               }
 
               long contextId = ensureTransportContext(db, transportContext);
+              int maxBlobSizePerRow = config.getMaxBlobByteSizePerRow();
+
+              byte[] payloadBytes = event.getEncodedPayload().getBytes();
+              boolean inline = payloadBytes.length <= maxBlobSizePerRow;
               ContentValues values = new ContentValues();
               values.put("context_id", contextId);
               values.put("transport_name", event.getTransportName());
               values.put("timestamp_ms", event.getEventMillis());
               values.put("uptime_ms", event.getUptimeMillis());
               values.put("payload_encoding", event.getEncodedPayload().getEncoding().getName());
-              values.put("payload", event.getEncodedPayload().getBytes());
               values.put("code", event.getCode());
               values.put("num_attempts", 0);
+              values.put("inline", inline);
+              values.put("payload", inline ? payloadBytes : new byte[0]);
               long newEventId = db.insert("events", null, values);
+              if (!inline) {
+                int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
+
+                for (int chunk = 1; chunk <= numChunks; chunk++) {
+                  byte[] chunkBytes =
+                      Arrays.copyOfRange(
+                          payloadBytes,
+                          (chunk - 1) * maxBlobSizePerRow,
+                          Math.min((chunk) * maxBlobSizePerRow, payloadBytes.length));
+                  ContentValues payloadValues = new ContentValues();
+                  payloadValues.put("event_id", newEventId);
+                  payloadValues.put("sequence_num", chunk);
+                  payloadValues.put("bytes", chunkBytes);
+                  db.insert("event_payloads", null, payloadValues);
+                }
+              }
 
               // TODO: insert all with one sql query.
               for (Map.Entry<String, String> entry : event.getMetadata().entrySet()) {
@@ -161,6 +198,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     if (transportContext.getExtras() != null) {
       selection.append(" and extras = ?");
       selectionArgs.add(Base64.encodeToString(transportContext.getExtras(), Base64.DEFAULT));
+    } else {
+      selection.append(" and extras is null");
     }
 
     return tryWithCursor(
@@ -185,12 +224,28 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     if (!events.iterator().hasNext()) {
       return;
     }
-    String query =
+    String incrementAttemptNumQuery =
         "UPDATE events SET num_attempts = num_attempts + 1 WHERE _id in " + toIdList(events);
+    String countMaxAttemptsEventsQuery =
+        "SELECT COUNT(*), transport_name FROM events "
+            + "WHERE num_attempts >= "
+            + MAX_RETRIES
+            + " GROUP BY transport_name";
 
     inTransaction(
         db -> {
-          db.compileStatement(query).execute();
+          db.compileStatement(incrementAttemptNumQuery).execute();
+          tryWithCursor(
+              db.rawQuery(countMaxAttemptsEventsQuery, null),
+              cursor -> {
+                while (cursor.moveToNext()) {
+                  int count = cursor.getInt(0);
+                  String transportName = cursor.getString(1);
+                  recordLogEventDropped(
+                      count, LogEventDropped.Reason.MAX_RETRIES_REACHED, transportName);
+                }
+                return null;
+              });
           db.compileStatement("DELETE FROM events WHERE num_attempts >= " + MAX_RETRIES).execute();
           return null;
         });
@@ -315,7 +370,26 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
   public int cleanUp() {
     long oneWeekAgo = wallClock.getTime() - config.getEventCleanUpAge();
     return inTransaction(
-        db -> db.delete("events", "timestamp_ms < ?", new String[] {String.valueOf(oneWeekAgo)}));
+        db -> {
+          String query =
+              "SELECT COUNT(*), transport_name FROM events "
+                  + "WHERE timestamp_ms < ? "
+                  + "GROUP BY transport_name";
+          String[] selectionArgs = new String[] {String.valueOf(oneWeekAgo)};
+          tryWithCursor(
+              db.rawQuery(query, selectionArgs),
+              cursor -> {
+                while (cursor.moveToNext()) {
+                  int count = cursor.getInt(0);
+                  String transportName = cursor.getString(1);
+                  recordLogEventDropped(
+                      count, LogEventDropped.Reason.MESSAGE_TOO_OLD, transportName);
+                }
+                return null;
+              });
+
+          return db.delete("events", "timestamp_ms < ?", selectionArgs);
+        });
   }
 
   @Override
@@ -358,7 +432,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
               "uptime_ms",
               "payload_encoding",
               "payload",
-              "code"
+              "code",
+              "inline",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -369,13 +444,19 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
         cursor -> {
           while (cursor.moveToNext()) {
             long id = cursor.getLong(0);
+            boolean inline = cursor.getInt(7) != 0;
             EventInternal.Builder event =
                 EventInternal.builder()
                     .setTransportName(cursor.getString(1))
                     .setEventMillis(cursor.getLong(2))
-                    .setUptimeMillis(cursor.getLong(3))
-                    .setEncodedPayload(
-                        new EncodedPayload(toEncoding(cursor.getString(4)), cursor.getBlob(5)));
+                    .setUptimeMillis(cursor.getLong(3));
+            if (inline) {
+              event.setEncodedPayload(
+                  new EncodedPayload(toEncoding(cursor.getString(4)), cursor.getBlob(5)));
+            } else {
+              event.setEncodedPayload(
+                  new EncodedPayload(toEncoding(cursor.getString(4)), readPayload(id)));
+            }
             if (!cursor.isNull(6)) {
               event.setCode(cursor.getInt(6));
             }
@@ -384,6 +465,37 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
           return null;
         });
     return events;
+  }
+
+  private byte[] readPayload(long eventId) {
+    return tryWithCursor(
+        getDb()
+            .query(
+                "event_payloads",
+                new String[] {"bytes"},
+                "event_id = ?",
+                new String[] {String.valueOf(eventId)},
+                null,
+                null,
+                "sequence_num"),
+        cursor -> {
+          List<byte[]> chunks = new ArrayList<>();
+          int totalLength = 0;
+          while (cursor.moveToNext()) {
+            byte[] chunk = cursor.getBlob(0);
+            chunks.add(chunk);
+            totalLength += chunk.length;
+          }
+
+          byte[] payloadBytes = new byte[totalLength];
+          int offset = 0;
+          for (int i = 0; i < chunks.size(); i++) {
+            byte[] chunk = chunks.get(i);
+            System.arraycopy(chunk, 0, payloadBytes, offset, chunk.length);
+            offset += chunk.length;
+          }
+          return payloadBytes;
+        });
   }
 
   private static Encoding toEncoding(@Nullable String value) {
@@ -463,6 +575,157 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     } while (true);
   }
 
+  /**
+   * Record log event dropped.
+   *
+   * @param eventsDroppedCount number of events dropped
+   * @param reason reason why events are dropped
+   * @param logSource log source of the dropped events
+   */
+  @Override
+  public void recordLogEventDropped(
+      long eventsDroppedCount, LogEventDropped.Reason reason, String logSource) {
+    inTransaction(
+        db -> {
+          String selectSql =
+              "SELECT 1 FROM log_event_dropped" + " WHERE log_source = ? AND reason = ?";
+          String[] selectionArgs = new String[] {logSource, Integer.toString(reason.getNumber())};
+          boolean isRowExist =
+              tryWithCursor(db.rawQuery(selectSql, selectionArgs), cursor -> cursor.getCount() > 0);
+          if (!isRowExist) {
+            ContentValues metrics = new ContentValues();
+            metrics.put("log_source", logSource);
+            metrics.put("reason", reason.getNumber());
+            metrics.put("events_dropped_count", eventsDroppedCount);
+            db.insert("log_event_dropped", null, metrics);
+          } else {
+            String updateSql =
+                "UPDATE log_event_dropped SET events_dropped_count = events_dropped_count + "
+                    + eventsDroppedCount
+                    + " WHERE log_source = ? AND reason = ?";
+            db.execSQL(updateSql, new String[] {logSource, Integer.toString(reason.getNumber())});
+          }
+          return null;
+        });
+  }
+
+  private LogEventDropped.Reason convertToReason(int number) {
+    if (number == LogEventDropped.Reason.REASON_UNKNOWN.getNumber()) {
+      return LogEventDropped.Reason.REASON_UNKNOWN;
+    } else if (number == LogEventDropped.Reason.MESSAGE_TOO_OLD.getNumber()) {
+      return LogEventDropped.Reason.MESSAGE_TOO_OLD;
+    } else if (number == LogEventDropped.Reason.CACHE_FULL.getNumber()) {
+      return LogEventDropped.Reason.CACHE_FULL;
+    } else if (number == LogEventDropped.Reason.PAYLOAD_TOO_BIG.getNumber()) {
+      return LogEventDropped.Reason.PAYLOAD_TOO_BIG;
+    } else if (number == LogEventDropped.Reason.MAX_RETRIES_REACHED.getNumber()) {
+      return LogEventDropped.Reason.MAX_RETRIES_REACHED;
+    } else if (number == LogEventDropped.Reason.INVALID_PAYLOD.getNumber()) {
+      return LogEventDropped.Reason.INVALID_PAYLOD;
+    } else if (number == LogEventDropped.Reason.SERVER_ERROR.getNumber()) {
+      return LogEventDropped.Reason.SERVER_ERROR;
+    } else {
+      Logging.d(
+          LOG_TAG,
+          "%n is not valid. No matched LogEventDropped-Reason found. "
+              + "Treated it as REASON_UNKNOWN",
+          number);
+      return LogEventDropped.Reason.REASON_UNKNOWN;
+    }
+  }
+
+  /**
+   * Load full-populated ClientMetrics.
+   *
+   * @return the returned ClientMetrics is fully populated with persisted and non-persisted fields.
+   */
+  @Override
+  public ClientMetrics loadClientMetrics() {
+    ClientMetrics.Builder clientMetricsBuilder = ClientMetrics.newBuilder();
+    Map<String, List<LogEventDropped>> metricsMap = new HashMap<>();
+    String query = "SELECT log_source, reason, events_dropped_count FROM log_event_dropped";
+
+    return inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery(query, new String[] {}),
+                cursor -> {
+                  while (cursor.moveToNext()) {
+                    String logSource = cursor.getString(0);
+                    LogEventDropped.Reason reason = convertToReason(cursor.getInt(1));
+                    long eventsDroppedCount = cursor.getLong(2);
+                    if (!metricsMap.containsKey(logSource)) {
+                      metricsMap.put(logSource, new ArrayList<>());
+                    }
+                    metricsMap
+                        .get(logSource)
+                        .add(
+                            LogEventDropped.newBuilder()
+                                .setReason(reason)
+                                .setEventsDroppedCount(eventsDroppedCount)
+                                .build());
+                  }
+                  populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
+                  clientMetricsBuilder.setWindow(getTimeWindow());
+                  clientMetricsBuilder.setGlobalMetrics(getGlobalMetrics());
+                  clientMetricsBuilder.setAppNamespace(packageName.get());
+                  return clientMetricsBuilder.build();
+                }));
+  }
+
+  private void populateLogSourcesMetrics(
+      ClientMetrics.Builder clientMetricsBuilder, Map<String, List<LogEventDropped>> metricsMap) {
+    for (Map.Entry<String, List<LogEventDropped>> entry : metricsMap.entrySet()) {
+      clientMetricsBuilder.addLogSourceMetrics(
+          LogSourceMetrics.newBuilder()
+              .setLogSource(entry.getKey())
+              .setLogEventDroppedList(entry.getValue())
+              .build());
+    }
+  }
+
+  private TimeWindow getTimeWindow() {
+    long currentTime = wallClock.getTime();
+
+    return inTransaction(
+        db ->
+            tryWithCursor(
+                db.rawQuery(
+                    "SELECT last_metrics_upload_ms FROM global_log_event_state LIMIT 1",
+                    new String[] {}),
+                cursor -> {
+                  cursor.moveToNext();
+                  long start_ms = cursor.getLong(0);
+                  return TimeWindow.newBuilder().setStartMs(start_ms).setEndMs(currentTime).build();
+                }));
+  }
+
+  private GlobalMetrics getGlobalMetrics() {
+    return GlobalMetrics.newBuilder()
+        .setStorageMetrics(
+            StorageMetrics.newBuilder()
+                .setCurrentCacheSizeBytes(getByteSize())
+                .setMaxCacheSizeBytes(EventStoreConfig.DEFAULT.getMaxStorageSizeInBytes())
+                .build())
+        .build();
+  }
+
+  /**
+   * This Method delete every rows in log_event_dropped table, and update last_metrics_upload_ms in
+   * global_log_event_state table to current time.
+   */
+  @Override
+  public void resetClientMetrics() {
+    inTransaction(
+        db -> {
+          db.compileStatement("DELETE FROM log_event_dropped").execute();
+          db.compileStatement(
+                  "UPDATE global_log_event_state SET last_metrics_upload_ms=" + wallClock.getTime())
+              .execute();
+          return null;
+        });
+  }
+
   interface Producer<T> {
     T produce();
   }
@@ -496,7 +759,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     }
   }
 
-  private <T> T inTransaction(Function<SQLiteDatabase, T> function) {
+  @VisibleForTesting
+  <T> T inTransaction(Function<SQLiteDatabase, T> function) {
     SQLiteDatabase db = getDb();
     db.beginTransaction();
     try {
@@ -542,7 +806,8 @@ public class SQLiteEventStore implements EventStore, SynchronizationGuard {
     return getDb().compileStatement("PRAGMA page_count").simpleQueryForLong();
   }
 
-  private static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
+  @VisibleForTesting
+  static <T> T tryWithCursor(Cursor c, Function<Cursor, T> function) {
     try {
       return function.apply(c);
     } finally {

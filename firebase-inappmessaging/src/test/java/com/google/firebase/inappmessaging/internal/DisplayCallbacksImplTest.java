@@ -25,8 +25,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_S
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.DATA;
 import static com.google.firebase.inappmessaging.testutil.TestData.IMAGE_DATA;
-import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_ID;
-import static com.google.firebase.inappmessaging.testutil.TestData.INSTANCE_TOKEN;
+import static com.google.firebase.inappmessaging.testutil.TestData.INSTALLATION_ID;
 import static com.google.firebase.inappmessaging.testutil.TestData.IS_NOT_TEST_MESSAGE;
 import static com.google.firebase.inappmessaging.testutil.TestData.MESSAGE_BACKGROUND_HEX_STRING;
 import static com.google.firebase.inappmessaging.testutil.TestData.TITLE_MODEL;
@@ -41,17 +40,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.app.Application;
+import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason;
-import com.google.firebase.inappmessaging.FirebaseInAppMessagingTest.ShadowFirebaseInstanceId;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.MessagesProto.Content;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
@@ -61,6 +61,8 @@ import com.google.firebase.inappmessaging.model.CardMessage;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import com.google.firebase.inappmessaging.model.RateLimit;
 import com.google.firebase.inappmessaging.model.TriggeredInAppMessage;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.ThickContent;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto.VanillaCampaignPayload;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpression;
@@ -76,15 +78,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.Implementation;
-import org.robolectric.annotation.Implements;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(
-    manifest = Config.NONE,
-    shadows = {ShadowFirebaseInstanceId.class})
+@Config(manifest = Config.NONE)
 public class DisplayCallbacksImplTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
@@ -141,7 +138,33 @@ public class DisplayCallbacksImplTest {
           .setTimeToLiveMillis(TimeUnit.DAYS.toMillis(1))
           .build();
 
-  @Mock private static FirebaseInstanceId firebaseInstanceId;
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      new InstallationTokenResult() {
+        @NonNull
+        @Override
+        public String getToken() {
+          return INSTALLATION_ID;
+        }
+
+        @Override
+        public long getTokenExpirationTimestamp() {
+          return 0;
+        }
+
+        @Override
+        public long getTokenCreationTimestamp() {
+          return 0;
+        }
+
+        @Override
+        public Builder toBuilder() {
+          return null;
+        }
+      };
+  private static final InstallationIdResult FID_RESULT =
+      InstallationIdResult.create(INSTALLATION_ID, INSTALLATION_TOKEN_RESULT);
+
+  @Mock private static FirebaseInstallationsApi firebaseInstallations;
   @Mock private static MetricsLoggerClient metricsLoggerClient;
   @Mock private Schedulers schedulers;
   @Mock private ImpressionStorageClient impressionStorageClient;
@@ -175,7 +198,7 @@ public class DisplayCallbacksImplTest {
     fakeImpressionCompletable = Completable.fromCallable(() -> wasRecorded = true);
     fakeRateLimitCompletable = Completable.fromCallable(() -> wasIncremented = true);
 
-    application = RuntimeEnvironment.application;
+    application = ApplicationProvider.getApplicationContext();
 
     options =
         new FirebaseOptions.Builder()
@@ -201,11 +224,9 @@ public class DisplayCallbacksImplTest {
     when(campaignCacheClient.get()).thenReturn(Maybe.just(campaignsResponse));
     when(rateLimiterClient.increment(appForegroundRateLimit)).thenReturn(fakeRateLimitCompletable);
 
-    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
-    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
-
-    when(firebaseInstanceId.getId()).thenReturn(INSTANCE_ID);
-    when(firebaseInstanceId.getToken()).thenReturn(INSTANCE_TOKEN);
+    when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(firebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
     FakeClock clock = new FakeClock(NOW);
 
@@ -507,13 +528,5 @@ public class DisplayCallbacksImplTest {
 
     verify(metricsLoggerClient, times(1))
         .logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.SWIPE);
-  }
-
-  @Implements(FirebaseInstanceId.class)
-  public static class ShadowFirebaseInstanceId {
-    @Implementation
-    public static FirebaseInstanceId getInstance() {
-      return firebaseInstanceId;
-    }
   }
 }

@@ -58,6 +58,12 @@ exports.instanceIdTest = functions.https.onRequest((request, response) => {
   response.send({data: {}});
 });
 
+exports.appCheckTest = functions.https.onRequest((request, response) => {
+  assert.equal(request.get('X-Firebase-AppCheck'), 'appCheck');
+  assert.deepEqual(request.body, {data: {}});
+  response.send({data: {}});
+});
+
 exports.nullTest = functions.https.onRequest((request, response) => {
   assert.deepEqual(request.body, {data: null});
   response.send({data: null});

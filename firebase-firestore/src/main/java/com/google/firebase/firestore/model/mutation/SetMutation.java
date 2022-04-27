@@ -14,15 +14,16 @@
 
 package com.google.firebase.firestore.model.mutation;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A mutation that creates or replaces the document at the given key with the object value contents.
@@ -31,7 +32,15 @@ public final class SetMutation extends Mutation {
   private final ObjectValue value;
 
   public SetMutation(DocumentKey key, ObjectValue value, Precondition precondition) {
-    super(key, precondition);
+    this(key, value, precondition, new ArrayList<>());
+  }
+
+  public SetMutation(
+      DocumentKey key,
+      ObjectValue value,
+      Precondition precondition,
+      List<FieldTransform> fieldTransforms) {
+    super(key, precondition, fieldTransforms);
     this.value = value;
   }
 
@@ -45,7 +54,9 @@ public final class SetMutation extends Mutation {
     }
 
     SetMutation that = (SetMutation) o;
-    return hasSameKeyAndPrecondition(that) && value.equals(that.value);
+    return hasSameKeyAndPrecondition(that)
+        && value.equals(that.value)
+        && getFieldTransforms().equals(that.getFieldTransforms());
   }
 
   @Override
@@ -61,42 +72,44 @@ public final class SetMutation extends Mutation {
   }
 
   @Override
-  public MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
-    verifyKeyMatches(maybeDoc);
-
-    hardAssert(
-        mutationResult.getTransformResults() == null, "Transform results received by SetMutation.");
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
+    verifyKeyMatches(document);
 
     // Unlike applyToLocalView, if we're applying a mutation to a remote document the server has
     // accepted the mutation so the precondition must have held.
-
-    SnapshotVersion version = mutationResult.getVersion();
-    return new Document(getKey(), version, Document.DocumentState.COMMITTED_MUTATIONS, value);
+    ObjectValue newData = value.clone();
+    Map<FieldPath, Value> transformResults =
+        serverTransformResults(document, mutationResult.getTransformResults());
+    newData.setAll(transformResults);
+    document
+        .convertToFoundDocument(mutationResult.getVersion(), newData)
+        .setHasCommittedMutations();
   }
 
-  @Nullable
   @Override
-  public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
-    verifyKeyMatches(maybeDoc);
+  public FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
+    verifyKeyMatches(document);
 
-    if (!this.getPrecondition().isValidFor(maybeDoc)) {
-      return maybeDoc;
+    if (!this.getPrecondition().isValidFor(document)) {
+      return previousMask;
     }
 
-    SnapshotVersion version = getPostMutationVersion(maybeDoc);
-    return new Document(getKey(), version, Document.DocumentState.LOCAL_MUTATIONS, value);
+    Map<FieldPath, Value> transformResults = localTransformResults(localWriteTime, document);
+    ObjectValue localValue = value.clone();
+    localValue.setAll(transformResults);
+    document.convertToFoundDocument(document.getVersion(), localValue).setHasLocalMutations();
+    // SetMutation overwrites all fields.
+    return null;
+  }
+
+  @Override
+  public @Nullable FieldMask getFieldMask() {
+    return null;
   }
 
   /** Returns the object value to use when setting the document. */
   public ObjectValue getValue() {
     return value;
-  }
-
-  @Nullable
-  @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    return null;
   }
 }

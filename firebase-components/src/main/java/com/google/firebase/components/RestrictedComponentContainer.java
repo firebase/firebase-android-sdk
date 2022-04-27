@@ -16,6 +16,7 @@ package com.google.firebase.components;
 
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
+import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,6 +29,7 @@ import java.util.Set;
 final class RestrictedComponentContainer extends AbstractComponentContainer {
   private final Set<Class<?>> allowedDirectInterfaces;
   private final Set<Class<?>> allowedProviderInterfaces;
+  private final Set<Class<?>> allowedDeferredInterfaces;
   private final Set<Class<?>> allowedSetDirectInterfaces;
   private final Set<Class<?>> allowedSetProviderInterfaces;
   private final Set<Class<?>> allowedPublishedEvents;
@@ -36,6 +38,7 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   RestrictedComponentContainer(Component<?> component, ComponentContainer container) {
     Set<Class<?>> directInterfaces = new HashSet<>();
     Set<Class<?>> providerInterfaces = new HashSet<>();
+    Set<Class<?>> deferredInterfaces = new HashSet<>();
     Set<Class<?>> setDirectInterfaces = new HashSet<>();
     Set<Class<?>> setProviderInterfaces = new HashSet<>();
     for (Dependency dependency : component.getDependencies()) {
@@ -45,6 +48,8 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
         } else {
           directInterfaces.add(dependency.getInterface());
         }
+      } else if (dependency.isDeferred()) {
+        deferredInterfaces.add(dependency.getInterface());
       } else {
         if (dependency.isSet()) {
           setProviderInterfaces.add(dependency.getInterface());
@@ -58,6 +63,7 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     }
     allowedDirectInterfaces = Collections.unmodifiableSet(directInterfaces);
     allowedProviderInterfaces = Collections.unmodifiableSet(providerInterfaces);
+    allowedDeferredInterfaces = Collections.unmodifiableSet(deferredInterfaces);
     allowedSetDirectInterfaces = Collections.unmodifiableSet(setDirectInterfaces);
     allowedSetProviderInterfaces = Collections.unmodifiableSet(setProviderInterfaces);
     allowedPublishedEvents = component.getPublishedEvents();
@@ -67,12 +73,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns an instance of the requested class if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> T get(Class<T> anInterface) {
     if (!allowedDirectInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format("Attempting to request an undeclared dependency %s.", anInterface));
     }
 
@@ -93,27 +99,37 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns an instance of the provider for the requested class if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Provider<T> getProvider(Class<T> anInterface) {
     if (!allowedProviderInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format(
               "Attempting to request an undeclared dependency Provider<%s>.", anInterface));
     }
     return delegateContainer.getProvider(anInterface);
   }
 
+  @Override
+  public <T> Deferred<T> getDeferred(Class<T> anInterface) {
+    if (!allowedDeferredInterfaces.contains(anInterface)) {
+      throw new DependencyException(
+          String.format(
+              "Attempting to request an undeclared dependency Deferred<%s>.", anInterface));
+    }
+    return delegateContainer.getDeferred(anInterface);
+  }
+
   /**
    * Returns an instance of the provider for the set of requested classes if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Provider<Set<T>> setOfProvider(Class<T> anInterface) {
     if (!allowedSetProviderInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format(
               "Attempting to request an undeclared dependency Provider<Set<%s>>.", anInterface));
     }
@@ -123,12 +139,12 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
   /**
    * Returns a set of requested classes if it is allowed.
    *
-   * @throws IllegalArgumentException otherwise.
+   * @throws DependencyException otherwise.
    */
   @Override
   public <T> Set<T> setOf(Class<T> anInterface) {
     if (!allowedSetDirectInterfaces.contains(anInterface)) {
-      throw new IllegalArgumentException(
+      throw new DependencyException(
           String.format("Attempting to request an undeclared dependency Set<%s>.", anInterface));
     }
     return delegateContainer.setOf(anInterface);
@@ -150,7 +166,7 @@ final class RestrictedComponentContainer extends AbstractComponentContainer {
     @Override
     public void publish(Event<?> event) {
       if (!allowedPublishedEvents.contains(event.getType())) {
-        throw new IllegalArgumentException(
+        throw new DependencyException(
             String.format("Attempting to publish an undeclared event %s.", event));
       }
       delegate.publish(event);

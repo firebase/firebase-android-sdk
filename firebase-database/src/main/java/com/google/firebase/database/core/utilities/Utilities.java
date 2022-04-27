@@ -16,8 +16,12 @@ package com.google.firebase.database.core.utilities;
 
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.database.BuildConfig;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.DatabaseReference;
@@ -26,12 +30,13 @@ import com.google.firebase.database.core.RepoInfo;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 import java.util.Map;
 
 public class Utilities {
   private static final char[] HEX_CHARACTERS = "0123456789abcdef".toCharArray();
 
-  public static ParsedUrl parseUrl(String url) throws DatabaseException {
+  public static ParsedUrl parseUrl(@NonNull String url) throws DatabaseException {
     try {
       Uri uri = Uri.parse(url);
 
@@ -45,9 +50,14 @@ public class Utilities {
         throw new IllegalArgumentException("Database URL does not specify a valid host");
       }
 
-      RepoInfo repoInfo = new RepoInfo();
-      repoInfo.host = host.toLowerCase();
+      String namespace = uri.getQueryParameter("ns");
+      if (namespace == null) {
+        String[] parts = host.split("\\.", -1);
+        namespace = parts[0].toLowerCase(Locale.US);
+      }
 
+      RepoInfo repoInfo = new RepoInfo();
+      repoInfo.host = host.toLowerCase(Locale.US);
       int port = uri.getPort();
       if (port != -1) {
         repoInfo.secure = scheme.equals("https") || scheme.equals("wss");
@@ -56,15 +66,8 @@ public class Utilities {
         repoInfo.secure = true;
       }
 
-      String namespaceParam = uri.getQueryParameter("ns");
-      if (namespaceParam != null) {
-        repoInfo.namespace = namespaceParam;
-      } else {
-        String[] parts = host.split("\\.", -1);
-        repoInfo.namespace = parts[0].toLowerCase();
-      }
-
       repoInfo.internalHost = repoInfo.host;
+      repoInfo.namespace = namespace;
 
       String originalPathString = extractPathString(url);
       // URLEncoding a space turns it into a '+', which is different
@@ -230,7 +233,11 @@ public class Utilities {
 
   public static void hardAssert(boolean condition, String message) {
     if (!condition) {
-      throw new AssertionError("hardAssert failed: " + message);
+      if (BuildConfig.DEBUG) {
+        throw new AssertionError("hardAssert failed: " + message);
+      } else {
+        Log.w("FirebaseDatabase", "Assertion failed: " + message);
+      }
     }
   }
 
@@ -254,5 +261,16 @@ public class Utilities {
       // If a listener is supplied we do not want to create a Task
       return new Pair<>(null, optListener);
     }
+  }
+
+  /** A nullable-aware equals method. */
+  public static boolean equals(@Nullable Object left, @Nullable Object right) {
+    if (left == right) {
+      return true;
+    }
+    if (left == null || right == null) {
+      return false;
+    }
+    return left.equals(right);
   }
 }

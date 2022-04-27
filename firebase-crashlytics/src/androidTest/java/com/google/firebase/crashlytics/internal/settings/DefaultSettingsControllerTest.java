@@ -31,9 +31,6 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsData;
-import com.google.firebase.crashlytics.internal.settings.model.SettingsRequest;
-import com.google.firebase.crashlytics.internal.settings.network.SettingsSpiCall;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
@@ -70,7 +67,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
       CachedSettingsIo cachedSettingsIo,
       SettingsSpiCall settingsSpiCall,
       DataCollectionArbiter dataCollectionArbiter,
-      final boolean buildInstanceIdentifierChanged) {
+      boolean buildInstanceIdentifierChanged) {
     return new SettingsController(
         getContext(),
         settingsRequest,
@@ -102,18 +99,18 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testCachedSettingsLoad() throws Exception {
-    final JSONObject cachedJson = new JSONObject();
+    JSONObject cachedJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(cachedJson);
 
     when(mockCurrentTimeProvider.getCurrentTimeMillis())
         .thenReturn(Long.valueOf(UNEXPIRED_CURRENT_TIME_MILLIS));
 
-    final SettingsData cachedSettings = new TestSettingsData();
+    Settings cachedSettings = new TestSettings();
     when(mockSettingsJsonParser.parseSettingsJson(cachedJson)).thenReturn(cachedSettings);
 
-    final SettingsRequest requestData = buildSettingsRequest();
+    SettingsRequest requestData = buildSettingsRequest();
 
-    final SettingsController controller =
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -124,8 +121,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             false);
 
     await(controller.loadSettingsData(networkExecutor));
-    assertEquals(cachedSettings, controller.getSettings());
-    assertEquals(cachedSettings.appData, await(controller.getAppSettings()));
+    assertEquals(cachedSettings, controller.getSettingsSync());
 
     verifyZeroInteractions(mockSettingsSpiCall);
     verify(mockCachedSettingsIo).readCachedSettings();
@@ -134,19 +130,19 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testCachedSettingsLoad_newInstanceIdentifier() throws Exception {
-    final SettingsData fetchedSettings = new TestSettingsData();
+    Settings fetchedSettings = new TestSettings();
 
-    final JSONObject fetchedJson = new JSONObject();
+    JSONObject fetchedJson = new JSONObject();
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(fetchedJson);
 
     when(mockSettingsJsonParser.parseSettingsJson(fetchedJson)).thenReturn(fetchedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -157,11 +153,11 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             true);
 
     controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
-    assertNotNull(controller.getSettings());
+    assertNotNull(controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
-    assertEquals(fetchedSettings.appData, await(controller.getAppSettings()));
-    assertEquals(fetchedSettings, controller.getSettings());
+    assertEquals(fetchedSettings, await(controller.getSettingsAsync()));
+    assertEquals(fetchedSettings, controller.getSettingsSync());
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo).writeCachedSettings(fetchedSettings.expiresAtMillis, fetchedJson);
@@ -171,13 +167,13 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
   public void testExpiredCachedSettingsLoad() throws Exception {
 
-    final SettingsData cachedSettings = new TestSettingsData();
-    final SettingsData fetchedSettings = new TestSettingsData();
+    Settings cachedSettings = new TestSettings();
+    Settings fetchedSettings = new TestSettings();
 
-    final JSONObject fetchedJson = new JSONObject();
+    JSONObject fetchedJson = new JSONObject();
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(fetchedJson);
 
-    final JSONObject cachedJson = new JSONObject();
+    JSONObject cachedJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(cachedJson);
 
     when(mockCurrentTimeProvider.getCurrentTimeMillis())
@@ -187,11 +183,11 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     when(mockSettingsJsonParser.parseSettingsJson(fetchedJson)).thenReturn(fetchedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -203,14 +199,13 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
     Task<Void> loadFinished = controller.loadSettingsData(networkExecutor);
 
-    assertEquals(cachedSettings, controller.getSettings());
-    assertEquals(cachedSettings.appData, await(controller.getAppSettings()));
+    assertEquals(cachedSettings, controller.getSettingsSync());
+    assertEquals(cachedSettings, await(controller.getSettingsAsync()));
 
     dataCollectionPermission.trySetResult(null);
     await(loadFinished);
 
-    assertEquals(fetchedSettings.appData, await(controller.getAppSettings()));
-    assertEquals(fetchedSettings, controller.getSettings());
+    assertEquals(fetchedSettings, controller.getSettingsSync());
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo, times(2)).readCachedSettings();
@@ -221,17 +216,17 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   }
 
   public void testIgnoreExpiredCachedSettingsLoad() throws Exception {
-    final JSONObject cachedJson = new JSONObject();
+    JSONObject cachedJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(cachedJson);
 
     when(mockCurrentTimeProvider.getCurrentTimeMillis())
         .thenReturn(Long.valueOf(EXPIRED_CURRENT_TIME_MILLIS));
 
-    final SettingsData cachedSettings = new TestSettingsData();
+    Settings cachedSettings = new TestSettings();
     when(mockSettingsJsonParser.parseSettingsJson(cachedJson)).thenReturn(cachedSettings);
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -241,8 +236,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockDataCollectionArbiter,
             false);
     controller.loadSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION, networkExecutor);
-    assertEquals(cachedSettings, controller.getSettings());
-    assertEquals(cachedSettings.appData, await(controller.getAppSettings()));
+    assertEquals(cachedSettings, controller.getSettingsSync());
 
     verifyZeroInteractions(mockSettingsSpiCall);
     verify(mockCachedSettingsIo).readCachedSettings();
@@ -252,29 +246,28 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
   public void testSkipCachedSettingsLoad() throws Exception {
 
-    final SettingsData fetchedSettings = new TestSettingsData();
-
-    final JSONObject fetchedJson = new JSONObject();
+    Settings fetchedSettings = new TestSettings();
+    JSONObject fetchedJson = new JSONObject();
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(fetchedJson);
 
     when(mockSettingsJsonParser.parseSettingsJson(fetchedJson)).thenReturn(fetchedSettings);
 
-    final JSONObject expiredCachedSettingsJson = new JSONObject();
+    JSONObject expiredCachedSettingsJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(expiredCachedSettingsJson);
 
     when(mockCurrentTimeProvider.getCurrentTimeMillis())
         .thenReturn(Long.valueOf(EXPIRED_CURRENT_TIME_MILLIS));
 
-    final SettingsData expiredCachedSettings = new TestSettingsData();
+    Settings expiredCachedSettings = new TestSettings();
     when(mockSettingsJsonParser.parseSettingsJson(expiredCachedSettingsJson))
         .thenReturn(expiredCachedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -286,14 +279,12 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
     Task<Void> loadFinished =
         controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
-    assertEquals(expiredCachedSettings.appData, await(controller.getAppSettings()));
-    assertEquals(expiredCachedSettings, controller.getSettings());
+    assertEquals(expiredCachedSettings, controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
     await(loadFinished);
 
-    assertEquals(fetchedSettings.appData, await(controller.getAppSettings()));
-    assertEquals(fetchedSettings, controller.getSettings());
+    assertEquals(fetchedSettings, controller.getSettingsSync());
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo).readCachedSettings();
@@ -312,22 +303,22 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   public void testLastDitchSettingsLoad() throws Exception {
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(null);
 
-    final JSONObject expiredCachedSettingsJson = new JSONObject();
+    JSONObject expiredCachedSettingsJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(expiredCachedSettingsJson);
 
     when(mockCurrentTimeProvider.getCurrentTimeMillis())
         .thenReturn(Long.valueOf(EXPIRED_CURRENT_TIME_MILLIS));
 
-    final SettingsData expiredCachedSettings = new TestSettingsData();
+    Settings expiredCachedSettings = new TestSettings();
     when(mockSettingsJsonParser.parseSettingsJson(expiredCachedSettingsJson))
         .thenReturn(expiredCachedSettings);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -339,14 +330,12 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
     Task<Void> loadFinished =
         controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
-    assertEquals(expiredCachedSettings, controller.getSettings());
-    assertEquals(expiredCachedSettings.appData, await(controller.getAppSettings()));
+    assertEquals(expiredCachedSettings, controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
     await(loadFinished);
 
-    assertEquals(expiredCachedSettings.appData, await(controller.getAppSettings()));
-    assertEquals(expiredCachedSettings, controller.getSettings());
+    assertEquals(expiredCachedSettings, controller.getSettingsSync());
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo).readCachedSettings();
@@ -360,11 +349,11 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(null);
 
     TaskCompletionSource<Void> dataCollectionPermission = new TaskCompletionSource<>();
-    when(mockDataCollectionArbiter.waitForDataCollectionPermission())
+    when(mockDataCollectionArbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(dataCollectionPermission.getTask());
 
-    final SettingsRequest requestData = buildSettingsRequest();
-    final SettingsController controller =
+    SettingsRequest requestData = buildSettingsRequest();
+    SettingsController controller =
         newSettingsController(
             requestData,
             mockCurrentTimeProvider,
@@ -375,14 +364,14 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             false);
 
     Task<Void> loadFinished = controller.loadSettingsData(networkExecutor);
-    assertNotNull(controller.getSettings());
-    assertFalse(controller.getAppSettings().isComplete());
+    assertNotNull(controller.getSettingsSync());
+    assertFalse(controller.getSettingsAsync().isComplete());
 
     dataCollectionPermission.trySetResult(null);
     await(loadFinished);
 
-    assertNotNull(controller.getSettings());
-    assertFalse(controller.getAppSettings().isComplete());
+    assertNotNull(controller.getSettingsSync());
+    assertFalse(controller.getSettingsAsync().isComplete());
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo, times(2)).readCachedSettings();
@@ -391,7 +380,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   }
 
   private SettingsRequest buildSettingsRequest() {
-    final InstallIdProvider installIdProvider =
+    InstallIdProvider installIdProvider =
         new InstallIdProvider() {
           @Override
           public String getCrashlyticsInstallId() {

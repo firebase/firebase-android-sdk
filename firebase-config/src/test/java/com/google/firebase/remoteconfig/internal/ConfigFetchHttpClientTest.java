@@ -20,8 +20,11 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentD
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.FETCH_REGEX_URL;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.ANALYTICS_USER_PROPERTIES;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_BUILD;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.LANGUAGE_CODE;
@@ -32,10 +35,14 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.os.Build;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
@@ -57,7 +64,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 
 /**
@@ -71,8 +77,9 @@ public class ConfigFetchHttpClientTest {
   private static final String API_KEY = "fake_api_key";
   private static final String FAKE_APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String PROJECT_NUMBER = "14368190084";
-  private static final String INSTANCE_ID_STRING = "fake instance id";
-  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
+  private static final String INSTALLATION_ID_STRING = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_AUTH_TOKEN_STRING =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
   private static final String DEFAULT_NAMESPACE = RemoteConfigComponent.DEFAULT_NAMESPACE;
   private static final String ETAG_FORMAT =
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
@@ -90,7 +97,7 @@ public class ConfigFetchHttpClientTest {
   @Before
   public void setUp() throws Exception {
     initMocks(this);
-    context = RuntimeEnvironment.application;
+    context = ApplicationProvider.getApplicationContext();
     configFetchHttpClient =
         new ConfigFetchHttpClient(
             context,
@@ -176,12 +183,13 @@ public class ConfigFetchHttpClientTest {
     expectedHeaders.put("X-Android-Package", context.getPackageName());
     expectedHeaders.put("X-Android-Cert", null);
     expectedHeaders.put("X-Google-GFE-Can-Retry", "yes");
+    expectedHeaders.put("X-Goog-Firebase-Installations-Auth", INSTALLATION_AUTH_TOKEN_STRING);
     expectedHeaders.put("Content-Type", "application/json");
     expectedHeaders.put("Accept", "application/json");
     // Custom user-defined headers.
     expectedHeaders.putAll(customHeaders);
 
-    fetch(FIRST_ETAG, /* userProperties= */ ImmutableMap.of(), customHeaders);
+    fetch(FIRST_ETAG, customHeaders);
 
     assertThat(fakeHttpURLConnection.getRequestHeaders()).isEqualTo(expectedHeaders);
   }
@@ -189,42 +197,94 @@ public class ConfigFetchHttpClientTest {
   @Test
   public void fetch_setsAllElementsOfRequestBody_sendsRequestBodyToServer() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
-    Map<String, String> userProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+    Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
 
-    fetch(FIRST_ETAG, userProperties);
+    long firstOpenTimeEpochFromMillis = 1636146000000L;
+    // ISO-8601 value corresponding to 1636146000000 ms-from-epoch in UTC
+    String firstOpenTimeIsoString = "2021-11-05T21:00:00.000Z";
+
+    fetch(FIRST_ETAG, customUserProperties, firstOpenTimeEpochFromMillis);
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
-    assertThat(requestBody.get(INSTANCE_ID)).isEqualTo(INSTANCE_ID_STRING);
-    assertThat(requestBody.get(INSTANCE_ID_TOKEN)).isEqualTo(INSTANCE_ID_TOKEN_STRING);
+    assertThat(requestBody.get(INSTANCE_ID)).isEqualTo(INSTALLATION_ID_STRING);
+    assertThat(requestBody.get(INSTANCE_ID_TOKEN)).isEqualTo(INSTALLATION_AUTH_TOKEN_STRING);
     assertThat(requestBody.get(APP_ID)).isEqualTo(FAKE_APP_ID);
     Locale locale = context.getResources().getConfiguration().locale;
     assertThat(requestBody.get(COUNTRY_CODE)).isEqualTo(locale.getCountry());
-    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(locale.toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(locale.toLanguageTag());
     assertThat(requestBody.getInt(PLATFORM_VERSION)).isEqualTo(android.os.Build.VERSION.SDK_INT);
     assertThat(requestBody.get(TIME_ZONE)).isEqualTo(TimeZone.getDefault().getID());
+    PackageInfo packageInfo =
+        context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+    assertThat(requestBody.get(APP_VERSION)).isEqualTo(packageInfo.versionName);
+    assertThat(requestBody.get(APP_BUILD))
+        .isEqualTo(Long.toString(packageInfo.getLongVersionCode()));
     assertThat(requestBody.get(PACKAGE_NAME)).isEqualTo(context.getPackageName());
     assertThat(requestBody.get(SDK_VERSION)).isEqualTo(BuildConfig.VERSION_NAME);
+    assertThat(requestBody.get(FIRST_OPEN_TIME)).isEqualTo(firstOpenTimeIsoString);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
-        .isEqualTo(new JSONObject(userProperties).toString());
+        .isEqualTo(new JSONObject(customUserProperties).toString());
   }
 
   @Test
-  public void fetch_instanceIdIsNull_throwsFRCClientException() throws Exception {
+  public void fetch_nullFirstOpenTime_fieldNotPresentInRequestBody() throws Exception {
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+    Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+
+    fetch(FIRST_ETAG, customUserProperties, null);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+
+    assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
+        .isEqualTo(new JSONObject(customUserProperties).toString());
+    assertFalse(requestBody.has(FIRST_OPEN_TIME));
+  }
+
+  @Test
+  public void fetch_requestEncodesLanguageSubtags() throws Exception {
+    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
+    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
+
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    fetch(FIRST_ETAG);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageTag);
+  }
+
+  @Test
+  @Config(sdk = Build.VERSION_CODES.KITKAT /* 19 */)
+  public void fetch_localeUsesToStringBelowLollipop() throws Exception {
+    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
+    String languageString = "zh_TW_#Hant";
+    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
+
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+
+    fetch(FIRST_ETAG);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
+  }
+
+  @Test
+  public void fetch_installationIdIsNull_throwsFRCClientException() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     FirebaseRemoteConfigClientException frcException =
-        assertThrows(FirebaseRemoteConfigClientException.class, () -> fetchWithoutIid());
+        assertThrows(FirebaseRemoteConfigClientException.class, () -> fetchWithoutInstallationId());
 
-    assertThat(frcException).hasMessageThat().contains("instance id is null");
+    assertThat(frcException).hasMessageThat().contains("installation id is null");
   }
 
   @Test
-  public void fetch_instanceIdTokenIsNull_doesNotThrowException() throws Exception {
+  public void fetch_installationAuthTokenIsNull_doesNotThrowException() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
-    FetchResponse fetchResponse = fetchWithoutIidToken();
+    FetchResponse fetchResponse = fetchWithoutInstallationAuthToken();
 
-    assertWithMessage("Fetch() failed with null instance id token!")
+    assertWithMessage("Fetch() failed with null installation auth token!")
         .that(fetchResponse)
         .isNotNull();
   }
@@ -260,57 +320,61 @@ public class ConfigFetchHttpClientTest {
   private FetchResponse fetch(String eTag) throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
-        INSTANCE_ID_STRING,
-        INSTANCE_ID_TOKEN_STRING,
+        INSTALLATION_ID_STRING,
+        INSTALLATION_AUTH_TOKEN_STRING,
         /* analyticsUserProperties= */ ImmutableMap.of(),
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         /* currentTime= */ new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetch(String eTag, Map<String, String> userProperties) throws Exception {
-    return configFetchHttpClient.fetch(
-        fakeHttpURLConnection,
-        INSTANCE_ID_STRING,
-        INSTANCE_ID_TOKEN_STRING,
-        userProperties,
-        eTag,
-        /* customHeaders= */ ImmutableMap.of(),
-        new Date(mockClock.currentTimeMillis()));
-  }
-
-  private FetchResponse fetch(
-      String eTag, Map<String, String> userProperties, Map<String, String> customHeaders)
+  private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
       throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
-        INSTANCE_ID_STRING,
-        INSTANCE_ID_TOKEN_STRING,
+        INSTALLATION_ID_STRING,
+        INSTALLATION_AUTH_TOKEN_STRING,
         userProperties,
         eTag,
+        /* customHeaders= */ ImmutableMap.of(),
+        firstOpenTime,
+        new Date(mockClock.currentTimeMillis()));
+  }
+
+  private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
+    return configFetchHttpClient.fetch(
+        fakeHttpURLConnection,
+        INSTALLATION_ID_STRING,
+        INSTALLATION_AUTH_TOKEN_STRING,
+        /* analyticsUserProperties= */ ImmutableMap.of(),
+        eTag,
         customHeaders,
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetchWithoutIid() throws Exception {
+  private FetchResponse fetchWithoutInstallationId() throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
-        /* instanceId= */ null,
-        INSTANCE_ID_TOKEN_STRING,
+        /* installationId= */ null,
+        INSTALLATION_AUTH_TOKEN_STRING,
         /* analyticsUserProperties= */ ImmutableMap.of(),
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 
-  private FetchResponse fetchWithoutIidToken() throws Exception {
+  private FetchResponse fetchWithoutInstallationAuthToken() throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
-        INSTANCE_ID_STRING,
-        /* instanceIdToken= */ null,
+        INSTALLATION_ID_STRING,
+        /* installationAuthToken= */ null,
         /* analyticsUserProperties= */ ImmutableMap.of(),
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
+        /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()));
   }
 

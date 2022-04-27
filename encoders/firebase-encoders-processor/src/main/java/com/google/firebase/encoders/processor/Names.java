@@ -34,6 +34,19 @@ public class Names {
     return sb.toString();
   }
 
+  /** Returns the AutoValue formatted class name for a given element. */
+  static String autoValueClassName(Element element) {
+    StringBuilder sb = new StringBuilder(element.getSimpleName().toString());
+    Element enclosingElement = element.getEnclosingElement();
+    while (!(enclosingElement instanceof PackageElement)) {
+      sb.insert(0, '_');
+      sb.insert(0, enclosingElement.getSimpleName().toString());
+      enclosingElement = enclosingElement.getEnclosingElement();
+    }
+    sb.insert(0, "AutoValue_");
+    return sb.toString();
+  }
+
   /** Returns the package name of an element. */
   static String packageName(Element element) {
     Element enclosingElement = element.getEnclosingElement();

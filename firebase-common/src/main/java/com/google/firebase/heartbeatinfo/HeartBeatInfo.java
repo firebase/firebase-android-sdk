@@ -23,6 +23,9 @@ import androidx.annotation.NonNull;
  * heartbeat needs to sent then HeartBeat.COMBINED is returned. if only sdk heart beat needs to be
  * sent then HeartBeat.SDK is returned. if only global heart beat needs to be sent then
  * HeartBeat.GLOBAL is returned. if no heart beat needs to be sent then HeartBeat.NONE is returned.
+ *
+ * <p>This also exposes functions to store and retrieve haartBeat Information in the form of
+ * HeartBeatResult.
  */
 public interface HeartBeatInfo {
   enum HeartBeat {

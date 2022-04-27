@@ -19,6 +19,7 @@ import static com.google.testing.compile.CompilationSubject.assertThat;
 import static com.google.testing.compile.Compiler.javac;
 
 import com.google.auto.value.processor.AutoValueProcessor;
+import com.google.common.truth.StringSubject;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
@@ -115,6 +116,27 @@ public class EncodableProcessorTest {
   }
 
   @Test
+  public void compile_withGenericClass_ShouldWarnAboutPotentialProblems() {
+    Compilation result =
+        javac()
+            .withProcessors(new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "GenericClass",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable public class GenericClass<T, U> {",
+                    "public T getT() { return null; }",
+                    "public U getU() { return null; }",
+                    "}"));
+
+    assertThat(result).hadWarningContaining("GenericClass<T,U> is a generic type");
+    assertThat(result)
+        .generatedSourceFile("AutoGenericClassEncoder")
+        .hasSourceEquivalentTo(
+            JavaFileObjects.forResource("ExpectedGenericsEncoderWithUnknownType.java"));
+  }
+
+  @Test
   public void compile_withMultipleGenericArgs_shouldCreateEncodersForAllKnownGenericArgs() {
     Compilation result =
         javac()
@@ -197,7 +219,7 @@ public class EncodableProcessorTest {
     assertThat(result)
         .generatedSourceFile("AutoWithOptionalEncoder")
         .contentsAsUtf8String()
-        .contains("\"hello\", value.getOptional().orElse(null)");
+        .contains("HELLO_DESCRIPTOR, value.getOptional().orElse(null)");
   }
 
   @Test
@@ -214,6 +236,7 @@ public class EncodableProcessorTest {
                     "public abstract String getField();",
                     "}"));
 
+    assertThat(result).succeededWithoutWarnings();
     assertThat(result)
         .generatedSourceFile("AutoFooEncoder")
         .contentsAsUtf8String()
@@ -231,13 +254,21 @@ public class EncodableProcessorTest {
                     "package com.example;",
                     "import com.google.firebase.encoders.annotations.Encodable;",
                     "@Encodable public class Foo {",
-                    "public com.example.sub.Member getField() { return null; }",
+                    "public com.example.sub.Member getMember() { return null; }",
+                    "public com.example.sub.AnotherMember getAnotherMember() { return null; }",
                     "}"),
                 JavaFileObjects.forSourceLines(
                     "com.example.sub.Member",
                     "package com.example.sub;",
                     "import com.google.auto.value.AutoValue;",
                     "@AutoValue public abstract class Member {",
+                    "public abstract String getField();",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "com.example.sub.AnotherMember",
+                    "package com.example.sub;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@AutoValue public abstract class AnotherMember {",
                     "public abstract String getField();",
                     "}"));
 
@@ -249,10 +280,89 @@ public class EncodableProcessorTest {
             "cfg.registerEncoder("
                 + "com.example.sub.EncodableComExampleFooMemberAutoValueSupport.TYPE,"
                 + " MemberEncoder.INSTANCE)");
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("com/example/AutoFooEncoder")
+        .contentsAsUtf8String()
+        .contains(
+            "cfg.registerEncoder("
+                + "com.example.sub.EncodableComExampleFooAnotherMemberAutoValueSupport.TYPE,"
+                + " AnotherMemberEncoder.INSTANCE)");
     assertThat(result)
         .generatedSourceFile("com/example/sub/EncodableComExampleFooMemberAutoValueSupport")
         .contentsAsUtf8String()
         .contains("Class<? extends Member> TYPE = AutoValue_Member.class");
+    assertThat(result)
+        .generatedSourceFile("com/example/sub/EncodableComExampleFooAnotherMemberAutoValueSupport")
+        .contentsAsUtf8String()
+        .contains("Class<? extends AnotherMember> TYPE = AutoValue_AnotherMember.class");
+  }
+
+  @Test
+  public void compile_withNestedAutoValueInSamePackage_shouldRegisterGeneratedSubclass() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "Foo",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@Encodable @AutoValue public abstract class Foo {",
+                    "public abstract Bar getBar();",
+                    "@AutoValue public abstract static class Bar {",
+                    "public abstract Baz getBaz();",
+                    "@AutoValue public abstract static class Baz {",
+                    "public abstract String getField();",
+                    "}",
+                    "}",
+                    "}"));
+
+    StringSubject compiled =
+        assertThat(result).generatedSourceFile("AutoFooEncoder").contentsAsUtf8String();
+
+    compiled.contains("cfg.registerEncoder(AutoValue_Foo.class");
+    compiled.contains("cfg.registerEncoder(AutoValue_Foo_Bar.class");
+    compiled.contains("cfg.registerEncoder(AutoValue_Foo_Bar_Baz.class");
+  }
+
+  @Test
+  public void compile_withNestedAutoValueInDifferentPackage_shouldRegisterGeneratedSubclass() {
+    Compilation result =
+        javac()
+            .withProcessors(new AutoValueProcessor(), new EncodableProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "com.example.Foo",
+                    "package com.example;",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable public class Foo {",
+                    "public com.example.sub.Member.SubMember getSubMember() { return null; }",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "com.example.sub.Member",
+                    "package com.example.sub;",
+                    "import com.google.auto.value.AutoValue;",
+                    "@AutoValue public abstract class Member {",
+                    "public abstract SubMember getSubMember();",
+                    "@AutoValue public abstract static class SubMember {",
+                    "public abstract String getField();",
+                    "}",
+                    "}"));
+
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("com/example/AutoFooEncoder")
+        .contentsAsUtf8String()
+        .contains(
+            "cfg.registerEncoder("
+                + "com.example.sub.EncodableComExampleFooMemberSubMemberAutoValueSupport.TYPE,"
+                + " MemberSubMemberEncoder.INSTANCE)");
+    assertThat(result)
+        .generatedSourceFile(
+            "com/example/sub/EncodableComExampleFooMemberSubMemberAutoValueSupport")
+        .contentsAsUtf8String()
+        .contains("Class<? extends Member.SubMember> TYPE = AutoValue_Member_SubMember.class");
   }
 
   @Test
@@ -355,6 +465,38 @@ public class EncodableProcessorTest {
         .generatedSourceFile("AutoOuterTypeEncoder")
         .contentsAsUtf8String()
         .contains("ctx.inline(value.getMember());");
+  }
+
+  @Test
+  public void compile_withExtraProperty_annotation_shouldIncludeThePropertyInFieldDescriptor() {
+    Compilation result =
+        javac()
+            .withProcessors(new EncodableProcessor(), new ExtraPropertyProcessor())
+            .compile(
+                JavaFileObjects.forSourceLines(
+                    "com.example.MyAnnotation",
+                    "package com.example;",
+                    "import com.google.firebase.encoders.annotations.ExtraProperty;",
+                    "@ExtraProperty",
+                    "@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)",
+                    "public @interface MyAnnotation {",
+                    "  int value();",
+                    "  boolean myBool() default true;",
+                    "}"),
+                JavaFileObjects.forSourceLines(
+                    "MyClass",
+                    "import com.google.firebase.encoders.annotations.Encodable;",
+                    "@Encodable",
+                    "class MyClass {",
+                    "@com.example.MyAnnotation(42)",
+                    "public String getHello() { return null; }",
+                    "}"));
+
+    assertThat(result).succeededWithoutWarnings();
+    assertThat(result)
+        .generatedSourceFile("AutoMyClassEncoder")
+        .hasSourceEquivalentTo(
+            JavaFileObjects.forResource("ExpectedMyClassEncoderWithExtraProperty.java"));
   }
 
   @Test

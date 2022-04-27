@@ -211,14 +211,32 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         (NetworkStatus networkStatus) -> {
           workerQueue.enqueueAndForget(
               () -> {
+                // Porting Note: Unlike iOS, `restartNetwork()` is called even when the network
+                // becomes unreachable as we don't have any other way to tear down our streams.
+
+                // We only invoke restartNetwork() when the network status differs from our online
+                // state. This prevents frequent reconnects as the callback is invoked whenever
+                // the app reaches the foreground.
+                if (networkStatus.equals(NetworkStatus.REACHABLE)
+                    && onlineStateTracker.getState().equals(OnlineState.ONLINE)) {
+                  return;
+                }
+
+                if (networkStatus.equals(NetworkStatus.UNREACHABLE)
+                    && onlineStateTracker.getState().equals(OnlineState.OFFLINE)) {
+                  return;
+                }
+
                 // If the network has been explicitly disabled, make sure we don't accidentally
                 // re-enable it.
-                if (canUseNetwork()) {
-                  // Tear down and re-create our network streams. This will ensure the backoffs are
-                  // reset.
-                  Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
-                  restartNetwork();
+                if (!canUseNetwork()) {
+                  return;
                 }
+
+                // Tear down and re-create our network streams. This will ensure the backoffs are
+                // reset.
+                Logger.debug(LOG_TAG, "Restarting streams for network reachability change.");
+                restartNetwork();
               });
         });
   }
@@ -277,6 +295,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     networkEnabled = false;
     disableNetworkInternal();
     onlineStateTracker.updateState(OnlineState.UNKNOWN);
+    writeStream.inhibitBackoff();
+    watchStream.inhibitBackoff();
     enableNetwork();
   }
 
@@ -463,7 +483,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void handleWatchStreamClose(Status status) {
-    if (Status.OK.equals(status)) {
+    if (status.isOk()) {
       // Graceful stop (due to stop() or idle timeout). Make sure that's desirable.
       hardAssert(
           !shouldStartWatchStream(), "Watch stream was stopped gracefully while still needed.");
@@ -514,7 +534,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       }
     }
 
-    // Re-establish listens for the targets that have been invalidated by  existence filter
+    // Re-establish listens for the targets that have been invalidated by existence filter
     // mismatches.
     for (int targetId : remoteEvent.getTargetMismatches()) {
       TargetData targetData = this.listenTargets.get(targetId);
@@ -650,7 +670,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void handleWriteStreamClose(Status status) {
-    if (Status.OK.equals(status)) {
+    if (status.isOk()) {
       // Graceful stop (due to stop() or idle timeout). Make sure that's desirable.
       hardAssert(
           !shouldStartWriteStream(), "Write stream was stopped gracefully while still needed.");

@@ -21,7 +21,8 @@ import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.inject.Deferred;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -33,9 +34,9 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
     return Arrays.asList(
         Component.builder(FirebaseCrashlytics.class)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
-            .add(Dependency.optional(AnalyticsConnector.class))
-            .add(Dependency.optional(CrashlyticsNativeComponent.class))
+            .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.deferred(CrashlyticsNativeComponent.class))
+            .add(Dependency.deferred(AnalyticsConnector.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
             .build(),
@@ -45,13 +46,15 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
     FirebaseApp app = container.get(FirebaseApp.class);
 
-    CrashlyticsNativeComponent nativeComponent = container.get(CrashlyticsNativeComponent.class);
+    Deferred<CrashlyticsNativeComponent> nativeComponent =
+        container.getDeferred(CrashlyticsNativeComponent.class);
 
-    AnalyticsConnector analyticsConnector = container.get(AnalyticsConnector.class);
+    Deferred<AnalyticsConnector> analyticsConnector =
+        container.getDeferred(AnalyticsConnector.class);
 
-    FirebaseInstanceIdInternal instanceId =
-        container.getProvider(FirebaseInstanceIdInternal.class).get();
+    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
 
-    return FirebaseCrashlytics.init(app, instanceId, nativeComponent, analyticsConnector);
+    return FirebaseCrashlytics.init(
+        app, firebaseInstallations, nativeComponent, analyticsConnector);
   }
 }

@@ -44,14 +44,8 @@ class GetAuthTokenListener implements StateListener {
   }
 
   @Override
-  public boolean onException(
-      PersistedInstallationEntry persistedInstallationEntry, Exception exception) {
-    if (persistedInstallationEntry.isErrored()
-        || persistedInstallationEntry.isNotGenerated()
-        || persistedInstallationEntry.isUnregistered()) {
-      resultTaskCompletionSource.trySetException(exception);
-      return true;
-    }
-    return false;
+  public boolean onException(Exception exception) {
+    resultTaskCompletionSource.trySetException(exception);
+    return true;
   }
 }

@@ -14,11 +14,11 @@
 
 package com.google.firebase.installations;
 
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
-import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
-import java.lang.annotation.Retention;
+import com.google.firebase.annotations.DeferredApi;
+import com.google.firebase.installations.internal.FidListener;
+import com.google.firebase.installations.internal.FidListenerHandle;
 
 /**
  * This is an interface of {@code FirebaseInstallations} that is only exposed to 2p via component
@@ -28,34 +28,39 @@ import java.lang.annotation.Retention;
  */
 public interface FirebaseInstallationsApi {
 
-  /** Specifies the options to get a FIS AuthToken. */
-  @IntDef({DO_NOT_FORCE_REFRESH, FORCE_REFRESH})
-  @Retention(SOURCE)
-  @interface AuthTokenOption {}
-  /**
-   * AuthToken is not refreshed until requested by the developer or if one doesn't exist, is expired
-   * or about to expire.
-   */
-  int DO_NOT_FORCE_REFRESH = 0;
-  /**
-   * AuthToken is forcefully refreshed on calling the {@link
-   * FirebaseInstallationsApi#getToken(int)}.
-   */
-  int FORCE_REFRESH = 1;
-
   /**
    * Async function that returns a globally unique identifier of this Firebase app installation.
    * This is a url-safe base64 string of a 128-bit integer.
    */
+  @NonNull
   Task<String> getId();
 
-  /** Async function that returns a auth token(public key) of this Firebase app installation. */
-  Task<InstallationTokenResult> getToken(@AuthTokenOption int authTokenOption);
+  /**
+   * Async function that returns a auth token(public key) of this Firebase app installation.
+   *
+   * @param forceRefresh If set to TRUE this method will trigger a server request to generate new
+   *     AuthToken every time when called. Otherwise it will return a locally cached token if
+   *     available and valid. It is strongly recommended to set this field to FALSE unless a
+   *     previously returned token turned out to be expired (which in itself is an indicator for
+   *     time synchronization issues).
+   */
+  @NonNull
+  Task<InstallationTokenResult> getToken(boolean forceRefresh);
 
   /**
    * Async function that deletes this Firebase app installation from Firebase backend. This call
    * would possibly lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or
    * Firebase In-App Messaging not function properly.
    */
+  @NonNull
   Task<Void> delete();
+
+  /**
+   * Register a listener to receive fid changes.
+   *
+   * @param listener implementation of the {@code FidListener} to handle fid changes.
+   * @hide
+   */
+  @DeferredApi
+  FidListenerHandle registerFidListener(@NonNull FidListener listener);
 }

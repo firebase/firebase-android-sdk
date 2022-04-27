@@ -1,6 +1,20 @@
 // Signature format: 2.0
 package com.google.firebase.crashlytics {
 
+  public class CustomKeysAndValues {
+  }
+
+  public static class CustomKeysAndValues.Builder {
+    ctor public CustomKeysAndValues.Builder();
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues build();
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putBoolean(@NonNull String, boolean);
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putDouble(@NonNull String, double);
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putFloat(@NonNull String, float);
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putInt(@NonNull String, int);
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putLong(@NonNull String, long);
+    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putString(@NonNull String, @NonNull String);
+  }
+
   public class FirebaseCrashlytics {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> checkForUnsentReports();
     method public void deleteUnsentReports();
@@ -10,12 +24,14 @@ package com.google.firebase.crashlytics {
     method public void recordException(@NonNull Throwable);
     method public void sendUnsentReports();
     method public void setCrashlyticsCollectionEnabled(boolean);
+    method public void setCrashlyticsCollectionEnabled(@Nullable Boolean);
     method public void setCustomKey(@NonNull String, boolean);
     method public void setCustomKey(@NonNull String, double);
     method public void setCustomKey(@NonNull String, float);
     method public void setCustomKey(@NonNull String, int);
     method public void setCustomKey(@NonNull String, long);
     method public void setCustomKey(@NonNull String, @NonNull String);
+    method public void setCustomKeys(@NonNull com.google.firebase.crashlytics.CustomKeysAndValues);
     method public void setUserId(@NonNull String);
   }
 

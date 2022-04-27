@@ -26,6 +26,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.BACKOFF_TIME_DURATIONS_IN_MINUTES;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
+import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FIRST_OPEN_TIME_KEY;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
@@ -42,6 +43,7 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -53,13 +55,15 @@ import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
@@ -85,7 +89,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.skyscreamer.jsonassert.JSONAssert;
 
@@ -97,8 +100,15 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class ConfigFetchHandlerTest {
-  private static final String INSTANCE_ID_STRING = "fake instance id";
-  private static final String INSTANCE_ID_TOKEN_STRING = "fake instance id token";
+  private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
+  private static final String INSTALLATION_AUTH_TOKEN =
+      "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
+  private static final InstallationTokenResult INSTALLATION_TOKEN_RESULT =
+      InstallationTokenResult.builder()
+          .setToken(INSTALLATION_AUTH_TOKEN)
+          .setTokenCreationTimestamp(1)
+          .setTokenExpirationTimestamp(1)
+          .build();
   private static final long DEFAULT_CACHE_EXPIRATION_IN_MILLISECONDS =
       SECONDS.toMillis(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
 
@@ -113,7 +123,7 @@ public class ConfigFetchHandlerTest {
   @Mock private ConfigFetchHttpClient mockBackendFetchApiClient;
 
   private Context context;
-  @Mock private FirebaseInstanceId mockFirebaseInstanceId;
+  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   private ConfigMetadataClient metadataClient;
 
   private ConfigFetchHandler fetchHandler;
@@ -127,13 +137,13 @@ public class ConfigFetchHandlerTest {
     MockitoAnnotations.initMocks(this);
 
     directExecutor = MoreExecutors.directExecutor();
-    context = RuntimeEnvironment.application.getApplicationContext();
+    context = ApplicationProvider.getApplicationContext();
     mockClock = new MockClock(0L);
     metadataClient =
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
 
     loadBackendApiClient();
-    loadInstanceIdAndToken();
+    loadInstallationIdAndAuthToken();
 
     /*
      * Every fetch starts with a call to retrieve the cached fetch values. Return successfully in
@@ -169,6 +179,39 @@ public class ConfigFetchHandlerTest {
         .isTrue();
 
     verifyBackendIsCalled();
+  }
+
+  @Test
+  public void fetch_firstFetch_includesInstallationAuthToken() throws Exception {
+    fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
+
+    assertWithMessage("Fetch() does not include installation auth token.")
+        .that(fetchHandler.fetch().isSuccessful())
+        .isTrue();
+
+    verify(mockBackendFetchApiClient)
+        .fetch(
+            any(HttpURLConnection.class),
+            /* instanceId= */ any(),
+            /* instanceIdToken= */ eq(INSTALLATION_AUTH_TOKEN),
+            /* analyticsUserProperties= */ any(),
+            /* lastFetchETag= */ any(),
+            /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
+            /* currentTime= */ any());
+  }
+
+  @Test
+  public void fetch_failToGetInstallationAuthToken_throwsRemoteConfigException() throws Exception {
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
+    fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
+
+    assertThrowsClientException(
+        fetchHandler.fetch(),
+        "Firebase Installations failed to get installation auth token for fetch.");
+
+    verifyBackendIsNeverCalled();
   }
 
   @Test
@@ -354,7 +397,7 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_fetchBackendCallFails_taskThrowsException() throws Exception {
-    when(mockBackendFetchApiClient.fetch(any(), any(), any(), any(), any(), any(), any()))
+    when(mockBackendFetchApiClient.fetch(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenThrow(
             new FirebaseRemoteConfigClientException("Fetch failed due to an unexpected error."));
 
@@ -588,21 +631,45 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void fetch_hasAnalyticsSdk_sendsUserProperties() throws Exception {
+  public void fetch_hasAnalyticsSdk_sendsUserPropertiesAndFirstOpenTime() throws Exception {
+    // Provide the mock Analytics SDK.
+    AnalyticsConnector mockAnalyticsConnector = mock(AnalyticsConnector.class);
+    fetchHandler = getNewFetchHandler(mockAnalyticsConnector);
+    long firstOpenTime = 1636146000000L;
+
+    Map<String, String> customUserProperties =
+        ImmutableMap.of("up_key1", "up_val1", "up_key2", "up_val2");
+    Map<String, Object> allUserProperties =
+        ImmutableMap.of(
+            "up_key1", "up_val1", "up_key2", "up_val2", FIRST_OPEN_TIME_KEY, firstOpenTime);
+    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
+        .thenReturn(ImmutableMap.copyOf(customUserProperties));
+    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ true))
+        .thenReturn(ImmutableMap.copyOf(allUserProperties));
+
+    fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
+
+    assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
+
+    verifyBackendIsCalled(customUserProperties, firstOpenTime);
+  }
+
+  @Test
+  public void fetch_hasAnalyticsSdk_sendsUserPropertiesNoFirstOpenTime() throws Exception {
     // Provide the mock Analytics SDK.
     AnalyticsConnector mockAnalyticsConnector = mock(AnalyticsConnector.class);
     fetchHandler = getNewFetchHandler(mockAnalyticsConnector);
 
     Map<String, String> userProperties =
         ImmutableMap.of("up_key1", "up_val1", "up_key2", "up_val2");
-    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
+    when(mockAnalyticsConnector.getUserProperties(anyBoolean()))
         .thenReturn(ImmutableMap.copyOf(userProperties));
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
 
     assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
 
-    verifyBackendIsCalled(userProperties);
+    verifyBackendIsCalled(userProperties, null);
   }
 
   @Test
@@ -673,8 +740,8 @@ public class ConfigFetchHandlerTest {
     ConfigFetchHandler fetchHandler =
         spy(
             new ConfigFetchHandler(
-                mockFirebaseInstanceId,
-                analyticsConnector,
+                mockFirebaseInstallations,
+                () -> analyticsConnector,
                 directExecutor,
                 mockClock,
                 mockRandom,
@@ -711,6 +778,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any());
   }
 
@@ -722,6 +790,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any()))
         .thenReturn(FetchResponse.forBackendHasNoUpdates(date));
   }
@@ -736,6 +805,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any());
   }
 
@@ -815,10 +885,12 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any());
   }
 
-  private void verifyBackendIsCalled(Map<String, String> userProperties) throws Exception {
+  private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
+      throws Exception {
     verify(mockBackendFetchApiClient)
         .fetch(
             any(HttpURLConnection.class),
@@ -827,6 +899,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ eq(userProperties),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ eq(firstOpenTime),
             /* currentTime= */ any());
   }
 
@@ -839,6 +912,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any());
   }
 
@@ -851,6 +925,7 @@ public class ConfigFetchHandlerTest {
             /* analyticsUserProperties= */ any(),
             /* lastFetchETag= */ eq(requestETag),
             /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
             /* currentTime= */ any());
     assertThat(metadataClient.getLastFetchETag()).isEqualTo(responseETag);
   }
@@ -865,9 +940,10 @@ public class ConfigFetchHandlerTest {
     this.responseETag = responseETag;
   }
 
-  private void loadInstanceIdAndToken() {
-    when(mockFirebaseInstanceId.getId()).thenReturn(INSTANCE_ID_STRING);
-    when(mockFirebaseInstanceId.getToken()).thenReturn(INSTANCE_ID_TOKEN_STRING);
+  private void loadInstallationIdAndAuthToken() {
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
   }
 
   private void loadCacheAndClockWithConfig(

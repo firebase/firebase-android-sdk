@@ -20,10 +20,15 @@ import androidx.annotation.Nullable;
 class HttpsCallableContext {
   @Nullable private final String authToken;
   @Nullable private final String instanceIdToken;
+  @Nullable private final String appCheckToken;
 
-  HttpsCallableContext(@Nullable String authToken, @Nullable String instanceIdToken) {
+  HttpsCallableContext(
+      @Nullable String authToken,
+      @Nullable String instanceIdToken,
+      @Nullable String appCheckToken) {
     this.authToken = authToken;
     this.instanceIdToken = instanceIdToken;
+    this.appCheckToken = appCheckToken;
   }
 
   @Nullable
@@ -34,5 +39,10 @@ class HttpsCallableContext {
   @Nullable
   public String getInstanceIdToken() {
     return instanceIdToken;
+  }
+
+  @Nullable
+  public String getAppCheckToken() {
+    return appCheckToken;
   }
 }

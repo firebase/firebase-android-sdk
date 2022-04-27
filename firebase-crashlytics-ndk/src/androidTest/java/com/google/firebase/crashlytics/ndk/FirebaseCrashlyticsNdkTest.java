@@ -23,13 +23,13 @@ public class FirebaseCrashlyticsNdkTest extends TestCase {
 
   private FirebaseCrashlyticsNdk nativeComponent;
 
-  private NativeComponentController mockController;
+  private CrashpadController mockController;
 
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    mockController = mock(NativeComponentController.class);
-    nativeComponent = new FirebaseCrashlyticsNdk(mockController);
+    mockController = mock(CrashpadController.class);
+    nativeComponent = new FirebaseCrashlyticsNdk(mockController, true);
   }
 
   @Override

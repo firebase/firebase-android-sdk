@@ -3,11 +3,13 @@ package com.google.firebase.functions {
 
   public class FirebaseFunctions {
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
-    method public void useFunctionsEmulator(@NonNull String);
+    method public void useEmulator(@NonNull String, int);
+    method @Deprecated public void useFunctionsEmulator(@NonNull String);
   }
 
   public class FirebaseFunctionsException extends com.google.firebase.FirebaseException {

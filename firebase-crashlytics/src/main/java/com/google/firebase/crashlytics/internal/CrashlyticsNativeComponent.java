@@ -15,48 +15,24 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 
 public interface CrashlyticsNativeComponent {
 
+  boolean hasCrashDataForCurrentSession();
+
   boolean hasCrashDataForSession(@NonNull String sessionId);
 
-  // TODO: Consider what to do with the rest of the lifecycle if openSession fails.
-  boolean openSession(@NonNull String sessionId);
-
-  // TODO: Consider whether these methods should return boolean or throw exceptions.
-
-  boolean finalizeSession(@NonNull String sessionId);
+  /**
+   * Prepares the native session for opening. Whether or not Crashlytics is fully initialized to
+   * handle native symbols is implementation dependent.
+   */
+  void prepareNativeSession(
+      @NonNull String sessionId,
+      @NonNull String generator,
+      long startedAtSeconds,
+      @NonNull StaticSessionData sessionData);
 
   @NonNull
   NativeSessionFileProvider getSessionFileProvider(@NonNull String sessionId);
-
-  void writeBeginSession(
-      @NonNull String sessionId, @NonNull String generator, long startedAtSeconds);
-
-  void writeSessionApp(
-      @NonNull String sessionId,
-      @NonNull String appIdentifier,
-      @NonNull String versionCode,
-      @NonNull String versionName,
-      @NonNull String installUuid,
-      int deliveryMechanism,
-      @NonNull String unityVersion);
-
-  void writeSessionOs(
-      @NonNull String sessionId,
-      @NonNull String osRelease,
-      @NonNull String osCodeName,
-      boolean isRooted);
-
-  void writeSessionDevice(
-      @NonNull String sessionId,
-      int arch,
-      @NonNull String model,
-      int availableProcessors,
-      long totalRam,
-      long diskSpace,
-      boolean isEmulator,
-      int state,
-      @NonNull String manufacturer,
-      @NonNull String modelClass);
 }

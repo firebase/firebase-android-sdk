@@ -14,14 +14,32 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import android.annotation.TargetApi;
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
-import android.util.Log;
+import android.os.Build;
+import android.text.TextUtils;
+import com.google.firebase.crashlytics.internal.Logger;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /** JNI implementation of the native API interface. */
 @SuppressWarnings("PMD.AvoidUsingNativeCode")
 class JniNativeApi implements NativeApi {
 
   private static final boolean LIB_CRASHLYTICS_LOADED;
+
+  private static final FilenameFilter APK_FILTER =
+      (file, name) -> name.toLowerCase().endsWith(".apk");
+
+  private final Context context;
 
   static {
     boolean loadSuccessful = false;
@@ -34,21 +52,131 @@ class JniNativeApi implements NativeApi {
       // This can happen if the APK doesn't contain the correct binary for this architecture,
       // most likely because the user sideloaded the APK that was intended for a different
       // architecture. We can't reasonably recover, and Crashlytics may not be
-      // initialized yet. So all we can do is write the error to LogCat.
-      Log.e(
-          FirebaseCrashlyticsNdk.TAG,
-          "libcrashlytics could not be loaded. "
-              + "This APK may not have been compiled for this device's architecture. "
-              + "NDK crashes will not be reported to Crashlytics:\n"
-              + e.getLocalizedMessage());
+      // initialized yet. So all we can do is write the error to logs
+      Logger.getLogger()
+          .e(
+              "libcrashlytics could not be loaded. "
+                  + "This APK may not have been compiled for this device's architecture. "
+                  + "NDK crashes will not be reported to Crashlytics:\n"
+                  + e.getLocalizedMessage());
     }
     LIB_CRASHLYTICS_LOADED = loadSuccessful;
   }
 
-  @Override
-  public boolean initialize(String dataPath, AssetManager assetManager) {
-    return LIB_CRASHLYTICS_LOADED && nativeInit(dataPath, assetManager);
+  public JniNativeApi(Context context) {
+    this.context = context;
   }
 
-  private native boolean nativeInit(String dataPath, Object assetManager);
+  public static boolean isAtLeastLollipop() {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP;
+  }
+
+  private static String getVersionCodeAsString(PackageInfo pi) {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P
+        ? Long.toString(pi.getLongVersionCode())
+        : Integer.toString(pi.versionCode);
+  }
+
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+  public static void addSplitSourceDirs(List<String> zipPaths, PackageInfo packageInfo) {
+    ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+    if (applicationInfo.splitSourceDirs != null) {
+      Collections.addAll(zipPaths, applicationInfo.splitSourceDirs);
+    }
+
+    File verifiedSplitsDir =
+        new File(
+            applicationInfo.dataDir,
+            String.format(
+                "files/splitcompat/%s/verified-splits", getVersionCodeAsString(packageInfo)));
+    if (!verifiedSplitsDir.exists()) {
+      // This is expected if the app does not use dynamic features
+      Logger.getLogger().d("No dynamic features found at " + verifiedSplitsDir.getAbsolutePath());
+      return;
+    }
+
+    File[] allApks = verifiedSplitsDir.listFiles(APK_FILTER);
+    if (allApks == null) {
+      allApks = new File[0];
+    }
+    Logger.getLogger()
+        .d("Found " + allApks.length + " APKs in " + verifiedSplitsDir.getAbsolutePath());
+
+    for (File apk : allApks) {
+      Logger.getLogger().d("Adding " + apk.getName() + " to classpath.");
+      zipPaths.add(apk.getAbsolutePath());
+    }
+  }
+
+  private static int getPackageInfoFlags() {
+    return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N
+        ? PackageManager.GET_SHARED_LIBRARY_FILES | PackageManager.MATCH_UNINSTALLED_PACKAGES
+        : PackageManager.GET_SHARED_LIBRARY_FILES;
+  }
+
+  public String[] makePackagePaths(String arch) {
+    try {
+      PackageManager pm = context.getPackageManager();
+      PackageInfo pi = pm.getPackageInfo(context.getPackageName(), getPackageInfoFlags());
+
+      List<String> zipPaths = new ArrayList<>(10);
+      zipPaths.add(pi.applicationInfo.sourceDir);
+
+      if (isAtLeastLollipop()) {
+        addSplitSourceDirs(zipPaths, pi);
+      }
+
+      if (pi.applicationInfo.sharedLibraryFiles != null) {
+        Collections.addAll(zipPaths, pi.applicationInfo.sharedLibraryFiles);
+      }
+
+      List<String> libPaths = new ArrayList<>(10);
+      File parent = new File(pi.applicationInfo.nativeLibraryDir).getParentFile();
+      if (parent != null) {
+        libPaths.add(new File(parent, arch).getPath());
+
+        // arch is the currently loaded library's ABI name. This is the name of the library
+        // directory in an APK, but may differ from the library directory extracted to the
+        // filesystem. ARM family abi names have a suffix specifying the architecture
+        // version, but may be extracted to directories named "arm64" or "arm".
+        // crbug.com/930342
+        if (arch.startsWith("arm64")) {
+          libPaths.add(new File(parent, "arm64").getPath());
+        } else if (arch.startsWith("arm")) {
+          libPaths.add(new File(parent, "arm").getPath());
+        }
+      }
+      for (String zip : zipPaths) {
+        if (zip.endsWith(".apk")) {
+          libPaths.add(zip + "!/lib/" + arch);
+        }
+      }
+      libPaths.add(System.getProperty("java.library.path"));
+      libPaths.add(pi.applicationInfo.nativeLibraryDir);
+
+      return new String[] {
+        TextUtils.join(File.pathSeparator, zipPaths), TextUtils.join(File.pathSeparator, libPaths)
+      };
+    } catch (NameNotFoundException e) {
+      Logger.getLogger().e("Unable to compose package paths", e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public boolean initialize(String dataPath, AssetManager assetManager) {
+    String[] paths = makePackagePaths(Build.CPU_ABI);
+
+    if (paths.length < 2) {
+      return false;
+    }
+
+    String classpath = paths[0];
+    String libspath = paths[1];
+
+    return LIB_CRASHLYTICS_LOADED
+        && nativeInit(new String[] {classpath, libspath, dataPath}, assetManager);
+  }
+
+  private native boolean nativeInit(String[] paths, Object assetManager);
 }

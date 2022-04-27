@@ -24,7 +24,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import com.google.firebase.firestore.model.value.FieldValue;
+import com.google.firestore.v1.Value;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,14 +39,14 @@ public class DocumentSetTest {
 
   private static final Comparator<Document> TEST_COMPARATOR =
       (left, right) -> {
-        FieldValue leftValue = left.getField(field("sort"));
-        FieldValue rightValue = right.getField(field("sort"));
-        return leftValue.compareTo(rightValue);
+        Value leftValue = left.getField(field("sort"));
+        Value rightValue = right.getField(field("sort"));
+        return Values.compare(leftValue, rightValue);
       };
 
-  private static final Document DOC1 = doc("docs/1", 0, map("sort", 2));
-  private static final Document DOC2 = doc("docs/2", 0, map("sort", 3));
-  private static final Document DOC3 = doc("docs/3", 0, map("sort", 1));
+  private static final MutableDocument DOC1 = doc("docs/1", 0, map("sort", 2));
+  private static final MutableDocument DOC2 = doc("docs/2", 0, map("sort", 3));
+  private static final MutableDocument DOC3 = doc("docs/3", 0, map("sort", 1));
 
   @Test
   public void testCount() {
@@ -118,7 +118,7 @@ public class DocumentSetTest {
   @Test
   public void testUpdates() {
     DocumentSet set = docSet(TEST_COMPARATOR, DOC1, DOC2, DOC3);
-    Document doc2Prime = doc("docs/2", 0, map("sort", 9));
+    MutableDocument doc2Prime = doc("docs/2", 0, map("sort", 9));
 
     set = set.add(doc2Prime);
     assertEquals(3, set.size());
@@ -128,8 +128,8 @@ public class DocumentSetTest {
 
   @Test
   public void testAddsDocsWithEqualComparisonValues() {
-    Document doc1 = doc("docs/1", 0, map("sort", 2));
-    Document doc2 = doc("docs/2", 0, map("sort", 2));
+    MutableDocument doc1 = doc("docs/1", 0, map("sort", 2));
+    MutableDocument doc2 = doc("docs/2", 0, map("sort", 2));
 
     DocumentSet set = docSet(TEST_COMPARATOR, doc1, doc2);
     assertEquals(Arrays.asList(doc1, doc2), set.toList());
@@ -137,8 +137,8 @@ public class DocumentSetTest {
 
   @Test
   public void testIsEqual() {
-    DocumentSet set1 = docSet(Document.keyComparator(), DOC1, DOC2, DOC3);
-    DocumentSet set2 = docSet(Document.keyComparator(), DOC1, DOC2, DOC3);
+    DocumentSet set1 = docSet(Document.KEY_COMPARATOR, DOC1, DOC2, DOC3);
+    DocumentSet set2 = docSet(Document.KEY_COMPARATOR, DOC1, DOC2, DOC3);
 
     assertEquals(set1, set1);
     assertEquals(set1, set2);
@@ -150,7 +150,7 @@ public class DocumentSetTest {
     assertEquals(sortedSet1, sortedSet2);
     assertFalse(sortedSet1.equals(null));
 
-    DocumentSet shortSet = docSet(Document.keyComparator(), DOC1, DOC2);
+    DocumentSet shortSet = docSet(Document.KEY_COMPARATOR, DOC1, DOC2);
     assertNotEquals(set1, shortSet);
     assertNotEquals(set1, sortedSet1);
   }

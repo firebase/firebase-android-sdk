@@ -17,6 +17,7 @@ package com.google.android.datatransport.cct.internal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import com.google.firebase.encoders.annotations.Encodable;
 import java.util.List;
 
 @AutoValue
@@ -34,12 +35,14 @@ public abstract class LogRequest {
   @Nullable
   public abstract ClientInfo getClientInfo();
 
-  public abstract int getLogSource();
+  @Nullable
+  public abstract Integer getLogSource();
 
   @Nullable
   public abstract String getLogSourceName();
 
   @Nullable
+  @Encodable.Field(name = "logEvent")
   public abstract List<LogEvent> getLogEvents();
 
   @Nullable
@@ -47,7 +50,7 @@ public abstract class LogRequest {
 
   @NonNull
   public static Builder builder() {
-    return new AutoValue_LogRequest.Builder().setLogSource(Integer.MIN_VALUE);
+    return new AutoValue_LogRequest.Builder();
   }
 
   @AutoValue.Builder
@@ -62,7 +65,7 @@ public abstract class LogRequest {
     public abstract Builder setClientInfo(@Nullable ClientInfo value);
 
     @NonNull
-    abstract Builder setLogSource(int value);
+    abstract Builder setLogSource(@Nullable Integer value);
 
     @NonNull
     abstract Builder setLogSourceName(@Nullable String value);

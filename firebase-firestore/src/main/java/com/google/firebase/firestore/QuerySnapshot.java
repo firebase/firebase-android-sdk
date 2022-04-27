@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,9 +55,9 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   }
 
   private class QuerySnapshotIterator implements Iterator<QueryDocumentSnapshot> {
-    private final Iterator<com.google.firebase.firestore.model.Document> it;
+    private final Iterator<Document> it;
 
-    QuerySnapshotIterator(Iterator<com.google.firebase.firestore.model.Document> it) {
+    QuerySnapshotIterator(Iterator<Document> it) {
       this.it = it;
     }
 
@@ -133,7 +133,7 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
   @NonNull
   public List<DocumentSnapshot> getDocuments() {
     List<DocumentSnapshot> res = new ArrayList<>(snapshot.getDocuments().size());
-    for (com.google.firebase.firestore.model.Document doc : snapshot.getDocuments()) {
+    for (Document doc : snapshot.getDocuments()) {
       res.add(convertDocument(doc));
     }
     return res;

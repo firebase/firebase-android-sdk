@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical">
+
+  <Button
+      android:id="@+id/install_play_integrity_app_check_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/install_play_integrity_app_check_button_text"/>
+  <Button
+      android:id="@+id/install_safety_net_app_check_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/install_safety_net_app_check_button_text"/>
+  <Button
+      android:id="@+id/install_debug_app_check_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/install_debug_app_check_button_text"/>
+  <Button
+      android:id="@+id/exchange_app_check_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/exchange_app_check_button_text"/>
+  <Button
+      android:id="@+id/storage_list_files_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/storage_list_files_button_text"/>
+</LinearLayout>

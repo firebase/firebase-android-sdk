@@ -1,0 +1,5 @@
+https://cloudconfig.googleapis.com/config
+https://www.google.com/ads/preferences/mobile_view
+https://www.googleapis.com/androidcheck/v1/attestations/adAttest
+http://community.wikia.com/wikia.php
+https://cloudconfig.googleapis.com/config

@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?> <!-- Copyright 2020 Google Inc. All Rights Reserved. -->
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:orientation="vertical">
+
+    <Button
+        android:id="@+id/activityFragment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="openFragmentActivity"
+        android:text="Fragment Activity"
+        android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/init"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="init"
+      android:textAllCaps="false" />
+    <Button
+      android:id="@+id/test2"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="test2"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/enable"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Enable Firebase Performance"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/disable"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Disable Firebase Performance"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/isPerfEnabled"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Check logcat if Perf is Enabled or Disabled "
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/trace"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log trace"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/traceWithLocalAttributes"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log trace with local attributes"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/traceWithGlobalAttributes"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log trace with global attributes"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/parcel_trace"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Parcel Trace"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/traceWithCounterIncrementingBy1"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Counter++ X times"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/traceWithCounterIncrementingByX"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Counter += X"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/traceStartedNotStopped"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Trace Started Not Stopped"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute1"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(request)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute2"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(request, context)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute3"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(request, responseHandler)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute4"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(request, responseHandler, context)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute5"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(target, request)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute6"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(target, request, context)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute7"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(target, request, responseHandler)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute8"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient execute(target, request, responseHandler, context)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpExecute9"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="HttpClient post"
+      android:textAllCaps="false" />
+
+
+    <Button
+      android:id="@+id/httpUrlConnection1"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection OpenConnection GetContent"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnection2"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection OpenConnection InputStream"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnection3"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection OpenConnection Proxy"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnection4"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection OpenStream"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnection5"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection GetContent"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnectionPost"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection OpenConnection Post"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpsUrlConnection1"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Https UrlConnection OpenConnection GetContent"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpsUrlConnection2"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Https UrlConnection OpenConnection InputStream"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/httpUrlConnectionInvalidUrl"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="UrlConnection InvalidUrl"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpExecute"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Execute"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpEnqueue"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Enqueue"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpPost"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Post"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpPostEnqueue"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Enqueue Post"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpExecuteError"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Execute Error"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpEnqueueError"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp Enqueue Error"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/okHttpGetWithCachePolicy"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="OkHttp GET (with Cache Policy)"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/manualnetwork"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Manual Network"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/fetchRemoteConfigDefaultInstance"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Fetch Firebase Remote Config values for the default instance"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/fetchRemoteConfigFireperfInstance"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Fetch Firebase Remote Config values for the fireperf instance"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/activateDefaultRemoteConfig"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Activate the default remote config namespace values"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/activateFireperfRemoteConfig"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Activate the fireperf remote config namespace values"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/getTraceSamplingRateFromRc"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log Firebase RC Trace Sampling Rate"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/getNetworkSamplingRateFromRc"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log Firebase RC Network Sampling Rate"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/getSessionSamplingRateFromRc"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log Firebase RC Session Sampling Rate"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/getAllFirebaseRCKeysDefaultNamespace"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log all fetched RC keys for default namespace"
+      android:textAllCaps="false" />
+
+    <Button
+      android:id="@+id/getAllFirebaseRCKeysFireperfNamespace"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Log all fetched RC keys for fireperf namespace"
+      android:textAllCaps="false" />
+
+    <TextView
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:text="You should be looking at logcat while running these tests to make sure they do the right thing."
+      android:textSize="16sp" />
+  </LinearLayout>
+
+</ScrollView>

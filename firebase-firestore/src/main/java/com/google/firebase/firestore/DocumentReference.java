@@ -14,8 +14,8 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Util.voidErrorTransformer;
 import static java.util.Collections.singletonList;
 
@@ -42,6 +42,7 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -95,7 +96,7 @@ public class DocumentReference {
 
   @NonNull
   public String getId() {
-    return key.getPath().getLastSegment();
+    return key.getDocumentId();
   }
 
   /**
@@ -105,7 +106,7 @@ public class DocumentReference {
    */
   @NonNull
   public CollectionReference getParent() {
-    return new CollectionReference(key.getPath().popLast(), firestore);
+    return new CollectionReference(key.getCollectionPath(), firestore);
   }
 
   /**
@@ -162,11 +163,11 @@ public class DocumentReference {
     checkNotNull(options, "Provided options must not be null.");
     ParsedSetData parsed =
         options.isMerge()
-            ? firestore.getDataConverter().parseMergeData(data, options.getFieldMask())
-            : firestore.getDataConverter().parseSetData(data);
+            ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
+            : firestore.getUserDataReader().parseSetData(data);
     return firestore
         .getClient()
-        .write(parsed.toMutationList(key, Precondition.NONE))
+        .write(Collections.singletonList(parsed.toMutation(key, Precondition.NONE)))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -180,7 +181,7 @@ public class DocumentReference {
    */
   @NonNull
   public Task<Void> update(@NonNull Map<String, Object> data) {
-    ParsedUpdateData parsedData = firestore.getDataConverter().parseUpdateData(data);
+    ParsedUpdateData parsedData = firestore.getUserDataReader().parseUpdateData(data);
     return update(parsedData);
   }
 
@@ -199,7 +200,7 @@ public class DocumentReference {
       @NonNull String field, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, field, value, moreFieldsAndValues));
@@ -220,7 +221,7 @@ public class DocumentReference {
       @NonNull FieldPath fieldPath, @Nullable Object value, Object... moreFieldsAndValues) {
     ParsedUpdateData parsedData =
         firestore
-            .getDataConverter()
+            .getUserDataReader()
             .parseUpdateData(
                 Util.collectUpdateArguments(
                     /* fieldPathOffset= */ 1, fieldPath, value, moreFieldsAndValues));
@@ -230,7 +231,7 @@ public class DocumentReference {
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
     return firestore
         .getClient()
-        .write(parsedData.toMutationList(key, Precondition.exists(true)))
+        .write(Collections.singletonList(parsedData.toMutation(key, Precondition.exists(true))))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -498,8 +499,7 @@ public class DocumentReference {
           } else {
             // We don't raise `hasPendingWrites` for deleted documents.
             documentSnapshot =
-                DocumentSnapshot.fromNoDocument(
-                    firestore, key, snapshot.isFromCache(), /* hasPendingWrites= */ false);
+                DocumentSnapshot.fromNoDocument(firestore, key, snapshot.isFromCache());
           }
           userListener.onEvent(documentSnapshot, null);
         };

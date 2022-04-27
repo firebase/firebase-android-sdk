@@ -15,6 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id 'firebase-vendor'
 }
 
 firebaseLibrary {
@@ -25,29 +26,22 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.4.0'
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     plugins {
         grpc {
-            artifact = 'io.grpc:protoc-gen-grpc-java:1.21.0'
-        }
-        javalite {
-            // The codegen for lite comes as a separate artifact
-            artifact = 'com.google.protobuf:protoc-gen-javalite:3.0.0'
+            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
         }
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                // In most cases you don't need the full Java output
-                // if you use the lite output.
-                remove java
+                java { option 'lite' }
             }
             task.plugins {
                 grpc {
                     option 'lite'
                 }
-                javalite {}
             }
         }
     }
@@ -65,6 +59,7 @@ android {
       multiDexEnabled true
       versionName version
       testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+      consumerProguardFiles 'proguard.txt'
     }
     sourceSets {
         main {
@@ -104,55 +99,70 @@ configurations.all {
     if(it.name.contains('AndroidTestRuntimeClasspath')) {
         it.resolutionStrategy {
             force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:27.0.1-android'
+            force 'com.google.guava:guava:30.1.1-android'
         }
     }
+}
+
+
+thirdPartyLicenses {
+    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {
     implementation project(':firebase-abt')
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':protolite-well-known-types')
     implementation project(':transport:transport-api')
     implementation project(':firebase-datatransport')
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+    implementation 'javax.inject:javax.inject:1'
 
-    implementation 'io.grpc:grpc-stub:1.21.0'
-    implementation 'io.grpc:grpc-protobuf-lite:1.21.0'
-    implementation 'io.grpc:grpc-okhttp:1.21.0'
-    implementation 'com.google.dagger:dagger:2.24'
+    //To provide @Generated annotations
+    compileOnly 'javax.annotation:jsr250-api:1.0'
+
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation "io.grpc:grpc-stub:$grpcVersion"
+    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
-    implementation 'com.google.auto.value:auto-value-annotations:1.6.5'
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
+    implementation 'com.google.auto.value:auto-value-annotations:1.8.1'
 
-    implementation('com.google.firebase:firebase-measurement-connector:18.0.0') {
+    implementation('com.google.firebase:firebase-measurement-connector:18.0.2') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
 
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.24'
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    vendor ('com.google.dagger:dagger:2.27') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
 
     testImplementation 'org.mockito:mockito-core:1.10.19'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation ('org.robolectric:robolectric:4.2') {
+    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'androidx.test:runner:1.3.0'
+    testImplementation 'androidx.test.ext:junit:1.1.2'
+    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
-    testImplementation 'io.grpc:grpc-testing:1.21.0'
-    testImplementation 'com.google.guava:guava:27.1-android'
+    testImplementation "io.grpc:grpc-testing:$grpcVersion"
+    testImplementation 'com.google.guava:guava:30.1-android'
+    testImplementation 'androidx.test:core:1.2.0'
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
-    androidTestImplementation 'io.grpc:grpc-testing:1.21.0'
+    androidTestImplementation "io.grpc:grpc-testing:$grpcVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
 
-    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.24'
+    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 }

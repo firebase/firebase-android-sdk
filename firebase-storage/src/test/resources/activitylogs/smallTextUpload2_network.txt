@@ -10,6 +10,7 @@ setRequestProperty:Content-Type,application/json
 setDoOutput:true
 setRequestProperty:Content-Length,59
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:
@@ -54,6 +55,7 @@ setRequestProperty:X-Goog-Upload-Protocol,resumable
 setDoOutput:true
 setRequestProperty:Content-Length,17
 setRequestProperty:x-firebase-gmpid,fooey
+setRequestProperty:x-firebase-appcheck,eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ==
 setUseCaches:false
 setDoInput:true
 getOutputStream:

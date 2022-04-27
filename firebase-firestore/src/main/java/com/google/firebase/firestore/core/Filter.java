@@ -14,39 +14,25 @@
 
 package com.google.firebase.firestore.core;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
+import java.util.List;
 
-/** Interface used for all query filters. */
 public abstract class Filter {
-  public enum Operator {
-    LESS_THAN("<"),
-    LESS_THAN_OR_EQUAL("<="),
-    EQUAL("=="),
-    GREATER_THAN(">"),
-    GREATER_THAN_OR_EQUAL(">="),
-    ARRAY_CONTAINS("array_contains"),
-    ARRAY_CONTAINS_ANY("array_contains_any"),
-    IN("in");
-
-    private final String text;
-
-    Operator(String text) {
-      this.text = text;
-    }
-
-    @Override
-    public String toString() {
-      return text;
-    }
-  }
-
-  /** Returns the field the Filter operates over. */
-  public abstract FieldPath getField();
-
   /** Returns true if a document matches the filter. */
   public abstract boolean matches(Document doc);
 
   /** A unique ID identifying the filter; used when serializing queries. */
   public abstract String getCanonicalId();
+
+  /** Returns a list of all field filters that are contained within this filter */
+  public abstract List<FieldFilter> getFlattenedFilters();
+
+  /** Returns a list of all filters that are contained within this filter */
+  public abstract List<Filter> getFilters();
+
+  /** Returns the field of the first filter that's an inequality, or null if none. */
+  @Nullable
+  public abstract FieldPath getFirstInequalityField();
 }

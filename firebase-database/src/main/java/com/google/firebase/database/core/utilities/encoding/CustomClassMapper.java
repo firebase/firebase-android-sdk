@@ -39,6 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -498,7 +499,7 @@ public class CustomClassMapper {
         for (Method method : currentClass.getDeclaredMethods()) {
           if (shouldIncludeSetter(method)) {
             String propertyName = propertyName(method);
-            String existingPropertyName = properties.get(propertyName.toLowerCase());
+            String existingPropertyName = properties.get(propertyName.toLowerCase(Locale.US));
             if (existingPropertyName != null) {
               if (!existingPropertyName.equals(propertyName)) {
                 throw new DatabaseException(
@@ -531,7 +532,7 @@ public class CustomClassMapper {
 
           // Case sensitivity is checked at deserialization time
           // Fields are only added if they don't exist on a subclass
-          if (properties.containsKey(propertyName.toLowerCase())
+          if (properties.containsKey(propertyName.toLowerCase(Locale.US))
               && !fields.containsKey(propertyName)) {
             field.setAccessible(true);
             fields.put(propertyName, field);
@@ -549,12 +550,12 @@ public class CustomClassMapper {
     }
 
     private void addProperty(String property) {
-      String oldValue = this.properties.put(property.toLowerCase(), property);
+      String oldValue = this.properties.put(property.toLowerCase(Locale.US), property);
       if (oldValue != null && !property.equals(oldValue)) {
         throw new DatabaseException(
             "Found two getters or fields with conflicting case "
                 + "sensitivity for property: "
-                + property.toLowerCase());
+                + property.toLowerCase(Locale.US));
       }
     }
 
@@ -613,7 +614,7 @@ public class CustomClassMapper {
                   + " found "
                   + "on class "
                   + this.clazz.getName();
-          if (this.properties.containsKey(propertyName.toLowerCase())) {
+          if (this.properties.containsKey(propertyName.toLowerCase(Locale.US))) {
             message += " (fields/setters are case sensitive!)";
           }
           if (this.throwOnUnknownProperties) {

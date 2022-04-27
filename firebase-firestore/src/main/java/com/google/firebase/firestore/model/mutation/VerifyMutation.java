@@ -17,8 +17,7 @@ package com.google.firebase.firestore.model.mutation;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.value.ObjectValue;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Assert;
 
 /**
@@ -58,21 +57,18 @@ public final class VerifyMutation extends Mutation {
   }
 
   @Override
-  public MaybeDocument applyToRemoteDocument(
-      @Nullable MaybeDocument maybeDoc, MutationResult mutationResult) {
+  public void applyToRemoteDocument(MutableDocument document, MutationResult mutationResult) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 
-  @Nullable
   @Override
-  public MaybeDocument applyToLocalView(
-      @Nullable MaybeDocument maybeDoc, @Nullable MaybeDocument baseDoc, Timestamp localWriteTime) {
+  public FieldMask applyToLocalView(
+      MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime) {
     throw Assert.fail("VerifyMutation should only be used in Transactions.");
   }
 
-  @Nullable
   @Override
-  public ObjectValue extractBaseValue(@Nullable MaybeDocument maybeDoc) {
-    throw Assert.fail("VerifyMutation should only be used in Transactions.");
+  public @Nullable FieldMask getFieldMask() {
+    return null;
   }
 }

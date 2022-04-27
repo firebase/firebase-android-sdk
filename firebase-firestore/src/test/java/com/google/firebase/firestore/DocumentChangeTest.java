@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.testutil.TestUtil.ackTarget;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -34,8 +35,7 @@ import com.google.firebase.firestore.core.View;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
@@ -55,28 +55,27 @@ public class DocumentChangeTest {
 
   private static void validatePositions(
       com.google.firebase.firestore.core.Query query,
-      Collection<Document> initialDocsList,
-      Collection<Document> addedList,
-      Collection<Document> modifiedList,
-      Collection<NoDocument> removedList) {
-    ImmutableSortedMap<DocumentKey, MaybeDocument> initialDocs =
-        docUpdates(initialDocsList.toArray(new MaybeDocument[] {}));
+      Collection<MutableDocument> initialDocsList,
+      Collection<MutableDocument> addedList,
+      Collection<MutableDocument> modifiedList,
+      Collection<MutableDocument> removedList) {
+    ImmutableSortedMap<DocumentKey, Document> initialDocs =
+        docUpdates(initialDocsList.toArray(new MutableDocument[] {}));
 
-    ImmutableSortedMap<DocumentKey, MaybeDocument> updates =
-        ImmutableSortedMap.Builder.emptyMap(DocumentKey.comparator());
-    for (Document doc : addedList) {
+    ImmutableSortedMap<DocumentKey, Document> updates = emptyDocumentMap();
+    for (MutableDocument doc : addedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
-    for (Document doc : modifiedList) {
+    for (MutableDocument doc : modifiedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
-    for (NoDocument doc : removedList) {
+    for (MutableDocument doc : removedList) {
       updates = updates.insert(doc.getKey(), doc);
     }
 
     View view = new View(query, DocumentKey.emptyKeySet());
     View.DocumentChanges initialChanges = view.computeDocChanges(initialDocs);
-    TargetChange initialTargetChange = ackTarget(initialDocsList.toArray(new Document[] {}));
+    TargetChange initialTargetChange = ackTarget(initialDocsList.toArray(new MutableDocument[] {}));
     ViewSnapshot initialSnapshot =
         view.applyChanges(initialChanges, initialTargetChange).getSnapshot();
 
@@ -114,18 +113,18 @@ public class DocumentChangeTest {
   @Test
   public void testAdditions() {
     Query query = Query.atPath(path("c"));
-    List<Document> initialDocs =
+    List<MutableDocument> initialDocs =
         asList(doc("c/a", 1, map()), doc("c/c", 1, map()), doc("c/e", 1, map()));
-    List<Document> adds = asList(doc("c/d", 2, map()), doc("c/b", 2, map()));
+    List<MutableDocument> adds = asList(doc("c/d", 2, map()), doc("c/b", 2, map()));
     validatePositions(query, initialDocs, adds, asList(), Collections.emptyList());
   }
 
   @Test
   public void testDeletions() {
     Query query = Query.atPath(path("c"));
-    List<Document> initialDocs =
+    List<MutableDocument> initialDocs =
         asList(doc("c/a", 1, map()), doc("c/b", 1, map()), doc("c/c", 1, map()));
-    List<NoDocument> deletes = asList(deletedDoc("c/a", 2), deletedDoc("c/c", 2));
+    List<MutableDocument> deletes = asList(deletedDoc("c/a", 2), deletedDoc("c/c", 2));
     validatePositions(
         query, initialDocs, Collections.emptyList(), Collections.emptyList(), deletes);
   }
@@ -133,12 +132,12 @@ public class DocumentChangeTest {
   @Test
   public void testModifications() {
     Query query = Query.atPath(path("c"));
-    List<Document> initialDocs =
+    List<MutableDocument> initialDocs =
         asList(
             doc("c/a", 1, map("value", "a-1")),
             doc("c/b", 1, map("value", "b-1")),
             doc("c/c", 1, map("value", "c-1")));
-    List<Document> updates =
+    List<MutableDocument> updates =
         asList(doc("c/a", 2, map("value", "a-2")), doc("c/c", 2, map("value", "c-2")));
     validatePositions(
         query, initialDocs, Collections.emptyList(), updates, Collections.emptyList());
@@ -147,19 +146,20 @@ public class DocumentChangeTest {
   @Test
   public void testChangesWithSortOrderChange() {
     Query query = Query.atPath(path("c")).orderBy(orderBy("sort"));
-    List<Document> initialDocs =
+    List<MutableDocument> initialDocs =
         asList(
             doc("c/a", 1, map("sort", 10)),
             doc("c/b", 1, map("sort", 20)),
             doc("c/c", 1, map("sort", 30)));
-    List<Document> adds = asList(doc("c/new-a", 2, map("sort", 0)), doc("c/e", 2, map("sort", 25)));
-    List<Document> updates =
+    List<MutableDocument> adds =
+        asList(doc("c/new-a", 2, map("sort", 0)), doc("c/e", 2, map("sort", 25)));
+    List<MutableDocument> updates =
         asList(
             doc("c/new-a", 2, map("sort", 0)),
             doc("c/b", 2, map("sort", 5)),
             doc("c/e", 2, map("sort", 25)),
             doc("c/a", 2, map("sort", 35)));
-    List<NoDocument> deletes = asList(deletedDoc("c/c", 2));
+    List<MutableDocument> deletes = asList(deletedDoc("c/c", 2));
     validatePositions(query, initialDocs, adds, updates, deletes);
   }
 
@@ -167,10 +167,10 @@ public class DocumentChangeTest {
   public void randomTests() {
     for (int run = 0; run < 100; run++) {
       Query query = Query.atPath(path("c")).orderBy(orderBy("sort"));
-      Map<DocumentKey, Document> initialDocs = new HashMap<>();
-      List<Document> adds = new ArrayList<>();
-      List<Document> updates = new ArrayList<>();
-      List<NoDocument> deletes = new ArrayList<>();
+      Map<DocumentKey, MutableDocument> initialDocs = new HashMap<>();
+      List<MutableDocument> adds = new ArrayList<>();
+      List<MutableDocument> updates = new ArrayList<>();
+      List<MutableDocument> deletes = new ArrayList<>();
       int numDocs = 100;
       for (int i = 0; i < numDocs; i++) {
         String docKey = "c/test-doc-" + i;

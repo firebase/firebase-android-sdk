@@ -1,6 +1,9 @@
-[submodule "firebase-crashlytics-ndk/src/third_party/breakpad"]
-	path = firebase-crashlytics-ndk/src/third_party/breakpad
-	url = https://chromium.googlesource.com/breakpad/breakpad
+[submodule "firebase-crashlytics-ndk/src/third_party/crashpad"]
+	path = firebase-crashlytics-ndk/src/third_party/crashpad
+	url = https://chromium.googlesource.com/crashpad/crashpad.git
+[submodule "firebase-crashlytics-ndk/src/third_party/mini_chromium"]
+	path = firebase-crashlytics-ndk/src/third_party/mini_chromium
+	url = https://chromium.googlesource.com/chromium/mini_chromium
 [submodule "firebase-crashlytics-ndk/src/third_party/lss"]
 	path = firebase-crashlytics-ndk/src/third_party/lss
-	url = https://chromium.googlesource.com/linux-syscall-support
+	url = https://chromium.googlesource.com/linux-syscall-support.git

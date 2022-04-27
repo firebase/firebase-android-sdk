@@ -3,14 +3,12 @@ package com.google.firebase.remoteconfig {
 
   public class FirebaseRemoteConfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
-    method @Deprecated @WorkerThread public boolean activateFetched();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo> ensureInitialized();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch(long);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> fetchAndActivate();
     method @NonNull public java.util.Map<java.lang.String,com.google.firebase.remoteconfig.FirebaseRemoteConfigValue> getAll();
     method public boolean getBoolean(@NonNull String);
-    method @Deprecated @NonNull public byte[] getByteArray(@NonNull String);
     method public double getDouble(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo getInfo();
     method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfig getInstance();
@@ -20,10 +18,7 @@ package com.google.firebase.remoteconfig {
     method @NonNull public String getString(@NonNull String);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigValue getValue(@NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> reset();
-    method @Deprecated public void setConfigSettings(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
-    method @Deprecated public void setDefaults(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
-    method @Deprecated public void setDefaults(@XmlRes int);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@XmlRes int);
     field public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
@@ -50,12 +45,7 @@ package com.google.firebase.remoteconfig {
     ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable);
   }
 
-  @Deprecated public class FirebaseRemoteConfigFetchException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
-    ctor @Deprecated public FirebaseRemoteConfigFetchException(@NonNull String);
-    ctor @Deprecated public FirebaseRemoteConfigFetchException(@NonNull String, @Nullable Throwable);
-  }
-
-  public class FirebaseRemoteConfigFetchThrottledException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchException {
+  public class FirebaseRemoteConfigFetchThrottledException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
     ctor public FirebaseRemoteConfigFetchThrottledException(long);
     method public long getThrottleEndTimeMillis();
   }
@@ -75,7 +65,6 @@ package com.google.firebase.remoteconfig {
   public class FirebaseRemoteConfigSettings {
     method public long getFetchTimeoutInSeconds();
     method public long getMinimumFetchIntervalInSeconds();
-    method @Deprecated public boolean isDeveloperModeEnabled();
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder toBuilder();
   }
 
@@ -84,7 +73,6 @@ package com.google.firebase.remoteconfig {
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings build();
     method public long getFetchTimeoutInSeconds();
     method public long getMinimumFetchIntervalInSeconds();
-    method @Deprecated @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setDeveloperModeEnabled(boolean);
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setFetchTimeoutInSeconds(long) throws java.lang.IllegalArgumentException;
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder setMinimumFetchIntervalInSeconds(long);
   }

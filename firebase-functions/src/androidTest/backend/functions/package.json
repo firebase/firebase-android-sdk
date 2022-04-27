@@ -2,14 +2,11 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "dependencies": {
-    "firebase-admin": "~4.2.1",
-    "firebase-functions": "^0.5.7"
-  },
-  "devDependencies": {
-    "@google-cloud/functions-emulator": "1.0.0-beta.4"
+    "firebase-admin": "9.4.2",
+    "firebase-functions": "3.13.1"
   },
   "private": true,
   "engines": {
-    "node": "8"
+    "node": "12"
   }
 }

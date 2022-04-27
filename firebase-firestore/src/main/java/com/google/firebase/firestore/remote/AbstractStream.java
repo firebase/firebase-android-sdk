@@ -86,20 +86,20 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       dispatcher.run(
           () -> {
             if (Logger.isDebugEnabled()) {
-              Map<String, String> whitelistedHeaders = new HashMap<>();
+              Map<String, String> allowlistedHeaders = new HashMap<>();
               for (String header : headers.keys()) {
                 if (Datastore.WHITE_LISTED_HEADERS.contains(header.toLowerCase(Locale.ENGLISH))) {
-                  whitelistedHeaders.put(
+                  allowlistedHeaders.put(
                       header,
                       headers.get(Metadata.Key.of(header, Metadata.ASCII_STRING_MARSHALLER)));
                 }
               }
-              if (!whitelistedHeaders.isEmpty()) {
+              if (!allowlistedHeaders.isEmpty()) {
                 Logger.debug(
                     AbstractStream.this.getClass().getSimpleName(),
                     "(%x) Stream received headers: %s",
                     System.identityHashCode(AbstractStream.this),
-                    whitelistedHeaders);
+                    allowlistedHeaders);
               }
             }
           });
@@ -142,7 +142,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
                   "(%x) Stream closed.",
                   System.identityHashCode(AbstractStream.this));
             } else {
-              Logger.debug(
+              Logger.warn(
                   AbstractStream.this.getClass().getSimpleName(),
                   "(%x) Stream closed with status: %s.",
                   System.identityHashCode(AbstractStream.this),
@@ -174,12 +174,16 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   /** The time a stream stays open after it is marked idle. */
   private static final long IDLE_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(1);
 
+  /** The time a stream stays open until we consider it healthy. */
+  private static final long HEALTHY_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
+
   /**
    * Maximum backoff time for reconnecting when we know the connection is failed on the client-side.
    */
   private static final long BACKOFF_CLIENT_NETWORK_FAILURE_MAX_DELAY_MS =
       TimeUnit.SECONDS.toMillis(10);
 
+  @Nullable private DelayedTask healthCheck;
   @Nullable private DelayedTask idleTimer;
 
   private final FirestoreChannel firestoreChannel;
@@ -188,6 +192,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
   private final AsyncQueue workerQueue;
   private final TimerId idleTimerId;
+  private final TimerId healthTimerId;
   private State state = State.Initial;
 
   /**
@@ -206,11 +211,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
       AsyncQueue workerQueue,
       TimerId connectionTimerId,
       TimerId idleTimerId,
+      TimerId healthTimerId,
       CallbackT listener) {
     this.firestoreChannel = channel;
     this.methodDescriptor = methodDescriptor;
     this.workerQueue = workerQueue;
     this.idleTimerId = idleTimerId;
+    this.healthTimerId = healthTimerId;
     this.listener = listener;
     this.idleTimeoutRunnable = new IdleTimeoutRunnable();
 
@@ -226,13 +233,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   @Override
   public boolean isStarted() {
     workerQueue.verifyIsCurrentThread();
-    return state == State.Starting || state == State.Open || state == State.Backoff;
+    return state == State.Starting || state == State.Backoff || isOpen();
   }
 
   @Override
   public boolean isOpen() {
     workerQueue.verifyIsCurrentThread();
-    return state == State.Open;
+    return state == State.Open || state == State.Healthy;
   }
 
   @Override
@@ -273,7 +280,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private void close(State finalState, Status status) {
     hardAssert(isStarted(), "Only started streams should be closed.");
     hardAssert(
-        finalState == State.Error || status.equals(Status.OK),
+        finalState == State.Error || status.isOk(),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
 
@@ -286,6 +293,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
 
     // Cancel any outstanding timers (they're guaranteed not to execute).
     cancelIdleCheck();
+    cancelHealthCheck();
     this.backoff.cancel();
 
     // Invalidates any stream-related callbacks (e.g. from auth or the underlying stream),
@@ -302,9 +310,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
           "(%x) Using maximum backoff delay to prevent overloading the backend.",
           System.identityHashCode(this));
       backoff.resetToMax();
-    } else if (code == Code.UNAUTHENTICATED) {
-      // "unauthenticated" error means the token was rejected. Try force refreshing it in case it
-      // just expired.
+    } else if (code == Code.UNAUTHENTICATED && state != State.Healthy) {
+      // "unauthenticated" error means the token was rejected. This should rarely
+      // happen since both Auth and AppCheck ensure a sufficient TTL when we
+      // request a token. If a user manually resets their system clock this can
+      // fail, however. In this case, we should get a Code.UNAUTHENTICATED error
+      // before we received the first message and we need to invalidate the token
+      // to ensure that we fetch a new token.
       firestoreChannel.invalidateToken();
     } else if (code == Code.UNAVAILABLE) {
       // This exception is thrown when the gRPC connection fails on the client side, To shorten
@@ -402,6 +414,19 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
   private void onOpen() {
     state = State.Open;
     this.listener.onOpen();
+
+    // Mark this stream as healthy if it's still open after 10 seconds.
+    if (healthCheck == null) {
+      healthCheck =
+          workerQueue.enqueueAfterDelay(
+              this.healthTimerId,
+              HEALTHY_TIMEOUT_MS,
+              () -> {
+                if (this.isOpen()) {
+                  state = State.Healthy;
+                }
+              });
+    }
   }
 
   public abstract void onNext(RespT change);
@@ -442,6 +467,13 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     if (idleTimer != null) {
       idleTimer.cancel();
       idleTimer = null;
+    }
+  }
+
+  private void cancelHealthCheck() {
+    if (healthCheck != null) {
+      healthCheck.cancel();
+      healthCheck = null;
     }
   }
 }

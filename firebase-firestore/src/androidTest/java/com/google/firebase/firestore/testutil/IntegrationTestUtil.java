@@ -36,10 +36,8 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -86,7 +84,7 @@ public class IntegrationTestUtil {
 
   // Whether the integration tests should run against a local Firestore emulator instead of the
   // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
-  // TODO(mrschmidt): Support multiple envrionments (Emulator, QA, Nightly, Production)
+  // TODO(mrschmidt): Support multiple environments (Emulator, QA, Nightly, Production)
   private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8080;
@@ -139,12 +137,6 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
-    return newTestSettingsWithSnapshotTimestampsEnabled(true);
-  }
-
-  @SuppressWarnings("deprecation") // for setTimestampsInSnapshotsEnabled()
-  public static FirebaseFirestoreSettings newTestSettingsWithSnapshotTimestampsEnabled(
-      boolean enabled) {
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
 
     if (CONNECT_TO_EMULATOR) {
@@ -155,7 +147,6 @@ public class IntegrationTestUtil {
     }
 
     settings.setPersistenceEnabled(true);
-    settings.setTimestampsInSnapshotsEnabled(enabled);
 
     return settings.build();
   }
@@ -263,9 +254,6 @@ public class IntegrationTestUtil {
     // This unfortunately is a global setting that affects existing Firestore clients.
     Logger.setLogLevel(logLevel);
 
-    // TODO: Remove this once this is ready to ship.
-    Persistence.INDEXING_SUPPORT_ENABLED = true;
-
     Context context = ApplicationProvider.getApplicationContext();
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
 
@@ -279,10 +267,11 @@ public class IntegrationTestUtil {
             databaseId,
             persistenceKey,
             MockCredentialsProvider.instance(),
+            new EmptyAppCheckTokenProvider(),
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
-    waitFor(AccessHelper.clearPersistence(firestore));
+    waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 
@@ -451,5 +440,11 @@ public class IntegrationTestUtil {
 
   public static void testChangeUserTo(User user) {
     MockCredentialsProvider.instance().changeUserTo(user);
+  }
+
+  public static List<Object> nullList() {
+    List<Object> nullArray = new ArrayList<>();
+    nullArray.add(null);
+    return nullArray;
   }
 }

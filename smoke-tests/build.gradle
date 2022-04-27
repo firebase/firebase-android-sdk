@@ -19,22 +19,23 @@ import java.nio.file.Paths
 buildscript {
   repositories {
     google()
-    jcenter()
+    mavenCentral()
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:3.4.2"
-    classpath "com.google.gms:google-services:4.3.0"
+    classpath "com.android.tools.build:gradle:3.4.3"
+    classpath "com.google.gms:google-services:4.3.10"
+    classpath "com.google.firebase:firebase-crashlytics-gradle:2.8.1"
   }
 }
 
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 28
+  compileSdkVersion 29
 
   defaultConfig {
-    minSdkVersion 16
+    minSdkVersion 19
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     versionName "1.0.0"
@@ -50,10 +51,9 @@ android {
     }
   }
 
-  // As required by Firebase Android Smart Reply doc:
-  // https://firebase.google.com/docs/ml-kit/android/generate-smart-replies#before-you-begin
-  aaptOptions {
-    noCompress "tflite"
+  compileOptions {
+    sourceCompatibility 1.8
+    targetCompatibility 1.8
   }
 
   if (project.hasProperty("testBuildType")) {
@@ -66,31 +66,33 @@ apply from: "configure.gradle"
 dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
+  implementation "com.google.firebase:firebase-annotations"
+  implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta01"
   implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
+  implementation "com.google.firebase:firebase-crashlytics"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   implementation "com.google.firebase:firebase-inappmessaging"
   implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-natural-language"
-  implementation "com.google.firebase:firebase-ml-natural-language-smart-reply-model"
-  implementation "com.google.firebase:firebase-ml-vision"
+  implementation "com.google.firebase:firebase-ml-modeldownloader"
+  implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
   // Common utilities (application side)
-  implementation "androidx.test:rules:1.2.0"
-  implementation "androidx.test:runner:1.2.0"
-  implementation "com.google.truth:truth:0.44"
-  implementation "junit:junit:4.12"
+  implementation "androidx.test:rules:1.4.0"
+  implementation "androidx.test:runner:1.4.0"
+  implementation "com.google.truth:truth:1.0.1"
+  implementation "junit:junit:4.13.2"
+  implementation "androidx.test:core:1.4.0"
 
   // Common utilities (instrumentation side)
-  androidTestImplementation "androidx.test:core:1.2.0"
-  androidTestImplementation "androidx.test:runner:1.2.0"
-  androidTestImplementation "junit:junit:4.12"
+  androidTestImplementation "androidx.test:runner:1.4.0"
+  androidTestImplementation "junit:junit:4.13.2"
 }
 
 clean.doLast {
@@ -102,3 +104,4 @@ clean.doLast {
 }
 
 apply plugin: "com.google.gms.google-services"
+apply plugin: "com.google.firebase.crashlytics"

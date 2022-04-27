@@ -19,8 +19,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.android.AndroidPlatform;
-import com.google.firebase.database.connection.ConnectionAuthTokenProvider;
 import com.google.firebase.database.connection.ConnectionContext;
+import com.google.firebase.database.connection.ConnectionTokenProvider;
 import com.google.firebase.database.connection.HostInfo;
 import com.google.firebase.database.connection.PersistentConnection;
 import com.google.firebase.database.core.persistence.NoopPersistenceManager;
@@ -38,7 +38,8 @@ public class Context {
 
   protected Logger logger;
   protected EventTarget eventTarget;
-  protected AuthTokenProvider authTokenProvider;
+  protected TokenProvider authTokenProvider;
+  protected TokenProvider appCheckTokenProvider;
   protected RunLoop runLoop;
   protected String persistenceKey;
   protected List<String> loggedComponents;
@@ -97,6 +98,7 @@ public class Context {
     ensureRunLoop();
     ensureSessionIdentifier();
     ensureAuthTokenProvider();
+    ensureAppTokenProvider();
   }
 
   private void restartServices() {
@@ -140,11 +142,13 @@ public class Context {
   public ConnectionContext getConnectionContext() {
     return new ConnectionContext(
         this.getLogger(),
-        wrapAuthTokenProvider(this.getAuthTokenProvider(), this.getExecutorService()),
+        wrapTokenProvider(this.getAuthTokenProvider(), this.getExecutorService()),
+        wrapTokenProvider(this.getAppCheckTokenProvider(), this.getExecutorService()),
         this.getExecutorService(),
         this.isPersistenceEnabled(),
         FirebaseDatabase.getSdkVersion(),
         this.getUserAgent(),
+        firebaseApp.getOptions().getApplicationId(),
         this.getSSLCacheDirectory().getAbsolutePath());
   }
 
@@ -199,8 +203,12 @@ public class Context {
     return this.persistenceKey;
   }
 
-  public AuthTokenProvider getAuthTokenProvider() {
+  public TokenProvider getAuthTokenProvider() {
     return this.authTokenProvider;
+  }
+
+  public TokenProvider getAppCheckTokenProvider() {
+    return this.appCheckTokenProvider;
   }
 
   public PersistentConnection newPersistentConnection(
@@ -247,6 +255,12 @@ public class Context {
         authTokenProvider, "You must register an authTokenProvider before initializing Context.");
   }
 
+  private void ensureAppTokenProvider() {
+    Preconditions.checkNotNull(
+        appCheckTokenProvider,
+        "You must register an appCheckTokenProvider before initializing Context.");
+  }
+
   private void ensureSessionIdentifier() {
     if (persistenceKey == null) {
       persistenceKey = "default";
@@ -265,12 +279,12 @@ public class Context {
     return sb.toString();
   }
 
-  private static ConnectionAuthTokenProvider wrapAuthTokenProvider(
-      final AuthTokenProvider provider, ScheduledExecutorService executorService) {
+  private static ConnectionTokenProvider wrapTokenProvider(
+      final TokenProvider provider, ScheduledExecutorService executorService) {
     return (forceRefresh, callback) ->
         provider.getToken(
             forceRefresh,
-            new AuthTokenProvider.GetTokenCompletionListener() {
+            new TokenProvider.GetTokenCompletionListener() {
               @Override
               public void onSuccess(String token) {
                 executorService.execute(() -> callback.onSuccess(token));

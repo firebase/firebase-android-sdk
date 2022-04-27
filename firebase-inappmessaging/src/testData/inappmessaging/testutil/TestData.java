@@ -30,8 +30,8 @@ public class TestData {
   // ************************* METADATA *************************
   public static final String ANALYTICS_EVENT_NAME = "event1";
   public static final String ON_FOREGROUND_EVENT_NAME = "ON_FOREGROUND";
-  public static final String INSTANCE_ID = "instance_id";
-  public static final String INSTANCE_TOKEN = "instance_token";
+  public static final String INSTALLATION_ID = "instance_id";
+  public static final String INSTALLATION_TOKEN = "instance_token";
   public static final boolean IS_NOT_TEST_MESSAGE = false;
   public static final boolean IS_TEST_MESSAGE = true;
   public static final String MESSAGE_BACKGROUND_HEX_STRING = "#FFFFFF";
@@ -77,7 +77,8 @@ public class TestData {
       Button.builder().setText(BUTTON_TEXT_MODEL).setButtonHexColor(BUTTON_BG_STRING).build();
 
   // ************************* ACTION *************************
-  public static final String ACTION_URL_STRING = "action_url";
+  public static final String ACTION_URL_STRING = "fiam://action_url";
+  public static final String WEB_ACTION_URL_STRING = "http://action_url";
   public static final String SECONDARY_ACTION_URL_STRING = "secondary_action";
   public static final Action ACTION_MODEL_WITHOUT_BUTTON =
       Action.builder().setActionUrl(ACTION_URL_STRING).build();
@@ -89,6 +90,8 @@ public class TestData {
       Action.builder().setActionUrl(ACTION_URL_STRING).setButton(BUTTON_MODEL).build();
   public static final Action SECONDARY_ACTION_MODEL_WITH_BUTTON =
       Action.builder().setActionUrl(SECONDARY_ACTION_URL_STRING).setButton(BUTTON_MODEL).build();
+  public static final Action WEB_ACTION_MODEL_WITHOUT_BUTTON =
+      Action.builder().setActionUrl(WEB_ACTION_URL_STRING).build();
 
   // ************************* BANNER *************************
   public static final BannerMessage BANNER_MESSAGE_MODEL =
@@ -153,6 +156,12 @@ public class TestData {
   public static final ImageOnlyMessage IMAGE_MESSAGE_MODEL =
       ImageOnlyMessage.builder()
           .setAction(ACTION_MODEL_WITHOUT_BUTTON)
+          .setImageData(IMAGE_DATA)
+          .build(CAMPAIGN_METADATA_MODEL, DATA);
+
+  public static final ImageOnlyMessage IMAGE_MESSAGE_WEB_ACTION_MODEL =
+      ImageOnlyMessage.builder()
+          .setAction(WEB_ACTION_MODEL_WITHOUT_BUTTON)
           .setImageData(IMAGE_DATA)
           .build(CAMPAIGN_METADATA_MODEL, DATA);
 

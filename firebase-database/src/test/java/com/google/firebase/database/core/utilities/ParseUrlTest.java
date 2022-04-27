@@ -19,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.database.DatabaseException;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -35,7 +36,6 @@ public class ParseUrlTest {
     assertEquals("gsoltis.fblocal.com:9000", parsed.repoInfo.internalHost);
 
     parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com/foo/bar");
-    assertEquals("/foo/bar", parsed.path.toString());
     assertEquals("gsoltis.firebaseio.com", parsed.repoInfo.host);
     assertEquals("gsoltis.firebaseio.com", parsed.repoInfo.internalHost);
 
@@ -89,5 +89,16 @@ public class ParseUrlTest {
     // Hosts with the default ports are considered secure
     parsed = Utilities.parseUrl("http://gsoltis.firebaseio.com");
     assertTrue(parsed.repoInfo.secure);
+  }
+
+  @Test
+  public void testUrlParsingWithEmulator() {
+    ParsedUrl parsedUrl = Utilities.parseUrl("https://myns.firebaseio.com");
+    parsedUrl.repoInfo.applyEmulatorSettings(new EmulatedServiceSettings("10.0.2.2", 9000));
+
+    assertFalse(parsedUrl.repoInfo.secure);
+    assertEquals(parsedUrl.repoInfo.host, "10.0.2.2:9000");
+    assertEquals(parsedUrl.repoInfo.internalHost, "10.0.2.2:9000");
+    assertEquals(parsedUrl.repoInfo.namespace, "myns");
   }
 }

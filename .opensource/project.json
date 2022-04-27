@@ -5,16 +5,8 @@
         "Android"
     ],
     "content": "docs/README.md",
-    "pages": {
-        "README.md": "Development Guide",
-        "docs/ktx/common.md": "Common KTX",
-        "docs/ktx/firestore.md": "Firestore KTX",
-        "docs/ktx/functions.md": "Functions KTX",
-        "docs/ktx/inappmessaging.md": "In-App Messaging KTX",
-        "docs/ktx/inappmessaging-display.md": "In-App Messaging Display KTX",
-        "docs/ktx/remote-config.md": "Remote Config KTX",
-        "docs/ktx/storage.md": "Storage KTX",
-        "docs/ktx/database.md": "Realtime Database KTX"
+    "pages": {	
+        "README.md": "Development Guide"
     },
     "related": [
         "firebase/quickstart-android"
@@ -23,10 +15,6 @@
         {
             "title": "Main Reference",
             "href": "https://firebase.google.com/docs/reference/android/"
-        },
-        {
-            "title": "KTX Reference",
-            "href": "https://firebase.github.io/firebase-android-sdk/reference/kotlin/firebase-ktx/"
         }
     ]
 }

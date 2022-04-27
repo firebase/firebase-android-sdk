@@ -21,11 +21,12 @@ firebaseLibrary{
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 28
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'proguard.txt'
     }
 
     compileOptions {
@@ -35,9 +36,9 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
-    compileOnly 'androidx.annotation:annotation:1.1.0'
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
+    implementation 'androidx.annotation:annotation:1.1.0'
+    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     testImplementation 'junit:junit:4.13-beta-3'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
 }

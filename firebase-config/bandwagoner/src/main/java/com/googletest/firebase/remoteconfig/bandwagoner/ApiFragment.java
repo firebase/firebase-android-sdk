@@ -16,11 +16,11 @@
 
 package com.googletest.firebase.remoteconfig.bandwagoner;
 
-import static com.googletest.firebase.remoteconfig.bandwagoner.Constants.TAG;
 import static com.googletest.firebase.remoteconfig.bandwagoner.TimeFormatHelper.getCurrentTimeString;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,7 +33,10 @@ import android.widget.ToggleButton;
 import androidx.annotation.IdRes;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 
@@ -46,6 +49,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 public class ApiFragment extends Fragment {
 
   private FirebaseRemoteConfig frc;
+  private FirebaseInstallationsApi firebaseInstallations;
   private View rootView;
   private EditText minimumFetchIntervalText;
   private EditText parameterKeyText;
@@ -53,13 +57,17 @@ public class ApiFragment extends Fragment {
   private TextView apiCallProgressText;
   private TextView apiCallResultsText;
 
+  private static final String TAG = "Bandwagoner";
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     frc = FirebaseRemoteConfig.getInstance();
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(true).build());
+    frc.setConfigSettingsAsync(
+        new FirebaseRemoteConfigSettings.Builder().setMinimumFetchIntervalInSeconds(0L).build());
+
+    firebaseInstallations = FirebaseApp.getInstance().get(FirebaseInstallationsApi.class);
   }
 
   @Override
@@ -87,9 +95,33 @@ public class ApiFragment extends Fragment {
     TextView sdkVersionText = rootView.findViewById(R.id.sdk_version_text);
 
     TextView iidText = rootView.findViewById(R.id.iid_text);
-    iidText.setText("IID: " + FirebaseInstanceId.getInstance().getId());
 
-    apiCallResultsText.setText(FirebaseInstanceId.getInstance().getToken());
+    Task<String> installationIdTask = firebaseInstallations.getId();
+    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+
+    Tasks.whenAllComplete(installationIdTask, installationAuthTokenTask)
+        .addOnCompleteListener(
+            unusedCompletedTasks -> {
+              if (installationIdTask.isSuccessful()) {
+                iidText.setText(
+                    String.format("Installation ID: %s", installationIdTask.getResult()));
+              } else {
+                Log.e(TAG, "Error getting installation ID", installationIdTask.getException());
+              }
+
+              if (installationAuthTokenTask.isSuccessful()) {
+                Log.i(
+                    TAG,
+                    String.format(
+                        "Installation authentication token: %s",
+                        installationAuthTokenTask.getResult().getToken()));
+              } else {
+                Log.e(
+                    TAG,
+                    "Error getting installation authentication token",
+                    installationAuthTokenTask.getException());
+              }
+            });
 
     return rootView;
   }
@@ -100,12 +132,21 @@ public class ApiFragment extends Fragment {
   }
 
   /** Sets the version of the FRC server the SDK fetches from. */
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
   private void onDevModeToggle(boolean isChecked) {
     hideSoftKeyboard();
 
-    frc.setConfigSettings(
-        new FirebaseRemoteConfigSettings.Builder().setDeveloperModeEnabled(isChecked).build());
+    FirebaseRemoteConfigSettings.Builder settingsBuilder =
+        new FirebaseRemoteConfigSettings.Builder();
+    String minimumFetchIntervalString = minimumFetchIntervalText.getText().toString();
+
+    if (isChecked || TextUtils.isEmpty(minimumFetchIntervalString)) {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(0L);
+    } else {
+      settingsBuilder.setMinimumFetchIntervalInSeconds(
+          Integer.parseInt(minimumFetchIntervalString));
+    }
+
+    frc.setConfigSettingsAsync(settingsBuilder.build());
   }
 
   /**
@@ -164,11 +205,20 @@ public class ApiFragment extends Fragment {
   private void onActivateFetched(View unusedView) {
     hideSoftKeyboard();
 
-    boolean activated = frc.activateFetched();
-    apiCallResultsText.setText(
-        String.format(
-            "%s - activateFetched %s!",
-            getCurrentTimeString(), activated ? "was successful" : "returned false"));
+    frc.activate()
+        .addOnCompleteListener(
+            activateTask -> {
+              if (activateTask.isSuccessful()) {
+                apiCallResultsText.setText(
+                    String.format(
+                        "%s - activate %s!",
+                        getCurrentTimeString(),
+                        activateTask.getResult() ? "was successful" : "returned false"));
+              } else {
+                apiCallResultsText.setText(
+                    String.format("%s - activate failed!", getCurrentTimeString()));
+              }
+            });
   }
 
   /**

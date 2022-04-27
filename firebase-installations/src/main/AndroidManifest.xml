@@ -3,6 +3,8 @@
     package="com.google.firebase.installations">
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
+    <!--<uses-sdk android:minSdkVersion="14"/>-->
     <application>
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"

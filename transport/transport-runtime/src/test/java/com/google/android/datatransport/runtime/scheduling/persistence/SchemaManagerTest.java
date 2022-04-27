@@ -13,11 +13,13 @@
 // limitations under the License.
 package com.google.android.datatransport.runtime.scheduling.persistence;
 
+import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.content.ContentValues;
 import android.database.sqlite.SQLiteDatabase;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -26,13 +28,13 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
 
 @RunWith(RobolectricTestRunner.class)
 public class SchemaManagerTest {
@@ -59,8 +61,7 @@ public class SchemaManagerTest {
           .build();
 
   private static final EventInternal EVENT2 =
-      EVENT1
-          .toBuilder()
+      EVENT1.toBuilder()
           .setEncodedPayload(
               new EncodedPayload(PROTOBUF_ENCODING, "World".getBytes(Charset.defaultCharset())))
           .build();
@@ -70,11 +71,15 @@ public class SchemaManagerTest {
       EventStoreConfig.DEFAULT.toBuilder().setLoadBatchSize(5).setEventCleanUpAge(HOUR).build();
 
   private final TestClock clock = new TestClock(1);
+  private final Lazy<String> packageName =
+      () -> ApplicationProvider.getApplicationContext().getPackageName();
 
   @Test
   public void persist_correctlyRoundTrips() {
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, SCHEMA_VERSION);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, SCHEMA_VERSION);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
 
     PersistedEvent newEvent = store.persist(CONTEXT1, EVENT1);
     Iterable<PersistedEvent> events = store.loadBatch(CONTEXT1);
@@ -87,9 +92,11 @@ public class SchemaManagerTest {
   public void upgradingV1ToLatest_emptyDatabase_allowsPersistsAfterUpgrade() {
     int oldVersion = 1;
     int newVersion = SCHEMA_VERSION;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
 
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
 
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     PersistedEvent newEvent1 = store.persist(CONTEXT1, EVENT1);
@@ -101,8 +108,10 @@ public class SchemaManagerTest {
   public void upgradingV1ToLatest_nonEmptyDB_isLossless() {
     int oldVersion = 1;
     int newVersion = SCHEMA_VERSION;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
     // We simulate operations as done by an older SQLLiteEventStore at V1
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
@@ -114,36 +123,35 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void downgradeV2ToV1_withNonEmptyDB_isLossy() {
-    int fromVersion = 2;
-    int toVersion = fromVersion - 1;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, fromVersion);
-    SQLiteEventStore store = new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager);
-    PersistedEvent event1 = store.persist(CONTEXT1, EVENT1);
+  public void upgradingV3ToV4_nonEmptyDB_isLossless() {
+    int oldVersion = 3;
+    int newVersion = 4;
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
+    SQLiteEventStore store =
+        new SQLiteEventStore(clock, new UptimeClock(), CONFIG, schemaManager, packageName);
+    // We simulate operations as done by an older SQLLiteEventStore at V1
+    // We cannot simulate older operations with a newer client
+    PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), toVersion, fromVersion);
+    // Upgrade to V4
+    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
+    assertThat(store.loadBatch(CONTEXT1)).containsExactly(event1);
 
-    long contextCount =
-        schemaManager
-            .getReadableDatabase()
-            .compileStatement("select count(*) from transport_contexts")
+    long inlineRows =
+        store
+            .getDb()
+            .compileStatement("SELECT COUNT(*) from events where inline = 1")
             .simpleQueryForLong();
-
-    long eventCount =
-        schemaManager
-            .getReadableDatabase()
-            .compileStatement("select count(*) from events")
-            .simpleQueryForLong();
-
-    assertThat(contextCount).isEqualTo(0);
-    assertThat(eventCount).isEqualTo(0);
+    assertThat(inlineRows).isEqualTo(1);
   }
 
   @Test
   public void upgrade_toANonExistentVersion_fails() {
     int oldVersion = 1;
     int nonExistentVersion = 1000;
-    SchemaManager schemaManager = new SchemaManager(RuntimeEnvironment.application, oldVersion);
+    SchemaManager schemaManager =
+        new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
 
     Assert.assertThrows(
         IllegalArgumentException.class,

@@ -276,26 +276,6 @@ public class ConfigCacheClientTest {
   }
 
   @Test
-  public void putWithoutWaitingForDiskWrite_fileWriteFails_setsCache() throws Exception {
-    when(mockStorageClient.write(configContainer)).thenThrow(IO_EXCEPTION);
-
-    Task<ConfigContainer> putTask = cacheClient.putWithoutWaitingForDiskWrite(configContainer);
-    assertThrows(ExecutionException.class, () -> Tasks.await(putTask));
-
-    assertThat(putTask.getException()).isEqualTo(IO_EXCEPTION);
-    assertThat(cacheClient.getCachedContainerTask().getResult()).isEqualTo(configContainer);
-  }
-
-  @Test
-  public void putWithoutWaitingForDiskWrite_fileWriteSucceeds_setsCache() throws Exception {
-    ConfigContainer putContainer =
-        Tasks.await(cacheClient.putWithoutWaitingForDiskWrite(configContainer));
-
-    assertThat(putContainer).isEqualTo(configContainer);
-    assertThat(cacheClient.getCachedContainerTask().getResult()).isEqualTo(configContainer);
-  }
-
-  @Test
   public void clear_hasNoCachedValue_setsCacheContainerToNull() {
     Preconditions.checkArgument(cacheClient.getCachedContainerTask() == null);
 

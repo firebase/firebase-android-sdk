@@ -14,14 +14,19 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
+
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.inject.Deferred;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,17 +42,20 @@ class FirestoreMultiDbComponent
 
   private final FirebaseApp app;
   private final Context context;
-  private final InternalAuthProvider authProvider;
+  private final Deferred<InternalAuthProvider> authProvider;
+  private final Deferred<InternalAppCheckTokenProvider> appCheckProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider,
+      @NonNull Deferred<InternalAuthProvider> authProvider,
+      @NonNull Deferred<InternalAppCheckTokenProvider> appCheckProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
+    this.appCheckProvider = appCheckProvider;
     this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
@@ -59,7 +67,7 @@ class FirestoreMultiDbComponent
     if (firestore == null) {
       firestore =
           FirebaseFirestore.newInstance(
-              context, app, authProvider, databaseId, this, metadataProvider);
+              context, app, authProvider, appCheckProvider, databaseId, this, metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;
@@ -79,10 +87,15 @@ class FirestoreMultiDbComponent
 
   @Override
   public synchronized void onDeleted(String firebaseAppName, FirebaseOptions options) {
-    // Shuts down all database instances and remove them from registry map when App is deleted.
-    for (Map.Entry<String, FirebaseFirestore> entry : instances.entrySet()) {
-      entry.getValue().terminateInternal();
-      instances.remove(entry.getKey());
+    // Shut down all database instances and remove them from the registry map. To avoid
+    // ConcurrentModificationException, make a copy of the entries instead of using an iterator from
+    // the `instances` map directly.
+    for (Map.Entry<String, FirebaseFirestore> entry : new ArrayList<>(instances.entrySet())) {
+      entry.getValue().terminate();
+      hardAssert(
+          !instances.containsKey(entry.getKey()),
+          "terminate() should have removed its entry from `instances` for key: %s",
+          entry.getKey());
     }
   }
 }

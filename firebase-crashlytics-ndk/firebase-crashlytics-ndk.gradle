@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'LicenseResolverPlugin'
 }
 
 firebaseLibrary {
@@ -21,19 +22,25 @@ firebaseLibrary {
     publishJavadoc = false
 }
 
-def androidVersion = 28
-
 android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion androidVersion
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion androidVersion
+        targetSdkVersion project.targetSdkVersion
         versionName version
 
+        externalNativeBuild {
+            ndkBuild {
+                arguments '-j4'
+                arguments '--output-sync=none'
+            }
+        }
+
+        consumerProguardFiles 'firebase-crashlytics-ndk-proguard.txt'
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -48,27 +55,78 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    packagingOptions {
+        exclude './src/third_party/**'
+    }
+
     externalNativeBuild {
         ndkBuild {
             path "./src/main/jni/Android.mk"
         }
     }
+
+    libraryVariants.all { variant ->
+        variant.outputs.each { output ->
+            def func = fixTrampolineFilenames(variant.baseName)
+
+            tasks.findAll {
+                it.name.startsWith("bundleReleaseAar")
+            }.each {
+                it.dependsOn func
+            }
+
+            tasks.findAll {
+                it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
+            }.each {
+                func.dependsOn it
+            }
+        }
+    }
+}
+
+
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+// There is not any normal way to package native executables in an Android APK.
+// It is normal to package native code as a loadable module but Android's APK
+// installer will ignore files not named like a shared object, so give the
+// handler executable an acceptable name
+def fixTrampolineFilenames(variantBaseName) {
+    project.task("fixTrampolineFilenames${variantBaseName}").configure({
+    }).doFirst {
+        ["x86", "x86_64", "armeabi-v7a", "arm64-v8a"].each { arch ->
+            def initial = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/crashlytics-trampoline")
+            def renamed = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/libcrashlytics-trampoline.so")
+
+            // There is no need to delete the original file, it will not be
+            // packaged into the APK
+            Files.copy(initial.toPath(), renamed.toPath(), StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+}
+
+thirdPartyLicenses {
+    add 'Crashpad', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-crashlytics')
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
 
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation 'org.robolectric:robolectric:4.2'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:1.10.19'
+    testImplementation 'androidx.test:runner:1.4.0'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:3.4.3'
 
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'androidx.test:runner:1.4.0'
+    androidTestImplementation 'androidx.test:core:1.4.0'
+    androidTestImplementation 'org.mockito:mockito-core:3.4.3'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
-    androidTestImplementation 'com.google.protobuf:protobuf-java:3.6.1'
+    androidTestImplementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 }

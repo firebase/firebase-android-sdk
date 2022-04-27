@@ -168,6 +168,7 @@ class WebsocketConnection {
       ConnectionContext connectionContext,
       HostInfo hostInfo,
       String optCachedHost,
+      String appCheckToken,
       Delegate delegate,
       String optLastSessionId) {
     this.connectionContext = connectionContext;
@@ -175,18 +176,20 @@ class WebsocketConnection {
     this.delegate = delegate;
     long connId = connectionId++;
     logger = new LogWrapper(connectionContext.getLogger(), "WebSocket", "ws_" + connId);
-    conn = createConnection(hostInfo, optCachedHost, optLastSessionId);
+    conn = createConnection(hostInfo, optCachedHost, appCheckToken, optLastSessionId);
   }
 
   private WSClient createConnection(
-      HostInfo hostInfo, String optCachedHost, String optLastSessionId) {
+      HostInfo hostInfo, String optCachedHost, String appCheckToken, String optLastSessionId) {
     String host = (optCachedHost != null) ? optCachedHost : hostInfo.getHost();
     URI uri =
         HostInfo.getConnectionUrl(
             host, hostInfo.isSecure(), hostInfo.getNamespace(), optLastSessionId);
     Map<String, String> extraHeaders = new HashMap<String, String>();
-    extraHeaders.put("User-Agent", this.connectionContext.getUserAgent());
-    WebSocket ws = new WebSocket(this.connectionContext, uri, /*protocol=*/ null, extraHeaders);
+    extraHeaders.put("User-Agent", connectionContext.getUserAgent());
+    extraHeaders.put("X-Firebase-GMPID", connectionContext.getApplicationId());
+    extraHeaders.put("X-Firebase-AppCheck", appCheckToken);
+    WebSocket ws = new WebSocket(connectionContext, uri, /*protocol=*/ null, extraHeaders);
     WSClientTubesock client = new WSClientTubesock(ws);
     return client;
   }

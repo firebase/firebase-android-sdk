@@ -14,37 +14,56 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.base.Function;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.PreviewApi;
+import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.EmptyCredentialsProvider;
+import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.ByteBufferInputStream;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
+import com.google.firebase.firestore.util.Preconditions;
+import com.google.firebase.inject.Deferred;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Represents a Cloud Firestore database and is the entry point for all Cloud Firestore operations.
@@ -71,13 +90,15 @@ public class FirebaseFirestore {
   // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
-  private final CredentialsProvider credentialsProvider;
+  private final CredentialsProvider<User> authProvider;
+  private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
-  private final UserDataConverter dataConverter;
+  private final UserDataReader userDataReader;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
   // this instance.
   private final InstanceRegistry instanceRegistry;
+  @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
@@ -109,7 +130,8 @@ public class FirebaseFirestore {
   static FirebaseFirestore newInstance(
       @NonNull Context context,
       @NonNull FirebaseApp app,
-      @Nullable InternalAuthProvider authProvider,
+      @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
+      @NonNull Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -121,13 +143,10 @@ public class FirebaseFirestore {
 
     AsyncQueue queue = new AsyncQueue();
 
-    CredentialsProvider provider;
-    if (authProvider == null) {
-      Logger.debug(TAG, "Firebase Auth not available, falling back to unauthenticated usage.");
-      provider = new EmptyCredentialsProvider();
-    } else {
-      provider = new FirebaseAuthCredentialsProvider(authProvider);
-    }
+    CredentialsProvider<User> authProvider =
+        new FirebaseAuthCredentialsProvider(deferredAuthProvider);
+    CredentialsProvider<String> appCheckProvider =
+        new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
 
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
@@ -140,7 +159,8 @@ public class FirebaseFirestore {
             context,
             databaseId,
             persistenceKey,
-            provider,
+            authProvider,
+            appCheckProvider,
             queue,
             app,
             instanceRegistry,
@@ -153,23 +173,25 @@ public class FirebaseFirestore {
       Context context,
       DatabaseId databaseId,
       String persistenceKey,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
-    this.dataConverter = new UserDataConverter(databaseId);
+    this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
-    this.credentialsProvider = checkNotNull(credentialsProvider);
+    this.authProvider = checkNotNull(authProvider);
+    this.appCheckProvider = checkNotNull(appCheckProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
 
-    settings = new FirebaseFirestoreSettings.Builder().build();
+    this.settings = new FirebaseFirestoreSettings.Builder().build();
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -183,8 +205,11 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
+    settings = mergeEmulatorSettings(settings, this.emulatorSettings);
+
     synchronized (databaseId) {
       checkNotNull(settings, "Provided settings must not be null.");
+
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
       if (client != null && !this.settings.equals(settings)) {
@@ -193,8 +218,27 @@ public class FirebaseFirestore {
                 + "You can only call setFirestoreSettings() before calling any other methods on a "
                 + "FirebaseFirestore object.");
       }
+
       this.settings = settings;
     }
+  }
+
+  /**
+   * Modifies this FirebaseDatabase instance to communicate with the Cloud Firestore emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any database operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 8080)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    if (this.client != null) {
+      throw new IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized.");
+    }
+
+    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
   }
 
   private void ensureClientConfigured() {
@@ -211,14 +255,103 @@ public class FirebaseFirestore {
 
       client =
           new FirestoreClient(
-              context, databaseInfo, settings, credentialsProvider, asyncQueue, metadataProvider);
+              context,
+              databaseInfo,
+              settings,
+              authProvider,
+              appCheckProvider,
+              asyncQueue,
+              metadataProvider);
     }
+  }
+
+  private FirebaseFirestoreSettings mergeEmulatorSettings(
+      @NonNull FirebaseFirestoreSettings settings,
+      @Nullable EmulatedServiceSettings emulatorSettings) {
+    if (emulatorSettings == null) {
+      return settings;
+    }
+
+    if (!FirebaseFirestoreSettings.DEFAULT_HOST.equals(settings.getHost())) {
+      Logger.warn(
+          TAG,
+          "Host has been set in FirebaseFirestoreSettings and useEmulator, emulator host will be used.");
+    }
+
+    return new FirebaseFirestoreSettings.Builder(settings)
+        .setHost(emulatorSettings.getHost() + ":" + emulatorSettings.getPort())
+        .setSslEnabled(false)
+        .build();
   }
 
   /** Returns the FirebaseApp instance to which this {@code FirebaseFirestore} belongs. */
   @NonNull
   public FirebaseApp getApp() {
     return firebaseApp;
+  }
+
+  /**
+   * Configures indexing for local query execution. Any previous index configuration is overridden.
+   * The Task resolves once the index configuration has been persisted.
+   *
+   * <p>The index entries themselves are created asynchronously. You can continue to use queries
+   * that require indexing even if the indices are not yet available. Query execution will
+   * automatically start using the index once the index entries have been written.
+   *
+   * <p>The method accepts the JSON format exported by the Firebase CLI (`firebase
+   * firestore:indexes`). If the JSON format is invalid, this method throws an exception.
+   *
+   * @param json The JSON format exported by the Firebase CLI.
+   * @return A task that resolves once all indices are successfully configured.
+   * @throws IllegalArgumentException if the JSON format is invalid
+   */
+  @PreviewApi
+  @NonNull
+  public Task<Void> setIndexConfiguration(@NonNull String json) {
+    ensureClientConfigured();
+    Preconditions.checkState(
+        settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
+
+    List<FieldIndex> parsedIndexes = new ArrayList<>();
+
+    // See https://firebase.google.com/docs/reference/firestore/indexes/#json_format for the
+    // format of the index definition. Unlike the backend, the SDK does not distinguish between
+    // collection ID and collection group indices and hence the queryScope field is ignored.
+
+    try {
+      JSONObject jsonObject = new JSONObject(json);
+
+      if (jsonObject.has("indexes")) {
+        JSONArray indexes = jsonObject.getJSONArray("indexes");
+        for (int i = 0; i < indexes.length(); ++i) {
+          JSONObject definition = indexes.getJSONObject(i);
+          String collectionGroup = definition.getString("collectionGroup");
+          List<FieldIndex.Segment> segments = new ArrayList<>();
+
+          JSONArray fields = definition.optJSONArray("fields");
+          for (int f = 0; fields != null && f < fields.length(); ++f) {
+            JSONObject field = fields.getJSONObject(f);
+            FieldPath fieldPath = FieldPath.fromServerFormat(field.getString("fieldPath"));
+            if ("CONTAINS".equals(field.optString("arrayConfig"))) {
+              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.CONTAINS));
+            } else if ("ASCENDING".equals(field.optString("order"))) {
+              segments.add(FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.ASCENDING));
+            } else {
+              segments.add(
+                  FieldIndex.Segment.create(fieldPath, FieldIndex.Segment.Kind.DESCENDING));
+            }
+          }
+
+          parsedIndexes.add(
+              FieldIndex.create(
+                  FieldIndex.UNKNOWN_ID, collectionGroup, segments, FieldIndex.INITIAL_STATE));
+        }
+      }
+    } catch (JSONException e) {
+      throw new IllegalArgumentException("Failed to parse index configuration", e);
+    }
+
+    return client.configureFieldIndexes(parsedIndexes);
   }
 
   /**
@@ -351,12 +484,6 @@ public class FirebaseFirestore {
     return batch.commit();
   }
 
-  Task<Void> terminateInternal() {
-    // The client must be initialized to ensure that all subsequent API usage throws an exception.
-    this.ensureClientConfigured();
-    return client.terminate();
-  }
-
   /**
    * Terminates this {@code FirebaseFirestore} instance.
    *
@@ -380,7 +507,10 @@ public class FirebaseFirestore {
   @NonNull
   public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
-    return terminateInternal();
+
+    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    this.ensureClientConfigured();
+    return client.terminate();
   }
 
   /**
@@ -540,6 +670,67 @@ public class FirebaseFirestore {
   }
 
   /**
+   * Loads a Firestore bundle into the local cache.
+   *
+   * @param bundleData A stream representing the bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull InputStream bundleData) {
+    ensureClientConfigured();
+    LoadBundleTask resultTask = new LoadBundleTask();
+    client.loadBundle(bundleData, resultTask);
+    return resultTask;
+  }
+
+  /**
+   * Loads a Firestore bundle into the local cache.
+   *
+   * @param bundleData A byte array representing the bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull byte[] bundleData) {
+    return loadBundle(new ByteArrayInputStream(bundleData));
+  }
+
+  /**
+   * Loads a Firestore bundle into the local cache.
+   *
+   * @param bundleData A ByteBuffer representing the bundle to be loaded.
+   * @return A {@link LoadBundleTask}, which notifies callers with progress updates, and completion
+   *     or error events.
+   */
+  @NonNull
+  public LoadBundleTask loadBundle(@NonNull ByteBuffer bundleData) {
+    return loadBundle(new ByteBufferInputStream(bundleData));
+  }
+
+  /**
+   * Reads a Firestore {@link Query} from local cache, identified by the given name.
+   *
+   * <p>The named queries are packaged into bundles on the server side (along with resulting
+   * documents) and loaded to local cache using {@link #loadBundle(byte[])}. Once in local cache,
+   * you can use this method to extract a query by name.
+   */
+  public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
+    ensureClientConfigured();
+    return client
+        .getNamedQuery(name)
+        .continueWith(
+            task -> {
+              com.google.firebase.firestore.core.Query query = task.getResult();
+              if (query != null) {
+                return new Query(query, FirebaseFirestore.this);
+              } else {
+                return null;
+              }
+            });
+  }
+
+  /**
    * Internal helper method to add a snapshotsInSync listener.
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
@@ -577,8 +768,8 @@ public class FirebaseFirestore {
     return databaseId;
   }
 
-  UserDataConverter getDataConverter() {
-    return dataConverter;
+  UserDataReader getUserDataReader() {
+    return userDataReader;
   }
 
   /**
@@ -591,5 +782,17 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException(
           "Provided document reference is from a different Cloud Firestore instance.");
     }
+  }
+
+  /**
+   * Sets the language of the public API in the format of "gl-<language>/<version>" where version
+   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   *
+   * <p>Note: this method is package-private because it is expected to only be called via JNI (which
+   * ignores access modifiers).
+   */
+  @Keep
+  static void setClientLanguage(@NonNull String languageToken) {
+    FirestoreChannel.setClientLanguage(languageToken);
   }
 }

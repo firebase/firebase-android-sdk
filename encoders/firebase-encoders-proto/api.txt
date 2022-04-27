@@ -1,0 +1,35 @@
+// Signature format: 2.0
+package com.google.firebase.encoders.proto {
+
+  public interface ProtoEnum {
+    method public int getNumber();
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Protobuf {
+    method public abstract com.google.firebase.encoders.proto.Protobuf.IntEncoding intEncoding() default com.google.firebase.encoders.proto.Protobuf.IntEncoding.DEFAULT;
+    method public abstract int tag();
+  }
+
+  public enum Protobuf.IntEncoding {
+    enum_constant public static final com.google.firebase.encoders.proto.Protobuf.IntEncoding DEFAULT;
+    enum_constant public static final com.google.firebase.encoders.proto.Protobuf.IntEncoding FIXED;
+    enum_constant public static final com.google.firebase.encoders.proto.Protobuf.IntEncoding SIGNED;
+  }
+
+  public class ProtobufEncoder {
+    method public static com.google.firebase.encoders.proto.ProtobufEncoder.Builder builder();
+    method public void encode(@NonNull Object, @NonNull OutputStream);
+    method @NonNull public byte[] encode(@NonNull Object);
+  }
+
+  public static final class ProtobufEncoder.Builder implements com.google.firebase.encoders.config.EncoderConfig<com.google.firebase.encoders.proto.ProtobufEncoder.Builder> {
+    ctor public ProtobufEncoder.Builder();
+    method public com.google.firebase.encoders.proto.ProtobufEncoder build();
+    method @NonNull public com.google.firebase.encoders.proto.ProtobufEncoder.Builder configureWith(@NonNull com.google.firebase.encoders.config.Configurator);
+    method @NonNull public <U> com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ObjectEncoder<? super U>);
+    method @NonNull public <U> com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerEncoder(@NonNull Class<U>, @NonNull com.google.firebase.encoders.ValueEncoder<? super U>);
+    method @NonNull public com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerFallbackEncoder(@NonNull com.google.firebase.encoders.ObjectEncoder<Object>);
+  }
+
+}
+

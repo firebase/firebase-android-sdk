@@ -25,7 +25,7 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = 'com.google.protobuf:protoc:3.10.1'
+        artifact = "com.google.protobuf:protoc:$protocVersion"
     }
     generateProtoTasks {
         all().each { task ->
@@ -37,12 +37,13 @@ protobuf {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         versionName version
+        consumerProguardFiles 'proguard.txt'
     }
     compileOptions {
         sourceCompatibility = '1.8'
@@ -53,34 +54,24 @@ android {
 dependencies {
     implementation project(':transport:transport-api')
     implementation project(':transport:transport-runtime')
+    implementation project(':encoders:firebase-encoders')
     implementation project(':encoders:firebase-encoders-json')
     implementation 'androidx.annotation:annotation:1.1.0'
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
 
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
+    annotationProcessor project(':encoders:firebase-encoders-processor')
 
-    testImplementation 'com.google.protobuf:protobuf-java:3.10.0'
-    testImplementation 'com.google.protobuf:protobuf-java-util:3.10.0'
+    testImplementation 'com.google.protobuf:protobuf-java-util:3.11.0'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
-    testImplementation("com.github.tomakehurst:wiremock-jre8:2.21.0") {
-        //Allows us to use the Android version of Apache httpclient instead
-        exclude group: 'org.apache.httpcomponents', module: 'httpclient'
-
-        //Resolves the Duplicate Class Exception
-        //duplicate entry: org/objectweb/asm/AnnotationVisitor.class
-        exclude group: 'asm', module: 'asm'
-
-        //Fixes Warning conflict with Android's version of org.json
-        //org.json:json:20090211 is ignored for debugAndroidTest as it may be conflicting with the internal version provided by Android.
-        exclude group: 'org.json', module: 'json'
-    }
+    testImplementation 'com.github.tomakehurst:wiremock:2.26.3'
     //Android compatible version of Apache httpclient.
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation 'org.robolectric:robolectric:4.2'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13-beta-2'
 
     androidTestImplementation 'androidx.test:runner:1.2.0'

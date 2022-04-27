@@ -14,14 +14,27 @@
 
 package com.google.firebase.platforminfo;
 
+import android.content.Context;
 import com.google.firebase.components.Component;
+import com.google.firebase.components.Dependency;
 
 /** Factory to create a component that publishes the version of an SDK */
 public class LibraryVersionComponent {
   private LibraryVersionComponent() {}
 
+  public interface VersionExtractor<T> {
+    String extract(T context);
+  }
+
   /** Creates a component that publishes SDK versions */
   public static Component<?> create(String sdkName, String version) {
     return Component.intoSet(LibraryVersion.create(sdkName, version), LibraryVersion.class);
+  }
+
+  public static Component<?> fromContext(String sdkName, VersionExtractor<Context> extractor) {
+    return Component.intoSetBuilder(LibraryVersion.class)
+        .add(Dependency.required(Context.class))
+        .factory(c -> LibraryVersion.create(sdkName, extractor.extract(c.get(Context.class))))
+        .build();
   }
 }

@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -81,7 +82,7 @@ public class CompoundHashingIntegrationTest {
     } else if (node.isEmpty()) {
       // ignore
     } else {
-      assert node instanceof ChildrenNode;
+      hardAssert(node instanceof ChildrenNode);
       ((ChildrenNode) node)
           .forEachChild(
               new ChildrenNode.ChildVisitor() {

@@ -45,11 +45,24 @@ final class DataCollectionTestUtil {
     }
   }
 
+  static SharedPreferences getSharedPreferences(Context context) {
+    return context.getSharedPreferences(
+        FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
+        Context.MODE_PRIVATE);
+  }
+
   static SharedPreferences getSharedPreferences() {
     return ApplicationProvider.getApplicationContext()
         .getSharedPreferences(
             FIREBASE_APP_PREFS + FirebaseApp.getPersistenceKey(APP_NAME, OPTIONS),
             Context.MODE_PRIVATE);
+  }
+
+  static void setSharedPreferencesTo(Context context, boolean enabled) {
+    getSharedPreferences(context)
+        .edit()
+        .putBoolean(DataCollectionConfigStorage.DATA_COLLECTION_DEFAULT_ENABLED, enabled)
+        .commit();
   }
 
   static void setSharedPreferencesTo(boolean enabled) {

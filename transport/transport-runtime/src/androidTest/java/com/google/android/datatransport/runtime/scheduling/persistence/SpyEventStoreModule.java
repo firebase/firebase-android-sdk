@@ -16,11 +16,13 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 
 import static org.mockito.Mockito.spy;
 
+import android.content.Context;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import dagger.Binds;
+import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Named;
@@ -39,8 +41,9 @@ public abstract class SpyEventStoreModule {
       @WallTime Clock wallClock,
       @Monotonic Clock clock,
       EventStoreConfig config,
-      SchemaManager schemaManager) {
-    return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager));
+      SchemaManager schemaManager,
+      @Named("PACKAGE_NAME") Lazy<String> packageName) {
+    return spy(new SQLiteEventStore(wallClock, clock, config, schemaManager, packageName));
   }
 
   @Binds
@@ -49,9 +52,24 @@ public abstract class SpyEventStoreModule {
   @Binds
   abstract SynchronizationGuard synchronizationGuard(SQLiteEventStore store);
 
+  @Binds
+  abstract ClientHealthMetricsStore clientHealthMetricsStore(SQLiteEventStore store);
+
   @Provides
   @Named("SCHEMA_VERSION")
   static int schemaVersion() {
     return SchemaManager.SCHEMA_VERSION;
+  }
+
+  @Provides
+  @Named("SQLITE_DB_NAME")
+  static String dbName() {
+    return SchemaManager.DB_NAME;
+  }
+
+  @Provides
+  @Named("PACKAGE_NAME")
+  static String packageName(Context context) {
+    return context.getPackageName();
   }
 }

@@ -27,8 +27,11 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
+import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.os.UserManagerCompat;
@@ -45,11 +48,9 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
 import com.google.firebase.events.Publisher;
-import com.google.firebase.heartbeatinfo.DefaultHeartBeatInfo;
+import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
-import com.google.firebase.platforminfo.KotlinDetector;
-import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,7 +60,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.concurrent.GuardedBy;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
@@ -115,7 +115,7 @@ public class FirebaseApp {
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
   private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
-
+  private final Provider<DefaultHeartBeatController> defaultHeartBeatController;
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
@@ -201,6 +201,7 @@ public class FirebaseApp {
     synchronized (LOCK) {
       FirebaseApp firebaseApp = INSTANCES.get(normalize(name));
       if (firebaseApp != null) {
+        firebaseApp.defaultHeartBeatController.get().registerHeartBeat();
         return firebaseApp;
       }
 
@@ -275,8 +276,8 @@ public class FirebaseApp {
    * @param options represents the global {@link FirebaseOptions}
    * @param name unique name for the app. It is an error to initialize an app with an already
    *     existing name. Starting and ending whitespace characters in the name are ignored (trimmed).
-   * @throws IllegalStateException if an app with the same name has already been initialized.
    * @return an instance of {@link FirebaseApp}
+   * @throws IllegalStateException if an app with the same name has already been initialized.
    */
   @NonNull
   public static FirebaseApp initializeApp(
@@ -384,9 +385,24 @@ public class FirebaseApp {
    * @hide
    */
   @KeepForSdk
-  public void setDataCollectionDefaultEnabled(boolean enabled) {
+  public void setDataCollectionDefaultEnabled(Boolean enabled) {
     checkNotDeleted();
     dataCollectionConfigStorage.get().setEnabled(enabled);
+  }
+
+  /**
+   * Enable or disable automatic data collection across all SDKs.
+   *
+   * <p>Note: this value is respected by all SDKs unless overridden by the developer via SDK
+   * specific mechanisms.
+   *
+   * @hide
+   * @deprecated Use {@link #setDataCollectionDefaultEnabled(Boolean)} instead.
+   */
+  @KeepForSdk
+  @Deprecated
+  public void setDataCollectionDefaultEnabled(boolean enabled) {
+    setDataCollectionDefaultEnabled(Boolean.valueOf(enabled));
   }
 
   /**
@@ -399,23 +415,18 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
-    List<ComponentRegistrar> registrars =
+    List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
-            .discover();
+            .discoverLazy();
 
-    String kotlinVersion = KotlinDetector.detectVersion();
     componentRuntime =
-        new ComponentRuntime(
-            UI_EXECUTOR,
-            registrars,
-            Component.of(applicationContext, Context.class),
-            Component.of(this, FirebaseApp.class),
-            Component.of(options, FirebaseOptions.class),
-            LibraryVersionComponent.create(FIREBASE_ANDROID, ""),
-            LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME),
-            kotlinVersion != null ? LibraryVersionComponent.create(KOTLIN, kotlinVersion) : null,
-            DefaultUserAgentPublisher.component(),
-            DefaultHeartBeatInfo.component());
+        ComponentRuntime.builder(UI_EXECUTOR)
+            .addLazyComponentRegistrars(registrars)
+            .addComponentRegistrar(new FirebaseCommonRegistrar())
+            .addComponent(Component.of(applicationContext, Context.class))
+            .addComponent(Component.of(this, FirebaseApp.class))
+            .addComponent(Component.of(options, FirebaseOptions.class))
+            .build();
 
     dataCollectionConfigStorage =
         new Lazy<>(
@@ -424,6 +435,14 @@ public class FirebaseApp {
                     applicationContext,
                     getPersistenceKey(),
                     componentRuntime.get(Publisher.class)));
+    defaultHeartBeatController = componentRuntime.getProvider(DefaultHeartBeatController.class);
+
+    addBackgroundStateChangeListener(
+        background -> {
+          if (!background) {
+            defaultHeartBeatController.get().registerHeartBeat();
+          }
+        });
   }
 
   private void checkNotDeleted() {
@@ -435,6 +454,13 @@ public class FirebaseApp {
   @VisibleForTesting
   public boolean isDefaultApp() {
     return DEFAULT_APP_NAME.equals(getName());
+  }
+
+  /** @hide */
+  @VisibleForTesting
+  @RestrictTo(Scope.TESTS)
+  void initializeAllComponents() {
+    componentRuntime.initializeAllComponentsForTests();
   }
 
   private void notifyBackgroundStateChangeListeners(boolean background) {
@@ -452,8 +478,8 @@ public class FirebaseApp {
    * <p>If automatic resource management is enabled and the app is in the background a callback is
    * triggered immediately.
    *
-   * @see BackgroundStateChangeListener
    * @hide
+   * @see BackgroundStateChangeListener
    */
   @KeepForSdk
   public void addBackgroundStateChangeListener(BackgroundStateChangeListener listener) {
@@ -557,10 +583,16 @@ public class FirebaseApp {
   private void initializeAllApis() {
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
     if (inDirectBoot) {
+      Log.i(
+          LOG_TAG,
+          "Device in Direct Boot Mode: postponing initialization of Firebase APIs for app "
+              + getName());
       // Ensure that all APIs are initialized once the user unlocks the phone.
       UserUnlockReceiver.ensureReceiverRegistered(applicationContext);
     } else {
+      Log.i(LOG_TAG, "Device unlocked: initializing all Firebase APIs for app " + getName());
       componentRuntime.initializeEagerComponents(isDefaultApp());
+      defaultHeartBeatController.get().registerHeartBeat();
     }
   }
 
@@ -671,6 +703,7 @@ public class FirebaseApp {
   }
 
   private static class UiExecutor implements Executor {
+
     private static final Handler HANDLER = new Handler(Looper.getMainLooper());
 
     @Override

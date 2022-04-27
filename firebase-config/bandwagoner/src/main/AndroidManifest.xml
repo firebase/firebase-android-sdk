@@ -22,7 +22,7 @@
     android:versionName="3.0.0">
 
 
-  <!--Needed for Firebase IID's getToken method.-->
+  <!--Needed for Firebase Installations getToken method.-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
   <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE"/>
 
@@ -43,7 +43,7 @@
 
     <service android:exported="false" android:name="com.google.firebase.components.ComponentDiscoveryService">
       <meta-data
-          android:name="com.google.firebase.components:com.google.firebase.iid.Registrar"
+          android:name="com.google.firebase.components:com.google.firebase.installations.FirebaseInstallationsRegistrar"
           android:value="com.google.firebase.components.ComponentRegistrar"/>
     </service>
 

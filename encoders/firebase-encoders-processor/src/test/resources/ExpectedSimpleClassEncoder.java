@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.encoders.EncodingException;
+import com.google.firebase.encoders.FieldDescriptor;
 import com.google.firebase.encoders.ObjectEncoder;
 import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
 import java.lang.Override;
-import javax.annotation.Generated;
 
-@Generated("com.google.firebase.encoders.processor.EncodableProcessor")
+/**
+ * @hide */
 public final class AutoSimpleClassEncoder implements Configurator {
-  public static final int CODEGEN_VERSION = 1;
+  public static final int CODEGEN_VERSION = 2;
 
   public static final Configurator CONFIG = new AutoSimpleClassEncoder();
 
-  private AutoSimpleClassEncoder() {}
+  private AutoSimpleClassEncoder() {
+  }
 
   @Override
   public void configure(EncoderConfig<?> cfg) {
@@ -37,13 +38,20 @@ public final class AutoSimpleClassEncoder implements Configurator {
   private static final class SimpleClassEncoder implements ObjectEncoder<SimpleClass> {
     static final SimpleClassEncoder INSTANCE = new SimpleClassEncoder();
 
+    private static final FieldDescriptor INT_DESCRIPTOR = FieldDescriptor.of("int");
+
+    private static final FieldDescriptor BOOL_DESCRIPTOR = FieldDescriptor.of("bool");
+
+    private static final FieldDescriptor MAP_DESCRIPTOR = FieldDescriptor.of("map");
+
+    private static final FieldDescriptor FOO_DESCRIPTOR = FieldDescriptor.of("foo");
+
     @Override
-    public void encode(SimpleClass value, ObjectEncoderContext ctx)
-        throws IOException, EncodingException {
-      ctx.add("int", value.getInt());
-      ctx.add("bool", value.isBool());
-      ctx.add("map", value.getMap());
-      ctx.add("foo", value.getField());
+    public void encode(SimpleClass value, ObjectEncoderContext ctx) throws IOException {
+      ctx.add(INT_DESCRIPTOR, value.getInt());
+      ctx.add(BOOL_DESCRIPTOR, value.isBool());
+      ctx.add(MAP_DESCRIPTOR, value.getMap());
+      ctx.add(FOO_DESCRIPTOR, value.getField());
     }
   }
 }

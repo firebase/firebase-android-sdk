@@ -18,7 +18,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
-import static com.google.firebase.remoteconfig.RemoteConfigComponent.NETWORK_CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
@@ -57,7 +57,6 @@ public class ConfigMetadataClient {
   private static final long NO_BACKOFF_TIME_IN_MILLIS = -1L;
   @VisibleForTesting static final Date NO_BACKOFF_TIME = new Date(NO_BACKOFF_TIME_IN_MILLIS);
 
-  private static final String DEVELOPER_MODE_KEY = "is_developer_mode_enabled";
   private static final String FETCH_TIMEOUT_IN_SECONDS_KEY = "fetch_timeout_in_seconds";
   private static final String MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY =
       "minimum_fetch_interval_in_seconds";
@@ -79,12 +78,8 @@ public class ConfigMetadataClient {
     this.backoffMetadataLock = new Object();
   }
 
-  public boolean isDeveloperModeEnabled() {
-    return frcMetadata.getBoolean(DEVELOPER_MODE_KEY, false);
-  }
-
   public long getFetchTimeoutInSeconds() {
-    return frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, NETWORK_CONNECTION_TIMEOUT_IN_SECONDS);
+    return frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   public long getMinimumFetchIntervalInSeconds() {
@@ -121,10 +116,8 @@ public class ConfigMetadataClient {
 
       FirebaseRemoteConfigSettings settings =
           new FirebaseRemoteConfigSettings.Builder()
-              .setDeveloperModeEnabled(frcMetadata.getBoolean(DEVELOPER_MODE_KEY, false))
               .setFetchTimeoutInSeconds(
-                  frcMetadata.getLong(
-                      FETCH_TIMEOUT_IN_SECONDS_KEY, NETWORK_CONNECTION_TIMEOUT_IN_SECONDS))
+                  frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
               .setMinimumFetchIntervalInSeconds(
                   frcMetadata.getLong(
                       MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY,
@@ -162,7 +155,6 @@ public class ConfigMetadataClient {
     synchronized (frcInfoLock) {
       frcMetadata
           .edit()
-          .putBoolean(DEVELOPER_MODE_KEY, settings.isDeveloperModeEnabled())
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
               MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY, settings.getMinimumFetchIntervalInSeconds())
@@ -180,7 +172,6 @@ public class ConfigMetadataClient {
     synchronized (frcInfoLock) {
       frcMetadata
           .edit()
-          .putBoolean(DEVELOPER_MODE_KEY, settings.isDeveloperModeEnabled())
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
               MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY, settings.getMinimumFetchIntervalInSeconds())

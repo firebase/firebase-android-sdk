@@ -79,17 +79,6 @@ public class ConfigCacheClient {
   }
 
   /**
-   * Sets the in-memory {@link ConfigContainer} to {@code configContainer} and then starts the file
-   * write to save the new config to disk.
-   *
-   * @return A {@link Task} representing the write to disk.
-   */
-  public Task<ConfigContainer> putWithoutWaitingForDiskWrite(ConfigContainer configContainer) {
-    updateInMemoryConfigContainer(configContainer);
-    return put(configContainer, /*shouldUpdateInMemoryContainer=*/ false);
-  }
-
-  /**
    * Returns the cached {@link ConfigContainer}, blocking on a file read if necessary.
    *
    * <p>If no {@link ConfigContainer} has been read from disk yet, blocks on a {@link #get()} call.

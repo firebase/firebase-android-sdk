@@ -1,0 +1,75 @@
+# Whenever a new Firebase Android SDK is released, this workflow triggers
+# *another* workflow on the Firebase C++ SDK, which will check for the Android
+# version update and create a PR updating its dependencies if any version
+# numbers changed.
+name: update-cpp-sdk-on-release
+on:
+  push:
+    branches:
+      # Change the below line if the main branch is renamed.
+      - 'master'
+    paths:
+      # Only run this if a gradle.properties file is touched.
+      - '**/gradle.properties'
+
+jobs:
+  check_if_version_changed:
+    name: Check if released version changed
+    # This step checks several things, and sets released_version_changed=1 only if all are true:
+    # - The push must target the main branch.
+    # - The push must modify a gradle.properties file.
+    # - The push must change a "latestReleasedVersion=" line in a gradle.properties file.
+    runs-on: ubuntu-latest
+    outputs:
+      released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
+    steps:
+      - uses: actions/checkout@v2.3.1
+        with:
+          # Check out the actual head commit, not any merge commit.
+          ref: ${{ github.sha }}
+          # Specify fetch-depth so we can query the log, the default is a shallow clone.
+          fetch-depth: 0
+      - name: Check if version was updated in git history
+        id: check_version
+        run: |
+          # Query the git history for all gradle.properties files changed by this push.
+          # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
+          if (git diff '${{ github.event.before }}' -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
+            echo "::set-output name=released_version_changed::1"
+          else
+            echo "No change to latestReleasedVersion detected since ${{ github.event.before }}"
+          fi
+
+  trigger_cpp_sdk_update:
+    name: Trigger C++ SDK update
+    # If the previous step set the released_version_changed output param to 1, then
+    # we should trigger the C++ SDK to update its Android dependencies.
+    needs: check_if_version_changed
+    if: ${{ needs.check_if_version_changed.outputs.released_version_changed }}
+    # Fetch an authentication token for firebase-workflow-trigger, then use that
+    # token to trigger the update-dependencies workflow in firebase-cpp-sdk.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Check out firebase-cpp-sdk
+        uses: actions/checkout@v2.3.1
+        with:
+          repository: firebase/firebase-cpp-sdk
+          ref: main
+
+      - name: Get firebase-workflow-trigger token
+        uses: tibdex/github-app-token@v1
+        id: generate-token
+        with:
+          app_id: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_ID }}
+          private_key: ${{ secrets.CPP_WORKFLOW_TRIGGER_APP_PRIVATE_KEY }}
+          repository: firebase/firebase-cpp-sdk
+
+      - name: Trigger firebase-cpp-sdk update
+        run: |
+          pip install -r scripts/gha/requirements.txt
+          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.sha }})." -s 10 -A

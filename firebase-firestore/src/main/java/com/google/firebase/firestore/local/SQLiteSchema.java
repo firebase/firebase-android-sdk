@@ -23,12 +23,11 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.text.TextUtils;
-import android.util.Log;
 import androidx.annotation.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.proto.Target;
 import com.google.firebase.firestore.util.Consumer;
+import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,48 +48,49 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 10;
-
-  // Remove this constant and increment VERSION to enable indexing support
-  static final int INDEXING_SUPPORT_VERSION = VERSION + 1;
+  static final int VERSION = 16;
 
   /**
-   * The batch size for the sequence number migration in `ensureSequenceNumbers()`.
+   * The batch size for data migrations.
    *
    * <p>This addresses https://github.com/firebase/firebase-android-sdk/issues/370, where a customer
    * reported that schema migrations failed for clients with thousands of documents. The number has
    * been chosen based on manual experiments.
    */
-  private static final int SEQUENCE_NUMBER_BATCH_SIZE = 100;
+  @VisibleForTesting static final int MIGRATION_BATCH_SIZE = 100;
 
   private final SQLiteDatabase db;
 
-  // PORTING NOTE: The Android client doesn't need to use a serializer to remove held write acks.
-  SQLiteSchema(SQLiteDatabase db) {
+  private final LocalSerializer serializer;
+
+  SQLiteSchema(SQLiteDatabase db, LocalSerializer serializer) {
     this.db = db;
+    this.serializer = serializer;
   }
 
-  void runMigrations() {
-    runMigrations(0, VERSION);
+  void runSchemaUpgrades() {
+    runSchemaUpgrades(0);
   }
 
-  void runMigrations(int fromVersion) {
-    runMigrations(fromVersion, VERSION);
+  void runSchemaUpgrades(int fromVersion) {
+    runSchemaUpgrades(fromVersion, VERSION);
   }
 
   /**
-   * Runs the migration methods defined in this class, starting at the given version.
+   * Runs the upgrade methods defined in this class, starting at the given version.
    *
    * @param fromVersion The version the database is starting at. When first created it will be zero.
    * @param toVersion The version the database is migrating to. Usually VERSION, but can be
    *     otherwise for testing.
    */
-  void runMigrations(int fromVersion, int toVersion) {
+  void runSchemaUpgrades(int fromVersion, int toVersion) {
     /*
      * New migrations should be added at the end of the series of `if` statements and should follow
      * the pattern. Make sure to increment `VERSION` and to read the comment below about
      * requirements for new migrations.
      */
+
+    long startTime = System.currentTimeMillis();
 
     if (fromVersion < 1 && toVersion >= 1) {
       createV1MutationQueue();
@@ -151,8 +151,36 @@ class SQLiteSchema {
       dropLastLimboFreeSnapshotVersion();
     }
 
+    if (fromVersion < 11 && toVersion >= 11) {
+      // Schema version 11 changed the format of canonical IDs in the target cache.
+      rewriteCanonicalIds();
+    }
+
+    if (fromVersion < 12 && toVersion >= 12) {
+      createBundleCache();
+    }
+
+    if (fromVersion < 13 && toVersion >= 13) {
+      addPathLength();
+      ensurePathLength();
+    }
+
+    if (fromVersion < 14 && toVersion >= 14) {
+      createOverlays();
+      createDataMigrationTable();
+      addPendingDataMigration(Persistence.DATA_MIGRATION_BUILD_OVERLAYS);
+    }
+
+    if (fromVersion < 15 && toVersion >= 15) {
+      ensureReadTime();
+    }
+
+    if (fromVersion < 16 && toVersion >= 16) {
+      createFieldIndex();
+    }
+
     /*
-     * Adding a new migration? READ THIS FIRST!
+     * Adding a new schema upgrade? READ THIS FIRST!
      *
      * Be aware that the SDK version may be downgraded then re-upgraded. This means that running
      * your new migration must not prevent older versions of the SDK from functioning. Additionally,
@@ -164,10 +192,12 @@ class SQLiteSchema {
      *    that existing values have been properly maintained. Calculate them again, if applicable.
      */
 
-    if (fromVersion < INDEXING_SUPPORT_VERSION && toVersion >= INDEXING_SUPPORT_VERSION) {
-      Preconditions.checkState(Persistence.INDEXING_SUPPORT_ENABLED);
-      createLocalDocumentsCollectionIndex();
-    }
+    Logger.debug(
+        "SQLiteSchema",
+        "Migration from version %s to %s took %s milliseconds",
+        fromVersion,
+        toVersion,
+        System.currentTimeMillis() - startTime);
   }
 
   /**
@@ -197,7 +227,8 @@ class SQLiteSchema {
     if (!tablesFound) {
       fn.run();
     } else {
-      Log.d("SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
+      Logger.debug(
+          "SQLiteSchema", "Skipping migration because all of " + allTables + " already exist");
     }
   }
 
@@ -257,7 +288,7 @@ class SQLiteSchema {
     mutationDeleter.bindString(1, uid);
     mutationDeleter.bindLong(2, batchId);
     int deleted = mutationDeleter.executeUpdateDelete();
-    hardAssert(deleted != 0, "Mutatiohn batch (%s, %d) did not exist", uid, batchId);
+    hardAssert(deleted != 0, "Mutation batch (%s, %d) did not exist", uid, batchId);
 
     // Delete all index entries for this batch
     db.execSQL(
@@ -325,24 +356,55 @@ class SQLiteSchema {
         });
   }
 
-  // TODO(indexing): Put the schema version in this method name.
-  private void createLocalDocumentsCollectionIndex() {
+  /**
+   * Creates the necessary tables to support document indexing.
+   *
+   * <p>The `index_configuration` table holds the configuration for all indices. Entries in this
+   * table apply for all users. It is not possible to only enable indices for a subset of users.
+   *
+   * <p>The `index_state` table holds backfill information on each index that stores when it was
+   * last updated.
+   *
+   * <p>The `index_entries` table holds the index values themselves. An index value is created for
+   * each field combination that matches a configured index.
+   */
+  private void createFieldIndex() {
     ifTablesDontExist(
-        new String[] {"collection_index"},
+        new String[] {"index_configuration", "index_state", "index_entries"},
         () -> {
-          // A per-user, per-collection index for cached documents indexed by a single field's name
-          // and value.
+          // Global configuration for all existing field indexes
           db.execSQL(
-              "CREATE TABLE collection_index ("
+              "CREATE TABLE index_configuration ("
+                  + "index_id INTEGER, "
+                  + "collection_group TEXT, "
+                  + "index_proto BLOB, " // V1 Admin index proto
+                  + "PRIMARY KEY (index_id))");
+
+          // Per index per user state to track the backfill state for each index
+          db.execSQL(
+              "CREATE TABLE index_state ("
+                  + "index_id INTEGER, "
                   + "uid TEXT, "
-                  + "collection_path TEXT, "
-                  + "field_path TEXT, "
-                  + "field_value_type INTEGER, " // determines type of field_value fields.
-                  + "field_value_1, " // first component
-                  + "field_value_2, " // second component; required for timestamps, GeoPoints
-                  + "document_id TEXT, "
-                  + "PRIMARY KEY (uid, collection_path, field_path, field_value_type, field_value_1, "
-                  + "field_value_2, document_id))");
+                  + "sequence_number INTEGER, " // Specifies the order of updates
+                  + "read_time_seconds INTEGER, " // Read time of last processed document
+                  + "read_time_nanos INTEGER, "
+                  + "document_key TEXT, " // Key of the last processed document
+                  + "largest_batch_id INTEGER, " // Largest mutation batch id that was processed
+                  + "PRIMARY KEY (index_id, uid))");
+
+          // The index entry table stores the encoded entries for all fields.
+          // The table only has a single primary index. `array_value` should be set for all queries.
+          db.execSQL(
+              "CREATE TABLE index_entries ("
+                  + "index_id INTEGER, " // The index_id of the field index creating this entry
+                  + "uid TEXT, "
+                  + "array_value BLOB, " // index values for ArrayContains/ArrayContainsAny
+                  + "directional_value BLOB, " // index values for equality and inequalities
+                  + "document_key TEXT, "
+                  + "PRIMARY KEY (index_id, uid, array_value, directional_value, document_key))");
+
+          db.execSQL(
+              "CREATE INDEX read_time ON remote_documents(read_time_seconds, read_time_nanos)");
         });
   }
 
@@ -372,6 +434,13 @@ class SQLiteSchema {
   private void addSequenceNumber() {
     if (!tableContainsColumn("target_documents", "sequence_number")) {
       db.execSQL("ALTER TABLE target_documents ADD COLUMN sequence_number INTEGER");
+    }
+  }
+
+  private void addPathLength() {
+    if (!tableContainsColumn("remote_documents", "path_length")) {
+      // The "path_length" column store the number of segments in the path.
+      db.execSQL("ALTER TABLE remote_documents ADD COLUMN path_length INTEGER");
     }
   }
 
@@ -435,7 +504,7 @@ class SQLiteSchema {
                     + "SELECT TD.path FROM target_documents AS TD "
                     + "WHERE RD.path = TD.path AND TD.target_id = 0"
                     + ") LIMIT ?")
-            .binding(SEQUENCE_NUMBER_BATCH_SIZE);
+            .binding(MIGRATION_BATCH_SIZE);
 
     boolean[] resultsRemaining = new boolean[1];
 
@@ -528,6 +597,119 @@ class SQLiteSchema {
       }
     }
     return columns;
+  }
+
+  private void rewriteCanonicalIds() {
+    new SQLitePersistence.Query(db, "SELECT target_id, target_proto FROM targets")
+        .forEach(
+            cursor -> {
+              int targetId = cursor.getInt(0);
+              byte[] targetProtoBytes = cursor.getBlob(1);
+
+              try {
+                Target targetProto = Target.parseFrom(targetProtoBytes);
+                TargetData targetData = serializer.decodeTargetData(targetProto);
+                String updatedCanonicalId = targetData.getTarget().getCanonicalId();
+                db.execSQL(
+                    "UPDATE targets SET canonical_id  = ? WHERE target_id = ?",
+                    new Object[] {updatedCanonicalId, targetId});
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode Query data for target %s", targetId);
+              }
+            });
+  }
+
+  /** Populates the remote_document's path_length column. */
+  private void ensurePathLength() {
+    SQLitePersistence.Query documentsToMigrate =
+        new SQLitePersistence.Query(
+                db, "SELECT path FROM remote_documents WHERE path_length IS NULL LIMIT ?")
+            .binding(MIGRATION_BATCH_SIZE);
+    SQLiteStatement insertKey =
+        db.compileStatement("UPDATE remote_documents SET path_length = ? WHERE path = ?");
+
+    boolean[] resultsRemaining = new boolean[1];
+
+    do {
+      resultsRemaining[0] = false;
+
+      documentsToMigrate.forEach(
+          row -> {
+            resultsRemaining[0] = true;
+
+            String encodedPath = row.getString(0);
+            ResourcePath decodedPath = EncodedPath.decodeResourcePath(encodedPath);
+
+            insertKey.clearBindings();
+            insertKey.bindLong(1, decodedPath.length());
+            insertKey.bindString(2, encodedPath);
+            hardAssert(insertKey.executeUpdateDelete() != -1, "Failed to update document path");
+          });
+    } while (resultsRemaining[0]);
+  }
+
+  /** Initialize the remote_document's read_time column with 0 values if they are not set. */
+  private void ensureReadTime() {
+    db.execSQL(
+        "UPDATE remote_documents SET read_time_seconds = 0, read_time_nanos = 0 WHERE read_time_seconds IS NULL");
+  }
+
+  private void createBundleCache() {
+    ifTablesDontExist(
+        new String[] {"bundles", "named_queries"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE bundles ("
+                  + "bundle_id TEXT PRIMARY KEY, "
+                  + "create_time_seconds INTEGER, "
+                  + "create_time_nanos INTEGER, "
+                  + "schema_version INTEGER, "
+                  + "total_documents INTEGER, "
+                  + "total_bytes INTEGER)");
+
+          db.execSQL(
+              "CREATE TABLE named_queries ("
+                  + "name TEXT PRIMARY KEY, "
+                  + "read_time_seconds INTEGER, "
+                  + "read_time_nanos INTEGER, "
+                  + "bundled_query_proto BLOB)");
+        });
+  }
+
+  private void createOverlays() {
+    ifTablesDontExist(
+        new String[] {"document_overlays"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE document_overlays ("
+                  + "uid TEXT, "
+                  + "collection_path TEXT, "
+                  + "document_id TEXT, "
+                  + "collection_group TEXT, "
+                  + "largest_batch_id INTEGER, "
+                  + "overlay_mutation BLOB, "
+                  + "PRIMARY KEY (uid, collection_path, document_id))");
+          db.execSQL("CREATE INDEX batch_id_overlay ON document_overlays (uid, largest_batch_id)");
+          db.execSQL(
+              "CREATE INDEX collection_group_overlay ON document_overlays (uid, collection_group)");
+        });
+  }
+
+  private void createDataMigrationTable() {
+    ifTablesDontExist(
+        new String[] {"data_migrations"},
+        () -> {
+          db.execSQL(
+              "CREATE TABLE data_migrations ("
+                  + "migration_name TEXT, "
+                  + "PRIMARY KEY (migration_name))");
+        });
+  }
+
+  private void addPendingDataMigration(String migration) {
+    db.execSQL(
+        "INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)",
+        new String[] {migration});
   }
 
   private boolean tableExists(String table) {

@@ -20,8 +20,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.Blob;
-import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -31,13 +29,13 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
-import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -49,26 +47,13 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.model.mutation.TransformMutation;
 import com.google.firebase.firestore.model.mutation.TransformOperation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.BlobValue;
-import com.google.firebase.firestore.model.value.BooleanValue;
-import com.google.firebase.firestore.model.value.DoubleValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.GeoPointValue;
-import com.google.firebase.firestore.model.value.IntegerValue;
-import com.google.firebase.firestore.model.value.NullValue;
-import com.google.firebase.firestore.model.value.NumberValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
-import com.google.firebase.firestore.model.value.StringValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.Assert;
+import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.BatchGetDocumentsResponse.ResultCase;
 import com.google.firestore.v1.Cursor;
@@ -79,21 +64,17 @@ import com.google.firestore.v1.DocumentRemove;
 import com.google.firestore.v1.DocumentTransform;
 import com.google.firestore.v1.ListenResponse;
 import com.google.firestore.v1.ListenResponse.ResponseTypeCase;
-import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
 import com.google.firestore.v1.StructuredQuery.FieldReference;
-import com.google.firestore.v1.StructuredQuery.Filter.FilterTypeCase;
 import com.google.firestore.v1.StructuredQuery.Order;
 import com.google.firestore.v1.StructuredQuery.UnaryFilter;
 import com.google.firestore.v1.Target;
 import com.google.firestore.v1.Target.DocumentsTarget;
 import com.google.firestore.v1.Target.QueryTarget;
 import com.google.firestore.v1.Value;
-import com.google.protobuf.ByteString;
 import com.google.protobuf.Int32Value;
-import com.google.type.LatLng;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,19 +119,6 @@ public final class RemoteSerializer {
     } else {
       return new SnapshotVersion(decodeTimestamp(proto));
     }
-  }
-
-  // GeoPoint
-
-  private LatLng encodeGeoPoint(GeoPoint geoPoint) {
-    return LatLng.newBuilder()
-        .setLatitude(geoPoint.getLatitude())
-        .setLongitude(geoPoint.getLongitude())
-        .build();
-  }
-
-  private GeoPoint decodeGeoPoint(LatLng latLng) {
-    return new GeoPoint(latLng.getLatitude(), latLng.getLongitude());
   }
 
   // Names and Keys
@@ -238,159 +206,27 @@ public final class RemoteSerializer {
         && path.getSegment(2).equals("databases");
   }
 
+  /** Validates that a path has a prefix that belongs to the current database. */
+  public boolean isLocalResourceName(ResourcePath path) {
+    return isValidResourceName(path)
+        && path.getSegment(1).equals(databaseId.getProjectId())
+        && path.getSegment(3).equals(databaseId.getDatabaseId());
+  }
+
   public String databaseName() {
     return databaseName;
   }
-
-  // Values
-
-  /**
-   * Converts the FieldValue model passed into the Value proto equivalent.
-   *
-   * @param value the model to convert
-   * @return The proto representation of the model
-   */
-  public com.google.firestore.v1.Value encodeValue(FieldValue value) {
-    com.google.firestore.v1.Value.Builder builder = com.google.firestore.v1.Value.newBuilder();
-
-    if (value instanceof NullValue) {
-      builder.setNullValueValue(0);
-      return builder.build();
-    }
-
-    Object encodedValue = value.value();
-    hardAssert(encodedValue != null, "Encoded field value should not be null.");
-
-    if (value instanceof BooleanValue) {
-      builder.setBooleanValue((Boolean) encodedValue);
-    } else if (value instanceof IntegerValue) {
-      builder.setIntegerValue((Long) encodedValue);
-    } else if (value instanceof DoubleValue) {
-      builder.setDoubleValue((Double) encodedValue);
-    } else if (value instanceof StringValue) {
-      builder.setStringValue((String) encodedValue);
-    } else if (value instanceof ArrayValue) {
-      builder.setArrayValue(encodeArrayValue((ArrayValue) value));
-    } else if (value instanceof ObjectValue) {
-      builder.setMapValue(encodeMapValue((ObjectValue) value));
-    } else if (value instanceof TimestampValue) {
-      Timestamp t = ((TimestampValue) value).getInternalValue();
-      builder.setTimestampValue(encodeTimestamp(t));
-    } else if (value instanceof GeoPointValue) {
-      GeoPoint geoPoint = (GeoPoint) encodedValue;
-      builder.setGeoPointValue(encodeGeoPoint(geoPoint));
-    } else if (value instanceof BlobValue) {
-      builder.setBytesValue(((Blob) encodedValue).toByteString());
-    } else if (value instanceof ReferenceValue) {
-      ReferenceValue ref = (ReferenceValue) value;
-      DatabaseId id = ref.getDatabaseId();
-      DocumentKey key = (DocumentKey) encodedValue;
-      builder.setReferenceValue(encodeResourceName(id, key.getPath()));
-    } else {
-      throw fail("Can't serialize %s", value);
-    }
-
-    return builder.build();
-  }
-
-  /**
-   * Converts from the proto Value format to the model FieldValue format
-   *
-   * @return The model equivalent of the proto data.
-   */
-  public FieldValue decodeValue(com.google.firestore.v1.Value proto) {
-    switch (proto.getValueTypeCase()) {
-      case NULL_VALUE:
-        return NullValue.nullValue();
-      case BOOLEAN_VALUE:
-        return BooleanValue.valueOf(proto.getBooleanValue());
-      case INTEGER_VALUE:
-        return IntegerValue.valueOf(proto.getIntegerValue());
-      case DOUBLE_VALUE:
-        return DoubleValue.valueOf(proto.getDoubleValue());
-      case TIMESTAMP_VALUE:
-        Timestamp timestamp = decodeTimestamp(proto.getTimestampValue());
-        return TimestampValue.valueOf(timestamp);
-      case GEO_POINT_VALUE:
-        LatLng latLng = proto.getGeoPointValue();
-        return GeoPointValue.valueOf(decodeGeoPoint(latLng));
-      case BYTES_VALUE:
-        ByteString bytes = proto.getBytesValue();
-        return BlobValue.valueOf(Blob.fromByteString(bytes));
-      case REFERENCE_VALUE:
-        ResourcePath resourceName = decodeResourceName(proto.getReferenceValue());
-        DatabaseId id =
-            DatabaseId.forDatabase(resourceName.getSegment(1), resourceName.getSegment(3));
-        DocumentKey key = DocumentKey.fromPath(extractLocalPathFromResourceName(resourceName));
-        return ReferenceValue.valueOf(id, key);
-      case STRING_VALUE:
-        return StringValue.valueOf(proto.getStringValue());
-      case ARRAY_VALUE:
-        return decodeArrayValue(proto.getArrayValue());
-      case MAP_VALUE:
-        return decodeMapValue(proto.getMapValue());
-      default:
-        throw fail("Unknown value %s", proto);
-    }
-  }
-
-  private com.google.firestore.v1.ArrayValue encodeArrayValue(ArrayValue value) {
-    List<FieldValue> internalValue = value.getInternalValue();
-    com.google.firestore.v1.ArrayValue.Builder arrayBuilder =
-        com.google.firestore.v1.ArrayValue.newBuilder();
-    for (FieldValue subValue : internalValue) {
-      arrayBuilder.addValues(encodeValue(subValue));
-    }
-    return arrayBuilder.build();
-  }
-
-  private ArrayValue decodeArrayValue(com.google.firestore.v1.ArrayValue protoArray) {
-    int count = protoArray.getValuesCount();
-    List<FieldValue> wrappedList = new ArrayList<>(count);
-    for (int i = 0; i < count; i++) {
-      wrappedList.add(decodeValue(protoArray.getValues(i)));
-    }
-    return ArrayValue.fromList(wrappedList);
-  }
-
-  private MapValue encodeMapValue(ObjectValue value) {
-    MapValue.Builder builder = MapValue.newBuilder();
-    for (Map.Entry<String, FieldValue> entry : value.getInternalValue()) {
-      builder.putFields(entry.getKey(), encodeValue(entry.getValue()));
-    }
-    return builder.build();
-  }
-
-  private ObjectValue decodeMapValue(MapValue value) {
-    return decodeFields(value.getFieldsMap());
-  }
-
-  // PORTING NOTE: There's no encodeFields here because there's no way to write it that doesn't
-  // involve creating a temporary map.
-
-  public ObjectValue decodeFields(Map<String, com.google.firestore.v1.Value> fields) {
-    ObjectValue result = ObjectValue.emptyObject();
-    for (Map.Entry<String, com.google.firestore.v1.Value> entry : fields.entrySet()) {
-      FieldPath path = FieldPath.fromSingleSegment(entry.getKey());
-      FieldValue value = decodeValue(entry.getValue());
-      result = result.set(path, value);
-    }
-    return result;
-  }
-
   // Documents
 
   public com.google.firestore.v1.Document encodeDocument(DocumentKey key, ObjectValue value) {
     com.google.firestore.v1.Document.Builder builder =
         com.google.firestore.v1.Document.newBuilder();
     builder.setName(encodeKey(key));
-    for (Map.Entry<String, FieldValue> entry : value.getInternalValue()) {
-      builder.putFields(entry.getKey(), encodeValue(entry.getValue()));
-    }
+    builder.putAllFields(value.getFieldsMap());
     return builder.build();
   }
 
-  public MaybeDocument decodeMaybeDocument(BatchGetDocumentsResponse response) {
+  public MutableDocument decodeMaybeDocument(BatchGetDocumentsResponse response) {
     if (response.getResultCase().equals(ResultCase.FOUND)) {
       return decodeFoundDocument(response);
     } else if (response.getResultCase().equals(ResultCase.MISSING)) {
@@ -400,19 +236,19 @@ public final class RemoteSerializer {
     }
   }
 
-  private Document decodeFoundDocument(BatchGetDocumentsResponse response) {
+  private MutableDocument decodeFoundDocument(BatchGetDocumentsResponse response) {
     Assert.hardAssert(
         response.getResultCase().equals(ResultCase.FOUND),
         "Tried to deserialize a found document from a missing document.");
     DocumentKey key = decodeKey(response.getFound().getName());
+    ObjectValue value = ObjectValue.fromMap(response.getFound().getFieldsMap());
     SnapshotVersion version = decodeVersion(response.getFound().getUpdateTime());
     hardAssert(
         !version.equals(SnapshotVersion.NONE), "Got a document response with no snapshot version");
-    return new Document(
-        key, version, Document.DocumentState.SYNCED, response.getFound(), this::decodeValue);
+    return MutableDocument.newFoundDocument(key, version, value);
   }
 
-  private NoDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
+  private MutableDocument decodeMissingDocument(BatchGetDocumentsResponse response) {
     Assert.hardAssert(
         response.getResultCase().equals(ResultCase.MISSING),
         "Tried to deserialize a missing document from a found document.");
@@ -421,7 +257,7 @@ public final class RemoteSerializer {
     hardAssert(
         !version.equals(SnapshotVersion.NONE),
         "Got a no document response with no snapshot version");
-    return new NoDocument(key, version, /*hasCommittedMutations=*/ false);
+    return MutableDocument.newNoDocument(key, version);
   }
 
   // Mutations
@@ -433,21 +269,17 @@ public final class RemoteSerializer {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((SetMutation) mutation).getValue()));
     } else if (mutation instanceof PatchMutation) {
       builder.setUpdate(encodeDocument(mutation.getKey(), ((PatchMutation) mutation).getValue()));
-      builder.setUpdateMask(encodeDocumentMask(((PatchMutation) mutation).getMask()));
-    } else if (mutation instanceof TransformMutation) {
-      TransformMutation transform = (TransformMutation) mutation;
-      DocumentTransform.Builder transformBuilder = DocumentTransform.newBuilder();
-      transformBuilder.setDocument(encodeKey(transform.getKey()));
-      for (FieldTransform fieldTransform : transform.getFieldTransforms()) {
-        transformBuilder.addFieldTransforms(encodeFieldTransform(fieldTransform));
-      }
-      builder.setTransform(transformBuilder);
+      builder.setUpdateMask(encodeDocumentMask((mutation.getFieldMask())));
     } else if (mutation instanceof DeleteMutation) {
       builder.setDelete(encodeKey(mutation.getKey()));
     } else if (mutation instanceof VerifyMutation) {
       builder.setVerify(encodeKey(mutation.getKey()));
     } else {
       throw fail("unknown mutation type %s", mutation.getClass());
+    }
+
+    for (FieldTransform fieldTransform : mutation.getFieldTransforms()) {
+      builder.addUpdateTransforms(encodeFieldTransform(fieldTransform));
     }
 
     if (!mutation.getPrecondition().isNone()) {
@@ -462,35 +294,30 @@ public final class RemoteSerializer {
             ? decodePrecondition(mutation.getCurrentDocument())
             : Precondition.NONE;
 
+    List<FieldTransform> fieldTransforms = new ArrayList<>();
+    for (DocumentTransform.FieldTransform fieldTransform : mutation.getUpdateTransformsList()) {
+      fieldTransforms.add(decodeFieldTransform(fieldTransform));
+    }
+
     switch (mutation.getOperationCase()) {
       case UPDATE:
         if (mutation.hasUpdateMask()) {
           return new PatchMutation(
               decodeKey(mutation.getUpdate().getName()),
-              decodeFields(mutation.getUpdate().getFieldsMap()),
+              ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
               decodeDocumentMask(mutation.getUpdateMask()),
-              precondition);
+              precondition,
+              fieldTransforms);
         } else {
           return new SetMutation(
               decodeKey(mutation.getUpdate().getName()),
-              decodeFields(mutation.getUpdate().getFieldsMap()),
-              precondition);
+              ObjectValue.fromMap(mutation.getUpdate().getFieldsMap()),
+              precondition,
+              fieldTransforms);
         }
 
       case DELETE:
         return new DeleteMutation(decodeKey(mutation.getDelete()), precondition);
-
-      case TRANSFORM:
-        ArrayList<FieldTransform> fieldTransforms = new ArrayList<>();
-        for (DocumentTransform.FieldTransform fieldTransform :
-            mutation.getTransform().getFieldTransformsList()) {
-          fieldTransforms.add(decodeFieldTransform(fieldTransform));
-        }
-        Boolean exists = precondition.getExists();
-        hardAssert(
-            exists != null && exists, "Transforms only support precondition \"exists == true\"");
-        return new TransformMutation(
-            decodeKey(mutation.getTransform().getDocument()), fieldTransforms);
 
       case VERIFY:
         return new VerifyMutation(decodeKey(mutation.getVerify()), precondition);
@@ -554,34 +381,24 @@ public final class RemoteSerializer {
       ArrayTransformOperation.Union union = (ArrayTransformOperation.Union) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setAppendMissingElements(encodeArrayTransformElements(union.getElements()))
+          .setAppendMissingElements(ArrayValue.newBuilder().addAllValues(union.getElements()))
           .build();
     } else if (transform instanceof ArrayTransformOperation.Remove) {
       ArrayTransformOperation.Remove remove = (ArrayTransformOperation.Remove) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setRemoveAllFromArray(encodeArrayTransformElements(remove.getElements()))
+          .setRemoveAllFromArray(ArrayValue.newBuilder().addAllValues(remove.getElements()))
           .build();
     } else if (transform instanceof NumericIncrementTransformOperation) {
       NumericIncrementTransformOperation incrementOperation =
           (NumericIncrementTransformOperation) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
-          .setIncrement(encodeValue(incrementOperation.getOperand()))
+          .setIncrement(incrementOperation.getOperand())
           .build();
     } else {
       throw fail("Unknown transform: %s", transform);
     }
-  }
-
-  private com.google.firestore.v1.ArrayValue encodeArrayTransformElements(
-      List<FieldValue> elements) {
-    com.google.firestore.v1.ArrayValue.Builder arrayBuilder =
-        com.google.firestore.v1.ArrayValue.newBuilder();
-    for (FieldValue subValue : elements) {
-      arrayBuilder.addValues(encodeValue(subValue));
-    }
-    return arrayBuilder.build();
   }
 
   private FieldTransform decodeFieldTransform(DocumentTransform.FieldTransform fieldTransform) {
@@ -599,37 +416,19 @@ public final class RemoteSerializer {
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Union(
-                decodeArrayTransformElements(fieldTransform.getAppendMissingElements())));
+                fieldTransform.getAppendMissingElements().getValuesList()));
       case REMOVE_ALL_FROM_ARRAY:
         return new FieldTransform(
             FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
             new ArrayTransformOperation.Remove(
-                decodeArrayTransformElements(fieldTransform.getRemoveAllFromArray())));
+                fieldTransform.getRemoveAllFromArray().getValuesList()));
       case INCREMENT:
-        {
-          FieldValue operand = decodeValue(fieldTransform.getIncrement());
-          hardAssert(
-              operand instanceof NumberValue,
-              "Expected NUMERIC_ADD transform to be of number type, but was %s",
-              operand.getClass().getCanonicalName());
-          return new FieldTransform(
-              FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
-              new NumericIncrementTransformOperation(
-                  (NumberValue) decodeValue(fieldTransform.getIncrement())));
-        }
+        return new FieldTransform(
+            FieldPath.fromServerFormat(fieldTransform.getFieldPath()),
+            new NumericIncrementTransformOperation(fieldTransform.getIncrement()));
       default:
         throw fail("Unknown FieldTransform proto: %s", fieldTransform);
     }
-  }
-
-  private List<FieldValue> decodeArrayTransformElements(
-      com.google.firestore.v1.ArrayValue elementsProto) {
-    int count = elementsProto.getValuesCount();
-    List<FieldValue> result = new ArrayList<>(count);
-    for (int i = 0; i < count; i++) {
-      result.add(decodeValue(elementsProto.getValues(i)));
-    }
-    return result;
   }
 
   public MutationResult decodeMutationResult(
@@ -643,13 +442,10 @@ public final class RemoteSerializer {
       version = commitVersion;
     }
 
-    ArrayList<FieldValue> transformResults = null;
     int transformResultsCount = proto.getTransformResultsCount();
-    if (transformResultsCount > 0) {
-      transformResults = new ArrayList<>(transformResultsCount);
-      for (int i = 0; i < transformResultsCount; i++) {
-        transformResults.add(decodeValue(proto.getTransformResults(i)));
-      }
+    List<Value> transformResults = new ArrayList<>(transformResultsCount);
+    for (int i = 0; i < transformResultsCount; i++) {
+      transformResults.add(proto.getTransformResults(i));
     }
     return new MutationResult(version, transformResults);
   }
@@ -693,7 +489,15 @@ public final class RemoteSerializer {
     }
 
     builder.setTargetId(targetData.getTargetId());
-    builder.setResumeToken(targetData.getResumeToken());
+
+    if (targetData.getResumeToken().isEmpty()
+        && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
+      // tests depend on this behaviour though (leaving min() out of serialization).
+      builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
+    } else {
+      builder.setResumeToken(targetData.getResumeToken());
+    }
 
     return builder.build();
   }
@@ -750,21 +554,26 @@ public final class RemoteSerializer {
     }
 
     if (target.getStartAt() != null) {
-      structuredQueryBuilder.setStartAt(encodeBound(target.getStartAt()));
+      Cursor.Builder cursor = Cursor.newBuilder();
+      cursor.addAllValues(target.getStartAt().getPosition());
+      cursor.setBefore(target.getStartAt().isInclusive());
+      structuredQueryBuilder.setStartAt(cursor);
     }
 
     if (target.getEndAt() != null) {
-      structuredQueryBuilder.setEndAt(encodeBound(target.getEndAt()));
+      Cursor.Builder cursor = Cursor.newBuilder();
+      cursor.addAllValues(target.getEndAt().getPosition());
+      cursor.setBefore(!target.getEndAt().isInclusive());
+      structuredQueryBuilder.setEndAt(cursor);
     }
 
     builder.setStructuredQuery(structuredQueryBuilder);
     return builder.build();
   }
 
-  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
-    ResourcePath path = decodeQueryPath(target.getParent());
-
-    StructuredQuery query = target.getStructuredQuery();
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(
+      String parent, StructuredQuery query) {
+    ResourcePath path = decodeQueryPath(parent);
 
     String collectionGroup = null;
     int fromCount = query.getFromCount();
@@ -805,119 +614,151 @@ public final class RemoteSerializer {
 
     Bound startAt = null;
     if (query.hasStartAt()) {
-      startAt = decodeBound(query.getStartAt());
+      startAt = new Bound(query.getStartAt().getValuesList(), query.getStartAt().getBefore());
     }
 
     Bound endAt = null;
     if (query.hasEndAt()) {
-      endAt = decodeBound(query.getEndAt());
+      endAt = new Bound(query.getEndAt().getValuesList(), !query.getEndAt().getBefore());
     }
 
-    return new Query(
-            path,
-            collectionGroup,
-            filterBy,
-            orderBy,
-            limit,
-            Query.LimitType.LIMIT_TO_FIRST,
-            startAt,
-            endAt)
-        .toTarget();
+    return new com.google.firebase.firestore.core.Target(
+        path, collectionGroup, filterBy, orderBy, limit, startAt, endAt);
+  }
+
+  public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
+    return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
   }
 
   // Filters
 
   private StructuredQuery.Filter encodeFilters(List<Filter> filters) {
-    List<StructuredQuery.Filter> protos = new ArrayList<>(filters.size());
-    for (Filter filter : filters) {
-      if (filter instanceof FieldFilter) {
-        protos.add(encodeUnaryOrFieldFilter((FieldFilter) filter));
-      }
-    }
-    if (filters.size() == 1) {
-      return protos.get(0);
-    } else {
-      CompositeFilter.Builder composite = CompositeFilter.newBuilder();
-      composite.setOp(CompositeFilter.Operator.AND);
-      composite.addAllFilters(protos);
-      return StructuredQuery.Filter.newBuilder().setCompositeFilter(composite).build();
-    }
+    // A target's filter list is implicitly a composite AND filter.
+    return encodeFilter(
+        new com.google.firebase.firestore.core.CompositeFilter(
+            filters, CompositeFilter.Operator.AND));
   }
 
   private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
-    List<StructuredQuery.Filter> filters;
-    if (proto.getFilterTypeCase() == FilterTypeCase.COMPOSITE_FILTER) {
-      hardAssert(
-          proto.getCompositeFilter().getOp() == CompositeFilter.Operator.AND,
-          "Only AND-type composite filters are supported, got %d",
-          proto.getCompositeFilter().getOp());
-      filters = proto.getCompositeFilter().getFiltersList();
-    } else {
-      filters = Collections.singletonList(proto);
-    }
+    Filter result = decodeFilter(proto);
 
-    List<Filter> result = new ArrayList<>(filters.size());
-    for (StructuredQuery.Filter filter : filters) {
-      switch (filter.getFilterTypeCase()) {
-        case COMPOSITE_FILTER:
-          throw fail("Nested composite filters are not supported.");
-
-        case FIELD_FILTER:
-          result.add(decodeFieldFilter(filter.getFieldFilter()));
-          break;
-
-        case UNARY_FILTER:
-          result.add(decodeUnaryFilter(filter.getUnaryFilter()));
-          break;
-
-        default:
-          throw fail("Unrecognized Filter.filterType %d", filter.getFilterTypeCase());
+    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list containing F1,
+    // F2, ...
+    // TODO(orquery): Once proper support for composite filters has been completed, we can remove
+    // this flattening from here.
+    if (result instanceof com.google.firebase.firestore.core.CompositeFilter) {
+      com.google.firebase.firestore.core.CompositeFilter compositeFilter =
+          (com.google.firebase.firestore.core.CompositeFilter) result;
+      if (compositeFilter.isFlatConjunction()) {
+        return compositeFilter.getFilters();
       }
     }
 
-    return result;
+    return Collections.singletonList(result);
+  }
+
+  @VisibleForTesting
+  StructuredQuery.Filter encodeFilter(com.google.firebase.firestore.core.Filter filter) {
+    if (filter instanceof FieldFilter) {
+      return encodeUnaryOrFieldFilter((FieldFilter) filter);
+    } else if (filter instanceof com.google.firebase.firestore.core.CompositeFilter) {
+      return encodeCompositeFilter((com.google.firebase.firestore.core.CompositeFilter) filter);
+    } else {
+      throw fail("Unrecognized filter type %s", filter.toString());
+    }
   }
 
   @VisibleForTesting
   StructuredQuery.Filter encodeUnaryOrFieldFilter(FieldFilter filter) {
-    if (filter.getOperator() == Filter.Operator.EQUAL) {
+    if (filter.getOperator() == FieldFilter.Operator.EQUAL
+        || filter.getOperator() == FieldFilter.Operator.NOT_EQUAL) {
       UnaryFilter.Builder unaryProto = UnaryFilter.newBuilder();
       unaryProto.setField(encodeFieldPath(filter.getField()));
-      if (filter.getValue().equals(DoubleValue.NaN)) {
-        unaryProto.setOp(UnaryFilter.Operator.IS_NAN);
+      if (Values.isNanValue(filter.getValue())) {
+        unaryProto.setOp(
+            filter.getOperator() == FieldFilter.Operator.EQUAL
+                ? UnaryFilter.Operator.IS_NAN
+                : UnaryFilter.Operator.IS_NOT_NAN);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
-      } else if (filter.getValue().equals(NullValue.nullValue())) {
-        unaryProto.setOp(UnaryFilter.Operator.IS_NULL);
+      } else if (Values.isNullValue(filter.getValue())) {
+        unaryProto.setOp(
+            filter.getOperator() == FieldFilter.Operator.EQUAL
+                ? UnaryFilter.Operator.IS_NULL
+                : UnaryFilter.Operator.IS_NOT_NULL);
         return StructuredQuery.Filter.newBuilder().setUnaryFilter(unaryProto).build();
       }
     }
     StructuredQuery.FieldFilter.Builder proto = StructuredQuery.FieldFilter.newBuilder();
     proto.setField(encodeFieldPath(filter.getField()));
     proto.setOp(encodeFieldFilterOperator(filter.getOperator()));
-    proto.setValue(encodeValue(filter.getValue()));
+    proto.setValue(filter.getValue());
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
+  }
+
+  @VisibleForTesting
+  StructuredQuery.Filter encodeCompositeFilter(
+      com.google.firebase.firestore.core.CompositeFilter compositeFilter) {
+    List<StructuredQuery.Filter> protos = new ArrayList<>(compositeFilter.getFilters().size());
+    for (Filter filter : compositeFilter.getFilters()) {
+      protos.add(encodeFilter(filter));
+    }
+
+    // If there's only one filter in the composite filter, use it directly.
+    if (protos.size() == 1) {
+      return protos.get(0);
+    }
+
+    CompositeFilter.Builder composite = CompositeFilter.newBuilder();
+    composite.setOp(compositeFilter.getOperator());
+    composite.addAllFilters(protos);
+    return StructuredQuery.Filter.newBuilder().setCompositeFilter(composite).build();
+  }
+
+  @VisibleForTesting
+  Filter decodeFilter(StructuredQuery.Filter proto) {
+    switch (proto.getFilterTypeCase()) {
+      case COMPOSITE_FILTER:
+        return decodeCompositeFilter(proto.getCompositeFilter());
+      case FIELD_FILTER:
+        return decodeFieldFilter(proto.getFieldFilter());
+      case UNARY_FILTER:
+        return decodeUnaryFilter(proto.getUnaryFilter());
+      default:
+        throw fail("Unrecognized Filter.filterType %d", proto.getFilterTypeCase());
+    }
   }
 
   @VisibleForTesting
   FieldFilter decodeFieldFilter(StructuredQuery.FieldFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     FieldFilter.Operator filterOperator = decodeFieldFilterOperator(proto.getOp());
-    FieldValue value = decodeValue(proto.getValue());
-    return FieldFilter.create(fieldPath, filterOperator, value);
+    return FieldFilter.create(fieldPath, filterOperator, proto.getValue());
   }
 
   private Filter decodeUnaryFilter(StructuredQuery.UnaryFilter proto) {
     FieldPath fieldPath = FieldPath.fromServerFormat(proto.getField().getFieldPath());
     switch (proto.getOp()) {
       case IS_NAN:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, DoubleValue.NaN);
-
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NAN_VALUE);
       case IS_NULL:
-        return FieldFilter.create(fieldPath, Filter.Operator.EQUAL, NullValue.nullValue());
-
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.EQUAL, Values.NULL_VALUE);
+      case IS_NOT_NAN:
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NAN_VALUE);
+      case IS_NOT_NULL:
+        return FieldFilter.create(fieldPath, FieldFilter.Operator.NOT_EQUAL, Values.NULL_VALUE);
       default:
         throw fail("Unrecognized UnaryFilter.operator %d", proto.getOp());
     }
+  }
+
+  @VisibleForTesting
+  com.google.firebase.firestore.core.CompositeFilter decodeCompositeFilter(
+      StructuredQuery.CompositeFilter compositeFilter) {
+    List<Filter> filters = new ArrayList<>();
+    for (StructuredQuery.Filter filter : compositeFilter.getFiltersList()) {
+      filters.add(decodeFilter(filter));
+    }
+    return new com.google.firebase.firestore.core.CompositeFilter(filters, compositeFilter.getOp());
   }
 
   private FieldReference encodeFieldPath(FieldPath field) {
@@ -933,6 +774,8 @@ public final class RemoteSerializer {
         return StructuredQuery.FieldFilter.Operator.LESS_THAN_OR_EQUAL;
       case EQUAL:
         return StructuredQuery.FieldFilter.Operator.EQUAL;
+      case NOT_EQUAL:
+        return StructuredQuery.FieldFilter.Operator.NOT_EQUAL;
       case GREATER_THAN:
         return StructuredQuery.FieldFilter.Operator.GREATER_THAN;
       case GREATER_THAN_OR_EQUAL:
@@ -943,6 +786,8 @@ public final class RemoteSerializer {
         return StructuredQuery.FieldFilter.Operator.IN;
       case ARRAY_CONTAINS_ANY:
         return StructuredQuery.FieldFilter.Operator.ARRAY_CONTAINS_ANY;
+      case NOT_IN:
+        return StructuredQuery.FieldFilter.Operator.NOT_IN;
       default:
         throw fail("Unknown operator %d", operator);
     }
@@ -957,6 +802,8 @@ public final class RemoteSerializer {
         return FieldFilter.Operator.LESS_THAN_OR_EQUAL;
       case EQUAL:
         return FieldFilter.Operator.EQUAL;
+      case NOT_EQUAL:
+        return FieldFilter.Operator.NOT_EQUAL;
       case GREATER_THAN_OR_EQUAL:
         return FieldFilter.Operator.GREATER_THAN_OR_EQUAL;
       case GREATER_THAN:
@@ -967,6 +814,8 @@ public final class RemoteSerializer {
         return FieldFilter.Operator.IN;
       case ARRAY_CONTAINS_ANY:
         return FieldFilter.Operator.ARRAY_CONTAINS_ANY;
+      case NOT_IN:
+        return FieldFilter.Operator.NOT_IN;
       default:
         throw fail("Unhandled FieldFilter.operator %d", operator);
     }
@@ -999,28 +848,6 @@ public final class RemoteSerializer {
         throw fail("Unrecognized direction %d", proto.getDirection());
     }
     return OrderBy.getInstance(direction, fieldPath);
-  }
-
-  // Bounds
-
-  private Cursor encodeBound(Bound bound) {
-    Cursor.Builder builder = Cursor.newBuilder();
-    builder.setBefore(bound.isBefore());
-    for (FieldValue component : bound.getPosition()) {
-      builder.addValues(encodeValue(component));
-    }
-    return builder.build();
-  }
-
-  private Bound decodeBound(Cursor proto) {
-    int valuesCount = proto.getValuesCount();
-    List<FieldValue> indexComponents = new ArrayList<>(valuesCount);
-
-    for (int i = 0; i < valuesCount; i++) {
-      Value valueProto = proto.getValues(i);
-      indexComponents.add(decodeValue(valueProto));
-    }
-    return new Bound(indexComponents, proto.getBefore());
   }
 
   // Watch changes
@@ -1066,13 +893,8 @@ public final class RemoteSerializer {
         SnapshotVersion version = decodeVersion(docChange.getDocument().getUpdateTime());
         hardAssert(
             !version.equals(SnapshotVersion.NONE), "Got a document change without an update time");
-        Document document =
-            new Document(
-                key,
-                version,
-                Document.DocumentState.SYNCED,
-                docChange.getDocument(),
-                this::decodeValue);
+        ObjectValue data = ObjectValue.fromMap(docChange.getDocument().getFieldsMap());
+        MutableDocument document = MutableDocument.newFoundDocument(key, version, data);
         watchChange = new WatchChange.DocumentChange(added, removed, document.getKey(), document);
         break;
       case DOCUMENT_DELETE:
@@ -1081,7 +903,7 @@ public final class RemoteSerializer {
         key = decodeKey(docDelete.getDocument());
         // Note that version might be unset in which case we use SnapshotVersion.NONE
         version = decodeVersion(docDelete.getReadTime());
-        NoDocument doc = new NoDocument(key, version, /*hasCommittedMutations=*/ false);
+        MutableDocument doc = MutableDocument.newNoDocument(key, version);
         watchChange =
             new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
         break;

@@ -16,8 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
@@ -34,52 +32,33 @@ import android.os.Debug;
 import android.os.StatFs;
 import android.provider.Settings.Secure;
 import android.text.TextUtils;
-import android.util.Log;
-import android.view.View;
-import android.view.inputmethod.InputMethodManager;
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
-import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
-import javax.crypto.Cipher;
 
 public class CommonUtils {
 
-  private static final String LOG_PRIORITY_NAME_ASSERT = "A";
-  private static final String LOG_PRIORITY_NAME_DEBUG = "D";
-  private static final String LOG_PRIORITY_NAME_ERROR = "E";
-  private static final String LOG_PRIORITY_NAME_INFO = "I";
-  private static final String LOG_PRIORITY_NAME_VERBOSE = "V";
-  private static final String LOG_PRIORITY_NAME_WARN = "W";
-  private static final String LOG_PRIORITY_NAME_UNKNOWN = "?";
-
   private static final String SHA1_INSTANCE = "SHA-1";
-  private static final String SHA256_INSTANCE = "SHA-256";
-  private static final String GOOGLE_SDK = "google_sdk";
+  private static final String GOLDFISH = "goldfish";
+  private static final String RANCHU = "ranchu";
   private static final String SDK = "sdk";
 
   public static final String SHARED_PREFS_NAME = "com.google.firebase.crashlytics";
   public static final String LEGACY_SHARED_PREFS_NAME = "com.crashlytics.prefs";
-
-  private static final String CLS_TRACE_PREFERENCE_NAME = "com.crashlytics.Trace";
-  private static final boolean CLS_TRACE_DEFAULT = false;
-  private static Boolean clsTrace = null;
 
   private static final char[] HEX_VALUES = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
@@ -88,9 +67,6 @@ public class CommonUtils {
   static final String MAPPING_FILE_ID_RESOURCE_NAME =
       "com.google.firebase.crashlytics.mapping_file_id";
   static final String LEGACY_MAPPING_FILE_ID_RESOURCE_NAME = "com.crashlytics.android.build_id";
-
-  private static final String UNITY_EDITOR_VERSION =
-      "com.google.firebase.crashlytics.unity_version";
 
   private static final long UNCALCULATED_TOTAL_RAM = -1;
   static final int BYTES_IN_A_GIGABYTE = 1073741824;
@@ -134,7 +110,7 @@ public class CommonUtils {
           }
         }
       } catch (Exception e) {
-        Logger.getLogger().e(Logger.TAG, "Error parsing " + file, e);
+        Logger.getLogger().e("Error parsing " + file, e);
       } finally {
         CommonUtils.closeOrLog(br, "Failed to close system file reader.");
       }
@@ -174,7 +150,6 @@ public class CommonUtils {
       matcher.put("armeabi", ARMV6);
       matcher.put("arm64-v8a", ARM64);
       matcher.put("x86", X86_32);
-      // TODO: Add mips to pbuf, matcher.put("mips", MIPS);
     }
 
     /** @Return {@link CommonUtils.Architecture} enum based on @param String */
@@ -182,8 +157,7 @@ public class CommonUtils {
       String arch = Build.CPU_ABI;
 
       if (TextUtils.isEmpty(arch)) {
-        Logger.getLogger()
-            .d(Logger.TAG, "Architecture#getValue()::Build.CPU_ABI returned null or empty");
+        Logger.getLogger().v("Architecture#getValue()::Build.CPU_ABI returned null or empty");
         return UNKNOWN;
       }
 
@@ -220,12 +194,10 @@ public class CommonUtils {
             // leave in this handling since we don't know for certain it isn't.
             bytes = convertMemInfoToBytes(result, "GB", BYTES_IN_A_GIGABYTE);
           } else {
-            Logger.getLogger()
-                .d(Logger.TAG, "Unexpected meminfo format while computing RAM: " + result);
+            Logger.getLogger().w("Unexpected meminfo format while computing RAM: " + result);
           }
         } catch (NumberFormatException e) {
-          Logger.getLogger()
-              .e(Logger.TAG, "Unexpected meminfo format while computing RAM: " + result, e);
+          Logger.getLogger().e("Unexpected meminfo format while computing RAM: " + result, e);
         }
       }
       totalRamInBytes = bytes;
@@ -263,7 +235,7 @@ public class CommonUtils {
     return procInfo;
   }
 
-  public static String streamToString(InputStream is) throws IOException {
+  public static String streamToString(InputStream is) {
     // Previous code was running into this: http://code.google.com/p/android/issues/detail?id=14562
     // on Android 2.3.3. The below code below does not exhibit that problem.
     final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
@@ -274,36 +246,8 @@ public class CommonUtils {
     return hash(source, SHA1_INSTANCE);
   }
 
-  public static String sha256(String source) {
-    return hash(source, SHA256_INSTANCE);
-  }
-
-  public static String sha1(InputStream source) {
-    return hash(source, SHA1_INSTANCE);
-  }
-
   private static String hash(String s, String algorithm) {
     return hash(s.getBytes(), algorithm);
-  }
-
-  private static String hash(InputStream source, String sha1Instance) {
-    try {
-      final MessageDigest digest = MessageDigest.getInstance(sha1Instance);
-
-      final byte[] buffer = new byte[1024];
-      int length = 0;
-
-      // Copy all the bytes out of the input stream and into the hash digest
-      while ((length = source.read(buffer)) != -1) {
-        digest.update(buffer, 0, length);
-      }
-
-      return CommonUtils.hexify(digest.digest());
-    } catch (Exception e) {
-      Logger.getLogger().e(Logger.TAG, "Could not calculate hash for app icon.", e);
-    }
-
-    return "";
   }
 
   private static String hash(byte[] bytes, String algorithm) {
@@ -313,10 +257,7 @@ public class CommonUtils {
       digest = java.security.MessageDigest.getInstance(algorithm);
     } catch (NoSuchAlgorithmException e) {
       Logger.getLogger()
-          .e(
-              Logger.TAG,
-              "Could not create hashing algorithm: " + algorithm + ", returning empty string.",
-              e);
+          .e("Could not create hashing algorithm: " + algorithm + ", returning empty string.", e);
       return "";
     }
     // :TODO: Need to specify character encoding??
@@ -383,7 +324,6 @@ public class CommonUtils {
    * @param path Filesystem path at which to make the space calculations
    * @return Amount of disk space used, in bytes
    */
-  @SuppressWarnings("deprecation")
   public static long calculateUsedDiskSpaceInBytes(String path) {
     final StatFs statFs = new StatFs(path);
     final long blockSizeBytes = statFs.getBlockSize();
@@ -404,51 +344,10 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * Used by Crashlytics internally to log only when the com.crashlytics.Trace property is set to
-   * true. When it is, this API passes processing to the log API.
-   */
-  public static void logControlled(Context context, String msg) {
-    if (isClsTrace(context)) {
-      Logger.getLogger().d(Logger.TAG, msg);
-    }
-  }
-
-  /**
-   * Used by Crashlytics internally to log errors only when the com.crashlytics.Trace property is
-   * set to true. When it is, this API passes processing to the logError API.
-   */
-  public static void logControlledError(Context context, String msg, Throwable tr) {
-    if (isClsTrace(context)) {
-      Logger.getLogger().e(Logger.TAG, msg);
-    }
-  }
-
-  /**
-   * Used by Crashlytics internally to log only when the com.crashlytics.Trace property is set to
-   * true. When it is, this API passes processing to the log API.
-   */
-  public static void logControlled(Context context, int level, String tag, String msg) {
-    if (isClsTrace(context)) {
-      Logger.getLogger().log(level, Logger.TAG, msg);
-    }
-  }
-
   /** @deprecated This method will now always return false. It should not be used. */
   @Deprecated
   public static boolean isLoggingEnabled(Context context) {
     return false;
-  }
-
-  /** */
-  public static boolean isClsTrace(Context context) {
-    // Since the cached value is a Boolean object, it can be null. If it's null, load the value
-    // and cache it.
-    if (clsTrace == null) {
-      clsTrace = getBooleanResourceValue(context, CLS_TRACE_PREFERENCE_NAME, CLS_TRACE_DEFAULT);
-    }
-
-    return clsTrace;
   }
 
   /**
@@ -503,7 +402,10 @@ public class CommonUtils {
    */
   public static boolean isEmulator(Context context) {
     final String androidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
-    return SDK.equals(Build.PRODUCT) || GOOGLE_SDK.equals(Build.PRODUCT) || androidId == null;
+    return Build.PRODUCT.contains(SDK)
+        || Build.HARDWARE.contains(GOLDFISH)
+        || Build.HARDWARE.contains(RANCHU)
+        || androidId == null;
   }
 
   public static boolean isRooted(Context context) {
@@ -566,15 +468,6 @@ public class CommonUtils {
     return deviceState;
   }
 
-  /**
-   * @deprecated This method will now always throw an {@link InvalidKeyException}. It should not be
-   *     called.
-   */
-  @Deprecated
-  public static Cipher createCipher(int mode, String key) throws InvalidKeyException {
-    throw new InvalidKeyException("This method is deprecated");
-  }
-
   /** Returns a hex string for the given byte array. */
   public static String hexify(byte[] bytes) {
     final char[] hexChars = new char[bytes.length * 2];
@@ -588,46 +481,12 @@ public class CommonUtils {
   }
 
   /**
-   * Converts the given hexidecimal string to raw bytes. Does NOT perform any kind of checking for
-   * hex validity.
-   */
-  public static byte[] dehexify(String string) {
-    // http://stackoverflow.com/a/140861
-    final int len = string.length();
-    final byte[] data = new byte[len / 2];
-    for (int i = 0; i < len; i += 2) {
-      data[i / 2] =
-          (byte)
-              ((Character.digit(string.charAt(i), 16) << 4)
-                  + Character.digit(string.charAt(i + 1), 16));
-    }
-    return data;
-  }
-
-  /**
    * Returns true if the app's manifest includes android:debuggable=true. Eclipse and ant inject
    * this property into the manifest automatically for debug builds.
-   *
-   * <p>Requires a Context so we can check before {@link
-   * com.google.firebase.crashlytics.internal.Kit#context} is set.
    */
   public static boolean isAppDebuggable(Context context) {
     return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
   }
-
-  /**
-   * Compares the file lastModified date - ascending (oldest first) used in capFileCount when
-   * finding oldest files to remove
-   */
-  public static final Comparator<File> FILE_MODIFIED_COMPARATOR =
-      new Comparator<File>() {
-
-        @Override
-        public int compare(File file0, File file1) {
-          // sort oldest first
-          return (int) (file0.lastModified() - file1.lastModified());
-        }
-      };
 
   /**
    * Gets values for string properties in the strings.xml file by its name. If a key is not present,
@@ -659,24 +518,9 @@ public class CommonUtils {
       try {
         c.close();
       } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, message, e);
+        Logger.getLogger().e(message, e);
       }
     }
-  }
-
-  public static void flushOrLog(Flushable f, String message) {
-    if (f != null) {
-      try {
-        f.flush();
-      } catch (IOException e) {
-        Logger.getLogger().e(Logger.TAG, message, e);
-      }
-    }
-  }
-
-  // TODO remove this in favor of TextUtils.isEmpty()
-  public static boolean isNullOrEmpty(String s) {
-    return s == null || s.length() == 0;
   }
 
   /**
@@ -693,23 +537,6 @@ public class CommonUtils {
     // This formatter pads the int value with spaces on the left until it reaches 10 characters
     // in width, then the spaces are replaced with zeros.
     return String.format(Locale.US, "%1$10s", value).replace(' ', '0');
-  }
-
-  public static boolean stringsEqualIncludingNull(String s1, String s2) {
-    if (s1 == s2) {
-      // Handles the case that both are null, or are identical object references.
-      return true;
-    } else {
-      if (s1 != null) {
-        // If s1 isn't null, we can just delegate to String equals on s1. Will work even if
-        // s2 is null.
-        return s1.equals(s2);
-      } else {
-        // If s1 is null, we've already established that s2 isn't also null, so return
-        // false.
-        return false;
-      }
-    }
   }
 
   /**
@@ -731,13 +558,18 @@ public class CommonUtils {
     if (iconId > 0) {
       try {
         resourcePackageName = context.getResources().getResourcePackageName(iconId);
+        // Apps using built-in icons will end up with the "android" resource package,
+        // which is definitely not what we want. Default to context.getPackageName().
+        if ("android".equals(resourcePackageName)) {
+          resourcePackageName = context.getPackageName();
+        }
       } catch (Resources.NotFoundException e) {
         // If we get here, the app has a valid icon, but it isn't in the resources for this
         // context. This can happen if the app uses a default system icon, for example.
         // In this case, we'll hope that context.getPackageName() is accurate.
         // (See b/122825635 for a note about whether or not this check makes sense for
         // future versions of the SDK, or if we should just use context.getPackageName()
-        // in all cases. Logging info or a warning here would be nice, but this method is
+        // in all cases.) Logging info or a warning here would be nice, but this method is
         // invoked many times throughout application startup.
         resourcePackageName = context.getPackageName();
       }
@@ -747,60 +579,6 @@ public class CommonUtils {
       resourcePackageName = context.getPackageName();
     }
     return resourcePackageName;
-  }
-
-  /**
-   * Copies all available data from the {@link InputStream} into the {@link OutputStream}, using the
-   * provided <code>buffer</code>. Neither stream is closed during this call.
-   */
-  public static void copyStream(InputStream is, OutputStream os, byte[] buffer) throws IOException {
-    int count;
-    while ((count = is.read(buffer)) != -1) {
-      os.write(buffer, 0, count);
-    }
-  }
-
-  public static String logPriorityToString(int priority) {
-    switch (priority) {
-      case Log.ASSERT:
-        return LOG_PRIORITY_NAME_ASSERT;
-      case Log.DEBUG:
-        return LOG_PRIORITY_NAME_DEBUG;
-      case Log.ERROR:
-        return LOG_PRIORITY_NAME_ERROR;
-      case Log.INFO:
-        return LOG_PRIORITY_NAME_INFO;
-      case Log.VERBOSE:
-        return LOG_PRIORITY_NAME_VERBOSE;
-      case Log.WARN:
-        return LOG_PRIORITY_NAME_WARN;
-      default:
-        return LOG_PRIORITY_NAME_UNKNOWN;
-    }
-  }
-
-  /**
-   * @return a SHA-1 hash String for the current app icon as read from Resources. Returns an empty
-   *     String in any case where a hash can't be computed.
-   */
-  public static String getAppIconHashOrNull(Context context) {
-    InputStream is = null;
-
-    try {
-      is = context.getResources().openRawResource(getAppIconResourceId(context));
-      final String sha1 = CommonUtils.sha1(is);
-      return CommonUtils.isNullOrEmpty(sha1) ? null : sha1;
-    } catch (Exception e) {
-      Logger.getLogger().w(Logger.TAG, "Could not calculate hash for app icon:" + e.getMessage());
-    } finally {
-      CommonUtils.closeOrLog(is, "Failed to close icon input stream.");
-    }
-
-    return null;
-  }
-
-  public static int getAppIconResourceId(Context context) {
-    return context.getApplicationContext().getApplicationInfo().icon;
   }
 
   public static String getMappingFileId(Context context) {
@@ -821,20 +599,6 @@ public class CommonUtils {
     return mappingFileId;
   }
 
-  /**
-   * @return the Unity Editor version resolved from String resources, or <code>null</code> if the
-   *     value was not present.
-   */
-  public static String resolveUnityEditorVersion(Context context) {
-    String version = null;
-    final int id = CommonUtils.getResourcesIdentifier(context, UNITY_EDITOR_VERSION, "string");
-    if (id != 0) {
-      version = context.getResources().getString(id);
-      Logger.getLogger().d(Logger.TAG, "Unity Editor version is: " + version);
-    }
-    return version;
-  }
-
   public static void closeQuietly(Closeable closeable) {
     if (closeable != null) {
       try {
@@ -850,50 +614,6 @@ public class CommonUtils {
   public static boolean checkPermission(Context context, String permission) {
     final int res = context.checkCallingOrSelfPermission(permission);
     return (res == PackageManager.PERMISSION_GRANTED);
-  }
-
-  public static void hideKeyboard(Context context, View view) {
-    final InputMethodManager imm =
-        (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (imm != null) {
-      imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-    }
-  }
-
-  public static void openKeyboard(Context context, View view) {
-    final InputMethodManager imm =
-        (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-    if (imm != null) {
-      imm.showSoftInputFromInputMethod(view.getWindowToken(), 0);
-    }
-  }
-
-  @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-  public static void finishAffinity(Context context, int resultCode) {
-    if (context instanceof Activity) {
-      finishAffinity((Activity) context, resultCode);
-    }
-  }
-
-  /**
-   * Finish this activity, and tries to finish all activities immediately below it in the current
-   * task that have the same affinity.
-   *
-   * <p>On Android 4.1+ calling this method will call through to the native version of this method.
-   * For other platforms will {@link Activity#setResult(int)} with @param resultCode and immediatly
-   * after {@link Activity#finish()} will be called instead.
-   */
-  @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-  public static void finishAffinity(Activity activity, int resultCode) {
-    if (activity == null) {
-      return;
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      activity.finishAffinity();
-    } else {
-      activity.setResult(resultCode);
-      activity.finish();
-    }
   }
 
   /**
@@ -912,5 +632,14 @@ public class CommonUtils {
     } else {
       return true;
     }
+  }
+
+  /** @return true if s1.equals(s2), or if both are null. */
+  public static boolean nullSafeEquals(@Nullable String s1, @Nullable String s2) {
+    // :TODO: replace calls to this method with Objects.equals(...) when minSdkVersion is 19+
+    if (s1 == null) {
+      return s2 == null;
+    }
+    return s1.equals(s2);
   }
 }

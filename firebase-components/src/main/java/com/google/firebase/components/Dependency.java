@@ -29,11 +29,12 @@ public final class Dependency {
     int SET = 2;
   }
 
-  @IntDef({Injection.DIRECT, Injection.PROVIDER})
+  @IntDef({Injection.DIRECT, Injection.PROVIDER, Injection.DEFERRED})
   @Retention(RetentionPolicy.SOURCE)
   private @interface Injection {
     int DIRECT = 0;
     int PROVIDER = 1;
+    int DEFERRED = 2;
   }
 
   private final Class<?> anInterface;
@@ -46,26 +47,82 @@ public final class Dependency {
     this.injection = injection;
   }
 
+  /**
+   * Declares an optional dependency.
+   *
+   * <p>Optional dependencies can be missing at runtime(being {@code null}) and dependents must be
+   * ready to handle that.
+   *
+   * @deprecated Optional dependencies are not safe to use in the context of Play's dynamic feature
+   *     delivery. Use {@link #optionalProvider(Class) optional provider} instead.
+   */
+  @Deprecated
   public static Dependency optional(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.DIRECT);
   }
 
+  /**
+   * Declares a deferred dependency.
+   *
+   * <p>Such dependencies are optional and may not be present by default. But they can become
+   * available if a dynamic module that contains them is installed.
+   */
+  public static Dependency deferred(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.OPTIONAL, Injection.DEFERRED);
+  }
+
+  /**
+   * Declares a required dependency.
+   *
+   * <p>Such dependencies must be present in order for the dependent component to function. Any
+   * component with a required dependency should also declare a Maven dependency on an SDK that
+   * provides it. Failing to do so will result in a {@link MissingDependencyException} to be thrown
+   * at runtime.
+   */
   public static Dependency required(Class<?> anInterface) {
     return new Dependency(anInterface, Type.REQUIRED, Injection.DIRECT);
   }
 
+  /**
+   * Declares a Set multi-binding dependency.
+   *
+   * <p>Such dependencies provide access to a {@code Set<Foo>} to dependent components. Note that
+   * the set is only filled with components that explicitly declare the intent to be a "set"
+   * dependency via {@link Component#intoSet(Object, Class)}.
+   */
   public static Dependency setOf(Class<?> anInterface) {
     return new Dependency(anInterface, Type.SET, Injection.DIRECT);
   }
 
+  /**
+   * Declares an optional dependency.
+   *
+   * <p>Optional dependencies can be missing at runtime(being {@code null}) and dependents must be
+   * ready to handle that.
+   */
   public static Dependency optionalProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.PROVIDER);
   }
 
+  /**
+   * Declares a required dependency.
+   *
+   * <p>Such dependencies must be present in order for the dependent component to function. Any
+   * component with a required dependency should also declare a Maven dependency on an SDK that
+   * provides it. Failing to do so will result in a {@link MissingDependencyException} to be thrown
+   * at runtime.
+   */
   public static Dependency requiredProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.REQUIRED, Injection.PROVIDER);
   }
 
+  /**
+   * Declares a Set multi-binding dependency.
+   *
+   * <p>Such dependencies provide access to a {@code Set<Foo>} to dependent components. Note that
+   * the set is only filled with components that explicitly declare the intent to be a "set"
+   * dependency via {@link Component#intoSet(Object, Class)}.
+   */
   public static Dependency setOfProvider(Class<?> anInterface) {
     return new Dependency(anInterface, Type.SET, Injection.PROVIDER);
   }
@@ -84,6 +141,10 @@ public final class Dependency {
 
   public boolean isDirectInjection() {
     return injection == Injection.DIRECT;
+  }
+
+  public boolean isDeferred() {
+    return injection == Injection.DEFERRED;
   }
 
   @Override
@@ -113,9 +174,22 @@ public final class Dependency {
             .append(anInterface)
             .append(", type=")
             .append(type == Type.REQUIRED ? "required" : type == Type.OPTIONAL ? "optional" : "set")
-            .append(", direct=")
-            .append(injection == Injection.DIRECT)
+            .append(", injection=")
+            .append(describeInjection(injection))
             .append("}");
     return sb.toString();
+  }
+
+  private static String describeInjection(@Injection int injection) {
+    switch (injection) {
+      case Injection.DIRECT:
+        return "direct";
+      case Injection.PROVIDER:
+        return "provider";
+      case Injection.DEFERRED:
+        return "deferred";
+      default:
+        throw new AssertionError("Unsupported injection: " + injection);
+    }
   }
 }

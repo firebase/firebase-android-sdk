@@ -19,14 +19,14 @@ plugins {
 
 firebaseLibrary {
     releaseWith project(':firebase-dynamic-links')
-    publishJavadoc = false
+    publishJavadoc = true
     publishSources = true
 }
 
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -45,13 +45,15 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
+    implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-dynamic-links')
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'androidx.test:core:1.2.0'
 }

@@ -14,39 +14,23 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
-import java.io.IOException;
-import okhttp3.Headers;
-import okhttp3.Response;
-
 public class HttpResponse {
-  private int code;
-  private String body;
-  private Headers headers;
+  private final int code;
+  private final String body;
 
-  HttpResponse(int code, String body, Headers headers) {
+  public HttpResponse(int code, String body) {
     this.code = code;
     this.body = body;
-    this.headers = headers;
-  }
-
-  static HttpResponse create(Response response) throws IOException {
-    String body = (response.body() == null) ? null : response.body().string();
-    return new HttpResponse(response.code(), body, response.headers());
   }
 
   /*
    * Response methods
    */
-
   public int code() {
     return code;
   }
 
   public String body() {
     return body;
-  }
-
-  public String header(String name) {
-    return headers.get(name);
   }
 }

@@ -47,6 +47,19 @@ public final class DocumentKey implements Comparable<DocumentKey> {
     return fromSegments(Collections.emptyList());
   }
 
+  /** Returns a DocumentKey from a fully qualified resource name. */
+  public static DocumentKey fromName(String name) {
+    ResourcePath resourceName = ResourcePath.fromString(name);
+    hardAssert(
+        resourceName.length() > 4
+            && resourceName.getSegment(0).equals("projects")
+            && resourceName.getSegment(2).equals("databases")
+            && resourceName.getSegment(4).equals("documents"),
+        "Tried to parse an invalid key: %s",
+        resourceName);
+    return DocumentKey.fromPath(resourceName.popFirst(5));
+  }
+
   /**
    * Creates and returns a new document key with the given path.
    *
@@ -93,6 +106,21 @@ public final class DocumentKey implements Comparable<DocumentKey> {
   /** Returns the path of to the document */
   public ResourcePath getPath() {
     return path;
+  }
+
+  /** Returns the collection group (i.e. the name of the parent collection) for this key. */
+  public String getCollectionGroup() {
+    return path.getSegment(path.length() - 2);
+  }
+
+  /** Returns the fully qualified path to the parent collection. */
+  public ResourcePath getCollectionPath() {
+    return path.popLast();
+  }
+
+  /** Returns the ID for this document key (i.e. the last path segment). */
+  public String getDocumentId() {
+    return path.getLastSegment();
   }
 
   /** Returns true if the document is in the specified collectionId. */

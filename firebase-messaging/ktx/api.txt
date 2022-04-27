@@ -1,0 +1,11 @@
+// Signature format: 2.0
+package com.google.firebase.messaging.ktx {
+
+  public final class MessagingKt {
+    ctor public MessagingKt();
+    method @NonNull public static com.google.firebase.messaging.FirebaseMessaging getMessaging(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(@NonNull String to, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
+  }
+
+}
+

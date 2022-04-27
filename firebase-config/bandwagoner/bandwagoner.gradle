@@ -18,7 +18,7 @@ apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion project.targetSdkVersion
     lintOptions {
         abortOnError false
     }
@@ -27,7 +27,7 @@ android {
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -55,7 +55,7 @@ android {
 }
 
 firebaseTestLab {
-    device 'model=walleye,version=26,locale=en,orientation=portrait'
+    device 'model=Pixel2,version=28,locale=en,orientation=portrait'
 }
 
 dependencies {
@@ -64,16 +64,16 @@ dependencies {
     // The alternative would be to make common an "api" dep of remote-config.
     // It should not matter for released artifacts.
     implementation project(":firebase-common")
+    implementation project(":firebase-components")
 
-    implementation('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-    }
+    implementation project(":firebase-installations-interop")
+    runtimeOnly project(":firebase-installations")
 
-    implementation 'com.google.android.gms:play-services-basement:17.0.0'
-    implementation 'com.google.android.gms:play-services-tasks:17.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     // Support Libraries
-    implementation 'com.google.guava:guava:27.1-android'
+    implementation 'com.google.guava:guava:28.1-android'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
     implementation 'androidx.appcompat:appcompat:1.0.2'

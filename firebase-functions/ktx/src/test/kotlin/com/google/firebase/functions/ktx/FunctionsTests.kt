@@ -14,6 +14,7 @@
 
 package com.google.firebase.functions.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -27,7 +28,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -38,7 +38,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -47,7 +47,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)

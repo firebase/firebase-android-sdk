@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -22,8 +23,8 @@ import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.model.value.IntegerValue
-import com.google.firebase.firestore.model.value.ObjectValue
+import com.google.firebase.firestore.model.ObjectValue
+import com.google.firebase.firestore.testutil.TestUtil.wrap
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -34,7 +35,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -45,7 +45,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -54,7 +54,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -86,7 +86,7 @@ class FirestoreTests : BaseTestCase() {
 
     @Test
     fun `FirebaseFirestoreSettings builder works`() {
-        val host = "http://10.0.0.2:8080"
+        val host = "http://10.0.2.2:8080"
         val isSslEnabled = false
         val isPersistenceEnabled = false
 
@@ -171,7 +171,7 @@ class QuerySnapshotTests {
         val qs = TestUtil.querySnapshot(
                 "rooms",
                 mapOf(),
-                mapOf("id" to ObjectValue.fromMap(mapOf("a" to IntegerValue.valueOf(1), "b" to IntegerValue.valueOf(2)))),
+                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1), "b" to wrap(2)))),
                 false,
                 false)
 

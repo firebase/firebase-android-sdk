@@ -17,35 +17,28 @@ package com.google.firebase.crashlytics.internal.settings;
 class SettingsJsonConstants {
   // Top-level JSON Keys
   static final String EXPIRES_AT_KEY = "expires_at";
-  static final String APP_KEY = "app";
   static final String SESSION_KEY = "session";
   static final String SETTINGS_VERSION = "settings_version";
   static final String FEATURES_KEY = "features";
   static final String CACHE_DURATION_KEY = "cache_duration";
-  static final String FABRIC_KEY = "fabric";
+  static final String ON_DEMAND_UPLOAD_RATE_PER_MINUTE_KEY = "on_demand_upload_rate_per_minute";
+  static final String ON_DEMAND_BACKOFF_BASE_KEY = "on_demand_backoff_base";
+  static final String ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_KEY =
+      "on_demand_backoff_step_duration_seconds";
 
   // Top-level Defaults
   static final int SETTINGS_VERSION_DEFAULT = 0;
 
   // Feature Switch Keys
   static final String FEATURES_COLLECT_REPORTS_KEY = "collect_reports";
+  static final String FEATURES_COLLECT_ANRS_KEY = "collect_anrs";
 
   // Feature Switch Defaults
   static final boolean FEATURES_COLLECT_REPORTS_DEFAULT = true;
-
-  // Fabric JSON Keys
-  static final String FABRIC_BUNDLE_ID = "bundle_id";
-  static final String FABRIC_ORGANIZATION_ID = "org_id";
+  static final boolean FEATURES_COLLECT_ANRS_DEFAULT = false;
 
   // App JSON Keys
   static final String APP_STATUS_KEY = "status";
-  static final String APP_URL_KEY = "url";
-  static final String APP_REPORTS_URL_KEY = "reports_url";
-  static final String APP_NDK_REPORTS_URL_KEY = "ndk_reports_url";
-  static final String APP_UPDATE_REQUIRED_KEY = "update_required";
-
-  // App JSON Defaults
-  static final boolean APP_UPDATE_REQUIRED_DEFAULT = false;
 
   // Settings JSON Keys
   static final String SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_KEY = "max_custom_exception_events";
@@ -55,4 +48,7 @@ class SettingsJsonConstants {
   static final int SETTINGS_CACHE_DURATION_DEFAULT = 3600;
   static final int SETTINGS_MAX_CUSTOM_EXCEPTION_EVENTS_DEFAULT = 8;
   static final int SETTINGS_MAX_COMPLETE_SESSIONS_COUNT_DEFAULT = 4;
+  static final double SETTINGS_ON_DEMAND_UPLOAD_RATE_PER_MINUTE_DEFAULT = 10;
+  static final double SETTINGS_ON_DEMAND_BACKOFF_BASE_DEFAULT = 1.2;
+  static final int SETTINGS_ON_DEMAND_BACKOFF_STEP_DURATION_SECONDS_DEFAULT = 60;
 }

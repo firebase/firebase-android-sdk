@@ -14,195 +14,66 @@
 
 package com.google.firebase.firestore.model;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.common.base.Function;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firestore.v1.Value;
 import java.util.Comparator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a document in Firestore with a key, version, data and whether the data has local
  * mutations applied to it.
  */
-public final class Document extends MaybeDocument {
-
-  /** Describes the `hasPendingWrites` state of a document. */
-  public enum DocumentState {
-    /** Local mutations applied via the mutation queue. Document is potentially inconsistent. */
-    LOCAL_MUTATIONS,
-    /** Mutations applied based on a write acknowledgment. Document is potentially inconsistent. */
-    COMMITTED_MUTATIONS,
-    /** No mutations applied. Document was sent to us by Watch. */
-    SYNCED
-  }
-
-  private static final Comparator<Document> KEY_COMPARATOR =
-      (left, right) -> left.getKey().compareTo(right.getKey());
-
+public interface Document {
   /** A document comparator that returns document by key and key only. */
-  public static Comparator<Document> keyComparator() {
-    return KEY_COMPARATOR;
-  }
+  Comparator<Document> KEY_COMPARATOR = (left, right) -> left.getKey().compareTo(right.getKey());
 
-  private final DocumentState documentState;
-  private @Nullable final com.google.firestore.v1.Document proto;
-  private @Nullable final Function<Value, FieldValue> converter;
-  private @Nullable ObjectValue objectValue;
-
-  /** A cache for FieldValues that have already been deserialized in `getField()`. */
-  private @Nullable Map<FieldPath, FieldValue> fieldValueCache;
-
-  public Document(
-      DocumentKey key,
-      SnapshotVersion version,
-      DocumentState documentState,
-      ObjectValue objectValue) {
-    super(key, version);
-    this.documentState = documentState;
-    this.objectValue = objectValue;
-    this.proto = null;
-    this.converter = null;
-  }
-
-  public Document(
-      DocumentKey key,
-      SnapshotVersion version,
-      DocumentState documentState,
-      com.google.firestore.v1.Document proto,
-      Function<com.google.firestore.v1.Value, FieldValue> converter) {
-    super(key, version);
-    this.documentState = documentState;
-    this.proto = proto;
-    this.converter = converter;
-  }
+  /** The key for this document */
+  DocumentKey getKey();
 
   /**
-   * Memoized serialized form of the document for optimization purposes (avoids repeated
-   * serialization). Might be null.
+   * Returns the version of this document if it exists or a version at which this document was
+   * guaranteed to not exist.
    */
-  public @Nullable com.google.firestore.v1.Document getProto() {
-    return proto;
-  }
+  SnapshotVersion getVersion();
 
-  @NonNull
-  public ObjectValue getData() {
-    if (objectValue == null) {
-      hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
+  /**
+   * Returns the timestamp at which this document was read from the remote server. Returns
+   * `SnapshotVersion.NONE` for documents created by the user.
+   */
+  SnapshotVersion getReadTime();
 
-      ObjectValue result = ObjectValue.emptyObject();
-      for (Map.Entry<String, com.google.firestore.v1.Value> entry :
-          proto.getFieldsMap().entrySet()) {
-        FieldPath path = FieldPath.fromSingleSegment(entry.getKey());
-        FieldValue value = converter.apply(entry.getValue());
-        result = result.set(path, value);
-      }
-      objectValue = result;
+  /**
+   * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
+   * created by a mutation or read from the backend).
+   */
+  boolean isValidDocument();
 
-      // Once objectValue is computed, values inside the fieldValueCache are no longer accessed.
-      fieldValueCache = null;
-    }
+  /** Returns whether the document exists and its data is known at the current version. */
+  boolean isFoundDocument();
 
-    return objectValue;
-  }
+  /** Returns whether the document is known to not exist at the current version. */
+  boolean isNoDocument();
 
-  public @Nullable FieldValue getField(FieldPath path) {
-    if (objectValue != null) {
-      return objectValue.get(path);
-    } else {
-      hardAssert(proto != null && converter != null, "Expected proto and converter to be non-null");
+  /** Returns whether the document exists and its data is unknown at the current version. */
+  boolean isUnknownDocument();
 
-      Map<FieldPath, FieldValue> fieldValueCache = this.fieldValueCache;
-      if (fieldValueCache == null) {
-        // TODO(b/136090445): Remove the cache when `getField` is no longer called during Query
-        // ordering.
-        fieldValueCache = new ConcurrentHashMap<>();
-        this.fieldValueCache = fieldValueCache;
-      }
+  /** Returns the underlying data of this document. Returns an empty value if no data exists. */
+  ObjectValue getData();
 
-      FieldValue fieldValue = fieldValueCache.get(path);
-      if (fieldValue == null) {
-        // Instead of deserializing the full Document proto, we only deserialize the value at
-        // the requested field path. This speeds up Query execution as query filters can discard
-        // documents based on a single field.
-        Value protoValue = proto.getFieldsMap().get(path.getFirstSegment());
-        for (int i = 1; protoValue != null && i < path.length(); ++i) {
-          if (protoValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
-            return null;
-          }
-          protoValue = protoValue.getMapValue().getFieldsMap().get(path.getSegment(i));
-        }
+  /** Returns the data of the given path. Returns null if no data exists. */
+  @Nullable
+  Value getField(FieldPath path);
 
-        if (protoValue != null) {
-          fieldValue = converter.apply(protoValue);
-          fieldValueCache.put(path, fieldValue);
-        }
-      }
+  /** Returns whether local mutations were applied via the mutation queue. */
+  boolean hasLocalMutations();
 
-      return fieldValue;
-    }
-  }
+  /** Returns whether mutations were applied based on a write acknowledgment. */
+  boolean hasCommittedMutations();
 
-  public @Nullable Object getFieldValue(FieldPath path) {
-    FieldValue value = getField(path);
-    return (value == null) ? null : value.value();
-  }
+  /**
+   * Whether this document has a local mutation applied that has not yet been acknowledged by Watch.
+   */
+  boolean hasPendingWrites();
 
-  public boolean hasLocalMutations() {
-    return documentState.equals(DocumentState.LOCAL_MUTATIONS);
-  }
-
-  public boolean hasCommittedMutations() {
-    return documentState.equals(DocumentState.COMMITTED_MUTATIONS);
-  }
-
-  @Override
-  public boolean hasPendingWrites() {
-    return this.hasLocalMutations() || this.hasCommittedMutations();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof Document)) {
-      return false;
-    }
-
-    Document document = (Document) o;
-
-    return getVersion().equals(document.getVersion())
-        && getKey().equals(document.getKey())
-        && documentState.equals(document.documentState)
-        && getData().equals(document.getData());
-  }
-
-  @Override
-  public int hashCode() {
-    // Note: We deliberately decided to omit `getData()` since its computation is expensive.
-    int result = getKey().hashCode();
-    result = 31 * result + getVersion().hashCode();
-    result = 31 * result + documentState.hashCode();
-    return result;
-  }
-
-  @Override
-  public String toString() {
-    return "Document{"
-        + "key="
-        + getKey()
-        + ", data="
-        + getData()
-        + ", version="
-        + getVersion()
-        + ", documentState="
-        + documentState.name()
-        + '}';
-  }
+  /** Creates a mutable copy of this document. */
+  MutableDocument mutableCopy();
 }

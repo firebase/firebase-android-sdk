@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,13 +22,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;
 import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.api.internal.TaskApiCall;
 import com.google.android.gms.common.api.internal.TaskUtil;
+import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.safeparcel.SafeParcelableSerializer;
+import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -39,6 +40,7 @@ import com.google.firebase.dynamiclinks.DynamicLink.Builder;
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks;
 import com.google.firebase.dynamiclinks.PendingDynamicLinkData;
 import com.google.firebase.dynamiclinks.ShortDynamicLink;
+import com.google.firebase.inject.Provider;
 
 /**
  * Implementation of FirebaseDynamicLinks that passes requests to the binder interface to gmscore.
@@ -57,20 +59,25 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
 
   private final GoogleApi<NoOptions> googleApi;
 
-  @Nullable private final AnalyticsConnector analytics;
+  private final Provider<AnalyticsConnector> analytics;
 
-  public FirebaseDynamicLinksImpl(FirebaseApp firebaseApp, @Nullable AnalyticsConnector analytics) {
-    this(new DynamicLinksApi(firebaseApp.getApplicationContext()), analytics);
+  private final FirebaseApp firebaseApp;
+
+  public FirebaseDynamicLinksImpl(FirebaseApp firebaseApp, Provider<AnalyticsConnector> analytics) {
+    this(new DynamicLinksApi(firebaseApp.getApplicationContext()), firebaseApp, analytics);
   }
 
   // This overload exists to allow injecting a mock GoogleApi instance in tests.
   @VisibleForTesting
   public FirebaseDynamicLinksImpl(
-      GoogleApi<NoOptions> googleApi, @Nullable AnalyticsConnector analytics) {
+      GoogleApi<NoOptions> googleApi,
+      FirebaseApp firebaseApp,
+      Provider<AnalyticsConnector> analytics) {
     this.googleApi = googleApi;
+    this.firebaseApp = Preconditions.checkNotNull(firebaseApp);
     this.analytics = analytics;
 
-    if (analytics == null) {
+    if (analytics.get() == null) {
       // b/34217790: Try to get an instance of Analytics. This initializes Google Analytics
       // if it is set up for the app, which sets up the association for the app and package name,
       // allowing GmsCore to log FDL events on behalf of the app.
@@ -84,6 +91,11 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
     }
   }
 
+  public FirebaseApp getFirebaseApp() {
+    return firebaseApp;
+  }
+
+  @Nullable
   public PendingDynamicLinkData getPendingDynamicLinkData(@NonNull Intent intent) {
     DynamicLinkData dynamicLinkData =
         SafeParcelableSerializer.deserializeFromIntentExtra(
@@ -92,15 +104,20 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
   }
 
   @Override
-  public Task<PendingDynamicLinkData> getDynamicLink(@NonNull final Intent intent) {
+  public Task<PendingDynamicLinkData> getDynamicLink(@Nullable final Intent intent) {
+    String dynamicLinkDataString = intent != null ? intent.getDataString() : null;
     Task<PendingDynamicLinkData> result =
-        googleApi.doWrite(new GetDynamicLinkImpl(analytics, intent.getDataString()));
-    PendingDynamicLinkData pendingDynamicLinkData = getPendingDynamicLinkData(intent);
-    if (pendingDynamicLinkData != null) {
-      // DynamicLinkData included in the Intent, return it immediately and allow the Task to run in
-      // the background to do logging and mark the FDL as returned.
-      result = Tasks.forResult(pendingDynamicLinkData);
+        googleApi.doWrite(new GetDynamicLinkImpl(analytics, dynamicLinkDataString));
+
+    if (intent != null) {
+      PendingDynamicLinkData pendingDynamicLinkData = getPendingDynamicLinkData(intent);
+      if (pendingDynamicLinkData != null) {
+        // DynamicLinkData included in the Intent, return it immediately and allow the Task to run
+        // in the background to do logging and mark the FDL as returned.
+        result = Tasks.forResult(pendingDynamicLinkData);
+      }
     }
+
     return result;
   }
 
@@ -120,15 +137,19 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
     if (longLink == null) {
       // Long link was not supplied, build the Dynamic Link from Dynamic Link parameters.
       Uri.Builder builder = new Uri.Builder();
-      Uri uri = Uri.parse(builderParameters.getString(Builder.KEY_DOMAIN_URI_PREFIX));
+      String domainUriPrefix =
+          Preconditions.checkNotNull(builderParameters.getString(Builder.KEY_DOMAIN_URI_PREFIX));
+      Uri uri = Uri.parse(domainUriPrefix);
       builder.scheme(uri.getScheme());
       builder.authority(uri.getAuthority());
       builder.path(uri.getPath());
       Bundle fdlParameters = builderParameters.getBundle(Builder.KEY_DYNAMIC_LINK_PARAMETERS);
-      for (String key : fdlParameters.keySet()) {
-        Object value = fdlParameters.get(key);
-        if (value != null) {
-          builder.appendQueryParameter(key, value.toString());
+      if (fdlParameters != null) {
+        for (String key : fdlParameters.keySet()) {
+          Object value = fdlParameters.get(key);
+          if (value != null) {
+            builder.appendQueryParameter(key, value.toString());
+          }
         }
       }
       longLink = builder.build();
@@ -153,10 +174,11 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
   static final class GetDynamicLinkImpl
       extends TaskApiCall<DynamicLinksClient, PendingDynamicLinkData> {
 
-    private final String dynamicLink;
-    @Nullable private final AnalyticsConnector analytics;
+    @Nullable private final String dynamicLink;
+    private final Provider<AnalyticsConnector> analytics;
 
-    GetDynamicLinkImpl(AnalyticsConnector analytics, String dynamicLink) {
+    GetDynamicLinkImpl(Provider<AnalyticsConnector> analytics, @Nullable String dynamicLink) {
+      super(null, false, FirebaseDynamicLinksImplConstants.GET_DYNAMIC_LINK_METHOD_KEY);
       this.dynamicLink = dynamicLink;
       this.analytics = analytics;
     }
@@ -176,6 +198,7 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
     private final Bundle builderParameters;
 
     CreateShortDynamicLinkImpl(Bundle builderParameters) {
+      super(null, false, FirebaseDynamicLinksImplConstants.CREATE_SHORT_DYNAMIC_LINK_METHOD_KEY);
       this.builderParameters = builderParameters;
     }
 
@@ -192,29 +215,30 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
   static class AbstractDynamicLinkCallbacks extends IDynamicLinksCallbacks.Stub {
 
     @Override
-    public void onGetDynamicLink(Status status, DynamicLinkData dynamicLinkData) {
+    public void onGetDynamicLink(Status status, @Nullable DynamicLinkData dynamicLinkData) {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public void onCreateShortDynamicLink(Status status, ShortDynamicLinkImpl shortDynamicLink) {
+    public void onCreateShortDynamicLink(
+        Status status, @Nullable ShortDynamicLinkImpl shortDynamicLink) {
       throw new UnsupportedOperationException();
     }
   }
 
   static class DynamicLinkCallbacks extends AbstractDynamicLinkCallbacks {
     private final TaskCompletionSource<PendingDynamicLinkData> completionSource;
-    @Nullable private final AnalyticsConnector analytics;
+    private final Provider<AnalyticsConnector> analytics;
 
     public DynamicLinkCallbacks(
-        AnalyticsConnector analytics,
+        Provider<AnalyticsConnector> analytics,
         TaskCompletionSource<PendingDynamicLinkData> completionSource) {
       this.analytics = analytics;
       this.completionSource = completionSource;
     }
 
     @Override
-    public void onGetDynamicLink(Status status, DynamicLinkData dynamicLinkData) {
+    public void onGetDynamicLink(Status status, @Nullable DynamicLinkData dynamicLinkData) {
       // Send result to client.
       TaskUtil.setResultOrApiException(
           status,
@@ -230,13 +254,14 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
         return;
       }
 
-      if (analytics == null) {
+      AnalyticsConnector connector = analytics.get();
+      if (connector == null) {
         return;
       }
 
       for (String name : scionData.keySet()) {
         Bundle params = scionData.getBundle(name);
-        analytics.logEvent(ANALYTICS_FDL_ORIGIN, name, params);
+        connector.logEvent(ANALYTICS_FDL_ORIGIN, name, params);
       }
     }
   }
@@ -249,7 +274,8 @@ public class FirebaseDynamicLinksImpl extends FirebaseDynamicLinks {
     }
 
     @Override
-    public void onCreateShortDynamicLink(Status status, ShortDynamicLinkImpl shortDynamicLink) {
+    public void onCreateShortDynamicLink(
+        Status status, @Nullable ShortDynamicLinkImpl shortDynamicLink) {
       TaskUtil.setResultOrApiException(status, shortDynamicLink, completionSource);
     }
   }

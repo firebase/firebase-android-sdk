@@ -14,14 +14,15 @@
 
 package com.google.firebase.storage.network;
 
-import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.internal.StorageReferenceUri;
 
 /** A network request that returns metadata on a gcs object. */
 public class GetMetadataNetworkRequest extends NetworkRequest {
-  public GetMetadataNetworkRequest(@NonNull Uri gsUri, @NonNull FirebaseApp app) {
-    super(gsUri, app);
+  public GetMetadataNetworkRequest(
+      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
+    super(storageReferenceUri, app);
   }
 
   @Override

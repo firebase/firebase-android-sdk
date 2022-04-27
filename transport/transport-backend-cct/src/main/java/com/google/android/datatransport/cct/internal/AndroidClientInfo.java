@@ -21,7 +21,8 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class AndroidClientInfo {
   /** This comes from android.os.Build.VERSION.SDK_INT. */
-  public abstract int getSdkVersion();
+  @Nullable
+  public abstract Integer getSdkVersion();
 
   /**
    * Textual description of the client platform. e.g., "Nexus 4". This comes from
@@ -57,16 +58,38 @@ public abstract class AndroidClientInfo {
   @Nullable
   public abstract String getFingerprint();
 
+  /**
+   * The chosen locale from the client. e.g., "en_US", "ko_KR", "en_GB". NB: Often set as just
+   * locale-derived language; e.g., "en", "ko".
+   */
+  @Nullable
+  public abstract String getLocale();
+
+  /** Locale-derived country, chosen by the user; e.g., "US", "KR", "JP". */
+  @Nullable
+  public abstract String getCountry();
+
+  /** The mobile country code / mobile network code (MCC/MNC). */
+  @Nullable
+  public abstract String getMccMnc();
+
+  /**
+   * The client application version. The java int version in the android package converted to
+   * string.
+   */
+  @Nullable
+  public abstract String getApplicationBuild();
+
   @NonNull
   public static Builder builder() {
-    return new AutoValue_AndroidClientInfo.Builder().setSdkVersion(Integer.MIN_VALUE);
+    return new AutoValue_AndroidClientInfo.Builder();
   }
 
   @AutoValue.Builder
   public abstract static class Builder {
 
     @NonNull
-    public abstract Builder setSdkVersion(int value);
+    public abstract Builder setSdkVersion(@Nullable Integer value);
 
     @NonNull
     public abstract Builder setModel(@Nullable String value);
@@ -88,6 +111,18 @@ public abstract class AndroidClientInfo {
 
     @NonNull
     public abstract Builder setFingerprint(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setCountry(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setLocale(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setMccMnc(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setApplicationBuild(@Nullable String value);
 
     @NonNull
     public abstract AndroidClientInfo build();

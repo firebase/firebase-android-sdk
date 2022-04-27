@@ -14,26 +14,16 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.value.ArrayValue;
-import com.google.firebase.firestore.model.value.FieldValue;
-import com.google.firebase.firestore.model.value.ObjectValue;
-import com.google.firebase.firestore.model.value.ReferenceValue;
-import com.google.firebase.firestore.model.value.ServerTimestampValue;
-import com.google.firebase.firestore.model.value.TimestampValue;
 import com.google.firebase.firestore.util.CustomClassMapper;
-import com.google.firebase.firestore.util.Logger;
-import java.util.ArrayList;
+import com.google.firestore.v1.Value;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -78,18 +68,6 @@ public class DocumentSnapshot {
     static final ServerTimestampBehavior DEFAULT = ServerTimestampBehavior.NONE;
   }
 
-  /** Holds settings that define field value deserialization options. */
-  static class FieldValueOptions {
-    final ServerTimestampBehavior serverTimestampBehavior;
-    final boolean timestampsInSnapshotsEnabled;
-
-    private FieldValueOptions(
-        ServerTimestampBehavior serverTimestampBehavior, boolean timestampsInSnapshotsEnabled) {
-      this.serverTimestampBehavior = serverTimestampBehavior;
-      this.timestampsInSnapshotsEnabled = timestampsInSnapshotsEnabled;
-    }
-  }
-
   private final FirebaseFirestore firestore;
 
   private final DocumentKey key;
@@ -117,14 +95,14 @@ public class DocumentSnapshot {
   }
 
   static DocumentSnapshot fromNoDocument(
-      FirebaseFirestore firestore, DocumentKey key, boolean fromCache, boolean hasPendingWrites) {
-    return new DocumentSnapshot(firestore, key, null, fromCache, hasPendingWrites);
+      FirebaseFirestore firestore, DocumentKey key, boolean fromCache) {
+    return new DocumentSnapshot(firestore, key, null, fromCache, /* hasPendingWrites= */ false);
   }
 
   /** @return The id of the document. */
   @NonNull
   public String getId() {
-    return key.getPath().getLastSegment();
+    return key.getDocumentId();
   }
 
   /** @return The metadata for this document snapshot. */
@@ -166,13 +144,8 @@ public class DocumentSnapshot {
   public Map<String, Object> getData(@NonNull ServerTimestampBehavior serverTimestampBehavior) {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
-    return doc == null
-        ? null
-        : convertObject(
-            doc.getData(),
-            new FieldValueOptions(
-                serverTimestampBehavior,
-                firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
+    UserDataWriter userDataWriter = new UserDataWriter(firestore, serverTimestampBehavior);
+    return doc == null ? null : userDataWriter.convertObject(doc.getData().getFieldsMap());
   }
 
   /**
@@ -283,11 +256,7 @@ public class DocumentSnapshot {
     checkNotNull(fieldPath, "Provided field path must not be null.");
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
-    return getInternal(
-        fieldPath.getInternalPath(),
-        new FieldValueOptions(
-            serverTimestampBehavior,
-            firestore.getFirestoreSettings().areTimestampsInSnapshotsEnabled()));
+    return getInternal(fieldPath.getInternalPath(), serverTimestampBehavior);
   }
 
   /**
@@ -420,9 +389,6 @@ public class DocumentSnapshot {
   /**
    * Returns the value of the field as a Date.
    *
-   * <p>This method ignores the global setting {@link
-   * FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled}.
-   *
    * @param field The path to the field.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
    *     been set to their final value.
@@ -435,19 +401,12 @@ public class DocumentSnapshot {
     checkNotNull(field, "Provided field path must not be null.");
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
-    Object maybeDate =
-        getInternal(
-            FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            new FieldValueOptions(
-                serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ false));
-    return castTypedValue(maybeDate, field, Date.class);
+    @Nullable Timestamp timestamp = getTimestamp(field, serverTimestampBehavior);
+    return timestamp != null ? timestamp.toDate() : null;
   }
 
   /**
    * Returns the value of the field as a {@code com.google.firebase.Timestamp}.
-   *
-   * <p>This method ignores the global setting {@link
-   * FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled}.
    *
    * @param field The path to the field.
    * @throws RuntimeException if this is not a timestamp field.
@@ -460,9 +419,6 @@ public class DocumentSnapshot {
 
   /**
    * Returns the value of the field as a {@code com.google.firebase.Timestamp}.
-   *
-   * <p>This method ignores the global setting {@link
-   * FirebaseFirestoreSettings#areTimestampsInSnapshotsEnabled}.
    *
    * @param field The path to the field.
    * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
@@ -478,8 +434,7 @@ public class DocumentSnapshot {
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Object maybeTimestamp =
         getInternal(
-            FieldPath.fromDotSeparatedPath(field).getInternalPath(),
-            new FieldValueOptions(serverTimestampBehavior, /*timestampsInSnapshotsEnabled=*/ true));
+            FieldPath.fromDotSeparatedPath(field).getInternalPath(), serverTimestampBehavior);
     return castTypedValue(maybeTimestamp, field, Timestamp.class);
   }
 
@@ -547,86 +502,14 @@ public class DocumentSnapshot {
   }
 
   @Nullable
-  private Object convertValue(FieldValue value, FieldValueOptions options) {
-    if (value instanceof ObjectValue) {
-      return convertObject((ObjectValue) value, options);
-    } else if (value instanceof ArrayValue) {
-      return convertArray((ArrayValue) value, options);
-    } else if (value instanceof ReferenceValue) {
-      return convertReference((ReferenceValue) value);
-    } else if (value instanceof TimestampValue) {
-      return convertTimestamp((TimestampValue) value, options);
-    } else if (value instanceof ServerTimestampValue) {
-      return convertServerTimestamp((ServerTimestampValue) value, options);
-    } else {
-      return value.value();
-    }
-  }
-
-  private Object convertServerTimestamp(ServerTimestampValue value, FieldValueOptions options) {
-    switch (options.serverTimestampBehavior) {
-      case PREVIOUS:
-        return value.getPreviousValue();
-      case ESTIMATE:
-        return value.getLocalWriteTime();
-      default:
-        return value.value();
-    }
-  }
-
-  private Object convertTimestamp(TimestampValue value, FieldValueOptions options) {
-    Timestamp timestamp = value.value();
-    if (options.timestampsInSnapshotsEnabled) {
-      return timestamp;
-    } else {
-      return timestamp.toDate();
-    }
-  }
-
-  private Object convertReference(ReferenceValue value) {
-    DocumentKey key = value.value();
-    DatabaseId refDatabase = value.getDatabaseId();
-    DatabaseId database = this.firestore.getDatabaseId();
-    if (!refDatabase.equals(database)) {
-      // TODO: Somehow support foreign references.
-      Logger.warn(
-          "DocumentSnapshot",
-          "Document %s contains a document reference within a different database "
-              + "(%s/%s) which is not supported. It will be treated as a reference in "
-              + "the current database (%s/%s) instead.",
-          key.getPath(),
-          refDatabase.getProjectId(),
-          refDatabase.getDatabaseId(),
-          database.getProjectId(),
-          database.getDatabaseId());
-    }
-    return new DocumentReference(key, firestore);
-  }
-
-  private Map<String, Object> convertObject(ObjectValue objectValue, FieldValueOptions options) {
-    Map<String, Object> result = new HashMap<>();
-    for (Map.Entry<String, FieldValue> entry : objectValue.getInternalValue()) {
-      result.put(entry.getKey(), convertValue(entry.getValue(), options));
-    }
-    return result;
-  }
-
-  private List<Object> convertArray(ArrayValue arrayValue, FieldValueOptions options) {
-    ArrayList<Object> result = new ArrayList<>(arrayValue.getInternalValue().size());
-    for (FieldValue v : arrayValue.getInternalValue()) {
-      result.add(convertValue(v, options));
-    }
-    return result;
-  }
-
-  @Nullable
   private Object getInternal(
       @NonNull com.google.firebase.firestore.model.FieldPath fieldPath,
-      @NonNull FieldValueOptions options) {
+      @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     if (doc != null) {
-      FieldValue val = doc.getField(fieldPath);
+      Value val = doc.getField(fieldPath);
       if (val != null) {
-        return convertValue(val, options);
+        UserDataWriter userDataWriter = new UserDataWriter(firestore, serverTimestampBehavior);
+        return userDataWriter.convertValue(val);
       }
     }
     return null;
@@ -651,7 +534,8 @@ public class DocumentSnapshot {
   public int hashCode() {
     int hash = firestore.hashCode();
     hash = hash * 31 + key.hashCode();
-    hash = hash * 31 + (doc != null ? doc.hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getKey().hashCode() : 0);
+    hash = hash * 31 + (doc != null ? doc.getData().hashCode() : 0);
     hash = hash * 31 + metadata.hashCode();
     return hash;
   }

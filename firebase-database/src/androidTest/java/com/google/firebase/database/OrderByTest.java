@@ -17,6 +17,7 @@ package com.google.firebase.database;
 import static org.junit.Assert.assertEquals;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,6 +36,12 @@ import org.junit.Test;
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class OrderByTest {
   @Rule public RetryRule retryRule = new RetryRule(3);
+
+  @After
+  public void tearDown() {
+    RepoManager.clear();
+    IntegrationTestHelpers.failOnFirstUncaughtException();
+  }
 
   @Test
   public void snapshotsAreIteratedInOrder()

@@ -14,9 +14,9 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
@@ -58,6 +58,7 @@ final class SQLiteMutationQueue implements MutationQueue {
 
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
+  private final IndexManager indexManager;
 
   /** The normalized uid (e.g. null => "") used in the uid column. */
   private final String uid;
@@ -88,11 +89,16 @@ final class SQLiteMutationQueue implements MutationQueue {
    * @param persistence The SQLite database in which to create the queue.
    * @param user The user for which to create a mutation queue.
    */
-  SQLiteMutationQueue(SQLitePersistence persistence, LocalSerializer serializer, User user) {
+  SQLiteMutationQueue(
+      SQLitePersistence persistence,
+      LocalSerializer serializer,
+      User user,
+      IndexManager indexManager) {
     this.db = persistence;
     this.serializer = serializer;
     this.uid = user.isAuthenticated() ? user.getUid() : "";
     this.lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
+    this.indexManager = indexManager;
   }
 
   // MutationQueue implementation
@@ -209,7 +215,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       String path = EncodedPath.encode(key.getPath());
       db.execute(indexInserter, uid, path, batchId);
 
-      db.getIndexManager().addToCollectionParentIndex(key.getPath().popLast());
+      indexManager.addToCollectionParentIndex(key.getCollectionPath());
     }
 
     return batch;
@@ -318,7 +324,7 @@ final class SQLiteMutationQueue implements MutationQueue {
       Collections.sort(
           result,
           (MutationBatch lhs, MutationBatch rhs) ->
-              Util.compareInts(lhs.getBatchId(), rhs.getBatchId()));
+              Util.compareIntegers(lhs.getBatchId(), rhs.getBatchId()));
     }
     return result;
   }

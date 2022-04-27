@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -66,7 +68,7 @@ public class SyncPointTest {
           SyncTree.CompletionListener onListenComplete) {
         Path path = query.getPath();
         logger.debug("Listening at " + path + " for Tag " + tag + ")");
-        assert !listens.contains(query) : "Duplicate listen";
+        hardAssert(!listens.contains(query), "Duplicate listen");
         this.listens.add(query);
       }
 
@@ -74,7 +76,7 @@ public class SyncPointTest {
       public void stopListening(QuerySpec query, Tag tag) {
         Path path = query.getPath();
         logger.debug("Stop listening at " + path + " for Tag " + tag + ")");
-        assert this.listens.contains(query) : "Stopped listening for query already";
+        hardAssert(this.listens.contains(query), "Stopped listening for query already");
         this.listens.remove(query);
       }
     };

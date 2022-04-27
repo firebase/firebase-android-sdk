@@ -14,13 +14,18 @@
 
 package com.google.firebase.database.snapshot;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.core.utilities.Utilities;
 
 public class ChildKey implements Comparable<ChildKey> {
   private final String key;
 
-  private static final ChildKey MIN_KEY = new ChildKey("[MIN_KEY]");
-  private static final ChildKey MAX_KEY = new ChildKey("[MAX_KEY]");
+  public static final String MAX_KEY_NAME = "[MAX_KEY]";
+  public static final String MIN_KEY_NAME = "[MIN_NAME]";
+
+  private static final ChildKey MIN_KEY = new ChildKey(MIN_KEY_NAME);
+  private static final ChildKey MAX_KEY = new ChildKey(MAX_KEY_NAME);
 
   // Singleton for priority child keys
   private static final ChildKey PRIORITY_CHILD_KEY = new ChildKey(".priority");
@@ -66,9 +71,9 @@ public class ChildKey implements Comparable<ChildKey> {
   public int compareTo(ChildKey other) {
     if (this == other) {
       return 0;
-    } else if (this == MIN_KEY || other == MAX_KEY) {
+    } else if (this.key.equals(MIN_KEY_NAME) || other.key.equals(MAX_KEY_NAME)) {
       return -1;
-    } else if (other == MIN_KEY || this == MAX_KEY) {
+    } else if (other.key.equals(MIN_KEY_NAME) || this.key.equals(MAX_KEY_NAME)) {
       return 1;
     } else if (this.isInt()) {
       if (other.isInt()) {
@@ -113,7 +118,7 @@ public class ChildKey implements Comparable<ChildKey> {
     } else if (key.equals(".priority")) {
       return PRIORITY_CHILD_KEY;
     } else {
-      assert !key.contains("/");
+      hardAssert(!key.contains("/"));
       return new ChildKey(key);
     }
   }

@@ -15,34 +15,42 @@
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
+import static com.google.firebase.firestore.util.Util.diffCollections;
 import static java.util.Arrays.asList;
 
 import android.util.SparseArray;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.bundle.BundleCallback;
+import com.google.firebase.firestore.bundle.BundleMetadata;
+import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
-import com.google.firebase.firestore.model.NoDocument;
+import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
+import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
-import com.google.firebase.firestore.model.value.ObjectValue;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -91,7 +99,7 @@ import java.util.concurrent.TimeUnit;
  * <p>The LocalStore must be able to efficiently execute queries against its local cache of the
  * documents, to provide the initial set of results before any remote changes have been received.
  */
-public final class LocalStore {
+public final class LocalStore implements BundleCallback {
   /**
    * The maximum time to leave a resume token buffered without writing it out. This value is
    * arbitrary: it's long enough to avoid several writes (possibly indefinitely if updates come more
@@ -103,8 +111,17 @@ public final class LocalStore {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** Manages the list of active field and collection indices. */
+  private IndexManager indexManager;
+
+  /** Manages field index backfill. */
+  private final @Nullable IndexBackfiller indexBackfiller;
+
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
+
+  /** The overlays that can be used to short circuit applying all mutations from mutation queue. */
+  private DocumentOverlayCache documentOverlayCache;
 
   /** The last known state of all referenced documents according to the backend. */
   private final RemoteDocumentCache remoteDocuments;
@@ -113,13 +130,16 @@ public final class LocalStore {
   private LocalDocumentsView localDocuments;
 
   /** Performs queries over the localDocuments (and potentially maintains indexes). */
-  private QueryEngine queryEngine;
+  private final QueryEngine queryEngine;
 
   /** The set of document references maintained by any local views. */
   private final ReferenceSet localViewReferences;
 
   /** Maps a query to the data about that query. */
   private final TargetCache targetCache;
+
+  /** Holds information about the bundles loaded into the SDK. */
+  private final BundleCache bundleCache;
 
   /** Maps a targetId to data about its query. */
   private final SparseArray<TargetData> queryDataByTarget;
@@ -130,54 +150,71 @@ public final class LocalStore {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
+  public LocalStore(
+      Persistence persistence,
+      @Nullable IndexBackfiller indexBackfiller,
+      QueryEngine queryEngine,
+      User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
-    targetCache = persistence.getTargetCache();
-    targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
-    mutationQueue = persistence.getMutationQueue(initialUser);
-    remoteDocuments = persistence.getRemoteDocumentCache();
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-
     this.queryEngine = queryEngine;
-    queryEngine.setLocalDocumentsView(localDocuments);
+    this.indexBackfiller = indexBackfiller;
 
+    targetCache = persistence.getTargetCache();
+    bundleCache = persistence.getBundleCache();
+    targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
+    remoteDocuments = persistence.getRemoteDocumentCache();
     localViewReferences = new ReferenceSet();
-    persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
-
     queryDataByTarget = new SparseArray<>();
     targetIdByTarget = new HashMap<>();
+
+    persistence.getReferenceDelegate().setInMemoryPins(localViewReferences);
+
+    initializeUserComponents(initialUser);
+  }
+
+  private void initializeUserComponents(User user) {
+    // TODO(indexing): Add spec tests that test these components change after a user change
+    indexManager = persistence.getIndexManager(user);
+    mutationQueue = persistence.getMutationQueue(user, indexManager);
+    documentOverlayCache = persistence.getDocumentOverlayCache(user);
+    localDocuments =
+        new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
+
+    remoteDocuments.setIndexManager(indexManager);
+    queryEngine.initialize(localDocuments, indexManager);
+    if (indexBackfiller != null) {
+      indexBackfiller.setIndexManager(indexManager);
+      indexBackfiller.setLocalDocumentsView(localDocuments);
+    }
   }
 
   public void start() {
+    persistence.getOverlayMigrationManager().run();
+    startIndexManager();
     startMutationQueue();
   }
 
+  private void startIndexManager() {
+    persistence.runTransaction("Start IndexManager", () -> indexManager.start());
+  }
+
   private void startMutationQueue() {
-    persistence.runTransaction(
-        "Start MutationQueue",
-        () -> {
-          mutationQueue.start();
-        });
+    persistence.runTransaction("Start MutationQueue", () -> mutationQueue.start());
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
 
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> handleUserChange(User user) {
+  public ImmutableSortedMap<DocumentKey, Document> handleUserChange(User user) {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
     List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
-    mutationQueue = persistence.getMutationQueue(user);
+    initializeUserComponents(user);
+    startIndexManager();
     startMutationQueue();
 
     List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
-
-    // Recreate our LocalDocumentsView using the new MutationQueue.
-    localDocuments =
-        new LocalDocumentsView(remoteDocuments, mutationQueue, persistence.getIndexManager());
-    queryEngine.setLocalDocumentsView(localDocuments);
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
@@ -194,7 +231,7 @@ public final class LocalStore {
   }
 
   /** Accepts locally generated Mutations and commits them to storage. */
-  public LocalWriteResult writeLocally(List<Mutation> mutations) {
+  public LocalDocumentsResult writeLocally(List<Mutation> mutations) {
     Timestamp localWriteTime = Timestamp.now();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -207,10 +244,22 @@ public final class LocalStore {
     return persistence.runTransaction(
         "Locally write mutations",
         () -> {
+          // Figure out which keys do not have a remote version in the cache, this is needed to
+          // create the right overlay mutation: if no remote version presents, we do not need to
+          // create overlays as patch mutations.
+          // TODO(Overlay): Is there a better way to determine this? Document version does not work
+          // because local mutations set them back to 0.
+          Map<DocumentKey, MutableDocument> remoteDocs = remoteDocuments.getAll(keys);
+          Set<DocumentKey> docsWithoutRemoteVersion = new HashSet<>();
+          for (Map.Entry<DocumentKey, MutableDocument> entry : remoteDocs.entrySet()) {
+            if (!entry.getValue().isValidDocument()) {
+              docsWithoutRemoteVersion.add(entry.getKey());
+            }
+          }
           // Load and apply all existing mutations. This lets us compute the current base state for
           // all non-idempotent transforms before applying any additional user-provided writes.
-          ImmutableSortedMap<DocumentKey, MaybeDocument> existingDocuments =
-              localDocuments.getDocuments(keys);
+          Map<DocumentKey, OverlayedDocument> overlayedDocuments =
+              localDocuments.getOverlayedDocuments(remoteDocs);
 
           // For non-idempotent mutations (such as `FieldValue.increment()`), we record the base
           // state in a separate patch mutation. This is later used to guarantee consistent values
@@ -219,7 +268,8 @@ public final class LocalStore {
           List<Mutation> baseMutations = new ArrayList<>();
           for (Mutation mutation : mutations) {
             ObjectValue baseValue =
-                mutation.extractBaseValue(existingDocuments.get(mutation.getKey()));
+                mutation.extractTransformBaseValue(
+                    overlayedDocuments.get(mutation.getKey()).getDocument());
             if (baseValue != null) {
               // NOTE: The base state should only be applied if there's some existing
               // document to override, so use a Precondition of exists=true
@@ -234,9 +284,11 @@ public final class LocalStore {
 
           MutationBatch batch =
               mutationQueue.addMutationBatch(localWriteTime, baseMutations, mutations);
-          ImmutableSortedMap<DocumentKey, MaybeDocument> changedDocuments =
-              batch.applyToLocalDocumentSet(existingDocuments);
-          return new LocalWriteResult(batch.getBatchId(), changedDocuments);
+          Map<DocumentKey, Mutation> overlays =
+              batch.applyToLocalDocumentSet(overlayedDocuments, docsWithoutRemoteVersion);
+          documentOverlayCache.saveOverlays(batch.getBatchId(), overlays);
+          return LocalDocumentsResult.fromOverlayedDocuments(
+              batch.getBatchId(), overlayedDocuments);
         });
   }
 
@@ -255,7 +307,7 @@ public final class LocalStore {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> acknowledgeBatch(
+  public ImmutableSortedMap<DocumentKey, Document> acknowledgeBatch(
       MutationBatchResult batchResult) {
     return persistence.runTransaction(
         "Acknowledge batch",
@@ -264,8 +316,25 @@ public final class LocalStore {
           mutationQueue.acknowledgeBatch(batch, batchResult.getStreamToken());
           applyWriteToRemoteDocuments(batchResult);
           mutationQueue.performConsistencyCheck();
+
+          documentOverlayCache.removeOverlaysForBatchId(batchResult.getBatch().getBatchId());
+          localDocuments.recalculateAndSaveOverlays(getKeysWithTransformResults(batchResult));
+
           return localDocuments.getDocuments(batch.getKeys());
         });
+  }
+
+  @NonNull
+  private Set<DocumentKey> getKeysWithTransformResults(MutationBatchResult batchResult) {
+    Set<DocumentKey> result = new HashSet<>();
+
+    for (int i = 0; i < batchResult.getMutationResults().size(); ++i) {
+      MutationResult mutationResult = batchResult.getMutationResults().get(i);
+      if (!mutationResult.getTransformResults().isEmpty()) {
+        result.add(batchResult.getBatch().getMutations().get(i).getKey());
+      }
+    }
+    return result;
   }
 
   /**
@@ -274,7 +343,7 @@ public final class LocalStore {
    *
    * @return The resulting (modified) documents.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> rejectBatch(int batchId) {
+  public ImmutableSortedMap<DocumentKey, Document> rejectBatch(int batchId) {
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
 
     return persistence.runTransaction(
@@ -285,6 +354,10 @@ public final class LocalStore {
 
           mutationQueue.removeMutationBatch(toReject);
           mutationQueue.performConsistencyCheck();
+
+          documentOverlayCache.removeOverlaysForBatchId(batchId);
+          localDocuments.recalculateAndSaveOverlays(toReject.getKeys());
+
           return localDocuments.getDocuments(toReject.getKeys());
         });
   }
@@ -330,7 +403,7 @@ public final class LocalStore {
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
-  public ImmutableSortedMap<DocumentKey, MaybeDocument> applyRemoteEvent(RemoteEvent remoteEvent) {
+  public ImmutableSortedMap<DocumentKey, Document> applyRemoteEvent(RemoteEvent remoteEvent) {
     SnapshotVersion remoteVersion = remoteEvent.getSnapshotVersion();
 
     // TODO: Call queryEngine.handleDocumentChange() appropriately.
@@ -355,67 +428,38 @@ public final class LocalStore {
             targetCache.removeMatchingKeys(change.getRemovedDocuments(), targetId);
             targetCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
-            ByteString resumeToken = change.getResumeToken();
-            // Update the resume token if the change includes one.
-            if (!resumeToken.isEmpty()) {
-              TargetData newTargetData =
-                  oldTargetData
-                      .withResumeToken(resumeToken, remoteEvent.getSnapshotVersion())
-                      .withSequenceNumber(sequenceNumber);
-              queryDataByTarget.put(targetId, newTargetData);
+            TargetData newTargetData = oldTargetData.withSequenceNumber(sequenceNumber);
+            if (remoteEvent.getTargetMismatches().contains(targetId)) {
+              newTargetData =
+                  newTargetData
+                      .withResumeToken(ByteString.EMPTY, SnapshotVersion.NONE)
+                      .withLastLimboFreeSnapshotVersion(SnapshotVersion.NONE);
+            } else if (!change.getResumeToken().isEmpty()) {
+              newTargetData =
+                  newTargetData.withResumeToken(
+                      change.getResumeToken(), remoteEvent.getSnapshotVersion());
+            }
 
-              // Update the query data if there are target changes (or if sufficient time has
-              // passed since the last update).
-              if (shouldPersistTargetData(oldTargetData, newTargetData, change)) {
-                targetCache.updateTargetData(newTargetData);
-              }
+            queryDataByTarget.put(targetId, newTargetData);
+
+            // Update the query data if there are target changes (or if sufficient time has passed
+            // since the last update).
+            if (shouldPersistTargetData(oldTargetData, newTargetData, change)) {
+              targetCache.updateTargetData(newTargetData);
             }
           }
 
-          Map<DocumentKey, MaybeDocument> changedDocs = new HashMap<>();
-          Map<DocumentKey, MaybeDocument> documentUpdates = remoteEvent.getDocumentUpdates();
+          Map<DocumentKey, MutableDocument> documentUpdates = remoteEvent.getDocumentUpdates();
           Set<DocumentKey> limboDocuments = remoteEvent.getResolvedLimboDocuments();
-          // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
-          // documents in advance in a single call.
-          Map<DocumentKey, MaybeDocument> existingDocs =
-              remoteDocuments.getAll(documentUpdates.keySet());
 
-          for (Entry<DocumentKey, MaybeDocument> entry : documentUpdates.entrySet()) {
-            DocumentKey key = entry.getKey();
-            MaybeDocument doc = entry.getValue();
-            MaybeDocument existingDoc = existingDocs.get(key);
-
-            // Note: The order of the steps below is important, since we want to ensure that
-            // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
-            // never add documents to cache.
-            if (doc instanceof NoDocument && doc.getVersion().equals(SnapshotVersion.NONE)) {
-              // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
-              // these documents from cache since we lost access.
-              remoteDocuments.remove(doc.getKey());
-              changedDocs.put(key, doc);
-            } else if (existingDoc == null
-                || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
-                || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
-                    && existingDoc.hasPendingWrites())) {
-              hardAssert(
-                  !SnapshotVersion.NONE.equals(remoteEvent.getSnapshotVersion()),
-                  "Cannot add a document when the remote version is zero");
-              remoteDocuments.add(doc, remoteEvent.getSnapshotVersion());
-              changedDocs.put(key, doc);
-            } else {
-              Logger.debug(
-                  "LocalStore",
-                  "Ignoring outdated watch update for %s."
-                      + "Current version: %s  Watch version: %s",
-                  key,
-                  existingDoc.getVersion(),
-                  doc.getVersion());
-            }
-
+          for (DocumentKey key : documentUpdates.keySet()) {
             if (limboDocuments.contains(key)) {
               persistence.getReferenceDelegate().updateLimboDocument(key);
             }
           }
+
+          DocumentChangeResult result = populateDocumentChanges(documentUpdates);
+          Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
 
           // HACK: The only reason we allow snapshot version NONE is so that we can synthesize
           // remote events when we get permission denied errors while trying to resolve the
@@ -430,8 +474,78 @@ public final class LocalStore {
             targetCache.setLastRemoteSnapshotVersion(remoteVersion);
           }
 
-          return localDocuments.getLocalViewOfDocuments(changedDocs);
+          return localDocuments.getLocalViewOfDocuments(changedDocs, result.existenceChangedKeys);
         });
+  }
+
+  private static class DocumentChangeResult {
+    private final Map<DocumentKey, MutableDocument> changedDocuments;
+    private final Set<DocumentKey> existenceChangedKeys;
+
+    private DocumentChangeResult(
+        Map<DocumentKey, MutableDocument> changedDocuments, Set<DocumentKey> existenceChangedKeys) {
+      this.changedDocuments = changedDocuments;
+      this.existenceChangedKeys = existenceChangedKeys;
+    }
+  }
+
+  /**
+   * Populates the remote document cache with documents from backend or a bundle. Returns the
+   * document changes resulting from applying those documents, and also a set of documents whose
+   * existence state are changed as a result.
+   *
+   * <p>Note: this function will use `documentVersions` if it is defined. When it is not defined, it
+   * resorts to `globalVersion`.
+   *
+   * @param documents Documents to be applied.
+   */
+  private DocumentChangeResult populateDocumentChanges(
+      Map<DocumentKey, MutableDocument> documents) {
+    Map<DocumentKey, MutableDocument> changedDocs = new HashMap<>();
+    List<DocumentKey> removedDocs = new ArrayList<>();
+    Set<DocumentKey> conditionChanged = new HashSet<>();
+
+    // Each loop iteration only affects its "own" doc, so it's safe to get all the remote
+    // documents in advance in a single call.
+    Map<DocumentKey, MutableDocument> existingDocs = remoteDocuments.getAll(documents.keySet());
+
+    for (Entry<DocumentKey, MutableDocument> entry : documents.entrySet()) {
+      DocumentKey key = entry.getKey();
+      MutableDocument doc = entry.getValue();
+      MutableDocument existingDoc = existingDocs.get(key);
+      // Check if see if there is a existence state change for this document.
+      if (doc.isFoundDocument() != existingDoc.isFoundDocument()) {
+        conditionChanged.add(key);
+      }
+
+      // Note: The order of the steps below is important, since we want to ensure that
+      // rejected limbo resolutions (which fabricate NoDocuments with SnapshotVersion.NONE)
+      // never add documents to cache.
+      if (doc.isNoDocument() && doc.getVersion().equals(SnapshotVersion.NONE)) {
+        // NoDocuments with SnapshotVersion.NONE are used in manufactured events. We remove
+        // these documents from cache since we lost access.
+        removedDocs.add(doc.getKey());
+        changedDocs.put(key, doc);
+      } else if (!existingDoc.isValidDocument()
+          || doc.getVersion().compareTo(existingDoc.getVersion()) > 0
+          || (doc.getVersion().compareTo(existingDoc.getVersion()) == 0
+              && existingDoc.hasPendingWrites())) {
+        hardAssert(
+            !SnapshotVersion.NONE.equals(doc.getReadTime()),
+            "Cannot add a document when the remote version is zero");
+        remoteDocuments.add(doc, doc.getReadTime());
+        changedDocs.put(key, doc);
+      } else {
+        Logger.debug(
+            "LocalStore",
+            "Ignoring outdated watch update for %s." + "Current version: %s  Watch version: %s",
+            key,
+            existingDoc.getVersion(),
+            doc.getVersion());
+      }
+    }
+    remoteDocuments.removeAll(removedDocs);
+    return new DocumentChangeResult(changedDocs, conditionChanged);
   }
 
   /**
@@ -446,10 +560,6 @@ public final class LocalStore {
    */
   private static boolean shouldPersistTargetData(
       TargetData oldTargetData, TargetData newTargetData, TargetChange change) {
-    hardAssert(
-        !newTargetData.getResumeToken().isEmpty(),
-        "Attempted to persist query data with empty resume token");
-
     // Always persist query data if we don't already have a resume token.
     if (oldTargetData.getResumeToken().isEmpty()) return true;
 
@@ -516,8 +626,7 @@ public final class LocalStore {
   }
 
   /** Returns the current value of a document with a given key, or null if not found. */
-  @Nullable
-  public MaybeDocument readDocument(DocumentKey key) {
+  public Document readDocument(DocumentKey key) {
     return localDocuments.getDocument(key);
   }
 
@@ -573,6 +682,114 @@ public final class LocalStore {
       return queryDataByTarget.get(targetId);
     }
     return targetCache.getTargetData(target);
+  }
+
+  /**
+   * Returns a boolean indicating if the given bundle has already been loaded and its create time is
+   * newer or equal to the currently loading bundle.
+   */
+  public boolean hasNewerBundle(BundleMetadata bundleMetadata) {
+    return persistence.runTransaction(
+        "Has newer bundle",
+        () -> {
+          BundleMetadata cachedMetadata =
+              bundleCache.getBundleMetadata(bundleMetadata.getBundleId());
+          return cachedMetadata != null
+              && cachedMetadata.getCreateTime().compareTo(bundleMetadata.getCreateTime()) >= 0;
+        });
+  }
+
+  @Override
+  public void saveBundle(BundleMetadata bundleMetadata) {
+    persistence.runTransaction(
+        "Save bundle",
+        () -> {
+          bundleCache.saveBundleMetadata(bundleMetadata);
+        });
+  }
+
+  @Override
+  public ImmutableSortedMap<DocumentKey, Document> applyBundledDocuments(
+      ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
+    // Allocates a target to hold all document keys from the bundle, such that
+    // they will not get garbage collected right away.
+    TargetData umbrellaTargetData = allocateTarget(newUmbrellaTarget(bundleId));
+
+    return persistence.runTransaction(
+        "Apply bundle documents",
+        () -> {
+          ImmutableSortedSet<DocumentKey> documentKeys = DocumentKey.emptyKeySet();
+          Map<DocumentKey, MutableDocument> documentMap = new HashMap<>();
+
+          for (Entry<DocumentKey, MutableDocument> entry : documents) {
+            DocumentKey documentKey = entry.getKey();
+            MutableDocument document = entry.getValue();
+
+            if (document.isFoundDocument()) {
+              documentKeys = documentKeys.insert(documentKey);
+            }
+            documentMap.put(documentKey, document);
+          }
+
+          targetCache.removeMatchingKeysForTargetId(umbrellaTargetData.getTargetId());
+          targetCache.addMatchingKeys(documentKeys, umbrellaTargetData.getTargetId());
+
+          DocumentChangeResult result = populateDocumentChanges(documentMap);
+          Map<DocumentKey, MutableDocument> changedDocs = result.changedDocuments;
+          return localDocuments.getLocalViewOfDocuments(changedDocs, result.existenceChangedKeys);
+        });
+  }
+
+  @Override
+  public void saveNamedQuery(NamedQuery namedQuery, ImmutableSortedSet<DocumentKey> documentKeys) {
+    // Allocate a target for the named query such that it can be resumed from associated read time
+    // if users use it to listen.
+    // NOTE: this also means if no corresponding target exists, the new target will remain active
+    // and will not get collected, unless users happen to unlisten the query somehow.
+    TargetData existingTargetData = allocateTarget(namedQuery.getBundledQuery().getTarget());
+    int targetId = existingTargetData.getTargetId();
+
+    persistence.runTransaction(
+        "Saved named query",
+        () -> {
+          // Only update the matching documents if it is newer than what the SDK already has
+          if (namedQuery.getReadTime().compareTo(existingTargetData.getSnapshotVersion()) > 0) {
+            // Update existing target data because the query from the bundle is newer.
+            TargetData newTargetData =
+                existingTargetData.withResumeToken(ByteString.EMPTY, namedQuery.getReadTime());
+            queryDataByTarget.append(targetId, newTargetData);
+
+            targetCache.updateTargetData(newTargetData);
+            targetCache.removeMatchingKeysForTargetId(targetId);
+            targetCache.addMatchingKeys(documentKeys, targetId);
+          }
+
+          bundleCache.saveNamedQuery(namedQuery);
+        });
+  }
+
+  /** Returns the NameQuery associated with queryName or null if not found. */
+  public @Nullable NamedQuery getNamedQuery(String queryName) {
+    return persistence.runTransaction(
+        "Get named query", () -> bundleCache.getNamedQuery(queryName));
+  }
+
+  @VisibleForTesting
+  Collection<FieldIndex> getFieldIndexes() {
+    return persistence.runTransaction("Get indexes", () -> indexManager.getFieldIndexes());
+  }
+
+  public void configureFieldIndexes(List<FieldIndex> newFieldIndexes) {
+    persistence.runTransaction(
+        "Configure indexes",
+        () -> {
+          diffCollections(
+              indexManager.getFieldIndexes(),
+              newFieldIndexes,
+              FieldIndex.SEMANTIC_COMPARATOR,
+              indexManager::addFieldIndex,
+              indexManager::deleteFieldIndex);
+        });
   }
 
   /** Mutable state for the transaction in allocateQuery. */
@@ -631,7 +848,7 @@ public final class LocalStore {
         queryEngine.getDocumentsMatchingQuery(
             query,
             usePreviousResults ? lastLimboFreeSnapshotVersion : SnapshotVersion.NONE,
-            usePreviousResults ? remoteKeys : DocumentKey.emptyKeySet());
+            remoteKeys);
     return new QueryResult(documents, remoteKeys);
   }
 
@@ -647,20 +864,13 @@ public final class LocalStore {
     MutationBatch batch = batchResult.getBatch();
     Set<DocumentKey> docKeys = batch.getKeys();
     for (DocumentKey docKey : docKeys) {
-      MaybeDocument remoteDoc = remoteDocuments.get(docKey);
-      MaybeDocument doc = remoteDoc;
+      MutableDocument doc = remoteDocuments.get(docKey);
       SnapshotVersion ackVersion = batchResult.getDocVersions().get(docKey);
       hardAssert(ackVersion != null, "docVersions should contain every doc in the write.");
 
-      if (doc == null || doc.getVersion().compareTo(ackVersion) < 0) {
-        doc = batch.applyToRemoteDocument(docKey, doc, batchResult);
-        if (doc == null) {
-          hardAssert(
-              remoteDoc == null,
-              "Mutation batch %s applied to document %s resulted in null.",
-              batch,
-              remoteDoc);
-        } else {
+      if (doc.getVersion().compareTo(ackVersion) < 0) {
+        batch.applyToRemoteDocument(doc, batchResult);
+        if (doc.isValidDocument()) {
           remoteDocuments.add(doc, batchResult.getCommitVersion());
         }
       }
@@ -672,5 +882,16 @@ public final class LocalStore {
   public LruGarbageCollector.Results collectGarbage(LruGarbageCollector garbageCollector) {
     return persistence.runTransaction(
         "Collect garbage", () -> garbageCollector.collect(queryDataByTarget));
+  }
+
+  /**
+   * Creates a new target using the given bundle name, which will be used to hold the keys of all
+   * documents from the bundle in query-document mappings. This ensures that the loaded documents do
+   * not get garbage collected right away.
+   */
+  private static Target newUmbrellaTarget(String bundleName) {
+    // It is OK that the path used for the query is not valid, because this will not be read and
+    // queried.
+    return Query.atPath(ResourcePath.fromString("__bundle__/docs/" + bundleName)).toTarget();
   }
 }

@@ -59,7 +59,7 @@ The integration tests require that the Firestore emulator is running on port
     ```
   * Run the emulator
     ```
-    firebase serve --only firestore
+    firebase emulators:start --only firestore
     ```
   * Select the `Firestore Integration Tests (Firestore Emulator)` run
     configuration to run all integration tests.

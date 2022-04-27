@@ -14,15 +14,19 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
+
 import android.content.Context;
 import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
+import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.MaybeDocument;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -35,6 +39,7 @@ import com.google.firestore.v1.FirestoreGrpc;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,16 +91,27 @@ public class Datastore {
   public Datastore(
       DatabaseInfo databaseInfo,
       AsyncQueue workerQueue,
-      CredentialsProvider credentialsProvider,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
       Context context,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.workerQueue = workerQueue;
     this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
+    this.channel =
+        initializeChannel(
+            databaseInfo, workerQueue, authProvider, appCheckProvider, context, metadataProvider);
+  }
 
-    channel =
-        new FirestoreChannel(
-            workerQueue, context, credentialsProvider, databaseInfo, metadataProvider);
+  FirestoreChannel initializeChannel(
+      DatabaseInfo databaseInfo,
+      AsyncQueue workerQueue,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      Context context,
+      @Nullable GrpcMetadataProvider metadataProvider) {
+    return new FirestoreChannel(
+        workerQueue, context, authProvider, appCheckProvider, databaseInfo, metadataProvider);
   }
 
   void shutdown() {
@@ -152,37 +168,51 @@ public class Datastore {
             });
   }
 
-  public Task<List<MaybeDocument>> lookup(List<DocumentKey> keys) {
+  public Task<List<MutableDocument>> lookup(List<DocumentKey> keys) {
     BatchGetDocumentsRequest.Builder builder = BatchGetDocumentsRequest.newBuilder();
     builder.setDatabase(serializer.databaseName());
     for (DocumentKey key : keys) {
       builder.addDocuments(serializer.encodeKey(key));
     }
-    return channel
-        .runStreamingResponseRpc(FirestoreGrpc.getBatchGetDocumentsMethod(), builder.build())
-        .continueWith(
-            workerQueue.getExecutor(),
-            task -> {
-              if (!task.isSuccessful()) {
-                if (task.getException() instanceof FirebaseFirestoreException
-                    && ((FirebaseFirestoreException) task.getException()).getCode()
-                        == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
-                  channel.invalidateToken();
-                }
-              }
+    List<BatchGetDocumentsResponse> responses = new ArrayList<>();
+    TaskCompletionSource<List<MutableDocument>> completionSource = new TaskCompletionSource<>();
 
-              Map<DocumentKey, MaybeDocument> resultMap = new HashMap<>();
-              List<BatchGetDocumentsResponse> responses = task.getResult();
+    channel.runStreamingResponseRpc(
+        FirestoreGrpc.getBatchGetDocumentsMethod(),
+        builder.build(),
+        new FirestoreChannel.StreamingListener<BatchGetDocumentsResponse>() {
+          @Override
+          public void onMessage(BatchGetDocumentsResponse message) {
+            responses.add(message);
+            if (responses.size() == keys.size()) {
+              Map<DocumentKey, MutableDocument> resultMap = new HashMap<>();
               for (BatchGetDocumentsResponse response : responses) {
-                MaybeDocument doc = serializer.decodeMaybeDocument(response);
+                MutableDocument doc = serializer.decodeMaybeDocument(response);
                 resultMap.put(doc.getKey(), doc);
               }
-              List<MaybeDocument> results = new ArrayList<>();
+              List<MutableDocument> results = new ArrayList<>();
               for (DocumentKey key : keys) {
                 results.add(resultMap.get(key));
               }
-              return results;
-            });
+              completionSource.trySetResult(results);
+            }
+          }
+
+          @Override
+          public void onClose(Status status) {
+            if (status.isOk()) {
+              completionSource.trySetResult(Collections.emptyList());
+            } else {
+              FirebaseFirestoreException exception = exceptionFromStatus(status);
+              if (exception.getCode() == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                channel.invalidateToken();
+              }
+              completionSource.trySetException(exception);
+            }
+          }
+        });
+
+    return completionSource.getTask();
   }
 
   /**

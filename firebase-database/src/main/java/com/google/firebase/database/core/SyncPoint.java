@@ -14,6 +14,8 @@
 
 package com.google.firebase.database.core;
 
+import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
+
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.annotations.NotNull;
 import com.google.firebase.database.annotations.Nullable;
@@ -29,6 +31,7 @@ import com.google.firebase.database.core.view.QuerySpec;
 import com.google.firebase.database.core.view.View;
 import com.google.firebase.database.core.view.ViewCache;
 import com.google.firebase.database.snapshot.ChildKey;
+import com.google.firebase.database.snapshot.EmptyNode;
 import com.google.firebase.database.snapshot.IndexedNode;
 import com.google.firebase.database.snapshot.NamedNode;
 import com.google.firebase.database.snapshot.Node;
@@ -98,7 +101,7 @@ public class SyncPoint {
     QueryParams queryParams = operation.getSource().getQueryParams();
     if (queryParams != null) {
       View view = this.views.get(queryParams);
-      assert view != null;
+      hardAssert(view != null);
       return applyOperationToView(view, operation, writesCache, optCompleteServerCache);
     } else {
       List<DataEvent> events = new ArrayList<DataEvent>();
@@ -111,11 +114,7 @@ public class SyncPoint {
   }
 
   /** Add an event callback for the specified query. */
-  public List<DataEvent> addEventRegistration(
-      @NotNull EventRegistration eventRegistration,
-      WriteTreeRef writesCache,
-      CacheNode serverCache) {
-    QuerySpec query = eventRegistration.getQuerySpec();
+  public View getView(QuerySpec query, WriteTreeRef writesCache, CacheNode serverCache) {
     View view = this.views.get(query.getParams());
     if (view == null) {
       // TODO: make writesCache take flag for complete server node
@@ -126,24 +125,39 @@ public class SyncPoint {
       if (eventCache != null) {
         eventCacheComplete = true;
       } else {
-        eventCache = writesCache.calcCompleteEventChildren(serverCache.getNode());
+        eventCache =
+            writesCache.calcCompleteEventChildren(
+                serverCache.getNode() != null ? serverCache.getNode() : EmptyNode.Empty());
         eventCacheComplete = false;
       }
       IndexedNode indexed = IndexedNode.from(eventCache, query.getIndex());
       ViewCache viewCache =
           new ViewCache(new CacheNode(indexed, eventCacheComplete, false), serverCache);
-      view = new View(query, viewCache);
-      // If this is a non-default query we need to tell persistence our current view of the data
-      if (!query.loadsAllData()) {
-        Set<ChildKey> allChildren = new HashSet<ChildKey>();
-        for (NamedNode node : view.getEventCache()) {
-          allChildren.add(node.getName());
-        }
-        this.persistenceManager.setTrackedQueryKeys(query, allChildren);
-      }
-      this.views.put(query.getParams(), view);
+      return new View(query, viewCache);
     }
 
+    return view;
+  }
+
+  /** Add an event callback for the specified query. */
+  public List<DataEvent> addEventRegistration(
+      @NotNull EventRegistration eventRegistration,
+      WriteTreeRef writesCache,
+      CacheNode serverCache) {
+    QuerySpec query = eventRegistration.getQuerySpec();
+    View view = getView(query, writesCache, serverCache);
+    // If this is a non-default query we need to tell persistence our current view of the data
+    if (!query.loadsAllData()) {
+      Set<ChildKey> allChildren = new HashSet<ChildKey>();
+      for (NamedNode node : view.getEventCache()) {
+        allChildren.add(node.getName());
+      }
+      this.persistenceManager.setTrackedQueryKeys(query, allChildren);
+    }
+    if (!this.views.containsKey(query.getParams())) {
+      this.views.put(query.getParams(), view);
+    }
+    this.views.put(query.getParams(), view);
     // This is guaranteed to exist now, we just created anything that was missing
     view.addEventRegistration(eventRegistration);
     return view.getInitialEvents(eventRegistration);

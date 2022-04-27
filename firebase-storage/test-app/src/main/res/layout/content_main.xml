@@ -286,13 +286,24 @@
 
     <!-- Tenth Row -->
 
+    <Button
+        android:textSize="7sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Use Emulator"
+        android:id="@+id/useEmulator"
+        android:layout_below="@+id/listSinglePage"
+        android:layout_alignParentLeft="true" />
+
+    <!-- Eleventh Row -->
+
     <EditText
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:inputType="textMultiLine"
         android:ems="10"
         android:id="@+id/editText"
-        android:layout_below="@+id/listMultplePages"
+        android:layout_below="@+id/useEmulator"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"/>
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2019 Google LLC
+  -->
+
+<resources
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <string
+        name="com.crashlytics.RequireBuildId"
+        tools:ignore="UnusedResources"
+        translatable="false">
+        false
+    </string>
+
+</resources>

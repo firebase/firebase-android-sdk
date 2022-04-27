@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.ktx
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
@@ -22,15 +23,15 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
+import java.util.UUID
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+internal const val APP_ID = "APP:ID"
+internal val API_KEY = "ABC" + UUID.randomUUID().toString()
 
 const val EXISTING_APP = "existing"
 
@@ -38,7 +39,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
             .setGcmSenderId("ic")
@@ -48,7 +49,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)

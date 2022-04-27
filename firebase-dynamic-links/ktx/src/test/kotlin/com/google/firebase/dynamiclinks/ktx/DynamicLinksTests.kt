@@ -15,19 +15,23 @@
 package com.google.firebase.dynamiclinks.ktx
 
 import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
+import com.google.firebase.dynamiclinks.PendingDynamicLinkData
+import com.google.firebase.dynamiclinks.ShortDynamicLink
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -38,7 +42,7 @@ abstract class BaseTestCase {
     @Before
     fun setUp() {
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -47,7 +51,7 @@ abstract class BaseTestCase {
         )
 
         Firebase.initialize(
-                RuntimeEnvironment.application,
+                ApplicationProvider.getApplicationContext(),
                 FirebaseOptions.Builder()
                         .setApplicationId(APP_ID)
                         .setApiKey(API_KEY)
@@ -220,7 +224,48 @@ class DynamicLinksTests : BaseTestCase() {
             }
         }
 
-        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")) == 1
+        val efr = Integer.parseInt(dynamicLink.uri.getQueryParameter("efr")!!) == 1
         assertThat(efr).isEqualTo(forcedRedirect)
+    }
+
+    @Test
+    fun `ShortDynamicLink destructure declaration works`() {
+        val fakeWarning = object : ShortDynamicLink.Warning {
+            override fun getMessage() = "Warning"
+            override fun getCode() = "warning"
+        }
+
+        val expectedShortLink = Uri.parse("https://example.com")
+        val expectedPreviewLink = Uri.parse("https://example.com/preview")
+        val expectedWarnings = mutableListOf<ShortDynamicLink.Warning>(fakeWarning)
+
+        val mockShortDynamicLink = mock(ShortDynamicLink::class.java)
+        `when`(mockShortDynamicLink.shortLink).thenReturn(expectedShortLink)
+        `when`(mockShortDynamicLink.previewLink).thenReturn(expectedPreviewLink)
+        `when`(mockShortDynamicLink.warnings).thenReturn(expectedWarnings)
+
+        val (shortLink, previewLink, warnings) = mockShortDynamicLink
+
+        assertThat(shortLink).isEqualTo(expectedShortLink)
+        assertThat(previewLink).isEqualTo(expectedPreviewLink)
+        assertThat(warnings).isEqualTo(expectedWarnings)
+    }
+
+    @Test
+    fun `PendingDynamicLinkData destructure declaration works`() {
+        val expectedLink = Uri.parse("https://example.com")
+        val expectedMinAppVersion = 30
+        val expectedTimestamp = 172947600L
+
+        val mockPendingData = mock(PendingDynamicLinkData::class.java)
+        `when`(mockPendingData.link).thenReturn(expectedLink)
+        `when`(mockPendingData.minimumAppVersion).thenReturn(expectedMinAppVersion)
+        `when`(mockPendingData.clickTimestamp).thenReturn(expectedTimestamp)
+
+        val (link, minAppVersion, timestamp) = mockPendingData
+
+        assertThat(link).isEqualTo(expectedLink)
+        assertThat(minAppVersion).isEqualTo(expectedMinAppVersion)
+        assertThat(timestamp).isEqualTo(expectedTimestamp)
     }
 }

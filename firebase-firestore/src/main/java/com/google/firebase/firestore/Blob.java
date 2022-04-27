@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -82,18 +82,6 @@ public class Blob implements Comparable<Blob> {
 
   @Override
   public int compareTo(@NonNull Blob other) {
-    int size = Math.min(bytes.size(), other.bytes.size());
-    for (int i = 0; i < size; i++) {
-      // Make sure the bytes are unsigned
-      int thisByte = bytes.byteAt(i) & 0xff;
-      int otherByte = other.bytes.byteAt(i) & 0xff;
-      if (thisByte < otherByte) {
-        return -1;
-      } else if (thisByte > otherByte) {
-        return 1;
-      }
-      // Byte values are equal, continue with comparison
-    }
-    return Util.compareIntegers(bytes.size(), other.bytes.size());
+    return Util.compareByteStrings(bytes, other.bytes);
   }
 }

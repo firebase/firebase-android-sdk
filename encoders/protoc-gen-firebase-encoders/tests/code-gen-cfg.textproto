@@ -1,0 +1,8 @@
+vendor_package: "com.example"
+
+include: "com.google.firebase.testing.e2e.LinkedListProto"
+include: "com.google.firebase.testing.e2e.Other"
+include: "com.google.firebase.testing.e2e.SimpleProto"
+include: "com.google.firebase.testing.e2e.Types"
+include: "com.google.firebase.testing.e2e.Types32"
+include: "com.google.firebase.testing.e2e.Types64"
