@@ -26,6 +26,7 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
+import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleElement;
 import com.google.firebase.firestore.bundle.BundleLoader;
@@ -307,8 +308,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * <p>The Task returned is resolved when the transaction is fully committed.
    */
   public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue, Function<Transaction, Task<TResult>> updateFunction) {
-    return new TransactionRunner<TResult>(asyncQueue, remoteStore, updateFunction).run();
+      AsyncQueue asyncQueue,
+      TransactionOptions options,
+      Function<Transaction, Task<TResult>> updateFunction) {
+    return new TransactionRunner<TResult>(asyncQueue, remoteStore, options, updateFunction).run();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */

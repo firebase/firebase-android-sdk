@@ -3,6 +3,8 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # Unreleased
+- [changed] Added `TransactionOptions` to control how many times a transaction
+  will retry commits before failing.
 - [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
 
 # 24.1.1
