@@ -199,6 +199,27 @@ public class FrameMetricsRecorderTest extends FirebasePerformanceTestBase {
     assertThat(subTrace2.get().getFrozenFrames()).isEqualTo(5 - 2);
   }
 
+  /**
+   * This case happens when AppStateMonitor calls stop() before all Fragment traces are stopped by
+   * stopFragment(fragment), leaving some dangling fragment traces that are invalid. Even if
+   * activity recording starts again later, then stopFragment(fragment) is called, it should not
+   * return a result which is incorrect.
+   */
+  @Test
+  public void
+      startAndStopSubTrace_notContainedWithinActivityRecordingStartAndStop_returnsEmptyResult() {
+    Fragment fragment = new Fragment();
+    recorder.start();
+    stubFrameMetricsAggregatorData(fma, frameTimesDefault);
+    recorder.startFragment(fragment);
+    stubFrameMetricsAggregatorData(fma, frameTimes1);
+    recorder.stop();
+    recorder.start();
+    stubFrameMetricsAggregatorData(fma, frameTimes2);
+    Optional<PerfFrameMetrics> result = recorder.stopFragment(fragment); // invalid dangling trace
+    assertThat(result.isAvailable()).isFalse();
+  }
+
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
     ActivityController<Activity> fakeActivityController = Robolectric.buildActivity(Activity.class);
 

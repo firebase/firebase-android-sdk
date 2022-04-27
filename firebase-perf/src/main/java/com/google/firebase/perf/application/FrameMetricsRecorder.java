@@ -89,7 +89,7 @@ public class FrameMetricsRecorder {
       return Optional.absent();
     }
     if (!fragmentSnapshotMap.isEmpty()) {
-      // Instrumentation will be stopped and return activity data. Dangling fragments will fail.
+      // Instrumentation stops and still return activity data, but invalidate all dangling fragments
       logger.debug(
           "Sub-recordings are still ongoing! Sub-recordings should be stopped first before stopping Activity screen trace.");
       fragmentSnapshotMap.clear();
