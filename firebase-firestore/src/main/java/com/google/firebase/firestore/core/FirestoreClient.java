@@ -26,6 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleReader;
@@ -228,10 +229,12 @@ public final class FirestoreClient {
   }
 
   /** Tries to execute the transaction in updateFunction. */
-  public <TResult> Task<TResult> transaction(Function<Transaction, Task<TResult>> updateFunction) {
+  public <TResult> Task<TResult> transaction(
+      TransactionOptions options, Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
     return AsyncQueue.callTask(
-        asyncQueue.getExecutor(), () -> syncEngine.transaction(asyncQueue, updateFunction));
+        asyncQueue.getExecutor(),
+        () -> syncEngine.transaction(asyncQueue, options, updateFunction));
   }
 
   /**
