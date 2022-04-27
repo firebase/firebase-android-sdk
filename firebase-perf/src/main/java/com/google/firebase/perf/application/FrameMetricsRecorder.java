@@ -70,7 +70,7 @@ public class FrameMetricsRecorder {
   /** Starts recording FrameMetrics for the activity window. */
   public void start() {
     if (isRecording) {
-      logger.warn(
+      logger.debug(
           "FrameMetricsAggregator is already recording %s", activity.getClass().getSimpleName());
       return;
     }
@@ -85,18 +85,18 @@ public class FrameMetricsRecorder {
    */
   public Optional<PerfFrameMetrics> stop() {
     if (!isRecording) {
-      logger.warn("Cannot stop because no recording was started");
+      logger.debug("Cannot stop because no recording was started");
       return Optional.absent();
     }
     if (!fragmentSnapshotMap.isEmpty()) {
-      logger.warn(
+      logger.debug(
           "Sub-recordings are still ongoing! Sub-recordings should be stopped first before stopping Activity screen trace.");
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
       frameMetricsAggregator.remove(activity);
     } catch (IllegalArgumentException err) {
-      logger.debug(
+      logger.warn(
           "View not hardware accelerated. Unable to collect FrameMetrics. %s", err.toString());
       return Optional.absent();
     }
@@ -114,18 +114,18 @@ public class FrameMetricsRecorder {
    */
   public void startFragment(Fragment fragment) {
     if (!isRecording) {
-      logger.warn("Cannot start sub-recording because FrameMetricsAggregator is not recording");
+      logger.debug("Cannot start sub-recording because FrameMetricsAggregator is not recording");
       return;
     }
     if (fragmentSnapshotMap.containsKey(fragment)) {
-      logger.warn(
+      logger.debug(
           "Cannot start sub-recording because one is already ongoing with the key %s",
           fragment.getClass().getSimpleName());
       return;
     }
     Optional<PerfFrameMetrics> snapshot = this.snapshot();
     if (!snapshot.isAvailable()) {
-      logger.warn("startFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
+      logger.debug("startFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
       return;
     }
     fragmentSnapshotMap.put(fragment, snapshot.get());
@@ -141,11 +141,11 @@ public class FrameMetricsRecorder {
    */
   public Optional<PerfFrameMetrics> stopFragment(Fragment fragment) {
     if (!isRecording) {
-      logger.warn("Cannot stop sub-recording because FrameMetricsAggregator is not recording");
+      logger.debug("Cannot stop sub-recording because FrameMetricsAggregator is not recording");
       return Optional.absent();
     }
     if (!fragmentSnapshotMap.containsKey(fragment)) {
-      logger.warn(
+      logger.debug(
           "Sub-recording associated with key %s was not started or does not exist",
           fragment.getClass().getSimpleName());
       return Optional.absent();
@@ -153,7 +153,7 @@ public class FrameMetricsRecorder {
     PerfFrameMetrics snapshotStart = fragmentSnapshotMap.remove(fragment);
     Optional<PerfFrameMetrics> snapshotEnd = this.snapshot();
     if (!snapshotEnd.isAvailable()) {
-      logger.warn("stopFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
+      logger.debug("stopFragment(%s): snapshot() failed", fragment.getClass().getSimpleName());
       return Optional.absent();
     }
     return Optional.of(snapshotEnd.get().deltaFrameMetricsFromSnapshot(snapshotStart));
@@ -167,17 +167,17 @@ public class FrameMetricsRecorder {
    */
   private Optional<PerfFrameMetrics> snapshot() {
     if (!isRecording) {
-      logger.warn("No recording has been started.");
+      logger.debug("No recording has been started.");
       return Optional.absent();
     }
     SparseIntArray[] arr = this.frameMetricsAggregator.getMetrics();
     if (arr == null) {
-      logger.warn("FrameMetricsAggregator.mMetrics is uninitialized.");
+      logger.debug("FrameMetricsAggregator.mMetrics is uninitialized.");
       return Optional.absent();
     }
     SparseIntArray frameTimes = arr[FrameMetricsAggregator.TOTAL_INDEX];
     if (frameTimes == null) {
-      logger.warn("FrameMetricsAggregator.mMetrics[TOTAL_INDEX] is uninitialized.");
+      logger.debug("FrameMetricsAggregator.mMetrics[TOTAL_INDEX] is uninitialized.");
       return Optional.absent();
     }
     return Optional.of(FrameMetricsCalculator.calculateFrameMetrics(arr));
