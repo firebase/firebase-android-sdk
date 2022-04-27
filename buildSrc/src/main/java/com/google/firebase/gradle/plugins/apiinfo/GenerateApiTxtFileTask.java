@@ -38,6 +38,7 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
   @OutputFile
   abstract File getApiTxt();
 
+  @Input
   abstract Object getSourceSet();
 
   @InputFiles

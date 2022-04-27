@@ -66,28 +66,30 @@ public final class Coverage {
                       .add("**Manifest*.*")
                       .build();
 
-              task.setClassDirectories(
-                  project.files(
+              task.getClassDirectories()
+                  .from(
+                      project.files(
+                          project.fileTree(
+                              ImmutableMap.of(
+                                  "dir",
+                                  project.getBuildDir() + "/intermediates/javac/release",
+                                  "excludes",
+                                  excludes)),
+                          project.fileTree(
+                              ImmutableMap.of(
+                                  "dir",
+                                  project.getBuildDir() + "/tmp/kotlin-classes/release",
+                                  "excludes",
+                                  excludes))));
+              task.getSourceDirectories().from(project.files("src/main/java", "src/main/kotlin"));
+              task.getExecutionData()
+                  .from(
                       project.fileTree(
                           ImmutableMap.of(
                               "dir",
-                              project.getBuildDir() + "/intermediates/javac/release",
-                              "excludes",
-                              excludes)),
-                      project.fileTree(
-                          ImmutableMap.of(
-                              "dir",
-                              project.getBuildDir() + "/tmp/kotlin-classes/release",
-                              "excludes",
-                              excludes))));
-              task.setSourceDirectories(project.files("src/main/java", "src/main/kotlin"));
-              task.setExecutionData(
-                  project.fileTree(
-                      ImmutableMap.of(
-                          "dir",
-                          project.getBuildDir(),
-                          "includes",
-                          ImmutableList.of("jacoco/*.exec"))));
+                              project.getBuildDir(),
+                              "includes",
+                              ImmutableList.of("jacoco/*.exec"))));
               task.reports(
                   reports -> {
                     reports

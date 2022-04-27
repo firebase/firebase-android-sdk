@@ -13,7 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id "org.gradle.kotlin.kotlin-dsl" version "1.2.9"
+    id "org.gradle.kotlin.kotlin-dsl" version "1.3.3"
     id "org.jlleitschuh.gradle.ktlint" version "9.2.1"
     id 'com.github.sherter.google-java-format' version '0.9'
 }
@@ -52,7 +52,7 @@ dependencies {
     implementation "com.google.auto.value:auto-value-annotations:1.7"
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     implementation 'digital.wup:android-maven-publish:3.6.3'
-    implementation 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72'
+    implementation 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.20'
     implementation 'org.json:json:20180813'
 
     implementation "org.eclipse.aether:aether-api:1.0.0.v20140518"

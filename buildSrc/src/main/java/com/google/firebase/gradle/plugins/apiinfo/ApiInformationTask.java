@@ -46,6 +46,7 @@ public abstract class ApiInformationTask extends DefaultTask {
   @InputFile
   abstract File getApiTxt();
 
+  @Input
   abstract Object getSourceSet();
 
   @InputFiles
