@@ -14,9 +14,11 @@
 
 package com.google.firebase.perf.application;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -25,8 +27,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.SparseIntArray;
+import android.view.WindowManager;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
@@ -53,7 +58,9 @@ import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
+import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.android.controller.ActivityController;
 
 /** Unit tests for {@link com.google.firebase.perf.application.FragmentStateMonitor}. */
 @RunWith(RobolectricTestRunner.class)
@@ -64,7 +71,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   @Mock private FragmentManager mockFragmentManager;
   @Mock private TransportManager mockTransportManager;
   @Mock private AppCompatActivity mockActivity;
-  @Mock private AppCompatActivity mockActivityB;
   @Mock private AppStateMonitor appStateMonitor;
   @Mock private FrameMetricsRecorder recorder;
   @Mock private PerfFrameMetrics frameCounts1;
@@ -73,6 +79,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
 
+  private Activity activity;
   private long currentTime = 0;
   private static final String longFragmentName =
       "_st_NeverGonnaGiveYouUpNeverGonnaLetYouDownNeverGonnaRunAroundAndDesertYouNeverGonnaMakeYouCryNeverGonnaSayGoodbyeNeverGonnaTellALieAndHurtYou";
@@ -92,13 +99,14 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     doAnswer((Answer<Timer>) invocationOnMock -> new Timer(currentTime)).when(clock).getTime();
 
     DeviceCacheManager.clearInstance();
-
-    //    ConfigResolver configResolver = ConfigResolver.getInstance();
-    //    configResolver.setDeviceCacheManager(new DeviceCacheManager(new
-    // FakeDirectExecutorService()));
-    //    ConfigResolver spyConfigResolver = spy(configResolver);
     doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();
-    //    this.configResolver = spyConfigResolver;
+
+    doNothing().when(recorder).start();
+    doNothing().when(recorder).startFragment(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
+    doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
+
+    activity = createFakeActivity(true);
 
     // fmaMetrics1 should have 1+3+1=5 total frames, 3+1=4 slow frames, and 1 frozen frames.
     SparseIntArray sparseIntArray = new SparseIntArray();
@@ -124,13 +132,13 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   public void lifecycleCallbacks_differentFrameMetricsCapturedByFma_logFragmentScreenTrace() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
     monitor.onFragmentPaused(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
 
-    doReturn(Optional.of(frameCounts2)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(1)).log(any(TraceMetric.class), any());
     monitor.onFragmentPaused(mockFragmentManager, mockFragment);
@@ -141,7 +149,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   public void lifecycleCallbacks_onPausedCalledTwice_logFragmentScreenTraceOnce() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
 
@@ -156,7 +164,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   public void lifecycleCallbacks_onPausedCalledBeforeOnResume_doesNotLogFragmentScreenTrace() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
 
     monitor.onFragmentPaused(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
@@ -170,7 +178,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
       lifecycleCallbacks_differentFrameMetricsCapturedByFma_logFragmentScreenTraceWithCorrectFrames() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
 
@@ -191,39 +199,42 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         3, (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
   }
 
+  /**
+   * Simulate call order of activity + fragment lifecycle events
+   */
   @Test
   public void lifecycleCallbacks_cleansUpMap_duringActivityTransitions() {
-    // Simulate call order of activity + fragment lifecycle events
     Bundle savedInstanceState = mock(Bundle.class);
-    AppStateMonitor appStateMonitor =
-        new AppStateMonitor(mockTransportManager, clock, configResolver, true);
+    AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
+    Fragment mockFragment1 = mock(Fragment.class);
+    Fragment mockFragment2 = mock(Fragment.class);
+    doNothing().when(recorder).startFragment(any());
+    doReturn(mockFragmentManager).when(mockActivity).getSupportFragmentManager();
+
     FragmentStateMonitor fragmentMonitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();
     WeakHashMap<Fragment, Trace> fragmentToTraceMap = fragmentMonitor.getFragmentToTraceMap();
-    // Activity_A onCreate registers FragmentStateMonitor, then:
-    appStateMonitor.onActivityCreated(mockActivity, savedInstanceState);
-    appStateMonitor.onActivityStarted(mockActivity);
-    Assert.assertEquals(0, fragmentToTraceMap.size());
-    appStateMonitor.onActivityResumed(mockActivity);
-    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
-    Assert.assertEquals(1, fragmentToTraceMap.size());
-    appStateMonitor.onActivityPaused(mockActivity);
-    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
-    Assert.assertEquals(0, fragmentToTraceMap.size());
-    // Activity_B onCreate registers FragmentStateMonitor, then:
-    appStateMonitor.onActivityStarted(mockActivityB);
-    appStateMonitor.onActivityResumed(mockActivityB);
-    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityStopped(mockActivity);
-    Assert.assertEquals(1, fragmentToTraceMap.size());
+
+    // Activity_A starts
+    fragmentMonitor.onFragmentCreated(mockFragmentManager, mockFragment1, savedInstanceState);
+    fragmentMonitor.onFragmentStarted(mockFragmentManager, mockFragment1);
+    assertThat(fragmentToTraceMap.size()).isEqualTo(0);
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment1);
+    assertThat(fragmentToTraceMap.size()).isEqualTo(1);
+    // Activity A is starting Activity B
+    fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment1);
+    assertThat(fragmentToTraceMap.size()).isEqualTo(0);
+    fragmentMonitor.onFragmentCreated(mockFragmentManager, mockFragment2, savedInstanceState);
+    fragmentMonitor.onFragmentStarted(mockFragmentManager, mockFragment2);
+    fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment2);
+    assertThat(fragmentToTraceMap.size()).isEqualTo(1);
   }
 
   @Test
   public void fragmentTraceCreation_whenFrameMetricsIsAbsent_dropsTrace() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    doReturn(Optional.absent()).when(recorder).stopSubTrace(any());
+    doReturn(Optional.absent()).when(recorder).stopFragment(any());
     monitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
 
@@ -241,7 +252,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     doReturn(longFragmentName)
         .when(fragmentMonitor)
         .getFragmentScreenTraceName(nullable(Fragment.class));
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
 
     fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
@@ -258,20 +269,38 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         spy(new AppStateMonitor(mockTransportManager, clock, configResolver, true));
     FragmentStateMonitor fragmentMonitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
+    doReturn(true).when(configResolver).isPerformanceMonitoringEnabled();
     doReturn(true).when(appStateMonitor).isScreenTraceSupported();
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopSubTrace(any());
     // Activity_A onCreate registers FragmentStateMonitor, then:
-    appStateMonitor.onActivityStarted(mockActivity);
+    appStateMonitor.onActivityStarted(activity);
     fragmentMonitor.onFragmentStarted(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityResumed(mockActivity);
+    appStateMonitor.onActivityResumed(activity);
     fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityPaused(mockActivity);
+    appStateMonitor.onActivityPaused(activity);
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
-    appStateMonitor.onActivityStopped(mockActivity);
+    appStateMonitor.onActivityStopped(activity);
     fragmentMonitor.onFragmentStopped(mockFragmentManager, mockFragment);
     // reset() is only called after fragment is done collecting its metrics
     InOrder orderVerifier = inOrder(recorder);
-    orderVerifier.verify(recorder, times(1)).stopSubTrace(any());
+    orderVerifier.verify(recorder, times(1)).stopFragment(any());
     orderVerifier.verify(recorder, times(1)).stop();
+  }
+
+  private static Activity createFakeActivity(boolean isHardwareAccelerated) {
+    ActivityController<Activity> fakeActivityController = Robolectric.buildActivity(Activity.class);
+
+    if (isHardwareAccelerated) {
+      fakeActivityController
+              .get()
+              .getWindow()
+              .addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+    } else {
+      fakeActivityController
+              .get()
+              .getWindow()
+              .clearFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+    }
+
+    return fakeActivityController.start().get();
   }
 }
