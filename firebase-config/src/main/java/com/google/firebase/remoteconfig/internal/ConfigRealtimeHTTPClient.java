@@ -191,7 +191,7 @@ public class ConfigRealtimeHTTPClient {
     }
 
     private boolean canMakeConnection() {
-        return !isInBackground && eventListener != null && this.httpURLConnection == null;
+        return !isInBackground && hasEventListener() && this.httpURLConnection == null;
     }
 
     // Try to reopen HTTP connection after a random amount of time
@@ -212,7 +212,7 @@ public class ConfigRealtimeHTTPClient {
             , backOffTime, TimeUnit.MILLISECONDS);
         } else {
             logger.info("Can't create Realtime stream. Restart app.");
-            if (this.eventListener != null) {
+            if (hasEventListener()) {
                 this.eventListener.onError(
                         new FirebaseRemoteConfigClientException("Can't open the connection")
                 );
@@ -252,7 +252,7 @@ public class ConfigRealtimeHTTPClient {
 
             @Override
             public void onError(Exception error) {
-                if (eventListener != null) {
+                if (hasEventListener()) {
                     eventListener.onError(error);
                 }
             }
@@ -312,6 +312,10 @@ public class ConfigRealtimeHTTPClient {
         this.eventListener = null;
     }
 
+    public boolean hasEventListener() {
+        return this.eventListener != null;
+    }
+
     public static class ListenerRegistration {
         private final ConfigRealtimeHTTPClient client;
 
@@ -322,6 +326,7 @@ public class ConfigRealtimeHTTPClient {
 
         public void remove() {
             this.client.removeRealtimeEventListener();
+            this.client.pauseRealtimeConnection();
         }
     }
 

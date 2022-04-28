@@ -1076,6 +1076,7 @@ public final class FirebaseRemoteConfigTest {
             = frc.setOnConfigUpdateListener(eventListener);
     registration.remove();
     verify(mockRealtimeClient).removeRealtimeEventListener();
+    verify(mockRealtimeClient).pauseRealtimeConnection();
   }
 
   private static void loadCacheWithConfig(
