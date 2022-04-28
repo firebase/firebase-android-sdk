@@ -59,7 +59,6 @@ public class IndexBackfiller {
   }
 
   public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
-    private boolean hasRun = false;
     @Nullable private AsyncQueue.DelayedTask backfillTask;
     private final AsyncQueue asyncQueue;
 
@@ -69,7 +68,7 @@ public class IndexBackfiller {
 
     @Override
     public void start() {
-      scheduleBackfill();
+      scheduleBackfill(INITIAL_BACKFILL_DELAY_MS);
     }
 
     @Override
@@ -79,8 +78,7 @@ public class IndexBackfiller {
       }
     }
 
-    private void scheduleBackfill() {
-      long delay = hasRun ? REGULAR_BACKFILL_DELAY_MS : INITIAL_BACKFILL_DELAY_MS;
+    private void scheduleBackfill(long delay) {
       backfillTask =
           asyncQueue.enqueueAfterDelay(
               AsyncQueue.TimerId.INDEX_BACKFILL,
@@ -88,8 +86,7 @@ public class IndexBackfiller {
               () -> {
                 int documentsProcessed = backfill();
                 Logger.debug(LOG_TAG, "Documents written: %s", documentsProcessed);
-                hasRun = true;
-                scheduleBackfill();
+                scheduleBackfill(REGULAR_BACKFILL_DELAY_MS);
               });
     }
   }
