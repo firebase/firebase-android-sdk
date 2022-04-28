@@ -39,6 +39,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.testutil.Assert;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -46,6 +47,7 @@ import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
+import java.util.HashMap;
 import java.util.WeakHashMap;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,6 +60,9 @@ import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+
+public class PerfMockFragment extends Fragment {
+}
 
 /** Unit tests for {@link com.google.firebase.perf.application.FragmentStateMonitor}. */
 @RunWith(RobolectricTestRunner.class)
@@ -81,14 +86,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   private static final String longFragmentName =
       "_st_NeverGonnaGiveYouUpNeverGonnaLetYouDownNeverGonnaRunAroundAndDesertYouNeverGonnaMakeYouCryNeverGonnaSayGoodbyeNeverGonnaTellALieAndHurtYou";
 
-  /**
-   * Array of SparseIntArray to mock the return value from {@link
-   * FrameMetricsAggregator#getMetrics()}
-   */
-  private SparseIntArray[] fmaMetrics1 = new SparseIntArray[1];
-
-  private SparseIntArray[] fmaMetrics2 = new SparseIntArray[1];
-
   @Before
   public void setUp() {
     currentTime = 0;
@@ -100,30 +97,28 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
     doNothing().when(recorder).start();
     doNothing().when(recorder).startFragment(any());
+
     doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
 
     activity = createFakeActivity(true);
 
     // fmaMetrics1 should have 1+3+1=5 total frames, 3+1=4 slow frames, and 1 frozen frames.
-    SparseIntArray sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(1, 1);
-    sparseIntArray.append(17, 3);
-    sparseIntArray.append(800, 1);
-    fmaMetrics1[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
-    doReturn(9).when(frameCounts1).getTotalFrames();
-    doReturn(5).when(frameCounts1).getSlowFrames();
-    doReturn(3).when(frameCounts1).getFrozenFrames();
+    frameCounts1 = new PerfFrameMetrics(9, 5, 3);
 
     // fmaMetrics2 should have 5+5+4=14 total frames, 5+4=9 slow frames, and 4 frozen frames.
-    sparseIntArray = new SparseIntArray();
-    sparseIntArray.append(1, 5);
-    sparseIntArray.append(18, 5);
-    sparseIntArray.append(800, 4);
-    fmaMetrics2[FrameMetricsAggregator.TOTAL_INDEX] = sparseIntArray;
+    frameCounts2 = new PerfFrameMetrics(14, 9, 4);
   }
 
   /************ Trace Creation Tests ****************/
+
+  @Test
+  public void fragmentTraceName_validFragment_validFragmentScreenTraceNameGenerated() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
+    Fragment testFragment = new PerfMockFragment();
+    Assert.assertEquals("_st_PerfMockFragment", monitor.getFragmentScreenTraceName(testFragment));
+  }
 
   @Test
   public void lifecycleCallbacks_differentFrameMetricsCapturedByFma_logFragmentScreenTrace() {
@@ -181,19 +176,15 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
     monitor.onFragmentPaused(mockFragmentManager, mockFragment);
 
-    // fmaMetrics1 has 1+3+1=5 total frames, 3+1=4 slow frames, and 1 frozen frames
-    // fmaMetrics2 has 5+5+4=14 total frames, 5+4=9 slow frames, and 4 frozen frames
-    // we expect the trace to have 14-5=9 total frames, 9-4=5 slow frames, and 4-1=3 frozen
-    // frames.
     verify(mockTransportManager, times(1))
         .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
     TraceMetric metric = argTraceMetric.getValue();
     Assert.assertEquals(
-        9, (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString()));
+        frameCounts1.getTotalFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString()));
     Assert.assertEquals(
-        5, (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_SLOW.toString()));
+        frameCounts1.getSlowFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_SLOW.toString()));
     Assert.assertEquals(
-        3, (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
+        frameCounts1.getFrozenFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
   }
 
   /** Simulate call order of activity + fragment lifecycle events */

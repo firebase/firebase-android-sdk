@@ -58,6 +58,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap =
       new WeakHashMap<>();
+
+  // Map for holding the fragment state monitor to remove receiving the fragment state callbacks
   private final WeakHashMap<Activity, FragmentStateMonitor> activityToFragmentStateMonitorMap =
       new WeakHashMap<>();
   private final WeakHashMap<Activity, Trace> activityToScreenTraceMap = new WeakHashMap<>();
@@ -181,10 +183,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       // Starts recording frame metrics for this activity.
-      /**
-       * TODO: Only add activities that are hardware acceleration enabled so that calling {@link
-       * FrameMetricsAggregator#remove(Activity)} will not throw exceptions.
-       */
       activityToRecorderMap.get(activity).start();
       // Start the Trace
       Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
