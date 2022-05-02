@@ -28,10 +28,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.SparseIntArray;
 import android.view.WindowManager;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -47,7 +45,6 @@ import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
-import java.util.HashMap;
 import java.util.WeakHashMap;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,8 +58,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 
-public class PerfMockFragment extends Fragment {
-}
+public class FragmentMonitorMockFragment extends Fragment {}
 
 /** Unit tests for {@link com.google.firebase.perf.application.FragmentStateMonitor}. */
 @RunWith(RobolectricTestRunner.class)
@@ -116,8 +112,9 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   public void fragmentTraceName_validFragment_validFragmentScreenTraceNameGenerated() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
-    Fragment testFragment = new PerfMockFragment();
-    Assert.assertEquals("_st_PerfMockFragment", monitor.getFragmentScreenTraceName(testFragment));
+    Fragment testFragment = new FragmentMonitorMockFragment();
+    Assert.assertEquals(
+        "_st_FragmentMonitorMockFragment", monitor.getFragmentScreenTraceName(testFragment));
   }
 
   @Test
@@ -180,11 +177,14 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
         .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
     TraceMetric metric = argTraceMetric.getValue();
     Assert.assertEquals(
-        frameCounts1.getTotalFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString()));
+        frameCounts1.getTotalFrames(),
+        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString()));
     Assert.assertEquals(
-        frameCounts1.getSlowFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_SLOW.toString()));
+        frameCounts1.getSlowFrames(),
+        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_SLOW.toString()));
     Assert.assertEquals(
-        frameCounts1.getFrozenFrames(), (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
+        frameCounts1.getFrozenFrames(),
+        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
   }
 
   /** Simulate call order of activity + fragment lifecycle events */
