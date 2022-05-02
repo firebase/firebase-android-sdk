@@ -19,6 +19,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionService;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -42,7 +43,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseAppDistribution.class)
+        Component.builder(FirebaseAppDistributionService.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)
@@ -53,10 +54,10 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
+  private FirebaseAppDistributionService buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistribution(
+    FirebaseAppDistributionService appDistributionService =
+        new FirebaseAppDistributionServiceImpl(
             firebaseApp, container.getProvider(FirebaseInstallationsApi.class));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
@@ -75,6 +76,6 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
                   + " function correctly.");
     }
 
-    return appDistribution;
+    return appDistributionService;
   }
 }

@@ -33,6 +33,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionService;
 import com.google.firebase.appdistribution.internal.LogWrapper;
 import com.google.firebase.appdistribution.internal.SignInStorage;
 import com.google.firebase.inject.Provider;
@@ -47,7 +48,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
  * <p>Call {@link FirebaseAppDistribution#getInstance()} to get the singleton instance of
  * FirebaseAppDistribution.
  */
-public class FirebaseAppDistribution {
+public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionService {
 
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
@@ -80,9 +81,9 @@ public class FirebaseAppDistribution {
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
 
-  /** Constructor for FirebaseAppDistribution. */
+  /** Constructor for FirebaseAppDistributionServiceImpl. */
   @VisibleForTesting
-  FirebaseAppDistribution(
+  FirebaseAppDistributionServiceImpl(
       @NonNull FirebaseApp firebaseApp,
       @NonNull TesterSignInManager testerSignInManager,
       @NonNull NewReleaseFetcher newReleaseFetcher,
@@ -102,8 +103,8 @@ public class FirebaseAppDistribution {
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
   }
 
-  /** Constructor for FirebaseAppDistribution. */
-  FirebaseAppDistribution(
+  /** Constructor for FirebaseAppDistributionServiceImpl. */
+  FirebaseAppDistributionServiceImpl(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull SignInStorage signInStorage,
@@ -121,8 +122,8 @@ public class FirebaseAppDistribution {
         lifecycleNotifier);
   }
 
-  /** Constructor for FirebaseAppDistribution. */
-  FirebaseAppDistribution(
+  /** Constructor for FirebaseAppDistributionServiceImpl. */
+  FirebaseAppDistributionServiceImpl(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
     this(
