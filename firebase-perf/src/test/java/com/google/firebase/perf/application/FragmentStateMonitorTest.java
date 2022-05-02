@@ -98,8 +98,8 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     doNothing().when(recorder).start();
     doNothing().when(recorder).startFragment(any());
 
-    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
-    doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
+    // doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
+    // doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
 
     activity = createFakeActivity(true);
 

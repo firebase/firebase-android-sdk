@@ -366,10 +366,10 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       int startTime = i * 100;
       int endTime = startTime + 10;
       currentTime = startTime;
-      monitor.onActivityResumed(activity);
+      monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
-      monitor.onActivityPostPaused(activity);
+      monitor.onActivityStopped(activity);
       Assert.assertEquals(0, monitor.getActivity2ScreenTrace().size());
     }
   }
@@ -421,7 +421,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityResumed(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
     currentTime = 200;
-    monitor.onActivityPostPaused(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
 
     // Case #2: developer has disabled Performance Monitoring during runtime.
@@ -431,7 +431,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).isEmpty();
     // Confirm that this doesn't throw an exception.
-    monitor.onActivityPostPaused(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
   }
 
   @Test
@@ -462,7 +462,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
-    monitor.onActivityResumed(activity1);
+    monitor.onActivityStarted(activity1);
 
     // activity1 goes to background.
     currentTime = 2;
@@ -476,7 +476,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 3;
-    monitor.onActivityResumed(activity1);
+    monitor.onActivityStarted(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
@@ -524,7 +524,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void foreGroundTrace_perfMonDeactivated_traceCreated() {
+  public void foregroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
 
     // Firebase Performance is deactivated at build time.
