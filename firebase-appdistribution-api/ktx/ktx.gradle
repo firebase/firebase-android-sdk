@@ -50,7 +50,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(path: ':firebase-appdistribution')
+    implementation project(path: ':firebase-appdistribution-api')
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'

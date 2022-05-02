@@ -48,7 +48,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
  * <p>Call {@link FirebaseAppDistribution#getInstance()} to get the singleton instance of
  * FirebaseAppDistribution.
  */
-public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionService {
+class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionService {
 
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
@@ -133,12 +133,6 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  /** Gets the singleton {@link FirebaseAppDistribution} instance. */
-  @NonNull
-  public static FirebaseAppDistribution getInstance() {
-    return FirebaseApp.getInstance().get(FirebaseAppDistribution.class);
-  }
-
   /**
    * Updates the app to the newest release, if one is available.
    *
@@ -154,6 +148,7 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
    *       installation.
    * </ol>
    */
+  @Override
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
     synchronized (updateIfNewReleaseTaskLock) {
@@ -256,6 +251,7 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
   }
 
   /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI. */
+  @Override
   @NonNull
   public Task<Void> signInTester() {
     return this.testerSignInManager.signInTester();
@@ -265,6 +261,7 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
    * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
    * tester, or {@code null} otherwise.
    */
+  @Override
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
     if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
@@ -310,6 +307,7 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
    * <p>Cancels task with {@link Status#UPDATE_NOT_AVAILABLE} if no new release is cached from
    * {@link #checkForNewRelease}.
    */
+  @Override
   @NonNull
   public UpdateTask updateApp() {
     return updateApp(false);
@@ -352,11 +350,13 @@ public class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributi
   }
 
   /** Returns {@code true} if the App Distribution tester is signed in. */
+  @Override
   public boolean isTesterSignedIn() {
     return this.signInStorage.getSignInStatus();
   }
 
   /** Signs out the App Distribution tester. */
+  @Override
   public void signOutTester() {
     setCachedNewRelease(null);
     this.signInStorage.setSignInStatus(false);
