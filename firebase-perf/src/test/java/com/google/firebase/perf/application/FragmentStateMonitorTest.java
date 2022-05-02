@@ -58,7 +58,7 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 
-public class FragmentMonitorMockFragment extends Fragment {}
+class FragmentMonitorMockFragment extends Fragment {}
 
 /** Unit tests for {@link com.google.firebase.perf.application.FragmentStateMonitor}. */
 @RunWith(RobolectricTestRunner.class)
