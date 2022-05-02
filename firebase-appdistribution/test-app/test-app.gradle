@@ -49,7 +49,12 @@ android {
 dependencies {
     // TODO(rachelprince): Add flag to build with public version of SDK
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
-    implementation project(':firebase-appdistribution')
+
+    // Debug variant uses full SDK
+    debugImplementation project(':firebase-appdistribution')
+
+    // Release variant just uses the API, as if publishing to Play
+    releaseImplementation project(':firebase-appdistribution-api')
 
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
