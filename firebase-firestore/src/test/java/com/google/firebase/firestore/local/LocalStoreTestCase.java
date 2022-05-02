@@ -1337,16 +1337,17 @@ public abstract class LocalStoreTestCase {
             emptyList()));
     assertChanged(doc("foo/bar", 1, map("sum", 0, "array_union", new ArrayList<>())));
 
-    writeMutations(
-        asList(
-            patchMutation("foo/bar", map("sum", FieldValue.increment(1))),
-            patchMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo")))));
+    writeMutation(patchMutation("foo/bar", map("sum", FieldValue.increment(1))));
+    assertChanged(
+        doc("foo/bar", 1, map("sum", 1, "array_union", new ArrayList<>())).setHasLocalMutations());
+
+    writeMutation(patchMutation("foo/bar", map("array_union", FieldValue.arrayUnion("foo"))));
     assertChanged(
         doc("foo/bar", 1, map("sum", 1, "array_union", Collections.singletonList("foo")))
             .setHasLocalMutations());
 
-    // The sum transform is not idempotent and the backend's updated value is ignored. The
-    // ArrayUnion transform is recomputed and includes the backend value.
+    // The sum transform and array union transform make the SDK ignore the
+    // backend's updated value.
     applyRemoteEvent(
         addedRemoteEvent(
             doc("foo/bar", 2, map("sum", 1337, "array_union", Collections.singletonList("bar"))),
@@ -1355,10 +1356,18 @@ public abstract class LocalStoreTestCase {
     assertChanged(
         doc("foo/bar", 2, map("sum", 1, "array_union", asList("foo"))).setHasLocalMutations());
 
-    acknowledgeMutationWithTransformResults(3, 1338, asList("bar", "foo"));
+    // With a field transform acknowledgement, the overlay is recalculated with
+    // remaining local mutations.
+    acknowledgeMutationWithTransformResults(3, 1338);
     assertChanged(
         doc("foo/bar", 3, map("sum", 1338, "array_union", asList("bar", "foo")))
             .setReadTime(new SnapshotVersion(new Timestamp(0, 3000)))
+            .setHasLocalMutations());
+
+    acknowledgeMutationWithTransformResults(4, asList("bar", "foo"));
+    assertChanged(
+        doc("foo/bar", 4, map("sum", 1338, "array_union", asList("bar", "foo")))
+            .setReadTime(new SnapshotVersion(new Timestamp(0, 4000)))
             .setHasCommittedMutations());
   }
 
