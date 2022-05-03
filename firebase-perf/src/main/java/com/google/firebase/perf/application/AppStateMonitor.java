@@ -150,8 +150,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     tsnsCount.addAndGet(value);
   }
 
-  @Override
-  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+  // Starts tracking the frame metrics for an activity.
+  public void startFrameMonitoring(Activity activity) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
       FrameMetricsRecorder recorder = new FrameMetricsRecorder(activity);
       activityToRecorderMap.put(activity, recorder);
@@ -165,6 +165,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .registerFragmentLifecycleCallbacks(fragmentStateMonitor, true);
       }
     }
+  }
+
+  @Override
+  public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    startFrameMonitoring(activity);
   }
 
   @Override
@@ -183,6 +188,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
+      if (activityToRecorderMap.get(activity) == null) {
+        // If performance monitoring is disabled at start and enabled at runtime, start monitoring
+        // the activity as the app comes to foreground.
+        startFrameMonitoring(activity);
+      }
       // Starts recording frame metrics for this activity.
       activityToRecorderMap.get(activity).start();
       // Start the Trace
