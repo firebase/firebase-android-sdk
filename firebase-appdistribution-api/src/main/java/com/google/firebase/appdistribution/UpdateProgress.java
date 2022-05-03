@@ -15,18 +15,9 @@
 package com.google.firebase.appdistribution;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.auto.value.AutoValue;
 
 /** Represents a progress update or a final state from updating an app. */
-@AutoValue
-public abstract class UpdateProgress {
-
-  @NonNull
-  static UpdateProgress.Builder builder() {
-    return new com.google.firebase.appdistribution.AutoValue_UpdateProgress.Builder();
-  }
-
+public interface UpdateProgress {
   /**
    * Returns the number of bytes downloaded so far for an APK.
    *
@@ -34,7 +25,7 @@ public abstract class UpdateProgress {
    *     release is available.
    */
   @NonNull
-  public abstract long getApkBytesDownloaded();
+  long getApkBytesDownloaded();
 
   /**
    * Returns the file size of the APK file to download in bytes.
@@ -43,26 +34,9 @@ public abstract class UpdateProgress {
    *     is available.
    */
   @NonNull
-  public abstract long getApkFileTotalBytes();
+  long getApkFileTotalBytes();
 
   /** Returns the current {@link UpdateStatus} of the update. */
   @NonNull
-  public abstract UpdateStatus getUpdateStatus();
-
-  /** Builder for {@link UpdateProgress}. */
-  @AutoValue.Builder
-  abstract static class Builder {
-
-    @NonNull
-    abstract UpdateProgress.Builder setApkBytesDownloaded(@NonNull long value);
-
-    @NonNull
-    abstract UpdateProgress.Builder setApkFileTotalBytes(@NonNull long value);
-
-    @NonNull
-    abstract UpdateProgress.Builder setUpdateStatus(@Nullable UpdateStatus value);
-
-    @NonNull
-    abstract UpdateProgress build();
-  }
+  UpdateStatus getUpdateStatus();
 }

@@ -20,6 +20,7 @@ import com.google.firebase.appdistribution.internal.FirebaseAppDistributionServi
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -36,8 +37,7 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
-            // TODO: do we need this?
-            // .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optionalProvider(FirebaseAppDistributionService.class))
             .factory(this::buildFirebaseAppDistribution)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called

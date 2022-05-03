@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -64,7 +65,9 @@ public class FirebaseAppDistribution {
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      // TODO(lkellogg): figure out what to return here
+      return null;
     }
     return firebaseAppDistributionServiceProvider.get().updateIfNewReleaseAvailable();
   }
@@ -73,7 +76,9 @@ public class FirebaseAppDistribution {
   @NonNull
   public Task<Void> signInTester() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      // TODO(lkellogg): figure out what to return here
+      return null;
     }
     return firebaseAppDistributionServiceProvider.get().signInTester();
   }
@@ -85,7 +90,9 @@ public class FirebaseAppDistribution {
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      // TODO(lkellogg): figure out what to return here
+      return null;
     }
     return firebaseAppDistributionServiceProvider.get().checkForNewRelease();
   }
@@ -103,7 +110,9 @@ public class FirebaseAppDistribution {
   @NonNull
   public UpdateTask updateApp() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      // TODO(lkellogg): figure out what to return here
+      return null;
     }
     return firebaseAppDistributionServiceProvider.get().updateApp();
   }
@@ -111,7 +120,9 @@ public class FirebaseAppDistribution {
   /** Returns {@code true} if the App Distribution tester is signed in. */
   public boolean isTesterSignedIn() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      // TODO(lkellogg): figure out what to return here
+      return false;
     }
     return firebaseAppDistributionServiceProvider.get().isTesterSignedIn();
   }
@@ -119,7 +130,8 @@ public class FirebaseAppDistribution {
   /** Signs out the App Distribution tester. */
   public void signOutTester() {
     if (firebaseAppDistributionServiceProvider.get() == null) {
-      // Some backup behavior
+      Log.e("FirebaseAppDistribution", "No implementation available");
+      return;
     }
     firebaseAppDistributionServiceProvider.get().signOutTester();
   }

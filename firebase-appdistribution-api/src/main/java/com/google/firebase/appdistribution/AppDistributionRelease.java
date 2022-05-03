@@ -22,47 +22,21 @@ import com.google.auto.value.AutoValue;
  * The release information returned by {@link FirebaseAppDistribution#checkForNewRelease} when a new
  * version is available for the signed in tester.
  */
-@AutoValue
-public abstract class AppDistributionRelease {
-
-  @NonNull
-  static Builder builder() {
-    return new com.google.firebase.appdistribution.AutoValue_AppDistributionRelease.Builder();
-  }
+public interface AppDistributionRelease {
 
   /** Returns the short bundle version of this build (example: 1.0.0). */
   @NonNull
-  public abstract String getDisplayVersion();
+  String getDisplayVersion();
 
   /** Returns the version code of this build (example: 123). */
   @NonNull
-  public abstract long getVersionCode();
+  long getVersionCode();
 
   /** Returns the release notes for this build. */
   @Nullable
-  public abstract String getReleaseNotes();
+  String getReleaseNotes();
 
   /** Returns the binary type for this build. */
   @NonNull
-  public abstract BinaryType getBinaryType();
-
-  /** Builder for {@link AppDistributionRelease}. */
-  @AutoValue.Builder
-  abstract static class Builder {
-
-    @NonNull
-    abstract Builder setDisplayVersion(@NonNull String value);
-
-    @NonNull
-    abstract Builder setVersionCode(@NonNull long value);
-
-    @NonNull
-    abstract Builder setReleaseNotes(@Nullable String value);
-
-    @NonNull
-    abstract Builder setBinaryType(@NonNull BinaryType value);
-
-    @NonNull
-    abstract AppDistributionRelease build();
-  }
+  BinaryType getBinaryType();
 }

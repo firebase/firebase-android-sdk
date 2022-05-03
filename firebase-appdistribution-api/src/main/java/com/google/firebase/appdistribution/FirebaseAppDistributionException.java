@@ -74,31 +74,25 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull private final Status status;
   @Nullable private final AppDistributionRelease release;
 
-  FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
-    super(message);
-    this.status = status;
-    this.release = null;
+  public FirebaseAppDistributionException(
+      @NonNull String message, @NonNull Status status) {
+    this(message, status, (AppDistributionRelease) null);
   }
 
-  FirebaseAppDistributionException(
+  public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @Nullable AppDistributionRelease release) {
     super(message);
     this.status = status;
     this.release = release;
   }
 
-  FirebaseAppDistributionException(
+  public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
-    super(message, cause);
-    this.status = status;
-    this.release = null;
+    this(message, status, null, cause);
   }
 
-  FirebaseAppDistributionException(
-      @NonNull String message,
-      @NonNull Status status,
-      @Nullable AppDistributionRelease release,
-      @NonNull Throwable cause) {
+  public FirebaseAppDistributionException(
+      @NonNull String message, @NonNull Status status, @Nullable AppDistributionRelease release, @NonNull Throwable cause) {
     super(message, cause);
     this.status = status;
     this.release = release;
@@ -114,49 +108,5 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull
   public Status getErrorCode() {
     return status;
-  }
-
-  static FirebaseAppDistributionException wrap(Throwable t) {
-    // We never want to wrap a FirebaseAppDistributionException
-    if (t instanceof FirebaseAppDistributionException) {
-      return (FirebaseAppDistributionException) t;
-    }
-    return new FirebaseAppDistributionException(
-        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, t);
-  }
-
-  static class ErrorMessages {
-    public static final String NETWORK_ERROR =
-        "Failed to fetch releases due to unknown network error.";
-
-    public static final String JSON_PARSING_ERROR =
-        "Error parsing service response when checking for new release. This was most likely due to a transient condition and may be corrected by retrying.";
-
-    public static final String AUTHENTICATION_ERROR =
-        "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
-
-    public static final String AUTHORIZATION_ERROR =
-        "Failed to authorize the tester. The tester is not authorized to test this app. Verify that the tester has accepted an invitation to test this app.";
-
-    public static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
-
-    public static final String NOT_FOUND_ERROR =
-        "Release not found. An update was not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
-
-    public static final String TIMEOUT_ERROR =
-        "Failed to fetch releases due to timeout. Check the tester's internet connection and try again.";
-
-    public static final String UPDATE_CANCELED = "Tester canceled the update.";
-
-    public static final String UNKNOWN_ERROR = "Unknown error.";
-
-    public static final String DOWNLOAD_URL_NOT_FOUND =
-        "Download URL not found. This was a most likely due to a transient condition and may be corrected by retrying.";
-
-    public static final String HOST_ACTIVITY_INTERRUPTED =
-        "Host activity interrupted while dialog was showing. Try calling FirebaseAppDistribution#updateIfNewReleaseAvailable again.";
-
-    public static final String APK_INSTALLATION_FAILED =
-        "The APK failed to install or installation was canceled by the tester.";
   }
 }
