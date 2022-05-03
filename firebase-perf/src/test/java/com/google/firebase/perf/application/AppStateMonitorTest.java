@@ -462,7 +462,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
-    monitor.onActivityStarted(activity1);
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
@@ -477,7 +476,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 3;
-    monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
@@ -498,7 +497,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
-    monitor.onActivityStarted(activity1);
     monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
@@ -513,14 +511,16 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 3;
-    monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
+    // Background trace has been created because Performance Monitoring is enabled.
+    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // activity1 goes to background.
     currentTime = 4;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground trace has been created because Performance Monitoring is enabled.
-    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
+    verify(transportManager, times(2)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
   }
 
   @Test

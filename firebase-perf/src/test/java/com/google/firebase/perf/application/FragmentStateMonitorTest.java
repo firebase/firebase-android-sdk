@@ -200,7 +200,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     FragmentStateMonitor fragmentMonitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     WeakHashMap<Fragment, Trace> fragmentToTraceMap = fragmentMonitor.getFragmentToTraceMap();
-    FrameMetricsRecorder activityToFrameRecorder = fragmentMonitor.getActivityToFrameRecorderMap();
 
     // Activity_A starts
     fragmentMonitor.onFragmentCreated(mockFragmentManager, mockFragment1, savedInstanceState);
@@ -210,7 +209,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     assertThat(fragmentToTraceMap.size()).isEqualTo(1);
     // Activity A is starting Activity B
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment1);
-    assertThat(activityToFrameRecorder.isTrackingFragment(mockFragment1)).isFalse();
     assertThat(fragmentToTraceMap.size()).isEqualTo(0);
     fragmentMonitor.onFragmentCreated(mockFragmentManager, mockFragment2, savedInstanceState);
     fragmentMonitor.onFragmentStarted(mockFragmentManager, mockFragment2);
