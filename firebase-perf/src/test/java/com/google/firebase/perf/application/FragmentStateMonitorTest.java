@@ -188,12 +188,13 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
   /** Simulate call order of activity + fragment lifecycle events */
   @Test
-  public void lifecycleCallbacks_cleansUpMap_duringActivityTransitions() {
+  public void lifecycleCallbacks_cleansUpMap_duringFragmentTransitions() {
     Bundle savedInstanceState = mock(Bundle.class);
     AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
     Fragment mockFragment1 = mock(Fragment.class);
     Fragment mockFragment2 = mock(Fragment.class);
     doNothing().when(recorder).startFragment(any());
+    doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     doReturn(mockFragmentManager).when(mockActivity).getSupportFragmentManager();
 
     FragmentStateMonitor fragmentMonitor =
@@ -207,7 +208,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     assertThat(fragmentToTraceMap.size()).isEqualTo(0);
     fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment1);
     assertThat(fragmentToTraceMap.size()).isEqualTo(1);
-    assertThat(activityToFrameRecorder.isTrackingFragment(mockFragment1)).isTrue();
     // Activity A is starting Activity B
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment1);
     assertThat(activityToFrameRecorder.isTrackingFragment(mockFragment1)).isFalse();
