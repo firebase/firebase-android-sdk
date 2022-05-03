@@ -25,7 +25,6 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;

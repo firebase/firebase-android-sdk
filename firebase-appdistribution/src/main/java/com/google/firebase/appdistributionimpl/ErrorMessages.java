@@ -1,8 +1,7 @@
 package com.google.firebase.appdistributionimpl;
 
 class ErrorMessages {
-  static final String NETWORK_ERROR =
-      "Failed to fetch releases due to unknown network error.";
+  static final String NETWORK_ERROR = "Failed to fetch releases due to unknown network error.";
 
   static final String JSON_PARSING_ERROR =
       "Error parsing service response when checking for new release. This was most likely due to a transient condition and may be corrected by retrying.";

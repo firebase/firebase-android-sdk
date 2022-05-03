@@ -20,9 +20,7 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 
-/**
- * The default implementation of {@link AppDistributionRelease}.
- */
+/** The default implementation of {@link AppDistributionRelease}. */
 @AutoValue
 public abstract class AppDistributionReleaseImpl implements AppDistributionRelease {
 

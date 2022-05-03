@@ -176,12 +176,10 @@ class FirebaseAppDistributionTesterApiClient {
             "Bad request when fetching new release", Status.UNKNOWN);
       case 401:
         return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHENTICATION_ERROR,
-            Status.AUTHENTICATION_FAILURE);
+            ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
       case 403:
         return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHORIZATION_ERROR,
-            Status.AUTHENTICATION_FAILURE);
+            ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
       case 404:
         return new FirebaseAppDistributionException(
             "App or tester not found when fetching new release", Status.AUTHENTICATION_FAILURE);

@@ -242,15 +242,13 @@ class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionServi
               (dialogInterface, i) ->
                   showSignInDialogTask.setException(
                       new FirebaseAppDistributionException(
-                          ErrorMessages.AUTHENTICATION_CANCELED,
-                          AUTHENTICATION_CANCELED)));
+                          ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
           signInConfirmationDialog.setOnCancelListener(
               dialogInterface ->
                   showSignInDialogTask.setException(
                       new FirebaseAppDistributionException(
-                          ErrorMessages.AUTHENTICATION_CANCELED,
-                          AUTHENTICATION_CANCELED)));
+                          ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED)));
 
           signInConfirmationDialog.show();
         });
@@ -337,8 +335,7 @@ class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionServi
         LogWrapper.getInstance().v("New release not found.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                ErrorMessages.NOT_FOUND_ERROR,
-                UPDATE_NOT_AVAILABLE));
+                ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
       }
       if (cachedNewRelease.getDownloadUrl() == null) {
         LogWrapper.getInstance().v("Download failed to execute.");
@@ -375,8 +372,7 @@ class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionServi
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showSignInDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED,
-                HOST_ACTIVITY_INTERRUPTED));
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
         showSignInConfirmationDialog(activity);
       }
@@ -386,8 +382,7 @@ class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionServi
       if (dialogHostActivity != null && dialogHostActivity != activity) {
         showUpdateDialogTask.setException(
             new FirebaseAppDistributionException(
-                ErrorMessages.HOST_ACTIVITY_INTERRUPTED,
-                HOST_ACTIVITY_INTERRUPTED));
+                ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
         synchronized (cachedNewReleaseLock) {
           showUpdateConfirmationDialog(
@@ -470,15 +465,13 @@ class FirebaseAppDistributionServiceImpl implements FirebaseAppDistributionServi
               (dialogInterface, i) ->
                   showUpdateDialogTask.setException(
                       new FirebaseAppDistributionException(
-                          ErrorMessages.UPDATE_CANCELED,
-                          Status.INSTALLATION_CANCELED)));
+                          ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
           updateConfirmationDialog.setOnCancelListener(
               dialogInterface ->
                   showUpdateDialogTask.setException(
                       new FirebaseAppDistributionException(
-                          ErrorMessages.UPDATE_CANCELED,
-                          Status.INSTALLATION_CANCELED)));
+                          ErrorMessages.UPDATE_CANCELED, Status.INSTALLATION_CANCELED)));
 
           updateConfirmationDialog.show();
         });

@@ -54,7 +54,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistributionService buildFirebaseAppDistribution(ComponentContainer container) {
+  private FirebaseAppDistributionService buildFirebaseAppDistribution(
+      ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseAppDistributionService appDistributionService =
         new FirebaseAppDistributionServiceImpl(

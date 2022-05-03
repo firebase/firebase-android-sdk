@@ -170,10 +170,7 @@ public class AabUpdaterTest {
     aabUpdater.onActivityStarted(activity);
 
     FirebaseAppDistributionException exception =
-        assertTaskFailure(
-            updateTask,
-            Status.INSTALLATION_CANCELED,
-            ErrorMessages.UPDATE_CANCELED);
+        assertTaskFailure(updateTask, Status.INSTALLATION_CANCELED, ErrorMessages.UPDATE_CANCELED);
     assertEquals(
         ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
         exception.getRelease());

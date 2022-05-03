@@ -31,7 +31,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistributionimpl.internal.LogWrapper;
 import java.io.BufferedOutputStream;
@@ -135,9 +134,7 @@ class ApkUpdater {
                   showDownloadNotificationManager,
                   R.string.install_failed);
               setUpdateTaskCompletionErrorWithDefault(
-                  e,
-                  ErrorMessages.APK_INSTALLATION_FAILED,
-                  Status.INSTALLATION_FAILURE);
+                  e, ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE);
             });
   }
 

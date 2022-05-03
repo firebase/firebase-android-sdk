@@ -26,6 +26,9 @@ class FirebaseAppDistributionExceptions {
       return (FirebaseAppDistributionException) t;
     }
     return new FirebaseAppDistributionException(
-        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()), Status.UNKNOWN, null, t);
+        String.format("%s: %s", ErrorMessages.UNKNOWN_ERROR, t.getMessage()),
+        Status.UNKNOWN,
+        null,
+        t);
   }
 }

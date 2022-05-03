@@ -51,6 +51,7 @@ dependencies {
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
 
     // Debug variant uses full SDK
+    debugImplementation project(':firebase-appdistribution-api') // TODO(lkellogg): why doesn't this get picked up transitively?
     debugImplementation project(':firebase-appdistribution')
 
     // Release variant just uses the API, as if publishing to Play

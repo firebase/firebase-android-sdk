@@ -22,8 +22,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
@@ -258,8 +258,7 @@ public class ApkUpdaterTest {
 
     installTaskCompletionSource.setException(
         new FirebaseAppDistributionException(
-            ErrorMessages.APK_INSTALLATION_FAILED,
-            Status.INSTALLATION_FAILURE));
+            ErrorMessages.APK_INSTALLATION_FAILED, Status.INSTALLATION_FAILURE));
 
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());

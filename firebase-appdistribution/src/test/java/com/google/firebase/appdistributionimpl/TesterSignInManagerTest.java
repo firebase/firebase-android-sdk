@@ -16,6 +16,7 @@ package com.google.firebase.appdistributionimpl;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
+import static com.google.firebase.appdistributionimpl.TestUtils.applyToForegroundActivityAnswer;
 import static com.google.firebase.appdistributionimpl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -131,7 +132,7 @@ public class TesterSignInManagerTest {
     shadowActivity = shadowOf(activity);
 
     when(mockLifecycleNotifier.applyToForegroundActivity(any()))
-        .thenAnswer(TestUtils.applyToForegroundActivityAnswer(activity));
+        .thenAnswer(applyToForegroundActivityAnswer(activity));
 
     testerSignInManager =
         new TesterSignInManager(
@@ -223,7 +224,6 @@ public class TesterSignInManagerTest {
     Exception e = signInTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(
-        ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 }

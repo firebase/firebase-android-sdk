@@ -6,10 +6,19 @@ import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.UpdateTask;
 
 public interface FirebaseAppDistributionService {
-  @NonNull Task<AppDistributionRelease> checkForNewRelease();
+  @NonNull
+  Task<AppDistributionRelease> checkForNewRelease();
+
   boolean isTesterSignedIn();
-  @NonNull Task<Void> signInTester();
+
+  @NonNull
+  Task<Void> signInTester();
+
   void signOutTester();
-  @NonNull UpdateTask updateApp();
-  @NonNull UpdateTask updateIfNewReleaseAvailable();
+
+  @NonNull
+  UpdateTask updateApp();
+
+  @NonNull
+  UpdateTask updateIfNewReleaseAvailable();
 }
