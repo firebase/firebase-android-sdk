@@ -184,4 +184,9 @@ public class FrameMetricsRecorder {
     }
     return Optional.of(FrameMetricsCalculator.calculateFrameMetrics(arr));
   }
+
+  @VisibleForTesting
+  boolean isTrackingFragment(Fragment fragment) {
+    return fragmentSnapshotMap.containsKey(fragment);
+  }
 }

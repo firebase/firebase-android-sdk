@@ -105,4 +105,9 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
   WeakHashMap<Fragment, Trace> getFragmentToTraceMap() {
     return fragmentToTraceMap;
   }
+
+  @VisibleForTesting
+  FrameMetricsRecorder getActivityToFrameRecorderMap() {
+    return activityFramesRecorder;
+  }
 }
