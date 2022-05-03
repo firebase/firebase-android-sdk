@@ -92,12 +92,12 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     Trace fragmentTrace = fragmentToTraceMap.get(f);
     fragmentToTraceMap.remove(f);
 
-    Optional<PerfFrameMetrics> data = activityFramesRecorder.stopFragment(f);
-    if (!data.isAvailable()) {
+    Optional<PerfFrameMetrics> frameMetricsData = activityFramesRecorder.stopFragment(f);
+    if (!frameMetricsData.isAvailable()) {
       logger.warn("onFragmentPaused: recorder failed to trace %s", f.getClass().getSimpleName());
       return;
     }
-    ScreenTraceUtil.addFrameCounters(fragmentTrace, data.get());
+    ScreenTraceUtil.addFrameCounters(fragmentTrace, frameMetricsData.get());
     fragmentTrace.stop();
   }
 

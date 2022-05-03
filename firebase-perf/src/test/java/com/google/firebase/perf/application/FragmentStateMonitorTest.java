@@ -93,15 +93,10 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     doNothing().when(recorder).start();
     doNothing().when(recorder).startFragment(any());
 
-    // doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
-    // doReturn(Optional.of(frameCounts2)).when(recorder).stopFragment(any());
-
     activity = createFakeActivity(true);
 
-    // fmaMetrics1 should have 1+3+1=5 total frames, 3+1=4 slow frames, and 1 frozen frames.
+    // Sample frame counts.
     frameCounts1 = new PerfFrameMetrics(9, 5, 3);
-
-    // fmaMetrics2 should have 5+5+4=14 total frames, 5+4=9 slow frames, and 4 frozen frames.
     frameCounts2 = new PerfFrameMetrics(14, 9, 4);
   }
 
@@ -117,7 +112,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void lifecycleCallbacks_differentFrameMetricsCapturedByFma_logFragmentScreenTrace() {
+  public void lifecycleCallbacks_differentFrameMetricsCapturedByFrameRecorder_logFragmentScreenTrace() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
@@ -163,7 +158,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Test
   public void
-      lifecycleCallbacks_differentFrameMetricsCapturedByFma_logFragmentScreenTraceWithCorrectFrames() {
+      lifecycleCallbacks_differentFrameMetricsCapturedByFrameRecorder_logFragmentScreenTraceWithCorrectFrames() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
