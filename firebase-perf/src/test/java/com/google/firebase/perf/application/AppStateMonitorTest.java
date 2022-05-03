@@ -366,6 +366,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       int startTime = i * 100;
       int endTime = startTime + 10;
       currentTime = startTime;
+      monitor.onActivityCreated(activity);
       monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
@@ -380,6 +381,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ false);
 
+    monitor.onActivityCreated(activityWithNonHardwareAcceleratedView);
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
 
     // Confirm that this doesn't throw an exception.
@@ -418,7 +420,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // Assert that screen trace has been created.
     currentTime = 100;
-    monitor.onActivityResumed(activityWithNonHardwareAcceleratedView);
+    monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
     assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
     currentTime = 200;
     monitor.onActivityStopped(activityWithNonHardwareAcceleratedView);
@@ -462,6 +464,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
+    monitor.onActivityCreated(activity1);
     monitor.onActivityStarted(activity1);
 
     // activity1 goes to background.
@@ -497,7 +500,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
-    monitor.onActivityResumed(activity1);
+    monitor.onActivityStarted(activity1);
 
     // activity1 goes to background.
     currentTime = 2;
@@ -511,7 +514,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 3;
-    monitor.onActivityResumed(activity1);
+    monitor.onActivityStarted(activity1);
     // Background trace has been created because Performance Monitoring is enabled.
     verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
