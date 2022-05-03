@@ -15,6 +15,7 @@
 package com.google.firebase.perf.application;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.perf.v1.ApplicationProcessState.BACKGROUND;
 import static com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND_BACKGROUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
