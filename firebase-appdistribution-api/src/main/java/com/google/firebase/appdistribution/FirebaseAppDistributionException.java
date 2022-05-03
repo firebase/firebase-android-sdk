@@ -69,6 +69,15 @@ public class FirebaseAppDistributionException extends FirebaseException {
      * calling {@link FirebaseAppDistribution#updateIfNewReleaseAvailable()} again.
      */
     HOST_ACTIVITY_INTERRUPTED,
+
+    /**
+     * This API is not implemented.
+     *
+     * <p>This build was compiled against the API only. This may be intentional if this variant is
+     * intended for use in production. Otherwise you may need to include a dependency on
+     * {@code com.google.firebase:firebase-appdistribution}.
+     */
+    NOT_IMPLEMENTED,
   }
 
   @NonNull private final Status status;
