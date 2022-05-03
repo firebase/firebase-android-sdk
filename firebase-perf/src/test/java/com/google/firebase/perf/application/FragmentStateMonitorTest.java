@@ -73,6 +73,10 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   @Mock private PerfFrameMetrics frameCounts1;
   @Mock private PerfFrameMetrics frameCounts2;
   @Mock private ConfigResolver configResolver;
+  @Mock private Bundle savedInstanceState;
+  @Mock private AppStateMonitor appStateMonitor;
+  @Mock private Fragment mockFragment1;
+  @Mock private Fragment mockFragment2;
 
   @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
 
@@ -98,6 +102,11 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     // Sample frame counts.
     frameCounts1 = new PerfFrameMetrics(9, 5, 3);
     frameCounts2 = new PerfFrameMetrics(14, 9, 4);
+
+    savedInstanceState = mock(Bundle.class);
+    appStateMonitor = mock(AppStateMonitor.class);
+    mockFragment1 = mock(Fragment.class);
+    mockFragment2 = mock(Fragment.class);
   }
 
   /************ Trace Creation Tests ****************/
@@ -184,10 +193,6 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   /** Simulate call order of activity + fragment lifecycle events */
   @Test
   public void lifecycleCallbacks_cleansUpMap_duringFragmentTransitions() {
-    Bundle savedInstanceState = mock(Bundle.class);
-    AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
-    Fragment mockFragment1 = mock(Fragment.class);
-    Fragment mockFragment2 = mock(Fragment.class);
     doNothing().when(recorder).startFragment(any());
     doReturn(Optional.of(frameCounts1)).when(recorder).stopFragment(any());
     doReturn(mockFragmentManager).when(mockActivity).getSupportFragmentManager();
