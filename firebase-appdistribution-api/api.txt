@@ -40,6 +40,7 @@ package com.google.firebase.appdistribution {
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_CANCELED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status INSTALLATION_FAILURE;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status NETWORK_FAILURE;
+    enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status NOT_IMPLEMENTED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UNKNOWN;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UPDATE_NOT_AVAILABLE;
   }
