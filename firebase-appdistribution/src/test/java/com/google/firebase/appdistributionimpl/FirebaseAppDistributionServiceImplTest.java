@@ -25,7 +25,7 @@ import static com.google.firebase.appdistributionimpl.ErrorMessages.JSON_PARSING
 import static com.google.firebase.appdistributionimpl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistributionimpl.ErrorMessages.NOT_FOUND_ERROR;
 import static com.google.firebase.appdistributionimpl.ErrorMessages.UPDATE_CANCELED;
-import static com.google.firebase.appdistributionimpl.TaskUtils.assertTaskFailure;
+import static com.google.firebase.appdistributionimpl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
