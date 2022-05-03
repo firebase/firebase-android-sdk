@@ -15,7 +15,6 @@
 package com.google.firebase.perf.application;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.perf.v1.ApplicationProcessState.BACKGROUND;
 import static com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND_BACKGROUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -464,13 +463,14 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 1;
     monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 2;
     monitor.onActivityStopped(activity1);
     assertThat(monitor.isForeground()).isFalse();
     // Foreground traces has been created because Performance Monitoring is enabled.
-    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(BACKGROUND));
+    verify(transportManager, times(1)).log(any(TraceMetric.class), eq(FOREGROUND_BACKGROUND));
 
     // Developer disabled Performance Monitoring during runtime.
     ConfigResolver.getInstance().setIsPerformanceCollectionEnabled(false);
@@ -478,6 +478,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
@@ -499,6 +500,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 1;
     monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 2;
@@ -513,6 +515,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityStarted(activity1);
+    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
