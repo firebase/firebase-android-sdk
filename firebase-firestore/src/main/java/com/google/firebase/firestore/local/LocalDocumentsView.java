@@ -377,7 +377,9 @@ class LocalDocumentsView {
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
-        overlay.getMutation().applyToLocalView(docEntry.getValue(), FieldMask.EMPTY, Timestamp.now());
+        overlay
+            .getMutation()
+            .applyToLocalView(docEntry.getValue(), FieldMask.EMPTY, Timestamp.now());
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
