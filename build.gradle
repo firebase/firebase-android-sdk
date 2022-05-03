@@ -36,7 +36,7 @@ buildscript {
         classpath 'com.google.gms:google-services:4.3.3'
         classpath 'digital.wup:android-maven-publish:3.6.3'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath 'org.jlleitschuh.gradle:ktlint-gradle:9.2.1'
+        classpath 'org.jlleitschuh.gradle:ktlint-gradle:10.3.0'
     }
 }
 
