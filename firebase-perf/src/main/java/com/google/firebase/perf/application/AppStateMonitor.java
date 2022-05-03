@@ -97,6 +97,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     this(transportManager, clock, ConfigResolver.getInstance(), hasFrameMetricsAggregatorClass());
   }
 
+  @VisibleForTesting
   AppStateMonitor(
       TransportManager transportManager,
       Clock clock,

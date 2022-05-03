@@ -366,7 +366,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
       int startTime = i * 100;
       int endTime = startTime + 10;
       currentTime = startTime;
-      monitor.onActivityCreated(activity);
       monitor.onActivityStarted(activity);
       assertThat(monitor.getActivity2ScreenTrace()).hasSize(1);
       currentTime = endTime;
@@ -381,7 +380,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated =*/ false);
 
-    monitor.onActivityCreated(activityWithNonHardwareAcceleratedView);
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
 
     // Confirm that this doesn't throw an exception.
@@ -464,7 +462,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
     // activity1 comes to foreground.
     currentTime = 1;
-    monitor.onActivityCreated(activity1);
     monitor.onActivityStarted(activity1);
 
     // activity1 goes to background.
