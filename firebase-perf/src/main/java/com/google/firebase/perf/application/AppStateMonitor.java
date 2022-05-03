@@ -188,7 +188,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @Override
   public synchronized void onActivityStarted(Activity activity) {
     if (isScreenTraceSupported() && configResolver.isPerformanceMonitoringEnabled()) {
-      if (activityToRecorderMap.containsKey(activity)) {
+      if (!activityToRecorderMap.containsKey(activity)) {
         // If performance monitoring is disabled at start and enabled at runtime, start monitoring
         // the activity as the app comes to foreground.
         startFrameMonitoring(activity);
