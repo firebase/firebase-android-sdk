@@ -1,12 +1,11 @@
 // Signature format: 2.0
 package com.google.firebase.appdistribution {
 
-  public abstract class AppDistributionRelease {
-    ctor public AppDistributionRelease();
-    method @NonNull public abstract com.google.firebase.appdistribution.BinaryType getBinaryType();
-    method @NonNull public abstract String getDisplayVersion();
-    method @Nullable public abstract String getReleaseNotes();
-    method @NonNull public abstract long getVersionCode();
+  public interface AppDistributionRelease {
+    method @NonNull public com.google.firebase.appdistribution.BinaryType getBinaryType();
+    method @NonNull public String getDisplayVersion();
+    method @Nullable public String getReleaseNotes();
+    method @NonNull public long getVersionCode();
   }
 
   public enum BinaryType {
@@ -25,6 +24,10 @@ package com.google.firebase.appdistribution {
   }
 
   public class FirebaseAppDistributionException extends com.google.firebase.FirebaseException {
+    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status);
+    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @Nullable com.google.firebase.appdistribution.AppDistributionRelease);
+    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @NonNull Throwable);
+    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @Nullable com.google.firebase.appdistribution.AppDistributionRelease, @NonNull Throwable);
     method @NonNull public com.google.firebase.appdistribution.FirebaseAppDistributionException.Status getErrorCode();
     method @Nullable public com.google.firebase.appdistribution.AppDistributionRelease getRelease();
   }
@@ -45,11 +48,10 @@ package com.google.firebase.appdistribution {
     method public void onProgressUpdate(@NonNull com.google.firebase.appdistribution.UpdateProgress);
   }
 
-  public abstract class UpdateProgress {
-    ctor public UpdateProgress();
-    method @NonNull public abstract long getApkBytesDownloaded();
-    method @NonNull public abstract long getApkFileTotalBytes();
-    method @NonNull public abstract com.google.firebase.appdistribution.UpdateStatus getUpdateStatus();
+  public interface UpdateProgress {
+    method @NonNull public long getApkBytesDownloaded();
+    method @NonNull public long getApkFileTotalBytes();
+    method @NonNull public com.google.firebase.appdistribution.UpdateStatus getUpdateStatus();
   }
 
   public enum UpdateStatus {
