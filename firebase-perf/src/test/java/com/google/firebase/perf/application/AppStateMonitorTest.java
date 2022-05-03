@@ -478,7 +478,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityStarted(activity1);
-    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
@@ -515,7 +514,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // activity1 comes to foreground.
     currentTime = 3;
     monitor.onActivityStarted(activity1);
-    monitor.onActivityResumed(activity1);
 
     // activity1 goes to background.
     currentTime = 4;
