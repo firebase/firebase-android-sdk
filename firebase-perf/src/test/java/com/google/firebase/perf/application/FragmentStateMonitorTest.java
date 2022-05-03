@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -235,8 +236,9 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     FragmentStateMonitor fragmentMonitor =
         spy(new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder));
     when(appStateMonitor.isScreenTraceSupported()).thenReturn(true);
-    when(fragmentMonitor.getFragmentScreenTraceName(nullable(Fragment.class)))
-        .thenReturn(longFragmentName);
+    doReturn(longFragmentName)
+        .when(fragmentMonitor)
+        .getFragmentScreenTraceName(nullable(Fragment.class));
     when(recorder.stopFragment(any())).thenReturn(Optional.of(frameCounts1));
 
     fragmentMonitor.onFragmentResumed(mockFragmentManager, mockFragment);
