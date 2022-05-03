@@ -86,7 +86,7 @@ public class ApkInstallerTests {
 
     assert ex instanceof FirebaseAppDistributionException;
     assertEquals(
-        FirebaseAppDistributionExceptions.ErrorMessages.APK_INSTALLATION_FAILED,
+        ErrorMessages.APK_INSTALLATION_FAILED,
         ((FirebaseAppDistributionException) ex).getMessage());
     assertEquals(
         FirebaseAppDistributionException.Status.INSTALLATION_FAILURE,

@@ -122,7 +122,7 @@ class ApkUpdater {
             taskExecutor,
             unused -> {
               synchronized (updateTaskLock) {
-                TaskUtils.safeSetTaskResult(cachedUpdateTask);
+                safeSetTaskResult(cachedUpdateTask);
               }
             })
         .addOnFailureListener(
@@ -136,7 +136,7 @@ class ApkUpdater {
                   R.string.install_failed);
               setUpdateTaskCompletionErrorWithDefault(
                   e,
-                  FirebaseAppDistributionExceptions.ErrorMessages.APK_INSTALLATION_FAILED,
+                  ErrorMessages.APK_INSTALLATION_FAILED,
                   Status.INSTALLATION_FAILURE);
             });
   }
@@ -157,7 +157,7 @@ class ApkUpdater {
           try {
             makeApkDownloadRequest(newRelease, showNotification);
           } catch (FirebaseAppDistributionException e) {
-            TaskUtils.safeSetTaskException(downloadTaskCompletionSource, e);
+            safeSetTaskException(downloadTaskCompletionSource, e);
           }
         });
     return downloadTaskCompletionSource.getTask();
@@ -200,7 +200,7 @@ class ApkUpdater {
         UpdateStatus.DOWNLOADED,
         showNotification,
         R.string.download_completed);
-    TaskUtils.safeSetTaskResult(downloadTaskCompletionSource, apkFile);
+    safeSetTaskResult(downloadTaskCompletionSource, apkFile);
   }
 
   private static boolean isResponseSuccess(int responseCode) {
@@ -284,7 +284,7 @@ class ApkUpdater {
 
   private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
     synchronized (updateTaskLock) {
-      TaskUtils.safeSetTaskException(cachedUpdateTask, e);
+      safeSetTaskException(cachedUpdateTask, e);
     }
   }
 

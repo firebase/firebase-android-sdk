@@ -186,7 +186,7 @@ public class NewReleaseFetcherTest {
 
     assertThat(actualException)
         .hasMessageThat()
-        .contains(FirebaseAppDistributionExceptions.ErrorMessages.UNKNOWN_ERROR);
+        .contains(ErrorMessages.UNKNOWN_ERROR);
     assertThat(actualException).hasMessageThat().contains("test ex");
     assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
@@ -209,7 +209,7 @@ public class NewReleaseFetcherTest {
 
     assertThat(actualException)
         .hasMessageThat()
-        .contains(FirebaseAppDistributionExceptions.ErrorMessages.UNKNOWN_ERROR);
+        .contains(ErrorMessages.UNKNOWN_ERROR);
     assertThat(actualException).hasMessageThat().contains("test ex");
     assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(actualException).hasCauseThat().isEqualTo(expectedException);

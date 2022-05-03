@@ -92,7 +92,7 @@ class FirebaseAppDistributionTesterApiClient {
       responseBody = readResponseBody(connection);
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
-          FirebaseAppDistributionExceptions.ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     } finally {
       if (connection != null) {
         connection.disconnect();
@@ -165,7 +165,7 @@ class FirebaseAppDistributionTesterApiClient {
     } catch (JSONException e) {
       LogWrapper.getInstance().e(TAG + "Error parsing the new release.", e);
       throw new FirebaseAppDistributionException(
-          FirebaseAppDistributionExceptions.ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
+          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
   }
 
@@ -176,11 +176,11 @@ class FirebaseAppDistributionTesterApiClient {
             "Bad request when fetching new release", Status.UNKNOWN);
       case 401:
         return new FirebaseAppDistributionException(
-            FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_ERROR,
+            ErrorMessages.AUTHENTICATION_ERROR,
             Status.AUTHENTICATION_FAILURE);
       case 403:
         return new FirebaseAppDistributionException(
-            FirebaseAppDistributionExceptions.ErrorMessages.AUTHORIZATION_ERROR,
+            ErrorMessages.AUTHORIZATION_ERROR,
             Status.AUTHENTICATION_FAILURE);
       case 404:
         return new FirebaseAppDistributionException(
@@ -188,7 +188,7 @@ class FirebaseAppDistributionTesterApiClient {
       case 408:
       case 504:
         return new FirebaseAppDistributionException(
-            FirebaseAppDistributionExceptions.ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
+            ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
       default:
         return new FirebaseAppDistributionException(
             "Received error status when fetching new release: " + responseCode, Status.UNKNOWN);

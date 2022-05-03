@@ -132,7 +132,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
     assertThat(ex.getMessage())
-        .contains(FirebaseAppDistributionExceptions.ErrorMessages.NETWORK_ERROR);
+        .contains(ErrorMessages.NETWORK_ERROR);
     assertThat(ex.getCause()).isEqualTo(caughtException);
   }
 
@@ -150,7 +150,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
     assertThat(ex.getMessage())
-        .isEqualTo(FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_ERROR);
+        .isEqualTo(ErrorMessages.AUTHENTICATION_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -168,7 +168,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
     assertThat(ex.getMessage())
-        .isEqualTo(FirebaseAppDistributionExceptions.ErrorMessages.AUTHORIZATION_ERROR);
+        .isEqualTo(ErrorMessages.AUTHORIZATION_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -203,7 +203,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
     assertThat(ex.getMessage())
-        .isEqualTo(FirebaseAppDistributionExceptions.ErrorMessages.TIMEOUT_ERROR);
+        .isEqualTo(ErrorMessages.TIMEOUT_ERROR);
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -239,7 +239,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(ex.getErrorCode()).isEqualTo(Status.UNKNOWN);
     assertThat(ex.getMessage())
-        .isEqualTo(FirebaseAppDistributionExceptions.ErrorMessages.JSON_PARSING_ERROR);
+        .isEqualTo(ErrorMessages.JSON_PARSING_ERROR);
     assertThat(ex.getCause()).isInstanceOf(JSONException.class);
     verify(mockHttpsURLConnection).disconnect();
   }

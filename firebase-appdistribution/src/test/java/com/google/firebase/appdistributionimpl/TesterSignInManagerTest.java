@@ -148,7 +148,7 @@ public class TesterSignInManagerTest {
 
     Task signInTask = testerSignInManager.signInTester();
 
-    TestUtils.assertTaskFailure(
+    assertTaskFailure(
         signInTask, Status.AUTHENTICATION_FAILURE, "Failed to authenticate", fisException);
   }
 
@@ -161,7 +161,7 @@ public class TesterSignInManagerTest {
 
     Task signInTask = testerSignInManager.signInTester();
 
-    TestUtils.assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
+    assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
   }
 
   @Test
@@ -224,6 +224,6 @@ public class TesterSignInManagerTest {
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
     assertEquals(
-        FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+        ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 }

@@ -14,18 +14,18 @@
 
 package com.google.firebase.appdistributionimpl;
 
-import static com.google.firebase.appdistributionimpl.FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_ERROR;
-import static com.google.firebase.appdistributionimpl.FirebaseAppDistributionExceptions.ErrorMessages.JSON_PARSING_ERROR;
-import static com.google.firebase.appdistributionimpl.FirebaseAppDistributionExceptions.ErrorMessages.NETWORK_ERROR;
-import static com.google.firebase.appdistributionimpl.FirebaseAppDistributionExceptions.ErrorMessages.NOT_FOUND_ERROR;
-import static com.google.firebase.appdistributionimpl.FirebaseAppDistributionExceptions.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistributionimpl.ErrorMessages.AUTHENTICATION_ERROR;
+import static com.google.firebase.appdistributionimpl.ErrorMessages.JSON_PARSING_ERROR;
+import static com.google.firebase.appdistributionimpl.ErrorMessages.NETWORK_ERROR;
+import static com.google.firebase.appdistributionimpl.ErrorMessages.NOT_FOUND_ERROR;
+import static com.google.firebase.appdistributionimpl.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
-import static com.google.firebase.appdistributionimpl.TestUtils.assertTaskFailure;
+import static com.google.firebase.appdistributionimpl.TaskUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -191,11 +191,11 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionExceptions.ErrorMessages.JSON_PARSING_ERROR,
+                    ErrorMessages.JSON_PARSING_ERROR,
                     Status.NETWORK_FAILURE)));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
-    TestUtils.assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
+    assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
   }
 
   @Test
@@ -204,7 +204,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
 
-    TestUtils.assertTaskFailure(task, AUTHENTICATION_FAILURE, "Tester is not signed in");
+    assertTaskFailure(task, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
 
   @Test
@@ -238,7 +238,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    TestUtils.assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, "Tester is not signed in");
+    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
 
   @Test
@@ -321,7 +321,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED,
+                    ErrorMessages.AUTHENTICATION_CANCELED,
                     AUTHENTICATION_CANCELED)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -331,10 +331,10 @@ public class FirebaseAppDistributionServiceImplTest {
 
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
-    TestUtils.assertTaskFailure(
+    assertTaskFailure(
         updateTask,
         AUTHENTICATION_CANCELED,
-        FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED);
+        ErrorMessages.AUTHENTICATION_CANCELED);
   }
 
   @Test
@@ -344,7 +344,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_ERROR,
+                    ErrorMessages.AUTHENTICATION_ERROR,
                     AUTHENTICATION_FAILURE)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -352,7 +352,7 @@ public class FirebaseAppDistributionServiceImplTest {
     AlertDialog signInDialog = assertAlertDialogShown();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
-    TestUtils.assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
+    assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
   }
 
   @Test
@@ -366,7 +366,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     assertFalse(updateDialog.isShowing());
     assertFalse(updateTask.isSuccessful());
-    TestUtils.assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
+    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
   }
 
   @Test
@@ -381,7 +381,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     assertFalse(updateDialog.isShowing());
 
-    TestUtils.assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
+    assertTaskFailure(updateTask, INSTALLATION_CANCELED, UPDATE_CANCELED);
   }
 
   @Test
@@ -390,7 +390,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException(
-                    FirebaseAppDistributionExceptions.ErrorMessages.NETWORK_ERROR,
+                    ErrorMessages.NETWORK_ERROR,
                     FirebaseAppDistributionException.Status.NETWORK_FAILURE)));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
@@ -401,7 +401,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
 
     verify(firebaseAppDistribution, never()).updateApp();
-    TestUtils.assertTaskFailure(updateTask, NETWORK_FAILURE, NETWORK_ERROR);
+    assertTaskFailure(updateTask, NETWORK_FAILURE, NETWORK_ERROR);
   }
 
   @Test
@@ -426,7 +426,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
     assertEquals(
-        FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+        ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   @Test
@@ -442,7 +442,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertTrue(e instanceof FirebaseAppDistributionException);
     assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
     assertEquals(
-        FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+        ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
   }
 
   private AlertDialog assertAlertDialogShown() {
@@ -543,10 +543,10 @@ public class FirebaseAppDistributionServiceImplTest {
     firebaseAppDistribution.onActivityPaused(activity);
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
-    TestUtils.assertTaskFailure(
+    assertTaskFailure(
         updateTask,
         HOST_ACTIVITY_INTERRUPTED,
-        FirebaseAppDistributionExceptions.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
@@ -562,10 +562,10 @@ public class FirebaseAppDistributionServiceImplTest {
     firebaseAppDistribution.onActivityPaused(activity);
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
-    TestUtils.assertTaskFailure(
+    assertTaskFailure(
         updateTask,
         HOST_ACTIVITY_INTERRUPTED,
-        FirebaseAppDistributionExceptions.ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
+        ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
 
   @Test
@@ -575,7 +575,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    TestUtils.assertTaskFailure(updateTask, UPDATE_NOT_AVAILABLE, NOT_FOUND_ERROR);
+    assertTaskFailure(updateTask, UPDATE_NOT_AVAILABLE, NOT_FOUND_ERROR);
   }
 
   @Test

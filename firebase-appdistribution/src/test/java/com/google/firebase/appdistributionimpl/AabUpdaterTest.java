@@ -173,7 +173,7 @@ public class AabUpdaterTest {
         assertTaskFailure(
             updateTask,
             Status.INSTALLATION_CANCELED,
-            FirebaseAppDistributionExceptions.ErrorMessages.UPDATE_CANCELED);
+            ErrorMessages.UPDATE_CANCELED);
     assertEquals(
         ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
         exception.getRelease());

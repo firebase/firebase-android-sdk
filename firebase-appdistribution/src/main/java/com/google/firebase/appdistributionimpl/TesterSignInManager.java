@@ -111,7 +111,7 @@ class TesterSignInManager {
           LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
           setSignInTaskCompletionError(
               new FirebaseAppDistributionException(
-                  FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_CANCELED,
+                  ErrorMessages.AUTHENTICATION_CANCELED,
                   AUTHENTICATION_CANCELED));
         }
       }
@@ -141,13 +141,13 @@ class TesterSignInManager {
           .getId()
           .addOnFailureListener(
               handleTaskFailure(
-                  FirebaseAppDistributionExceptions.ErrorMessages.AUTHENTICATION_ERROR,
+                  ErrorMessages.AUTHENTICATION_ERROR,
                   Status.AUTHENTICATION_FAILURE))
           .onSuccessTask(this::getForegroundActivityAndOpenSignInFlow)
           // Catch any unexpected failures to be safe.
           .addOnFailureListener(
               handleTaskFailure(
-                  FirebaseAppDistributionExceptions.ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
+                  ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN));
 
       return signInTaskCompletionSource.getTask();
     }
@@ -186,13 +186,13 @@ class TesterSignInManager {
 
   private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
     synchronized (signInTaskLock) {
-      TaskUtils.safeSetTaskException(signInTaskCompletionSource, e);
+      safeSetTaskException(signInTaskCompletionSource, e);
     }
   }
 
   private void setSuccessfulSignInResult() {
     synchronized (signInTaskLock) {
-      TaskUtils.safeSetTaskResult(signInTaskCompletionSource, null);
+      safeSetTaskResult(signInTaskCompletionSource, null);
     }
   }
 

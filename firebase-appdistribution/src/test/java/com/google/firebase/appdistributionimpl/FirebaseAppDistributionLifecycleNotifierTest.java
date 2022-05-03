@@ -86,7 +86,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    TestUtils.assertTaskFailure(task, Status.UNKNOWN, "Unknown", consumerException);
+    assertTaskFailure(task, Status.UNKNOWN, "Unknown", consumerException);
   }
 
   @Test
@@ -132,7 +132,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    TestUtils.assertTaskFailure(task, Status.AUTHENTICATION_CANCELED, "exception in continuation task");
+    assertTaskFailure(task, Status.AUTHENTICATION_CANCELED, "exception in continuation task");
   }
 
   @Test
@@ -146,7 +146,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    TestUtils.assertTaskFailure(task, Status.UNKNOWN, "Unknown", continuationException);
+    assertTaskFailure(task, Status.UNKNOWN, "Unknown", continuationException);
   }
 
   @Test

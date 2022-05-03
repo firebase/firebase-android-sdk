@@ -89,7 +89,7 @@ class ApkInstaller {
       safeSetTaskException(
           installTaskCompletionSource,
           new FirebaseAppDistributionException(
-              FirebaseAppDistributionExceptions.ErrorMessages.APK_INSTALLATION_FAILED,
+              ErrorMessages.APK_INSTALLATION_FAILED,
               FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
     }
   }

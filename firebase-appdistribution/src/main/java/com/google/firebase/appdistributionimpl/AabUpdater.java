@@ -184,7 +184,7 @@ class AabUpdater {
       safeSetTaskException(
           cachedUpdateTask,
           new FirebaseAppDistributionException(
-              FirebaseAppDistributionExceptions.ErrorMessages.UPDATE_CANCELED,
+              ErrorMessages.UPDATE_CANCELED,
               FirebaseAppDistributionException.Status.INSTALLATION_CANCELED,
               ReleaseUtils.convertToAppDistributionRelease(aabReleaseInProgress)));
     }
