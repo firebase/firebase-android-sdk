@@ -41,12 +41,23 @@ import java.util.Map;
  */
 public class FrameMetricsRecorder {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
+  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
+      "androidx.core.app.FrameMetricsAggregator";
 
   private final Activity activity;
   private final FrameMetricsAggregator frameMetricsAggregator;
   private final Map<Fragment, PerfFrameMetrics> fragmentSnapshotMap;
 
   private boolean isRecording = false;
+
+  static boolean isFrameMetricsRecordingSupported() {
+    try {
+      Class<?> initializerClass = Class.forName(FRAME_METRICS_AGGREGATOR_CLASSNAME);
+      return true;
+    } catch (ClassNotFoundException e) {
+      return false;
+    }
+  }
 
   /**
    * Creates a recorder for a specific activity.

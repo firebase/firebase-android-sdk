@@ -49,11 +49,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   private static final AndroidLogger logger = AndroidLogger.getInstance();
-  private static final String FRAME_METRICS_AGGREGATOR_CLASSNAME =
-      "androidx.core.app.FrameMetricsAggregator";
 
   private static volatile AppStateMonitor instance;
-  private final boolean hasFrameMetricsAggregator;
+  private final boolean screenPerformanceRecordingSupported;
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap =
@@ -94,7 +92,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
-    this(transportManager, clock, ConfigResolver.getInstance(), hasFrameMetricsAggregatorClass());
+    this(transportManager, clock, ConfigResolver.getInstance(), isScreenPerformanceRecordingSupported());
   }
 
   @VisibleForTesting
@@ -102,11 +100,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       TransportManager transportManager,
       Clock clock,
       ConfigResolver configResolver,
-      boolean hasFrameMetricsAggregator) {
+      boolean screenPerformanceRecordingSupported) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.configResolver = configResolver;
-    this.hasFrameMetricsAggregator = hasFrameMetricsAggregator;
+    this.screenPerformanceRecordingSupported = screenPerformanceRecordingSupported;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {
@@ -401,7 +399,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @return true if supported, false if not.
    */
   protected boolean isScreenTraceSupported() {
-    return hasFrameMetricsAggregator;
+    return screenPerformanceRecordingSupported;
   }
 
   /**
@@ -409,13 +407,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * updated to 26.1.0 (b/69954793), there will be ClassNotFoundException. This method is to check
    * if FrameMetricsAggregator exists to avoid ClassNotFoundException.
    */
-  private static boolean hasFrameMetricsAggregatorClass() {
-    try {
-      Class<?> initializerClass = Class.forName(FRAME_METRICS_AGGREGATOR_CLASSNAME);
-      return true;
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
+  private static boolean isScreenPerformanceRecordingSupported() {
+    return FrameMetricsRecorder.isFrameMetricsRecordingSupported();
   }
 
   /** An interface to be implemented by subscribers which needs to receive app state update. */
