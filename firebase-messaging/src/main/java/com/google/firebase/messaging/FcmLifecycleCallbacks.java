@@ -42,8 +42,8 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
       return;
     }
 
-    if (VERSION.SDK_INT <= VERSION_CODES.N) {
-      // On Android 7.0 and lower Bundle unparceling is not thread safe. Wait to log notification
+    if (VERSION.SDK_INT <= VERSION_CODES.N_MR1) {
+      // On Android 7.1 and lower Bundle unparceling is not thread safe. Wait to log notification
       // open after Activity.onCreate() has completed to try to avoid race conditions with other
       // code that may be trying to access the Intent extras Bundle in onCreate() on a different
       // thread.
