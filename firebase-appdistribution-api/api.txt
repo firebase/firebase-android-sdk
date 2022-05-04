@@ -13,7 +13,7 @@ package com.google.firebase.appdistribution {
     enum_constant public static final com.google.firebase.appdistribution.BinaryType APK;
   }
 
-  public class FirebaseAppDistribution {
+  public interface FirebaseAppDistribution {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
