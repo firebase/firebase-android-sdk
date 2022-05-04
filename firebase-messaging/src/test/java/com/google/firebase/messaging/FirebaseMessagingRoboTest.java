@@ -278,6 +278,7 @@ public final class FirebaseMessagingRoboTest {
             new Metadata(context),
             mockGmsRpc,
             Runnable::run,
+            Runnable::run,
             Runnable::run);
     when(mockGmsRpc.getToken()).thenReturn(Tasks.forResult("fake_token"));
 
@@ -304,6 +305,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Metadata.class),
             mockGmsRpc,
             Runnable::run,
+            Runnable::run,
             Runnable::run);
     when(mockFiid.getTokenTask()).thenReturn(Tasks.forResult("fake_token"));
 
@@ -327,6 +329,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
+            Runnable::run,
             Runnable::run,
             Runnable::run);
     when(mockGmsRpc.getToken()).thenReturn(Tasks.forResult("fake_token"));
@@ -356,6 +359,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Metadata.class),
             mockGmsRpc,
             Runnable::run,
+            Runnable::run,
             Runnable::run);
 
     Task<Void> deleteTokenTask = messaging.deleteToken();
@@ -380,6 +384,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Metadata.class),
             mock(GmsRpc.class),
             Runnable::run,
+            Runnable::run,
             Runnable::run);
 
     assertThat(messaging.isNotificationDelegationEnabled()).isTrue();
@@ -397,6 +402,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             mock(Metadata.class),
             mock(GmsRpc.class),
+            Runnable::run,
             Runnable::run,
             Runnable::run);
 
@@ -507,6 +513,7 @@ public final class FirebaseMessagingRoboTest {
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
+            Runnable::run,
             Runnable::run,
             Runnable::run);
 
