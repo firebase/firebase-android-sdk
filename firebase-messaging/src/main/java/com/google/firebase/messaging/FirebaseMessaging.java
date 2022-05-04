@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
+import static com.google.firebase.messaging.FcmExecutors.newFileIOExecutor;
 import static com.google.firebase.messaging.FcmExecutors.newInitExecutor;
 import static com.google.firebase.messaging.FcmExecutors.newTaskExecutor;
 import static com.google.firebase.messaging.FcmExecutors.newTopicsSyncExecutor;
@@ -110,8 +111,9 @@ public class FirebaseMessaging {
   private final GmsRpc gmsRpc;
   private final RequestDeduplicator requestDeduplicator;
   private final AutoInit autoInit;
-  private final Executor fileIoExecutor;
+  private final Executor initExecutor;
   private final Executor taskExecutor;
+  private final Executor fileExecutor;
   private final Task<TopicsSubscriber> topicsSubscriberTask;
   private final Metadata metadata;
 
@@ -195,7 +197,8 @@ public class FirebaseMessaging {
         new GmsRpc(
             firebaseApp, metadata, userAgentPublisher, heartBeatInfo, firebaseInstallationsApi),
         /* taskExecutor= */ newTaskExecutor(),
-        /* fileIoExecutor= */ newInitExecutor());
+        /* initExecutor= */ newInitExecutor(),
+        /* fileExecutor= */ newFileIOExecutor());
   }
 
   FirebaseMessaging(
@@ -207,7 +210,8 @@ public class FirebaseMessaging {
       Metadata metadata,
       GmsRpc gmsRpc,
       Executor taskExecutor,
-      Executor fileIoExecutor) {
+      Executor initExecutor,
+      Executor fileExecutor) {
 
     FirebaseMessaging.transportFactory = transportFactory;
 
@@ -221,7 +225,8 @@ public class FirebaseMessaging {
     this.taskExecutor = taskExecutor;
     this.gmsRpc = gmsRpc;
     this.requestDeduplicator = new RequestDeduplicator(taskExecutor);
-    this.fileIoExecutor = fileIoExecutor;
+    this.initExecutor = initExecutor;
+    this.fileExecutor = fileExecutor;
 
     Context appContext = firebaseApp.getApplicationContext();
     if (appContext instanceof Application) {
@@ -243,7 +248,7 @@ public class FirebaseMessaging {
           });
     }
 
-    fileIoExecutor.execute(
+    initExecutor.execute(
         () -> {
           if (isAutoInitEnabled()) {
             startSyncIfNecessary();
@@ -257,7 +262,7 @@ public class FirebaseMessaging {
     // During FCM instantiation, as part of the initial setup, we spin up a couple of background
     // threads to handle topic syncing and proxy notification configuration.
     topicsSubscriberTask.addOnSuccessListener(
-        fileIoExecutor,
+        initExecutor,
         topicsSubscriber -> {
           // Topics operations relay on IID for token generation, thus the sync is also
           // subject to an auto-init check.
@@ -266,7 +271,7 @@ public class FirebaseMessaging {
           }
         });
 
-    fileIoExecutor.execute(
+    initExecutor.execute(
         () ->
             // Initializes proxy notification support for the app.
             ProxyNotificationInitializer.initialize(context));
@@ -363,7 +368,7 @@ public class FirebaseMessaging {
    * @return A Task that completes when the notification delegation has been set.
    */
   public Task<Void> setNotificationDelegationEnabled(boolean enable) {
-    return ProxyNotificationInitializer.setEnableProxyNotification(fileIoExecutor, context, enable);
+    return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable);
   }
 
   /**
@@ -381,7 +386,7 @@ public class FirebaseMessaging {
       return iid.getTokenTask();
     }
     TaskCompletionSource<String> taskCompletionSource = new TaskCompletionSource<>();
-    fileIoExecutor.execute(
+    initExecutor.execute(
         () -> {
           try {
             taskCompletionSource.setResult(blockingGetToken());
@@ -405,7 +410,7 @@ public class FirebaseMessaging {
   public Task<Void> deleteToken() {
     if (iid != null) {
       TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-      fileIoExecutor.execute(
+      initExecutor.execute(
           () -> {
             try {
               iid.deleteToken(Metadata.getDefaultSenderId(firebaseApp), INSTANCE_ID_SCOPE);
@@ -604,7 +609,7 @@ public class FirebaseMessaging {
                 gmsRpc
                     .getToken()
                     .onSuccessTask(
-                        Runnable::run, // direct executor
+                        fileExecutor,
                         token -> {
                           getStore(context)
                               .saveToken(
