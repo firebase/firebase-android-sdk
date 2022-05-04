@@ -92,7 +92,11 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   }
 
   AppStateMonitor(TransportManager transportManager, Clock clock) {
-    this(transportManager, clock, ConfigResolver.getInstance(), isScreenPerformanceRecordingSupported());
+    this(
+        transportManager,
+        clock,
+        ConfigResolver.getInstance(),
+        isScreenPerformanceRecordingSupported());
   }
 
   @VisibleForTesting
@@ -348,8 +352,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     activityToScreenTraceMap.remove(activity);
 
-    Optional<PerfFrameMetrics> perfFrameMetrics =
-        activityToRecorderMap.get(activity).stop();
+    Optional<PerfFrameMetrics> perfFrameMetrics = activityToRecorderMap.get(activity).stop();
     if (!perfFrameMetrics.isAvailable()) {
       logger.warn("Failed to record frame data for %s.", activity.getClass().getSimpleName());
       return;
