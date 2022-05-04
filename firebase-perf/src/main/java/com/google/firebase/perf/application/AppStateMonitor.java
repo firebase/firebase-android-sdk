@@ -24,7 +24,7 @@ import androidx.fragment.app.FragmentActivity;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.metrics.FrameMetricsCalculator;
+import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
@@ -348,7 +348,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     }
     activityToScreenTraceMap.remove(activity);
 
-    Optional<FrameMetricsCalculator.PerfFrameMetrics> perfFrameMetrics =
+    Optional<PerfFrameMetrics> perfFrameMetrics =
         activityToRecorderMap.get(activity).stop();
     if (!perfFrameMetrics.isAvailable()) {
       logger.warn("Failed to record frame data for %s.", activity.getClass().getSimpleName());
