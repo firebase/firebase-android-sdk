@@ -16,7 +16,8 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
-import com.google.firebase.appdistribution.internal.FirebaseAppDistributionService;
+
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionApi;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -36,9 +37,9 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseAppDistribution.class)
-            .add(Dependency.optionalProvider(FirebaseAppDistributionService.class))
-            .factory(this::buildFirebaseAppDistribution)
+        Component.builder(FirebaseAppDistributionApi.class)
+            .add(Dependency.optionalProvider(FirebaseAppDistribution.class))
+            .factory(this::buildFirebaseAppDistributionApi)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -46,7 +47,7 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
-    return new FirebaseAppDistribution(container.getProvider(FirebaseAppDistributionService.class));
+  private FirebaseAppDistributionApi buildFirebaseAppDistributionApi(ComponentContainer container) {
+    return new FirebaseAppDistributionApi(container.getProvider(FirebaseAppDistribution.class));
   }
 }
