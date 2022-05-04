@@ -36,87 +36,30 @@ import com.google.firebase.inject.Provider;
 import java.util.concurrent.Executor;
 
 /**
- * The Firebase App Distribution API provides methods to update the app to the most recent
- * pre-release build.
- *
- * <p>By default, Firebase App Distribution is automatically initialized.
- *
- * <p>Call {@link FirebaseAppDistributionApi#getInstance()} to get the singleton instance of
- * FirebaseAppDistribution.
+ * This stub implementation of the Firebase App Distribution API delegates to the real
+ * implementation ({@code FirebaseAppDistributionImpl}) provided by the
+ * {@code com.google.firebase:firebase-appdistribution} artifact. If that artifact is not included
+ * in the build then the stubs will return failed {@link Task Tasks}/{@link UpdateTask UpdateTasks}
+ * with {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
  */
 public class FirebaseAppDistributionApi implements FirebaseAppDistribution {
-
   private final Provider<FirebaseAppDistribution> firebaseAppDistributionImplProvider;
 
-  /** Constructor for FirebaseAppDistribution. */
   public FirebaseAppDistributionApi(
       Provider<FirebaseAppDistribution> firebaseAppDistributionImplProvider) {
     this.firebaseAppDistributionImplProvider = firebaseAppDistributionImplProvider;
   }
 
-  /**
-   * Updates the app to the newest release, if one is available.
-   *
-   * <p>Returns the release information or {@code null} if no update is found. Performs the
-   * following actions:
-   *
-   * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
-   *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
-   *       dialog to begin the download.
-   *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
-   *       newest release is an AAB, directs the tester to the Play app to complete the download and
-   *       installation.
-   * </ol>
-   */
   @NonNull
+  @Override
   public UpdateTask updateIfNewReleaseAvailable() {
     if (firebaseAppDistributionImplProvider.get() == null) {
-      return new AppInProductionUpdateTask();
+      return new NotImplementedUpdateTask();
     }
     return firebaseAppDistributionImplProvider.get().updateIfNewReleaseAvailable();
   }
 
-  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI. */
-  @NonNull
-  public Task<Void> signInTester() {
-    if (firebaseAppDistributionImplProvider.get() == null) {
-      return getNotImplementedTask();
-    }
-    return firebaseAppDistributionImplProvider.get().signInTester();
-  }
-
-  /**
-   * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
-   * tester, or {@code null} otherwise.
-   */
-  @NonNull
-  public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    if (firebaseAppDistributionImplProvider.get() == null) {
-      return getNotImplementedTask();
-    }
-    return firebaseAppDistributionImplProvider.get().checkForNewRelease();
-  }
-
-  /**
-   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}.
-   *
-   * <p>If the newest release is an APK, downloads the binary and starts an installation. If the
-   * newest release is an AAB, directs the tester to the Play app to complete the download and
-   * installation.
-   *
-   * <p>Cancels task with {@link Status#UPDATE_NOT_AVAILABLE} if no new release is cached from
-   * {@link #checkForNewRelease}.
-   */
-  @NonNull
-  public UpdateTask updateApp() {
-    if (firebaseAppDistributionImplProvider.get() == null) {
-      return new AppInProductionUpdateTask();
-    }
-    return firebaseAppDistributionImplProvider.get().updateApp();
-  }
-
-  /** Returns {@code true} if the App Distribution tester is signed in. */
+  @Override
   public boolean isTesterSignedIn() {
     if (firebaseAppDistributionImplProvider.get() == null) {
       return false;
@@ -124,12 +67,40 @@ public class FirebaseAppDistributionApi implements FirebaseAppDistribution {
     return firebaseAppDistributionImplProvider.get().isTesterSignedIn();
   }
 
-  /** Signs out the App Distribution tester. */
+  @NonNull
+  @Override
+  public Task<Void> signInTester() {
+    if (firebaseAppDistributionImplProvider.get() == null) {
+      return getNotImplementedTask();
+    }
+    return firebaseAppDistributionImplProvider.get().signInTester();
+  }
+
+  @Override
   public void signOutTester() {
     if (firebaseAppDistributionImplProvider.get() == null) {
       return;
     }
     firebaseAppDistributionImplProvider.get().signOutTester();
+  }
+
+  @NonNull
+  @Override
+  public synchronized Task<AppDistributionRelease> checkForNewRelease() {
+    if (firebaseAppDistributionImplProvider.get() == null) {
+      return getNotImplementedTask();
+    }
+    return firebaseAppDistributionImplProvider.get().checkForNewRelease();
+  }
+
+
+  @NonNull
+  @Override
+  public UpdateTask updateApp() {
+    if (firebaseAppDistributionImplProvider.get() == null) {
+      return new NotImplementedUpdateTask();
+    }
+    return firebaseAppDistributionImplProvider.get().updateApp();
   }
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
@@ -139,7 +110,7 @@ public class FirebaseAppDistributionApi implements FirebaseAppDistribution {
             Status.NOT_IMPLEMENTED));
   }
 
-  private static class AppInProductionUpdateTask extends UpdateTask {
+  private static class NotImplementedUpdateTask extends UpdateTask {
     private final Task<Void> task = getNotImplementedTask();
 
     @NonNull

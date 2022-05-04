@@ -44,13 +44,8 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 /**
- * The Firebase App Distribution API provides methods to update the app to the most recent
- * pre-release build.
- *
- * <p>By default, Firebase App Distribution is automatically initialized.
- *
- * <p>Call {@link FirebaseAppDistribution#getInstance()} to get the singleton instance of
- * FirebaseAppDistribution.
+ * This call is the "real" implementation of the Firebase App Distribution API which should
+ * only be included in pre-release builds.
  */
 class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
@@ -85,7 +80,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
 
-  /** Constructor for FirebaseAppDistributionServiceImpl. */
   @VisibleForTesting
   FirebaseAppDistributionImpl(
       @NonNull FirebaseApp firebaseApp,
@@ -107,7 +101,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
   }
 
-  /** Constructor for FirebaseAppDistributionServiceImpl. */
   FirebaseAppDistributionImpl(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
@@ -126,7 +119,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         lifecycleNotifier);
   }
 
-  /** Constructor for FirebaseAppDistributionServiceImpl. */
   FirebaseAppDistributionImpl(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
@@ -137,21 +129,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
-  /**
-   * Updates the app to the newest release, if one is available.
-   *
-   * <p>Returns the release information or {@code null} if no update is found. Performs the
-   * following actions:
-   *
-   * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
-   *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
-   *       dialog to begin the download.
-   *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
-   *       newest release is an AAB, directs the tester to the Play app to complete the download and
-   *       installation.
-   * </ol>
-   */
   @Override
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
@@ -206,6 +183,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     }
   }
 
+  @NonNull
   private Task<Void> showSignInConfirmationDialog(Activity hostActivity) {
     if (isTesterSignedIn()) {
       return Tasks.forResult(null);
@@ -252,17 +230,23 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     return showSignInDialogTask.getTask();
   }
 
-  /** Signs in the App Distribution tester. Presents the tester with a Google sign in UI. */
+  @Override
+  public boolean isTesterSignedIn() {
+    return signInStorage.getSignInStatus();
+  }
+
   @Override
   @NonNull
   public Task<Void> signInTester() {
-    return this.testerSignInManager.signInTester();
+    return testerSignInManager.signInTester();
   }
 
-  /**
-   * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
-   * tester, or {@code null} otherwise.
-   */
+  @Override
+  public void signOutTester() {
+    setCachedNewRelease(null);
+    signInStorage.setSignInStatus(false);
+  }
+
   @Override
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
@@ -276,7 +260,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     }
 
     cachedCheckForNewReleaseTask =
-        this.newReleaseFetcher
+        newReleaseFetcher
             .checkForNewRelease()
             .onSuccessTask(
                 appDistributionReleaseInternal -> {
@@ -299,16 +283,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     return cachedCheckForNewReleaseTask;
   }
 
-  /**
-   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}.
-   *
-   * <p>If the newest release is an APK, downloads the binary and starts an installation. If the
-   * newest release is an AAB, directs the tester to the Play app to complete the download and
-   * installation.
-   *
-   * <p>Cancels task with {@link Status#UPDATE_NOT_AVAILABLE} if no new release is cached from
-   * {@link #checkForNewRelease}.
-   */
   @Override
   @NonNull
   public UpdateTask updateApp() {
@@ -343,24 +317,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       }
 
       if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
-        return this.aabUpdater.updateAab(cachedNewRelease);
+        return aabUpdater.updateAab(cachedNewRelease);
       } else {
-        return this.apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
+        return apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
       }
     }
-  }
-
-  /** Returns {@code true} if the App Distribution tester is signed in. */
-  @Override
-  public boolean isTesterSignedIn() {
-    return this.signInStorage.getSignInStatus();
-  }
-
-  /** Signs out the App Distribution tester. */
-  @Override
-  public void signOutTester() {
-    setCachedNewRelease(null);
-    this.signInStorage.setSignInStatus(false);
   }
 
   @VisibleForTesting
@@ -412,14 +373,14 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @VisibleForTesting
   void setCachedNewRelease(@Nullable AppDistributionReleaseInternal newRelease) {
     synchronized (cachedNewReleaseLock) {
-      this.cachedNewRelease = newRelease;
+      cachedNewRelease = newRelease;
     }
   }
 
   @VisibleForTesting
   AppDistributionReleaseInternal getCachedNewRelease() {
     synchronized (cachedNewReleaseLock) {
-      return this.cachedNewRelease;
+      return cachedNewRelease;
     }
   }
 

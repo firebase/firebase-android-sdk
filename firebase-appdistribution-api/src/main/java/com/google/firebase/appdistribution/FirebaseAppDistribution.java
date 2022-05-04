@@ -18,22 +18,97 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 
+/**
+ * The Firebase App Distribution API provides methods to update the app to the most recent
+ * pre-release build.
+ *
+ * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+ * your build, then all methods will be stubs and the {@link Task Tasks} and
+ * {@link UpdateTask UpdateTasks} will fail with
+ * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+ *
+ * <p>By default, Firebase App Distribution is automatically initialized.
+ *
+ * <p>Call {@link #getInstance()} to get the singleton instance of
+ * {@link FirebaseAppDistribution}.
+ */
 public interface FirebaseAppDistribution {
+  /**
+   * Updates the app to the newest release, if one is available.
+   *
+   * <p>Returns the release information or {@code null} if no update is found. Performs the
+   * following actions:
+   *
+   * <ol>
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
+   *       dialog to begin the download.
+   *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
+   *       newest release is an AAB, directs the tester to the Play app to complete the download and
+   *       installation.
+   * </ol>
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods returns a failed {@link Task} with
+   * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+   */
   @NonNull
-  Task<AppDistributionRelease> checkForNewRelease();
+  UpdateTask updateIfNewReleaseAvailable();
 
+  /**
+   * Returns {@code true} if the App Distribution tester is signed in.
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods always returns {@code false}.
+   */
   boolean isTesterSignedIn();
 
+  /**
+   * Signs in the App Distribution tester. Presents the tester with a Google sign in UI.
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods returns a failed {@link Task} with
+   * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+   */
   @NonNull
   Task<Void> signInTester();
 
+  /**
+   * Signs out the App Distribution tester.
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods is a no-op.
+   */
   void signOutTester();
 
+  /**
+   * Returns an {@link AppDistributionRelease} if an update is available for the current signed in
+   * tester, or {@code null} otherwise.
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods returns a failed {@link Task} with
+   * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+   */
+  @NonNull
+  Task<AppDistributionRelease> checkForNewRelease();
+
+  /**
+   * Updates app to the {@link AppDistributionRelease} returned by {@link #checkForNewRelease}.
+   *
+   * <p>If the newest release is an APK, downloads the binary and starts an installation. If the
+   * newest release is an AAB, directs the tester to the Play app to complete the download and
+   * installation.
+   *
+   * <p>Fails the {@link Task} with
+   * {@link FirebaseAppDistributionException.Status#UPDATE_NOT_AVAILABLE} if no new release is
+   * cached from {@link #checkForNewRelease}.
+   *
+   * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
+   * your build, then this methods returns a failed {@link UpdateTask} with
+   * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+   */
   @NonNull
   UpdateTask updateApp();
-
-  @NonNull
-  UpdateTask updateIfNewReleaseAvailable();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
