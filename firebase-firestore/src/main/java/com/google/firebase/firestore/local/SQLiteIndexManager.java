@@ -292,16 +292,16 @@ final class SQLiteIndexManager implements IndexManager {
 
     Iterator<FieldIndex> it = fieldIndexes.iterator();
     IndexOffset minOffset = it.next().getIndexState().getOffset();
-    int minBatchId = minOffset.getLargestBatchId();
+    int maxBatchId = minOffset.getLargestBatchId();
     while (it.hasNext()) {
       IndexOffset newOffset = it.next().getIndexState().getOffset();
       if (newOffset.compareTo(minOffset) < 0) {
         minOffset = newOffset;
       }
-      minBatchId = Math.max(newOffset.getLargestBatchId(), minBatchId);
+      maxBatchId = Math.max(newOffset.getLargestBatchId(), maxBatchId);
     }
 
-    return IndexOffset.create(minOffset.getReadTime(), minOffset.getDocumentKey(), minBatchId);
+    return IndexOffset.create(minOffset.getReadTime(), minOffset.getDocumentKey(), maxBatchId);
   }
 
   @Override
