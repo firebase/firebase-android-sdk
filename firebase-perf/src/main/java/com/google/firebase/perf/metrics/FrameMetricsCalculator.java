@@ -49,6 +49,19 @@ public class FrameMetricsCalculator {
     public int getTotalFrames() {
       return totalFrames;
     }
+
+    /**
+     * Subtracts frame-time counts of the argument object (that) from the current object (this).
+     *
+     * @param that the subtrahend PerfFrameMetrics object.
+     * @return difference of this and the argument.
+     */
+    public PerfFrameMetrics deltaFrameMetricsFromSnapshot(PerfFrameMetrics that) {
+      int newTotalFrames = this.totalFrames - that.getTotalFrames();
+      int newSlowFrames = this.slowFrames - that.getSlowFrames();
+      int newFrozenFrames = this.frozenFrames - that.getFrozenFrames();
+      return new PerfFrameMetrics(newTotalFrames, newSlowFrames, newFrozenFrames);
+    }
   }
 
   /**
