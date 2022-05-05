@@ -51,7 +51,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   private static volatile AppStateMonitor instance;
-  private final boolean screenPerformanceRecordingSupported;
 
   private final WeakHashMap<Activity, Boolean> activityToResumedMap = new WeakHashMap<>();
   private final WeakHashMap<Activity, FrameMetricsRecorder> activityToRecorderMap =
@@ -71,6 +70,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final TransportManager transportManager;
   private final ConfigResolver configResolver;
   private final Clock clock;
+  private final boolean screenPerformanceRecordingSupported;
 
   private Timer resumeTime; // The time app comes to foreground
   private Timer stopTime; // The time app goes to background
