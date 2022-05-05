@@ -40,13 +40,12 @@ import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
-import com.google.firebase.perf.util.Constants;
+import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.WeakHashMap;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -116,8 +115,8 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     Fragment testFragment = new FragmentMonitorMockFragment();
-    Assert.assertEquals(
-        "_st_FragmentMonitorMockFragment", monitor.getFragmentScreenTraceName(testFragment));
+    assertThat(monitor.getFragmentScreenTraceName(testFragment))
+        .isEqualTo("_st_FragmentMonitorMockFragment");
   }
 
   @Test
@@ -180,15 +179,12 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     verify(mockTransportManager, times(1))
         .log(argTraceMetric.capture(), nullable(ApplicationProcessState.class));
     TraceMetric metric = argTraceMetric.getValue();
-    Assert.assertEquals(
-        frameCounts1.getTotalFrames(),
-        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_TOTAL.toString()));
-    Assert.assertEquals(
-        frameCounts1.getSlowFrames(),
-        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_SLOW.toString()));
-    Assert.assertEquals(
-        frameCounts1.getFrozenFrames(),
-        (long) metric.getCountersMap().get(Constants.CounterNames.FRAMES_FROZEN.toString()));
+    assertThat((long) metric.getCountersMap().get(CounterNames.FRAMES_TOTAL.toString()))
+        .isEqualTo(frameCounts1.getTotalFrames());
+    assertThat((long) metric.getCountersMap().get(CounterNames.FRAMES_SLOW.toString()))
+        .isEqualTo(frameCounts1.getSlowFrames());
+    assertThat((long) metric.getCountersMap().get(CounterNames.FRAMES_FROZEN.toString()))
+        .isEqualTo(frameCounts1.getFrozenFrames());
   }
 
   /** Simulate call order of activity + fragment lifecycle events */
