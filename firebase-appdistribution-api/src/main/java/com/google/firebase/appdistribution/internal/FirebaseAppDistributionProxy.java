@@ -19,10 +19,12 @@ import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.AppDistributionRelease;
@@ -36,16 +38,16 @@ import com.google.firebase.inject.Provider;
 import java.util.concurrent.Executor;
 
 /**
- * This stub implementation of the Firebase App Distribution API delegates to the real
+ * This implementation of the Firebase App Distribution API proxies to the real
  * implementation ({@code FirebaseAppDistributionImpl}) provided by the
  * {@code com.google.firebase:firebase-appdistribution} artifact. If that artifact is not included
  * in the build then the stubs will return failed {@link Task Tasks}/{@link UpdateTask UpdateTasks}
  * with {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
  */
-public class FirebaseAppDistributionApi implements FirebaseAppDistribution {
+public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   private final Provider<FirebaseAppDistribution> firebaseAppDistributionImplProvider;
 
-  public FirebaseAppDistributionApi(
+  public FirebaseAppDistributionProxy(
       Provider<FirebaseAppDistribution> firebaseAppDistributionImplProvider) {
     this.firebaseAppDistributionImplProvider = firebaseAppDistributionImplProvider;
   }
@@ -112,6 +114,49 @@ public class FirebaseAppDistributionApi implements FirebaseAppDistribution {
 
   private static class NotImplementedUpdateTask extends UpdateTask {
     private final Task<Void> task = getNotImplementedTask();
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> continueWith(
+        @NonNull Continuation<Void, TContinuationResult> continuation) {
+      return task.continueWith(continuation);
+    }
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> continueWith(@NonNull Executor executor,
+        @NonNull Continuation<Void, TContinuationResult> continuation) {
+      return task.continueWith(executor, continuation);
+    }
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> continueWithTask(
+        @NonNull Continuation<Void, Task<TContinuationResult>> continuation) {
+      return task.continueWithTask(continuation);
+    }
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> continueWithTask(
+        @NonNull Executor executor,
+        @NonNull Continuation<Void, Task<TContinuationResult>> continuation) {
+      return task.continueWithTask(executor, continuation);
+    }
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
+        @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
+      return task.onSuccessTask(successContinuation);
+    }
+
+    @NonNull
+    @Override
+    public <TContinuationResult> Task<TContinuationResult> onSuccessTask(@NonNull Executor executor,
+        @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
+      return task.onSuccessTask(executor, successContinuation);
+    }
 
     @NonNull
     @Override

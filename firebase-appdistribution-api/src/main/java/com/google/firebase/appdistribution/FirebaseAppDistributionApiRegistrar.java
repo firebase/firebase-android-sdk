@@ -17,7 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
-import com.google.firebase.appdistribution.internal.FirebaseAppDistributionApi;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Registers FirebaseAppDistribution.
+ * Registers {@link FirebaseAppDistributionProxy}.
  *
  * @hide
  */
@@ -37,9 +37,9 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseAppDistributionApi.class)
+        Component.builder(FirebaseAppDistributionProxy.class)
             .add(Dependency.optionalProvider(FirebaseAppDistribution.class))
-            .factory(this::buildFirebaseAppDistributionApi)
+            .factory(this::buildFirebaseAppDistributionProxy)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -47,7 +47,7 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-appdistribution-api", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistributionApi buildFirebaseAppDistributionApi(ComponentContainer container) {
-    return new FirebaseAppDistributionApi(container.getProvider(FirebaseAppDistribution.class));
+  private FirebaseAppDistributionProxy buildFirebaseAppDistributionProxy(ComponentContainer container) {
+    return new FirebaseAppDistributionProxy(container.getProvider(FirebaseAppDistribution.class));
   }
 }

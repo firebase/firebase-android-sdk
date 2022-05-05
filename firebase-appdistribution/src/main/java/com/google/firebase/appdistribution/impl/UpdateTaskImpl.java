@@ -19,10 +19,12 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.TaskExecutors;
@@ -200,6 +202,50 @@ class UpdateTaskImpl extends UpdateTask {
       @NonNull Activity activity, @NonNull OnCanceledListener onCanceledListener) {
     return getTask().addOnCanceledListener(activity, onCanceledListener);
   }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> continueWith(
+      @NonNull Continuation<Void, TContinuationResult> continuation) {
+    return getTask().continueWith(continuation);
+  }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> continueWith(@NonNull Executor executor,
+      @NonNull Continuation<Void, TContinuationResult> continuation) {
+    return getTask().continueWith(executor, continuation);
+  }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> continueWithTask(
+      @NonNull Continuation<Void, Task<TContinuationResult>> continuation) {
+    return getTask().continueWithTask(continuation);
+  }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> continueWithTask(
+      @NonNull Executor executor,
+      @NonNull Continuation<Void, Task<TContinuationResult>> continuation) {
+    return getTask().continueWithTask(executor, continuation);
+  }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
+      @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
+    return getTask().onSuccessTask(successContinuation);
+  }
+
+  @NonNull
+  @Override
+  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(@NonNull Executor executor,
+      @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
+    return getTask().onSuccessTask(executor, successContinuation);
+  }
+
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void setResult() {
