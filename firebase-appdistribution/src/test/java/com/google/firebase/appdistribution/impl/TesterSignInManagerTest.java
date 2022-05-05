@@ -70,8 +70,8 @@ public class TesterSignInManagerTest {
   public static final String TEST_URL =
       String.format(
           "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts"
-              + "?appName=com.google.firebase.appdistribution.test"
-              + "&packageName=com.google.firebase.appdistribution.test"
+              + "?appName=com.google.firebase.appdistribution.impl.test"
+              + "&packageName=com.google.firebase.appdistribution.impl.test"
               + "&newRedirectScheme=true",
           TEST_APP_ID_1, TEST_FID_1);
 

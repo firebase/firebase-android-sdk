@@ -56,7 +56,7 @@ public class ApkInstallerTests {
 
     assertFalse(installTask.isComplete());
     assertEquals(
-        "com.google.firebase.appdistribution.internal.InstallActivity",
+        "com.google.firebase.appdistribution.impl.InstallActivity",
         installIntent.getComponent().getShortClassName());
     assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
   }
@@ -72,7 +72,7 @@ public class ApkInstallerTests {
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertEquals(
-        "com.google.firebase.appdistribution.internal.InstallActivity",
+        "com.google.firebase.appdistribution.impl.InstallActivity",
         installIntent.getComponent().getShortClassName());
     assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
     assertFalse(installTask.isComplete());
