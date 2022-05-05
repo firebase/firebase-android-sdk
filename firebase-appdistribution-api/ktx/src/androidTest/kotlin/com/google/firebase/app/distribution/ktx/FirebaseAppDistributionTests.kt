@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.ktx
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.appdistribution.FirebaseAppDistribution
@@ -68,7 +69,7 @@ abstract class BaseTestCase {
 class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun appDistribution_default_callsDefaultGetInstance() {
-        Truth.assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
+        assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
     }
 }
 
@@ -79,6 +80,6 @@ class LibraryVersionTest : BaseTestCase() {
     @Test
     fun libraryRegistrationAtRuntime() {
         val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        Truth.assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
 }

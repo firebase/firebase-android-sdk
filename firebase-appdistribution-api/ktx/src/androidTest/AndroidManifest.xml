@@ -9,5 +9,5 @@
 
   <instrumentation
     android:name="androidx.test.runner.AndroidJUnitRunner"
-    android:targetPackage="3com.google.firebase.appdistribution.ktx" />
+    android:targetPackage="com.google.firebase.appdistribution.ktx" />
 </manifest>

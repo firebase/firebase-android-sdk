@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionApi;
 
 /**
  * The Firebase App Distribution API provides methods to update the app to the most recent
@@ -113,6 +114,6 @@ public interface FirebaseAppDistribution {
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
   static FirebaseAppDistribution getInstance() {
-    return FirebaseApp.getInstance().get(FirebaseAppDistribution.class);
+    return FirebaseApp.getInstance().get(FirebaseAppDistributionApi.class);
   }
 }
