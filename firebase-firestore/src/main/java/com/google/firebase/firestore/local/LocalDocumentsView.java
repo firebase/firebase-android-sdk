@@ -91,7 +91,7 @@ class LocalDocumentsView {
     Overlay overlay = documentOverlayCache.getOverlay(key);
     MutableDocument document = getBaseDocument(key, overlay);
     if (overlay != null) {
-      overlay.getMutation().applyToLocalView(document, null, Timestamp.now());
+      overlay.getMutation().applyToLocalView(document, FieldMask.EMPTY, Timestamp.now());
     }
     return document;
   }
@@ -171,7 +171,9 @@ class LocalDocumentsView {
         recalculateDocuments.put(doc.getKey(), doc);
       } else if (overlay != null) {
         mutatedFields.put(doc.getKey(), overlay.getMutation().getFieldMask());
-        overlay.getMutation().applyToLocalView(doc, null, Timestamp.now());
+        overlay
+            .getMutation()
+            .applyToLocalView(doc, overlay.getMutation().getFieldMask(), Timestamp.now());
       }
     }
 
@@ -375,7 +377,9 @@ class LocalDocumentsView {
     for (Map.Entry<DocumentKey, MutableDocument> docEntry : remoteDocuments.entrySet()) {
       Overlay overlay = overlays.get(docEntry.getKey());
       if (overlay != null) {
-        overlay.getMutation().applyToLocalView(docEntry.getValue(), null, Timestamp.now());
+        overlay
+            .getMutation()
+            .applyToLocalView(docEntry.getValue(), FieldMask.EMPTY, Timestamp.now());
       }
       // Finally, insert the documents that still match the query
       if (query.matches(docEntry.getValue())) {
