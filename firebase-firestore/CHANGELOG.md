@@ -2,8 +2,9 @@ Android changes are not released automatically. Ensure that changes are released
 by opting into a release at 
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
-# Unreleased
+# 24.1.2
 - [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
+- [feature] Added customization support for `FirebaseFirestore.runTransaction`.
 
 # 24.1.1
 - [fixed] Fixed an issue in the experimental index engine that might have
@@ -17,7 +18,6 @@ by opting into a release at
   JSON index definition exported by the Firestore CLI. Queries against the
   cache are executed using an index once the asynchronous operation to generate
   the index entries completes.
-- [fixed] Fixed missing document fields issue with offline overlays (#3528)
 
 # 24.0.2
 - [fixed] Fixed an issue of long grpc reconnection period, when App moves to
