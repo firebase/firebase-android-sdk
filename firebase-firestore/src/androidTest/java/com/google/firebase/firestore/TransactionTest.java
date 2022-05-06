@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -29,7 +30,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.core.TransactionRunner;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import java.util.ArrayList;
@@ -651,7 +651,38 @@ public class TransactionTest {
 
     Exception e = waitForException(transactionTask);
     assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
-    assertEquals(TransactionRunner.DEFAULT_MAX_ATTEMPTS_COUNT, count.get());
+    assertEquals(TransactionOptions.DEFAULT_MAX_ATTEMPTS_COUNT, count.get());
+  }
+
+  @Test
+  public void testMakesOptionSpecifiedMaxAttempts() {
+    TransactionOptions options = new TransactionOptions.Builder().setMaxAttempts(1).build();
+
+    FirebaseFirestore firestore = testFirestore();
+    DocumentReference doc1 = firestore.collection("counters").document();
+    AtomicInteger count = new AtomicInteger(0);
+    waitFor(doc1.set(map("count", 15)));
+    Task<Void> transactionTask =
+        firestore.runTransaction(
+            options,
+            transaction -> {
+              // Get the first doc.
+              transaction.get(doc1);
+              // Do a write outside of the transaction to cause the transaction to fail.
+              waitFor(doc1.set(map("count", 1234 + count.incrementAndGet())));
+              return null;
+            });
+
+    Exception e = waitForException(transactionTask);
+    assertEquals(Code.FAILED_PRECONDITION, ((FirebaseFirestoreException) e).getCode());
+    assertEquals(options.getMaxAttempts(), count.get());
+  }
+
+  @Test
+  public void testTransactionOptionsZeroMaxAttempts_shouldThrowIllegalArgumentException() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new TransactionOptions.Builder().setMaxAttempts(0).build());
   }
 
   @Test

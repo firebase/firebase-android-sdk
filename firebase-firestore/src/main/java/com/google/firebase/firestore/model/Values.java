@@ -228,28 +228,36 @@ public class Values {
     }
   }
 
-  public static @Nullable Value max(@Nullable Value left, @Nullable Value right) {
-    if (left == null && right == null) {
-      return null;
-    } else if (left == null) {
-      return right;
-    } else if (right == null) {
-      return left;
-    } else {
-      return compare(left, right) > 0 ? left : right;
+  public static int lowerBoundCompare(
+      Value left, boolean leftInclusive, Value right, boolean rightInclusive) {
+    int cmp = compare(left, right);
+    if (cmp != 0) {
+      return cmp;
     }
+
+    if (leftInclusive && !rightInclusive) {
+      return -1;
+    } else if (!leftInclusive && rightInclusive) {
+      return 1;
+    }
+
+    return 0;
   }
 
-  public static @Nullable Value min(@Nullable Value left, @Nullable Value right) {
-    if (left == null && right == null) {
-      return null;
-    } else if (left == null) {
-      return right;
-    } else if (right == null) {
-      return left;
-    } else {
-      return compare(left, right) < 0 ? left : right;
+  public static int upperBoundCompare(
+      Value left, boolean leftInclusive, Value right, boolean rightInclusive) {
+    int cmp = compare(left, right);
+    if (cmp != 0) {
+      return cmp;
     }
+
+    if (leftInclusive && !rightInclusive) {
+      return 1;
+    } else if (!leftInclusive && rightInclusive) {
+      return -1;
+    }
+
+    return 0;
   }
 
   private static int compareNumbers(Value left, Value right) {

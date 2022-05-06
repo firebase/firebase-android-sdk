@@ -405,9 +405,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Executes the given updateFunction and then attempts to commit the changes applied within the
-   * transaction. If any document read within the transaction has changed, the updateFunction will
-   * be retried. If it fails to commit after 5 attempts, the transaction will fail.
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after 5 attempts (the default failure
+   * limit), the transaction will fail.
    *
    * <p>The maximum number of writes allowed in a single transaction is 500, but note that each
    * usage of {@link FieldValue#serverTimestamp()}, {@link FieldValue#arrayUnion(Object...)}, {@link
@@ -419,7 +420,7 @@ public class FirebaseFirestore {
    * @return The task returned from the updateFunction.
    */
   private <ResultT> Task<ResultT> runTransaction(
-      Transaction.Function<ResultT> updateFunction, Executor executor) {
+      TransactionOptions options, Transaction.Function<ResultT> updateFunction, Executor executor) {
     ensureClientConfigured();
 
     // We wrap the function they provide in order to
@@ -434,13 +435,15 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(wrappedUpdateFunction);
+    return client.transaction(options, wrappedUpdateFunction);
   }
 
   /**
-   * Executes the given updateFunction and then attempts to commit the changes applied within the
-   * transaction. If any document read within the transaction has changed, the updateFunction will
-   * be retried. If it fails to commit after 5 attempts, the transaction will fail.
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after 5 attempts (the default failure
+   * limit), the transaction will fail. To have a different number of retries, use the {@link
+   * FirebaseFirestore#runTransaction(TransactionOptions, Transaction.Function)} method instead.
    *
    * @param updateFunction The function to execute within the transaction context.
    * @return The task returned from the updateFunction.
@@ -448,9 +451,27 @@ public class FirebaseFirestore {
   @NonNull
   public <TResult> Task<TResult> runTransaction(
       @NonNull Transaction.Function<TResult> updateFunction) {
+    return runTransaction(TransactionOptions.DEFAULT, updateFunction);
+  }
+
+  /**
+   * Executes the given {@code updateFunction} and then attempts to commit the changes applied
+   * within the transaction. If any document read within the transaction has changed, the
+   * updateFunction will be retried. If it fails to commit after the maxmimum number of attempts
+   * specified in transactionOptions, the transaction will fail.
+   *
+   * @param options The transaction options for controlling execution.
+   * @param updateFunction The function to execute within the transaction context.
+   * @return The task returned from the updateFunction.
+   */
+  @NonNull
+  public <TResult> Task<TResult> runTransaction(
+      @NonNull TransactionOptions options, @NonNull Transaction.Function<TResult> updateFunction) {
     checkNotNull(updateFunction, "Provided transaction update function must not be null.");
     return runTransaction(
-        updateFunction, com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
+        options,
+        updateFunction,
+        com.google.firebase.firestore.core.Transaction.getDefaultExecutor());
   }
 
   /**

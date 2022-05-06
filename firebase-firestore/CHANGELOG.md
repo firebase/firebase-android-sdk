@@ -3,6 +3,9 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # 24.1.2
+# Unreleased
+- [changed] Added `TransactionOptions` to control how many times a transaction
+  will retry commits before failing.
 - [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
 - [feature] Added customization support for `FirebaseFirestore.runTransaction`.
 
@@ -18,6 +21,7 @@ by opting into a release at
   JSON index definition exported by the Firestore CLI. Queries against the
   cache are executed using an index once the asynchronous operation to generate
   the index entries completes.
+- [fixed] Fixed missing document fields issue with offline overlays (#3528)
 
 # 24.0.2
 - [fixed] Fixed an issue of long grpc reconnection period, when App moves to
