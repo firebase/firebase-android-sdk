@@ -212,8 +212,8 @@ class UpdateTaskImpl extends UpdateTask {
 
   @NonNull
   @Override
-  public <TContinuationResult> Task<TContinuationResult> continueWith(@NonNull Executor executor,
-      @NonNull Continuation<Void, TContinuationResult> continuation) {
+  public <TContinuationResult> Task<TContinuationResult> continueWith(
+      @NonNull Executor executor, @NonNull Continuation<Void, TContinuationResult> continuation) {
     return getTask().continueWith(executor, continuation);
   }
 
@@ -241,11 +241,11 @@ class UpdateTaskImpl extends UpdateTask {
 
   @NonNull
   @Override
-  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(@NonNull Executor executor,
+  public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
+      @NonNull Executor executor,
       @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
     return getTask().onSuccessTask(executor, successContinuation);
   }
-
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public void setResult() {

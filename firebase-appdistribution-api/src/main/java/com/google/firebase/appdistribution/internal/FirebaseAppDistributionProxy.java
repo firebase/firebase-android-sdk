@@ -15,10 +15,8 @@
 package com.google.firebase.appdistribution.internal;
 
 import android.app.Activity;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -28,21 +26,20 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.AppDistributionRelease;
+import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.inject.Provider;
-
 import java.util.concurrent.Executor;
 
 /**
- * This implementation of the Firebase App Distribution API proxies to the real
- * implementation ({@code FirebaseAppDistributionImpl}) provided by the
- * {@code com.google.firebase:firebase-appdistribution} artifact. If that artifact is not included
- * in the build then the stubs will return failed {@link Task Tasks}/{@link UpdateTask UpdateTasks}
- * with {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+ * This implementation of the Firebase App Distribution API proxies to the real implementation
+ * ({@code FirebaseAppDistributionImpl}) provided by the {@code
+ * com.google.firebase:firebase-appdistribution} artifact. If that artifact is not included in the
+ * build then the stubs will return failed {@link Task Tasks}/{@link UpdateTask UpdateTasks} with
+ * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
  */
 public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   private final Provider<FirebaseAppDistribution> firebaseAppDistributionImplProvider;
@@ -95,7 +92,6 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
     return firebaseAppDistributionImplProvider.get().checkForNewRelease();
   }
 
-
   @NonNull
   @Override
   public UpdateTask updateApp() {
@@ -124,8 +120,8 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
 
     @NonNull
     @Override
-    public <TContinuationResult> Task<TContinuationResult> continueWith(@NonNull Executor executor,
-        @NonNull Continuation<Void, TContinuationResult> continuation) {
+    public <TContinuationResult> Task<TContinuationResult> continueWith(
+        @NonNull Executor executor, @NonNull Continuation<Void, TContinuationResult> continuation) {
       return task.continueWith(executor, continuation);
     }
 
@@ -153,7 +149,8 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
 
     @NonNull
     @Override
-    public <TContinuationResult> Task<TContinuationResult> onSuccessTask(@NonNull Executor executor,
+    public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
+        @NonNull Executor executor,
         @NonNull SuccessContinuation<Void, TContinuationResult> successContinuation) {
       return task.onSuccessTask(executor, successContinuation);
     }

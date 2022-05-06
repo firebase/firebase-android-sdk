@@ -32,7 +32,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateStatus;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;

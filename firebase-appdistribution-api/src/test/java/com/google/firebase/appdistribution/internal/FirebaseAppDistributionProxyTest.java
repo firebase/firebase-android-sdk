@@ -18,14 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import android.app.Activity;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -90,9 +88,14 @@ public class FirebaseAppDistributionProxyTest {
     assertTaskListeners(updateTask);
 
     updateTask.addOnProgressListener(
-        up -> { throw new AssertionFailedError("UpdateTask should not update progress");});
-    updateTask.addOnProgressListener(executor,
-        up -> { throw new AssertionFailedError("UpdateTask should not update progress");});
+        up -> {
+          throw new AssertionFailedError("UpdateTask should not update progress");
+        });
+    updateTask.addOnProgressListener(
+        executor,
+        up -> {
+          throw new AssertionFailedError("UpdateTask should not update progress");
+        });
   }
 
   private void assertTaskListeners(Task<?> task) {
@@ -112,11 +115,13 @@ public class FirebaseAppDistributionProxyTest {
         r -> {
           throw new AssertionFailedError("UpdateTask should not call success listener");
         });
-    task.addOnSuccessListener(executor,
+    task.addOnSuccessListener(
+        executor,
         r -> {
           throw new AssertionFailedError("UpdateTask should not call success listener");
         });
-    task.addOnSuccessListener(activity,
+    task.addOnSuccessListener(
+        activity,
         r -> {
           throw new AssertionFailedError("UpdateTask should not call success listener");
         });
@@ -125,11 +130,13 @@ public class FirebaseAppDistributionProxyTest {
         () -> {
           throw new AssertionFailedError("UpdateTask should not call canceled listener");
         });
-    task.addOnCanceledListener(executor,
+    task.addOnCanceledListener(
+        executor,
         () -> {
           throw new AssertionFailedError("UpdateTask should not call canceled listener");
         });
-    task.addOnCanceledListener(activity,
+    task.addOnCanceledListener(
+        activity,
         () -> {
           throw new AssertionFailedError("UpdateTask should not call canceled listener");
         });
@@ -145,7 +152,6 @@ public class FirebaseAppDistributionProxyTest {
     task.onSuccessTask(result -> Tasks.forResult(null));
     task.onSuccessTask(executor, result -> Tasks.forResult(null));
   }
-
 
   private void assertTaskFailsWithNotImplemented(Task task) {
     assertThat(task.isSuccessful()).isFalse();

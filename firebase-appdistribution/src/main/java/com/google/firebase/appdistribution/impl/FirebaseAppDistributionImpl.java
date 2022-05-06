@@ -44,8 +44,8 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 
 /**
- * This class is the "real" implementation of the Firebase App Distribution API which should
- * only be included in pre-release builds.
+ * This class is the "real" implementation of the Firebase App Distribution API which should only be
+ * included in pre-release builds.
  */
 class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 

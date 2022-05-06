@@ -23,7 +23,6 @@ import android.provider.Settings;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
-
 import java.io.File;
 
 /**

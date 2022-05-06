@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
-
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -47,7 +46,8 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create("fire-appdistribution-api", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistributionProxy buildFirebaseAppDistributionProxy(ComponentContainer container) {
+  private FirebaseAppDistributionProxy buildFirebaseAppDistributionProxy(
+      ComponentContainer container) {
     return new FirebaseAppDistributionProxy(container.getProvider(FirebaseAppDistribution.class));
   }
 }

@@ -28,7 +28,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.UpdateStatus;
-
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;

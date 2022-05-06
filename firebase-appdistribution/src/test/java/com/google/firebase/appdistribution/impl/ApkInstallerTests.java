@@ -22,7 +22,6 @@ import android.content.Intent;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionServiceImplTest.TestActivity;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
