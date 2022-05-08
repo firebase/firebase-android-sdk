@@ -1,5 +1,5 @@
 .gradle/
-build/
+build/ 
 .idea/
 *.iml
 captures/
