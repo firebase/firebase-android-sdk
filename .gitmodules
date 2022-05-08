@@ -7,3 +7,4 @@
 [submodule "firebase-crashlytics-ndk/src/third_party/lss"]
 	path = firebase-crashlytics-ndk/src/third_party/lss
 	url = https://chromium.googlesource.com/linux-syscall-support.git
+ 
