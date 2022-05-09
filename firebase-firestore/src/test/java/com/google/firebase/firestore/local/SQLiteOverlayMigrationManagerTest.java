@@ -25,6 +25,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.auth.User;
@@ -108,6 +109,46 @@ public class SQLiteOverlayMigrationManagerTest {
     SQLiteOverlayMigrationManager migrationManager =
         (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
     assertFalse(migrationManager.hasPendingOverlayMigration());
+  }
+
+  @Test
+  public void testSkipsIfAlreadyMigrated() {
+    writeRemoteDocument(doc("foo/bar", 2, map("it", "original")));
+    writeMutation(setMutation("foo/bar", map("foo", "bar")));
+
+    // Switch to new persistence and run migrations
+    this.persistence.shutdown();
+    persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
+    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
+    localStore.start();
+
+    assertEquals(
+        setMutation("foo/bar", map("foo", "bar")),
+        persistence
+            .getDocumentOverlayCache(User.UNAUTHENTICATED)
+            .getOverlay(key("foo/bar"))
+            .getMutation());
+
+    // Delete the overlay to verify migration is skipped the second time.
+    persistence.getDocumentOverlayCache(User.UNAUTHENTICATED).removeOverlaysForBatchId(1);
+
+    // Switch to new persistence and run migrations which should be a no-op.
+    this.persistence.shutdown();
+    persistence = PersistenceTestHelpers.createSQLitePersistence("test-data-migration");
+    indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
+    localStore =
+        new LocalStore(persistence, indexBackfiller, new QueryEngine(), User.UNAUTHENTICATED);
+    localStore.start();
+
+    SQLiteOverlayMigrationManager migrationManager =
+        (SQLiteOverlayMigrationManager) persistence.getOverlayMigrationManager();
+    assertFalse(migrationManager.hasPendingOverlayMigration());
+
+    // We deleted the overlay earlier and the migration is not run again, so we get a null.
+    assertNull(
+        persistence.getDocumentOverlayCache(User.UNAUTHENTICATED).getOverlay(key("foo/bar")));
   }
 
   @Test

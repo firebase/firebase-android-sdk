@@ -46,6 +46,10 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
     db.runTransaction(
         "build overlays",
         () -> {
+          if (!hasPendingOverlayMigration()) {
+            return;
+          }
+
           Set<String> userIds = getAllUserIds();
           RemoteDocumentCache remoteDocumentCache = db.getRemoteDocumentCache();
           for (String uid : userIds) {
