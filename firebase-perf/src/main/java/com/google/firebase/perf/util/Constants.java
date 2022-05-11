@@ -58,6 +58,9 @@ public class Constants {
   /** Attribute key for the hosting activity of a fragment screen trace. */
   public static final String ACTIVITY_ATTRIBUTE_KEY = "Hosting_activity";
 
+  /** Attribute value for when the current fragment does not have a parent fragment. */
+  public static final String NO_PARENT_FRAGMENT = "No parent";
+
   /** frames longer than 16 ms are slow frames */
   public static final int SLOW_FRAME_TIME = 16;
 
