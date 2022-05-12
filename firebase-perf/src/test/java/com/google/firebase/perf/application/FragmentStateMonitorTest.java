@@ -40,6 +40,7 @@ import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
+import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.Timer;
@@ -241,6 +242,21 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
     fragmentMonitor.onFragmentPaused(mockFragmentManager, mockFragment);
     verify(mockTransportManager, times(0)).log(any(TraceMetric.class), any());
+  }
+
+  @Test
+  public void fragmentTraceCreation_addsSpecialAttributeValue_whenFragmentDoesNotHaveParent() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
+    when(recorder.stopFragment(any())).thenReturn(Optional.of(frameCounts1));
+
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+
+    verify(mockTransportManager, times(1)).log(argTraceMetric.capture(), any());
+    TraceMetric metric = argTraceMetric.getValue();
+    assertThat(metric.getCustomAttributesMap().get(Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY))
+        .isEqualTo(Constants.PARENT_FRAGMENT_ATTRIBUTE_VALUE_NONE);
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {

@@ -69,7 +69,9 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     Fragment parent = f.getParentFragment();
     fragmentTrace.putAttribute(
         Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY,
-        parent == null ? Constants.NO_PARENT_FRAGMENT : parent.getClass().getSimpleName());
+        parent == null
+            ? Constants.PARENT_FRAGMENT_ATTRIBUTE_VALUE_NONE
+            : parent.getClass().getSimpleName());
     if (f.getActivity() != null) {
       fragmentTrace.putAttribute(
           Constants.ACTIVITY_ATTRIBUTE_KEY, f.getActivity().getClass().getSimpleName());
