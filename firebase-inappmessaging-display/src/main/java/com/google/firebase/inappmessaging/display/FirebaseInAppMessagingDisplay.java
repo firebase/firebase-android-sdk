@@ -317,8 +317,9 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                 if (callbacks != null) {
                   Logging.logi("Calling callback for click action");
                   callbacks.messageClicked(action);
+                } else {
+                  launchUriIntent(activity, Uri.parse(action.getActionUrl()));
                 }
-                launchUriIntent(activity, Uri.parse(action.getActionUrl()));
                 notifyFiamClick();
                 // Ensure that we remove the displayed FIAM, and ensure that on re-load, the message
                 // isn't re-displayed
