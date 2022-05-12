@@ -130,7 +130,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
 
   public void testSanitizeName() {
     assertEquals(
-        sanitizeName("com.google.my.awesome.app:big.stuff.happens_here$%^"),
-        "com.google.my.awesome.app_big.stuff.happens_here___");
+        "com.google.my.awesome.app_big.stuff.Happens_Here123___",
+        sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"));
   }
 }
