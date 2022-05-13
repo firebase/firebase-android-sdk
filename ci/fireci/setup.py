@@ -25,13 +25,14 @@ setup(
     name='fireci',
     version='0.1',
     install_requires=[
+        'protobuf==3.19',
         'click==7.0',
-        'google-cloud-storage==1.38.0',
+        'google-cloud-storage==1.44.0',
         'numpy==1.19.5',
         'PyGithub==1.43.8',
         'pystache==0.5.4',
         'requests==2.23.0',
-        'PyYAML==5.4.1',
+        'PyYAML==6.0.0',
     ],
     packages=find_packages(exclude=['tests']),
     entry_points={
