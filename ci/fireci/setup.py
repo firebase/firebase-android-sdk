@@ -25,7 +25,7 @@ setup(
     name='fireci',
     version='0.1',
     install_requires=[
-        'protobuf==3.20',
+        'protobuf==3.19',
         'click==7.0',
         'google-cloud-storage==1.44.0',
         'numpy==1.19.5',
