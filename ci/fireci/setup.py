@@ -28,7 +28,7 @@ setup(
         'protobuf==3.19',
         'click==7.0',
         'google-cloud-storage==1.44.0',
-        'numpy==1.19.5',
+        'numpy==1.21.0',
         'PyGithub==1.43.8',
         'pystache==0.5.4',
         'requests==2.23.0',
