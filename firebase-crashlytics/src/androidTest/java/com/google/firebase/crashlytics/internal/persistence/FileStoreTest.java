@@ -14,11 +14,14 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import static com.google.firebase.crashlytics.internal.persistence.FileStore.sanitizeName;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
+@SuppressWarnings("ResultOfMethodCallIgnored") // Convenient use of files.
 public class FileStoreTest extends CrashlyticsTestCase {
   FileStore fileStore;
 
@@ -31,6 +34,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
   public void testGetCommonFile() {
     File commonFile = fileStore.getCommonFile("testCommonFile");
     assertFalse(commonFile.exists());
+    assertNotNull(commonFile.getParentFile());
     assertTrue(commonFile.getParentFile().exists());
   }
 
@@ -39,6 +43,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
     String filename = "testSessionFile";
     File sessionFile = fileStore.getSessionFile(sessionId, filename);
     assertFalse(sessionFile.exists());
+    assertNotNull(sessionFile.getParentFile());
     assertTrue(sessionFile.getParentFile().exists());
     assertEquals(sessionFile.getParentFile().getName(), sessionId);
 
@@ -121,5 +126,11 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertEquals(nativeReport, fileStore.getNativeReports().get(0));
     nativeReport.delete();
     assertEquals(0, fileStore.getNativeReports().size());
+  }
+
+  public void testSanitizeName() {
+    assertEquals(
+        "com.google.my.awesome.app_big.stuff.Happens_Here123___",
+        sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"));
   }
 }

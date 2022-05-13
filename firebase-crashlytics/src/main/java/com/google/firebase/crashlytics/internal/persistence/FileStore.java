@@ -14,7 +14,11 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import android.annotation.SuppressLint;
+import android.app.Application;
 import android.content.Context;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -31,7 +35,7 @@ import java.util.List;
  *
  * <ul>
  *   <li>"Common" files, that exist independent of a specific session id.
- *   <li>"Open session" files, which contain a varierty of temporary files specific ot a Crashlytics
+ *   <li>"Open session" files, which contain a variety of temporary files specific ot a Crashlytics
  *       session. These files may or may not eventually be combined into a Crashlytics crash report
  *       file.
  *   <li>"Report" files, which are processed reports, ready to be uploaded to Crashlytics servers.
@@ -48,46 +52,54 @@ import java.util.List;
  * convention, any use of new File(...) or similar outside of this class is a code smell.
  */
 public class FileStore {
-
-  private static final String FILES_PATH = ".com.google.firebase.crashlytics.files.v1";
+  private static final String CRASHLYTICS_PATH_V1 = ".com.google.firebase.crashlytics.files.v1";
+  private static final String CRASHLYTICS_PATH_V2 = ".com.google.firebase.crashlytics.files.v2";
   private static final String SESSIONS_PATH = "open-sessions";
   private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
   private static final String PRIORITY_REPORTS_PATH = "priority-reports";
   private static final String NATIVE_REPORTS_PATH = "native-reports";
 
-  private final File rootDir;
+  private final File filesDir;
+  private final File crashlyticsDir;
   private final File sessionsDir;
   private final File reportsDir;
   private final File priorityReportsDir;
   private final File nativeReportsDir;
 
   public FileStore(Context context) {
-    rootDir = prepareBaseDir(new File(context.getFilesDir(), FILES_PATH));
-    sessionsDir = prepareBaseDir(new File(rootDir, SESSIONS_PATH));
-    reportsDir = prepareBaseDir(new File(rootDir, REPORTS_PATH));
-    priorityReportsDir = prepareBaseDir(new File(rootDir, PRIORITY_REPORTS_PATH));
-    nativeReportsDir = prepareBaseDir(new File(rootDir, NATIVE_REPORTS_PATH));
+    filesDir = context.getFilesDir();
+    String crashlyticsPath =
+        useV2FileSystem()
+            ? CRASHLYTICS_PATH_V2 + File.pathSeparator + sanitizeName(Application.getProcessName())
+            : CRASHLYTICS_PATH_V1;
+    crashlyticsDir = prepareBaseDir(new File(filesDir, crashlyticsPath));
+    sessionsDir = prepareBaseDir(new File(crashlyticsDir, SESSIONS_PATH));
+    reportsDir = prepareBaseDir(new File(crashlyticsDir, REPORTS_PATH));
+    priorityReportsDir = prepareBaseDir(new File(crashlyticsDir, PRIORITY_REPORTS_PATH));
+    nativeReportsDir = prepareBaseDir(new File(crashlyticsDir, NATIVE_REPORTS_PATH));
   }
 
   @VisibleForTesting
   public void deleteAllCrashlyticsFiles() {
-    recursiveDelete(rootDir);
+    recursiveDelete(crashlyticsDir);
   }
 
-  public void cleanupLegacyFiles() {
-    // Fixes b/195664514
-    // :TODO: consider removing this method in mid 2023, to give all clients time to upgrade
-    File[] legacyDirs =
-        new File[] {
-          new File(rootDir.getParent(), ".com.google.firebase.crashlytics"),
-          new File(rootDir.getParent(), ".com.google.firebase.crashlytics-ndk")
-        };
+  /** Clean up files from previous file systems. */
+  public void cleanupPreviousFileSystems() {
+    // Clean up pre-versioned file systems.
+    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics"));
+    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics-ndk"));
 
-    for (File legacyDir : legacyDirs) {
-      if (legacyDir.exists() && recursiveDelete(legacyDir)) {
-        Logger.getLogger().d("Deleted legacy Crashlytics files from " + legacyDir.getPath());
-      }
+    // Clean up v1 file system.
+    if (useV2FileSystem()) {
+      cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V1));
+    }
+  }
+
+  private void cleanupDir(File dir) {
+    if (dir.exists() && recursiveDelete(dir)) {
+      Logger.getLogger().d("Deleted previous Crashlytics file system: " + dir.getPath());
     }
   }
 
@@ -103,12 +115,12 @@ public class FileStore {
 
   /** @return internal File used by Crashlytics, that is not specific to a session */
   public File getCommonFile(String filename) {
-    return new File(rootDir, filename);
+    return new File(crashlyticsDir, filename);
   }
 
   /** @return all common (non session specific) files matching the given filter. */
   public List<File> getCommonFiles(FilenameFilter filter) {
-    return safeArrayToList(rootDir.listFiles(filter));
+    return safeArrayToList(crashlyticsDir.listFiles(filter));
   }
 
   private File getSessionDir(String sessionId) {
@@ -192,5 +204,16 @@ public class FileStore {
 
   private static <T> List<T> safeArrayToList(@Nullable T[] array) {
     return (array == null) ? Collections.emptyList() : Arrays.asList(array);
+  }
+
+  @SuppressLint("AnnotateVersionCheck")
+  private static boolean useV2FileSystem() {
+    return VERSION.SDK_INT >= VERSION_CODES.P;
+  }
+
+  /** Replace potentially unsafe chars with underscores to make a safe file name. */
+  @VisibleForTesting
+  static String sanitizeName(String filename) {
+    return filename.replaceAll("[^a-zA-Z0-9.]", "_");
   }
 }
