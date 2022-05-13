@@ -106,7 +106,7 @@ dependencies {
 
     androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"
-    androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:2.25.0"
+    androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:2.28.1"
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
