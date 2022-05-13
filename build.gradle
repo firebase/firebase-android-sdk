@@ -26,7 +26,7 @@ buildscript {
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
         }
-        jcenter()
+
     }
 
     dependencies {
@@ -74,10 +74,10 @@ configure(subprojects) {
     repositories {
         google()
         mavenLocal()
+        mavenCentral()
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
         }
-        jcenter()
     }
 
     apply plugin: "org.jlleitschuh.gradle.ktlint"
