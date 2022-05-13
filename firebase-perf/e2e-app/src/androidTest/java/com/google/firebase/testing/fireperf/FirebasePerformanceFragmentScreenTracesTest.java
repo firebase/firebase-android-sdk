@@ -79,6 +79,9 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     assertThat(activityRule.getScenario().getState())
         .isIn(Arrays.asList(State.CREATED, State.RESUMED));
     activityRule.getScenario().moveToState(State.CREATED);
+
+    // End Activity screen trace by relaunching the activity to ensure the screen trace is sent.
+    activityRule.getScenario().launch(FirebasePerfFragmentsActivity.class);
   }
 
   private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
