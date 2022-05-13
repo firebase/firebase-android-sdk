@@ -161,8 +161,8 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
     androidTestImplementation "io.grpc:grpc-testing:$grpcVersion"
-    androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.25.0'
-    androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.25.0'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
+    androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.28.1'
 
     androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 }
