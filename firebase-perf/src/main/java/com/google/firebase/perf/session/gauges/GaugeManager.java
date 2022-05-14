@@ -24,6 +24,7 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.CpuMetricReading;
@@ -81,6 +82,7 @@ public class GaugeManager {
       GaugeMetadataManager gaugeMetadataManager,
       Lazy<CpuGaugeCollector> cpuGaugeCollector,
       Lazy<MemoryGaugeCollector> memoryGaugeCollector) {
+    Timer timer = new Timer();
 
     this.gaugeManagerExecutor = gaugeManagerExecutor;
     this.transportManager = transportManager;
@@ -88,6 +90,8 @@ public class GaugeManager {
     this.gaugeMetadataManager = gaugeMetadataManager;
     this.cpuGaugeCollector = cpuGaugeCollector;
     this.memoryGaugeCollector = memoryGaugeCollector;
+
+    logger.info("GaugeManager initialized in %s us", timer.getDurationMicros());
   }
 
   /** Initializes GaugeMetadataManager which requires application context. */
@@ -97,6 +101,7 @@ public class GaugeManager {
 
   /** Returns the singleton instance of this class. */
   public static synchronized GaugeManager getInstance() {
+    logger.info("GaugeManager requested %s", Utils.invoker());
     return instance;
   }
 

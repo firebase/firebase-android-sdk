@@ -20,7 +20,10 @@ import androidx.annotation.Keep;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.gauges.GaugeManager;
+import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
@@ -35,6 +38,7 @@ import java.util.concurrent.Future;
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
 public class SessionManager extends AppStateUpdateHandler {
+  private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
@@ -48,6 +52,7 @@ public class SessionManager extends AppStateUpdateHandler {
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
+    logger.info("SessionManager requested %s", Utils.invoker());
     return instance;
   }
 
@@ -63,10 +68,15 @@ public class SessionManager extends AppStateUpdateHandler {
   @VisibleForTesting
   public SessionManager(
       GaugeManager gaugeManager, PerfSession perfSession, AppStateMonitor appStateMonitor) {
+    Timer timer = new Timer();
+
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
     this.appStateMonitor = appStateMonitor;
     registerForAppState();
+
+    logger.info("SessionManager initialized in %s us", timer.getDurationMicros());
+
   }
 
   /**

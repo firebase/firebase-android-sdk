@@ -41,6 +41,7 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -129,6 +130,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // See https://developer.android.com/studio/build/manifest-merge#node_markers for details.
   @NonNull
   public static FirebasePerformance getInstance() {
+    logger.info("FirebasePerformance requested %s", Utils.invoker());
     return FirebaseApp.getInstance().get(FirebasePerformance.class);
   }
 
@@ -165,6 +167,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       SessionManager sessionManager) {
+    Timer timer = new Timer();
 
     this.firebaseApp = firebaseApp;
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
@@ -199,6 +202,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
+
+    logger.info("FirebasePerformance initialized in %s us", timer.getDurationMicros());
   }
 
   /**

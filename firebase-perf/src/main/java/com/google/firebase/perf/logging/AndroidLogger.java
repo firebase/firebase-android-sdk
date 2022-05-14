@@ -15,6 +15,10 @@
 package com.google.firebase.perf.logging;
 
 import androidx.annotation.VisibleForTesting;
+
+import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
+
 import java.util.Locale;
 
 /** Firebase Performance logger that writes to logcat. */
@@ -31,6 +35,7 @@ public class AndroidLogger {
       synchronized (AndroidLogger.class) {
         if (instance == null) {
           instance = new AndroidLogger();
+          instance.info("AndroidLogger requested %s", Utils.invoker());
         }
       }
     }
@@ -40,7 +45,9 @@ public class AndroidLogger {
 
   @VisibleForTesting
   public AndroidLogger(LogWrapper logWrapper) {
+    Timer timer = new Timer();
     this.logWrapper = (logWrapper == null) ? LogWrapper.getInstance() : logWrapper;
+    this.logWrapper.i("Initialized AndroidLogger in " + timer.getDurationMicros() + " us");
   }
 
   private AndroidLogger() {

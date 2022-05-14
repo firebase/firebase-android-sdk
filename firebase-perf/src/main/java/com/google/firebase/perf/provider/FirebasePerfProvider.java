@@ -31,6 +31,7 @@ import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.FirebasePerformanceInitializer;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Clock;
@@ -39,6 +40,7 @@ import com.google.firebase.perf.util.Timer;
 /** Initializes app start time at app startup time. */
 @Keep
 public class FirebasePerfProvider extends ContentProvider {
+  private static final AndroidLogger logger = AndroidLogger.getInstance();
 
   private static final Timer APP_START_TIME = new Clock().getTime();
   /** Should match the {@link FirebasePerfProvider} authority if $androidId is empty. */
@@ -54,6 +56,8 @@ public class FirebasePerfProvider extends ContentProvider {
 
   @Override
   public void attachInfo(Context context, ProviderInfo info) {
+    logger.setLogcatEnabled(true);
+
     // super.attachInfo calls onCreate(). Fail as early as possible.
     checkContentProviderAuthority(info);
     super.attachInfo(context, info);

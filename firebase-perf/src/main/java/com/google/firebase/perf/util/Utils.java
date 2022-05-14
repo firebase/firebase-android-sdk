@@ -146,4 +146,17 @@ public class Utils {
       throw new IllegalArgumentException(errorMessage);
     }
   }
+
+  public static String invoker() {
+    StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+    StringBuilder builder = new StringBuilder("\n");
+    for (int i = 3, length = elements.length; i < length; i++) {
+      String clazz = elements[i].getClassName().replace("com.google.firebase", "c.g.f");
+      String method = elements[i].getMethodName();
+      String file = elements[i].getFileName();
+      int line = elements[i].getLineNumber();
+      builder.append(String.format("%s#%s(%s:%s)\n", clazz, method, file, line));
+    }
+    return builder.toString();
+  }
 }

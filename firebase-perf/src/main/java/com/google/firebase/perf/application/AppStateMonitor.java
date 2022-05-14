@@ -34,6 +34,7 @@ import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.perf.util.ScreenTraceUtil;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
@@ -81,10 +82,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean isColdStart = true;
 
   public static AppStateMonitor getInstance() {
+
+    logger.info("AppStateMonitor requested: %s", Utils.invoker());
+
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
+          Timer timer = new Timer();
           instance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
+          logger.info("AppStateMonitor initialized in %s us", timer.getDurationMicros());
         }
       }
     }

@@ -42,6 +42,8 @@ import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.util.Rate;
+import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
 import com.google.firebase.perf.v1.AndroidApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationInfo;
 import com.google.firebase.perf.v1.ApplicationProcessState;
@@ -126,6 +128,8 @@ public class TransportManager implements AppStateCallback {
   private boolean isForegroundState = false;
 
   private TransportManager() {
+    Timer timer = new Timer();
+
     // MAX_POOL_SIZE must always be 1. We only allow one thread in this Executor. The reason
     // we specifically use a ThreadPoolExecutor rather than generating one from ExecutorService
     // because ThreadPoolExecutor provides the keepAliveTime timeout mechanism. If any threads
@@ -143,9 +147,12 @@ public class TransportManager implements AppStateCallback {
     cacheMap.put(
         KEY_AVAILABLE_NETWORK_REQUESTS_FOR_CACHING, MAX_NETWORK_REQUEST_METRICS_CACHE_SIZE);
     cacheMap.put(KEY_AVAILABLE_GAUGES_FOR_CACHING, MAX_GAUGE_METRICS_CACHE_SIZE);
+
+    logger.info("TransportManager initialized in %s us", timer.getDurationMicros());
   }
 
   public static TransportManager getInstance() {
+    logger.info("TransportManager requested %s", Utils.invoker());
     return instance;
   }
 

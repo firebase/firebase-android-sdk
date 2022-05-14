@@ -22,6 +22,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Optional;
+import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -46,10 +49,15 @@ public class DeviceCacheManager {
 
   @VisibleForTesting
   public DeviceCacheManager(ExecutorService serialExecutor) {
+    Timer timer = new Timer();
+
     this.serialExecutor = serialExecutor;
+
+    logger.info("DeviceCacheManager initialized in %s us", timer.getDurationMicros());
   }
 
   public static synchronized DeviceCacheManager getInstance() {
+    logger.info("DeviceCacheManager requested %s", Utils.invoker());
     if (instance == null) {
       instance = new DeviceCacheManager(Executors.newSingleThreadExecutor());
     }

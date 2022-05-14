@@ -37,6 +37,8 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
+import com.google.firebase.perf.util.Utils;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -94,8 +96,12 @@ public class Trace extends AppStateUpdateHandler
    */
   @NonNull
   public static Trace create(@NonNull String name) {
+    logger.info("Creating a Trace instance (%s): %s", name, Utils.invoker());
+    Timer timer = new Timer();
     // Make a copy of input name so it does not hold onto the reference which is thread-safer.
-    return new Trace(name);
+    Trace result =  new Trace(name);
+    logger.info("The Trace instance (%s) created in %s us", name, timer.getDurationMicros());
+    return result;
   }
 
   private Trace(@NonNull String name) {

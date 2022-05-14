@@ -51,5 +51,7 @@ class LogWrapper {
     Log.e(LOG_TAG, msg);
   }
 
-  private LogWrapper() {}
+  private LogWrapper() {
+    Log.i(LOG_TAG, "Initialized LogWrapper");
+  }
 }

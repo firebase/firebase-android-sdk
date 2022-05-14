@@ -43,6 +43,7 @@ import com.google.firebase.perf.config.ConfigurationConstants.TraceSamplingRate;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
+import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.Utils;
 
 /**
@@ -73,14 +74,20 @@ public class ConfigResolver {
       @Nullable RemoteConfigManager remoteConfigManager,
       @Nullable ImmutableBundle metadataBundle,
       @Nullable DeviceCacheManager deviceCacheManager) {
+    Timer timer = new Timer();
+
     this.remoteConfigManager =
         remoteConfigManager == null ? RemoteConfigManager.getInstance() : remoteConfigManager;
     this.metadataBundle = metadataBundle == null ? new ImmutableBundle() : metadataBundle;
     this.deviceCacheManager =
         deviceCacheManager == null ? DeviceCacheManager.getInstance() : deviceCacheManager;
+
+    logger.info("ConfigResolver initialized in %s us", timer.getDurationMicros());
   }
 
   public static synchronized ConfigResolver getInstance() {
+    logger.info("ConfigResolver requested %s", Utils.invoker());
+
     if (instance == null) {
       instance = new ConfigResolver(null, null, null);
     }
