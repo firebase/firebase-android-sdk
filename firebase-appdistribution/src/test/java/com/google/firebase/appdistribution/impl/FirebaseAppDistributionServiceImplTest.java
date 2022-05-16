@@ -56,6 +56,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
+import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateProgress;
@@ -452,9 +453,9 @@ public class FirebaseAppDistributionServiceImplTest {
   public void updateIfNewReleaseAvailable_receiveProgressUpdateFromUpdateApp() {
     AppDistributionReleaseInternal newRelease = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
-    UpdateTaskImpl mockTask = new UpdateTaskImpl();
-    when(mockAabUpdater.updateAab(newRelease)).thenReturn(mockTask);
-    mockTask.updateProgress(
+    UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
+    when(mockAabUpdater.updateAab(newRelease)).thenReturn(updateTaskToReturn);
+    updateTaskToReturn.updateProgress(
         UpdateProgressImpl.builder()
             .setApkFileTotalBytes(1)
             .setApkBytesDownloaded(1)

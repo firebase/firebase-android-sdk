@@ -132,7 +132,7 @@ public class ApkUpdaterTest {
     IOException caughtException = new IOException("error");
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
@@ -146,7 +146,7 @@ public class ApkUpdaterTest {
   public void updateApk_whenResponseStatusIsError_setsDownloadFailure() throws Exception {
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(400);
 
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, false);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
@@ -160,7 +160,7 @@ public class ApkUpdaterTest {
     IOException caughtException = new IOException("error");
     when(mockHttpsUrlConnection.getInputStream()).thenThrow(caughtException);
 
-    UpdateTaskImpl updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
+    UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
     updateTask.addOnCompleteListener(testExecutor, onCompleteListener);
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
