@@ -245,7 +245,24 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void fragmentTraceCreation_addsSpecialAttributeValue_whenFragmentDoesNotHaveParent() {
+  public void fragmentTraceCreation_hasParentFragment_addsParentFragmentAttribute() {
+    FragmentStateMonitor monitor =
+        new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
+    when(recorder.stopFragment(any())).thenReturn(Optional.of(frameCounts1));
+    Fragment mockParent = mock(Fragment.class);
+    when(mockFragment.getParentFragment()).thenReturn(mockParent);
+
+    monitor.onFragmentResumed(mockFragmentManager, mockFragment);
+    monitor.onFragmentPaused(mockFragmentManager, mockFragment);
+
+    verify(mockTransportManager, times(1)).log(argTraceMetric.capture(), any());
+    TraceMetric metric = argTraceMetric.getValue();
+    assertThat(metric.getCustomAttributesMap().get(Constants.PARENT_FRAGMENT_ATTRIBUTE_KEY))
+        .isEqualTo("Fragment");
+  }
+
+  @Test
+  public void fragmentTraceCreation_noParentFragment_addsSpecialAttributeValue() {
     FragmentStateMonitor monitor =
         new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder);
     when(recorder.stopFragment(any())).thenReturn(Optional.of(frameCounts1));
