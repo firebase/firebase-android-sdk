@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 
 /** A listener that is called periodically during execution of the {@link UpdateTask}. */
-public interface OnProgressListener {
+interface OnProgressListener {
   /** Called periodically for progress update and state changes of the {@link UpdateTask}. */
   void onProgressUpdate(@NonNull UpdateProgress updateState);
 }

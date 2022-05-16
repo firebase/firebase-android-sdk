@@ -36,7 +36,6 @@ abstract class UpdateProgressImpl implements UpdateProgress {
    *     release is available.
    */
   @Override
-  @NonNull
   public abstract long getApkBytesDownloaded();
 
   /**
@@ -46,7 +45,6 @@ abstract class UpdateProgressImpl implements UpdateProgress {
    *     is available.
    */
   @Override
-  @NonNull
   public abstract long getApkFileTotalBytes();
 
   /** Returns the current {@link UpdateStatus} of the update. */

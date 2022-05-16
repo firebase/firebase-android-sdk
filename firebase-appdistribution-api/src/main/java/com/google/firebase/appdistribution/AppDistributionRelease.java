@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
  * The release information returned by {@link FirebaseAppDistribution#checkForNewRelease} when a new
  * version is available for the signed in tester.
  */
-public interface AppDistributionRelease {
+interface AppDistributionRelease {
 
   /** Returns the short bundle version of this build (example: 1.0.0). */
   @NonNull
