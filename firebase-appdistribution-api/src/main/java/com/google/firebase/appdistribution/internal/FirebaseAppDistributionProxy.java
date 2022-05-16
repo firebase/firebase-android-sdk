@@ -14,25 +14,13 @@
 
 package com.google.firebase.appdistribution.internal;
 
-import android.app.Activity;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.OnCanceledListener;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.inject.Provider;
-import java.util.concurrent.Executor;
 
 /**
  * This implementation of the Firebase App Distribution API proxies to the real implementation

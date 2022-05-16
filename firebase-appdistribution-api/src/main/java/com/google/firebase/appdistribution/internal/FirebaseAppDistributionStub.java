@@ -31,13 +31,12 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
-import com.google.firebase.inject.Provider;
 import java.util.concurrent.Executor;
 
 /**
- * This stuib implementation of the Firebase App Distribution API will return failed
- * {@link Task Tasks}/{@link UpdateTask UpdateTasks} with
- * {@link FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
+ * This stuib implementation of the Firebase App Distribution API will return failed {@link Task
+ * Tasks}/{@link UpdateTask UpdateTasks} with {@link
+ * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
  */
 public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   @NonNull
