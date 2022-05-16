@@ -61,7 +61,7 @@ import javax.inject.Singleton;
 public class SQLiteEventStore
     implements EventStore, SynchronizationGuard, ClientHealthMetricsStore {
 
-  private static final String LOG_TAG = "SQLEventStore";
+  private static final String LOG_TAG = "SQLiteEventStore";
 
   static final int MAX_RETRIES = 16;
 

@@ -32,7 +32,7 @@ import com.google.android.datatransport.runtime.util.PriorityMapping;
  * Used for Apis 20 and below.
  */
 public class AlarmManagerScheduler implements WorkScheduler {
-  private static final String LOG_TAG = "AlarmScheduler";
+  private static final String LOG_TAG = "AlarmManagerScheduler";
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
