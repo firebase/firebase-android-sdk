@@ -344,7 +344,7 @@ public class MessagingAnalytics {
               Encoding.of("proto"),
               MessagingClientEventExtension::toByteArray)
           .send(
-              Event.ofTelemetry(
+              Event.ofData(
                   MessagingClientEventExtension.newBuilder()
                       .setMessagingClientEvent(clientEvent)
                       .build()));
