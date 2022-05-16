@@ -197,7 +197,8 @@ public class DisplayNotificationRoboTest {
     Bundle metadata = new Bundle();
     metadata.putInt(METADATA_DEFAULT_ICON, resId);
     PackageInfo packageInfo =
-        shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
+        shadowOf(context.getPackageManager())
+            .getInternalMutablePackageInfo(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;
 
     Bundle data = new Bundle();
@@ -250,7 +251,8 @@ public class DisplayNotificationRoboTest {
     metadata.putInt(
         METADATA_DEFAULT_ICON, com.google.firebase.messaging.test.R.drawable.adaptive_icon);
     PackageInfo packageInfo =
-        shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
+        shadowOf(context.getPackageManager())
+            .getInternalMutablePackageInfo(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;
 
     Bundle data = new Bundle();
@@ -508,7 +510,8 @@ public class DisplayNotificationRoboTest {
     metadata.putInt(
         METADATA_DEFAULT_COLOR, com.google.firebase.messaging.test.R.color.fcm_test_color);
     PackageInfo packageInfo =
-        shadowOf(context.getPackageManager()).getPackageInfoForTesting(context.getPackageName());
+        shadowOf(context.getPackageManager())
+            .getInternalMutablePackageInfo(context.getPackageName());
     packageInfo.applicationInfo.metaData = metadata;
 
     Bundle data = new Bundle();

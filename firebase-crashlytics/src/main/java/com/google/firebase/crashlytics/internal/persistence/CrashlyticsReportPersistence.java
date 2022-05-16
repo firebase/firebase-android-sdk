@@ -223,9 +223,7 @@ public class CrashlyticsReportPersistence {
   }
 
   private SortedSet<String> capAndGetOpenSessions(@Nullable String currentSessionId) {
-
-    // Fixes b/195664514
-    fileStore.cleanupLegacyFiles();
+    fileStore.cleanupPreviousFileSystems();
 
     SortedSet<String> openSessionIds = getOpenSessionIds();
     if (currentSessionId != null) {
