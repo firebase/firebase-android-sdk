@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
  * The release information returned by {@link FirebaseAppDistribution#checkForNewRelease} when a new
  * version is available for the signed in tester.
  */
-interface AppDistributionRelease {
+public interface AppDistributionRelease {
 
   /** Returns the short bundle version of this build (example: 1.0.0). */
   @NonNull

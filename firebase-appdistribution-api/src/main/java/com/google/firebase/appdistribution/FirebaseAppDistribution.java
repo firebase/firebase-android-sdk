@@ -31,7 +31,7 @@ import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy
  *
  * <p>Call {@link #getInstance()} to get the singleton instance of {@link FirebaseAppDistribution}.
  */
-interface FirebaseAppDistribution {
+public interface FirebaseAppDistribution {
   /**
    * Updates the app to the newest release, if one is available.
    *

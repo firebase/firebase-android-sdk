@@ -17,7 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 
 /** A listener that is called periodically during execution of the {@link UpdateTask}. */
-interface OnProgressListener {
+public interface OnProgressListener {
   /** Called periodically for progress update and state changes of the {@link UpdateTask}. */
   void onProgressUpdate(@NonNull UpdateProgress updateState);
 }

@@ -17,7 +17,7 @@ package com.google.firebase.appdistribution;
 import androidx.annotation.NonNull;
 
 /** Represents a progress update or a final state from updating an app. */
-interface UpdateProgress {
+public interface UpdateProgress {
   /**
    * Returns the number of bytes downloaded so far for an APK.
    *
