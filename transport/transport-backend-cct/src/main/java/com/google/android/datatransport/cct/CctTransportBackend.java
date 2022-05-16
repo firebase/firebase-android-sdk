@@ -68,7 +68,7 @@ import java.util.zip.GZIPOutputStream;
 
 final class CctTransportBackend implements TransportBackend {
 
-  private static final String LOG_TAG = "CctTransportBackend";
+  private static final String LOG_TAG = "CctTBackend";
 
   private static final int CONNECTION_TIME_OUT = 30000;
   private static final int READ_TIME_OUT = 40000;

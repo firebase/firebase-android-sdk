@@ -38,7 +38,7 @@ import java.util.zip.Adler32;
  */
 @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class JobInfoScheduler implements WorkScheduler {
-  private static final String LOG_TAG = "JobInfoScheduler";
+  private static final String LOG_TAG = "JobInfoSched";
 
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";

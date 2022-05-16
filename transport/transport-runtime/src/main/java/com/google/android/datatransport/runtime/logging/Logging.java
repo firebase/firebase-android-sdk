@@ -14,13 +14,15 @@
 
 package com.google.android.datatransport.runtime.logging;
 
+import android.os.Build;
 import android.util.Log;
 
 public final class Logging {
   private Logging() {}
 
   private static String getTag(String tag) {
-    return "TransportRuntime." + tag;
+    // isLoggable has a max limit of 23 chars for versions lower than 7.0
+    return android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.N ? "TRuntime." + tag : "";
   }
 
   public static void d(String tag, String message) {
