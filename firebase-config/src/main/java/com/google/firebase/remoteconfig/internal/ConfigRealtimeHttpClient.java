@@ -3,6 +3,11 @@ package com.google.firebase.remoteconfig.internal;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Client for receiving realtime config updates from the Firebase Remote Config server.
+ *
+ * @author Quan Pham
+ */
 public class ConfigRealtimeHttpClient {
     
     private final Map<Integer, ConfigUpdateListener> listeners;
