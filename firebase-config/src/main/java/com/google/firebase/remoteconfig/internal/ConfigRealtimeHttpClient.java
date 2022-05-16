@@ -10,27 +10,27 @@ public class ConfigRealtimeHttpClient {
     
     public ConfigRealtimeHttpClient() {
         listeners = new HashMap<>();
-        listenerCount = 0;
+        listenerCount = 1;
     }
 
     // Kicks off Http stream listening and autofetch
-    private void beginRealtime() {
+    private void beginRealtimeStream() {
     }
 
     // Pauses Http stream listening
-    private void pauseRealtime() {
+    private void pauseRealtimeStream() {
     }
     
     public ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(ConfigUpdateListener configUpdateListener) {
         listeners.put(listenerCount, configUpdateListener);
-        beginRealtime();
+        beginRealtimeStream();
         return new ConfigUpdateListenerRegistration(this, listenerCount++);
     }
     
     public void removeRealtimeConfigUpdateListener(int listenerKey) {
         listeners.remove(listenerKey);
         if (listeners.isEmpty()) {
-            pauseRealtime();
+            pauseRealtimeStream();
         }
     }
 
