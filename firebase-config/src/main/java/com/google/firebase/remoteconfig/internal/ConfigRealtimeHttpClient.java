@@ -18,7 +18,7 @@ public class ConfigRealtimeHttpClient {
         listenerCount = 1;
     }
 
-    // Kicks off Http stream listening and autofetch
+    // Kicks off Http stream listening and autofetch. Will implement in later PRs
     private void beginRealtimeStream() {
     }
 
