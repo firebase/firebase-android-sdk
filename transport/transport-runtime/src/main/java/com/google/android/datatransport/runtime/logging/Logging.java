@@ -22,7 +22,7 @@ public final class Logging {
 
   private static String getTag(String tag) {
     // isLoggable has a max limit of 23 chars for versions lower than 7.0
-    return android.os.Build.VERSION.SDK_INT > Build.VERSION_CODES.N ? "TRuntime." + tag : "";
+    return "TRuntime." + tag;
   }
 
   public static void d(String tag, String message) {
