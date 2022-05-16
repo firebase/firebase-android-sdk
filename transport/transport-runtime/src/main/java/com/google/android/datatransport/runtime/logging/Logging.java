@@ -14,13 +14,26 @@
 
 package com.google.android.datatransport.runtime.logging;
 
+import android.os.Build;
 import android.util.Log;
 
 public final class Logging {
   private Logging() {}
 
   private static String getTag(String tag) {
-    return "TransportRuntime." + tag;
+    String prefix = "TRuntime.";
+    return prefix + concatTag(prefix, tag);
+  }
+
+  private static String concatTag(String prefix, String tag){
+    int loggableLimit = 23;
+    int remainingSpace = loggableLimit - prefix.length();
+
+    if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+      if(tag.length() > remainingSpace)
+        tag = tag.substring(0, remainingSpace);
+
+    return tag;
   }
 
   public static void d(String tag, String message) {
