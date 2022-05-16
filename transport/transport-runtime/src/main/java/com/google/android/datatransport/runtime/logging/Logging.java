@@ -18,22 +18,24 @@ import android.os.Build;
 import android.util.Log;
 
 public final class Logging {
+  private static final String prefix = "TRuntime.";
   private Logging() {}
 
   private static String getTag(String tag) {
-    String prefix = "TRuntime.";
-    return prefix + concatTag(prefix, tag);
+    if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+      return concatTag(prefix, tag);
+
+    return prefix + tag;
   }
 
   private static String concatTag(String prefix, String tag){
+    String concatText = prefix + tag;
     int loggableLimit = 23;
-    int remainingSpace = loggableLimit - prefix.length();
 
-    if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
-      if(tag.length() > remainingSpace)
-        tag = tag.substring(0, remainingSpace);
+    if(concatText.length() > loggableLimit)
+      concatText = concatText.substring(0, loggableLimit);
 
-    return tag;
+    return concatText;
   }
 
   public static void d(String tag, String message) {
