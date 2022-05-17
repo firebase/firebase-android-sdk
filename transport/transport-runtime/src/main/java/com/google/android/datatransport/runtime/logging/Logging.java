@@ -27,7 +27,7 @@ public final class Logging {
     if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
       return concatTag(LOG_PREFIX, tag);
 
-    return MAX_LOG_TAG_SIZE_IN_SDK_N + tag;
+    return LOG_PREFIX + tag;
   }
 
   private static String concatTag(String prefix, String tag){
