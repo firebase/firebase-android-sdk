@@ -24,16 +24,15 @@ public final class Logging {
   private Logging() {}
 
   private static String getTag(String tag) {
-    if(android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
-      return concatTag(LOG_PREFIX, tag);
+    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return concatTag(LOG_PREFIX, tag);
 
     return LOG_PREFIX + tag;
   }
 
-  private static String concatTag(String prefix, String tag){
+  private static String concatTag(String prefix, String tag) {
     String concatText = prefix + tag;
 
-    if(concatText.length() > MAX_LOG_TAG_SIZE_IN_SDK_N)
+    if (concatText.length() > MAX_LOG_TAG_SIZE_IN_SDK_N)
       concatText = concatText.substring(0, MAX_LOG_TAG_SIZE_IN_SDK_N);
 
     return concatText;
