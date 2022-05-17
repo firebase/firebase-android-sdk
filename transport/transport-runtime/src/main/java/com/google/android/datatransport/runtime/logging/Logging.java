@@ -14,13 +14,28 @@
 
 package com.google.android.datatransport.runtime.logging;
 
+import android.os.Build;
 import android.util.Log;
 
 public final class Logging {
+  private static final String LOG_PREFIX = "TRuntime.";
+  private static final int MAX_LOG_TAG_SIZE_IN_SDK_N = 23;
+
   private Logging() {}
 
   private static String getTag(String tag) {
-    return "TransportRuntime." + tag;
+    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return concatTag(LOG_PREFIX, tag);
+
+    return LOG_PREFIX + tag;
+  }
+
+  private static String concatTag(String prefix, String tag) {
+    String concatText = prefix + tag;
+
+    if (concatText.length() > MAX_LOG_TAG_SIZE_IN_SDK_N)
+      concatText = concatText.substring(0, MAX_LOG_TAG_SIZE_IN_SDK_N);
+
+    return concatText;
   }
 
   public static void d(String tag, String message) {
