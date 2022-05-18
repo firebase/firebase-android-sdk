@@ -33,7 +33,6 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -661,44 +660,5 @@ public class FirebaseRemoteConfig {
   private static boolean isFetchedFresh(
       ConfigContainer fetched, @Nullable ConfigContainer activated) {
     return activated == null || !fetched.getFetchTime().equals(activated.getFetchTime());
-  }
-
-  /**
-   * Represents a listener that can be removed by calling remove. This is returned when calling
-   * addOnConfigUpdateListener and should be used when you no longer want to listen for new config
-   * updates. If this is the last listener it will close the Realtime stream.
-   */
-  public static class ConfigUpdateListenerRegistration {
-    private final ConfigRealtimeHttpClient client;
-    private final int listenerKey;
-
-    public ConfigUpdateListenerRegistration(ConfigRealtimeHttpClient client, int listenerKey) {
-      this.client = client;
-      this.listenerKey = listenerKey;
-    }
-
-    /**
-     * Removes the listener being tracked by this 'ConfigUpdateListenerRegistration`. After the
-     * initial call, subsequent calls have no effect.
-     */
-    public void remove() {
-      client.removeRealtimeConfigUpdateListener(listenerKey);
-    }
-  }
-
-  /** Event Listener for Realtime config update callbacks. */
-  public interface ConfigUpdateListener {
-    /**
-     * Callback for when a new config has been automatically fetched from the backend. Can be used
-     * to activate the new config.
-     */
-    void onEvent();
-
-    /**
-     * Call back for when an error occurs during Realtime.
-     *
-     * @param error
-     */
-    void onError(Exception error);
   }
 }
