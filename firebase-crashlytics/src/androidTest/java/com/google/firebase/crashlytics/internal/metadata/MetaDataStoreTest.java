@@ -17,10 +17,14 @@ package com.google.firebase.crashlytics.internal.metadata;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("ResultOfMethodCallIgnored") // Convenient use of files.
 public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   private static final String SESSION_ID_1 = "session1";
@@ -40,7 +44,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   private static final String ESCAPED = "\ttest\nvalue";
 
   private FileStore fileStore;
-  private CrashlyticsBackgroundWorker worker = new CrashlyticsBackgroundWorker(Runnable::run);
+  private final CrashlyticsBackgroundWorker worker = new CrashlyticsBackgroundWorker(Runnable::run);
 
   private MetaDataStore storeUnderTest;
 
@@ -83,7 +87,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   public void testWriteUserData_null() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, null).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
-    assertEquals(null, userData.getUserId());
+    assertNull(userData.getUserId());
   }
 
   public void testWriteUserData_emptyString() {
@@ -110,6 +114,24 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore, worker);
     assertNull(userData.getUserId());
+  }
+
+  public void testReadUserData_corruptData() throws IOException {
+    File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
+    try (PrintWriter printWriter = new PrintWriter(file)) {
+      printWriter.println("Matt says hi!");
+    }
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    assertNull(userData.getUserId());
+    assertFalse(file.exists());
+  }
+
+  public void testReadUserData_emptyData() throws IOException {
+    File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
+    file.createNewFile();
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    assertNull(userData.getUserId());
+    assertFalse(file.exists());
   }
 
   public void testReadUserData_noStoredData() {
@@ -235,6 +257,24 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
     assertEqualMaps(keys, readKeys);
     assertEqualMaps(internalKeys, readInternalKeys);
+  }
+
+  public void testReadKeys_corruptData() throws IOException {
+    File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
+    try (PrintWriter printWriter = new PrintWriter(file)) {
+      printWriter.println("This is not json.");
+    }
+    final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+    assertEquals(0, readKeys.size());
+    assertFalse(file.exists());
+  }
+
+  public void testReadKeys_emptyStoredData() throws IOException {
+    File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
+    file.createNewFile();
+    final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+    assertEquals(0, readKeys.size());
+    assertFalse(file.exists());
   }
 
   public void testReadKeys_noStoredData() {
