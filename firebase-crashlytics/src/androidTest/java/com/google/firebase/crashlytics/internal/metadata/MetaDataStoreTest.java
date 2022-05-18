@@ -17,7 +17,9 @@ package com.google.firebase.crashlytics.internal.metadata;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -114,10 +116,22 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertNull(userData.getUserId());
   }
 
-  public void testReadUserData_emptyData() throws IOException {
-    storeUnderTest.getUserDataFileForSession(SESSION_ID_1).createNewFile();
+  public void testReadUserData_corruptData() throws IOException {
+    File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
+    try (PrintWriter printWriter = new PrintWriter(file)) {
+      printWriter.println("Matt says hi!");
+    }
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
     assertNull(userData.getUserId());
+    assertFalse(file.exists());
+  }
+
+  public void testReadUserData_emptyData() throws IOException {
+    File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
+    file.createNewFile();
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    assertNull(userData.getUserId());
+    assertFalse(file.exists());
   }
 
   public void testReadUserData_noStoredData() {
@@ -245,10 +259,22 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(internalKeys, readInternalKeys);
   }
 
-  public void testReadKeys_emptyStoredData() throws IOException {
-    storeUnderTest.getKeysFileForSession(SESSION_ID_1).createNewFile();
+  public void testReadKeys_corruptData() throws IOException {
+    File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
+    try (PrintWriter printWriter = new PrintWriter(file)) {
+      printWriter.println("This is not json.");
+    }
     final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
     assertEquals(0, readKeys.size());
+    assertFalse(file.exists());
+  }
+
+  public void testReadKeys_emptyStoredData() throws IOException {
+    File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
+    file.createNewFile();
+    final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+    assertEquals(0, readKeys.size());
+    assertFalse(file.exists());
   }
 
   public void testReadKeys_noStoredData() {

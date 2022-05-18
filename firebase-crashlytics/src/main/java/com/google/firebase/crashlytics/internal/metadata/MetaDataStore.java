@@ -59,7 +59,7 @@ class MetaDataStore {
       writer.write(userIdJson);
       writer.flush();
     } catch (Exception e) {
-      Logger.getLogger().e("Error serializing user metadata.", e);
+      Logger.getLogger().w("Error serializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close user metadata file.");
     }
@@ -70,6 +70,7 @@ class MetaDataStore {
     final File f = getUserDataFileForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
       Logger.getLogger().d("No userId set for session " + sessionId);
+      safeDeleteCorruptFile(f);
       return null;
     }
 
@@ -80,7 +81,8 @@ class MetaDataStore {
       Logger.getLogger().d("Loaded userId " + userId + " for session " + sessionId);
       return userId;
     } catch (Exception e) {
-      Logger.getLogger().e("Error deserializing user metadata.", e);
+      Logger.getLogger().w("Error deserializing user metadata.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -101,7 +103,8 @@ class MetaDataStore {
       writer.write(keyDataString);
       writer.flush();
     } catch (Exception e) {
-      Logger.getLogger().e("Error serializing key/value metadata.", e);
+      Logger.getLogger().w("Error serializing key/value metadata.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close key/value metadata file.");
     }
@@ -115,6 +118,7 @@ class MetaDataStore {
     final File f =
         isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
+      safeDeleteCorruptFile(f);
       return Collections.emptyMap();
     }
 
@@ -123,7 +127,8 @@ class MetaDataStore {
       is = new FileInputStream(f);
       return jsonToKeysData(CommonUtils.streamToString(is));
     } catch (Exception e) {
-      Logger.getLogger().e("Error deserializing user metadata.", e);
+      Logger.getLogger().w("Error deserializing user metadata.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -176,5 +181,11 @@ class MetaDataStore {
 
   private static String valueOrNull(JSONObject json, String key) {
     return !json.isNull(key) ? json.optString(key, null) : null;
+  }
+
+  private static void safeDeleteCorruptFile(File file) {
+    if (file.exists() && file.delete()) {
+      Logger.getLogger().i("Deleted corrupt file: " + file.getAbsolutePath());
+    }
   }
 }
