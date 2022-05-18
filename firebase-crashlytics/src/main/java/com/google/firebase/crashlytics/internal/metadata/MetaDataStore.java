@@ -68,7 +68,7 @@ class MetaDataStore {
   @Nullable
   public String readUserId(String sessionId) {
     final File f = getUserDataFileForSession(sessionId);
-    if (!f.exists()) {
+    if (!f.exists() || f.length() == 0) {
       Logger.getLogger().d("No userId set for session " + sessionId);
       return null;
     }
@@ -114,7 +114,7 @@ class MetaDataStore {
   Map<String, String> readKeyData(String sessionId, boolean isInternal) {
     final File f =
         isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
-    if (!f.exists()) {
+    if (!f.exists() || f.length() == 0) {
       return Collections.emptyMap();
     }
 
