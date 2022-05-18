@@ -5,6 +5,8 @@ public interface ConfigUpdateListener {
   /**
    * Callback for when a new config has been automatically fetched from the backend. Can be used to
    * activate the new config.
+   *
+   * @author Quan Pham
    */
   void onEvent();
 

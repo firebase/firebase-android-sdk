@@ -6,6 +6,8 @@ import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
  * Represents a listener that can be removed by calling remove. This is returned when calling
  * addOnConfigUpdateListener and should be used when you no longer want to listen for new config
  * updates. If this is the last listener it will close the Realtime stream.
+ *
+ * @author Quan Pham
  */
 public class ConfigUpdateListenerRegistration {
   private final ConfigRealtimeHttpClient client;
