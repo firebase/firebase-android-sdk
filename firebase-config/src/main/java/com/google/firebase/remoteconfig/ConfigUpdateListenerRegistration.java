@@ -1,6 +1,7 @@
 package com.google.firebase.remoteconfig;
 
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import javax.annotation.Nonnull;
 
 /**
  * Represents a listener that can be removed by calling remove. This is returned when calling
@@ -13,7 +14,8 @@ public class ConfigUpdateListenerRegistration {
   private final ConfigRealtimeHttpClient client;
   private final int listenerKey;
 
-  public ConfigUpdateListenerRegistration(ConfigRealtimeHttpClient client, int listenerKey) {
+  public ConfigUpdateListenerRegistration(
+      @Nonnull ConfigRealtimeHttpClient client, int listenerKey) {
     this.client = client;
     this.listenerKey = listenerKey;
   }

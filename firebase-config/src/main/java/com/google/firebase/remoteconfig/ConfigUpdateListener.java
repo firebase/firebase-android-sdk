@@ -1,5 +1,7 @@
 package com.google.firebase.remoteconfig;
 
+import javax.annotation.Nonnull;
+
 /** Event Listener for Realtime config update callbacks. */
 public interface ConfigUpdateListener {
   /**
@@ -15,5 +17,5 @@ public interface ConfigUpdateListener {
    *
    * @param error
    */
-  void onError(Exception error);
+  void onError(@Nonnull Exception error);
 }
