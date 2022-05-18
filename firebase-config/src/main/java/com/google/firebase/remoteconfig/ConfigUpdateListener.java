@@ -16,7 +16,8 @@ package com.google.firebase.remoteconfig;
 
 import javax.annotation.Nonnull;
 
-/** Event Listener for Realtime config update callbacks.
+/**
+ * Event Listener for Realtime config update callbacks.
  *
  * @author Quan Pham
  */

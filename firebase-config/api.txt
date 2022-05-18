@@ -6,8 +6,7 @@ package com.google.firebase.remoteconfig {
     method public void onEvent();
   }
 
-  public class ConfigUpdateListenerRegistration {
-    ctor public ConfigUpdateListenerRegistration(com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient, int);
+  public interface ConfigUpdateListenerRegistration {
     method public void remove();
   }
 
