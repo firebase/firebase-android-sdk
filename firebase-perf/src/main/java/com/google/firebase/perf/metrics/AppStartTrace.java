@@ -132,10 +132,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock(), new TTIDMeasure());
+    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
   }
 
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock, TTIDMeasure ttidMeasure) {
+  static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
@@ -148,8 +148,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                       MAX_POOL_SIZE,
                       /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(1)),
-                  ttidMeasure);
+                      new LinkedBlockingQueue<>(1)));
         }
       }
     }
@@ -159,12 +158,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
-      @NonNull ExecutorService executorService,
-      @NonNull TTIDMeasure ttidMeasure) {
+      @NonNull ExecutorService executorService) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.executorService = executorService;
-    this.ttidMeasure = ttidMeasure;
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
