@@ -1,6 +1,16 @@
 // Signature format: 2.0
 package com.google.firebase.remoteconfig {
 
+  public interface ConfigUpdateListener {
+    method public void onError(Exception);
+    method public void onEvent();
+  }
+
+  public class ConfigUpdateListenerRegistration {
+    ctor public ConfigUpdateListenerRegistration(com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient, int);
+    method public void remove();
+  }
+
   public class FirebaseRemoteConfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo> ensureInitialized();
