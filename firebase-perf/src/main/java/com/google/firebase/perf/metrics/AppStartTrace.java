@@ -18,6 +18,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -28,6 +29,7 @@ import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.ttid.TTIDMeasure;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
@@ -89,6 +91,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
+  private Timer onFirstDrawTime = null;
+  private TTIDMeasure ttidMeasure;
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -122,11 +126,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     // no-op, for backward compatibility with old version plugin.
   }
 
-  public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
+  private void recordFirstOnDrawPierreRicau() {
+    this.onFirstDrawTime = clock.getTime();
+    executorService.execute(this::logTTIDPierreRicauTrace);
   }
 
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
+  public static AppStartTrace getInstance() {
+    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock(), new TTIDMeasure());
+  }
+
+  static AppStartTrace getInstance(TransportManager transportManager, Clock clock, TTIDMeasure ttidMeasure) {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
@@ -139,7 +148,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                       MAX_POOL_SIZE,
                       /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(1)));
+                      new LinkedBlockingQueue<>(1)),
+                  ttidMeasure);
         }
       }
     }
@@ -149,10 +159,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
-      @NonNull ExecutorService executorService) {
+      @NonNull ExecutorService executorService,
+      @NonNull TTIDMeasure ttidMeasure) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.executorService = executorService;
+    this.ttidMeasure = ttidMeasure;
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
@@ -225,6 +237,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                 + this.appStartTime.getDurationMicros(onResumeTime)
                 + " microseconds");
 
+    // Pierre-Yves Ricau's method of measuring TTID
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+      TTIDMeasure.measureTTID(activity, this::recordFirstOnDrawPierreRicau);
+    }
+
+    // TODO: PRIMES method of measuring TTID
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+
+    }
+
     // Log the app start trace in a non-main thread.
     executorService.execute(this::logAppStartTrace);
 
@@ -232,6 +254,40 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       // After AppStart trace is logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
     }
+  }
+
+  private void logTTIDPierreRicauTrace() {
+    TraceMetric.Builder metric =
+            TraceMetric.newBuilder()
+                    .setName("TTID_PierreRicau")
+                    .setClientStartTimeUs(getappStartTime().getMicros())
+                    .setDurationUs(getappStartTime().getDurationMicros(onFirstDrawTime));
+    List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
+
+    TraceMetric.Builder traceMetricBuilder =
+            TraceMetric.newBuilder()
+                    .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
+                    .setClientStartTimeUs(getappStartTime().getMicros())
+                    .setDurationUs(getappStartTime().getDurationMicros(onCreateTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    traceMetricBuilder = TraceMetric.newBuilder();
+    traceMetricBuilder
+            .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
+            .setClientStartTimeUs(onCreateTime.getMicros())
+            .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    traceMetricBuilder = TraceMetric.newBuilder();
+    traceMetricBuilder
+            .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
+            .setClientStartTimeUs(onStartTime.getMicros())
+            .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
+    subtraces.add(traceMetricBuilder.build());
+
+    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
+
+    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
   private void logAppStartTrace() {
