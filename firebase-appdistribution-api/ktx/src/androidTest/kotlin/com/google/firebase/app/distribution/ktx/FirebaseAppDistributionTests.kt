@@ -98,9 +98,9 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun updateProgressDestructuringDeclarationsWork() {
         val mockUpdateProgress = object : UpdateProgress {
-            override fun getApkBytesDownloaded(): Long = 1200
+            override fun getApkBytesDownloaded(): Long = 1200L
 
-            override fun getApkFileTotalBytes(): Long = 9000
+            override fun getApkFileTotalBytes(): Long = 9000L
 
             override fun getUpdateStatus(): UpdateStatus = UpdateStatus.DOWNLOADING
         }
