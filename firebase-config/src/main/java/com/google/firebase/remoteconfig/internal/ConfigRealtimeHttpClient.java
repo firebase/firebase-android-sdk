@@ -15,25 +15,219 @@
 package com.google.firebase.remoteconfig.internal;
 
 import androidx.annotation.GuardedBy;
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
+
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.util.Log;
+import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Hex;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import org.json.JSONObject;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class ConfigRealtimeHttpClient {
+  private static final String API_KEY_HEADER = "X-Goog-Api-Key";
+  private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
+  private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
+  private static final String X_GOOGLE_GFE_CAN_RETRY = "X-Google-GFE-Can-Retry";
+  private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
+      "X-Goog-Firebase-Installations-Auth";
+  private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
 
+  private HttpURLConnection httpURLConnection;
+  private boolean isStreamOpen;
+
   public ConfigRealtimeHttpClient() {
     listeners = new LinkedHashSet<ConfigUpdateListener>();
+  private final ConfigFetchHandler configFetchHandler;
+  private final FirebaseApp firebaseApp;
+  private final FirebaseInstallationsApi firebaseInstallations;
+  private final Context context;
+  private final String namespace;
+  private final Executor executor;
+
+  public ConfigRealtimeHttpClient(
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      Context context,
+      String namespace,
+      Executor executor) {
+
+    this.listeners = new LinkedHashSet<>();
+    this.isStreamOpen = false;
+    this.httpURLConnection = null;
+
+    this.firebaseApp = firebaseApp;
+    this.configFetchHandler = configFetchHandler;
+    this.firebaseInstallations = firebaseInstallations;
+    this.context = context;
+    this.namespace = namespace;
+    this.executor = executor;
+  }
+
+  /**
+   * A regular expression for the GMP App Id format. The first group (index 1) is the project
+   * number.
+   */
+  private static final Pattern GMP_APP_ID_PATTERN =
+      Pattern.compile("^[^:]+:([0-9]+):(android|ios|web):([0-9a-f]+)");
+
+  private static String extractProjectNumberFromAppId(String gmpAppId) {
+    Matcher matcher = GMP_APP_ID_PATTERN.matcher(gmpAppId);
+    return matcher.matches() ? matcher.group(1) : null;
+  }
+
+  private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
+    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+    installationAuthTokenTask.onSuccessTask(
+        unusedToken -> {
+          httpURLConnection.setRequestProperty(
+              INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
+          return Tasks.forResult(null);
+        });
+  }
+
+  /** Gets the Android package's SHA-1 fingerprint. */
+  private String getFingerprintHashForPackage() {
+    byte[] hash;
+
+    try {
+      hash =
+          AndroidUtilsLight.getPackageCertificateHashBytes(
+              this.context, this.context.getPackageName());
+      if (hash == null) {
+        Log.e(TAG, "Could not get fingerprint hash for package: " + this.context.getPackageName());
+        return null;
+      } else {
+        return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.i(TAG, "No such package: " + this.context.getPackageName());
+      return null;
+    }
+  }
+
+  private void setCommonRequestHeaders(HttpURLConnection httpURLConnection) {
+    // Get Installation Token
+    getInstallationAuthToken(httpURLConnection);
+
+    // API Key
+    httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
+
+    // Headers required for Android API Key Restrictions.
+    httpURLConnection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+    httpURLConnection.setRequestProperty(X_ANDROID_CERT_HEADER, getFingerprintHashForPackage());
+
+    // Header to denote request is retryable on the server.
+    httpURLConnection.setRequestProperty(X_GOOGLE_GFE_CAN_RETRY, "yes");
+
+    // Header to tell server that client expects stream response
+    httpURLConnection.setRequestProperty(X_ACCEPT_RESPONSE_STREAMING, "true");
+
+    // Headers to denote that the request body is a JSONObject.
+    httpURLConnection.setRequestProperty("Content-Type", "application/json");
+    httpURLConnection.setRequestProperty("Accept", "application/json");
+  }
+
+  private JSONObject createRequestBody() {
+    Map<String, String> body = new HashMap<>();
+        body.put("project",
+                extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
+    body.put("namespace", this.namespace);
+    body.put("lastKnownVersionNumber",
+            Long.toString(1L));
+    return new JSONObject(body);
+  }
+
+  private void setRequestParams(HttpURLConnection httpURLConnection) throws IOException {
+    httpURLConnection.setRequestMethod("POST");
+    byte[] body = createRequestBody().toString().getBytes("utf-8");
+    OutputStream outputStream = new BufferedOutputStream(httpURLConnection.getOutputStream());
+    outputStream.write(body);
+    outputStream.flush();
+    outputStream.close();
+  }
+
+  private boolean canMakeHttpStreamConnection() {
+    return !listeners.isEmpty() && !isStreamOpen;
+  }
+
+  private String getRealtimeURL(String namespace) {
+    return String.format(
+        REALTIME_REGEX_URL,
+        extractProjectNumberFromAppId(firebaseApp.getOptions().getApplicationId()),
+        namespace);
+  }
+
+  private URL getUrl() {
+    URL realtimeURL = null;
+    try {
+      realtimeURL = new URL(getRealtimeURL(namespace));
+    } catch (MalformedURLException ex) {
+      Log.i(TAG, "URL is malformed");
+    }
+
+    return realtimeURL;
+  }
+
+  private HttpURLConnection makeHttpConnection() {
+    HttpURLConnection httpURLConnection = null;
+    URL realtimeUrl = getUrl();
+    try {
+      httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+      setCommonRequestHeaders(httpURLConnection);
+      setRequestParams(httpURLConnection);
+    } catch (IOException ex) {
+      Log.i(TAG, String.format("Can't start http connection due to %s", ex.toString()));
+    }
+
+    return httpURLConnection;
+  }
+
+  private void startAutoFetch() {
+
   }
 
   // Kicks off Http stream listening and autofetch
-  private void beginRealtime() {}
+  private void beginRealtime() {
+    this.httpURLConnection = makeHttpConnection();
+    isStreamOpen = true;
+    startAutoFetch();
+  }
 
   // Pauses Http stream listening
-  private void pauseRealtime() {}
+  private void pauseRealtime() {
+    if (this.httpURLConnection != null) {
+      this.httpURLConnection.disconnect();
+      isStreamOpen = false;
+    }
+  }
 
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       ConfigUpdateListener configUpdateListener) {
