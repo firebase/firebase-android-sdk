@@ -66,7 +66,7 @@ public final class Coverage {
                       .add("**Manifest*.*")
                       .build();
 
-              task.setClassDirectories(
+              task.getClassDirectories().setFrom(
                   project.files(
                       project.fileTree(
                           ImmutableMap.of(
@@ -80,8 +80,8 @@ public final class Coverage {
                               project.getBuildDir() + "/tmp/kotlin-classes/release",
                               "excludes",
                               excludes))));
-              task.setSourceDirectories(project.files("src/main/java", "src/main/kotlin"));
-              task.setExecutionData(
+              task.getSourceDirectories().setFrom(project.files("src/main/java", "src/main/kotlin"));
+              task.getExecutionData().setFrom(
                   project.fileTree(
                       ImmutableMap.of(
                           "dir",
