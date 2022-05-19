@@ -107,8 +107,8 @@ class FirebaseAppDistributionTests : BaseTestCase() {
 
         val (downloaded, total, status) = mockUpdateProgress
 
-        assertThat(downloaded).isSameInstanceAs(mockUpdateProgress.apkBytesDownloaded)
-        assertThat(total).isSameInstanceAs(mockUpdateProgress.apkFileTotalBytes)
+        assertThat(downloaded).isEqualTo(mockUpdateProgress.apkBytesDownloaded)
+        assertThat(total).isEqualTo(mockUpdateProgress.apkFileTotalBytes)
         assertThat(status).isSameInstanceAs(mockUpdateProgress.updateStatus)
     }
 }
