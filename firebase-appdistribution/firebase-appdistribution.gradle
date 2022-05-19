@@ -16,6 +16,10 @@ plugins {
     id 'firebase-library'
 }
 
+firebaseLibrary {
+    publishJavadoc = false
+}
+
 android {
     compileSdkVersion project.targetSdkVersion
 
