@@ -20,6 +20,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.AppDistributionRelease
+import com.google.firebase.appdistribution.BinaryType
+import com.google.firebase.appdistribution.UpdateProgress
+import com.google.firebase.appdistribution.UpdateStatus
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -69,6 +73,43 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun appDistribution_default_callsDefaultGetInstance() {
         assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
+    }
+
+    @Test
+    fun appDistributionReleaseDestructuringDeclarationsWork() {
+        val mockAppDistributionRelease = object : AppDistributionRelease {
+            override fun getDisplayVersion(): String = "1.0.0"
+
+            override fun getVersionCode(): Long = 1L
+
+            override fun getReleaseNotes(): String = "Changelog..."
+
+            override fun getBinaryType(): BinaryType = BinaryType.AAB
+        }
+
+        val (type, displayVersion, versionCode, notes) = mockAppDistributionRelease
+
+        assertThat(type).isSameInstanceAs(mockAppDistributionRelease.binaryType)
+        assertThat(displayVersion).isSameInstanceAs(mockAppDistributionRelease.displayVersion)
+        assertThat(versionCode).isSameInstanceAs(mockAppDistributionRelease.versionCode)
+        assertThat(notes).isSameInstanceAs(mockAppDistributionRelease.releaseNotes)
+    }
+
+    @Test
+    fun updateProgressDestructuringDeclarationsWork() {
+        val mockUpdateProgress = object : UpdateProgress {
+            override fun getApkBytesDownloaded(): Long = 1200
+
+            override fun getApkFileTotalBytes(): Long = 9000
+
+            override fun getUpdateStatus(): UpdateStatus = UpdateStatus.DOWNLOADING
+        }
+
+        val (downloaded, total, status) = mockUpdateProgress
+
+        assertThat(downloaded).isSameInstanceAs(mockUpdateProgress.apkBytesDownloaded)
+        assertThat(total).isSameInstanceAs(mockUpdateProgress.apkFileTotalBytes)
+        assertThat(status).isSameInstanceAs(mockUpdateProgress.updateStatus)
     }
 }
 
