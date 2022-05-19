@@ -44,8 +44,11 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.JSONObject;
 
 public class ConfigRealtimeHttpClient {
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
@@ -61,6 +64,7 @@ public class ConfigRealtimeHttpClient {
 
   private HttpURLConnection httpURLConnection;
   private boolean isStreamOpen;
+  private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHttpClient() {
     listeners = new LinkedHashSet<ConfigUpdateListener>();
@@ -82,6 +86,7 @@ public class ConfigRealtimeHttpClient {
     this.listeners = new LinkedHashSet<>();
     this.isStreamOpen = false;
     this.httpURLConnection = null;
+    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
@@ -157,8 +162,8 @@ public class ConfigRealtimeHttpClient {
 
   private JSONObject createRequestBody() {
     Map<String, String> body = new HashMap<>();
-        body.put("project",
-                extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
+    body.put(
+        "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
     body.put("namespace", this.namespace);
     body.put("lastKnownVersionNumber",
             Long.toString(1L));
@@ -211,14 +216,39 @@ public class ConfigRealtimeHttpClient {
   }
 
   private void startAutoFetch() {
+    ConfigUpdateListener retryCallback =
+        new ConfigUpdateListener() {
+          @Override
+          public void onEvent() {
+            pauseRealtime();
+          }
 
+          @Override
+          public void onError(Exception error) {
+            for (ConfigUpdateListener listener : listeners.values()) {
+              listener.onError(error);
+            }
+          }
+        };
+    Log.i(TAG, "Starting autofetch...");
+    ConfigAutoFetch autoFetch =
+        new ConfigAutoFetch(
+            this.httpURLConnection,
+            configFetchHandler,
+            listeners,
+            retryCallback,
+            executor,
+            scheduledExecutorService);
+    autoFetch.beginAutoFetch();
   }
 
   // Kicks off Http stream listening and autofetch
   private void beginRealtime() {
-    this.httpURLConnection = makeHttpConnection();
-    isStreamOpen = true;
-    startAutoFetch();
+    if (canMakeHttpStreamConnection()) {
+      this.httpURLConnection = makeHttpConnection();
+      isStreamOpen = true;
+      startAutoFetch();
+    }
   }
 
   // Pauses Http stream listening
