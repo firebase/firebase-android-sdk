@@ -16,17 +16,16 @@ package com.google.firebase.remoteconfig.internal;
 
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class ConfigRealtimeHttpClient {
 
-  private final Map<Integer, ConfigUpdateListener> listeners;
-  private int listenerCount;
+  private final Set<ConfigUpdateListener> listeners;
 
   public ConfigRealtimeHttpClient() {
-    listeners = new HashMap<>();
-    listenerCount = 1;
+    listeners = Collections.synchronizedSet(new LinkedHashSet<ConfigUpdateListener>());
   }
 
   // Kicks off Http stream listening and autofetch
@@ -37,31 +36,28 @@ public class ConfigRealtimeHttpClient {
 
   public ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       ConfigUpdateListener configUpdateListener) {
-    listeners.put(listenerCount, configUpdateListener);
+    listeners.add(configUpdateListener);
     beginRealtime();
-    return new ConfigUpdateListenerRegistrationInternal(this, listenerCount++);
+    return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
-  public void removeRealtimeConfigUpdateListener(int listenerKey) {
-    listeners.remove(listenerKey);
+  private void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
+    listeners.remove(listener);
     if (listeners.isEmpty()) {
       pauseRealtime();
     }
   }
 
-  public static class ConfigUpdateListenerRegistrationInternal
+  public class ConfigUpdateListenerRegistrationInternal
       implements ConfigUpdateListenerRegistration {
-    private final ConfigRealtimeHttpClient client;
-    private final int listenerKey;
+    private final ConfigUpdateListener listener;
 
-    public ConfigUpdateListenerRegistrationInternal(
-        ConfigRealtimeHttpClient client, int listenerKey) {
-      this.client = client;
-      this.listenerKey = listenerKey;
+    public ConfigUpdateListenerRegistrationInternal(ConfigUpdateListener listener) {
+      this.listener = listener;
     }
 
     public void remove() {
-      client.removeRealtimeConfigUpdateListener(listenerKey);
+      removeRealtimeConfigUpdateListener(listener);
     }
   }
 }
