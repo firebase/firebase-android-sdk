@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = false
+    publishJavadoc = false
     releaseWith project(':firebase-messaging')
 }
 
