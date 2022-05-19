@@ -89,10 +89,10 @@ class FirebaseAppDistributionTests : BaseTestCase() {
 
         val (type, displayVersion, versionCode, notes) = mockAppDistributionRelease
 
-        assertThat(type).isSameInstanceAs(mockAppDistributionRelease.binaryType)
-        assertThat(displayVersion).isSameInstanceAs(mockAppDistributionRelease.displayVersion)
-        assertThat(versionCode).isSameInstanceAs(mockAppDistributionRelease.versionCode)
-        assertThat(notes).isSameInstanceAs(mockAppDistributionRelease.releaseNotes)
+        assertThat(type).isEqualTo(mockAppDistributionRelease.binaryType)
+        assertThat(displayVersion).isEqualTo(mockAppDistributionRelease.displayVersion)
+        assertThat(versionCode).isEqualTo(mockAppDistributionRelease.versionCode)
+        assertThat(notes).isEqualTo(mockAppDistributionRelease.releaseNotes)
     }
 
     @Test
@@ -109,7 +109,7 @@ class FirebaseAppDistributionTests : BaseTestCase() {
 
         assertThat(downloaded).isEqualTo(mockUpdateProgress.apkBytesDownloaded)
         assertThat(total).isEqualTo(mockUpdateProgress.apkFileTotalBytes)
-        assertThat(status).isSameInstanceAs(mockUpdateProgress.updateStatus)
+        assertThat(status).isEqualTo(mockUpdateProgress.updateStatus)
     }
 }
 
