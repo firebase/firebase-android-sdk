@@ -19,9 +19,9 @@ import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.appdistribution.FirebaseAppDistribution
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.BinaryType
+import com.google.firebase.appdistribution.FirebaseAppDistribution
 import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.appdistribution.UpdateStatus
 import com.google.firebase.ktx.Firebase
