@@ -14,18 +14,19 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import androidx.annotation.GuardedBy;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class ConfigRealtimeHttpClient {
 
+  @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
 
   public ConfigRealtimeHttpClient() {
-    listeners = Collections.synchronizedSet(new LinkedHashSet<ConfigUpdateListener>());
+    listeners = new LinkedHashSet<ConfigUpdateListener>();
   }
 
   // Kicks off Http stream listening and autofetch
@@ -34,14 +35,14 @@ public class ConfigRealtimeHttpClient {
   // Pauses Http stream listening
   private void pauseRealtime() {}
 
-  public ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
+  public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
     beginRealtime();
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
-  private void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
+  private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
     listeners.remove(listener);
     if (listeners.isEmpty()) {
       pauseRealtime();
