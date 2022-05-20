@@ -17,7 +17,9 @@ package com.google.firebase.appdistribution.ktx
 import androidx.annotation.Keep
 import com.google.firebase.BuildConfig
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
@@ -26,6 +28,55 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 /** Returns the [FirebaseAppDistribution] instance of the default [FirebaseApp]. */
 val Firebase.appDistribution: FirebaseAppDistribution
     get() = FirebaseAppDistribution.getInstance()
+
+/**
+ * Destructuring declaration for [AppDistributionRelease] to provide binaryType.
+ *
+ * @return the binaryType of the [AppDistributionRelease]
+ */
+operator fun AppDistributionRelease.component1() = binaryType
+
+/**
+ * Destructuring declaration for [AppDistributionRelease] to provide displayVersion.
+ *
+ * @return the displayVersion of the [AppDistributionRelease]
+ */
+operator fun AppDistributionRelease.component2() = displayVersion
+
+/**
+ * Destructuring declaration for [AppDistributionRelease] to provide versionCode.
+ *
+ * @return the versionCode of the [AppDistributionRelease]
+ */
+operator fun AppDistributionRelease.component3() = versionCode
+
+/**
+ * Destructuring declaration for [AppDistributionRelease] to provide releaseNotes.
+ *
+ * @return the releaseNotes of the [AppDistributionRelease]
+ */
+operator fun AppDistributionRelease.component4() = releaseNotes
+
+/**
+ * Destructuring declaration for [UpdateProgress] to provide apkBytesDownloaded.
+ *
+ * @return the apkBytesDownloaded of the [UpdateProgress]
+ */
+operator fun UpdateProgress.component1() = apkBytesDownloaded
+
+/**
+ * Destructuring declaration for [UpdateProgress] to provide apkFileTotalBytes.
+ *
+ * @return the apkFileTotalBytes of the [UpdateProgress]
+ */
+operator fun UpdateProgress.component2() = apkFileTotalBytes
+
+/**
+ * Destructuring declaration for [UpdateProgress] to provide updateStatus.
+ *
+ * @return the updateStatus of the [UpdateProgress]
+ */
+operator fun UpdateProgress.component3() = updateStatus
 
 internal const val LIBRARY_NAME: String = "fire-appdistribution-ktx"
 

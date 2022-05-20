@@ -712,30 +712,26 @@ public class BundleSerializerTest {
             + json
             + ",\n"
             + "    limitType: '"
-            + (query.hasLimitToLast() ? "LAST" : "FIRST")
+            + (query.getLimitType().equals(Query.LimitType.LIMIT_TO_LAST) ? "LAST" : "FIRST")
             + "'\n"
             + "   },\n"
             + " readTime: '2020-01-01T00:00:01.000000001Z'\n"
             + "}";
     NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
 
-    long limit =
-        query.hasLimitToFirst()
-            ? query.getLimitToFirst()
-            : (query.hasLimitToLast() ? query.getLimitToLast() : Target.NO_LIMIT);
     Target target =
         new Target(
             query.getPath(),
             query.getCollectionGroup(),
             query.getFilters(),
             query.getExplicitOrderBy(),
-            limit,
+            query.getLimit(),
             query.getStartAt(),
             query.getEndAt());
     BundledQuery bundledQuery =
         new BundledQuery(
             target,
-            query.hasLimitToLast()
+            query.getLimitType().equals(Query.LimitType.LIMIT_TO_LAST)
                 ? Query.LimitType.LIMIT_TO_LAST
                 : Query.LimitType.LIMIT_TO_FIRST);
     NamedQuery expectedNamedQuery =
