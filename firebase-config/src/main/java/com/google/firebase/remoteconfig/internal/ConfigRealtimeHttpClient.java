@@ -14,13 +14,13 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import androidx.annotation.GuardedBy;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -30,11 +30,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.json.JSONObject;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +37,9 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,12 +59,12 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
 
-  private HttpURLConnection httpURLConnection;
+  @GuardedBy("this")
   private boolean isStreamOpen;
+
+  private HttpURLConnection httpURLConnection;
   private final ScheduledExecutorService scheduledExecutorService;
 
-  public ConfigRealtimeHttpClient() {
-    listeners = new LinkedHashSet<ConfigUpdateListener>();
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -165,8 +162,8 @@ public class ConfigRealtimeHttpClient {
     body.put(
         "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
     body.put("namespace", this.namespace);
-    body.put("lastKnownVersionNumber",
-            Long.toString(1L));
+    body.put(
+        "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
     return new JSONObject(body);
   }
 
@@ -179,7 +176,7 @@ public class ConfigRealtimeHttpClient {
     outputStream.close();
   }
 
-  private boolean canMakeHttpStreamConnection() {
+  private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty() && !isStreamOpen;
   }
 
@@ -201,11 +198,10 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private HttpURLConnection makeHttpConnection() {
-    HttpURLConnection httpURLConnection = null;
+  private synchronized HttpURLConnection makeHttpConnection() {
     URL realtimeUrl = getUrl();
     try {
-      httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+      this.httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
@@ -225,7 +221,7 @@ public class ConfigRealtimeHttpClient {
 
           @Override
           public void onError(Exception error) {
-            for (ConfigUpdateListener listener : listeners.values()) {
+            for (ConfigUpdateListener listener : listeners) {
               listener.onError(error);
             }
           }
@@ -243,7 +239,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Kicks off Http stream listening and autofetch
-  private void beginRealtime() {
+  private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
       this.httpURLConnection = makeHttpConnection();
       isStreamOpen = true;
@@ -252,7 +248,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Pauses Http stream listening
-  private void pauseRealtime() {
+  private synchronized void pauseRealtime() {
     if (this.httpURLConnection != null) {
       this.httpURLConnection.disconnect();
       isStreamOpen = false;

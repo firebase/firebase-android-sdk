@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import androidx.annotation.GuardedBy;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
@@ -23,20 +24,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class ConfigAutoFetch {
+
   private static final Logger logger = Logger.getLogger("Real_Time_RC");
   private static final int FETCH_RETRY = 3;
 
+  @GuardedBy("this")
+  private final Set<ConfigUpdateListener> eventListener;
+
   private final HttpURLConnection httpURLConnection;
   private final ConfigFetchHandler configFetchHandler;
-  private final Map<Integer, ConfigUpdateListener> eventListener;
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
@@ -45,7 +49,7 @@ public class ConfigAutoFetch {
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
-      Map<Integer, ConfigUpdateListener> eventListener,
+      Set<ConfigUpdateListener> eventListener,
       ConfigUpdateListener retryCallback,
       Executor executor,
       ScheduledExecutorService scheduledExecutorService) {
@@ -102,10 +106,9 @@ public class ConfigAutoFetch {
     reader.close();
   }
 
-  private void autoFetch(int remainingAttempts, long currentVersion) {
+  private synchronized void autoFetch(int remainingAttempts, long currentVersion) {
     if (remainingAttempts == 0) {
-
-      for (ConfigUpdateListener listener : eventListener.values()) {
+      for (ConfigUpdateListener listener : eventListener) {
         listener.onError(new FirebaseRemoteConfigException("Unable to fetch latest version."));
       }
 
@@ -128,18 +131,18 @@ public class ConfigAutoFetch {
     }
   }
 
-  private void fetchLatestConfig(int remainingAttempts, long currentVersion) {
+  private synchronized void fetchLatestConfig(int remainingAttempts, long currentVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           logger.info("Fetch done...");
           long newTemplateVersion = 0;
           if (fetchResponse.getFetchedConfigs() != null) {
-            newTemplateVersion = 1L;
+            newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
           }
 
           if (newTemplateVersion >= currentVersion) {
-            for (ConfigUpdateListener listener : eventListener.values()) {
+            for (ConfigUpdateListener listener : eventListener) {
               listener.onEvent();
             }
           } else {
