@@ -19,7 +19,11 @@ import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.appdistribution.AppDistributionRelease
+import com.google.firebase.appdistribution.BinaryType
 import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.UpdateProgress
+import com.google.firebase.appdistribution.UpdateStatus
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -69,6 +73,43 @@ class FirebaseAppDistributionTests : BaseTestCase() {
     @Test
     fun appDistribution_default_callsDefaultGetInstance() {
         assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
+    }
+
+    @Test
+    fun appDistributionReleaseDestructuringDeclarationsWork() {
+        val mockAppDistributionRelease = object : AppDistributionRelease {
+            override fun getDisplayVersion(): String = "1.0.0"
+
+            override fun getVersionCode(): Long = 1L
+
+            override fun getReleaseNotes(): String = "Changelog..."
+
+            override fun getBinaryType(): BinaryType = BinaryType.AAB
+        }
+
+        val (type, displayVersion, versionCode, notes) = mockAppDistributionRelease
+
+        assertThat(type).isEqualTo(mockAppDistributionRelease.binaryType)
+        assertThat(displayVersion).isEqualTo(mockAppDistributionRelease.displayVersion)
+        assertThat(versionCode).isEqualTo(mockAppDistributionRelease.versionCode)
+        assertThat(notes).isEqualTo(mockAppDistributionRelease.releaseNotes)
+    }
+
+    @Test
+    fun updateProgressDestructuringDeclarationsWork() {
+        val mockUpdateProgress = object : UpdateProgress {
+            override fun getApkBytesDownloaded(): Long = 1200L
+
+            override fun getApkFileTotalBytes(): Long = 9000L
+
+            override fun getUpdateStatus(): UpdateStatus = UpdateStatus.DOWNLOADING
+        }
+
+        val (downloaded, total, status) = mockUpdateProgress
+
+        assertThat(downloaded).isEqualTo(mockUpdateProgress.apkBytesDownloaded)
+        assertThat(total).isEqualTo(mockUpdateProgress.apkFileTotalBytes)
+        assertThat(status).isEqualTo(mockUpdateProgress.updateStatus)
     }
 }
 

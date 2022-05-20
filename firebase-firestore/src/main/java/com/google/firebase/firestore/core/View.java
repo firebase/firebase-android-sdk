@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_FIRST;
+import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.compareIntegers;
 
@@ -147,11 +149,11 @@ public class View {
     // Note that this should never get used in a refill (when previousChanges is set), because there
     // will only be adds -- no deletes or updates.
     Document lastDocInLimit =
-        (query.hasLimitToFirst() && oldDocumentSet.size() == query.getLimitToFirst())
+        (query.getLimitType().equals(LIMIT_TO_FIRST) && oldDocumentSet.size() == query.getLimit())
             ? oldDocumentSet.getLastDocument()
             : null;
     Document firstDocInLimit =
-        (query.hasLimitToLast() && oldDocumentSet.size() == query.getLimitToLast())
+        (query.getLimitType().equals(LIMIT_TO_LAST) && oldDocumentSet.size() == query.getLimit())
             ? oldDocumentSet.getFirstDocument()
             : null;
 
@@ -222,11 +224,10 @@ public class View {
     }
 
     // Drop documents out to meet limitToFirst/limitToLast requirement.
-    if (query.hasLimitToFirst() || query.hasLimitToLast()) {
-      long limit = query.hasLimitToFirst() ? query.getLimitToFirst() : query.getLimitToLast();
-      for (long i = newDocumentSet.size() - limit; i > 0; --i) {
+    if (query.hasLimit()) {
+      for (long i = newDocumentSet.size() - query.getLimit(); i > 0; --i) {
         Document oldDoc =
-            query.hasLimitToFirst()
+            query.getLimitType().equals(LIMIT_TO_FIRST)
                 ? newDocumentSet.getLastDocument()
                 : newDocumentSet.getFirstDocument();
         newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
