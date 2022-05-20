@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class NestedMapTest {
+class NestedMapDecoderTest {
     @Serializable
     data class PlainProject(val name: String, val ownerName: String)
 
