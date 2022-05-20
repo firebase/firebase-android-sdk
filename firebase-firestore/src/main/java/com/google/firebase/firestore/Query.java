@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
@@ -1216,7 +1217,7 @@ public class Query {
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {
-    if (query.hasLimitToLast() && query.getExplicitOrderBy().isEmpty()) {
+    if (query.getLimitType().equals(LIMIT_TO_LAST) && query.getExplicitOrderBy().isEmpty()) {
       throw new IllegalStateException(
           "limitToLast() queries require specifying at least one orderBy() clause");
     }

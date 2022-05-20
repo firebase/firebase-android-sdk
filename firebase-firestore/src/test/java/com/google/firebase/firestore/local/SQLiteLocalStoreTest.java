@@ -213,7 +213,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
-  public void testDoesNotUseIndexForLimitQueryWhenIndexIsOutdated() {
+  public void testDoesNotUseLimitWhenIndexIsOutdated() {
     FieldIndex index =
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "count", FieldIndex.Segment.Kind.ASCENDING);
     configureFieldIndexes(singletonList(index));
@@ -234,10 +234,10 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     writeMutation(deleteMutation("coll/b"));
 
     executeQuery(query);
-    // The query engine first reads the documents by key and then discards the results, which means
-    // that we read both by key and by collection.
-    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 3);
-    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 1);
+
+    // The query engine first reads the documents by key and then re-runs the query without limit.
+    assertRemoteDocumentsRead(/* byKey= */ 5, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 5, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/c");
   }
 

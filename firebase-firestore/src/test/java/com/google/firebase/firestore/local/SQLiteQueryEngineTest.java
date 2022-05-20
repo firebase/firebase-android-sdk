@@ -23,6 +23,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
+import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertEquals;
@@ -46,7 +48,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
   }
 
   @Test
-  public void combinesIndexedWithNonIndexedResults() throws Exception {
+  public void testCombinesIndexedWithNonIndexedResults() throws Exception {
     MutableDocument doc1 = doc("coll/a", 1, map("foo", true));
     MutableDocument doc2 = doc("coll/b", 2, map("foo", true));
     MutableDocument doc3 = doc("coll/c", 3, map("foo", true));
@@ -70,7 +72,7 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
   }
 
   @Test
-  public void usesPartialIndexForLimitQueries() throws Exception {
+  public void testUsesPartialIndexForLimitQueries() throws Exception {
     MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
     MutableDocument doc2 = doc("coll/2", 1, map("a", 1, "b", 1));
     MutableDocument doc3 = doc("coll/3", 1, map("a", 1, "b", 2));
@@ -86,5 +88,24 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
         query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1)).limitToFirst(3);
     DocumentSet result = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
     assertEquals(docSet(query.comparator(), doc2), result);
+  }
+
+  @Test
+  public void testRefillsIndexedLimitQueries() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1));
+    MutableDocument doc2 = doc("coll/2", 1, map("a", 2));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 4));
+    addDocument(doc1, doc2, doc3, doc4);
+
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc4));
+
+    addMutation(patchMutation("coll/3", map("a", 5)));
+
+    Query query = query("coll").orderBy(orderBy("a")).limitToFirst(3);
+    DocumentSet result = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
+    assertEquals(docSet(query.comparator(), doc1, doc2, doc4), result);
   }
 }
