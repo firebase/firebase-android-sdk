@@ -19,6 +19,10 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -95,18 +99,27 @@ public class ConfigAutoFetch {
 
   // Auto-fetch new config and execute callbacks on each new message
   private void handleNotifications(InputStream inputStream) throws IOException {
-    BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream)));
+    BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
       logger.info(message);
-      long currentTemplateVersion = 1L;
-      logger.info("Template version is " + currentTemplateVersion);
-      autoFetch(FETCH_RETRY, currentTemplateVersion);
+      long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+      try {
+        JSONObject jsonObject = new JSONObject(message);
+        if (jsonObject.has("latestTemplateVersionNumber")) {
+          targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
+        }
+      } catch (JSONException ex) {
+        logger.info("Can't get latest config update message.");
+      }
+
+      logger.info("Template version is " + targetTemplateVersion);
+      autoFetch(FETCH_RETRY, targetTemplateVersion);
     }
     reader.close();
   }
 
-  private synchronized void autoFetch(int remainingAttempts, long currentVersion) {
+  private synchronized void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
       for (ConfigUpdateListener listener : eventListener) {
         listener.onError(new FirebaseRemoteConfigException("Unable to fetch latest version."));
@@ -116,14 +129,15 @@ public class ConfigAutoFetch {
     }
 
     if (remainingAttempts == FETCH_RETRY) {
-      fetchLatestConfig(remainingAttempts, currentVersion);
+      fetchLatestConfig(remainingAttempts, targetVersion);
     } else {
+      // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
       int timeTillFetch = random.nextInt(11000) + 2000;
       scheduledExecutorService.schedule(
           new Runnable() {
             @Override
             public void run() {
-              fetchLatestConfig(remainingAttempts, currentVersion);
+              fetchLatestConfig(remainingAttempts, targetVersion);
             }
           },
           timeTillFetch,
@@ -131,7 +145,7 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized void fetchLatestConfig(int remainingAttempts, long currentVersion) {
+  private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
@@ -141,7 +155,7 @@ public class ConfigAutoFetch {
             newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
           }
 
-          if (newTemplateVersion >= currentVersion) {
+          if (newTemplateVersion >= targetVersion) {
             for (ConfigUpdateListener listener : eventListener) {
               listener.onEvent();
             }
@@ -150,7 +164,7 @@ public class ConfigAutoFetch {
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");
             // Continue fetching until template version number if greater then current.
-            autoFetch(remainingAttempts - 1, currentVersion);
+            autoFetch(remainingAttempts - 1, targetVersion);
           }
           return Tasks.forResult(null);
         });
