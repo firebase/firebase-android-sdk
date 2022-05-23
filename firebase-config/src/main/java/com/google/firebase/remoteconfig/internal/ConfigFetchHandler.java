@@ -530,6 +530,13 @@ public class ConfigFetchHandler {
     return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
   }
 
+  public long getTemplateVersionNumber() {
+    if (fetchedConfigsCache.get() != null && fetchedConfigsCache.get().getResult() != null) {
+      return fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
+    }
+    return 1L;
+  }
+
   /** Used to verify that the fetch handler is getting Analytics as expected. */
   @VisibleForTesting
   public Provider<AnalyticsConnector> getAnalyticsConnector() {
