@@ -48,7 +48,7 @@ public interface FirebaseAppDistribution {
    * </ol>
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods returns a failed {@link Task} with {@link
+   * your build, then this method returns a failed {@link Task} with {@link
    * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
    */
   @NonNull
@@ -58,7 +58,7 @@ public interface FirebaseAppDistribution {
    * Returns {@code true} if the App Distribution tester is signed in.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods always returns {@code false}.
+   * your build, then this method always returns {@code false}.
    */
   boolean isTesterSignedIn();
 
@@ -66,7 +66,7 @@ public interface FirebaseAppDistribution {
    * Signs in the App Distribution tester. Presents the tester with a Google sign in UI.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods returns a failed {@link Task} with {@link
+   * your build, then this method returns a failed {@link Task} with {@link
    * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
    */
   @NonNull
@@ -76,7 +76,7 @@ public interface FirebaseAppDistribution {
    * Signs out the App Distribution tester.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods is a no-op.
+   * your build, then this method is a no-op.
    */
   void signOutTester();
 
@@ -85,7 +85,7 @@ public interface FirebaseAppDistribution {
    * tester, or {@code null} otherwise.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods returns a failed {@link Task} with {@link
+   * your build, then this method returns a failed {@link Task} with {@link
    * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
    */
   @NonNull
@@ -103,7 +103,7 @@ public interface FirebaseAppDistribution {
    * {@link #checkForNewRelease}.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
-   * your build, then this methods returns a failed {@link UpdateTask} with {@link
+   * your build, then this method returns a failed {@link UpdateTask} with {@link
    * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
    */
   @NonNull
