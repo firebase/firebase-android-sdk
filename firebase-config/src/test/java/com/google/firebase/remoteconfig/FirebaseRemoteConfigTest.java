@@ -39,6 +39,7 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.shadows.common.internal.ShadowPreconditions;
 import com.google.android.gms.tasks.Task;
@@ -62,6 +63,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -131,6 +133,8 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
   @Mock private ConfigMetadataClient metadataClient;
+  @Mock private ConfigRealtimeHttpClient mockRealtimeHttpClient;
+  @Mock private ConfigUpdateListenerRegistration mockRealtimeRegistration;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
@@ -1039,6 +1043,45 @@ public final class FirebaseRemoteConfigTest {
             });
   }
 
+  @Test
+  public void realtime_addListener_success() {
+    ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
+    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+        .thenReturn(
+            new ConfigUpdateListenerRegistration() {
+              @Override
+              public void remove() {}
+            });
+    ConfigUpdateListenerRegistration registration =
+        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener);
+    verify(mockRealtimeHttpClient).addRealtimeConfigUpdateListener(eventListener);
+    assertThat(registration).isNotNull();
+  }
+
+  @Test
+  public void realtime_addListener_fail() {
+    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(null)).thenReturn(null);
+
+    ConfigUpdateListenerRegistration registration =
+        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(null);
+
+    assertThat(registration).isNull();
+  }
+
+  @Test
+  public void realtime_removeListener_success() {
+    ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
+    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+        .thenReturn(mockRealtimeRegistration);
+
+    ConfigUpdateListenerRegistration registration =
+        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener);
+    registration.remove();
+
+    assertThat(registration).isNotNull();
+    verify(mockRealtimeRegistration).remove();
+  }
+
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);
@@ -1114,5 +1157,15 @@ public final class FirebaseRemoteConfigTest {
             .setApplicationId(APP_ID)
             .setProjectId(PROJECT_ID)
             .build());
+  }
+
+  private ConfigUpdateListener generateEmptyRealtimeListener() {
+    return new ConfigUpdateListener() {
+      @Override
+      public void onEvent() {}
+
+      @Override
+      public void onError(@NonNull Exception error) {}
+    };
   }
 }

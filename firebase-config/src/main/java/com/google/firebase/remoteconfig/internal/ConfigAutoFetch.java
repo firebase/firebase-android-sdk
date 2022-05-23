@@ -14,15 +14,15 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
+
+import android.util.Log;
 import androidx.annotation.GuardedBy;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateFetchException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,11 +33,11 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class ConfigAutoFetch {
 
-  private static final Logger logger = Logger.getLogger("Real_Time_RC");
   private static final int FETCH_RETRY = 3;
 
   @GuardedBy("this")
@@ -77,21 +77,27 @@ public class ConfigAutoFetch {
   }
 
   // Check connection and establish InputStream
-  private void listenForNotifications() {
+  private synchronized void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
-        logger.info(httpURLConnection.toString());
         int responseCode = httpURLConnection.getResponseCode();
-        logger.info(responseCode + "");
         if (responseCode == 200) {
           InputStream inputStream = httpURLConnection.getInputStream();
           handleNotifications(inputStream);
           inputStream.close();
         } else {
-          logger.info("Can't open Realtime stream");
+          for (ConfigUpdateListener listener : eventListener) {
+            listener.onError(
+                new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                    "Http connection responded with error: " + responseCode));
+          }
         }
       } catch (IOException ex) {
-        logger.info("Error handling messages with exception: " + ex.toString());
+        for (ConfigUpdateListener listener : eventListener) {
+          listener.onError(
+              new FirebaseRemoteConfigRealtimeUpdateFetchException(
+                  "Error handling stream messages while fetching.", ex.getCause()));
+        }
       }
     }
     retryCallback.onEvent();
@@ -102,7 +108,6 @@ public class ConfigAutoFetch {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
-      logger.info(message);
       long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
       try {
         JSONObject jsonObject = new JSONObject(message);
@@ -110,10 +115,9 @@ public class ConfigAutoFetch {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
         }
       } catch (JSONException ex) {
-        logger.info("Can't get latest config update message.");
+        Log.i(TAG, "Can't get latest config update message.");
       }
 
-      logger.info("Template version is " + targetTemplateVersion);
       autoFetch(FETCH_RETRY, targetTemplateVersion);
     }
     reader.close();
@@ -122,34 +126,34 @@ public class ConfigAutoFetch {
   private synchronized void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
       for (ConfigUpdateListener listener : eventListener) {
-        listener.onError(new FirebaseRemoteConfigException("Unable to fetch latest version."));
+        listener.onError(
+            new FirebaseRemoteConfigRealtimeUpdateFetchException(
+                "Unable to fetch latest version."));
       }
 
       return;
     }
 
+    // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
+    int timeTillFetch = random.nextInt(11000) + 2000;
     if (remainingAttempts == FETCH_RETRY) {
-      fetchLatestConfig(remainingAttempts, targetVersion);
-    } else {
-      // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
-      int timeTillFetch = random.nextInt(11000) + 2000;
-      scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              fetchLatestConfig(remainingAttempts, targetVersion);
-            }
-          },
-          timeTillFetch,
-          TimeUnit.MILLISECONDS);
+      timeTillFetch = 0;
     }
+    scheduledExecutorService.schedule(
+        new Runnable() {
+          @Override
+          public void run() {
+            fetchLatestConfig(remainingAttempts, targetVersion);
+          }
+        },
+        timeTillFetch,
+        TimeUnit.MILLISECONDS);
   }
 
   private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
-          logger.info("Fetch done...");
           long newTemplateVersion = 0;
           if (fetchResponse.getFetchedConfigs() != null) {
             newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
@@ -160,7 +164,8 @@ public class ConfigAutoFetch {
               listener.onEvent();
             }
           } else {
-            logger.info(
+            Log.i(
+                TAG,
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");
             // Continue fetching until template version number if greater then current.

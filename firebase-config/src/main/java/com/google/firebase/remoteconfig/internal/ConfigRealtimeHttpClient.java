@@ -30,6 +30,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -205,13 +206,17 @@ public class ConfigRealtimeHttpClient {
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
-      Log.i(TAG, String.format("Can't start http connection due to %s", ex.toString()));
+      for (ConfigUpdateListener listener : listeners) {
+        listener.onError(
+            new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                "Can't establish http stream.", ex.getCause()));
+      }
     }
 
     return httpURLConnection;
   }
 
-  private void startAutoFetch() {
+  private synchronized void startAutoFetch() {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
@@ -257,9 +262,13 @@ public class ConfigRealtimeHttpClient {
 
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       ConfigUpdateListener configUpdateListener) {
-    listeners.add(configUpdateListener);
-    beginRealtime();
-    return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
+    if (configUpdateListener != null) {
+      listeners.add(configUpdateListener);
+      beginRealtime();
+      return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
+    }
+
+    return null;
   }
 
   private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
