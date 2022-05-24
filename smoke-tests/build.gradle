@@ -67,7 +67,7 @@ dependencies {
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
   implementation "com.google.firebase:firebase-annotations"
-  implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta02"
+  implementation "com.google.firebase:firebase-appdistribution"
   implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
