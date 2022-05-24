@@ -2,7 +2,7 @@
 package com.google.firebase.remoteconfig {
 
   public interface ConfigUpdateListener {
-    method public void onError(Exception);
+    method public void onError(@NonNull Exception);
     method public void onEvent();
   }
 
@@ -63,6 +63,16 @@ package com.google.firebase.remoteconfig {
     method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings getConfigSettings();
     method public long getFetchTimeMillis();
     method public int getLastFetchStatus();
+  }
+
+  public class FirebaseRemoteConfigRealtimeUpdateFetchException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
+    ctor public FirebaseRemoteConfigRealtimeUpdateFetchException(@NonNull String);
+    ctor public FirebaseRemoteConfigRealtimeUpdateFetchException(@NonNull String, @Nullable Throwable);
+  }
+
+  public class FirebaseRemoteConfigRealtimeUpdateStreamException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
+    ctor public FirebaseRemoteConfigRealtimeUpdateStreamException(@NonNull String);
+    ctor public FirebaseRemoteConfigRealtimeUpdateStreamException(@NonNull String, @Nullable Throwable);
   }
 
   public class FirebaseRemoteConfigServerException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
