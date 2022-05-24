@@ -20,6 +20,7 @@ import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateFetchException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedReader;
@@ -39,7 +40,7 @@ public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
 
-  private final Set<ConfigUpdateListener> eventListener;
+  private final Set<ConfigUpdateListener> eventListeners;
 
   private final HttpURLConnection httpURLConnection;
   private final ConfigFetchHandler configFetchHandler;
@@ -51,13 +52,13 @@ public class ConfigAutoFetch {
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
-      Set<ConfigUpdateListener> eventListener,
+      Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
       Executor executor,
       ScheduledExecutorService scheduledExecutorService) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
-    this.eventListener = eventListener;
+    this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
@@ -74,6 +75,12 @@ public class ConfigAutoFetch {
         });
   }
 
+  private void propagateErrors(FirebaseRemoteConfigException exception) {
+    for (ConfigUpdateListener listener : eventListeners) {
+      listener.onError(exception);
+    }
+  }
+
   // Check connection and establish InputStream
   private void listenForNotifications() {
     if (httpURLConnection != null) {
@@ -84,18 +91,14 @@ public class ConfigAutoFetch {
           handleNotifications(inputStream);
           inputStream.close();
         } else {
-          for (ConfigUpdateListener listener : eventListener) {
-            listener.onError(
-                new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                    "Http connection responded with error: " + responseCode));
-          }
+          propagateErrors(
+              new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                  "Http connection responded with error: " + responseCode));
         }
       } catch (IOException ex) {
-        for (ConfigUpdateListener listener : eventListener) {
-          listener.onError(
-              new FirebaseRemoteConfigRealtimeUpdateFetchException(
-                  "Error handling stream messages while fetching.", ex.getCause()));
-        }
+        propagateErrors(
+            new FirebaseRemoteConfigRealtimeUpdateFetchException(
+                "Error handling stream messages while fetching.", ex.getCause()));
       }
     }
     retryCallback.onEvent();
@@ -113,7 +116,7 @@ public class ConfigAutoFetch {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
         }
       } catch (JSONException ex) {
-        Log.i(TAG, "Can't get latest config update message.");
+        Log.i(TAG, "Unable to parse latest config update message.");
       }
 
       autoFetch(FETCH_RETRY, targetTemplateVersion);
@@ -123,15 +126,10 @@ public class ConfigAutoFetch {
 
   private void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
-      for (ConfigUpdateListener listener : eventListener) {
-        listener.onError(
-            new FirebaseRemoteConfigRealtimeUpdateFetchException(
-                "Unable to fetch latest version."));
-      }
-
+      propagateErrors(
+          new FirebaseRemoteConfigRealtimeUpdateFetchException("Unable to fetch latest version."));
       return;
     }
-
     // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
     int timeTillFetch = random.nextInt(11000) + 2000;
     if (remainingAttempts == FETCH_RETRY) {
@@ -158,7 +156,7 @@ public class ConfigAutoFetch {
           }
 
           if (newTemplateVersion >= targetVersion) {
-            for (ConfigUpdateListener listener : eventListener) {
+            for (ConfigUpdateListener listener : eventListeners) {
               listener.onEvent();
             }
           } else {

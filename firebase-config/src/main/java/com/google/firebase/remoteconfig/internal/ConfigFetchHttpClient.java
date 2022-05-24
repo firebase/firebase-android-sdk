@@ -435,15 +435,10 @@ public class ConfigFetchHttpClient {
         containerBuilder.withPersonalizationMetadata(personalizationMetadata);
       }
 
-      String templateVersionNumber = null;
-      try {
-        templateVersionNumber = fetchResponse.getString(TEMPLATE_VERSION_NUMBER);
-      } catch (JSONException ex) {
-        // Do nothing if template version number does not exist.
-      }
-      if (templateVersionNumber != null) {
-        containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
-      }
+      // Try and get template version number, if not available fallback to lowest possible version
+      // in order to trigger fetch
+      String templateVersionNumber = fetchResponse.optString(TEMPLATE_VERSION_NUMBER, "1");
+      containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
 
       return containerBuilder.build();
     } catch (JSONException e) {

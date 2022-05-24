@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * A Firebase Remote Config issue that is caused by the stream component of Realtime config updates.
+ * A Firebase Remote Config exception caused by the stream component of Realtime config updates.
  *
  * @author Quan Pham
  */

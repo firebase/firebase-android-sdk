@@ -18,8 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * A Firebase Remote Config issue that is caused by the auto-fetch component of Realtime config
- * updates.
+ * A Firebase Remote Config exception caused by the auto-fetch component of Realtime config updates.
  *
  * @author Quan Pham
  */
