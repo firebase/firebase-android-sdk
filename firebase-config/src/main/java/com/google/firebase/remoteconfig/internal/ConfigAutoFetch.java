@@ -40,7 +40,6 @@ public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
 
-  @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListener;
 
   private final HttpURLConnection httpURLConnection;
@@ -77,7 +76,7 @@ public class ConfigAutoFetch {
   }
 
   // Check connection and establish InputStream
-  private synchronized void listenForNotifications() {
+  private void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
         int responseCode = httpURLConnection.getResponseCode();
@@ -123,7 +122,7 @@ public class ConfigAutoFetch {
     reader.close();
   }
 
-  private synchronized void autoFetch(int remainingAttempts, long targetVersion) {
+  private void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
       for (ConfigUpdateListener listener : eventListener) {
         listener.onError(
@@ -150,7 +149,7 @@ public class ConfigAutoFetch {
         TimeUnit.MILLISECONDS);
   }
 
-  private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
+  private void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {

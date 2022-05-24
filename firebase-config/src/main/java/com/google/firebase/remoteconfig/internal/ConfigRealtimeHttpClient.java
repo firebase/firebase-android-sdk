@@ -225,11 +225,7 @@ public class ConfigRealtimeHttpClient {
           }
 
           @Override
-          public void onError(Exception error) {
-            for (ConfigUpdateListener listener : listeners) {
-              listener.onError(error);
-            }
-          }
+          public void onError(Exception error) {}
         };
     Log.i(TAG, "Starting autofetch...");
     ConfigAutoFetch autoFetch =
