@@ -23,12 +23,15 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Process;
+import android.os.SystemClock;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
@@ -102,8 +105,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onFirstDrawPierreRicau = null;
   private Timer onFirstDrawPRIMESFrontOfQueue = null;
   private Timer onFirstDrawPRIMES = null;
-  private TTIDMeasure ttidMeasure;
-
+  private long onFirstDrawElapsedRealTime;
+  private long onFirstDrawUptimeMillis;
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
 
@@ -142,8 +145,16 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   private void recordFirstOnDrawPRIMESFrontOfQueue() {
+    // Old time
     this.onFirstDrawPRIMESFrontOfQueue = clock.getTime();
     executorService.execute(this::logTTIDPRIMESFrontOfQueueTrace);
+    // Process start, API 24+ only
+    this.onFirstDrawElapsedRealTime = SystemClock.elapsedRealtime();
+    this.onFirstDrawUptimeMillis = SystemClock.uptimeMillis();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      executorService.execute(this::logTTIDProcessStartElapsedRealTimeTrace);
+      executorService.execute(this::logTTIDProcessStartUptimeMillisTrace);
+    }
   }
 
   private void recordFirstOnDrawPRIMES() {
@@ -168,7 +179,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                       MAX_POOL_SIZE,
                       /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(4)));
+                      new LinkedBlockingQueue<>(5)));
         }
       }
     }
@@ -303,6 +314,34 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                     .setName("TTID_PRIMES")
                     .setClientStartTimeUs(getappStartTime().getMicros())
                     .setDurationUs(getappStartTime().getDurationMicros(onFirstDrawPRIMES));
+    metric.addPerfSessions(this.startSession.build());
+
+    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
+  }
+
+  private void logTTIDProcessStartElapsedRealTimeTrace() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return;
+    }
+    TraceMetric.Builder metric =
+            TraceMetric.newBuilder()
+                    .setName("TTID_ProcessStart_elapsedRealTime")
+                    .setClientStartTimeUs(getappStartTime().getMicros())
+                    .setDurationUs(TimeUnit.MILLISECONDS.toMicros(onFirstDrawElapsedRealTime - Process.getStartElapsedRealtime()));
+    metric.addPerfSessions(this.startSession.build());
+
+    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
+  }
+
+  private void logTTIDProcessStartUptimeMillisTrace() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return;
+    }
+    TraceMetric.Builder metric =
+            TraceMetric.newBuilder()
+                    .setName("TTID_ProcessStart_uptimeMillis")
+                    .setClientStartTimeUs(getappStartTime().getMicros())
+                    .setDurationUs(TimeUnit.MILLISECONDS.toMicros(onFirstDrawUptimeMillis - Process.getStartUptimeMillis()));
     metric.addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
