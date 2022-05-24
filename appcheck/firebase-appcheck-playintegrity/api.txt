@@ -1,0 +1,11 @@
+// Signature format: 2.0
+package com.google.firebase.appcheck.playintegrity {
+
+  public class PlayIntegrityAppCheckProviderFactory implements com.google.firebase.appcheck.AppCheckProviderFactory {
+    ctor public PlayIntegrityAppCheckProviderFactory();
+    method @NonNull public com.google.firebase.appcheck.AppCheckProvider create(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public static com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory getInstance();
+  }
+
+}
+

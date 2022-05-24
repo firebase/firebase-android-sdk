@@ -21,6 +21,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskAction
@@ -50,7 +51,8 @@ fun Project.runMetalavaWithArgs(
 
 abstract class GenerateStubsTask : DefaultTask() {
     /** Source files against which API signatures will be validated. */
-    lateinit var sourceSet: Object
+    @Nested
+    lateinit var sourceSet: Any
 
     @get:InputFiles
     lateinit var classPath: FileCollection

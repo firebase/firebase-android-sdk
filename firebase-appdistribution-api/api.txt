@@ -50,8 +50,8 @@ package com.google.firebase.appdistribution {
   }
 
   public interface UpdateProgress {
-    method @NonNull public long getApkBytesDownloaded();
-    method @NonNull public long getApkFileTotalBytes();
+    method public long getApkBytesDownloaded();
+    method public long getApkFileTotalBytes();
     method @NonNull public com.google.firebase.appdistribution.UpdateStatus getUpdateStatus();
   }
 
