@@ -18,6 +18,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 
 import android.util.Log;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
@@ -41,10 +42,12 @@ public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
 
-  @GuardedBy(("this"))
+  @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
 
+  @GuardedBy("this")
   private final HttpURLConnection httpURLConnection;
+
   private final ConfigFetchHandler configFetchHandler;
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
@@ -90,7 +93,8 @@ public class ConfigAutoFetch {
   }
 
   // Check connection and establish InputStream
-  private void listenForNotifications() {
+  @VisibleForTesting
+  public synchronized void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
         int responseCode = httpURLConnection.getResponseCode();
@@ -138,20 +142,22 @@ public class ConfigAutoFetch {
           new FirebaseRemoteConfigRealtimeUpdateFetchException("Unable to fetch latest version."));
       return;
     }
-    // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
-    int timeTillFetch = random.nextInt(11000) + 2000;
+
     if (remainingAttempts == FETCH_RETRY) {
-      timeTillFetch = 0;
+      fetchLatestConfig(remainingAttempts, targetVersion);
+    } else {
+      // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
+      int timeTillFetch = random.nextInt(11000) + 2000;
+      scheduledExecutorService.schedule(
+          new Runnable() {
+            @Override
+            public void run() {
+              fetchLatestConfig(remainingAttempts, targetVersion);
+            }
+          },
+          timeTillFetch,
+          TimeUnit.MILLISECONDS);
     }
-    scheduledExecutorService.schedule(
-        new Runnable() {
-          @Override
-          public void run() {
-            fetchLatestConfig(remainingAttempts, targetVersion);
-          }
-        },
-        timeTillFetch,
-        TimeUnit.MILLISECONDS);
   }
 
   private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {

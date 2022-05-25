@@ -57,6 +57,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.internal.ConfigAutoFetch;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
@@ -65,14 +66,19 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -133,8 +139,14 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
   @Mock private ConfigMetadataClient metadataClient;
+
   @Mock private ConfigRealtimeHttpClient mockRealtimeHttpClient;
   @Mock private ConfigUpdateListenerRegistration mockRealtimeRegistration;
+  @Mock private HttpURLConnection mockHttpURLConnection;
+  @Mock private ConfigUpdateListener mockListener;
+  @Mock private ConfigUpdateListener mockRetryListener;
+  @Mock private ScheduledExecutorService mockScheduledExecutorService;
+  @Mock private Executor mockExecutor;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
@@ -153,6 +165,9 @@ public final class FirebaseRemoteConfigTest {
   private FirebaseRemoteConfig personalizationFrc;
   private ConfigContainer firstFetchedContainer;
   private ConfigContainer secondFetchedContainer;
+  private FetchResponse realtimeFetchedContainerResponse;
+  private ConfigContainer realtimeFetchedContainer;
+  private ConfigAutoFetch configAutoFetch;
 
   private FetchResponse firstFetchedContainerResponse;
 
@@ -248,6 +263,20 @@ public final class FirebaseRemoteConfigTest {
 
     firstFetchedContainerResponse =
         FetchResponse.forBackendUpdatesFetched(firstFetchedContainer, ETAG);
+
+    realtimeFetchedContainer = ConfigContainer.newBuilder().withTemplateVersionNumber(1L).build();
+    realtimeFetchedContainerResponse =
+        FetchResponse.forBackendUpdatesFetched(realtimeFetchedContainer, ETAG);
+    HashSet<ConfigUpdateListener> listeners = new HashSet();
+    listeners.add(mockListener);
+    configAutoFetch =
+        new ConfigAutoFetch(
+            mockHttpURLConnection,
+            mockFetchHandler,
+            listeners,
+            mockRetryListener,
+            mockExecutor,
+            mockScheduledExecutorService);
   }
 
   @Test
@@ -1059,16 +1088,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_addListener_fail() {
-    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(null)).thenReturn(null);
-
-    ConfigUpdateListenerRegistration registration =
-        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(null);
-
-    assertThat(registration).isNull();
-  }
-
-  @Test
   public void realtime_removeListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
@@ -1078,8 +1097,59 @@ public final class FirebaseRemoteConfigTest {
         mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener);
     registration.remove();
 
-    assertThat(registration).isNotNull();
     verify(mockRealtimeRegistration).remove();
+  }
+
+  @Test
+  public void realtime_stream_listen_success() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+    verify(mockListener).onEvent();
+  }
+
+  @Test
+  public void realtime_stream_listen_ends_retry() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+    verify(mockRetryListener).onEvent();
+  }
+
+  @Test
+  public void realtime_stream_listen_fail() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(400);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+    verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
+  }
+
+  @Test
+  public void realtime_stream_listen_get_inputstream_fail() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+    verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
   }
 
   private static void loadCacheWithConfig(

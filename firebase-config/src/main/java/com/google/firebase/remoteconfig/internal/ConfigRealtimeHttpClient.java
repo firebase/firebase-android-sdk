@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -61,11 +62,9 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private boolean isStreamOpen;
-
   private HttpURLConnection httpURLConnection;
-  private final ScheduledExecutorService scheduledExecutorService;
 
+  private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -82,7 +81,6 @@ public class ConfigRealtimeHttpClient {
       Executor executor) {
 
     this.listeners = new LinkedHashSet<>();
-    this.isStreamOpen = false;
     this.httpURLConnection = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -178,7 +176,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && !isStreamOpen;
+    return !listeners.isEmpty() && httpURLConnection == null;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -243,28 +241,24 @@ public class ConfigRealtimeHttpClient {
   private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
       this.httpURLConnection = makeHttpConnection();
-      isStreamOpen = true;
       startAutoFetch();
     }
   }
 
   // Pauses Http stream listening
   private synchronized void pauseRealtime() {
-    if (this.httpURLConnection != null) {
-      this.httpURLConnection.disconnect();
-      isStreamOpen = false;
+    if (httpURLConnection != null) {
+      httpURLConnection.disconnect();
+      httpURLConnection = null;
     }
   }
 
+  @NonNull
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
-      ConfigUpdateListener configUpdateListener) {
-    if (configUpdateListener != null) {
-      listeners.add(configUpdateListener);
-      beginRealtime();
-      return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
-    }
-
-    return null;
+      @NonNull ConfigUpdateListener configUpdateListener) {
+    listeners.add(configUpdateListener);
+    beginRealtime();
+    return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
   private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
