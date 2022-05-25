@@ -439,7 +439,7 @@ public class ConfigFetchHttpClient {
       try {
         templateVersionNumber = fetchResponse.getString(TEMPLATE_VERSION_NUMBER);
       } catch (JSONException ex) {
-        // Do nothing if personalizationMetadata does not exist.
+        // Do nothing if templateVersionNumber does not exist.
       }
       if (templateVersionNumber != null) {
         containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
