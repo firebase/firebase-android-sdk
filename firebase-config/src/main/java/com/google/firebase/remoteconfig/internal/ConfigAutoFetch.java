@@ -77,7 +77,7 @@ public class ConfigAutoFetch {
         });
   }
 
-  private void propagateErrors(FirebaseRemoteConfigException exception) {
+  private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
     for (ConfigUpdateListener listener : eventListeners) {
       listener.onError(exception);
     }
