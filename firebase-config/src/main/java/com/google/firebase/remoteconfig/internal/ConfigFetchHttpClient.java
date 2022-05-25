@@ -435,8 +435,7 @@ public class ConfigFetchHttpClient {
         containerBuilder.withPersonalizationMetadata(personalizationMetadata);
       }
 
-      // Try and get template version number, if not available fallback to lowest possible version
-      // in order to trigger fetch
+      // Try and get template version number, if not available fallback to empty string.
       String templateVersionNumber = fetchResponse.optString(TEMPLATE_VERSION_NUMBER, "");
       if (!templateVersionNumber.isEmpty()) {
         containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
