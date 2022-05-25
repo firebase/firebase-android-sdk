@@ -17,6 +17,7 @@ package com.google.firebase.remoteconfig.internal;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 
 import android.util.Log;
+import androidx.annotation.GuardedBy;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
@@ -40,6 +41,7 @@ public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
 
+  @GuardedBy(("this"))
   private final Set<ConfigUpdateListener> eventListeners;
 
   private final HttpURLConnection httpURLConnection;
@@ -78,6 +80,12 @@ public class ConfigAutoFetch {
   private void propagateErrors(FirebaseRemoteConfigException exception) {
     for (ConfigUpdateListener listener : eventListeners) {
       listener.onError(exception);
+    }
+  }
+
+  private synchronized void executeAllListenerCallbacks() {
+    for (ConfigUpdateListener listener : eventListeners) {
+      listener.onEvent();
     }
   }
 
@@ -146,7 +154,7 @@ public class ConfigAutoFetch {
         TimeUnit.MILLISECONDS);
   }
 
-  private void fetchLatestConfig(int remainingAttempts, long targetVersion) {
+  private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
@@ -156,9 +164,7 @@ public class ConfigAutoFetch {
           }
 
           if (newTemplateVersion >= targetVersion) {
-            for (ConfigUpdateListener listener : eventListeners) {
-              listener.onEvent();
-            }
+            executeAllListenerCallbacks();
           } else {
             Log.i(
                 TAG,
