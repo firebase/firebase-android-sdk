@@ -22,6 +22,8 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.regex.Pattern;
 
 final class TopicOperation {
@@ -117,6 +119,7 @@ final class TopicOperation {
   }
 
   @StringDef({TopicOperations.OPERATION_SUBSCRIBE, TopicOperations.OPERATION_UNSUBSCRIBE})
+  @Retention(RetentionPolicy.SOURCE)
   @interface TopicOperations {
     String OPERATION_SUBSCRIBE = "S";
     String OPERATION_UNSUBSCRIBE = "U";
