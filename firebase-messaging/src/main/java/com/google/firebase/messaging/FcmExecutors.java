@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 class FcmExecutors {
   // TODO(b/117848373): TikTok applications need to comply with go/tiktok-tattletale. Before we
   // migrate to use TikTok thread pools, threads need to use the whitelisted prefix
-  // "Firebase-Messaing".
+  // "Firebase-Messaging".
   private static final String THREAD_NETWORK_IO = "Firebase-Messaging-Network-Io";
   private static final String THREAD_TASK = "Firebase-Messaging-Task";
   private static final String THREAD_FILE = "Firebase-Messaging-File";

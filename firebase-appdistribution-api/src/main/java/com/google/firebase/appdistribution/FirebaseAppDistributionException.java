@@ -83,10 +83,12 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull private final Status status;
   @Nullable private final AppDistributionRelease release;
 
+  /** @hide */
   public FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
     this(message, status, (AppDistributionRelease) null);
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @Nullable AppDistributionRelease release) {
     super(message);
@@ -94,11 +96,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     this.release = release;
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
     this(message, status, null, cause);
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message,
       @NonNull Status status,
