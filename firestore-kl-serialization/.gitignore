@@ -74,4 +74,3 @@ firestore.indexes.json
 firestore.rules
 gradle/wrapper/gradle-wrapper.jar
 package-lock.json
-package.json

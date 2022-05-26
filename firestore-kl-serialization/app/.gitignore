@@ -3,4 +3,3 @@
 ../.idea
 /src/main/java/com/example/firestore_kotlin_serialization/annotations/test.kt
 /src/main/java/com/example/firestore_kotlin_serialization/MainActivity.kt
-/src/main/res/layout/activity_main.xml
