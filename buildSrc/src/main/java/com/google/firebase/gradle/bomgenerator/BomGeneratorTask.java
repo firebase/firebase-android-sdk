@@ -130,6 +130,8 @@ public class BomGeneratorTask extends DefaultTask {
           "firebase-datatransport",
           "firebase-appdistribution-ktx",
           "firebase-appdistribution",
+          "firebase-appdistribution-api",
+          "firebase-appdistribution-api-ktx",
           "firebase-dynamic-module-support",
           "firebase-dynamic-links-license",
           "firebase-functions-license",
