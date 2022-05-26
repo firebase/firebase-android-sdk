@@ -4,5 +4,6 @@ import kotlinx.serialization.SerialInfo
 
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
-@Target(AnnotationTarget.CLASS)
-annotation class IgnoreExtraProperties()
+@Target(AnnotationTarget.PROPERTY)
+annotation class KServerTimestamp()
+

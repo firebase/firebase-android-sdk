@@ -5,5 +5,5 @@ import kotlinx.serialization.SerialInfo
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
-annotation class ThrowOnExtraProperties {
+annotation class KThrowOnExtraProperties {
 }

@@ -1,8 +1,7 @@
 package com.example.firestore_kotlin_serialization
 
-import com.example.firestore_kotlin_serialization.annotations.DocumentId
+import com.example.firestore_kotlin_serialization.annotations.KDocumentId
 import com.google.firebase.firestore.DocumentReference
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -13,7 +12,6 @@ import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
-
 
 class NestedMapEncoder(
     private var map: MutableMap<Int, MutableMap<String, Any?>> = mutableMapOf(),
@@ -42,10 +40,10 @@ class NestedMapEncoder(
     override fun encodeValue(value: Any) {
         val elementAnnotations: List<Annotation> = descriptor!!.getElementAnnotations(elementIndex)
         val elementKind = descriptor!!.getElementDescriptor(elementIndex).kind
-        val skipDocumentId = elementAnnotations?.any { it is DocumentId }
+        val skipDocumentId = elementAnnotations?.any { it is KDocumentId }
         if (skipDocumentId && elementKind != PrimitiveKind.STRING) {
             // TODO: DocumentReference is not a primitive type, so I need to make it @Serializable so I can have it
-            throw IllegalArgumentException("Field is annotated with @DocumentId but is class ${elementKind} instead of String or DocumentReference.")
+            throw IllegalArgumentException("Field is annotated with @DocumentId but is class $elementKind instead of String or DocumentReference.")
         }
         if (skipDocumentId && depth == ROOT_LEVEL) {
             elementIndex++ // skip encoding any field annotated with @DocumentId at root level
@@ -62,7 +60,7 @@ class NestedMapEncoder(
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        //TODO: @DocumentID and @ServerTimeStamp should not be applied on Structures
+        // TODO: @DocumentID and @ServerTimeStamp should not be applied on Structures
         var listOfElementsToBeEncoded: MutableList<Any> = mutableListOf()
         if (!descriptor.elementNames.toList().isNullOrEmpty()) {
             listOfElementsToBeEncoded = descriptor.elementNames.toList() as MutableList<Any>
@@ -149,14 +147,12 @@ fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): MutableMap<
 inline fun <reified T> encodeToMap(value: T): MutableMap<String, Any?> =
     encodeToMap(serializer(), value)
 
-inline fun <reified T> DocumentReference.set(value: T): Unit {
+inline fun <reified T> DocumentReference.set(value: T) {
     val encodedMap = encodeToMap<T>(value)
     set(encodedMap)
 }
 
-fun main() {
-    @Serializable
-    data class TestList(
-        val list: List<String> = listOf("a", "b")
-    )
+inline fun <reified T> DocumentReference.serialSet(value: T) {
+    val encodedMap = encodeToMap<T>(value)
+    set(encodedMap)
 }

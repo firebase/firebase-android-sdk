@@ -1,7 +1,8 @@
 package com.example.firestore_kotlin_serialization
 
-import com.example.firestore_kotlin_serialization.annotations.DocumentId
-import com.example.firestore_kotlin_serialization.annotations.ThrowOnExtraProperties
+import com.example.firestore_kotlin_serialization.annotations.KDocumentId
+import com.example.firestore_kotlin_serialization.annotations.KThrowOnExtraProperties
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -15,10 +16,11 @@ import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
-val dummyDocumentId: String = "this is a simulated documentID"
+data class FirestoreDocument(val id: String, val documentReference: DocumentReference)
 
 abstract class NestDecoder(
     open val nestedObject: Any = Unit,
+    open var documentId: FirestoreDocument? = null
 ) : AbstractDecoder() {
 
     var elementIndex: Int = 0
@@ -56,19 +58,19 @@ abstract class NestDecoder(
                         val propertyIndex = descriptor.getElementIndex(propertyName)
                         val annotationsOnProperty = descriptor.getElementAnnotations(propertyIndex)
                         // TODO: Loop through all the properties' annotation list to replace @ServerTimestamp
-                        if (annotationsOnProperty.any { it is DocumentId }) {
+                        if (annotationsOnProperty.any { it is KDocumentId }) {
                             val propertieType = descriptor.getElementDescriptor(propertyIndex).kind
                             if (propertieType is PrimitiveKind.STRING) { // TODO: Need to handle DocumentReference Type as well
-                                innerMap[propertyName] = dummyDocumentId
+                                innerMap[propertyName] = documentId!!.id
                             } else {
                                 throw IllegalArgumentException(
-                                    "Field is annotated with @DocumentId but is class ${propertieType} instead of String."
+                                    "Field is annotated with @DocumentId but is class $propertieType instead of String."
                                 )
                             }
                         }
                     }
                 }
-                return NestedMapDecoder(innerMap)
+                return NestedMapDecoder(innerMap, documentId)
             }
             is StructureKind.LIST -> {
                 val innerList = innerCompositeObject as? List<Any> ?: listOf()
@@ -97,6 +99,7 @@ class NestedListDecoder(
 
 class NestedMapDecoder(
     override val nestedObject: Map<*, *>,
+    override var documentId: FirestoreDocument?
 ) : NestDecoder() {
     private val map = nestedObject
     override val decodeValueList = ArrayList(map.values)
@@ -104,7 +107,7 @@ class NestedMapDecoder(
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == map.size) return CompositeDecoder.DECODE_DONE
         val throwOnExtraProperties: Boolean =
-            descriptor.annotations.any { it is ThrowOnExtraProperties }
+            descriptor.annotations.any { it is KThrowOnExtraProperties }
         while (true) {
             if (elementIndex == map.size) return CompositeDecoder.DECODE_DONE
             val decodeElementName = map.keys.elementAt(elementIndex).toString()
@@ -118,22 +121,23 @@ class NestedMapDecoder(
             }
             if (decodeElementIndex == CompositeDecoder.UNKNOWN_NAME && throwOnExtraProperties) {
                 throw IllegalArgumentException(
-                    "Can not match ${decodeElementName} to any properties inside of Object: ${descriptor.serialName}"
+                    "Can not match $decodeElementName to any properties inside of Object: ${descriptor.serialName}"
                 )
             }
         }
     }
 }
 
-fun <T> decodeFromNestedMap(map: Map<String, Any?>, deserializer: DeserializationStrategy<T>): T {
-    val decoder: Decoder = NestedMapDecoder(map)
+fun <T> decodeFromNestedMap(map: Map<String, Any?>, deserializer: DeserializationStrategy<T>, firestoreDocument: FirestoreDocument?): T {
+    val decoder: Decoder = NestedMapDecoder(map, firestoreDocument)
     return decoder.decodeSerializableValue(deserializer)
 }
 
-inline fun <reified T> decodeFromNestedMap(map: Map<String, Any?>): T =
-    decodeFromNestedMap(map, serializer())
+inline fun <reified T> decodeFromNestedMap(map: Map<String, Any?>, firestoreDocument: FirestoreDocument?): T =
+    decodeFromNestedMap(map, serializer(), firestoreDocument)
 
 inline fun <reified T> DocumentSnapshot.get(): T? {
+    val firestoreDocument = FirestoreDocument(this.id, this.reference)
     val objectMap = this.data // Map<String!, Any!>?
-    return objectMap?.let { decodeFromNestedMap<T>(it) }
+    return objectMap?.let { decodeFromNestedMap<T>(it, firestoreDocument) }
 }

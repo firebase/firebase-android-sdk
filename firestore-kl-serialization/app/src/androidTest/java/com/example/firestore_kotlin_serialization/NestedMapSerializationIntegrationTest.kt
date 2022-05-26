@@ -1,22 +1,19 @@
 package com.example.firestore_kotlin_serialization
 
-import android.util.Log
-import com.example.firestore_kotlin_serialization.testutil.IntegrationTestUtil
+import com.example.firestore_kotlin_serialization.annotations.KDocumentId
+import com.example.firestore_kotlin_serialization.annotations.KThrowOnExtraProperties
 import com.example.firestore_kotlin_serialization.testutil.IntegrationTestUtil.Companion.testDocument
 import com.example.firestore_kotlin_serialization.testutil.IntegrationTestUtil.Companion.waitFor
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.test.assertFailsWith
 
 class NestedMapSerializationIntegrationTest {
 
-    companion object {
-        private const val TAG = "LogTest"
-        private val firestore = IntegrationTestUtil.testFirestore
-    }
-
     @Serializable
+    @KThrowOnExtraProperties
     data class Project(val name: String? = null, val owner: String? = null)
 
     @Serializable
@@ -31,19 +28,25 @@ class NestedMapSerializationIntegrationTest {
         val listOfOwner: List<Owner?>? = null
     )
 
+    @Serializable
+    data class KProjectWithDocId(val name: String? = null, @KDocumentId val owner: String? = null)
 
-    val docRef = firestore.collection("collection").document("docPath")
-    val docRef1 = firestore.collection("collection1").document("docPath")
+    @Serializable
+    data class KProjectWithPrimitiveExtraProperties(val name: String? = null, val owner: String? = null, val extraBoolean: Boolean? = true)
+
+    @Serializable
+    data class KProjectWithCustomObjectExtraProperties(val name: String? = null, val owner: String? = null, val extraOwner: Owner? = null)
 
     @Test
     fun testSerializationSetMethodSameAsPOJOSet() {
         val docRefKotlin = testDocument("kotlin_set")
         val docRefPOJO = testDocument("pojo_set")
-        val project1 = Project()
-        val project2 = Project("x")
-        val project3 = Project("x", "y")
-        val project4 = Project(null, null)
-        val projectList = listOf(project1, project2, project3, project4)
+        val projectList = listOf(
+            Project(),
+            Project("x"),
+            Project("x", "y"),
+            Project(null, null)
+        )
 
         for (project in projectList) {
             docRefKotlin.set<Project>(project)
@@ -58,20 +61,19 @@ class NestedMapSerializationIntegrationTest {
     fun testSerializationSetMethodWorksForNestedObject() {
         val docRefKotlin = testDocument("kotlin_set")
         val docRefPOJO = testDocument("pojo_set")
-        val project1 = ObjectInsideOfObject()
-        val project2 = ObjectInsideOfObject("x")
-        val project3 = ObjectInsideOfObject("x", Owner())
-        val project4 = ObjectInsideOfObject("x", Owner("yyy"))
-        val project5 = ObjectInsideOfObject("x", Owner(name = null))
-        val projectList = listOf(project1, project2, project3, project4, project5)
+        val projectList = listOf(
+            ObjectInsideOfObject(),
+            ObjectInsideOfObject("x"),
+            ObjectInsideOfObject("x", Owner()),
+            ObjectInsideOfObject("x", Owner("yyy")),
+            ObjectInsideOfObject("x", Owner(name = null))
+        )
 
         for (project in projectList) {
             docRefKotlin.set<ObjectInsideOfObject>(project)
             docRefPOJO.set(project)
             val expected = waitFor(docRefPOJO.get()).data
-            Log.d(TAG, "${expected}")
             val actual = waitFor(docRefKotlin.get()).data
-            Log.d(TAG, "${actual}")
             assertEquals(expected, actual)
         }
     }
@@ -80,23 +82,22 @@ class NestedMapSerializationIntegrationTest {
     fun testSerializationSetMethodWorksForList() {
         val docRefKotlin = testDocument("kotlin_set")
         val docRefPOJO = testDocument("pojo_set")
-        val project1 = ListOfObjectsInsideOfObject()
-        val project2 = ListOfObjectsInsideOfObject("x")
-        val project3 = ListOfObjectsInsideOfObject("x", listOf())
-        val project4 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner("b")))
-        val project5 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner()))
-        //TODO: Investigate the feasibility of supporting encode nullable List<T?>
+        val projectList = listOf(
+            ListOfObjectsInsideOfObject(),
+            ListOfObjectsInsideOfObject("x"),
+            ListOfObjectsInsideOfObject("x", listOf()),
+            ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner("b"))),
+            ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner()))
+        )
+        // TODO: Investigate the feasibility of supporting encode nullable List<T?>
         // i.e. val project6 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"), null))
-        // currently, List<Any> is not supported by the serialization compiler plugin
-        val projectList = listOf(project1, project2, project3, project4, project5)
+        // currently, List<Any> is not supported by the serialization compiler plugin)
 
         for (project in projectList) {
             docRefKotlin.set<ListOfObjectsInsideOfObject>(project)
             docRefPOJO.set(project)
             val expected = waitFor(docRefPOJO.get()).data
-            Log.d(TAG, "${expected}")
             val actual = waitFor(docRefKotlin.get()).data
-            Log.d(TAG, "${actual}")
             assertEquals(expected, actual)
         }
     }
@@ -105,19 +106,17 @@ class NestedMapSerializationIntegrationTest {
     fun testSerializationGetMethodSameAsPOJOGet() {
         val docRefKotlin = testDocument("kotlin_get")
         val docRefPOJO = testDocument("pojo_get")
-        val project1 = Project()
-        val project2 = Project("x")
-        val project3 = Project("x", "y")
-        val project4 = Project(null, null)
-        val projectList = listOf(project1, project2, project3, project4)
+        val projectList = listOf(
+            Project(),
+            Project("x"),
+            Project("x", "y"), Project(null, null)
+        )
 
         for (project in projectList) {
             docRefPOJO.set(project)
             docRefKotlin.set(project)
             val expected = waitFor(docRefPOJO.get()).toObject<Project>()
-            Log.d(TAG, "${expected}")
             val actual = waitFor(docRefKotlin.get()).get<Project>()
-            Log.d(TAG, "${actual}")
             assertEquals(expected, actual)
         }
     }
@@ -126,21 +125,19 @@ class NestedMapSerializationIntegrationTest {
     fun testSerializationGetMethodWorksForNestedObject() {
         val docRefKotlin = testDocument("kotlin_set")
         val docRefPOJO = testDocument("pojo_set")
-        val project1 = ObjectInsideOfObject()
-        val project2 = ObjectInsideOfObject("x")
-        val project3 = ObjectInsideOfObject("x", Owner())
-        val project4 = ObjectInsideOfObject("x", Owner("b"))
-        //TODO: Fix the bug to decode nested nullable properties
-        // i.e. val project5 = ObjectInsideOfObject("x", Owner(name = null))
-        val projectList = listOf(project1, project2, project3, project4)
+        val projectList = listOf(
+            ObjectInsideOfObject(),
+            ObjectInsideOfObject("x"),
+            ObjectInsideOfObject("x", Owner()),
+            ObjectInsideOfObject("x", Owner("b")),
+            ObjectInsideOfObject("x", Owner(name = null)),
+        )
 
         for (project in projectList) {
             docRefPOJO.set(project)
             docRefKotlin.set(project)
             val expected = waitFor(docRefPOJO.get()).toObject<ObjectInsideOfObject>()
-            Log.d(TAG, "${expected}")
             val actual = waitFor(docRefKotlin.get()).get<ObjectInsideOfObject>()
-            Log.d(TAG, "${actual}")
             assertEquals(expected, actual)
         }
     }
@@ -149,24 +146,110 @@ class NestedMapSerializationIntegrationTest {
     fun testSerializationGetMethodWorksForList() {
         val docRefKotlin = testDocument("kotlin_set")
         val docRefPOJO = testDocument("pojo_set")
-        val project1 = ListOfObjectsInsideOfObject()
-        val project2 = ListOfObjectsInsideOfObject("x")
-        val project3 = ListOfObjectsInsideOfObject("x", listOf())
-        val project4 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner("b")))
-        val project5 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner()))
-        //TODO: Investigate the feasibility of supporting decode nullable List<T?>
+        val projectList = listOf(
+            ListOfObjectsInsideOfObject(),
+            ListOfObjectsInsideOfObject("x"),
+            ListOfObjectsInsideOfObject("x", listOf()),
+            ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner("b"))),
+            ListOfObjectsInsideOfObject("x", listOf(Owner("a"), Owner()))
+        )
+        // TODO: Investigate the feasibility of supporting decode nullable List<T?>
         // i.e. val project6 = ListOfObjectsInsideOfObject("x", listOf(Owner("a"),null))
         // mix type list (List<Any>) decoding is not supported i.e. listOf("123", 123)
-        val projectList = listOf(project1, project2, project3, project4, project5)
 
         for (project in projectList) {
             docRefPOJO.set(project)
             docRefKotlin.set(project)
             val expected = waitFor(docRefPOJO.get()).toObject<ListOfObjectsInsideOfObject>()
-            Log.d(TAG, "${expected}")
             val actual = waitFor(docRefKotlin.get()).get<ListOfObjectsInsideOfObject>()
-            Log.d(TAG, "${actual}")
             assertEquals(expected, actual)
+        }
+    }
+
+    @Test
+    fun testSerializationWorksWithDocumentIdAnnotation() {
+        val docRefKotlin = testDocument("kotlin_set")
+        val kProjectList = listOf(
+            KProjectWithDocId(),
+            KProjectWithDocId("name"),
+            KProjectWithDocId("name", "docId")
+        )
+
+        for (project in kProjectList) {
+            docRefKotlin.set<KProjectWithDocId>(project)
+            val expected = docRefKotlin.id
+            val actual = waitFor(docRefKotlin.get()).get<KProjectWithDocId>()?.owner
+            assertEquals(expected, actual)
+        }
+    }
+
+    @Test
+    fun testSerializationThrowWhenDocumentIdAnnotationAppliedToWrongField() {
+
+        @Serializable
+        data class KProjectWithDocIdOnWrongField1(val name: String? = null, @KDocumentId val owner: Int? = null)
+
+        @Serializable
+        data class KProjectWithDocIdOnWrongField2(val name: String? = null, @KDocumentId val owner: Boolean? = null)
+
+        @Serializable
+        data class KProjectWithDocIdOnWrongField3(val name: String? = null, @KDocumentId val owner: Owner? = null)
+        val docRefKotlin = testDocument("kotlin_set")
+        val kProjectList = listOf(
+            KProjectWithDocIdOnWrongField1(),
+            KProjectWithDocIdOnWrongField2(),
+            KProjectWithDocIdOnWrongField3(),
+        )
+
+        for (project in kProjectList) {
+            assertFailsWith<IllegalArgumentException>(
+                message = "Field is annotated with",
+                block = {
+                    docRefKotlin.serialSet(project)
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testSerializationWorksWithThrowOnExtraProperties() {
+        val docRefKotlin = testDocument("kotlin_set")
+        val kProjectList = listOf(
+            KProjectWithPrimitiveExtraProperties(),
+            KProjectWithPrimitiveExtraProperties(extraBoolean = null),
+            KProjectWithPrimitiveExtraProperties(extraBoolean = true),
+        )
+
+        for (project in kProjectList) {
+            docRefKotlin.set<KProjectWithPrimitiveExtraProperties>(project)
+            assertFailsWith<IllegalArgumentException>(
+                message = "Can not match",
+                block = {
+                    waitFor(docRefKotlin.get()).get<Project>()
+                }
+            )
+        }
+    }
+
+    @Test
+    fun testSerializationWorksWithThrowOnExtraPropertiesOnCustomField() {
+        val docRefKotlin = testDocument("kotlin_set")
+        val kProjectList = listOf(
+            KProjectWithCustomObjectExtraProperties(),
+            KProjectWithCustomObjectExtraProperties(extraOwner = null),
+            KProjectWithCustomObjectExtraProperties(extraOwner = Owner()),
+            KProjectWithCustomObjectExtraProperties(extraOwner = Owner(null)),
+            KProjectWithCustomObjectExtraProperties(extraOwner = Owner("owner_name")),
+        )
+
+        for (project in kProjectList) {
+            docRefKotlin.set<KProjectWithCustomObjectExtraProperties>(project)
+            assertFailsWith<IllegalArgumentException>(
+                message = "Can not match",
+                block = {
+                    waitFor(docRefKotlin.get()).get<Project>()
+                }
+            )
         }
     }
 }

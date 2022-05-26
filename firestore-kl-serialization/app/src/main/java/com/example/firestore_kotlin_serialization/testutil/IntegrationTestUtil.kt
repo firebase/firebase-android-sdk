@@ -4,6 +4,7 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import java.security.SecureRandom
@@ -13,7 +14,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class IntegrationTestUtil {
-
 
     companion object {
         // constants
@@ -26,8 +26,10 @@ class IntegrationTestUtil {
 
         private val rand: Random = SecureRandom()
 
-        private val settings: FirebaseFirestoreSettings =
-            FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build()
+        // Emulator must have local persistence storage enabled
+        var settings = FirebaseFirestoreSettings.Builder()
+            .setPersistenceEnabled(true)
+            .build()
 
         val testFirestore: FirebaseFirestore by lazy {
             FirebaseFirestore.getInstance().apply {
@@ -69,7 +71,9 @@ class IntegrationTestUtil {
         fun testDocument(name: String): DocumentReference {
             return testCollection("test-collection").document(name)
         }
+
+        fun testDocumentSnapshot(): DocumentSnapshot {
+            return waitFor(testCollection("test-document").document("dummy").get())
+        }
     }
-
-
 }

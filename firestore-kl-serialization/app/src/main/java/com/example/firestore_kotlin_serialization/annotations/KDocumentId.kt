@@ -10,4 +10,4 @@ import kotlinx.serialization.SerialInfo
     AnnotationTarget.PROPERTY_GETTER,
 //    AnnotationTarget.FIELD
 )
-annotation class DocumentId
+annotation class KDocumentId

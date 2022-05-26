@@ -1,10 +1,8 @@
 package com.example.firestore_kotlin_serialization
 
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.serialization.Serializable
-import org.junit.Assert.*
+import org.junit.Assert.assertTrue
 import org.junit.Test
-
 
 class NestedMapEncoderTest {
 
@@ -22,7 +20,6 @@ class NestedMapEncoderTest {
 
     @Serializable
     data class ListOfObjectsInsideOfObject(val name: String, val listOfOwner: List<Owner>)
-
 
     @Test
     fun encodePlainObject() {
@@ -71,20 +68,4 @@ class NestedMapEncoderTest {
         )
         assertTrue(encodeMap == expectedMap)
     }
-
-    @Test
-    fun integrationTest(){
-
-//        val inputObject = PlainProject("name","owner")
-//        docRef.set(inputObject)
-//        docRef.get().addOnSuccessListener { documentSnapshot ->
-//            val result = documentSnapshot.toObject<PlainProject>()
-//            println("==============================")
-//            println(result)
-//        }
-        assertTrue(true)
-
-    }
-
-
 }
