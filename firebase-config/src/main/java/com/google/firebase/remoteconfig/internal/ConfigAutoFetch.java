@@ -143,24 +143,21 @@ public class ConfigAutoFetch {
       return;
     }
 
-    if (remainingAttempts == FETCH_RETRY) {
-      fetchLatestConfig(remainingAttempts, targetVersion);
-    } else {
-      // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
-      int timeTillFetch = random.nextInt(11000) + 2000;
-      scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              fetchLatestConfig(remainingAttempts, targetVersion);
-            }
-          },
-          timeTillFetch,
-          TimeUnit.MILLISECONDS);
-    }
+    // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
+    int timeTillFetch = random.nextInt(6) + 1;
+    scheduledExecutorService.schedule(
+        new Runnable() {
+          @Override
+          public void run() {
+            fetchLatestConfig(remainingAttempts, targetVersion);
+          }
+        },
+        timeTillFetch,
+        TimeUnit.SECONDS);
   }
 
-  private synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
+  @VisibleForTesting
+  public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
