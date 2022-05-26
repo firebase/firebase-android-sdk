@@ -65,3 +65,13 @@ node_modules/
 # dotenv environment variables file
 .env
 gradle-old
+app/src/main/AndroidMainfest.xml
+
+# firebase test files
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
+gradle/wrapper/gradle-wrapper.jar
+package-lock.json
+package.json
