@@ -36,8 +36,8 @@ dependencies {
     implementation "com.google.protobuf:protobuf-java:3.14.0"
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.guava:guava:30.0-jre'
-    implementation 'com.google.dagger:dagger:2.31.2'
-    kapt 'com.google.dagger:dagger-compiler:2.31.2'
+    implementation 'com.google.dagger:dagger:2.39.1'
+    kapt 'com.google.dagger:dagger-compiler:2.39.1'
 
     testImplementation 'junit:junit:4.13.1'
     testImplementation "com.google.truth:truth:1.0.1"
