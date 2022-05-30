@@ -117,6 +117,7 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
             task -> {
               task.setOutputFile(metalavaOutputJarFile);
             });
+
     File apiTxt =
         project.file("api.txt").exists()
             ? project.file("api.txt")
