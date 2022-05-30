@@ -26,6 +26,7 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
@@ -35,31 +36,32 @@ public abstract class GenerateApiTxtFileTask extends DefaultTask {
   @Input
   abstract String getMetalavaJarPath();
 
+  public abstract void setMetalavaJarPath(String value);
+
   @OutputFile
   abstract File getApiTxt();
 
+  public abstract void setApiTxt(File value);
+
+  @Nested
   abstract Object getSourceSet();
+
+  public abstract void setSourceSet(Object value);
 
   @InputFiles
   public abstract FileCollection getClassPath();
 
+  public abstract void setClassPath(FileCollection value);
+
   @OutputFile
   abstract File getBaselineFile();
+
+  public abstract void setBaselineFile(File value);
 
   @Input
   abstract boolean getUpdateBaseline();
 
-  public abstract void setSourceSet(Object value);
-
-  public abstract void setClassPath(FileCollection value);
-
-  public abstract void setBaselineFile(File value);
-
   public abstract void setUpdateBaseline(boolean value);
-
-  public abstract void setMetalavaJarPath(String value);
-
-  public abstract void setApiTxt(File value);
 
   private Set<File> getSourceDirs() {
     if (getSourceSet() instanceof SourceSet) {

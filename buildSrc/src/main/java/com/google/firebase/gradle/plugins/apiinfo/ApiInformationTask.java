@@ -30,6 +30,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
@@ -46,6 +47,7 @@ public abstract class ApiInformationTask extends DefaultTask {
   @InputFile
   abstract File getApiTxt();
 
+  @Nested
   abstract Object getSourceSet();
 
   @InputFiles
