@@ -29,6 +29,9 @@ public enum LibraryType {
   }
 
   public String getComponentName() {
+    if (this == ANDROID) {
+      return name().toLowerCase() + "Release";
+    }
     return name().toLowerCase();
   }
 }
