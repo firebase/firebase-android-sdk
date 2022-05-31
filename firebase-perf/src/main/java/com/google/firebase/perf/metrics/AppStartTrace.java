@@ -103,10 +103,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer onFirstDrawPierreRicau = null;
-  private Timer onFirstDrawPRIMESFrontOfQueue = null;
-  private Timer onFirstDrawPRIMES = null;
+  private Timer onFirstDrawP1 = null;
   private long onFirstDrawElapsedRealTime;
-  private long onFirstDrawUptimeMillis;
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
 
@@ -144,22 +142,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     executorService.execute(this::logTTIDPierreRicauTrace);
   }
 
-  private void recordFirstOnDrawPRIMESFrontOfQueue() {
+  private void recordFirstOnDrawP1() {
     // Old time
-    this.onFirstDrawPRIMESFrontOfQueue = clock.getTime();
+    this.onFirstDrawP1 = clock.getTime();
     executorService.execute(this::logTTIDPRIMESFrontOfQueueTrace);
     // Process start, API 24+ only
     this.onFirstDrawElapsedRealTime = SystemClock.elapsedRealtime();
-    this.onFirstDrawUptimeMillis = SystemClock.uptimeMillis();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       executorService.execute(this::logTTIDProcessStartElapsedRealTimeTrace);
-      executorService.execute(this::logTTIDProcessStartUptimeMillisTrace);
     }
-  }
-
-  private void recordFirstOnDrawPRIMES() {
-    this.onFirstDrawPRIMES = clock.getTime();
-    executorService.execute(this::logTTIDPRIMESTrace);
   }
 
   public static AppStartTrace getInstance() {
@@ -179,7 +170,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                       MAX_POOL_SIZE,
                       /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(6)));
+                      new LinkedBlockingQueue<>(5)));
         }
       }
     }
@@ -270,11 +261,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       TTIDMeasure.measureTTID(activity, this::recordFirstOnDrawPierreRicau);
     }
 
-    // PRIMES method of measuring TTID
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      View rootView = activity.findViewById(android.R.id.content);
+    // Google P1 method of measuring TTID
+    View rootView = activity.findViewById(android.R.id.content);
+    // views are available after setContentView which should be called in onCreate
+    if (rootView != null) {
       ViewTreeObserver observer = rootView.getViewTreeObserver();
-      observer.addOnDrawListener(new RecordFirstOnDrawListener(rootView, sMainThreadHandler));
+      observer.addOnDrawListener(new FirstOnDrawListener(rootView));
     }
 
     // Log the app start trace in a non-main thread.
@@ -302,18 +294,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             TraceMetric.newBuilder()
                     .setName("TTID_PRIMES_FrontOfQueue")
                     .setClientStartTimeUs(getappStartTime().getMicros())
-                    .setDurationUs(getappStartTime().getDurationMicros(onFirstDrawPRIMESFrontOfQueue));
-    metric.addPerfSessions(this.startSession.build());
-
-    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
-  }
-
-  private void logTTIDPRIMESTrace() {
-    TraceMetric.Builder metric =
-            TraceMetric.newBuilder()
-                    .setName("TTID_PRIMES")
-                    .setClientStartTimeUs(getappStartTime().getMicros())
-                    .setDurationUs(getappStartTime().getDurationMicros(onFirstDrawPRIMES));
+                    .setDurationUs(getappStartTime().getDurationMicros(onFirstDrawP1));
     metric.addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
@@ -328,20 +309,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                     .setName("TTID_ProcessStart_elapsedRealTime")
                     .setClientStartTimeUs(getappStartTime().getMicros())
                     .setDurationUs(TimeUnit.MILLISECONDS.toMicros(onFirstDrawElapsedRealTime - Process.getStartElapsedRealtime()));
-    metric.addPerfSessions(this.startSession.build());
-
-    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
-  }
-
-  private void logTTIDProcessStartUptimeMillisTrace() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-      return;
-    }
-    TraceMetric.Builder metric =
-            TraceMetric.newBuilder()
-                    .setName("TTID_ProcessStart_uptimeMillis")
-                    .setClientStartTimeUs(getappStartTime().getMicros())
-                    .setDurationUs(TimeUnit.MILLISECONDS.toMicros(onFirstDrawUptimeMillis - Process.getStartUptimeMillis()));
     metric.addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
@@ -417,14 +384,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-  private final class RecordFirstOnDrawListener implements ViewTreeObserver.OnDrawListener {
+  private final class FirstOnDrawListener implements ViewTreeObserver.OnDrawListener {
 
-    private final Handler sMainThreadHandler;
     private final AtomicReference<View> view;
 
-    private RecordFirstOnDrawListener(View view, Handler sMainThreadHandler) {
+    private FirstOnDrawListener(View view) {
       this.view = new AtomicReference<>(view);
-      this.sMainThreadHandler = sMainThreadHandler;
     }
 
     @Override
@@ -433,22 +398,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       if (theView == null) {
         return;
       }
-      // TODO(b/181715113): consider alternatives to the catch(RuntimeException e)
-      // anti-pattern. This try in particular was added to replicate pre-existing code
-      // in this file.
-      try {
-        // OnDrawListeners cannot be removed within onDraw, so we remove it with a
-        // GlobalLayoutListener
-        theView
-                .getViewTreeObserver()
-                .addOnGlobalLayoutListener(
-                        () -> theView.getViewTreeObserver().removeOnDrawListener(this));
-        sMainThreadHandler.postAtFrontOfQueue(AppStartTrace.this::recordFirstOnDrawPRIMESFrontOfQueue);
-        sMainThreadHandler.post(AppStartTrace.this::recordFirstOnDrawPRIMES);
-      } catch (RuntimeException e) {
-        // ignore Exception to avoid crashing the app
-        AndroidLogger.getInstance().debug("Error handling StartupMeasure's onDraw", e);
-      }
+      // OnDrawListeners cannot be removed within onDraw, so we remove it with a
+      // GlobalLayoutListener
+      theView
+              .getViewTreeObserver()
+              .addOnGlobalLayoutListener(
+                      () -> theView.getViewTreeObserver().removeOnDrawListener(this));
+      sMainThreadHandler.postAtFrontOfQueue(AppStartTrace.this::recordFirstOnDrawP1);
     }
   }
 
