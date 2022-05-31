@@ -14,13 +14,10 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import static com.google.firebase.appdistribution.impl.ReleaseIdentificationUtils.calculateApkHash;
 import static com.google.firebase.appdistribution.impl.ReleaseIdentificationUtils.getPackageInfo;
-import static com.google.firebase.appdistribution.impl.ReleaseIdentificationUtils.getPackageInfoWithMetadata;
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -34,8 +31,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.File;
-import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -51,6 +46,7 @@ class NewReleaseFetcher {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
+  private final ApkHashExtractor apkHashExtractor;
   private final Context context;
   // Maintain an in-memory mapping from source file to APK hash to avoid re-calculating the hash
   private static final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
@@ -61,11 +57,13 @@ class NewReleaseFetcher {
   NewReleaseFetcher(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
+      ApkHashExtractor apkHashExtractor) {
     this(
         firebaseApp,
         firebaseAppDistributionTesterApiClient,
         firebaseInstallationsApiProvider,
+        apkHashExtractor,
         Executors.newSingleThreadExecutor());
   }
 
@@ -73,10 +71,12 @@ class NewReleaseFetcher {
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
+      ApkHashExtractor apkHashExtractor,
       @NonNull Executor executor) {
     this.firebaseApp = firebaseApp;
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
+    this.apkHashExtractor = apkHashExtractor;
     this.taskExecutor = executor;
     this.context = firebaseApp.getApplicationContext();
   }
@@ -206,29 +206,10 @@ class NewReleaseFetcher {
     return getPackageInfo(context).versionName;
   }
 
-  @VisibleForTesting
-  String extractApkHash(PackageInfo packageInfo) {
-    File sourceFile = new File(packageInfo.applicationInfo.sourceDir);
-
-    String key =
-        String.format(
-            Locale.ENGLISH, "%s.%d", sourceFile.getAbsolutePath(), sourceFile.lastModified());
-    if (!cachedApkHashes.containsKey(key)) {
-      cachedApkHashes.put(key, calculateApkHash(sourceFile));
-    }
-    return cachedApkHashes.get(key);
-  }
-
   private boolean hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
-    Context context = firebaseApp.getApplicationContext();
-    PackageInfo metadataPackageInfo = getPackageInfoWithMetadata(context);
-    String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
-
-    if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
-      throw new FirebaseAppDistributionException(
-          "Could not calculate hash of installed APK", Status.UNKNOWN);
-    } else if (newRelease.getApkHash().isEmpty()) {
+    String installedReleaseApkHash = apkHashExtractor.extractApkHash();
+    if (newRelease.getApkHash().isEmpty()) {
       throw new FirebaseAppDistributionException(
           "Missing APK hash from new release", Status.UNKNOWN);
     }
