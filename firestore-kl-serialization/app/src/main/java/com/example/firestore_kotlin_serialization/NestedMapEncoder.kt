@@ -44,6 +44,11 @@ class NestedMapEncoder(
 
     private var elementIndex: Int = 0
 
+    override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
+        val enumFieldNames = enumDescriptor.elementNames.toList()
+        encodeValue(enumFieldNames.get(index))
+    }
+
     override val serializersModule: SerializersModule = EmptySerializersModule
 
     override fun encodeNull() {

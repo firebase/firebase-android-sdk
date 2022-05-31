@@ -43,6 +43,14 @@ abstract class NestDecoder(
 
     abstract val decodeValueList: List<*>
 
+    override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
+        val decodeEnumField = decodeValueList.elementAt(elementIndex-1)!!
+        //TODO: Add a EnumNamingProperties parameter, and convert the enumFieldNames based on it
+        // i.e. case insensitive, snake_case match camelCase, etc
+        val enumFieldNames = enumDescriptor.elementNames.toList()
+        return enumFieldNames.indexOf(decodeEnumField)
+    }
+
     final override fun decodeValue(): Any {
         return decodeValueList.elementAt(elementIndex - 1)!!
     }

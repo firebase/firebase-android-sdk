@@ -266,4 +266,21 @@ class NestedMapSerializationIntegrationTest {
             )
         }
     }
+
+    @Serializable
+    enum class PaymentStatus(){
+        SUCCESS, FAIL
+    }
+
+    @Serializable
+    data class Payment(val status: PaymentStatus)
+
+    @Test
+    fun testSavingReadingEnum(){
+        val docRefKotlin = testDocument("kotlin_enum")
+        val expected = Payment(PaymentStatus.FAIL)
+        docRefKotlin.set<Payment>(expected)
+        val actual = waitFor(docRefKotlin.get()).get<Payment>()
+        assertEquals(expected, actual)
+    }
 }

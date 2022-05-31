@@ -7,6 +7,14 @@
     - Module level build.gradle need to have `implementation("androidx.multidex:multidex:2.0.1")` dependence,
     - Also need to have `multiDexEnabled true` in andorid defaultConfig
 
-3. Kotlin version is currently 1.6.21, target is 1.5.32 (tried 1.4.32, but integration test will not run, will do more test if 1.4 is really necessary)
+3. If your Gradle 6.9 reject to run the integration test for you with error message: 
+```
+Run Android instrumented tests using Gradle" option was ignored because this module type is not supported yet.
+```
+You have to disable the "Run Android Instrumented Tests using Gradle" option for your Android Studio [[Reference Link](https://stackoverflow.com/questions/71513360/run-android-instrumented-tests-fail)]
 
+4. Kotlin version is currently 1.6.21, target is 1.5.32 (tried 1.4.32, but integration test will not run, will do more test if 1.4 is really necessary)
+----
 ### Some Known issue about this implementation
+
+1. All the anotaitons can be only applied on either class, or properties (annotations on setters/getters are not support by Kotlin serialization plugin) [[Link](https://github.com/Kotlin/kotlinx.serialization/issues/1925)]
