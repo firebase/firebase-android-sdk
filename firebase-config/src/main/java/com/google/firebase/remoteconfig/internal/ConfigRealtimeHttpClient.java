@@ -225,7 +225,6 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onError(Exception error) {}
         };
-    Log.i(TAG, "Starting autofetch...");
     ConfigAutoFetch autoFetch =
         new ConfigAutoFetch(
             this.httpURLConnection,
