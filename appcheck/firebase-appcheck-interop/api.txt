@@ -1,0 +1,25 @@
+// Signature format: 2.0
+package com.google.firebase.appcheck {
+
+  public abstract class AppCheckTokenResult {
+    ctor public AppCheckTokenResult();
+    method @Nullable public abstract com.google.firebase.FirebaseException getError();
+    method @NonNull public abstract String getToken();
+  }
+
+}
+
+package com.google.firebase.appcheck.interop {
+
+  public interface AppCheckTokenListener {
+    method public void onAppCheckTokenChanged(@NonNull com.google.firebase.appcheck.AppCheckTokenResult);
+  }
+
+  public interface InternalAppCheckTokenProvider {
+    method public void addAppCheckTokenListener(@NonNull com.google.firebase.appcheck.interop.AppCheckTokenListener);
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckTokenResult> getToken(boolean);
+    method public void removeAppCheckTokenListener(@NonNull com.google.firebase.appcheck.interop.AppCheckTokenListener);
+  }
+
+}
+

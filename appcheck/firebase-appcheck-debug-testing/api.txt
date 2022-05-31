@@ -1,0 +1,15 @@
+// Signature format: 2.0
+package com.google.firebase.appcheck.debug.testing {
+
+  public final class DebugAppCheckTestHelper {
+    method @NonNull public static com.google.firebase.appcheck.debug.testing.DebugAppCheckTestHelper fromInstrumentationArgs();
+    method public <E extends java.lang.Throwable> void withDebugProvider(@NonNull com.google.firebase.appcheck.debug.testing.DebugAppCheckTestHelper.MaybeThrowingRunnable<E>) throws E;
+    method public <E extends java.lang.Throwable> void withDebugProvider(@NonNull com.google.firebase.FirebaseApp, @NonNull com.google.firebase.appcheck.debug.testing.DebugAppCheckTestHelper.MaybeThrowingRunnable<E>) throws E;
+  }
+
+  public static interface DebugAppCheckTestHelper.MaybeThrowingRunnable<E extends java.lang.Throwable> {
+    method public void run() throws E;
+  }
+
+}
+
