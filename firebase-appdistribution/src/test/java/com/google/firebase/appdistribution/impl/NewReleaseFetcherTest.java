@@ -18,18 +18,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.BinaryType.APK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
@@ -37,15 +31,10 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import androidx.test.core.content.pm.PackageInfoBuilder;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.installations.InstallationTokenResult;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.junit.Before;
@@ -58,11 +47,7 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class NewReleaseFetcherTest {
-  private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-  private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
-  private static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  private static final String TEST_AUTH_TOKEN = "fad.auth.token";
+
   private static final String TEST_IAS_ARTIFACT_ID = "ias-artifact-id";
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String NEW_CODEHASH = "abcdef";
@@ -74,12 +59,8 @@ public class NewReleaseFetcherTest {
 
   private NewReleaseFetcher newReleaseFetcher;
   private ShadowPackageManager shadowPackageManager;
-  private Context applicationContext;
 
-  @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
-  @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
-  @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private ApkHashExtractor mockApkHashExtractor;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
@@ -88,27 +69,8 @@ public class NewReleaseFetcherTest {
   public void setup() throws FirebaseAppDistributionException {
     MockitoAnnotations.initMocks(this);
 
-    FirebaseApp.clearInstancesForTest();
-
-    FirebaseApp firebaseApp =
-        FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApplicationId(TEST_APP_ID_1)
-                .setProjectId(TEST_PROJECT_ID)
-                .setApiKey(TEST_API_KEY)
-                .build());
-
-    when(mockFirebaseInstallationsProvider.get()).thenReturn(mockFirebaseInstallations);
-    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
-    when(mockFirebaseInstallations.getToken(false))
-        .thenReturn(Tasks.forResult(mockInstallationTokenResult));
-
-    when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
-
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-    applicationContext = ApplicationProvider.getApplicationContext();
 
     ApplicationInfo applicationInfo =
         ApplicationInfoBuilder.newBuilder()
@@ -131,22 +93,17 @@ public class NewReleaseFetcherTest {
     newReleaseFetcher =
         spy(
             new NewReleaseFetcher(
-                firebaseApp,
+                ApplicationProvider.getApplicationContext(),
                 mockFirebaseAppDistributionTesterApiClient,
-                mockFirebaseInstallationsProvider,
-                mockApkHashExtractor,
-                testExecutor));
+                mockApkHashExtractor));
   }
 
   @Test
-  public void checkForNewRelease_whenCalled_getsFidAndAuthToken() {
-    newReleaseFetcher.checkForNewRelease();
-    verify(mockFirebaseInstallations, times(1)).getId();
-    verify(mockFirebaseInstallations, times(1)).getToken(false);
-  }
+  public void checkForNewRelease_whenCalledMultipleTimes_returnsTheSameTask() {
+    // Start a new task completion source and do not complete it, to mimic an in progress task
+    TaskCompletionSource<AppDistributionReleaseInternal> task = new TaskCompletionSource<>();
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease()).thenReturn(task.getTask());
 
-  @Test
-  public void checkForNewReleaseTask_whenCalledMultipleTimes_returnsTheSameTask() {
     Task<AppDistributionReleaseInternal> checkForNewReleaseTask1 =
         newReleaseFetcher.checkForNewRelease();
     Task<AppDistributionReleaseInternal> checkForNewReleaseTask2 =
@@ -157,9 +114,8 @@ public class NewReleaseFetcherTest {
 
   @Test
   public void checkForNewRelease_succeeds() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(getTestNewRelease().build());
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forResult(getTestNewRelease().build()));
 
     TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
         new TestOnCompleteListener<>();
@@ -168,138 +124,66 @@ public class NewReleaseFetcherTest {
 
     AppDistributionReleaseInternal appDistributionReleaseInternal = onCompleteListener.await();
     assertEquals(getTestNewRelease().build(), appDistributionReleaseInternal);
-    verify(mockFirebaseInstallations, times(1)).getId();
-    verify(mockFirebaseInstallations, times(1)).getToken(false);
   }
 
   @Test
-  public void checkForNewRelease_fisFailure() throws Exception {
-    Exception expectedException = new Exception("test ex");
-    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
-
-    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
-        new TestOnCompleteListener<>();
-    Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
-    task.addOnCompleteListener(testExecutor, onCompleteListener);
-
-    FirebaseAppDistributionException actualException =
-        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-
-    assertThat(actualException).hasMessageThat().contains(ErrorMessages.UNKNOWN_ERROR);
-    assertThat(actualException).hasMessageThat().contains("test ex");
-    assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
-    assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
-  }
-
-  @Test
-  public void checkForNewRelease_uncaughtExceptionFailure() throws Exception {
-    RuntimeException expectedException = new RuntimeException("test ex");
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenThrow(expectedException);
-
-    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
-        new TestOnCompleteListener<>();
-    Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
-    task.addOnCompleteListener(testExecutor, onCompleteListener);
-
-    FirebaseAppDistributionException actualException =
-        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-
-    assertThat(actualException).hasMessageThat().contains(ErrorMessages.UNKNOWN_ERROR);
-    assertThat(actualException).hasMessageThat().contains("test ex");
-    assertThat(actualException.getErrorCode()).isEqualTo(Status.UNKNOWN);
-    assertThat(actualException).hasCauseThat().isEqualTo(expectedException);
-  }
-
-  @Test
-  public void checkForNewRelease_appDistroFailure() throws Exception {
+  public void checkForNewRelease_apiClientFailure() {
     FirebaseAppDistributionException expectedException =
         new FirebaseAppDistributionException(
             "test", FirebaseAppDistributionException.Status.UNKNOWN);
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenThrow(expectedException);
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forException(expectedException));
 
-    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
-        new TestOnCompleteListener<>();
     Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
-    task.addOnCompleteListener(testExecutor, onCompleteListener);
 
-    FirebaseAppDistributionException actualException =
-        assertThrows(FirebaseAppDistributionException.class, onCompleteListener::await);
-
-    assertEquals(expectedException, actualException);
+    assertThat(task.isSuccessful()).isFalse();
+    assertThat(task.getException()).isEqualTo(expectedException);
   }
 
   @Test
-  public void getNewReleaseFromClient_whenNewReleaseIsNewerBuildThanInstalled_returnsRelease()
-      throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
-        .thenReturn(getTestNewRelease().build());
+  public void checkForNewRelease_whenNewReleaseIsSameRelease_returnsNull() {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forResult(getTestInstalledRelease().build()));
 
-    AppDistributionReleaseInternal release =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    Task<AppDistributionReleaseInternal> releaseTask = newReleaseFetcher.checkForNewRelease();
 
-    assertNotNull(release);
-    assertEquals(Long.toString(NEW_VERSION_CODE), release.getBuildVersion());
+    assertThat(releaseTask.getResult()).isNull();
   }
 
   @Test
-  public void getNewReleaseFromClient_whenNewReleaseIsSameRelease_returnsNull() throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
-        .thenReturn(getTestInstalledRelease().build());
-
-    AppDistributionReleaseInternal release =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-
-    assertNull(release);
-  }
-
-  @Test
-  public void getNewReleaseFromClient_whenNewReleaseIsLowerVersionCode_returnsNull()
-      throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
+  public void checkForNewRelease_whenNewReleaseIsLowerVersionCode_returnsNull() {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(
-            getTestInstalledRelease()
-                .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE - 1))
-                .build());
+            Tasks.forResult(
+                getTestInstalledRelease()
+                    .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE - 1))
+                    .build()));
 
-    AppDistributionReleaseInternal release =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    Task<AppDistributionReleaseInternal> releaseTask = newReleaseFetcher.checkForNewRelease();
 
-    assertNull(release);
+    assertThat(releaseTask.isSuccessful()).isTrue();
+    assertThat(releaseTask.getResult()).isNull();
   }
 
   @Test
-  public void handleNewReleaseFromClient_whenNewAabIsAvailable_returnsRelease() throws Exception {
+  public void checkForNewRelease_whenNewAabIsAvailable_returnsRelease() {
     AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
             .setIasArtifactId("test-ias-artifact-id-2")
             .setBinaryType(BinaryType.AAB)
             .build();
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(expectedRelease);
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forResult(expectedRelease));
 
-    AppDistributionReleaseInternal result =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
+    Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
 
-    assertEquals(expectedRelease, result);
+    assertThat(result.isSuccessful()).isTrue();
+    assertThat(result.getResult()).isEqualTo(expectedRelease);
   }
 
   @Test
-  public void
-      handleNewReleaseFromClient_whenNewReleaseHasDifferentVersionNameThanInstalled_returnsRelease()
-          throws Exception {
+  public void checkForNewRelease_differentVersionNameThanInstalled_returnsRelease() {
     AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
@@ -307,36 +191,34 @@ public class NewReleaseFetcherTest {
             .setBinaryType(BinaryType.AAB)
             .setDisplayVersion("2.0")
             .build();
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
-        .thenReturn(expectedRelease);
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forResult(expectedRelease));
 
-    AppDistributionReleaseInternal result =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    assertEquals(expectedRelease, result);
+    Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
+
+    assertThat(result.isSuccessful()).isTrue();
+    assertThat(result.getResult()).isEqualTo(expectedRelease);
   }
 
   @Test
-  public void handleNewReleaseFromClient_whenNewReleaseIsSameAsInstalledAab_returnsNull()
-      throws Exception {
-    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease(
-            any(), any(), any(), any(), any()))
+  public void handleNewReleaseFromClient_whenNewReleaseIsSameAsInstalledAab_returnsNull() {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(
-            getTestInstalledRelease()
-                .setDownloadUrl("http://fake-download-url")
-                .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
-                .setBinaryType(BinaryType.AAB)
-                .build());
+            Tasks.forResult(
+                getTestInstalledRelease()
+                    .setDownloadUrl("http://fake-download-url")
+                    .setIasArtifactId(TEST_IAS_ARTIFACT_ID)
+                    .setBinaryType(BinaryType.AAB)
+                    .build()));
 
-    AppDistributionReleaseInternal result =
-        newReleaseFetcher.getNewReleaseFromClient(
-            TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
-    assertNull(result);
+    Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
+
+    assertThat(result.isSuccessful()).isTrue();
+    assertThat(result.getResult()).isNull();
   }
 
   @Test
-  public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue()
+  public void isSameAsInstalledRelease_whenApkHashesEqual_returnsTrue()
       throws FirebaseAppDistributionException {
     assertTrue(newReleaseFetcher.isSameAsInstalledRelease(getTestInstalledRelease().build()));
   }

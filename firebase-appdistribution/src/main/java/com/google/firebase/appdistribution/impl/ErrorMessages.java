@@ -15,7 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 class ErrorMessages {
-  static final String NETWORK_ERROR = "Failed to fetch releases due to unknown network error.";
+  static final String NETWORK_ERROR = "Request failed with unknown network error.";
 
   static final String JSON_PARSING_ERROR =
       "Error parsing service response when checking for new release. This was most likely due to a transient condition and may be corrected by retrying.";
@@ -32,7 +32,7 @@ class ErrorMessages {
       "Release not found. An update was not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
 
   static final String TIMEOUT_ERROR =
-      "Failed to fetch releases due to timeout. Check the tester's internet connection and try again.";
+      "Request timed out. Check the tester's internet connection and try again.";
 
   static final String UPDATE_CANCELED = "Tester canceled the update.";
 
