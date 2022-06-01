@@ -14,20 +14,29 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,8 +44,12 @@ import org.json.JSONObject;
 
 class FirebaseAppDistributionTesterApiClient {
 
-  private static final String RELEASE_ENDPOINT_URL_FORMAT =
-      "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/%s/installations/%s/releases";
+  /** A potentially long-running job that requires a FID and a FIS auth token */
+  private interface FidDependentJob<TResult> {
+    TResult run(String fid, String token) throws FirebaseAppDistributionException;
+  }
+
+  private static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
@@ -55,38 +68,91 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
   private static final String TAG = "TesterApiClient:";
+  private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  public static final int DEFAULT_BUFFER_SIZE = 8192;
-
+  private final FirebaseApp firebaseApp;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
+  private final Executor taskExecutor;
 
-  FirebaseAppDistributionTesterApiClient() {
-    this(new HttpsUrlConnectionFactory());
+  FirebaseAppDistributionTesterApiClient(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
+    this(
+        Executors.newSingleThreadExecutor(),
+        firebaseApp,
+        firebaseInstallationsApiProvider,
+        new HttpsUrlConnectionFactory());
   }
 
   @VisibleForTesting
   FirebaseAppDistributionTesterApiClient(
+      @NonNull Executor taskExecutor,
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
+    this.taskExecutor = taskExecutor;
+    this.firebaseApp = firebaseApp;
+    this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
   }
 
   /**
-   * Fetches and returns the latest release for the app that the tester has access to, or null if
-   * the tester doesn't have access to any releases.
+   * Fetches and returns a {@link Task} that will complete with the latest release for the app that
+   * the tester has access to, or {@code null} if the tester doesn't have access to any releases.
    */
-  @Nullable
-  AppDistributionReleaseInternal fetchNewRelease(
-      @NonNull String fid,
-      @NonNull String appId,
-      @NonNull String apiKey,
-      @NonNull String authToken,
-      @NonNull Context context)
+  @NonNull
+  Task<AppDistributionReleaseInternal> fetchNewRelease() {
+    return runWithFidAndToken(
+        (fid, token) -> {
+          String path =
+              String.format(
+                  "v1alpha/devices/-/testerApps/%s/installations/%s/releases",
+                  firebaseApp.getOptions().getApplicationId(), fid);
+          String responseBody = makeGetRequest(path, token);
+          return parseNewRelease(responseBody);
+        });
+  }
+
+  /**
+   * Fetches and returns the name of the installed release given the hash of the installed APK, or
+   * null if it could not be found.
+   */
+  @NonNull
+  Task<String> findReleaseUsingApkHash(String apkHash) {
+    return Tasks.forException(
+        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
+  }
+
+  /**
+   * Fetches and returns the name of the installed release given the IAS artifact ID of the
+   * installed app bundle, or null if it could not be found.
+   */
+  @NonNull
+  Task<String> findReleaseUsingIasArtifactId(String iasArtifactId) {
+    return Tasks.forException(
+        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
+  }
+
+  /** Creates a new feedback from the given text, and returns the feedback name. */
+  @NonNull
+  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
+    return Tasks.forException(
+        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
+  }
+
+  /** Commits the feedback with the given name. */
+  @NonNull
+  Task<Void> commitFeedback(String feedbackName) {
+    return Tasks.forException(
+        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
+  }
+
+  private String readResponse(HttpsURLConnection connection)
       throws FirebaseAppDistributionException {
-    HttpsURLConnection connection = null;
     int responseCode;
     String responseBody;
     try {
-      connection = openHttpsUrlConnection(appId, fid, apiKey, authToken, context);
       responseCode = connection.getResponseCode();
       responseBody = readResponseBody(connection);
     } catch (IOException e) {
@@ -98,11 +164,26 @@ class FirebaseAppDistributionTesterApiClient {
       }
     }
 
+    LogWrapper.getInstance().v("Response code: " + responseCode);
+    LogWrapper.getInstance().v("Response body: " + responseBody);
+
     if (!isResponseSuccess(responseCode)) {
       throw getExceptionForHttpResponse(responseCode);
     }
 
-    return parseNewRelease(responseBody);
+    return responseBody;
+  }
+
+  private String makeGetRequest(String path, String token) throws FirebaseAppDistributionException {
+    String url = String.format("https://%s/%s", APP_TESTERS_HOST, path);
+    HttpsURLConnection connection;
+    try {
+      connection = openHttpsUrlConnection(url, token);
+    } catch (IOException e) {
+      throw new FirebaseAppDistributionException(
+          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+    }
+    return readResponse(connection);
   }
 
   private String readResponseBody(HttpsURLConnection connection) throws IOException {
@@ -171,8 +252,7 @@ class FirebaseAppDistributionTesterApiClient {
   private FirebaseAppDistributionException getExceptionForHttpResponse(int responseCode) {
     switch (responseCode) {
       case 400:
-        return new FirebaseAppDistributionException(
-            "Bad request when fetching new release", Status.UNKNOWN);
+        return new FirebaseAppDistributionException("Bad request", Status.UNKNOWN);
       case 401:
         return new FirebaseAppDistributionException(
             ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
@@ -181,14 +261,14 @@ class FirebaseAppDistributionTesterApiClient {
             ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
       case 404:
         return new FirebaseAppDistributionException(
-            "App or tester not found when fetching new release", Status.AUTHENTICATION_FAILURE);
+            "Resource not found", Status.AUTHENTICATION_FAILURE);
       case 408:
       case 504:
         return new FirebaseAppDistributionException(
             ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
       default:
         return new FirebaseAppDistributionException(
-            "Received error status when fetching new release: " + responseCode, Status.UNKNOWN);
+            "Received error status: " + responseCode, Status.UNKNOWN);
     }
   }
 
@@ -200,18 +280,18 @@ class FirebaseAppDistributionTesterApiClient {
     }
   }
 
-  private HttpsURLConnection openHttpsUrlConnection(
-      String appId, String fid, String apiKey, String authToken, Context context)
+  private HttpsURLConnection openHttpsUrlConnection(String url, String authToken)
       throws IOException {
+    LogWrapper.getInstance().v("Opening connection to " + url);
+    Context context = firebaseApp.getApplicationContext();
     HttpsURLConnection httpsURLConnection;
-    String url = String.format(RELEASE_ENDPOINT_URL_FORMAT, appId, fid);
     httpsURLConnection = httpsUrlConnectionFactory.openConnection(url);
     httpsURLConnection.setRequestMethod(REQUEST_METHOD_GET);
-    httpsURLConnection.setRequestProperty(API_KEY_HEADER, apiKey);
+    httpsURLConnection.setRequestProperty(API_KEY_HEADER, firebaseApp.getOptions().getApiKey());
     httpsURLConnection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
     httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
     httpsURLConnection.addRequestProperty(
-        X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage(context));
+        X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
     httpsURLConnection.addRequestProperty(
         X_CLIENT_VERSION_HEADER_KEY, String.format("android-sdk/%s", BuildConfig.VERSION_NAME));
     return httpsURLConnection;
@@ -228,7 +308,8 @@ class FirebaseAppDistributionTesterApiClient {
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */
-  private String getFingerprintHashForPackage(Context context) {
+  private String getFingerprintHashForPackage() {
+    Context context = firebaseApp.getApplicationContext();
     byte[] hash;
 
     try {
@@ -253,5 +334,29 @@ class FirebaseAppDistributionTesterApiClient {
               e);
       return null;
     }
+  }
+
+  /**
+   * Asynchronously runs a potentially long-running job that depends on a FID and a FIS auth token.
+   */
+  private <TResult> Task<TResult> runWithFidAndToken(FidDependentJob<TResult> job) {
+    Task<String> installationIdTask = firebaseInstallationsApiProvider.get().getId();
+    // forceRefresh is false to get locally cached token if available
+    Task<InstallationTokenResult> installationAuthTokenTask =
+        firebaseInstallationsApiProvider.get().getToken(/* forceRefresh= */ false);
+
+    return Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
+        .continueWithTask(TaskUtils::handleTaskFailure)
+        .onSuccessTask(
+            resultsList -> {
+              // Tasks.whenAllSuccess combines task results into a list
+              if (resultsList.size() != 2) {
+                throw new FirebaseAppDistributionException(
+                    "Expected 2 task results, got " + resultsList.size(), Status.UNKNOWN);
+              }
+              String fid = (String) resultsList.get(0);
+              InstallationTokenResult tokenResult = (InstallationTokenResult) resultsList.get(1);
+              return runAsyncInTask(taskExecutor, () -> job.run(fid, tokenResult.getToken()));
+            });
   }
 }
