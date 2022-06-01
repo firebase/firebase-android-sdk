@@ -14,12 +14,14 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Tasks;
@@ -33,6 +35,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
@@ -41,6 +44,7 @@ import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Component for providing multiple Firebase Remote Config (FRC) instances. Firebase Android
@@ -73,6 +77,10 @@ public class RemoteConfigComponent {
 
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
+
+  @GuardedBy("this")
+  private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground =
+      new HashMap<>();
 
   private final Context context;
   private final ExecutorService executorService;
@@ -199,9 +207,12 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient);
+              metadataClient,
+              getRealtime(
+                  firebaseApp, firebaseInstallations, fetchHandler, context, namespace, executor));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
+      frcNamespaceInstancesBackground.put(namespace, in);
     }
     return frcNamespaceInstances.get(namespace);
   }
@@ -246,6 +257,17 @@ public class RemoteConfigComponent {
         getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, metadataClient),
         metadataClient,
         this.customHeaders);
+  }
+
+  synchronized ConfigRealtimeHttpClient getRealtime(
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      Context context,
+      String namespace,
+      Executor executor) {
+    return new ConfigRealtimeHttpClient(
+        firebaseApp, firebaseInstallations, configFetchHandler, context, namespace, executor);
   }
 
   private ConfigGetParameterHandler getGetHandler(
@@ -298,5 +320,30 @@ public class RemoteConfigComponent {
    */
   private static boolean isPrimaryApp(FirebaseApp firebaseApp) {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
+  }
+
+  private static class GlobalBackgroundListener
+      implements BackgroundDetector.BackgroundStateChangeListener {
+    private static AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
+
+    private static void ensureBackgroundListenerIsRegistered(Context context) {
+      Application application = (Application) context.getApplicationContext();
+      if (INSTANCE.get() == null) {
+        GlobalBackgroundListener globalBackgroundListener = new GlobalBackgroundListener();
+        if (INSTANCE.compareAndSet(null, globalBackgroundListener)) {
+          BackgroundDetector.initialize(application);
+          BackgroundDetector.getInstance().addListener(globalBackgroundListener);
+        }
+      }
+    }
+
+    @Override
+    public void onBackgroundStateChanged(boolean b) {
+      for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
+        if (!b) {
+          frc.retryRealtimeConnection();
+        }
+      }
+    }
   }
 }

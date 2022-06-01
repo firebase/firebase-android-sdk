@@ -33,6 +33,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,6 +152,7 @@ public class FirebaseRemoteConfig {
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
   private final FirebaseInstallationsApi firebaseInstallations;
+  private final ConfigRealtimeHttpClient configRealtimeHttpClient;
 
   /**
    * Firebase Remote Config constructor.
@@ -168,7 +170,8 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata) {
+      ConfigMetadataClient frcMetadata,
+      ConfigRealtimeHttpClient configRealtimeHttpClient) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
@@ -180,6 +183,7 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
+    this.configRealtimeHttpClient = configRealtimeHttpClient;
   }
 
   /**
@@ -539,6 +543,26 @@ public class FirebaseRemoteConfig {
           frcMetadata.clear();
           return null;
         });
+  }
+
+  /**
+   * Starts realtime and returns registration.
+   *
+   * @param configUpdateListener A event listener that has one function that executes a callback
+   * @return A registration object that allows the user to remove the event listener, and if it is
+   *     the last listener, stop Realtime.
+   */
+  public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
+      @NonNull ConfigUpdateListener configUpdateListener) {
+    return configRealtimeHttpClient.addRealtimeConfigUpdateListener(configUpdateListener);
+  }
+
+  /**
+   * Retries the Realtime Http Stream connection. Must have added a listener via
+   * addOnConfigUpdateListener first or the connection will not be retried.
+   */
+  public void retryRealtimeConnection() {
+    this.configRealtimeHttpClient.beginRealtime();
   }
 
   /**
