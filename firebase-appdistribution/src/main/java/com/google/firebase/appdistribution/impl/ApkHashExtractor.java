@@ -39,7 +39,7 @@ import java.util.zip.ZipFile;
 /** Extracts a hash of the installed APK. */
 class ApkHashExtractor {
 
-  private static final String TAG = "ApkHashExtractor:";
+  private static final String TAG = "ApkHashExtractor";
   private static final int BYTES_IN_LONG = 8;
 
   private final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
@@ -64,8 +64,7 @@ class ApkHashExtractor {
     return installedReleaseApkHash;
   }
 
-  @VisibleForTesting
-  String extractApkHash(PackageInfo packageInfo) {
+  private String extractApkHash(PackageInfo packageInfo) {
     File sourceFile = new File(packageInfo.applicationInfo.sourceDir);
 
     String key =
@@ -79,8 +78,11 @@ class ApkHashExtractor {
 
   @Nullable
   String calculateApkHash(@NonNull File file) {
-    LogWrapper.getInstance().v(TAG + "Calculating release id for " + file.getPath());
-    LogWrapper.getInstance().v(TAG + "File size: " + file.length());
+    LogWrapper.getInstance()
+        .v(
+            TAG,
+            String.format(
+                "Calculating release id for %s (%d bytes)", file.getPath(), file.length()));
 
     long start = System.currentTimeMillis();
     long entries = 0;
@@ -92,8 +94,7 @@ class ApkHashExtractor {
       // Since calculating the codeHash returned from the release backend is computationally
       // expensive, we has the existing checksum data from the ZipFile and compare it to
       // (1) the apk hash returned by the backend, or (2) look up a mapping from the apk zip hash to
-      // the
-      // full codehash, and compare that to the codehash to the backend
+      // the full codehash, and compare that to the codehash to the backend
       ZipFile zis = new ZipFile(file);
       try {
         Enumeration<? extends ZipEntry> zipEntries = zis.entries();
@@ -116,23 +117,16 @@ class ApkHashExtractor {
       zipFingerprint = sb.toString();
 
     } catch (IOException | NoSuchAlgorithmException e) {
-      LogWrapper.getInstance().v(TAG + "id calculation failed for " + file.getPath());
+      LogWrapper.getInstance().v(TAG, "id calculation failed for " + file.getPath());
       return null;
     } finally {
       long elapsed = System.currentTimeMillis() - start;
-      if (elapsed > 2 * 1000) {
-        LogWrapper.getInstance()
-            .v(
-                TAG
-                    + String.format(
-                        "Long id calculation time %d ms and %d entries for %s",
-                        elapsed, entries, file.getPath()));
-      }
-
       LogWrapper.getInstance()
-          .v(TAG + String.format("Finished calculating %d entries in %d ms", entries, elapsed));
-      LogWrapper.getInstance()
-          .v(TAG + String.format("%s hashes to %s", file.getPath(), zipFingerprint));
+          .v(
+              TAG,
+              String.format(
+                  "Computed hash of %s (%d entries, %d ms elapsed): %s",
+                  file.getPath(), entries, elapsed, zipFingerprint));
     }
 
     return zipFingerprint;
