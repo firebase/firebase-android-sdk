@@ -19,10 +19,6 @@ import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPositio
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle.State;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -52,36 +48,17 @@ public class FirebasePerformanceFragmentScreenTracesTest {
 
   @Test
   public void scrollAndCycleThroughAllFragments() throws InterruptedException {
-    activityRule
-        .getScenario()
-        .onActivity(
-            activity -> {
-              ((FragmentActivity) activity)
-                  .getSupportFragmentManager()
-                  .registerFragmentLifecycleCallbacks(
-                      new FragmentManager.FragmentLifecycleCallbacks() {
-                        @Override
-                        public void onFragmentResumed(
-                            @NonNull FragmentManager fm, @NonNull Fragment f) {
-                          super.onFragmentResumed(fm, f);
-                          notifyNavigationLock();
-                        }
-                      },
-                      true);
-            });
+    ActivityScenario scenario = activityRule.getScenario();
     scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
-    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_fast));
-    blockUntilNavigationDone();
+    scenario.onActivity(new NavigateAction(R.id.navigation_fast));
     scrollRecyclerViewToEnd(FastFragment.NUM_LIST_ITEMS, R.id.rv_numbers_fast);
-    activityRule.getScenario().onActivity(new NavigateAction(R.id.navigation_slow));
-    blockUntilNavigationDone();
+    scenario.onActivity(new NavigateAction(R.id.navigation_slow));
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
-    assertThat(activityRule.getScenario().getState())
-        .isIn(Arrays.asList(State.CREATED, State.RESUMED));
-    activityRule.getScenario().moveToState(State.CREATED);
+    assertThat(scenario.getState()).isIn(Arrays.asList(State.RESUMED));
+    scenario.moveToState(State.STARTED).moveToState(State.CREATED);
 
     // End Activity screen trace by relaunching the activity to ensure the screen trace is sent.
-    activityRule.getScenario().launch(FirebasePerfFragmentsActivity.class);
+    scenario.launch(FirebasePerfFragmentsActivity.class);
   }
 
   private void scrollRecyclerViewToEnd(int itemCount, int viewId) {
@@ -91,14 +68,6 @@ public class FirebasePerformanceFragmentScreenTracesTest {
       onView(withId(viewId)).perform(scrollToPosition(currItemCount));
       currItemCount += 5;
     }
-  }
-
-  private synchronized void blockUntilNavigationDone() throws InterruptedException {
-    wait();
-  }
-
-  private synchronized void notifyNavigationLock() {
-    notify();
   }
 
   static class NavigateAction

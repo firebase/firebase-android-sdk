@@ -14,12 +14,14 @@
 
 package com.google.firebase.testing.fireperf;
 
-import android.content.Context;
-import android.content.Intent;
-import androidx.test.InstrumentationRegistry;
+import androidx.test.core.app.ActivityScenario;
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.rule.ActivityTestRule;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,20 +32,8 @@ import org.junit.runner.RunWith;
 public class FirebasePerformanceTest {
 
   @Rule
-  public ActivityTestRule<FirebasePerfActivity> activityRule =
-      new ActivityTestRule<>(
-          FirebasePerfActivity.class, /* initialTouchMode= */ true, /* launchActivity= */ false);
-
-  private Intent getTraceAndNetworkEventIntent() {
-    Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-    Intent intent = new Intent(targetContext, FirebasePerfActivity.class);
-    intent.putExtra(FirebasePerfActivity.START_TRACES, true);
-    intent.putExtra(FirebasePerfActivity.START_NETWORK_REQUESTS, true);
-    intent.putExtra(FirebasePerfActivity.NUMBER_OF_TRACE_ITERATIONS, 15);
-    intent.putExtra(FirebasePerfActivity.NUMBER_OF_NETWORK_ITERATIONS, 15);
-
-    return intent;
-  }
+  public ActivityScenarioRule<FirebasePerfActivity> rule =
+      new ActivityScenarioRule<>(FirebasePerfActivity.class);
 
   /*
    * Totally generates 32 * 15 = 480 TraceMetric and 32 * 15 = 480 NetworkRequestMetric.
@@ -57,9 +47,17 @@ public class FirebasePerformanceTest {
    *   - Rate: 100 Events/Minute (https://bityl.co/3ZPL)
    */
   @Test
-  public void waitForBothTracesAndNetworkRequestsBatch() throws InterruptedException {
-    Intent intent = getTraceAndNetworkEventIntent();
-    activityRule.launchActivity(intent);
-    FireperfUtils.blockUntilAllEventsSent();
+  public void waitForBothTracesAndNetworkRequestsBatch()
+      throws ExecutionException, InterruptedException {
+    final List<Future<?>> futureList = new ArrayList<>();
+    ActivityScenario scenario = rule.getScenario();
+    scenario.onActivity(
+        activity -> {
+          futureList.add(FireperfUtils.startTraces(15));
+          futureList.add(FireperfUtils.startNetworkRequests(15));
+        });
+    for (Future<?> future : futureList) {
+      future.get();
+    }
   }
 }
