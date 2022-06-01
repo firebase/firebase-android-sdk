@@ -23,8 +23,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,7 +52,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.shadows.ShadowPackageManager;
@@ -83,6 +80,7 @@ public class NewReleaseFetcherTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
+  @Mock private ApkHashExtractor mockApkHashExtractor;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -128,12 +126,15 @@ public class NewReleaseFetcherTest {
     packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
+    when(mockApkHashExtractor.extractApkHash()).thenReturn(CURRENT_APK_HASH);
+
     newReleaseFetcher =
         spy(
             new NewReleaseFetcher(
                 firebaseApp,
                 mockFirebaseAppDistributionTesterApiClient,
                 mockFirebaseInstallationsProvider,
+                mockApkHashExtractor,
                 testExecutor));
   }
 
@@ -252,8 +253,6 @@ public class NewReleaseFetcherTest {
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN, applicationContext))
         .thenReturn(getTestInstalledRelease().build());
 
-    doReturn(CURRENT_APK_HASH).when(newReleaseFetcher).extractApkHash(any());
-
     AppDistributionReleaseInternal release =
         newReleaseFetcher.getNewReleaseFromClient(
             TEST_FID_1, TEST_APP_ID_1, TEST_API_KEY, TEST_AUTH_TOKEN);
@@ -270,8 +269,6 @@ public class NewReleaseFetcherTest {
             getTestInstalledRelease()
                 .setBuildVersion(Long.toString(INSTALLED_VERSION_CODE - 1))
                 .build());
-
-    doReturn(CURRENT_APK_HASH).when(newReleaseFetcher).extractApkHash(any());
 
     AppDistributionReleaseInternal release =
         newReleaseFetcher.getNewReleaseFromClient(
@@ -341,44 +338,21 @@ public class NewReleaseFetcherTest {
   @Test
   public void iisSameAsInstalledRelease_whenApkHashesEqual_returnsTrue()
       throws FirebaseAppDistributionException {
-    doReturn(CURRENT_APK_HASH).when(newReleaseFetcher).extractApkHash(any());
     assertTrue(newReleaseFetcher.isSameAsInstalledRelease(getTestInstalledRelease().build()));
   }
 
   @Test
   public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse()
       throws FirebaseAppDistributionException {
-    doReturn(CURRENT_APK_HASH).when(newReleaseFetcher).extractApkHash(any());
     assertFalse(newReleaseFetcher.isSameAsInstalledRelease(getTestNewRelease().build()));
   }
 
   @Test
   public void isSameAsInstalledRelease_ifApkHashNotPresent_throwsError() {
-    doReturn(CURRENT_APK_HASH).when(newReleaseFetcher).extractApkHash(any());
-
     assertThrows(
         FirebaseAppDistributionException.class,
         () ->
             newReleaseFetcher.isSameAsInstalledRelease(getTestNewRelease().setApkHash("").build()));
-  }
-
-  @Test
-  public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash() {
-    try (MockedStatic<ReleaseIdentificationUtils> mockedReleaseIdentificationUtils =
-        mockStatic(ReleaseIdentificationUtils.class)) {
-      PackageInfo packageInfo =
-          shadowPackageManager.getInternalMutablePackageInfo(
-              ApplicationProvider.getApplicationContext().getPackageName());
-      mockedReleaseIdentificationUtils
-          .when(() -> ReleaseIdentificationUtils.calculateApkHash(any()))
-          .thenReturn(NEW_CODEHASH);
-
-      newReleaseFetcher.extractApkHash(packageInfo);
-      newReleaseFetcher.extractApkHash(packageInfo);
-      // check that calculateApkInternalCodeHash is only called once
-      mockedReleaseIdentificationUtils.verify(
-          () -> ReleaseIdentificationUtils.calculateApkHash(any()));
-    }
   }
 
   private AppDistributionReleaseInternal.Builder getTestNewRelease() {
