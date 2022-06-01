@@ -27,7 +27,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import junit.framework.AssertionFailedError;
 import org.mockito.stubbing.Answer;
 
 final class TestUtils {
@@ -50,18 +49,9 @@ final class TestUtils {
     assertThat(task.getException()).hasCauseThat().isEqualTo(cause);
   }
 
-  static void awaitAsyncOperations(ExecutorService executorService) throws AssertionFailedError {
-    // Shut down and await anything enqueued to the executor
-    executorService.shutdown();
-    boolean finished;
-    try {
-      finished = executorService.awaitTermination(1000, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException e) {
-      throw new AssertionFailedError("Executor interrupted while awaiting async operations");
-    }
-    if (!finished) {
-      throw new AssertionFailedError("Timed out while awaiting async operations");
-    }
+  static void awaitAsyncOperations(ExecutorService executorService) throws InterruptedException {
+    // Await anything enqueued to the executor
+    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
 
     // Idle the main looper, which is also running these tests, so any Task or lifecycle callbacks
     // can be handled. See http://robolectric.org/blog/2019/06/04/paused-looper/ for more info.

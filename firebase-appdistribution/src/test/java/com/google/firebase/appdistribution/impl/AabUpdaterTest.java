@@ -55,7 +55,6 @@ import org.robolectric.shadows.ShadowActivity;
 public class AabUpdaterTest {
   private static final String TEST_URL = "https://test-url";
   private static final String REDIRECT_TO_PLAY = "https://redirect-to-play-url";
-  private static final ExecutorService testExecutor = Executors.newSingleThreadExecutor();
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -68,6 +67,7 @@ public class AabUpdaterTest {
 
   private AabUpdater aabUpdater;
   private ShadowActivity shadowActivity;
+  private static ExecutorService testExecutor;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -81,6 +81,7 @@ public class AabUpdaterTest {
 
     FirebaseApp.clearInstancesForTest();
 
+    testExecutor = Executors.newSingleThreadExecutor();
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
@@ -151,6 +152,7 @@ public class AabUpdaterTest {
     updateTask.addOnProgressListener(testExecutor, progressEvents::add);
     awaitAsyncOperations(testExecutor);
 
+    // Task is not completed in this case, because app is expected to terminate during update
     assertThat(shadowActivity.getNextStartedActivity().getData())
         .isEqualTo(Uri.parse(REDIRECT_TO_PLAY));
     assertEquals(1, progressEvents.size());

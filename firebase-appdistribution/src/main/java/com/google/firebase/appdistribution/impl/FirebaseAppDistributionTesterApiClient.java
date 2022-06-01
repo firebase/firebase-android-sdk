@@ -114,40 +114,6 @@ class FirebaseAppDistributionTesterApiClient {
         });
   }
 
-  /**
-   * Fetches and returns the name of the installed release given the hash of the installed APK, or
-   * null if it could not be found.
-   */
-  @NonNull
-  Task<String> findReleaseUsingApkHash(String apkHash) {
-    return Tasks.forException(
-        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
-  }
-
-  /**
-   * Fetches and returns the name of the installed release given the IAS artifact ID of the
-   * installed app bundle, or null if it could not be found.
-   */
-  @NonNull
-  Task<String> findReleaseUsingIasArtifactId(String iasArtifactId) {
-    return Tasks.forException(
-        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
-  }
-
-  /** Creates a new feedback from the given text, and returns the feedback name. */
-  @NonNull
-  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
-    return Tasks.forException(
-        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
-  }
-
-  /** Commits the feedback with the given name. */
-  @NonNull
-  Task<Void> commitFeedback(String feedbackName) {
-    return Tasks.forException(
-        new FirebaseAppDistributionException("Not implemented", Status.UNKNOWN));
-  }
-
   private String readResponse(HttpsURLConnection connection)
       throws FirebaseAppDistributionException {
     int responseCode;
@@ -163,14 +129,10 @@ class FirebaseAppDistributionTesterApiClient {
         connection.disconnect();
       }
     }
-
-    LogWrapper.getInstance().v("Response code: " + responseCode);
-    LogWrapper.getInstance().v("Response body: " + responseBody);
-
+    LogWrapper.getInstance().v(String.format("Response (%d): %s", responseCode, responseBody));
     if (!isResponseSuccess(responseCode)) {
       throw getExceptionForHttpResponse(responseCode);
     }
-
     return responseBody;
   }
 
