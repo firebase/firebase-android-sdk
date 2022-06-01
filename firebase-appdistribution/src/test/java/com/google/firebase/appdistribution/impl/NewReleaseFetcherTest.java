@@ -95,7 +95,7 @@ public class NewReleaseFetcherTest {
             new NewReleaseFetcher(
                 ApplicationProvider.getApplicationContext(),
                 mockFirebaseAppDistributionTesterApiClient,
-    mockApkHashExtractor));
+                mockApkHashExtractor));
   }
 
   @Test

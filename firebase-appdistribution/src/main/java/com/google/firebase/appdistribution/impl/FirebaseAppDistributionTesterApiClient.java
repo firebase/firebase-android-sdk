@@ -115,20 +115,9 @@ class FirebaseAppDistributionTesterApiClient {
   }
 
   private String readResponse(HttpsURLConnection connection)
-      throws FirebaseAppDistributionException {
-    int responseCode;
-    String responseBody;
-    try {
-      responseCode = connection.getResponseCode();
-      responseBody = readResponseBody(connection);
-    } catch (IOException e) {
-      throw new FirebaseAppDistributionException(
-          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
-    } finally {
-      if (connection != null) {
-        connection.disconnect();
-      }
-    }
+      throws FirebaseAppDistributionException, IOException {
+    int responseCode = connection.getResponseCode();
+    String responseBody = readResponseBody(connection);
     LogWrapper.getInstance().v(String.format("Response (%d): %s", responseCode, responseBody));
     if (!isResponseSuccess(responseCode)) {
       throw getExceptionForHttpResponse(responseCode);
@@ -138,14 +127,18 @@ class FirebaseAppDistributionTesterApiClient {
 
   private String makeGetRequest(String path, String token) throws FirebaseAppDistributionException {
     String url = String.format("https://%s/%s", APP_TESTERS_HOST, path);
-    HttpsURLConnection connection;
+    HttpsURLConnection connection = null;
     try {
       connection = openHttpsUrlConnection(url, token);
+      return readResponse(connection);
     } catch (IOException e) {
       throw new FirebaseAppDistributionException(
           ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+    } finally {
+      if (connection != null) {
+        connection.disconnect();
+      }
     }
-    return readResponse(connection);
   }
 
   private String readResponseBody(HttpsURLConnection connection) throws IOException {

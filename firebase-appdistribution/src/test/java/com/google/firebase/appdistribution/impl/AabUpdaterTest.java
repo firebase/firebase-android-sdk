@@ -67,7 +67,7 @@ public class AabUpdaterTest {
 
   private AabUpdater aabUpdater;
   private ShadowActivity shadowActivity;
-  private static ExecutorService testExecutor;
+  private ExecutorService testExecutor;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
