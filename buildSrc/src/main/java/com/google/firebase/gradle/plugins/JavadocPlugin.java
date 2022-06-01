@@ -33,6 +33,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.CoreJavadocOptions;
+import org.gradle.external.javadoc.StandardJavadocDocletOptions;
 import org.jetbrains.dokka.gradle.DokkaAndroidPlugin;
 import org.jetbrains.dokka.gradle.DokkaTask;
 
@@ -88,7 +89,7 @@ public class JavadocPlugin implements Plugin<Project> {
 
     // setting overwrite as java-library adds the javadoc task by default and it does not work
     // with our @hide tags.
-    Javadoc generateJavadoc = project.getTasks().replace("generateJavadoc", Javadoc.class);
+    Javadoc generateJavadoc = project.getTasks().create("generateJavadoc", Javadoc.class);
     project.configure(
         generateJavadoc,
         closureOf(
@@ -168,6 +169,7 @@ public class JavadocPlugin implements Plugin<Project> {
                 javadoc.setSource(java.getSourceSets().getByName("main").getAllJava());
                 javadoc.setClasspath(java.getSourceSets().getByName("main").getCompileClasspath());
               }
+              ((StandardJavadocDocletOptions) javadoc.getOptions()).noTimestamp(false);
 
               Configuration javadocClasspath =
                   project.getConfigurations().findByName("javadocClasspath");
