@@ -346,7 +346,7 @@ public abstract class QueryEngineTestCase {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentHasBeenUpdatedOutOfBand()
+  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentUpdatedOutOfBand()
       throws Exception {
     Query query =
         query("coll")
@@ -366,7 +366,7 @@ public abstract class QueryEngineTestCase {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitToLastQueryWhenFirstDocumentHasBeenUpdatedOutOfBand()
+  public void doesNotUseInitialResultsForLimitToLastWhenLastDocumentUpdatedOutOfBand()
       throws Exception {
     Query query =
         query("coll")
