@@ -176,46 +176,34 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * Attach a snapshotListener to a DocumentReference and use it as a coroutine flow
  * @param metadataChanges Indicates whether metadata-only changes
  */
-fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) = flow {
-    val channel = Channel<DocumentSnapshot>(Channel.CONFLATED)
-    var listener: ListenerRegistration? = null
-    withContext(Dispatchers.Main.immediate) {
-        listener = addSnapshotListener(metadataChanges) { value, error ->
-            value?.let { channel.offer(it) }
-            error?.let { channel.close(it) }
+fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) =
+    callbackFlow {
+        val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
+            if (exception != null) {
+                cancel(message = "Error getting DocumentReference snapshot", cause = exception)
+            }
+
+            if (snapshot != null) {
+                trySend(snapshot)
+            }
         }
-    }
-    try {
-        for (value in channel) {
-            emit(value)
-        }
-    } finally {
-        withContext(Dispatchers.Main.immediate + NonCancellable) {
-            listener?.remove()
-        }
-    }
-}
+        awaitClose { registration.remove() }
+    }.buffer(Channel.CONFLATED)
 
 /**
  * Attach a snapshotListener to a Query and use it as a coroutine flow
  * @param metadataChanges Indicates whether metadata-only changes
  */
-fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE): Flow<QuerySnapshot> = flow {
-    val channel = Channel<QuerySnapshot>(Channel.CONFLATED)
-    var listener: ListenerRegistration? = null
-    withContext(Dispatchers.Main.immediate) {
-        listener = addSnapshotListener(metadataChanges) { value, error ->
-            value?.let { channel.offer(it) }
-            error?.let { channel.close(it) }
+fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) =
+    callbackFlow {
+        val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
+            if (exception != null) {
+                cancel(message = "Error getting Query snapshot", cause = exception)
+            }
+
+            if (snapshot != null) {
+                trySend(snapshot)
+            }
         }
-    }
-    try {
-        for (value in channel) {
-            emit(value)
-        }
-    } finally {
-        withContext(Dispatchers.Main.immediate + NonCancellable) {
-            listener?.remove()
-        }
-    }
-}
+        awaitClose { registration.remove() }
+    }.buffer(Channel.CONFLATED)
