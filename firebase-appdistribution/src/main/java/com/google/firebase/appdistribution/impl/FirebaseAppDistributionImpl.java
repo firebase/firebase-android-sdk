@@ -40,8 +40,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -99,34 +97,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
-  }
-
-  FirebaseAppDistributionImpl(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
-    this(
-        firebaseApp,
-        new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
-        new NewReleaseFetcher(
-            firebaseApp,
-            new FirebaseAppDistributionTesterApiClient(),
-            firebaseInstallationsApiProvider),
-        new ApkUpdater(firebaseApp, new ApkInstaller()),
-        new AabUpdater(),
-        signInStorage,
-        lifecycleNotifier);
-  }
-
-  FirebaseAppDistributionImpl(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
-    this(
-        firebaseApp,
-        firebaseInstallationsApiProvider,
-        new SignInStorage(firebaseApp.getApplicationContext()),
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   @Override

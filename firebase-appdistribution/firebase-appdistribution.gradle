@@ -47,6 +47,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-installations-interop')
     implementation project(':firebase-common')
+    testImplementation project(path: ':firebase-appdistribution')
     runtimeOnly project(':firebase-installations')
 
     testImplementation 'junit:junit:4.13.2'
