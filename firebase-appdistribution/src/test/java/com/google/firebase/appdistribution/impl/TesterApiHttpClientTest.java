@@ -26,12 +26,12 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.impl.TesterApiHttpClient.HttpResponse;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import javax.net.ssl.HttpsURLConnection;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +50,7 @@ public class TesterApiHttpClientTest {
   private static final String TEST_PATH = "some/url/path";
   private static final String TEST_URL =
       String.format("https://firebaseapptesters.googleapis.com/%s", TEST_PATH);
+  private static final String TAG = "Test Tag";
 
   private TesterApiHttpClient testerApiHttpClient;
   @Mock private HttpsURLConnection mockHttpsURLConnection;
@@ -82,25 +83,10 @@ public class TesterApiHttpClientTest {
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
 
-    HttpResponse response = testerApiHttpClient.makeGetRequest(TEST_PATH, TEST_AUTH_TOKEN);
+    JSONObject responseBody = testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN);
 
-    assertThat(response.code()).isEqualTo(200);
-    assertThat(Iterators.getOnlyElement(response.body().keys())).isEqualTo("fieldName");
-    assertThat(response.body().getString("fieldName")).isEqualTo("fieldValue");
-    verify(mockHttpsURLConnection).disconnect();
-  }
-
-  @Test
-  public void makeGetRequest_whenResponseNotSuccessful_stillReturnsJsonResponse() throws Exception {
-    InputStream responseInputStream =
-        new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(401);
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
-
-    HttpResponse response = testerApiHttpClient.makeGetRequest(TEST_PATH, TEST_AUTH_TOKEN);
-
-    assertThat(response.code()).isEqualTo(401);
-    assertThat(Iterators.size(response.body().keys())).isEqualTo(0);
+    assertThat(Iterators.getOnlyElement(responseBody.keys())).isEqualTo("fieldName");
+    assertThat(responseBody.getString("fieldName")).isEqualTo("fieldValue");
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -112,10 +98,11 @@ public class TesterApiHttpClientTest {
     FirebaseAppDistributionException e =
         assertThrows(
             FirebaseAppDistributionException.class,
-            () -> testerApiHttpClient.makeGetRequest(TEST_PATH, TEST_AUTH_TOKEN));
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
 
     assertThat(e.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
-    assertThat(e.getMessage()).isEqualTo(ErrorMessages.NETWORK_ERROR);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.NETWORK_ERROR);
   }
 
   @Test
@@ -128,10 +115,75 @@ public class TesterApiHttpClientTest {
     FirebaseAppDistributionException e =
         assertThrows(
             FirebaseAppDistributionException.class,
-            () -> testerApiHttpClient.makeGetRequest(TEST_PATH, TEST_AUTH_TOKEN));
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
 
     assertThat(e.getErrorCode()).isEqualTo(Status.UNKNOWN);
-    assertThat(e.getMessage()).isEqualTo(ErrorMessages.JSON_PARSING_ERROR);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.JSON_PARSING_ERROR);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void makeGetRequest_whenResponseFailsWith401_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(401);
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
+
+    FirebaseAppDistributionException e =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.AUTHENTICATION_ERROR);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void makeGetRequest_whenResponseFailsWith403_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(403);
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
+
+    FirebaseAppDistributionException e =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.AUTHORIZATION_ERROR);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void makeGetRequest_whenResponseFailsWith404_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(404);
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
+
+    FirebaseAppDistributionException e =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.NOT_FOUND_ERROR);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void makeGetRequest_whenResponseFailsWithUnknownCode_throwsError() throws Exception {
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(409);
+    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
+
+    FirebaseAppDistributionException e =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.UNKNOWN);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains("409");
     verify(mockHttpsURLConnection).disconnect();
   }
 }

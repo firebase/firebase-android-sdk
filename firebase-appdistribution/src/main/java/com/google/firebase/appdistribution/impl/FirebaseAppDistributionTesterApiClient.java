@@ -24,7 +24,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.impl.TesterApiHttpClient.HttpResponse;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -55,6 +54,10 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
   private static final String TAG = "FirebaseAppDistributionTesterApiClient";
+  private static final String FETCH_NEW_RELEASE_TAG = "Fetching new release";
+  private static final String FIND_RELEASE_TAG = "Finding installed release";
+  private static final String CREATE_FEEDBACK_TAG = "Creating feedback";
+  private static final String COMMIT_FEEDBACK_TAG = "Committing feedback";
 
   private final FirebaseApp firebaseApp;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
@@ -96,21 +99,17 @@ class FirebaseAppDistributionTesterApiClient {
               String.format(
                   "v1alpha/devices/-/testerApps/%s/installations/%s/releases",
                   firebaseApp.getOptions().getApplicationId(), fid);
-          HttpResponse response = testerApiHttpClient.makeGetRequest(path, token);
-          if (response.code() == 404) {
-            throw new FirebaseAppDistributionException(
-                "App or tester not found, or tester does not have access to the app",
-                Status.AUTHENTICATION_FAILURE);
-          } else if (!response.isSuccess()) {
-            throw getExceptionForHttpResponse(response.code());
-          }
-          return parseNewRelease(response.body());
+          JSONObject responseBody =
+              testerApiHttpClient.makeGetRequest(FETCH_NEW_RELEASE_TAG, path, token);
+          return parseNewRelease(responseBody);
         });
   }
 
   /**
-   * Fetches and returns the name of the installed release given the hash of the installed APK, or
-   * null if it could not be found.
+   * Fetches and returns the name of the installed release given the hash of the installed APK.
+   *
+   * <p>The returned {@link Task} will fail with {@link Status#AUTHENTICATION_FAILURE} if the tester
+   * does not have access to the release, or if it doesn't exist.
    */
   @NonNull
   Task<String> findReleaseUsingApkHash(String apkHash) {
@@ -120,7 +119,10 @@ class FirebaseAppDistributionTesterApiClient {
 
   /**
    * Fetches and returns the name of the installed release given the IAS artifact ID of the
-   * installed app bundle, or null if it could not be found.
+   * installed app bundle.
+   *
+   * <p>The returned {@link Task} will fail with {@link Status#AUTHENTICATION_FAILURE} if the tester
+   * does not have access to the release, or if it doesn't exist.
    */
   @NonNull
   Task<String> findReleaseUsingIasArtifactId(String iasArtifactId) {
@@ -137,13 +139,8 @@ class FirebaseAppDistributionTesterApiClient {
             fid,
             binaryIdParam,
             binaryIdValue);
-    HttpResponse response = testerApiHttpClient.makeGetRequest(path, token);
-    if (response.code() == 404) {
-      return null;
-    } else if (!response.isSuccess()) {
-      throw getExceptionForHttpResponse(response.code());
-    }
-    return parseJsonFieldFromResponse(response.body(), "release");
+    JSONObject responseBody = testerApiHttpClient.makeGetRequest(FIND_RELEASE_TAG, path, token);
+    return parseJsonFieldFromResponse(responseBody, "release");
   }
 
   /** Creates a new feedback from the given text, and returns the feedback name. */
@@ -154,16 +151,9 @@ class FirebaseAppDistributionTesterApiClient {
           LogWrapper.getInstance().i("Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedback", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
-          HttpResponse response = testerApiHttpClient.makePostRequest(path, token, requestBody);
-          if (response.code() == 403) {
-            throw new FirebaseAppDistributionException(
-                ErrorMessages.NO_RELEASE_ACCESS, Status.AUTHENTICATION_FAILURE);
-          } else if (response.code() == 404) {
-            throw new FirebaseAppDistributionException("Release was not found", Status.UNKNOWN);
-          } else if (!response.isSuccess()) {
-            throw getExceptionForHttpResponse(response.code());
-          }
-          return parseJsonFieldFromResponse(response.body(), "name");
+          JSONObject responseBody =
+              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
+          return parseJsonFieldFromResponse(responseBody, "name");
         });
   }
 
@@ -174,16 +164,9 @@ class FirebaseAppDistributionTesterApiClient {
         (unused, token) -> {
           LogWrapper.getInstance().i("Committing feedback: " + feedbackName);
           String path = "v1alpha/" + feedbackName + ":commit";
-          HttpResponse response =
-              testerApiHttpClient.makePostRequest(path, token, /* requestBody= */ "");
-          if (response.code() == 403) {
-            throw new FirebaseAppDistributionException(
-                ErrorMessages.NO_RELEASE_ACCESS, Status.AUTHENTICATION_FAILURE);
-          } else if (response.code() == 404) {
-            throw new FirebaseAppDistributionException("Feedback was not found", Status.UNKNOWN);
-          } else if (!response.isSuccess()) {
-            throw getExceptionForHttpResponse(response.code());
-          }
+          System.out.println("LKELLOGG: " + path);
+          testerApiHttpClient.makePostRequest(
+              COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "");
           return null;
         });
   }
@@ -254,28 +237,6 @@ class FirebaseAppDistributionTesterApiClient {
           .e(TAG, String.format("Field '%s' missing from response", fieldName), e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
-    }
-  }
-
-  private FirebaseAppDistributionException getExceptionForHttpResponse(int responseCode) {
-    switch (responseCode) {
-      case 400:
-        return new FirebaseAppDistributionException("Bad request", Status.UNKNOWN);
-      case 401:
-        return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
-      case 403:
-        return new FirebaseAppDistributionException(
-            ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
-      case 404:
-        return new FirebaseAppDistributionException(ErrorMessages.NOT_FOUND_ERROR, Status.UNKNOWN);
-      case 408:
-      case 504:
-        return new FirebaseAppDistributionException(
-            ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
-      default:
-        return new FirebaseAppDistributionException(
-            "Received error status: " + responseCode, Status.UNKNOWN);
     }
   }
 

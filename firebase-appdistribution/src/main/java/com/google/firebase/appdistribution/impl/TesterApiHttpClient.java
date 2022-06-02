@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.auto.value.AutoValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -35,30 +34,6 @@ import org.json.JSONObject;
 
 /** Client that makes FIS-authenticated GET and POST requests to the App Distribution Tester API. */
 class TesterApiHttpClient {
-
-  /** A respone from an HTTP request. */
-  @AutoValue
-  abstract static class HttpResponse {
-    /** The HTTP status code. */
-    abstract int code();
-
-    /**
-     * The JSON response body.
-     *
-     * <p>This will be an empty JSON object if the status code does not indicate success.
-     */
-    abstract JSONObject body();
-
-    /** Returns {@code true} if the response code indicates a successful request. */
-    boolean isSuccess() {
-      return isResponseSuccess(code());
-    }
-
-    /** Convenience method to create an HTTPResponse. */
-    static HttpResponse create(int code, JSONObject body) {
-      return new AutoValue_TesterApiHttpClient_HttpResponse(code, body);
-    }
-  }
 
   @VisibleForTesting static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
   private static final String REQUEST_METHOD_GET = "GET";
@@ -92,15 +67,19 @@ class TesterApiHttpClient {
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
   }
 
-  /** Make a GET request to the tester API at the given path using a FIS token for auth. */
-  HttpResponse makeGetRequest(String path, String token) throws FirebaseAppDistributionException {
+  /**
+   * Make a GET request to the tester API at the given path using a FIS token for auth.
+   *
+   * @return the response body
+   */
+  JSONObject makeGetRequest(String tag, String path, String token)
+      throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
       connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
-      return readResponse(connection);
+      return readResponse(tag, connection);
     } catch (IOException e) {
-      throw new FirebaseAppDistributionException(
-          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+      throw getException(tag, ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     } finally {
       if (connection != null) {
         connection.disconnect();
@@ -108,8 +87,12 @@ class TesterApiHttpClient {
     }
   }
 
-  /** Make a POST request to the tester API at the given path using a FIS token for auth. */
-  HttpResponse makePostRequest(String path, String token, String requestBody)
+  /**
+   * Make a POST request to the tester API at the given path using a FIS token for auth.
+   *
+   * @return the response body
+   */
+  JSONObject makePostRequest(String tag, String path, String token, String requestBody)
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
@@ -123,15 +106,13 @@ class TesterApiHttpClient {
       try {
         gzipOutputStream.write(requestBody.getBytes("UTF-8"));
       } catch (IOException e) {
-        throw new FirebaseAppDistributionException(
-            "Error compressing network request body", Status.UNKNOWN, e);
+        throw getException(tag, "Error compressing network request body", Status.UNKNOWN, e);
       } finally {
         gzipOutputStream.close();
       }
-      return readResponse(connection);
+      return readResponse(tag, connection);
     } catch (IOException e) {
-      throw new FirebaseAppDistributionException(
-          ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
+      throw getException(tag, ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
     } finally {
       if (connection != null) {
         connection.disconnect();
@@ -143,22 +124,23 @@ class TesterApiHttpClient {
     return String.format("https://%s/%s", APP_TESTERS_HOST, path);
   }
 
-  private static HttpResponse readResponse(HttpsURLConnection connection)
+  private static JSONObject readResponse(String tag, HttpsURLConnection connection)
       throws IOException, FirebaseAppDistributionException {
     int responseCode = connection.getResponseCode();
     String responseBody = readResponseBody(connection);
-    LogWrapper.getInstance().v(String.format("Response (%d): %s", responseCode, responseBody));
-    JSONObject jsonBody =
-        isResponseSuccess(responseCode) ? parseJson(responseBody) : new JSONObject();
-    return HttpResponse.create(responseCode, jsonBody);
+    LogWrapper.getInstance().v(tag, String.format("Response (%d): %s", responseCode, responseBody));
+    if (!isResponseSuccess(responseCode)) {
+      throw getExceptionForHttpResponse(tag, responseCode);
+    }
+    return parseJson(tag, responseBody);
   }
 
-  private static JSONObject parseJson(String json) throws FirebaseAppDistributionException {
+  private static JSONObject parseJson(String tag, String json)
+      throws FirebaseAppDistributionException {
     try {
       return new JSONObject(json);
     } catch (JSONException e) {
-      throw new FirebaseAppDistributionException(
-          ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
+      throw getException(tag, ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
   }
 
@@ -194,6 +176,42 @@ class TesterApiHttpClient {
     httpsURLConnection.addRequestProperty(
         X_CLIENT_VERSION_HEADER_KEY, String.format("android-sdk/%s", BuildConfig.VERSION_NAME));
     return httpsURLConnection;
+  }
+
+  private static FirebaseAppDistributionException getExceptionForHttpResponse(
+      String tag, int responseCode) {
+    switch (responseCode) {
+      case 400:
+        return getException(tag, "Bad request", Status.UNKNOWN);
+      case 401:
+        return getException(tag, ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
+      case 403:
+        return getException(tag, ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
+      case 404:
+        // TODO(lkellogg): Change this to a different status once 404s no longer indicate missing
+        //  access (the backend should return 403s for those cases, including when the resource
+        //  doesn't exist but the tester doesn't have the access to see that information)
+        return getException(tag, ErrorMessages.NOT_FOUND_ERROR, Status.AUTHENTICATION_FAILURE);
+      case 408:
+      case 504:
+        return getException(tag, ErrorMessages.TIMEOUT_ERROR, Status.NETWORK_FAILURE);
+      default:
+        return getException(tag, "Received error status: " + responseCode, Status.UNKNOWN);
+    }
+  }
+
+  private static FirebaseAppDistributionException getException(
+      String tag, String message, Status status) {
+    return new FirebaseAppDistributionException(tagMessage(tag, message), status);
+  }
+
+  private static FirebaseAppDistributionException getException(
+      String tag, String message, Status status, Throwable t) {
+    return new FirebaseAppDistributionException(tagMessage(tag, message), status, t);
+  }
+
+  private static String tagMessage(String tag, String message) {
+    return String.format("%s: %s", tag, message);
   }
 
   private static String convertInputStreamToString(InputStream is) throws IOException {
