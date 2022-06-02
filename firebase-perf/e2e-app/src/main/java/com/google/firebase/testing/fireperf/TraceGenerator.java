@@ -32,7 +32,7 @@ public class TraceGenerator {
   private static final int TRACE_MEAN_DURATION = 3;
   private static final float TRACE_DURATION_STD_DEVIATION = .3f;
 
-  Future<?> launchTraces(final int totalTraces, final int totalSets) {
+  Future<?> generateTraces(final int totalTraces, final int totalSets) {
     return Executors.newSingleThreadExecutor()
         .submit(
             () -> {

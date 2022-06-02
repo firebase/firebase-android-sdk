@@ -64,7 +64,7 @@ public class NetworkRequestGenerator {
     this.rand = new Random();
   }
 
-  Future<?> launchRequests(final int totalRequests, final int totalSets) {
+  Future<?> generateRequests(final int totalRequests, final int totalSets) {
     return Executors.newSingleThreadExecutor()
         .submit(
             () -> {
