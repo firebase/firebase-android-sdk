@@ -78,7 +78,6 @@ public class ConfigRealtimeHttpClient {
 
   private final int ORIGINAL_RETRIES = 7;
 
-
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
@@ -293,7 +292,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Kicks off Http stream listening and autofetch
-  public synchronized void beginRealtime() {
+  private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
       this.httpURLConnection = makeHttpConnection();
       resetRetryParameters();

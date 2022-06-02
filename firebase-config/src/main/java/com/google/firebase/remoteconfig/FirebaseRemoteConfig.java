@@ -558,14 +558,6 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Retries the Realtime Http Stream connection. Must have added a listener via
-   * addOnConfigUpdateListener first or the connection will not be retried.
-   */
-  public void retryRealtimeConnection() {
-    this.configRealtimeHttpClient.beginRealtime();
-  }
-
-  /**
    * Loads all the configs from disk by calling {@link ConfigCacheClient#get} on each cache client.
    *
    * @hide

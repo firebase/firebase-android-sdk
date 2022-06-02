@@ -18,6 +18,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
@@ -341,7 +342,17 @@ public class RemoteConfigComponent {
     public void onBackgroundStateChanged(boolean b) {
       for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
         if (!b) {
-          frc.retryRealtimeConnection();
+          // Add dummy listener and remove to trigger http stream flow.
+          ConfigUpdateListenerRegistration registration =
+              frc.addOnConfigUpdateListener(
+                  new ConfigUpdateListener() {
+                    @Override
+                    public void onEvent() {}
+
+                    @Override
+                    public void onError(@NonNull Exception error) {}
+                  });
+          registration.remove();
         }
       }
     }
