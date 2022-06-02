@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 /** This activity displays a ListView which when scrolled generates slow and frozen frames. */
 public class FirebasePerfScreenTracesActivity extends Activity {
 
-  private static final int NUM_LIST_ITEMS = 100;
+  public static final int NUM_LIST_ITEMS = 100;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
