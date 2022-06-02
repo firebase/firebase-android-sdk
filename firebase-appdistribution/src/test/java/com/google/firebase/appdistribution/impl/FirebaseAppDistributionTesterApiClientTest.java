@@ -49,7 +49,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
+  private static final String TEST_PROJECT_ID = "project-id";
   private static final String TEST_PROJECT_NUMBER = "123456789";
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_FID_1 = "cccccccccccccccccccccc";
