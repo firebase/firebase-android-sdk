@@ -14,27 +14,21 @@
 
 package com.google.firebase.firestore.ktx
 
+import android.support.multidex.BuildConfig
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.QueryDocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.MetadataChanges
-import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.*
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.withContext
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -173,14 +167,23 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
 }
 
 /**
- * Attach a snapshotListener to a DocumentReference and use it as a coroutine flow
- * @param metadataChanges Indicates whether metadata-only changes
+ * Transforms a [DocumentReference] into a coroutine [Flow]
+ *
+ * **Backpressure handling**: by default this method conflates items. If the consumer isn't fast enough,
+ * it might miss some values but is always guaranteed to get the latest value. Use [bufferCapacity]
+ * to change that behaviour
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
-fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) =
-    callbackFlow {
+fun DocumentReference.toFlow(
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    bufferCapacity: Int? = Channel.CONFLATED
+): Flow<DocumentSnapshot?> {
+    val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
-                cancel(message = "Error getting DocumentReference snapshot", cause = exception)
+                cancel(CancellationException("Error getting DocumentReference snapshot", exception))
             }
 
             if (snapshot != null) {
@@ -188,17 +191,33 @@ fun DocumentReference.toFlow(metadataChanges: MetadataChanges = MetadataChanges.
             }
         }
         awaitClose { registration.remove() }
-    }.buffer(Channel.CONFLATED)
+    }
+
+    return if (bufferCapacity != null) {
+        flow.buffer(bufferCapacity)
+    } else {
+        flow
+    }
+}
 
 /**
- * Attach a snapshotListener to a Query and use it as a coroutine flow
- * @param metadataChanges Indicates whether metadata-only changes
+ * Transforms a [Query] into a coroutine [Flow]
+ *
+ * **Backpressure handling**: by default this method conflates items. If the consumer isn't fast enough,
+ * it might miss some values but is always guaranteed to get the latest value. Use [bufferCapacity]
+ * to change that behaviour
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
-fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) =
-    callbackFlow {
+fun Query.toFlow(
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    bufferCapacity: Int? = Channel.CONFLATED
+): Flow<QuerySnapshot?> {
+    val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
-                cancel(message = "Error getting Query snapshot", cause = exception)
+                cancel(CancellationException("Error getting Query snapshot", exception))
             }
 
             if (snapshot != null) {
@@ -206,4 +225,11 @@ fun Query.toFlow(metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE) =
             }
         }
         awaitClose { registration.remove() }
-    }.buffer(Channel.CONFLATED)
+    }
+
+    return if (bufferCapacity != null) {
+        flow.buffer(bufferCapacity)
+    } else {
+        flow
+    }
+}
