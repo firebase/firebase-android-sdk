@@ -27,8 +27,8 @@ public class FirebaseAppDistributionException extends FirebaseException {
 
     /**
      * The authentication process failed. The tester was either not signed in, does not have access,
-     * or something went wrong. Try signing in again by calling
-     * {@link FirebaseAppDistribution#signInTester}.
+     * or something went wrong. Try signing in again by calling {@link
+     * FirebaseAppDistribution#signInTester}.
      */
     AUTHENTICATION_FAILURE,
 
