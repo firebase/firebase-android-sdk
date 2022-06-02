@@ -19,16 +19,24 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.*
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QueryDocumentSnapshot
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
