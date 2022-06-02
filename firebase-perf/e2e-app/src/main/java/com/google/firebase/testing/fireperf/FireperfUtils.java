@@ -21,6 +21,8 @@ import java.util.concurrent.Future;
 /** A helper class that generates all of the traces and network requests. */
 public class FireperfUtils {
   private static final int MILLIS_IN_SECONDS = 1000;
+  private static final int TRACES_PER_ITERATION = 32;
+  private static final int REQUESTS_PER_ITERATION = 32;
 
   /** Creates all the traces and network requests. */
   static List<Future<?>> startEvents(final int iterations) {
@@ -31,11 +33,12 @@ public class FireperfUtils {
   }
 
   static Future<?> startTraces(int iterations) {
-    return new TraceGenerator().launchTraces(/* totalTraces= */ 32, iterations);
+    return new TraceGenerator().launchTraces(/* totalTraces= */ TRACES_PER_ITERATION, iterations);
   }
 
   static Future<?> startNetworkRequests(int iterations) {
-    return new NetworkRequestGenerator().launchRequests(/* totalRequests= */ 32, iterations);
+    return new NetworkRequestGenerator()
+        .launchRequests(/* totalRequests= */ REQUESTS_PER_ITERATION, iterations);
   }
 
   /**

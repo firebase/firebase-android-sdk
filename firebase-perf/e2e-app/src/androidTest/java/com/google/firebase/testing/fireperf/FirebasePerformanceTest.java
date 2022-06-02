@@ -49,12 +49,13 @@ public class FirebasePerformanceTest {
   @Test
   public void waitForBothTracesAndNetworkRequestsBatch()
       throws ExecutionException, InterruptedException {
+    final int iterations = 15;
     final List<Future<?>> futureList = new ArrayList<>();
     ActivityScenario scenario = rule.getScenario();
     scenario.onActivity(
         activity -> {
-          futureList.add(FireperfUtils.startTraces(15));
-          futureList.add(FireperfUtils.startNetworkRequests(15));
+          futureList.add(FireperfUtils.startTraces(iterations));
+          futureList.add(FireperfUtils.startNetworkRequests(iterations));
         });
     for (Future<?> future : futureList) {
       future.get();
