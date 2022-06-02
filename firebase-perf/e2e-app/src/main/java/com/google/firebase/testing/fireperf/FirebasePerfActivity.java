@@ -15,13 +15,6 @@
 package com.google.firebase.testing.fireperf;
 
 import android.app.Activity;
-import android.os.Bundle;
 
 /** Activity used to help end to end testing of FirebasePerformance. */
-public class FirebasePerfActivity extends Activity {
-
-  @Override
-  public void onCreate(Bundle onSavedInstanceState) {
-    super.onCreate(onSavedInstanceState);
-  }
-}
+public class FirebasePerfActivity extends Activity {}
