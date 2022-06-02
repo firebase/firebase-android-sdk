@@ -29,7 +29,6 @@ import androidx.test.filters.MediumTest;
 import com.google.firebase.testing.fireperf.ui.fast.FastFragment;
 import com.google.firebase.testing.fireperf.ui.home.HomeFragment;
 import com.google.firebase.testing.fireperf.ui.slow.SlowFragment;
-import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,7 +53,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     scrollRecyclerViewToEnd(FastFragment.NUM_LIST_ITEMS, R.id.rv_numbers_fast);
     scenario.onActivity(new NavigateAction(R.id.navigation_slow));
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
-    assertThat(scenario.getState()).isIn(Arrays.asList(State.RESUMED));
+    assertThat(scenario.getState()).isEqualTo(State.RESUMED);
     scenario.moveToState(State.STARTED).moveToState(State.CREATED);
 
     // End Activity screen trace by relaunching the activity to ensure the screen trace is sent.
