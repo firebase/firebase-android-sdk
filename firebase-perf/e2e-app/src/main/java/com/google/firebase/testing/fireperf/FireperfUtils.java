@@ -25,18 +25,18 @@ public class FireperfUtils {
   private static final int REQUESTS_PER_ITERATION = 32;
 
   /** Creates all the traces and network requests. */
-  static List<Future<?>> startEvents(final int iterations) {
+  static List<Future<?>> generateEvents(final int iterations) {
     List<Future<?>> futures = new ArrayList<>();
-    futures.add(startTraces(iterations));
-    futures.add(startNetworkRequests(iterations));
+    futures.add(generateTraces(iterations));
+    futures.add(generateNetworkRequests(iterations));
     return futures;
   }
 
-  static Future<?> startTraces(int iterations) {
+  static Future<?> generateTraces(int iterations) {
     return new TraceGenerator().launchTraces(/* totalTraces= */ TRACES_PER_ITERATION, iterations);
   }
 
-  static Future<?> startNetworkRequests(int iterations) {
+  static Future<?> generateNetworkRequests(int iterations) {
     return new NetworkRequestGenerator()
         .launchRequests(/* totalRequests= */ REQUESTS_PER_ITERATION, iterations);
   }

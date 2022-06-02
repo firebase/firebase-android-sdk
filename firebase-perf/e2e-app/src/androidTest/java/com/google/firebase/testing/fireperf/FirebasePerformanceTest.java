@@ -54,8 +54,8 @@ public class FirebasePerformanceTest {
     ActivityScenario scenario = rule.getScenario();
     scenario.onActivity(
         activity -> {
-          futureList.add(FireperfUtils.startTraces(iterations));
-          futureList.add(FireperfUtils.startNetworkRequests(iterations));
+          futureList.add(FireperfUtils.generateTraces(iterations));
+          futureList.add(FireperfUtils.generateNetworkRequests(iterations));
         });
     for (Future<?> future : futureList) {
       future.get();
