@@ -34,6 +34,7 @@ final class TestUtils {
 
   static FirebaseAppDistributionException assertTaskFailure(
       Task task, Status status, String messageSubstring) {
+    assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(FirebaseAppDistributionException.class);
     FirebaseAppDistributionException e = (FirebaseAppDistributionException) task.getException();

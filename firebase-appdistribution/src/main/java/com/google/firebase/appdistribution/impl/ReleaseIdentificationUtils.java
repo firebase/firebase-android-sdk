@@ -21,20 +21,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 final class ReleaseIdentificationUtils {
-  private static final String TAG = "ReleaseIdentification";
-  private static final int BYTES_IN_LONG = 8;
+
   private static final int NO_FLAGS = 0;
+  static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   /**
    * Get the package info for the currently installed app.
@@ -66,93 +57,13 @@ final class ReleaseIdentificationUtils {
     }
   }
 
+  @Nullable
   static String extractInternalAppSharingArtifactId(@NonNull Context appContext)
       throws FirebaseAppDistributionException {
     PackageInfo packageInfo = getPackageInfoWithMetadata(appContext);
     if (packageInfo.applicationInfo.metaData == null) {
       throw new FirebaseAppDistributionException("Missing package info metadata", Status.UNKNOWN);
     }
-    String id =
-        packageInfo.applicationInfo.metaData.getString("com.android.vending.internal.apk.id");
-    if (id == null) {
-      throw new FirebaseAppDistributionException(
-          "IAS artifact ID missing from package info metadata ", Status.UNKNOWN);
-    }
-    return id;
-  }
-
-  @Nullable
-  static String calculateApkHash(@NonNull File file) {
-    LogWrapper.getInstance().v(TAG + "Calculating release id for " + file.getPath());
-    LogWrapper.getInstance().v(TAG + "File size: " + file.length());
-
-    long start = System.currentTimeMillis();
-    long entries = 0;
-    String zipFingerprint = null;
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      ArrayList<Byte> checksums = new ArrayList<>();
-
-      // Since calculating the codeHash returned from the release backend is computationally
-      // expensive, we has the existing checksum data from the ZipFile and compare it to
-      // (1) the apk hash returned by the backend, or (2) look up a mapping from the apk zip hash to
-      // the
-      // full codehash, and compare that to the codehash to the backend
-      ZipFile zis = new ZipFile(file);
-      try {
-        Enumeration<? extends ZipEntry> zipEntries = zis.entries();
-        while (zipEntries.hasMoreElements()) {
-          ZipEntry zip = zipEntries.nextElement();
-          entries += 1;
-          byte[] crcBytes = longToByteArray(zip.getCrc());
-          for (byte b : crcBytes) {
-            checksums.add(b);
-          }
-        }
-      } finally {
-        zis.close();
-      }
-      byte[] checksumByteArray = digest.digest(arrayListToByteArray(checksums));
-      StringBuilder sb = new StringBuilder();
-      for (byte b : checksumByteArray) {
-        sb.append(String.format("%02x", b));
-      }
-      zipFingerprint = sb.toString();
-
-    } catch (IOException | NoSuchAlgorithmException e) {
-      LogWrapper.getInstance().v(TAG + "id calculation failed for " + file.getPath());
-      return null;
-    } finally {
-      long elapsed = System.currentTimeMillis() - start;
-      if (elapsed > 2 * 1000) {
-        LogWrapper.getInstance()
-            .v(
-                TAG
-                    + String.format(
-                        "Long id calculation time %d ms and %d entries for %s",
-                        elapsed, entries, file.getPath()));
-      }
-
-      LogWrapper.getInstance()
-          .v(TAG + String.format("Finished calculating %d entries in %d ms", entries, elapsed));
-      LogWrapper.getInstance()
-          .v(TAG + String.format("%s hashes to %s", file.getPath(), zipFingerprint));
-    }
-
-    return zipFingerprint;
-  }
-
-  private static byte[] longToByteArray(long x) {
-    ByteBuffer buffer = ByteBuffer.allocate(BYTES_IN_LONG);
-    buffer.putLong(x);
-    return buffer.array();
-  }
-
-  private static byte[] arrayListToByteArray(ArrayList<Byte> list) {
-    byte[] result = new byte[list.size()];
-    for (int i = 0; i < list.size(); i++) {
-      result[i] = list.get(i);
-    }
-    return result;
+    return packageInfo.applicationInfo.metaData.getString(IAS_ARTIFACT_ID_METADATA_KEY);
   }
 }
