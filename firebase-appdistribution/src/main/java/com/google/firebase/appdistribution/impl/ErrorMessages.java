@@ -18,7 +18,9 @@ class ErrorMessages {
   static final String NETWORK_ERROR = "Request failed with unknown network error.";
 
   static final String JSON_PARSING_ERROR =
-      "Error parsing service response when checking for new release. This was most likely due to a transient condition and may be corrected by retrying.";
+      "Error parsing service response. This was most likely due to a transient condition and may be corrected by retrying.";
+
+  static final String JSON_SERIALIZATION_ERROR = "Error building request body.";
 
   static final String AUTHENTICATION_ERROR =
       "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
@@ -28,8 +30,12 @@ class ErrorMessages {
 
   static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
 
-  static final String NOT_FOUND_ERROR =
-      "Release not found. An update was not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null  AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
+  static final String RELEASE_NOT_FOUND_ERROR =
+      "Release not found. An update was not available for the current tester and app. Make sure that FirebaseAppDistribution#checkForNewRelease returns with a non-null AppDistributionRelease before calling FirebaseAppDistribution#updateApp";
+
+  static final String NOT_FOUND_ERROR = "Resource not found.";
+
+  static final String NO_RELEASE_ACCESS = "Tester does not have access to the release.";
 
   static final String TIMEOUT_ERROR =
       "Request timed out. Check the tester's internet connection and try again.";

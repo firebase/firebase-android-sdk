@@ -14,11 +14,10 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
-import static org.mockito.Mockito.verify;
+import static com.google.firebase.appdistribution.impl.TestUtils.readTestJSON;
 import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
@@ -29,17 +28,12 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.impl.TesterApiHttpClient.HttpResponse;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.net.ssl.HttpsURLConnection;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,16 +50,14 @@ public class FirebaseAppDistributionTesterApiClientTest {
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String TEST_FID_1 = "cccccccccccccccccccccc";
-  private static final String INVALID_RESPONSE = "InvalidResponse";
-  private static final String RELEASES_URL =
-      "https://firebaseapptesters.googleapis.com/v1alpha/devices/-/testerApps/1:123456789:android:abcdef/installations/cccccccccccccccccccccc/releases";
+  private static final String RELEASES_PATH =
+      "v1alpha/devices/-/testerApps/1:123456789:android:abcdef/installations/cccccccccccccccccccccc/releases";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private InstallationTokenResult mockInstallationTokenResult;
-  @Mock private HttpsURLConnection mockHttpsURLConnection;
-  @Mock private HttpsUrlConnectionFactory mockHttpsURLConnectionFactory;
+  @Mock private TesterApiHttpClient mockTesterApiHttpClient;
 
   private ExecutorService testExecutor = Executors.newSingleThreadExecutor();
 
@@ -73,9 +65,6 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-
-    when(mockHttpsURLConnectionFactory.openConnection(RELEASES_URL))
-        .thenReturn(mockHttpsURLConnection);
 
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
@@ -94,19 +83,14 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     firebaseAppDistributionTesterApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            testExecutor,
-            firebaseApp,
-            mockFirebaseInstallationsProvider,
-            mockHttpsURLConnectionFactory);
+            testExecutor, firebaseApp, mockFirebaseInstallationsProvider, mockTesterApiHttpClient);
   }
 
   @Test
   public void fetchNewRelease_whenResponseSuccessfulForApk_returnsRelease() throws Exception {
-    JSONObject releaseJson = getTestJSON("testApkReleaseResponse.json");
-    InputStream response =
-        new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    JSONObject releaseJson = readTestJSON("testApkReleaseResponse.json");
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(200, releaseJson));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
@@ -125,16 +109,13 @@ public class FirebaseAppDistributionTesterApiClientTest {
             .setIasArtifactId("")
             .build();
     assertThat(releaseTask.getResult()).isEqualTo(expectedRelease);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
   public void fetchNewRelease_whenResponseSuccessfulForAab_returnsRelease() throws Exception {
-    JSONObject releaseJson = getTestJSON("testAabReleaseResponse.json");
-    InputStream response =
-        new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
+    JSONObject releaseJson = readTestJSON("testAabReleaseResponse.json");
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(200, releaseJson));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
@@ -153,7 +134,6 @@ public class FirebaseAppDistributionTesterApiClientTest {
             .setIasArtifactId("ias-artifact-id-1")
             .build();
     assertThat(releaseTask.getResult()).isEqualTo(expectedRelease);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
@@ -180,22 +160,24 @@ public class FirebaseAppDistributionTesterApiClientTest {
   }
 
   @Test
-  public void fetchNewRelease_whenConnectionFails_throwsError() throws Exception {
-    IOException caughtException = new IOException("error");
-    when(mockHttpsURLConnectionFactory.openConnection(RELEASES_URL)).thenThrow(caughtException);
+  public void fetchNewRelease_whenClientThrowsException_failsTask() throws Exception {
+    FirebaseAppDistributionException httpClientException =
+        new FirebaseAppDistributionException("error", Status.UNKNOWN);
+
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenThrow(httpClientException);
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(
-        releaseTask, Status.NETWORK_FAILURE, ErrorMessages.NETWORK_ERROR, caughtException);
+    assertTaskFailure(releaseTask, Status.UNKNOWN, "error");
   }
 
   @Test
   public void fetchNewRelease_whenResponseFailsWith401_throwsError() throws Exception {
-    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(401);
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(401, new JSONObject()));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
@@ -203,13 +185,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertTaskFailure(
         releaseTask, Status.AUTHENTICATION_FAILURE, ErrorMessages.AUTHENTICATION_ERROR);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
   public void fetchNewRelease_whenResponseFailsWith403_throwsError() throws Exception {
-    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(403);
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(403, new JSONObject()));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
@@ -217,90 +198,54 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertTaskFailure(
         releaseTask, Status.AUTHENTICATION_FAILURE, ErrorMessages.AUTHORIZATION_ERROR);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
   public void fetchNewRelease_whenResponseFailsWith404_throwsError() throws Exception {
-    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(404);
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(404, new JSONObject()));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(releaseTask, Status.AUTHENTICATION_FAILURE, "Resource not found");
-    verify(mockHttpsURLConnection).disconnect();
+    assertTaskFailure(releaseTask, Status.AUTHENTICATION_FAILURE, "App or tester not found");
   }
 
   @Test
   public void fetchNewRelease_whenResponseFailsWith504_throwsError() throws Exception {
-    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(504);
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(504, new JSONObject()));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(releaseTask, Status.NETWORK_FAILURE, ErrorMessages.TIMEOUT_ERROR);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
   public void fetchNewRelease_whenResponseFailsWithUnknownCode_throwsError() throws Exception {
-    when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException());
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(409);
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(409, new JSONObject()));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
     assertTaskFailure(releaseTask, Status.UNKNOWN, "409");
-    verify(mockHttpsURLConnection).disconnect();
-  }
-
-  @Test
-  public void fetchNewRelease_whenInvalidJson_throwsError() throws Exception {
-    InputStream response =
-        new ByteArrayInputStream(INVALID_RESPONSE.getBytes(StandardCharsets.UTF_8));
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
-
-    Task<AppDistributionReleaseInternal> releaseTask =
-        firebaseAppDistributionTesterApiClient.fetchNewRelease();
-    awaitAsyncOperations(testExecutor);
-
-    FirebaseAppDistributionException ex =
-        assertTaskFailure(releaseTask, Status.UNKNOWN, ErrorMessages.JSON_PARSING_ERROR);
-    assertThat(ex.getCause()).isInstanceOf(JSONException.class);
-    verify(mockHttpsURLConnection).disconnect();
   }
 
   @Test
   public void fetchNewRelease_whenNoReleases_returnsNull() throws Exception {
-    JSONObject releaseJson = getTestJSON("testNoReleasesResponse.json");
-    InputStream response =
-        new ByteArrayInputStream(releaseJson.toString().getBytes(StandardCharsets.UTF_8));
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
+    JSONObject releaseJson = readTestJSON("testNoReleasesResponse.json");
+    when(mockTesterApiHttpClient.makeGetRequest(RELEASES_PATH, TEST_AUTH_TOKEN))
+        .thenReturn(HttpResponse.create(200, releaseJson));
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
     awaitAsyncOperations(testExecutor);
 
     assertThat(releaseTask.getResult()).isNull();
-    verify(mockHttpsURLConnection).disconnect();
-  }
-
-  private JSONObject getTestJSON(String fileName) throws IOException, JSONException {
-    final InputStream jsonInputStream = getContext().getResources().getAssets().open(fileName);
-    final String testJsonString = streamToString(jsonInputStream);
-    final JSONObject testJson = new JSONObject(testJsonString);
-    return testJson;
-  }
-
-  private static String streamToString(InputStream is) {
-    final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
-    return s.hasNext() ? s.next() : "";
   }
 }
