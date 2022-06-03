@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.core;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.remote.Datastore;
 
-public class AggregateQuerySnapshot {
+public class CountQuery {
+  private final Datastore datastore;
+  private final Query query;
 
-  private final long count;
-
-  AggregateQuerySnapshot(long count) {
-    this.count = count;
+  public CountQuery(Datastore datastore, Query query) {
+    this.datastore = datastore;
+    this.query = query;
   }
 
-  @Nullable
-  public Long get(@NonNull AggregateField.CountAggregateField field) {
-    return count;
+  public Task<Long> run() {
+    return datastore.runCountQuery(query.toTarget());
   }
 
 }
