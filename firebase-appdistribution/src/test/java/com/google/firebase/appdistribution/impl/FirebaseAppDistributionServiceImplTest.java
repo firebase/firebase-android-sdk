@@ -23,7 +23,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.ErrorMessages.AUTHENTICATION_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSING_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
-import static com.google.firebase.appdistribution.impl.ErrorMessages.NOT_FOUND_ERROR;
+import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
@@ -560,7 +560,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
-    assertTaskFailure(updateTask, UPDATE_NOT_AVAILABLE, NOT_FOUND_ERROR);
+    assertTaskFailure(updateTask, UPDATE_NOT_AVAILABLE, RELEASE_NOT_FOUND_ERROR);
   }
 
   @Test

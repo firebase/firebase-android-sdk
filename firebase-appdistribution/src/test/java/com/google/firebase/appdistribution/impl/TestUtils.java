@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static android.os.Looper.getMainLooper;
+import static androidx.test.InstrumentationRegistry.getContext;
 import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -25,8 +26,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.mockito.stubbing.Answer;
 
 final class TestUtils {
@@ -78,5 +83,21 @@ final class TestUtils {
       }
       return continuation.then(activity);
     };
+  }
+
+  static String readTestFile(String fileName) throws IOException {
+    final InputStream jsonInputStream = getContext().getResources().getAssets().open(fileName);
+    return streamToString(jsonInputStream);
+  }
+
+  static JSONObject readTestJSON(String fileName) throws IOException, JSONException {
+    final String testJsonString = readTestFile(fileName);
+    final JSONObject testJson = new JSONObject(testJsonString);
+    return testJson;
+  }
+
+  private static String streamToString(InputStream is) {
+    final java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+    return s.hasNext() ? s.next() : "";
   }
 }
