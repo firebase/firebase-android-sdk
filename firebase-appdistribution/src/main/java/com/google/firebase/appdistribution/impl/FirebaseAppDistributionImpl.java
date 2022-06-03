@@ -276,7 +276,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         LogWrapper.getInstance().v("New release not found.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+                ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
       }
       if (cachedNewRelease.getDownloadUrl() == null) {
         LogWrapper.getInstance().v("Download failed to execute.");

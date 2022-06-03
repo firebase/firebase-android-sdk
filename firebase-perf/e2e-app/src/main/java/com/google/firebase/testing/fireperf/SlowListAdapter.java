@@ -30,6 +30,7 @@ public class SlowListAdapter extends ListAdapter {
 
   @Override
   public void onBindViewHolder(@NotNull NumberViewHolder holder, int position) {
+    // sleep thread to simulate jank
     try {
       if (position % 15 == 0) {
         Thread.sleep(900);
@@ -40,6 +41,6 @@ public class SlowListAdapter extends ListAdapter {
       Log.e(LOG_TAG, e.getMessage(), e);
     }
 
-    holder.bind(position);
+    super.onBindViewHolder(holder, position);
   }
 }
