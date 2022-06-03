@@ -240,6 +240,7 @@ public class TransportManager implements AppStateCallback {
     while (!pendingEventsQueue.isEmpty()) {
       PendingPerfEvent pendingPerfEvent = pendingEventsQueue.poll();
       if (pendingPerfEvent != null) {
+        TransportIdlingResource.increment();
         executorService.execute(
             () -> syncLog(pendingPerfEvent.perfMetricBuilder, pendingPerfEvent.appState));
       }
@@ -294,6 +295,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
+    TransportIdlingResource.increment();
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -322,6 +324,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
+    TransportIdlingResource.increment();
     executorService.execute(
         () ->
             syncLog(
@@ -351,6 +354,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
+    TransportIdlingResource.increment();
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }
@@ -369,7 +373,7 @@ public class TransportManager implements AppStateCallback {
 
         pendingEventsQueue.add(new PendingPerfEvent(perfMetricBuilder, appState));
       }
-
+      TransportIdlingResource.decrement();
       return;
     }
 
@@ -382,6 +386,7 @@ public class TransportManager implements AppStateCallback {
       //  callback in the SessionManager itself.
       SessionManager.getInstance().updatePerfSessionIfExpired();
     }
+    TransportIdlingResource.decrement();
   }
 
   @WorkerThread

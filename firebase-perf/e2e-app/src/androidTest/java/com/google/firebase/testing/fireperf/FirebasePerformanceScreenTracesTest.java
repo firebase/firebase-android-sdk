@@ -14,10 +14,13 @@
 
 package com.google.firebase.testing.fireperf;
 
+import static androidx.test.espresso.Espresso.onIdle;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPosition;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static com.google.common.truth.Truth.assertThat;
 
+import androidx.lifecycle.Lifecycle.State;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.filters.MediumTest;
@@ -49,7 +52,10 @@ public class FirebasePerformanceScreenTracesTest {
       onView(withId(R.id.rv_numbers)).perform(scrollToPosition(currItemCount));
       currItemCount += 5;
     }
-    // End Activity screen trace by switching to another Activity
-    scenario.launch(FirebasePerfScreenTracesActivity.class);
+    assertThat(scenario.getState()).isEqualTo(State.RESUMED);
+    scenario.moveToState(State.STARTED).moveToState(State.CREATED); // trigger activity screen trace
+    onIdle();
+    // Block until all Fireperf events are sent by Firelog
+    FireperfUtils.flgForceUploadSync();
   }
 }

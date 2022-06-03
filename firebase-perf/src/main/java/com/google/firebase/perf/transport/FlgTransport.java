@@ -23,6 +23,7 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.v1.PerfMetric;
+import java.util.concurrent.CountDownLatch;
 
 /** Manages Flg client for dispatching performance events. */
 final class FlgTransport {
@@ -53,7 +54,17 @@ final class FlgTransport {
       return;
     }
 
-    flgTransport.send(Event.ofData(perfMetric));
+    // Block until Firelog persisted logs
+    CountDownLatch latch = new CountDownLatch(1);
+    flgTransport.schedule(
+        Event.ofData(perfMetric),
+        result -> {
+          latch.countDown();
+        });
+    try {
+      latch.await();
+    } catch (Exception ignored) {
+    }
   }
 
   private boolean initializeFlgTransportClient() {

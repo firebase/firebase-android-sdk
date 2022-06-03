@@ -14,14 +14,20 @@
 
 package com.google.firebase.testing.fireperf;
 
+import static androidx.test.espresso.Espresso.onIdle;
+
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.IdlingRegistry;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import com.google.firebase.perf.transport.TransportIdlingResource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +40,16 @@ public class FirebasePerformanceTest {
   @Rule
   public ActivityScenarioRule<FirebasePerfActivity> rule =
       new ActivityScenarioRule<>(FirebasePerfActivity.class);
+
+  @Before
+  public void registerIdlingResource() {
+    IdlingRegistry.getInstance().register(TransportIdlingResource.get());
+  }
+
+  @After
+  public void unregisterIdlingResource() {
+    IdlingRegistry.getInstance().unregister(TransportIdlingResource.get());
+  }
 
   /*
    * Totally generates 32 * 15 = 480 TraceMetric and 32 * 15 = 480 NetworkRequestMetric.
@@ -49,7 +65,7 @@ public class FirebasePerformanceTest {
   @Test
   public void waitForBothTracesAndNetworkRequestsBatch()
       throws ExecutionException, InterruptedException {
-    final int iterations = 15;
+    final int iterations = 1;
     final List<Future<?>> futureList = new ArrayList<>();
     ActivityScenario scenario = rule.getScenario();
     scenario.onActivity(
@@ -60,5 +76,8 @@ public class FirebasePerformanceTest {
     for (Future<?> future : futureList) {
       future.get();
     }
+    onIdle();
+    // Block until all Fireperf events are sent by Firelog
+    FireperfUtils.flgForceUploadSync();
   }
 }
