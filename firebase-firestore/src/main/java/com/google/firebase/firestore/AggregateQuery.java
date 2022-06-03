@@ -16,66 +16,46 @@ package com.google.firebase.firestore;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.firestore.core.CountQuery;
+import com.google.firebase.firestore.util.Executors;
+
 import java.util.concurrent.Executor;
 
-public class AggregateQuery {
+public final class AggregateQuery {
 
-  AggregateQuery() {}
+  private final Query query;
+
+  AggregateQuery(@NonNull Query query, @NonNull AggregateField aggregateField) {
+    this.query = query;
+    if (! (aggregateField instanceof AggregateField.CountAggregateField)) {
+      throw new IllegalArgumentException("unsupported aggregateField: " + aggregateField);
+    }
+  }
 
   @NonNull
   public Query getQuery() {
-    throw new RuntimeException("not implemented");
+    return query;
   }
 
   @NonNull
   public Task<AggregateQuerySnapshot> get() {
-    throw new RuntimeException("not implemented");
+    CountQuery countQuery = new CountQuery(query.firestore.getClient().getDatastore(), query.query);
+    TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
+
+    countQuery.run().continueWith(Executors.DIRECT_EXECUTOR, task -> {
+      if (task.isSuccessful()) {
+        tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
+      } else {
+        tcs.setException(task.getException());
+      }
+      return null;
+    });
+
+    return tcs.getTask();
   }
 
-  @NonNull
-  public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public ListenConfig listen() {
-    throw new RuntimeException("not implemented");
-  }
-
-  @Override
-  public int hashCode() {
-    throw new RuntimeException("not implemented");
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    throw new RuntimeException("not implemented");
-  }
-
-  public static final class ListenConfig {
-
-    private ListenConfig() {}
-
-    @NonNull
-    public ListenConfig executeCallbacksOn(@NonNull Executor executor) {
-      throw new RuntimeException("not implemented");
-    }
-
-    @NonNull
-    public ListenConfig scopeTo(@NonNull Activity executor) {
-      throw new RuntimeException("not implemented");
-    }
-
-    @NonNull
-    public ListenConfig includeMetadataOnlyChanges(boolean includeMetadataOnlyChanges) {
-      throw new RuntimeException("not implemented");
-    }
-
-    @NonNull
-    public ListenerRegistration startDirectFromServer(
-        @NonNull EventListener<AggregateQuerySnapshot> listener) {
-      throw new RuntimeException("not implemented");
-    }
-  }
 }
