@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2019 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
 syntax = "proto3";
 
 package google.firestore.v1;
 
-import "google/api/field_behavior.proto";
+import "google/api/annotations.proto";
 import "google/firestore/v1/document.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -27,7 +28,7 @@ option java_outer_classname = "QueryProto";
 option java_package = "com.google.firestore.v1";
 option objc_class_prefix = "GCFS";
 option php_namespace = "Google\\Cloud\\Firestore\\V1";
-option ruby_package = "Google::Cloud::Firestore::V1";
+
 
 // A Firestore query.
 message StructuredQuery {
@@ -65,7 +66,7 @@ message StructuredQuery {
       // Unspecified. This value must not be used.
       OPERATOR_UNSPECIFIED = 0;
 
-      // Documents are required to satisfy all of the combined filters.
+      // The results are required to satisfy each of the combined filters.
       AND = 1;
     }
 
@@ -73,10 +74,7 @@ message StructuredQuery {
     Operator op = 1;
 
     // The list of filters to combine.
-    //
-    // Requires:
-    //
-    // * At least one filter is present.
+    // Must contain at least one filter.
     repeated Filter filters = 2;
   }
 
@@ -115,7 +113,7 @@ message StructuredQuery {
       // * That `field` come first in `order_by`.
       GREATER_THAN_OR_EQUAL = 4;
 
-      // The given `field` is equal to the given `value`.
+      // The given `field` is equal to the given `value`..
       EQUAL = 5;
 
       // The given `field` is not equal to the given `value`.
@@ -134,7 +132,7 @@ message StructuredQuery {
       // Requires:
       //
       // * That `value` is a non-empty `ArrayValue` with at most 10 values.
-      // * No other `IN` or `ARRAY_CONTAINS_ANY` or `NOT_IN`.
+      // * No other `IN` or `ARRAY_CONTAINS_ANY`. (-- or `NOT_IN` --)
       IN = 8;
 
       // The given `field` is an array that contains any of the values in the
@@ -143,7 +141,7 @@ message StructuredQuery {
       // Requires:
       //
       // * That `value` is a non-empty `ArrayValue` with at most 10 values.
-      // * No other `IN` or `ARRAY_CONTAINS_ANY` or `NOT_IN`.
+      // * No other `IN` or `ARRAY_CONTAINS_ANY`. (-- or `NOT_IN` --)
       ARRAY_CONTAINS_ANY = 9;
 
       // The value of the `field` is not in the given array.
@@ -171,30 +169,30 @@ message StructuredQuery {
   message UnaryFilter {
     // A unary operator.
     enum Operator {
-      // Unspecified. This value must not be used.
-      OPERATOR_UNSPECIFIED = 0;
+     // Unspecified. This value must not be used.
+     OPERATOR_UNSPECIFIED = 0;
 
-      // The given `field` is equal to `NaN`.
-      IS_NAN = 2;
+     // The given `field` is equal to `NaN`.
+     IS_NAN = 2;
 
-      // The given `field` is equal to `NULL`.
-      IS_NULL = 3;
+     // The given `field` is equal to `NULL`.
+     IS_NULL = 3;
 
-      // The given `field` is not equal to `NaN`.
-      //
-      // Requires:
-      //
-      // * No other `NOT_EQUAL`, `NOT_IN`, `IS_NOT_NULL`, or `IS_NOT_NAN`.
-      // * That `field` comes first in the `order_by`.
-      IS_NOT_NAN = 4;
+     // The given `field` is not equal to `NaN`.
+     //
+     // Requires:
+     //
+     // * No other `NOT_EQUAL`, `NOT_IN`, `IS_NOT_NULL`, or `IS_NOT_NAN`.
+     // * That `field` comes first in the `order_by`.
+     IS_NOT_NAN = 4;
 
-      // The given `field` is not equal to `NULL`.
-      //
-      // Requires:
-      //
-      // * A single `NOT_EQUAL`, `NOT_IN`, `IS_NOT_NULL`, or `IS_NOT_NAN`.
-      // * That `field` comes first in the `order_by`.
-      IS_NOT_NULL = 5;
+     // The given `field` is not equal to `NULL`.
+     //
+     // Requires:
+     //
+     // * A single `NOT_EQUAL`, `NOT_IN`, `IS_NOT_NULL`, or `IS_NOT_NAN`.
+     // * That `field` comes first in the `order_by`.
+     IS_NOT_NULL = 5;
     }
 
     // The unary operator to apply.
@@ -216,18 +214,6 @@ message StructuredQuery {
     Direction direction = 2;
   }
 
-  // A sort direction.
-  enum Direction {
-    // Unspecified.
-    DIRECTION_UNSPECIFIED = 0;
-
-    // Ascending.
-    ASCENDING = 1;
-
-    // Descending.
-    DESCENDING = 2;
-  }
-
   // A reference to a field, such as `max(messages.time) as max_time`.
   message FieldReference {
     string field_path = 2;
@@ -240,6 +226,18 @@ message StructuredQuery {
     // If empty, all fields are returned. To only return the name
     // of the document, use `['__name__']`.
     repeated FieldReference fields = 2;
+  }
+
+  // A sort direction.
+  enum Direction {
+    // Unspecified.
+    DIRECTION_UNSPECIFIED = 0;
+
+    // Ascending.
+    ASCENDING = 1;
+
+    // Descending.
+    DESCENDING = 2;
   }
 
   // The projection to return.
@@ -290,7 +288,6 @@ message StructuredQuery {
   google.protobuf.Int32Value limit = 5;
 }
 
-// Firestore query for running an aggregation over a [StructuredQuery][google.firestore.v1.StructuredQuery].
 message StructuredAggregationQuery {
   // Defines a aggregation that produces a single result.
   message Aggregation {
@@ -313,7 +310,7 @@ message StructuredAggregationQuery {
       // Requires:
       //
       // * Must be greater than zero when present.
-      int32 up_to = 1 [(google.api.field_behavior) = OPTIONAL];
+      int32 up_to = 1;
     }
 
     // The type of aggregation to perform, required.
@@ -329,7 +326,7 @@ message StructuredAggregationQuery {
     // * Must be present.
     // * Must be unique across all aggregation aliases.
     // * Conform to existing [document field name][google.firestore.v1.Document.fields] limitations.
-    string alias = 7 [(google.api.field_behavior) = REQUIRED];
+    string alias = 7;
   }
 
   // The base query to aggregate over.
@@ -339,7 +336,7 @@ message StructuredAggregationQuery {
   }
 
   // Optional. Series of aggregations to apply on top of the `structured_query`.
-  repeated Aggregation aggregations = 3 [(google.api.field_behavior) = OPTIONAL];
+  repeated Aggregation aggregations = 3;
 }
 
 // A position in a query result set.
