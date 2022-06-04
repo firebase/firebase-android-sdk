@@ -28,16 +28,12 @@ public abstract class AggregateField {
 
   public static final class CountAggregateField extends AggregateField {
 
-    @Nullable
-    private Integer upTo;
+    @Nullable private Integer upTo;
 
-    CountAggregateField() {
-    }
+    CountAggregateField() {}
 
     CountAggregateField(@Nullable Integer upTo) {
       this.upTo = upTo;
     }
-
   }
-
 }
