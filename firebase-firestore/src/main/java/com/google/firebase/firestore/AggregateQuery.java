@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.remote.Datastore;
@@ -27,7 +26,7 @@ public final class AggregateQuery {
 
   AggregateQuery(@NonNull Query query, @NonNull AggregateField aggregateField) {
     this.query = query;
-    if (! (aggregateField instanceof AggregateField.CountAggregateField)) {
+    if (!(aggregateField instanceof AggregateField.CountAggregateField)) {
       throw new IllegalArgumentException("unsupported aggregateField: " + aggregateField);
     }
   }
@@ -44,16 +43,17 @@ public final class AggregateQuery {
 
     datastore
         .runCountQuery(query.query.toTarget())
-        .continueWith(Executors.DIRECT_EXECUTOR, task -> {
-      if (task.isSuccessful()) {
-        tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
-      } else {
-        tcs.setException(task.getException());
-      }
-      return null;
-    });
+        .continueWith(
+            Executors.DIRECT_EXECUTOR,
+            task -> {
+              if (task.isSuccessful()) {
+                tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
+              } else {
+                tcs.setException(task.getException());
+              }
+              return null;
+            });
 
     return tcs.getTask();
   }
-
 }

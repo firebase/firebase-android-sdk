@@ -41,10 +41,8 @@ import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.RunAggregationQueryRequest;
 import com.google.firestore.v1.RunAggregationQueryResponse;
-import com.google.firestore.v1.RunQueryRequest;
 import com.google.firestore.v1.StructuredAggregationQuery;
 import com.google.firestore.v1.Value;
-
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -225,12 +223,15 @@ public class Datastore {
   }
 
   public Task<Long> runCountQuery(Target queryTarget) {
-    com.google.firestore.v1.Target.QueryTarget encodedQueryTarget = serializer.encodeQueryTarget(queryTarget);
+    com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
+        serializer.encodeQueryTarget(queryTarget);
 
-    StructuredAggregationQuery.Builder structuredAggregationQuery = StructuredAggregationQuery.newBuilder();
+    StructuredAggregationQuery.Builder structuredAggregationQuery =
+        StructuredAggregationQuery.newBuilder();
     structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
 
-    StructuredAggregationQuery.Aggregation.Builder aggregation = StructuredAggregationQuery.Aggregation.newBuilder();
+    StructuredAggregationQuery.Aggregation.Builder aggregation =
+        StructuredAggregationQuery.Aggregation.newBuilder();
     aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
     aggregation.setAlias("zzyzx_agg_alias_count");
     structuredAggregationQuery.addAggregations(aggregation);
@@ -239,13 +240,14 @@ public class Datastore {
     request.setParent(encodedQueryTarget.getParent());
     request.setStructuredAggregationQuery(structuredAggregationQuery);
 
-    return channel.runRpc(FirestoreGrpc.getRunAggregationQueryMethod(), request.build())
+    return channel
+        .runRpc(FirestoreGrpc.getRunAggregationQueryMethod(), request.build())
         .continueWith(
             workerQueue.getExecutor(),
             task -> {
               if (!task.isSuccessful()) {
                 if (task.getException() instanceof FirebaseFirestoreException
-                        && ((FirebaseFirestoreException) task.getException()).getCode()
+                    && ((FirebaseFirestoreException) task.getException()).getCode()
                         == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
                   channel.invalidateToken();
                 }
@@ -255,10 +257,14 @@ public class Datastore {
 
               AggregationResult aggregationResult = response.getResult();
               Map<String, Value> aggregateFieldsByAlias = aggregationResult.getAggregateFieldsMap();
-              hardAssert(aggregateFieldsByAlias.size() == 1, "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
+              hardAssert(
+                  aggregateFieldsByAlias.size() == 1,
+                  "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
               Value countValue = aggregateFieldsByAlias.get("zzyzx_agg_alias_count");
               hardAssert(countValue != null, "countValue == null");
-              hardAssert(countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE, "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
+              hardAssert(
+                  countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
+                  "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
               return countValue.getIntegerValue();
             });
   }

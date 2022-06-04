@@ -29,5 +29,4 @@ public class AggregateQuerySnapshot {
   public Long get(@NonNull AggregateField.CountAggregateField field) {
     return count;
   }
-
 }

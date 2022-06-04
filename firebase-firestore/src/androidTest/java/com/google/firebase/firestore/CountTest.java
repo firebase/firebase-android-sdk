@@ -20,11 +20,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
-import com.google.firebase.firestore.AggregateField;
-import com.google.firebase.firestore.AggregateQuerySnapshot;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,5 +45,4 @@ public class CountTest {
     AggregateQuerySnapshot snapshot = waitFor(collection.count().get());
     assertEquals(Long.valueOf(3), snapshot.get(AggregateField.count()));
   }
-
 }
