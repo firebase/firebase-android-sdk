@@ -14,16 +14,12 @@
 
 package com.google.firebase.firestore;
 
-import android.app.Activity;
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.firestore.core.CountQuery;
+import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.util.Executors;
-
-import java.util.concurrent.Executor;
 
 public final class AggregateQuery {
 
@@ -43,10 +39,12 @@ public final class AggregateQuery {
 
   @NonNull
   public Task<AggregateQuerySnapshot> get() {
-    CountQuery countQuery = new CountQuery(query.firestore.getClient().getDatastore(), query.query);
+    Datastore datastore = query.firestore.getClient().getDatastore();
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
 
-    countQuery.run().continueWith(Executors.DIRECT_EXECUTOR, task -> {
+    datastore
+        .runCountQuery(query.query.toTarget())
+        .continueWith(Executors.DIRECT_EXECUTOR, task -> {
       if (task.isSuccessful()) {
         tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
       } else {
