@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 public abstract class AggregateField {
 
@@ -27,13 +26,6 @@ public abstract class AggregateField {
   }
 
   public static final class CountAggregateField extends AggregateField {
-
-    @Nullable private Integer upTo;
-
     CountAggregateField() {}
-
-    CountAggregateField(@Nullable Integer upTo) {
-      this.upTo = upTo;
-    }
   }
 }
