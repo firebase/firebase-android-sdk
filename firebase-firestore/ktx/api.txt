@@ -20,3 +20,54 @@ package com.google.firebase.firestore.ktx {
 
 }
 
+package com.google.firebase.firestore.ktx.annotations {
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.PROPERTY) public @interface KDocumentId {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.CLASS) public @interface KIgnoreExtraProperties {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.PROPERTY) public @interface KServerTimestamp {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.CLASS) public @interface KThrowOnExtraProperties {
+  }
+
+}
+
+package com.google.firebase.firestore.ktx.serialization {
+
+  public final class ExtensionFunctionsKt {
+    ctor public ExtensionFunctionsKt();
+    method @NonNull public static inline <reified T> com.google.android.gms.tasks.Task<java.lang.Void> setData(@NonNull com.google.firebase.firestore.DocumentReference, @Nullable T data);
+  }
+
+  public final class NestListEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
+    ctor public NestListEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> list);
+    ctor public NestListEncoder();
+    method @NonNull public kotlinx.serialization.modules.SerializersModule getSerializersModule();
+    property @NonNull public kotlinx.serialization.modules.SerializersModule serializersModule;
+  }
+
+  public final class NestedMapEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
+    ctor public NestedMapEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> list, @Nullable kotlinx.serialization.descriptors.SerialDescriptor descriptor);
+    ctor public NestedMapEncoder();
+    method @NonNull public error.NonExistentClass encodeEnum(@NonNull kotlinx.serialization.descriptors.SerialDescriptor enumDescriptor, int index);
+    method @NonNull public kotlinx.serialization.modules.SerializersModule getSerializersModule();
+    method @NonNull public java.util.Map<java.lang.String,java.lang.Object> serializedResult();
+    property @NonNull public kotlinx.serialization.modules.SerializersModule serializersModule;
+    field public static final com.google.firebase.firestore.ktx.serialization.NestedMapEncoder.Companion Companion;
+  }
+
+  public static final class NestedMapEncoder.Companion {
+  }
+
+  public final class NestedMapEncoderKt {
+    ctor public NestedMapEncoderKt();
+    method @NonNull public static <T> java.util.Map<java.lang.String,java.lang.Object> encodeToMap(@NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer, @Nullable T value);
+    method @NonNull public static inline <reified T> java.util.Map<java.lang.String,java.lang.Object> encodeToMap(@Nullable T value);
+  }
+
+}
+
