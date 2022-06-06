@@ -191,7 +191,7 @@ fun DocumentReference.toFlow(
     val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
-                cancel(CancellationException("Error getting DocumentReference snapshot", exception))
+                cancel(message = "Error getting DocumentReference snapshot", cause = exception)
             }
 
             if (snapshot != null) {
@@ -225,7 +225,7 @@ fun Query.toFlow(
     val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
-                cancel(CancellationException("Error getting Query snapshot", exception))
+                cancel(message = "Error getting Query snapshot", cause = exception)
             }
 
             if (snapshot != null) {
