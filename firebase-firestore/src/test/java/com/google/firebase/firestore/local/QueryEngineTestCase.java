@@ -482,5 +482,39 @@ public abstract class QueryEngineTestCase {
     DocumentSet result5 =
         expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query5.comparator(), doc3), result5);
+
+    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
+    Query query6 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", ">", 0))).limitToFirst(2);
+    DocumentSet result6 =
+        expectFullCollectionScan(() -> runQuery(query6, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query6.comparator(), doc1, doc2), result6);
+
+    // Test with limits (implicit order by DESC): (a==1) || (b > 0) LIMIT_TO_LAST 2
+    Query query7 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", ">", 0))).limitToLast(2);
+    DocumentSet result7 =
+        expectFullCollectionScan(() -> runQuery(query7, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query7.comparator(), doc3, doc4), result7);
+
+    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
+    Query query8 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "==", 1)))
+            .limitToFirst(1)
+            .orderBy(orderBy("a", "asc"));
+    DocumentSet result8 =
+        expectFullCollectionScan(() -> runQuery(query8, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query8.comparator(), doc5), result8);
+
+    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
+    Query query9 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "==", 1)))
+            .limitToLast(1)
+            .orderBy(orderBy("a", "asc"));
+    DocumentSet result9 =
+        expectFullCollectionScan(() -> runQuery(query9, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query9.comparator(), doc2), result9);
   }
 }
