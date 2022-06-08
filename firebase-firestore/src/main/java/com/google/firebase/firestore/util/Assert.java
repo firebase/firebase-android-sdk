@@ -33,6 +33,23 @@ public class Assert {
   }
 
   /**
+   * Triggers a hard assertion. The null check is guaranteed to be checked at runtime. If the object
+   * is null an AssertionError will be thrown. The string messageFormat will be formatted with the
+   * provided args using {@link String#format(String, Object...)}.
+   *
+   * @param obj The condition to check
+   * @param messageFormat The message to throw if the condition is false, formatted using {@link
+   *     String#format(String, Object...)}.
+   * @param args The args to pass to String.format
+   */
+  public static <T> T hardAssertNonNull(T obj, String messageFormat, Object... args) {
+    if (obj == null) {
+      throw fail(messageFormat, args);
+    }
+    return obj;
+  }
+
+  /**
    * Throws an AssertionError with the provided message. The string messageFormat will be formatted
    * with the provided args using {@link String#format(String, Object...)}. The method returns an
    * AssertionError so it can be used with a throw statement. However, the method itself throws an

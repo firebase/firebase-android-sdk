@@ -114,9 +114,6 @@ public final class LocalStore implements BundleCallback {
   /** Manages the list of active field and collection indices. */
   private IndexManager indexManager;
 
-  /** Manages field index backfill. */
-  private final @Nullable IndexBackfiller indexBackfiller;
-
   /** The set of all mutations that have been sent but not yet been applied to the backend. */
   private MutationQueue mutationQueue;
 
@@ -150,16 +147,11 @@ public final class LocalStore implements BundleCallback {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  public LocalStore(
-      Persistence persistence,
-      @Nullable IndexBackfiller indexBackfiller,
-      QueryEngine queryEngine,
-      User initialUser) {
+  public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     this.queryEngine = queryEngine;
-    this.indexBackfiller = indexBackfiller;
 
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
@@ -184,10 +176,6 @@ public final class LocalStore implements BundleCallback {
 
     remoteDocuments.setIndexManager(indexManager);
     queryEngine.initialize(localDocuments, indexManager);
-    if (indexBackfiller != null) {
-      indexBackfiller.setIndexManager(indexManager);
-      indexBackfiller.setLocalDocumentsView(localDocuments);
-    }
   }
 
   public void start() {
@@ -202,6 +190,14 @@ public final class LocalStore implements BundleCallback {
 
   private void startMutationQueue() {
     persistence.runTransaction("Start MutationQueue", () -> mutationQueue.start());
+  }
+
+  public IndexManager getIndexManager() {
+    return indexManager;
+  }
+
+  public LocalDocumentsView getLocalDocuments() {
+    return localDocuments;
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.

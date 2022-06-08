@@ -28,6 +28,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.Query;
@@ -83,9 +85,10 @@ public class IndexBackfillerTest {
             persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             documentOverlayCache,
             indexManager);
-    backfiller = new IndexBackfiller(persistence, new AsyncQueue());
-    backfiller.setIndexManager(indexManager);
-    backfiller.setLocalDocumentsView(localDocumentsView);
+    LocalStore localStore = mock(LocalStore.class);
+    when(localStore.getIndexManager()).thenReturn(indexManager);
+    when(localStore.getLocalDocuments()).thenReturn(localDocumentsView);
+    backfiller = new IndexBackfiller(persistence, new AsyncQueue(), localStore);
   }
 
   @After

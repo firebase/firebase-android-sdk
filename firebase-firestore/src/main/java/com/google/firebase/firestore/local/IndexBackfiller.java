@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.model.Document;
@@ -41,21 +39,13 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private LocalDocumentsView localDocumentsView;
-  private IndexManager indexManager;
+  private final LocalStore localStore;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
 
-  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue) {
+  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue, LocalStore localStore) {
     this.persistence = persistence;
+    this.localStore = localStore;
     this.scheduler = new Scheduler(asyncQueue);
-  }
-
-  public void setLocalDocumentsView(LocalDocumentsView localDocumentsView) {
-    this.localDocumentsView = localDocumentsView;
-  }
-
-  public void setIndexManager(IndexManager indexManager) {
-    this.indexManager = indexManager;
   }
 
   public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
@@ -97,13 +87,12 @@ public class IndexBackfiller {
 
   /** Runs a single backfill operation and returns the number of documents processed. */
   public int backfill() {
-    hardAssert(localDocumentsView != null, "setLocalDocumentsView() not called");
-    hardAssert(indexManager != null, "setIndexManager() not called");
     return persistence.runTransaction("Backfill Indexes", () -> this.writeIndexEntries());
   }
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries() {
+    IndexManager indexManager = localStore.getIndexManager();
     Set<String> processedCollectionGroups = new HashSet<>();
     int documentsRemaining = maxDocumentsToProcess;
     while (documentsRemaining > 0) {
@@ -123,6 +112,8 @@ public class IndexBackfiller {
    */
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
+    IndexManager indexManager = localStore.getIndexManager();
+    LocalDocumentsView localDocumentsView = localStore.getLocalDocuments();
     // Use the earliest offset of all field indexes to query the local cache.
     IndexOffset existingOffset = indexManager.getMinOffset(collectionGroup);
 
