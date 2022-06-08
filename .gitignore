@@ -11,12 +11,4 @@ firebase-crashlytics-ndk/.externalNativeBuild/
 firebase-crashlytics-ndk/.cxx/
 smoke-test-logs/
 smoke-tests/build-debug-headGit-smoke-test
-smoke-tests/firehorn.log
-.firebaserc
-firebase-debug.log
-firebase-firestore/ktx/firestore-debug.log
-firebase-firestore/ktx/ui-debug.log
-firebase.json
-firestore-debug.log
-firestore-kl-serialization/
-ui-debug.log
+*.log
