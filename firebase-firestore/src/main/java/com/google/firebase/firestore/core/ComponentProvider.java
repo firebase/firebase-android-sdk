@@ -102,7 +102,7 @@ public abstract class ComponentProvider {
     }
   }
 
-  public final Persistence getPersistence() {
+  public Persistence getPersistence() {
     return hardAssertNonNull(persistence, "persistence not initialized yet");
   }
 
