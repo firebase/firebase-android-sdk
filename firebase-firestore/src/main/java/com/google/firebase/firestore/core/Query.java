@@ -392,7 +392,12 @@ public final class Query {
 
   /** A document must have a value for every ordering clause in order to show up in the results. */
   private boolean matchesOrderBy(Document doc) {
-    for (OrderBy order : explicitSortOrder) {
+    // We must use `getOrderBy` here, not `explicitSortOrder`. For queries without disjunctions,
+    // the `matchesFilters` method guarantees the existence of the implicit orderBy field in the
+    // document. With the introduction of OR queries, it is possible that a document is missing the
+    // inequality field, but passes the `matchesFilters` check because it matches another
+    // disjunction term.
+    for (OrderBy order : getOrderBy()) {
       // order by key always matches
       if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.field) == null)) {
         return false;
