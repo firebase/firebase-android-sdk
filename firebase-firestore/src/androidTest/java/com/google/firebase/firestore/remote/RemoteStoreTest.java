@@ -21,7 +21,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.OnlineState;
-import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
