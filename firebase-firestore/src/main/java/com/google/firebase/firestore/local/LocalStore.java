@@ -99,7 +99,7 @@ import java.util.concurrent.TimeUnit;
  * <p>The LocalStore must be able to efficiently execute queries against its local cache of the
  * documents, to provide the initial set of results before any remote changes have been received.
  */
-public final class LocalStore implements BundleCallback {
+public class LocalStore implements BundleCallback {
   /**
    * The maximum time to leave a resume token buffered without writing it out. This value is
    * arbitrary: it's long enough to avoid several writes (possibly indefinitely if updates come more
