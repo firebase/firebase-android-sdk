@@ -79,9 +79,8 @@ public class RemoteStoreTest {
     QueryEngine queryEngine = new QueryEngine();
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
-    IndexBackfiller indexBackfiller = new IndexBackfiller(persistence, new AsyncQueue());
     LocalStore localStore =
-        new LocalStore(persistence, indexBackfiller, queryEngine, User.UNAUTHENTICATED);
+        new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
         new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
 
