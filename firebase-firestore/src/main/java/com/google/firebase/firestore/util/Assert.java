@@ -37,7 +37,7 @@ public class Assert {
    * is null an AssertionError will be thrown. The string messageFormat will be formatted with the
    * provided args using {@link String#format(String, Object...)}.
    *
-   * @param obj The condition to check
+   * @param obj The object to be compared with null
    * @param messageFormat The message to throw if the condition is false, formatted using {@link
    *     String#format(String, Object...)}.
    * @param args The args to pass to String.format

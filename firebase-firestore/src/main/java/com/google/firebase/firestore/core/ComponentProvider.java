@@ -146,7 +146,6 @@ public abstract class ComponentProvider {
      *
      * <p>To catch incorrect order, all getX methods have runtime check for null.
      */
-    // The order in which components are created is important
     persistence = createPersistence(configuration);
     persistence.start();
     localStore = createLocalStore(configuration);
