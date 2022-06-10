@@ -39,12 +39,12 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private final LocalStore localStore;
+  private final UserComponents components;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
 
-  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue, LocalStore localStore) {
+  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue, UserComponents components) {
     this.persistence = persistence;
-    this.localStore = localStore;
+    this.components = components;
     this.scheduler = new Scheduler(asyncQueue);
   }
 
@@ -92,7 +92,7 @@ public class IndexBackfiller {
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries() {
-    IndexManager indexManager = localStore.getIndexManager();
+    IndexManager indexManager = components.getIndexManager();
     Set<String> processedCollectionGroups = new HashSet<>();
     int documentsRemaining = maxDocumentsToProcess;
     while (documentsRemaining > 0) {
@@ -112,8 +112,8 @@ public class IndexBackfiller {
    */
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
-    IndexManager indexManager = localStore.getIndexManager();
-    LocalDocumentsView localDocumentsView = localStore.getLocalDocuments();
+    IndexManager indexManager = components.getIndexManager();
+    LocalDocumentsView localDocumentsView = components.getLocalDocuments();
     // Use the earliest offset of all field indexes to query the local cache.
     IndexOffset existingOffset = indexManager.getMinOffset(collectionGroup);
 

@@ -85,10 +85,18 @@ public class IndexBackfillerTest {
             persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             documentOverlayCache,
             indexManager);
-    LocalStore localStore = mock(LocalStore.class);
-    when(localStore.getIndexManager()).thenReturn(indexManager);
-    when(localStore.getLocalDocuments()).thenReturn(localDocumentsView);
-    backfiller = new IndexBackfiller(persistence, new AsyncQueue(), localStore);
+    UserComponents components = new UserComponents() {
+      @Override
+      public IndexManager getIndexManager() {
+        return indexManager;
+      }
+
+      @Override
+      public LocalDocumentsView getLocalDocuments() {
+        return localDocumentsView;
+      }
+    };
+    backfiller = new IndexBackfiller(persistence, new AsyncQueue(), components);
   }
 
   @After
