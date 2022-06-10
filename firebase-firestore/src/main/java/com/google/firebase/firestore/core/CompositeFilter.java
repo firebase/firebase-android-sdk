@@ -115,14 +115,9 @@ public class CompositeFilter extends Filter {
    */
   @Nullable
   private FieldFilter findFirstMatchingFilter(Function<FieldFilter, Boolean> condition) {
-    for (Filter filter : filters) {
-      if (filter instanceof FieldFilter && condition.apply(((FieldFilter) filter))) {
-        return (FieldFilter) filter;
-      } else if (filter instanceof CompositeFilter) {
-        FieldFilter found = ((CompositeFilter) filter).findFirstMatchingFilter(condition);
-        if (found != null) {
-          return found;
-        }
+    for (FieldFilter filter : getFlattenedFilters()) {
+      if (condition.apply(filter)) {
+        return filter;
       }
     }
     return null;
