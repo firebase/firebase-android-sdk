@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.assertSetEquals;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
-import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.existenceFilterEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
@@ -127,7 +126,12 @@ public abstract class LocalStoreTestCase {
     queryEngine = new CountingQueryEngine(new QueryEngine());
     localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
-    indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue(), localStore);
+    indexBackfiller =
+        new IndexBackfiller(
+            localStorePersistence,
+            new AsyncQueue(),
+            localStore::getIndexManagerForCurrentUser,
+            localStore::getLocalDocumentsForCurrentUser);
   }
 
   @After

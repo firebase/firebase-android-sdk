@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.common.base.Supplier;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -39,13 +40,19 @@ public class IndexBackfiller {
 
   private final Scheduler scheduler;
   private final Persistence persistence;
-  private final UserComponents components;
+  private final Supplier<IndexManager> indexManagerOfCurrentUser;
+  private final Supplier<LocalDocumentsView> localDocumentsViewOfCurrentUser;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
 
-  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue, UserComponents components) {
+  public IndexBackfiller(
+      Persistence persistence,
+      AsyncQueue asyncQueue,
+      Supplier<IndexManager> indexManagerOfCurrentUser,
+      Supplier<LocalDocumentsView> localDocumentsViewOfCurrentUser) {
     this.persistence = persistence;
-    this.components = components;
     this.scheduler = new Scheduler(asyncQueue);
+    this.indexManagerOfCurrentUser = indexManagerOfCurrentUser;
+    this.localDocumentsViewOfCurrentUser = localDocumentsViewOfCurrentUser;
   }
 
   public class Scheduler implements com.google.firebase.firestore.local.Scheduler {
@@ -92,7 +99,7 @@ public class IndexBackfiller {
 
   /** Writes index entries until the cap is reached. Returns the number of documents processed. */
   private int writeIndexEntries() {
-    IndexManager indexManager = components.getIndexManager();
+    IndexManager indexManager = indexManagerOfCurrentUser.get();
     Set<String> processedCollectionGroups = new HashSet<>();
     int documentsRemaining = maxDocumentsToProcess;
     while (documentsRemaining > 0) {
@@ -112,8 +119,8 @@ public class IndexBackfiller {
    */
   private int writeEntriesForCollectionGroup(
       String collectionGroup, int documentsRemainingUnderCap) {
-    IndexManager indexManager = components.getIndexManager();
-    LocalDocumentsView localDocumentsView = components.getLocalDocuments();
+    IndexManager indexManager = indexManagerOfCurrentUser.get();
+    LocalDocumentsView localDocumentsView = localDocumentsViewOfCurrentUser.get();
     // Use the earliest offset of all field indexes to query the local cache.
     IndexOffset existingOffset = indexManager.getMinOffset(collectionGroup);
 
