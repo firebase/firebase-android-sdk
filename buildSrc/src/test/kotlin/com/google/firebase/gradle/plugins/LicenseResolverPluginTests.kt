@@ -79,7 +79,7 @@ class LicenseResolverPluginTests {
             android.compileSdkVersion = 26
 
             thirdPartyLicenses {
-                add 'customLib', "file:///${File("non_existent_path.txt").absolutePath}"
+                add 'customLib', "${File("non_existent_path.txt").absolutePath}"
             }
         """)
 
@@ -141,7 +141,7 @@ class LicenseResolverPluginTests {
         }
 
         thirdPartyLicenses {
-            add 'customLib1', "file:///${File("src/test/fixtures/license.txt").absolutePath}"
+            add 'customLib1', "${File("src/test/fixtures/license.txt").absolutePath}"
         }
         """
     }
