@@ -121,7 +121,10 @@ public class PublishingPlugin implements Plugin<Project> {
                                   repo.setUrl(
                                       URI.create(
                                           "file://"
-                                              + sub.getRootProject().getBuildDir()
+                                              + sub.getRootProject()
+                                                  .getBuildDir()
+                                                  .toString()
+                                                  .replace('\\', '/')
                                               + "/m2repository"));
                                   repo.setName("BuildDir");
                                 }));

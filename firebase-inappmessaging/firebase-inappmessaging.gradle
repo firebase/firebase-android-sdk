@@ -106,7 +106,7 @@ configurations.all {
 
 
 thirdPartyLicenses {
-    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Dagger', "file://${rootDir}/third_party/licenses/apache-2.0.txt".replace('\\', "/")
 }
 
 dependencies {

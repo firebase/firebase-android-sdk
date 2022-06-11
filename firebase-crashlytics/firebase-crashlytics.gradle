@@ -53,7 +53,7 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE"
+    add 'Tape', "file://${projectDir}/third_party_licenses/tape/LICENSE".replace('\\', "/")
 }
 
 dependencies {
