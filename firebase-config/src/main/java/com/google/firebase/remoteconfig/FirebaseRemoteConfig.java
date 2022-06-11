@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -569,6 +570,19 @@ public class FirebaseRemoteConfig {
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
     return configRealtimeHandler.addRealtimeConfigUpdateListener(configUpdateListener);
+  }
+
+  /**
+   * Modifies this FirebaseRemoteConfig instance to communicate with the Firebase Remote Config
+   * emulator.
+   *
+   * <p>Note: Call this method before using the instance to do any Remote Config operations.
+   *
+   * @param host the emulator host (for example, 10.0.2.2)
+   * @param port the emulator port (for example, 9299)
+   */
+  public void useEmulator(@NonNull String host, int port) {
+    fetchHandler.setEmulatedServiceSettings(new EmulatedServiceSettings(host, port));
   }
 
   /**

@@ -35,6 +35,7 @@ import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -221,6 +222,10 @@ public class ConfigFetchHandler {
                     cachedFetchConfigsTask,
                     /*minimumFetchIntervalInSeconds= */ 0,
                     copyOfCustomHttpHeaders));
+  }
+
+  public void setEmulatedServiceSettings(EmulatedServiceSettings emulatedServiceSettings) {
+    frcBackendApiClient.setEmulatedServiceSettings(emulatedServiceSettings);
   }
 
   /**

@@ -46,6 +46,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -85,6 +86,8 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
+  private static final String FETCH_EMULATOR_REGEX_URL =
+      "http://10.0.2.2:9299/v1/projects/%s/namespaces/%s:fetch";
 
   private Context context;
   private ConfigFetchHttpClient configFetchHttpClient;
@@ -142,6 +145,16 @@ public class ConfigFetchHttpClientTest {
 
     assertThat(urlConnection.getURL().toString())
         .isEqualTo(String.format(FETCH_REGEX_URL, PROJECT_NUMBER, DEFAULT_NAMESPACE));
+  }
+
+  @Test
+  public void createHttpURLConnection_withEmulator() throws Exception {
+    configFetchHttpClient.setEmulatedServiceSettings(new EmulatedServiceSettings("10.0.2.2", 9299));
+
+    HttpURLConnection urlConnection = configFetchHttpClient.createHttpURLConnection();
+
+    assertThat(urlConnection.getURL().toString())
+        .isEqualTo(String.format(FETCH_EMULATOR_REGEX_URL, PROJECT_NUMBER, DEFAULT_NAMESPACE));
   }
 
   @Test
