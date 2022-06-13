@@ -48,7 +48,7 @@ import java.util.TreeSet;
  * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
  * mutations in the MutationQueue to the RemoteDocumentCache.
  */
-public class LocalDocumentsView {
+class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;

@@ -44,6 +44,14 @@ public class IndexBackfiller {
   private final Supplier<LocalDocumentsView> localDocumentsViewOfCurrentUser;
   private int maxDocumentsToProcess = MAX_DOCUMENTS_TO_PROCESS;
 
+  public IndexBackfiller(Persistence persistence, AsyncQueue asyncQueue, LocalStore localStore) {
+    this(
+        persistence,
+        asyncQueue,
+        localStore::getIndexManagerForCurrentUser,
+        localStore::getLocalDocumentsForCurrentUser);
+  }
+
   public IndexBackfiller(
       Persistence persistence,
       AsyncQueue asyncQueue,

@@ -16,7 +16,6 @@ package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
-import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
@@ -36,12 +35,7 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
 
   @Override
   protected IndexBackfiller createIndexBackfiller(Configuration configuration) {
-    LocalStore localStore = getLocalStore();
-    return new IndexBackfiller(
-        getPersistence(),
-        configuration.getAsyncQueue(),
-        localStore::getIndexManagerForCurrentUser,
-        localStore::getLocalDocumentsForCurrentUser);
+    return new IndexBackfiller(getPersistence(), configuration.getAsyncQueue(), getLocalStore());
   }
 
   @Override
