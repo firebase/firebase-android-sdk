@@ -516,5 +516,11 @@ public abstract class QueryEngineTestCase {
     DocumentSet result9 =
         expectFullCollectionScan(() -> runQuery(query9, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query9.comparator(), doc2), result9);
+
+    // Test with limits without orderBy (the __name__ ordering is the tie breaker).
+    Query query10 =
+        query("coll").filter(orFilters(filter("a", "==", 2), filter("b", "==", 1))).limitToFirst(1);
+    DocumentSet result10 = expectFullCollectionScan(() -> runQuery(query10, SnapshotVersion.NONE));
+    assertEquals(docSet(query10.comparator(), doc2), result10);
   }
 }

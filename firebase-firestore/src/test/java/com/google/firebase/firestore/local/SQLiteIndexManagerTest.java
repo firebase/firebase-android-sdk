@@ -25,6 +25,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -1007,42 +1008,42 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     indexManager.addFieldIndex(fieldIndex("coll", "c", Kind.ASCENDING, "d", Kind.ASCENDING));
 
     Query query1 = query("coll").filter(filter("a", "==", 1));
-    validateIsFullIndex(query1);
+    validateIndexType(query1, IndexManager.IndexType.FULL);
 
     Query query2 = query("coll").filter(filter("b", "==", 1));
-    validateIsFullIndex(query2);
+    validateIndexType(query2, IndexManager.IndexType.FULL);
 
     Query query3 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("a"));
-    validateIsFullIndex(query3);
+    validateIndexType(query3, IndexManager.IndexType.FULL);
 
     Query query4 = query("coll").filter(filter("b", "==", 1)).orderBy(orderBy("b"));
-    validateIsFullIndex(query4);
+    validateIndexType(query4, IndexManager.IndexType.FULL);
 
     Query query5 = query("coll").filter(filter("a", "==", 1)).filter(filter("b", "==", 1));
-    validateIsPartialIndex(query5);
+    validateIndexType(query5, IndexManager.IndexType.PARTIAL);
 
     Query query6 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("b"));
-    validateIsPartialIndex(query6);
+    validateIndexType(query6, IndexManager.IndexType.PARTIAL);
 
     Query query7 = query("coll").filter(filter("b", "==", 1)).orderBy(orderBy("a"));
-    validateIsPartialIndex(query7);
+    validateIndexType(query7, IndexManager.IndexType.PARTIAL);
 
     Query query8 = query("coll").filter(filter("c", "==", 1)).filter(filter("d", "==", 1));
-    validateIsFullIndex(query8);
+    validateIndexType(query8, IndexManager.IndexType.FULL);
 
     Query query9 =
         query("coll")
             .filter(filter("c", "==", 1))
             .filter(filter("d", "==", 1))
             .orderBy(orderBy("c"));
-    validateIsFullIndex(query9);
+    validateIndexType(query9, IndexManager.IndexType.FULL);
 
     Query query10 =
         query("coll")
             .filter(filter("c", "==", 1))
             .filter(filter("d", "==", 1))
             .orderBy(orderBy("d"));
-    validateIsFullIndex(query10);
+    validateIndexType(query10, IndexManager.IndexType.FULL);
 
     Query query11 =
         query("coll")
@@ -1050,7 +1051,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .filter(filter("d", "==", 1))
             .orderBy(orderBy("c"))
             .orderBy(orderBy("d"));
-    validateIsFullIndex(query11);
+    validateIndexType(query11, IndexManager.IndexType.FULL);
 
     Query query12 =
         query("coll")
@@ -1058,39 +1059,97 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
             .filter(filter("d", "==", 1))
             .orderBy(orderBy("d"))
             .orderBy(orderBy("c"));
-    validateIsFullIndex(query12);
+    validateIndexType(query12, IndexManager.IndexType.FULL);
 
     Query query13 =
         query("coll")
             .filter(filter("c", "==", 1))
             .filter(filter("d", "==", 1))
             .orderBy(orderBy("e"));
-    validateIsPartialIndex(query13);
+    validateIndexType(query13, IndexManager.IndexType.PARTIAL);
 
     Query query14 = query("coll").filter(filter("c", "==", 1)).filter(filter("d", "<=", 1));
-    validateIsFullIndex(query14);
+    validateIndexType(query14, IndexManager.IndexType.FULL);
 
     Query query15 =
         query("coll")
             .filter(filter("c", "==", 1))
             .filter(filter("d", ">", 1))
             .orderBy(orderBy("d"));
-    validateIsFullIndex(query15);
+    validateIndexType(query15, IndexManager.IndexType.FULL);
   }
 
-  private void validateIsPartialIndex(Query query) {
-    validateIndex(query, false);
+  @Test
+  public void testIndexTypeForOrQueries() throws Exception {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.ASCENDING, "a", Kind.ASCENDING));
+
+    // OR query without orderBy without limit which has missing sub-target indexes.
+    Query query1 = query("coll").filter(orFilters(filter("a", "==", 1), filter("c", "==", 1)));
+    validateIndexType(query1, IndexManager.IndexType.NONE);
+
+    // OR query with explicit orderBy without limit which has missing sub-target indexes.
+    Query query2 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("c", "==", 1)))
+            .orderBy(orderBy("c"));
+    validateIndexType(query2, IndexManager.IndexType.NONE);
+
+    // OR query with implicit orderBy without limit which has missing sub-target indexes.
+    Query query3 = query("coll").filter(orFilters(filter("a", "==", 1), filter("c", ">", 1)));
+    validateIndexType(query3, IndexManager.IndexType.NONE);
+
+    // OR query with explicit orderBy with limit which has missing sub-target indexes.
+    Query query4 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("c", "==", 1)))
+            .orderBy(orderBy("c"))
+            .limitToFirst(2);
+    validateIndexType(query4, IndexManager.IndexType.NONE);
+
+    // OR query with implicit orderBy with limit which has missing sub-target indexes.
+    Query query5 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("c", ">", 1))).limitToFirst(2);
+    validateIndexType(query5, IndexManager.IndexType.NONE);
+
+    // OR query without orderBy without limit which has all sub-target indexes.
+    Query query6 = query("coll").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+    validateIndexType(query6, IndexManager.IndexType.FULL);
+
+    // OR query with explicit orderBy without limit which has all sub-target indexes.
+    Query query7 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)))
+            .orderBy(orderBy("a"));
+    validateIndexType(query7, IndexManager.IndexType.FULL);
+
+    // OR query with implicit orderBy without limit which has all sub-target indexes.
+    Query query8 = query("coll").filter(orFilters(filter("a", ">", 1), filter("b", "==", 1)));
+    validateIndexType(query8, IndexManager.IndexType.FULL);
+
+    // OR query without orderBy with limit which has all sub-target indexes.
+    Query query9 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1))).limitToFirst(2);
+    validateIndexType(query9, IndexManager.IndexType.PARTIAL);
+
+    // OR query with explicit orderBy with limit which has all sub-target indexes.
+    Query query10 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)))
+            .orderBy(orderBy("a"))
+            .limitToFirst(2);
+    validateIndexType(query10, IndexManager.IndexType.PARTIAL);
+
+    // OR query with implicit orderBy with limit which has all sub-target indexes.
+    Query query11 =
+        query("coll").filter(orFilters(filter("a", ">", 1), filter("b", "==", 1))).limitToFirst(2);
+    validateIndexType(query11, IndexManager.IndexType.PARTIAL);
   }
 
-  private void validateIsFullIndex(Query query) {
-    validateIndex(query, true);
-  }
-
-  private void validateIndex(Query query, boolean validateFullIndex) {
+  private void validateIndexType(Query query, IndexManager.IndexType expected) {
     IndexManager.IndexType indexType = indexManager.getIndexType(query.toTarget());
-    assertEquals(
-        indexType,
-        validateFullIndex ? IndexManager.IndexType.FULL : IndexManager.IndexType.PARTIAL);
+    assertEquals(indexType, expected);
   }
 
   private void verifySequenceNumber(
