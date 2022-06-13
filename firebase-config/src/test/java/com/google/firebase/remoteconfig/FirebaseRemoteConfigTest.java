@@ -1078,10 +1078,9 @@ public final class FirebaseRemoteConfigTest {
   public void realtime_frc_full_test() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
-            .thenReturn(mockRealtimeRegistration);
+        .thenReturn(mockRealtimeRegistration);
 
-    ConfigUpdateListenerRegistration registration =
-            frc.addOnConfigUpdateListener(eventListener);
+    ConfigUpdateListenerRegistration registration = frc.addOnConfigUpdateListener(eventListener);
     registration.remove();
 
     verify(mockRealtimeRegistration).remove();
@@ -1122,8 +1121,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "{ \\\"latestTemplateVersionNumber\\\": 1}"
-                    .getBytes(StandardCharsets.UTF_8)));
+                "{ \\\"latestTemplateVersionNumber\\\": 1}".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
