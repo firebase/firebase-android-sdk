@@ -1082,6 +1082,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   @Test
   public void testIndexTypeForOrQueries() throws Exception {
     indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.DESCENDING));
     indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.ASCENDING));
     indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.ASCENDING, "a", Kind.ASCENDING));
 
@@ -1110,7 +1111,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     // OR query with implicit orderBy with limit which has missing sub-target indexes.
     Query query5 =
-        query("coll").filter(orFilters(filter("a", "==", 1), filter("c", ">", 1))).limitToFirst(2);
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("c", ">", 1))).limitToLast(2);
     validateIndexType(query5, IndexManager.IndexType.NONE);
 
     // OR query without orderBy without limit which has all sub-target indexes.
@@ -1143,7 +1144,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
 
     // OR query with implicit orderBy with limit which has all sub-target indexes.
     Query query11 =
-        query("coll").filter(orFilters(filter("a", ">", 1), filter("b", "==", 1))).limitToFirst(2);
+        query("coll").filter(orFilters(filter("a", ">", 1), filter("b", "==", 1))).limitToLast(2);
     validateIndexType(query11, IndexManager.IndexType.PARTIAL);
   }
 
