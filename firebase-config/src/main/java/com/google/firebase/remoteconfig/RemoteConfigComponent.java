@@ -80,8 +80,7 @@ public class RemoteConfigComponent {
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   @GuardedBy("this")
-  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground =
-      new HashMap<>();
+  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground = new HashMap<>();
 
   private final Context context;
   private final ExecutorService executorService;
@@ -323,6 +322,24 @@ public class RemoteConfigComponent {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
   }
 
+  private synchronized void notifyRCInstances(boolean background) {
+    for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
+      if (!background) {
+        // Add dummy listener and remove to trigger http stream flow.
+        ConfigUpdateListenerRegistration registration =
+            frc.addOnConfigUpdateListener(
+                new ConfigUpdateListener() {
+                  @Override
+                  public void onEvent() {}
+
+                  @Override
+                  public void onError(@NonNull Exception error) {}
+                });
+        registration.remove();
+      }
+    }
+  }
+
   private class GlobalBackgroundListener
       implements BackgroundDetector.BackgroundStateChangeListener {
     private final AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
@@ -339,22 +356,8 @@ public class RemoteConfigComponent {
     }
 
     @Override
-    public synchronized void onBackgroundStateChanged(boolean b) {
-      for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
-        if (!b) {
-          // Add dummy listener and remove to trigger http stream flow.
-          ConfigUpdateListenerRegistration registration =
-              frc.addOnConfigUpdateListener(
-                  new ConfigUpdateListener() {
-                    @Override
-                    public void onEvent() {}
-
-                    @Override
-                    public void onError(@NonNull Exception error) {}
-                  });
-          registration.remove();
-        }
-      }
+    public void onBackgroundStateChanged(boolean b) {
+      notifyRCInstances(b);
     }
   }
 }
