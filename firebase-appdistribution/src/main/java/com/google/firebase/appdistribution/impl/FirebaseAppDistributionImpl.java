@@ -56,6 +56,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ApkUpdater apkUpdater;
   private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
+  private final ReleaseIdentifier releaseIdentifier;
 
   private final Object updateIfNewReleaseTaskLock = new Object();
 
@@ -86,13 +87,15 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ApkUpdater apkUpdater,
       @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @NonNull ReleaseIdentifier releaseIdentifier) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
     this.apkUpdater = apkUpdater;
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
+    this.releaseIdentifier = releaseIdentifier;
     this.lifecycleNotifier = lifecycleNotifier;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
