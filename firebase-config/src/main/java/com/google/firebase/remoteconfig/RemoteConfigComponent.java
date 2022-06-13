@@ -80,7 +80,7 @@ public class RemoteConfigComponent {
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   @GuardedBy("this")
-  private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground =
+  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground =
       new HashMap<>();
 
   private final Context context;
@@ -323,11 +323,11 @@ public class RemoteConfigComponent {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
   }
 
-  private static class GlobalBackgroundListener
+  private class GlobalBackgroundListener
       implements BackgroundDetector.BackgroundStateChangeListener {
-    private static AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
+    private final AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
 
-    private static void ensureBackgroundListenerIsRegistered(Context context) {
+    private void ensureBackgroundListenerIsRegistered(Context context) {
       Application application = (Application) context.getApplicationContext();
       if (INSTANCE.get() == null) {
         GlobalBackgroundListener globalBackgroundListener = new GlobalBackgroundListener();
@@ -339,7 +339,7 @@ public class RemoteConfigComponent {
     }
 
     @Override
-    public void onBackgroundStateChanged(boolean b) {
+    public synchronized void onBackgroundStateChanged(boolean b) {
       for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
         if (!b) {
           // Add dummy listener and remove to trigger http stream flow.
