@@ -125,10 +125,9 @@ public abstract class LocalStoreTestCase {
 
     localStorePersistence = getPersistence();
     queryEngine = new CountingQueryEngine(new QueryEngine());
-    indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue());
-    localStore =
-        new LocalStore(localStorePersistence, indexBackfiller, queryEngine, User.UNAUTHENTICATED);
+    localStore = new LocalStore(localStorePersistence, queryEngine, User.UNAUTHENTICATED);
     localStore.start();
+    indexBackfiller = new IndexBackfiller(localStorePersistence, new AsyncQueue(), localStore);
   }
 
   @After
