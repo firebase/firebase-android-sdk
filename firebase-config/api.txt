@@ -12,6 +12,7 @@ package com.google.firebase.remoteconfig {
 
   public class FirebaseRemoteConfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
+    method public com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration addOnConfigUpdateListener(@NonNull com.google.firebase.remoteconfig.ConfigUpdateListener);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo> ensureInitialized();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch(long);
