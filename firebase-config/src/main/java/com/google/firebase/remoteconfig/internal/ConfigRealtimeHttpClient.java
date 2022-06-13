@@ -31,6 +31,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -41,10 +42,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -63,6 +66,17 @@ public class ConfigRealtimeHttpClient {
 
   @GuardedBy("this")
   private HttpURLConnection httpURLConnection;
+
+  @GuardedBy("this")
+  private int RETRIES_REMAINING;
+
+  @GuardedBy("this")
+  private long RETRY_TIME_SECONDS;
+
+  @GuardedBy("this")
+  private final Random random;
+
+  private final int ORIGINAL_RETRIES = 7;
 
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
@@ -83,6 +97,10 @@ public class ConfigRealtimeHttpClient {
     this.listeners = new LinkedHashSet<>();
     this.httpURLConnection = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
+    // Retry parameters
+    this.random = new Random();
+    resetRetryParameters();
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
@@ -175,6 +193,22 @@ public class ConfigRealtimeHttpClient {
     outputStream.close();
   }
 
+  private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
+    for (ConfigUpdateListener listener : listeners) {
+      listener.onError(exception);
+    }
+  }
+
+  private synchronized int getRetryMultiplier() {
+    // Return retry multiplier between range of 5 and 2.
+    return random.nextInt(3) + 2;
+  }
+
+  private synchronized void resetRetryParameters() {
+    RETRY_TIME_SECONDS = random.nextInt(5) + 2;
+    RETRIES_REMAINING = ORIGINAL_RETRIES;
+  }
+
   private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty() && httpURLConnection == null;
   }
@@ -204,14 +238,34 @@ public class ConfigRealtimeHttpClient {
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
-      for (ConfigUpdateListener listener : listeners) {
-        listener.onError(
-            new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                "Can't establish http stream.", ex.getCause()));
-      }
+      pauseRealtime();
+      retryHTTPConnection();
     }
 
     return httpURLConnection;
+  }
+
+  // Try to reopen HTTP connection after a random amount of time
+  private synchronized void retryHTTPConnection() {
+    if (canMakeHttpStreamConnection() && RETRIES_REMAINING > 0) {
+      if (RETRIES_REMAINING < ORIGINAL_RETRIES) {
+        RETRY_TIME_SECONDS *= getRetryMultiplier();
+      }
+      RETRIES_REMAINING--;
+      scheduledExecutorService.schedule(
+          new Runnable() {
+            @Override
+            public void run() {
+              beginRealtime();
+            }
+          },
+          RETRY_TIME_SECONDS,
+          TimeUnit.SECONDS);
+    } else {
+      propagateErrors(
+          new FirebaseRemoteConfigRealtimeUpdateStreamException(
+              "Unable to establish Realtime http stream"));
+    }
   }
 
   private synchronized void startAutoFetch() {
@@ -220,6 +274,7 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onEvent() {
             pauseRealtime();
+            retryHTTPConnection();
           }
 
           @Override
@@ -240,6 +295,7 @@ public class ConfigRealtimeHttpClient {
   private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
       this.httpURLConnection = makeHttpConnection();
+      resetRetryParameters();
       startAutoFetch();
     }
   }

@@ -121,14 +121,19 @@ public class ConfigAutoFetch {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
+      if (!message.contains("latestTemplateVersionNumber")) {
+        continue;
+      }
       long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
       try {
-        JSONObject jsonObject = new JSONObject(message);
+
+        JSONObject jsonObject = new JSONObject("{" + message + "}");
         if (jsonObject.has("latestTemplateVersionNumber")) {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
         }
+
       } catch (JSONException ex) {
-        Log.i(TAG, "Unable to parse latest config update message.");
+        Log.i(TAG, "Unable to parse latest config update message." + ex.toString());
       }
 
       autoFetch(FETCH_RETRY, targetTemplateVersion);

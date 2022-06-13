@@ -213,7 +213,8 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
+            metadataClient,
+            mockRealtimeHttpClient);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -1074,7 +1075,21 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_addListener_success() {
+  public void realtime_frc_full_test() {
+    ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
+    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+            .thenReturn(mockRealtimeRegistration);
+
+    ConfigUpdateListenerRegistration registration =
+            frc.addOnConfigUpdateListener(eventListener);
+    registration.remove();
+
+    verify(mockRealtimeRegistration).remove();
+    verify(mockRealtimeHttpClient).addRealtimeConfigUpdateListener(eventListener);
+  }
+
+  @Test
+  public void realtime_client_addListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(
@@ -1089,7 +1104,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_removeListener_success() {
+  public void realtime_client_removeListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(mockRealtimeRegistration);
@@ -1107,7 +1122,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
+                "{ \\\"latestTemplateVersionNumber\\\": 1}"
                     .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
