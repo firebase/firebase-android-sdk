@@ -35,7 +35,7 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
 
   @Override
   protected IndexBackfiller createIndexBackfiller(Configuration configuration) {
-    return new IndexBackfiller(getPersistence(), configuration.getAsyncQueue());
+    return new IndexBackfiller(getPersistence(), configuration.getAsyncQueue(), getLocalStore());
   }
 
   @Override
