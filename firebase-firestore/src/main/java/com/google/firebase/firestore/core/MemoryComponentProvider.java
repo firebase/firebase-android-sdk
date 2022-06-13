@@ -54,8 +54,7 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected LocalStore createLocalStore(Configuration configuration) {
-    return new LocalStore(
-        getPersistence(), getIndexBackfiller(), new QueryEngine(), configuration.getInitialUser());
+    return new LocalStore(getPersistence(), new QueryEngine(), configuration.getInitialUser());
   }
 
   @Override
