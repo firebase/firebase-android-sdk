@@ -329,11 +329,12 @@ final class SQLiteIndexManager implements IndexManager {
     }
 
     // OR queries have more than one sub-target (one sub-target per DNF term). We currently consider
-    // all OR queries to have partial indexes, and hence do sorting and limit in post-processing.
+    // OR queries that have a `limit` to have a partial index. For such queries we perform sorting
+    // and apply the limit in memory as a post-processing step.
     // TODO(orquery): If we have a FULL index *and* we have the index that can be used for sorting
     //  all DNF branches on the same value, we can improve performance by performing a JOIN in SQL.
     //  See b/235224019 for more information.
-    if (subTargets.size() > 1 && result == IndexType.FULL) {
+    if (target.hasLimit() && subTargets.size() > 1 && result == IndexType.FULL) {
       return IndexType.PARTIAL;
     }
 
