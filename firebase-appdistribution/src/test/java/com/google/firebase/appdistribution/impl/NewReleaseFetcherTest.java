@@ -17,18 +17,13 @@ package com.google.firebase.appdistribution.impl;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.BinaryType.APK;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import androidx.test.core.content.pm.PackageInfoBuilder;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -49,7 +44,6 @@ import org.robolectric.shadows.ShadowPackageManager;
 public class NewReleaseFetcherTest {
 
   private static final String TEST_IAS_ARTIFACT_ID = "ias-artifact-id";
-  private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String NEW_CODEHASH = "abcdef";
   private static final String CURRENT_CODEHASH = "ghiklm";
   private static final String NEW_APK_HASH = "newApkHash";
@@ -61,7 +55,7 @@ public class NewReleaseFetcherTest {
   private ShadowPackageManager shadowPackageManager;
 
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
-  @Mock private ApkHashExtractor mockApkHashExtractor;
+  @Mock private ReleaseIdentifier mockReleaseIdentifier;
 
   Executor testExecutor = Executors.newSingleThreadExecutor();
 
@@ -72,30 +66,24 @@ public class NewReleaseFetcherTest {
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
 
-    ApplicationInfo applicationInfo =
-        ApplicationInfoBuilder.newBuilder()
-            .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
-            .build();
-    applicationInfo.metaData = new Bundle();
-    applicationInfo.metaData.putString(IAS_ARTIFACT_ID_KEY, TEST_IAS_ARTIFACT_ID);
-    applicationInfo.sourceDir = "sourcedir/";
     PackageInfo packageInfo =
         PackageInfoBuilder.newBuilder()
             .setPackageName(ApplicationProvider.getApplicationContext().getPackageName())
-            .setApplicationInfo(applicationInfo)
             .build();
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
-    when(mockApkHashExtractor.extractApkHash()).thenReturn(CURRENT_APK_HASH);
+    when(mockReleaseIdentifier.extractApkHash()).thenReturn(CURRENT_APK_HASH);
+    when(mockReleaseIdentifier.extractInternalAppSharingArtifactId())
+        .thenReturn(TEST_IAS_ARTIFACT_ID);
 
     newReleaseFetcher =
         spy(
             new NewReleaseFetcher(
                 ApplicationProvider.getApplicationContext(),
                 mockFirebaseAppDistributionTesterApiClient,
-                mockApkHashExtractor));
+                mockReleaseIdentifier));
   }
 
   @Test
@@ -113,7 +101,7 @@ public class NewReleaseFetcherTest {
   }
 
   @Test
-  public void checkForNewRelease_succeeds() throws Exception {
+  public void checkForNewRelease_newApkReleaseIsAvailable_returnsRelease() throws Exception {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(Tasks.forResult(getTestNewRelease().build()));
 
@@ -201,7 +189,7 @@ public class NewReleaseFetcherTest {
   }
 
   @Test
-  public void handleNewReleaseFromClient_whenNewReleaseIsSameAsInstalledAab_returnsNull() {
+  public void checkForNewRelease_whenNewReleaseIsSameAsInstalledAab_returnsNull() {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(
             Tasks.forResult(
@@ -218,23 +206,18 @@ public class NewReleaseFetcherTest {
   }
 
   @Test
-  public void isSameAsInstalledRelease_whenApkHashesEqual_returnsTrue()
-      throws FirebaseAppDistributionException {
-    assertTrue(newReleaseFetcher.isSameAsInstalledRelease(getTestInstalledRelease().build()));
-  }
+  public void checkForNewRelease_onlyDifferenceIsMissingApkHash_throwsError() {
+    when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
+        .thenReturn(Tasks.forResult(getTestInstalledRelease().setApkHash("").build()));
 
-  @Test
-  public void isSameAsInstalledRelease_whenApkHashesNotEqual_returnsFalse()
-      throws FirebaseAppDistributionException {
-    assertFalse(newReleaseFetcher.isSameAsInstalledRelease(getTestNewRelease().build()));
-  }
+    TestOnCompleteListener<AppDistributionReleaseInternal> onCompleteListener =
+        new TestOnCompleteListener<>();
+    Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
+    task.addOnCompleteListener(testExecutor, onCompleteListener);
 
-  @Test
-  public void isSameAsInstalledRelease_ifApkHashNotPresent_throwsError() {
-    assertThrows(
-        FirebaseAppDistributionException.class,
-        () ->
-            newReleaseFetcher.isSameAsInstalledRelease(getTestNewRelease().setApkHash("").build()));
+    FirebaseAppDistributionException e =
+        assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
+    assertThat(e.getMessage()).contains("Missing APK hash");
   }
 
   private AppDistributionReleaseInternal.Builder getTestNewRelease() {
