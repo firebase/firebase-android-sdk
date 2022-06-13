@@ -552,6 +552,7 @@ public class FirebaseRemoteConfig {
    * @return A registration object that allows the user to remove the event listener, and if it is
    *     the last listener, stop Realtime.
    */
+  @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
     return configRealtimeHttpClient.addRealtimeConfigUpdateListener(configUpdateListener);
