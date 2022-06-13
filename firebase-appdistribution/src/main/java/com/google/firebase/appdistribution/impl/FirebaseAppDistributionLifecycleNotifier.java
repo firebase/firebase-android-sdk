@@ -35,7 +35,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
   /** A functional interface for a function that takes an activity and does something with it. */
-  interface ActivityConsumer<T> {
+  interface ActivityConsumer {
     void consume(Activity activity);
   }
 
