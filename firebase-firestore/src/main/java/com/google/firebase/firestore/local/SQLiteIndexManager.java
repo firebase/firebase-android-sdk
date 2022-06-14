@@ -314,7 +314,9 @@ final class SQLiteIndexManager implements IndexManager {
   @Override
   public IndexType getIndexType(Target target) {
     IndexType result = IndexType.FULL;
-    for (Target subTarget : getSubTargets(target)) {
+    List<Target> subTargets = getSubTargets(target);
+
+    for (Target subTarget : subTargets) {
       FieldIndex index = getFieldIndex(subTarget);
       if (index == null) {
         result = IndexType.NONE;
@@ -325,6 +327,17 @@ final class SQLiteIndexManager implements IndexManager {
         result = IndexType.PARTIAL;
       }
     }
+
+    // OR queries have more than one sub-target (one sub-target per DNF term). We currently consider
+    // OR queries that have a `limit` to have a partial index. For such queries we perform sorting
+    // and apply the limit in memory as a post-processing step.
+    // TODO(orquery): If we have a FULL index *and* we have the index that can be used for sorting
+    //  all DNF branches on the same value, we can improve performance by performing a JOIN in SQL.
+    //  See b/235224019 for more information.
+    if (target.hasLimit() && subTargets.size() > 1 && result == IndexType.FULL) {
+      return IndexType.PARTIAL;
+    }
+
     return result;
   }
 
@@ -509,9 +522,23 @@ final class SQLiteIndexManager implements IndexManager {
       bindings.addAll(Arrays.asList(subQueryAndBindings).subList(1, subQueryAndBindings.length));
     }
 
-    String queryString =
-        "SELECT DISTINCT document_key FROM (" + TextUtils.join(" UNION ", subQueries) + ")";
+    // We are constructing:
+    // SELECT DISTINCT document_key FROM (
+    //   (SELECT ...) UNION (SELECT ...) UNION (SELECT ...)
+    //   ORDER BY ...
+    // )
+    // LIMIT ...
+    //
+    // Note: SQLite does not allow performing ORDER BY on each union clause. The ORDER BY must come
+    // after the last union clause. Also note that LIMIT must be applied *after* the DISTINCT
+    // operator has been performed. When dealing with multiple sub-targets, it's possible that the
+    // same document_key appears multiple times.
+    String unionSubTargets =
+        TextUtils.join(" UNION ", subQueries)
+            + "ORDER BY directional_value, document_key "
+            + (target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
 
+    String queryString = "SELECT DISTINCT document_key FROM (" + unionSubTargets + ")";
     if (target.hasLimit()) {
       queryString = queryString + " LIMIT " + target.getLimit();
     }
@@ -557,11 +584,8 @@ final class SQLiteIndexManager implements IndexManager {
     statement.append("AND directional_value ").append(lowerBoundOp).append(" ? ");
     statement.append("AND directional_value ").append(upperBoundOp).append(" ? ");
 
-    // Create the UNION statement by repeating the above generated statement. We can then add
-    // ordering and a limit clause.
+    // Create the UNION statement by repeating the above generated statement.
     StringBuilder sql = repeatSequence(statement, statementCount, " UNION ");
-    sql.append("ORDER BY directional_value, document_key ");
-    sql.append(target.getKeyOrder().equals(Direction.ASCENDING) ? "asc " : "desc ");
 
     if (notIn != null) {
       // Wrap the statement in a NOT-IN call.
