@@ -573,5 +573,13 @@ public abstract class QueryEngineTestCase {
     DocumentSet result4 =
         expectFullCollectionScan(() -> runQuery(query4, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query4.comparator(), doc3), result4);
+
+    // Query: a==1 || b==1
+    // Since there's no explicit nor implicit orderBy. Documents with missing 'a' or missing 'b'
+    // should be allowed if the document matches at least one disjunction term.
+    Query query5 = query("coll").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+    DocumentSet result5 =
+        expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query5.comparator(), doc1, doc2, doc4, doc5), result5);
   }
 }
