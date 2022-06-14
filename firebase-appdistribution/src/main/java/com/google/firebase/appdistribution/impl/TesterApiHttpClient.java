@@ -27,6 +27,9 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
@@ -35,7 +38,7 @@ import org.json.JSONObject;
 /** Client that makes FIS-authenticated GET and POST requests to the App Distribution Tester API. */
 class TesterApiHttpClient {
 
-  @VisibleForTesting static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
+  private static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String REQUEST_METHOD_POST = "POST";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
@@ -48,6 +51,12 @@ class TesterApiHttpClient {
   private static final String X_ANDROID_CERT_HEADER_KEY = "X-Android-Cert";
   // Format of "X-Client-Version": "{ClientId}/{ClientVersion}"
   private static final String X_CLIENT_VERSION_HEADER_KEY = "X-Client-Version";
+  private static final String X_GOOG_UPLOAD_PROTOCOL_HEADER = "X-Goog-Upload-Protocol";
+  private static final String X_GOOG_UPLOAD_PROTOCOL_RAW = "raw";
+  private static final String X_GOOG_UPLOAD_FILE_NAME_HEADER = "X-Goog-Upload-File-Name";
+  private static final String X_GOOG_UPLOAD_FILE_NAME = "screenshot.png";
+  // StandardCharsets.UTF_8 requires API level 19
+  private static final String UTF_8 = "UTF-8";
 
   private static final String TAG = "TesterApiClient:";
   private static final int DEFAULT_BUFFER_SIZE = 8192;
@@ -94,6 +103,34 @@ class TesterApiHttpClient {
    */
   JSONObject makePostRequest(String tag, String path, String token, String requestBody)
       throws FirebaseAppDistributionException {
+    byte[] bytes;
+    try {
+      bytes = requestBody.getBytes(UTF_8);
+    } catch (UnsupportedEncodingException e) {
+      throw new FirebaseAppDistributionException(
+          "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
+    }
+    return makePostRequest(tag, path, token, bytes, new HashMap<>());
+  }
+
+  /**
+   * Make a raw file upload request to the tester API at the given path using a FIS token for auth.
+   *
+   * <p>Uploads the file with gzip encoding.
+   *
+   * @return the response body
+   */
+  JSONObject makeUploadRequest(String tag, String path, String token, byte[] requestBody)
+      throws FirebaseAppDistributionException {
+    Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
+    extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
+    return makePostRequest(tag, path, token, requestBody, extraHeaders);
+  }
+
+  private JSONObject makePostRequest(
+      String tag, String path, String token, byte[] requestBody, Map<String, String> extraHeaders)
+      throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
       connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
@@ -101,10 +138,12 @@ class TesterApiHttpClient {
       connection.setRequestMethod(REQUEST_METHOD_POST);
       connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
       connection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-      connection.getOutputStream();
+      for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
+        connection.addRequestProperty(e.getKey(), e.getValue());
+      }
       GZIPOutputStream gzipOutputStream = new GZIPOutputStream(connection.getOutputStream());
       try {
-        gzipOutputStream.write(requestBody.getBytes("UTF-8"));
+        gzipOutputStream.write(requestBody);
       } catch (IOException e) {
         throw getException(tag, "Error compressing network request body", Status.UNKNOWN, e);
       } finally {
