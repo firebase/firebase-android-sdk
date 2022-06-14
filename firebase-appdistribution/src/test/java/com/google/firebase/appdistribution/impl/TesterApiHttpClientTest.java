@@ -53,8 +53,6 @@ public class TesterApiHttpClientTest {
   private static final String TEST_PATH = "some/url/path";
   private static final String TEST_URL =
       String.format("https://firebaseapptesters.googleapis.com/%s", TEST_PATH);
-  private static final String TEST_UPLOAD_URL =
-      String.format("https://firebaseapptesters.clients6.google.com/%s", TEST_PATH);
   private static final String TAG = "Test Tag";
   private static final String TEST_POST_BODY = "Post body";
 
@@ -83,7 +81,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenResponseSuccessful_returnsJsonResponse() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     String responseJson = readTestFile("testSimpleResponse.json");
     InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
@@ -98,7 +95,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenConnectionFails_throwsError() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     IOException caughtException = new IOException("error");
     when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
@@ -131,7 +127,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenResponseFailsWith401_throwsError() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(401);
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
 
@@ -148,7 +143,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenResponseFailsWith403_throwsError() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(403);
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
 
@@ -165,7 +159,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenResponseFailsWith404_throwsError() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(404);
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
 
@@ -182,7 +175,6 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenResponseFailsWithUnknownCode_throwsError() throws Exception {
-    when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(409);
     when(mockHttpsURLConnection.getInputStream()).thenThrow(new IOException("error"));
 

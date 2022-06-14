@@ -85,7 +85,7 @@ class TesterApiHttpClient {
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
-      connection = openHttpsUrlConnection(getTesterApiUrl(APP_TESTERS_HOST, path), token);
+      connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       return readResponse(tag, connection);
     } catch (IOException e) {
       throw getException(tag, ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
@@ -133,7 +133,7 @@ class TesterApiHttpClient {
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
-      connection = openHttpsUrlConnection(getTesterApiUrl(host, path), token);
+      connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       connection.setDoOutput(true);
       connection.setRequestMethod(REQUEST_METHOD_POST);
       connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
@@ -159,8 +159,8 @@ class TesterApiHttpClient {
     }
   }
 
-  private static String getTesterApiUrl(String host, String path) {
-    return String.format("https://%s/%s", host, path);
+  private static String getTesterApiUrl(String path) {
+    return String.format("https://%s/%s", APP_TESTERS_HOST, path);
   }
 
   private static JSONObject readResponse(String tag, HttpsURLConnection connection)
