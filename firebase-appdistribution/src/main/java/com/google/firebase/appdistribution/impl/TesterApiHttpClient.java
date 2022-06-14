@@ -129,11 +129,7 @@ class TesterApiHttpClient {
   }
 
   private JSONObject makePostRequest(
-      String tag,
-      String path,
-      String token,
-      byte[] requestBody,
-      Map<String, String> extraHeaders)
+      String tag, String path, String token, byte[] requestBody, Map<String, String> extraHeaders)
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
