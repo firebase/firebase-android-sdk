@@ -351,7 +351,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
     awaitTask(task);
 
-    verify(mockTesterApiHttpClient).makePostRequest(any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""));
+    verify(mockTesterApiHttpClient)
+        .makePostRequest(any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""));
   }
 
   @Test

@@ -40,14 +40,12 @@ import org.mockito.stubbing.Answer;
 final class TestUtils {
   private TestUtils() {}
 
-  static void awaitTaskFailure(
-      Task task, Status status, String messageSubstring) {
+  static void awaitTaskFailure(Task task, Status status, String messageSubstring) {
     assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
     assertTaskFailure(task, status, messageSubstring);
   }
 
-  static void awaitTaskFailure(
-      Task task, Status status, String messageSubstring, Throwable cause) {
+  static void awaitTaskFailure(Task task, Status status, String messageSubstring, Throwable cause) {
     assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
     assertTaskFailure(task, status, messageSubstring, cause);
   }

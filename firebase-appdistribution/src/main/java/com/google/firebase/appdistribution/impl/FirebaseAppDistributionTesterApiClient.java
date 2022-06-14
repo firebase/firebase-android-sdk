@@ -18,7 +18,6 @@ import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
 import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
