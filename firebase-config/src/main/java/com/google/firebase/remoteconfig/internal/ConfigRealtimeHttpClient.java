@@ -44,8 +44,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -65,7 +66,7 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private boolean isOpenConnection;
+  private Future<?> autoFetchThread;
 
   @GuardedBy("this")
   private int RETRIES_REMAINING;
@@ -84,7 +85,7 @@ public class ConfigRealtimeHttpClient {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Context context;
   private final String namespace;
-  private final Executor executor;
+  private final ExecutorService executorService;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -92,9 +93,10 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Executor executor) {
+      ExecutorService executorService) {
 
     this.listeners = new LinkedHashSet<>();
+    this.autoFetchThread = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     // Retry parameters
@@ -106,8 +108,7 @@ public class ConfigRealtimeHttpClient {
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
-    this.executor = executor;
-    this.isOpenConnection = false;
+    this.executorService = executorService;
   }
 
   /**
@@ -210,7 +211,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && !isOpenConnection;
+    return !listeners.isEmpty() && autoFetchThread == null;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -268,7 +269,7 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized void startAutoFetch(HttpURLConnection httpURLConnection) {
+  private synchronized Future<?> startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
@@ -282,9 +283,8 @@ public class ConfigRealtimeHttpClient {
         };
 
     ConfigAutoFetch autoFetch =
-        new ConfigAutoFetch(
-            httpURLConnection, configFetchHandler, listeners, retryCallback, executor);
-    autoFetch.beginAutoFetch();
+        new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
+    return executorService.submit(autoFetch);
   }
 
   // Kicks off Http stream listening and autofetch
@@ -294,8 +294,7 @@ public class ConfigRealtimeHttpClient {
 
       if (httpURLConnection != null) {
         resetRetryParameters();
-        isOpenConnection = true;
-        startAutoFetch(httpURLConnection);
+        autoFetchThread = startAutoFetch(httpURLConnection);
       } else {
         retryHTTPConnection();
       }
@@ -304,8 +303,9 @@ public class ConfigRealtimeHttpClient {
 
   // Pauses Http stream listening
   private synchronized void pauseRealtime() {
-    if (isOpenConnection) {
-      isOpenConnection = false;
+    if (autoFetchThread != null && !autoFetchThread.isCancelled()) {
+      autoFetchThread.cancel(true);
+      autoFetchThread = null;
     }
   }
 

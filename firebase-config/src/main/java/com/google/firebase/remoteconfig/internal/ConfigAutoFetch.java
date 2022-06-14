@@ -32,14 +32,13 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ConfigAutoFetch {
+public class ConfigAutoFetch implements Runnable {
 
   private static final int FETCH_RETRY = 3;
 
@@ -52,32 +51,23 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
-  private final Executor executor;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
       Set<ConfigUpdateListener> eventListeners,
-      ConfigUpdateListener retryCallback,
-      Executor executor) {
+      ConfigUpdateListener retryCallback) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    ;
     this.random = new Random();
-    this.executor = executor;
   }
 
-  public void beginAutoFetch() {
-    executor.execute(
-        new Runnable() {
-          @Override
-          public void run() {
-            listenForNotifications();
-          }
-        });
+  @Override
+  public void run() {
+    listenForNotifications();
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
