@@ -39,7 +39,6 @@ import org.json.JSONObject;
 class TesterApiHttpClient {
 
   private static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
-  private static final String APP_TESTERS_UPLOAD_HOST = "firebaseapptesters.clients6.google.com";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String REQUEST_METHOD_POST = "POST";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
@@ -56,6 +55,7 @@ class TesterApiHttpClient {
   private static final String X_GOOG_UPLOAD_PROTOCOL_RAW = "raw";
   private static final String X_GOOG_UPLOAD_FILE_NAME_HEADER = "X-Goog-Upload-File-Name";
   private static final String X_GOOG_UPLOAD_FILE_NAME = "screenshot.png";
+  // StandardCharsets.UTF_8 requires API level 19
   private static final String UTF_8 = "UTF-8";
 
   private static final String TAG = "TesterApiClient:";
@@ -85,7 +85,7 @@ class TesterApiHttpClient {
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
-      connection = openHttpsUrlConnection(getTesterApiUrl(APP_TESTERS_HOST, path), token);
+      connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       return readResponse(tag, connection);
     } catch (IOException e) {
       throw getException(tag, ErrorMessages.NETWORK_ERROR, Status.NETWORK_FAILURE, e);
@@ -110,7 +110,7 @@ class TesterApiHttpClient {
       throw new FirebaseAppDistributionException(
           "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
-    return makePostRequest(tag, APP_TESTERS_HOST, path, token, bytes, new HashMap<>());
+    return makePostRequest(tag, path, token, bytes, new HashMap<>());
   }
 
   /**
@@ -125,12 +125,11 @@ class TesterApiHttpClient {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
-    return makePostRequest(tag, APP_TESTERS_UPLOAD_HOST, path, token, requestBody, extraHeaders);
+    return makePostRequest(tag, path, token, requestBody, extraHeaders);
   }
 
   private JSONObject makePostRequest(
       String tag,
-      String host,
       String path,
       String token,
       byte[] requestBody,
@@ -138,7 +137,7 @@ class TesterApiHttpClient {
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
-      connection = openHttpsUrlConnection(getTesterApiUrl(host, path), token);
+      connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       connection.setDoOutput(true);
       connection.setRequestMethod(REQUEST_METHOD_POST);
       connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
@@ -164,8 +163,8 @@ class TesterApiHttpClient {
     }
   }
 
-  private static String getTesterApiUrl(String host, String path) {
-    return String.format("https://%s/%s", host, path);
+  private static String getTesterApiUrl(String path) {
+    return String.format("https://%s/%s", APP_TESTERS_HOST, path);
   }
 
   private static JSONObject readResponse(String tag, HttpsURLConnection connection)
