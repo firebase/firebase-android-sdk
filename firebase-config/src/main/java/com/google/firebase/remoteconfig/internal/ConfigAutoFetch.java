@@ -33,6 +33,7 @@ import java.net.HttpURLConnection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -45,7 +46,6 @@ public class ConfigAutoFetch {
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
 
-  @GuardedBy("this")
   private final HttpURLConnection httpURLConnection;
 
   private final ConfigFetchHandler configFetchHandler;
@@ -59,13 +59,13 @@ public class ConfigAutoFetch {
       ConfigFetchHandler configFetchHandler,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      Executor executor,
-      ScheduledExecutorService scheduledExecutorService) {
+      Executor executor) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
-    this.scheduledExecutorService = scheduledExecutorService;
+    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    ;
     this.random = new Random();
     this.executor = executor;
   }
@@ -94,7 +94,7 @@ public class ConfigAutoFetch {
 
   // Check connection and establish InputStream
   @VisibleForTesting
-  public synchronized void listenForNotifications() {
+  public void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
         int responseCode = httpURLConnection.getResponseCode();
@@ -108,10 +108,18 @@ public class ConfigAutoFetch {
                   "Http connection responded with error: " + responseCode));
         }
       } catch (IOException ex) {
+        httpURLConnection.disconnect();
         propagateErrors(
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
                 "Error handling stream messages while fetching.", ex.getCause()));
       }
+    }
+
+    scheduledExecutorService.shutdown();
+    try {
+      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
+    } catch (InterruptedException ex) {
+      Log.i(TAG, "Thread Interuppted");
     }
     retryCallback.onEvent();
   }
@@ -124,9 +132,9 @@ public class ConfigAutoFetch {
       if (!message.contains("latestTemplateVersionNumber")) {
         continue;
       }
+
       long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
       try {
-
         JSONObject jsonObject = new JSONObject("{" + message + "}");
         if (jsonObject.has("latestTemplateVersionNumber")) {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
@@ -149,7 +157,7 @@ public class ConfigAutoFetch {
     }
 
     // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
-    int timeTillFetch = random.nextInt(6) + 1;
+    int timeTillFetch = random.nextInt(3) + 1;
     scheduledExecutorService.schedule(
         new Runnable() {
           @Override
@@ -169,6 +177,9 @@ public class ConfigAutoFetch {
           long newTemplateVersion = 0;
           if (fetchResponse.getFetchedConfigs() != null) {
             newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
+          } else if (fetchResponse.getStatus()
+              == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
+            return Tasks.forResult(null);
           }
 
           if (newTemplateVersion >= targetVersion) {

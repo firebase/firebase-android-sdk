@@ -26,7 +26,6 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
@@ -79,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -146,7 +144,6 @@ public final class FirebaseRemoteConfigTest {
   @Mock private HttpURLConnection mockHttpURLConnection;
   @Mock private ConfigUpdateListener mockListener;
   @Mock private ConfigUpdateListener mockRetryListener;
-  @Mock private ScheduledExecutorService mockScheduledExecutorService;
   @Mock private Executor mockExecutor;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
@@ -273,12 +270,7 @@ public final class FirebaseRemoteConfigTest {
     listeners.add(mockListener);
     configAutoFetch =
         new ConfigAutoFetch(
-            mockHttpURLConnection,
-            mockFetchHandler,
-            listeners,
-            mockRetryListener,
-            mockExecutor,
-            mockScheduledExecutorService);
+            mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener, mockExecutor);
   }
 
   @Test
@@ -1127,7 +1119,6 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onEvent();
-    verify(mockScheduledExecutorService).schedule(any(Runnable.class), anyLong(), any());
   }
 
   @Test

@@ -65,7 +65,7 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private HttpURLConnection httpURLConnection;
+  private boolean isOpenConnection;
 
   @GuardedBy("this")
   private int RETRIES_REMAINING;
@@ -95,7 +95,6 @@ public class ConfigRealtimeHttpClient {
       Executor executor) {
 
     this.listeners = new LinkedHashSet<>();
-    this.httpURLConnection = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     // Retry parameters
@@ -108,6 +107,7 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.executor = executor;
+    this.isOpenConnection = false;
   }
 
   /**
@@ -210,7 +210,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null;
+    return !listeners.isEmpty() && !isOpenConnection;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -231,15 +231,15 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private synchronized HttpURLConnection makeHttpConnection() {
+  private HttpURLConnection makeHttpConnection() {
     URL realtimeUrl = getUrl();
+    HttpURLConnection httpURLConnection = null;
     try {
-      this.httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+      httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
-      pauseRealtime();
-      retryHTTPConnection();
+      Log.i(TAG, "Can't make connection, will retry after method returns.");
     }
 
     return httpURLConnection;
@@ -268,7 +268,7 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized void startAutoFetch() {
+  private synchronized void startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
@@ -280,31 +280,32 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onError(Exception error) {}
         };
+
     ConfigAutoFetch autoFetch =
         new ConfigAutoFetch(
-            this.httpURLConnection,
-            configFetchHandler,
-            listeners,
-            retryCallback,
-            executor,
-            scheduledExecutorService);
+            httpURLConnection, configFetchHandler, listeners, retryCallback, executor);
     autoFetch.beginAutoFetch();
   }
 
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
-      this.httpURLConnection = makeHttpConnection();
-      resetRetryParameters();
-      startAutoFetch();
+      HttpURLConnection httpURLConnection = makeHttpConnection();
+
+      if (httpURLConnection != null) {
+        resetRetryParameters();
+        isOpenConnection = true;
+        startAutoFetch(httpURLConnection);
+      } else {
+        retryHTTPConnection();
+      }
     }
   }
 
   // Pauses Http stream listening
   private synchronized void pauseRealtime() {
-    if (httpURLConnection != null) {
-      httpURLConnection.disconnect();
-      httpURLConnection = null;
+    if (isOpenConnection) {
+      isOpenConnection = false;
     }
   }
 
