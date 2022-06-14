@@ -108,13 +108,13 @@ public class ConfigAutoFetch {
                   "Http connection responded with error: " + responseCode));
         }
       } catch (IOException ex) {
-        httpURLConnection.disconnect();
         propagateErrors(
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
                 "Error handling stream messages while fetching.", ex.getCause()));
       }
     }
 
+    httpURLConnection.disconnect();
     scheduledExecutorService.shutdown();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
@@ -146,7 +146,9 @@ public class ConfigAutoFetch {
 
       autoFetch(FETCH_RETRY, targetTemplateVersion);
     }
+
     reader.close();
+    inputStream.close();
   }
 
   private void autoFetch(int remainingAttempts, long targetVersion) {
