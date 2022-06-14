@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.graphics.Bitmap.CompressFormat.PNG;
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
 import android.graphics.Bitmap;
@@ -27,7 +28,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.ByteArrayOutputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
@@ -157,10 +157,11 @@ class FirebaseAppDistributionTesterApiClient {
           LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          ByteArrayOutputStream stream = new ByteArrayOutputStream();
-          screenshot.compress(Bitmap.CompressFormat.PNG, /* quality= */ 100, stream);
-          byte[] bytes = stream.toByteArray();
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, bytes);
+          testerApiHttpClient.makeUploadRequest(
+              UPLOAD_SCREENSHOT_TAG,
+              path,
+              token,
+              stream -> screenshot.compress(PNG, /* quality= */ 100, stream));
           return feedbackName;
         });
   }

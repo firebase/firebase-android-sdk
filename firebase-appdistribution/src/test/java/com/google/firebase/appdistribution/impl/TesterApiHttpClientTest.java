@@ -23,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.common.collect.Iterators;
-import com.google.common.io.ByteStreams;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -32,7 +31,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -200,14 +198,10 @@ public class TesterApiHttpClientTest {
 
     testerApiHttpClient.makePostRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY);
 
-    byte[] unzippedPostBody =
-        ByteStreams.toByteArray(
-            new GZIPInputStream(new ByteArrayInputStream(requestBodyOutputStream.toByteArray())));
-    assertThat(new String(unzippedPostBody, UTF_8)).isEqualTo(TEST_POST_BODY);
+    assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8)).isEqualTo(TEST_POST_BODY);
     verify(mockHttpsURLConnection).setDoOutput(true);
     verify(mockHttpsURLConnection).setRequestMethod("POST");
     verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
-    verify(mockHttpsURLConnection).addRequestProperty("Content-Encoding", "gzip");
     verify(mockHttpsURLConnection).disconnect();
   }
 
@@ -238,16 +232,12 @@ public class TesterApiHttpClientTest {
     when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
 
     testerApiHttpClient.makeUploadRequest(
-        TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY.getBytes(UTF_8));
+        TAG, TEST_PATH, TEST_AUTH_TOKEN, stream -> stream.write(TEST_POST_BODY.getBytes(UTF_8)));
 
-    byte[] unzippedPostBody =
-        ByteStreams.toByteArray(
-            new GZIPInputStream(new ByteArrayInputStream(requestBodyOutputStream.toByteArray())));
-    assertThat(new String(unzippedPostBody, UTF_8)).isEqualTo(TEST_POST_BODY);
+    assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8)).isEqualTo(TEST_POST_BODY);
     verify(mockHttpsURLConnection).setDoOutput(true);
     verify(mockHttpsURLConnection).setRequestMethod("POST");
     verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
-    verify(mockHttpsURLConnection).addRequestProperty("Content-Encoding", "gzip");
     verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-Protocol", "raw");
     verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-File-Name", "screenshot.png");
     verify(mockHttpsURLConnection).disconnect();

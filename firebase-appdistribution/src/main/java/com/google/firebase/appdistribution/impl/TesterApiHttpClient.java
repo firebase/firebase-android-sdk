@@ -27,10 +27,10 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -38,13 +38,16 @@ import org.json.JSONObject;
 /** Client that makes FIS-authenticated GET and POST requests to the App Distribution Tester API. */
 class TesterApiHttpClient {
 
+  /** Functional interface for a function that writes a request body to an output stream */
+  interface RequestBodyWriter {
+    void write(OutputStream os) throws IOException;
+  }
+
   private static final String APP_TESTERS_HOST = "firebaseapptesters.googleapis.com";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String REQUEST_METHOD_POST = "POST";
   private static final String CONTENT_TYPE_HEADER_KEY = "Content-Type";
   private static final String JSON_CONTENT_TYPE = "application/json";
-  private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
-  private static final String GZIP_CONTENT_ENCODING = "gzip";
   private static final String API_KEY_HEADER = "x-goog-api-key";
   private static final String INSTALLATION_AUTH_HEADER = "X-Goog-Firebase-Installations-Auth";
   private static final String X_ANDROID_PACKAGE_HEADER_KEY = "X-Android-Package";
@@ -110,7 +113,8 @@ class TesterApiHttpClient {
       throw new FirebaseAppDistributionException(
           "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
-    return makePostRequest(tag, path, token, bytes, new HashMap<>());
+    return makePostRequest(
+        tag, path, token, new HashMap<>(), outputStream -> outputStream.write(bytes));
   }
 
   /**
@@ -120,16 +124,21 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, byte[] requestBody)
+  JSONObject makeUploadRequest(
+      String tag, String path, String token, RequestBodyWriter requestBodyWriter)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
-    return makePostRequest(tag, path, token, requestBody, extraHeaders);
+    return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
   }
 
   private JSONObject makePostRequest(
-      String tag, String path, String token, byte[] requestBody, Map<String, String> extraHeaders)
+      String tag,
+      String path,
+      String token,
+      Map<String, String> extraHeaders,
+      RequestBodyWriter requestBodyWriter)
       throws FirebaseAppDistributionException {
     HttpsURLConnection connection = null;
     try {
@@ -137,17 +146,16 @@ class TesterApiHttpClient {
       connection.setDoOutput(true);
       connection.setRequestMethod(REQUEST_METHOD_POST);
       connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
-      connection.addRequestProperty(CONTENT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
       for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
         connection.addRequestProperty(e.getKey(), e.getValue());
       }
-      GZIPOutputStream gzipOutputStream = new GZIPOutputStream(connection.getOutputStream());
+      OutputStream outputStream = connection.getOutputStream();
       try {
-        gzipOutputStream.write(requestBody);
+        requestBodyWriter.write(outputStream);
       } catch (IOException e) {
-        throw getException(tag, "Error compressing network request body", Status.UNKNOWN, e);
+        throw getException(tag, "Error writing network request body", Status.UNKNOWN, e);
       } finally {
-        gzipOutputStream.close();
+        outputStream.close();
       }
       return readResponse(tag, connection);
     } catch (IOException e) {
