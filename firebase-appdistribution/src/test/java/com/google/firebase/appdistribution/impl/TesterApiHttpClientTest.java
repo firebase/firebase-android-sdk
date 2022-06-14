@@ -82,8 +82,7 @@ public class TesterApiHttpClientTest {
   @Test
   public void makeGetRequest_whenResponseSuccessful_returnsJsonResponse() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
-    InputStream responseInputStream =
-        new ByteArrayInputStream(responseJson.getBytes(UTF_8));
+    InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
 
@@ -111,8 +110,7 @@ public class TesterApiHttpClientTest {
 
   @Test
   public void makeGetRequest_whenInvalidJson_throwsError() throws Exception {
-    InputStream response =
-        new ByteArrayInputStream(INVALID_RESPONSE.getBytes(UTF_8));
+    InputStream response = new ByteArrayInputStream(INVALID_RESPONSE.getBytes(UTF_8));
     when(mockHttpsURLConnection.getInputStream()).thenReturn(response);
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
 
@@ -194,8 +192,7 @@ public class TesterApiHttpClientTest {
   @Test
   public void makePostRequest_zipsRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
-    InputStream responseInputStream =
-        new ByteArrayInputStream(responseJson.getBytes(UTF_8));
+    InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
     ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
@@ -222,7 +219,9 @@ public class TesterApiHttpClientTest {
     FirebaseAppDistributionException e =
         assertThrows(
             FirebaseAppDistributionException.class,
-            () -> testerApiHttpClient.makePostRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY));
+            () ->
+                testerApiHttpClient.makePostRequest(
+                    TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY));
 
     assertThat(e.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
     assertThat(e.getMessage()).contains(TAG);
@@ -232,14 +231,14 @@ public class TesterApiHttpClientTest {
   @Test
   public void makeUploadRequest_zipsRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
-    InputStream responseInputStream =
-        new ByteArrayInputStream(responseJson.getBytes(UTF_8));
+    InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
     ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
     when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
 
-    testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY.getBytes(UTF_8));
+    testerApiHttpClient.makeUploadRequest(
+        TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY.getBytes(UTF_8));
 
     byte[] unzippedPostBody =
         ByteStreams.toByteArray(
