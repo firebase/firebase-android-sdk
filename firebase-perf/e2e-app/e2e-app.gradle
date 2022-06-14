@@ -100,13 +100,11 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
     implementation 'com.google.android.material:material:1.4.0'
-    implementation 'androidx.test.espresso:espresso-idling-resource:3.3.0'
 
     // 3rd party Deps
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
 
     // Integration Test Deps
-    androidTestImplementation project(":firebase-perf")
     androidTestImplementation 'junit:junit:4.13.1'
     androidTestImplementation "androidx.test.ext:junit:1.1.2"
     androidTestImplementation "androidx.test:core:1.3.0"

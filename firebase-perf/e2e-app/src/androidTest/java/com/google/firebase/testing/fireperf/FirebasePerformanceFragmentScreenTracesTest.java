@@ -14,7 +14,6 @@
 
 package com.google.firebase.testing.fireperf;
 
-import static androidx.test.espresso.Espresso.onIdle;
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.contrib.RecyclerViewActions.scrollToPosition;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
@@ -47,7 +46,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
       new ActivityScenarioRule<>(FirebasePerfFragmentsActivity.class);
 
   @Test
-  public void scrollAndCycleThroughAllFragments() {
+  public void scrollAndCycleThroughAllFragments() throws InterruptedException {
     ActivityScenario scenario = activityRule.getScenario();
     scrollRecyclerViewToEnd(HomeFragment.NUM_LIST_ITEMS, R.id.rv_numbers_home);
     scenario.onActivity(new NavigateAction(R.id.navigation_fast));
@@ -56,7 +55,8 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
     assertThat(scenario.getState()).isEqualTo(State.RESUMED);
     scenario.moveToState(State.STARTED).moveToState(State.CREATED); // trigger activity screen trace
-    onIdle();
+    // Wait for TransportManager and Firelog executors to finish
+    Thread.sleep(5000);
     // Block until all Fireperf events are sent by Firelog
     FireperfUtils.flgForceUploadSync();
   }

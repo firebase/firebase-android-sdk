@@ -14,20 +14,14 @@
 
 package com.google.firebase.testing.fireperf;
 
-import static androidx.test.espresso.Espresso.onIdle;
-
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.espresso.IdlingRegistry;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import com.google.firebase.perf.transport.TransportIdlingResource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,16 +34,6 @@ public class FirebasePerformanceTest {
   @Rule
   public ActivityScenarioRule<FirebasePerfActivity> rule =
       new ActivityScenarioRule<>(FirebasePerfActivity.class);
-
-  @Before
-  public void registerIdlingResource() {
-    IdlingRegistry.getInstance().register(TransportIdlingResource.get());
-  }
-
-  @After
-  public void unregisterIdlingResource() {
-    IdlingRegistry.getInstance().unregister(TransportIdlingResource.get());
-  }
 
   /*
    * Totally generates 32 * 15 = 480 TraceMetric and 32 * 15 = 480 NetworkRequestMetric.
@@ -76,7 +60,8 @@ public class FirebasePerformanceTest {
     for (Future<?> future : futureList) {
       future.get();
     }
-    onIdle();
+    // Wait for TransportManager and Firelog executors to finish
+    Thread.sleep(5000);
     // Block until all Fireperf events are sent by Firelog
     FireperfUtils.flgForceUploadSync();
   }
