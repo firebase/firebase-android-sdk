@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 2
       - name: Setup NDK
         run: |
           ANDROID_ROOT=/usr/local/lib/android
