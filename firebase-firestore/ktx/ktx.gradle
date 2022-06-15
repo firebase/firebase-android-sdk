@@ -48,10 +48,6 @@ tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
-tasks.withType(Test).configureEach {
-    forkEvery = 100
-}
-
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation project(':firebase-common')

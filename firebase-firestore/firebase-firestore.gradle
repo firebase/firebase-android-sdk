@@ -96,10 +96,6 @@ tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
-tasks.withType(Test).configureEach {
-    forkEvery = 100
-}
-
 android.libraryVariants.all { variant ->
     if (findProperty("useProdBackendForTests")) {
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
