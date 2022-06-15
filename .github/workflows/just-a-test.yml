@@ -29,6 +29,8 @@ jobs:
           restore-keys: |
              ${{ runner.os }}-gradle-
       - name: Check Changed
+        env:
+          FIREBASE_CI: 1
         run: |
           git log --graph --decorate --pretty=oneline --abbrev-commit
           ./gradlew --continue checkChanged withErrorProne
