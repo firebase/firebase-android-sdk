@@ -15,13 +15,16 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
-import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.readTestJSON;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -33,8 +36,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -70,6 +71,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
       "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback";
   private static final String COMMIT_FEEDBACK_PATH =
       "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback/feedback-id:commit";
+  private static final String ATTACH_SCREENSHOT_PATH =
+      "upload/v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback/feedback-id:uploadArtifact?type=SCREENSHOT";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
@@ -77,10 +80,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterApiHttpClient mockTesterApiHttpClient;
 
-  private ExecutorService testExecutor = Executors.newSingleThreadExecutor();
-
   @Before
-  public void setup() throws Exception {
+  public void setup() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
 
@@ -102,7 +103,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     firebaseAppDistributionTesterApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            testExecutor, firebaseApp, mockFirebaseInstallationsProvider, mockTesterApiHttpClient);
+            firebaseApp, mockFirebaseInstallationsProvider, mockTesterApiHttpClient);
   }
 
   @Test
@@ -113,21 +114,20 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
-    awaitAsyncOperations(testExecutor);
+    AppDistributionReleaseInternal result = awaitTask(releaseTask);
 
-    assertThat(releaseTask.isSuccessful()).isTrue();
-    AppDistributionReleaseInternal expectedRelease =
-        AppDistributionReleaseInternal.builder()
-            .setBinaryType(BinaryType.APK)
-            .setBuildVersion("3")
-            .setDisplayVersion("3.0")
-            .setReleaseNotes("This is a test release.")
-            .setDownloadUrl("http://test-url-apk")
-            .setCodeHash("code-hash-apk-1")
-            .setApkHash("apk-hash-1")
-            .setIasArtifactId("")
-            .build();
-    assertThat(releaseTask.getResult()).isEqualTo(expectedRelease);
+    assertThat(result)
+        .isEqualTo(
+            AppDistributionReleaseInternal.builder()
+                .setBinaryType(BinaryType.APK)
+                .setBuildVersion("3")
+                .setDisplayVersion("3.0")
+                .setReleaseNotes("This is a test release.")
+                .setDownloadUrl("http://test-url-apk")
+                .setCodeHash("code-hash-apk-1")
+                .setApkHash("apk-hash-1")
+                .setIasArtifactId("")
+                .build());
   }
 
   @Test
@@ -138,9 +138,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
-    awaitAsyncOperations(testExecutor);
+    AppDistributionReleaseInternal result = awaitTask(releaseTask);
 
-    assertThat(releaseTask.isSuccessful()).isTrue();
     AppDistributionReleaseInternal expectedRelease =
         AppDistributionReleaseInternal.builder()
             .setBinaryType(BinaryType.AAB)
@@ -152,7 +151,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
             .setApkHash("")
             .setIasArtifactId("ias-artifact-id-1")
             .build();
-    assertThat(releaseTask.getResult()).isEqualTo(expectedRelease);
+    assertThat(result).isEqualTo(expectedRelease);
   }
 
   @Test
@@ -163,7 +162,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
 
-    assertTaskFailure(releaseTask, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(releaseTask, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -175,7 +174,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
 
-    assertTaskFailure(releaseTask, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(releaseTask, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -185,9 +184,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
-    awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(releaseTask, Status.UNKNOWN, "test ex");
+    awaitTaskFailure(releaseTask, Status.UNKNOWN, "test ex");
   }
 
   @Test
@@ -198,9 +196,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<AppDistributionReleaseInternal> releaseTask =
         firebaseAppDistributionTesterApiClient.fetchNewRelease();
-    awaitAsyncOperations(testExecutor);
+    AppDistributionReleaseInternal result = awaitTask(releaseTask);
 
-    assertThat(releaseTask.getResult()).isNull();
+    assertThat(result).isNull();
   }
 
   @Test
@@ -211,10 +209,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
         .thenReturn(releaseJson);
 
     Task<String> task = firebaseAppDistributionTesterApiClient.findReleaseUsingApkHash(APK_HASH);
-    awaitAsyncOperations(testExecutor);
+    String result = awaitTask(task);
 
-    assertThat(task.isSuccessful()).isTrue();
-    assertThat(task.getResult()).isEqualTo(RELEASE_NAME);
+    assertThat(result).isEqualTo(RELEASE_NAME);
   }
 
   @Test
@@ -224,7 +221,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task = firebaseAppDistributionTesterApiClient.findReleaseUsingApkHash(APK_HASH);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -235,7 +232,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task = firebaseAppDistributionTesterApiClient.findReleaseUsingApkHash(APK_HASH);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -245,9 +242,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task = firebaseAppDistributionTesterApiClient.findReleaseUsingApkHash(APK_HASH);
-    awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex");
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
 
   @Test
@@ -260,10 +256,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.findReleaseUsingIasArtifactId(IAS_ARTIFACT_ID);
-    awaitAsyncOperations(testExecutor);
+    String result = awaitTask(task);
 
-    assertThat(task.isSuccessful()).isTrue();
-    assertThat(task.getResult()).isEqualTo(RELEASE_NAME);
+    assertThat(result).isEqualTo(RELEASE_NAME);
   }
 
   @Test
@@ -274,7 +269,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<String> task =
         firebaseAppDistributionTesterApiClient.findReleaseUsingIasArtifactId(IAS_ARTIFACT_ID);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -286,7 +281,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<String> task =
         firebaseAppDistributionTesterApiClient.findReleaseUsingIasArtifactId(IAS_ARTIFACT_ID);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -297,9 +292,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.findReleaseUsingIasArtifactId(IAS_ARTIFACT_ID);
-    awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex");
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
 
   @Test
@@ -311,10 +305,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
-    awaitAsyncOperations(testExecutor);
+    String result = awaitTask(task);
 
-    assertThat(task.isSuccessful()).isTrue();
-    assertThat(task.getResult()).isEqualTo(FEEDBACK_NAME);
+    assertThat(result).isEqualTo(FEEDBACK_NAME);
   }
 
   @Test
@@ -325,7 +318,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -337,7 +330,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -349,21 +342,17 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
-    awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex");
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
 
   @Test
-  public void commitFeedback_whenResponseSuccessful_returnsFeedbackName() throws Exception {
-    when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq("")))
-        .thenReturn(buildFeedbackJson());
-
+  public void commitFeedback_whenResponseSuccessful_makesPostRequest() throws Exception {
     Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
-    awaitAsyncOperations(testExecutor);
+    awaitTask(task);
 
-    assertThat(task.isSuccessful()).isTrue();
+    verify(mockTesterApiHttpClient)
+        .makePostRequest(any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""));
   }
 
   @Test
@@ -373,7 +362,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -384,7 +373,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
@@ -394,9 +383,60 @@ public class FirebaseAppDistributionTesterApiClientTest {
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
-    awaitAsyncOperations(testExecutor);
 
-    assertTaskFailure(task, Status.UNKNOWN, "test ex");
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex");
+  }
+
+  @Test
+  public void attachScreenshot_whenResponseSuccessful_makesPostRequestAndReturnsFeedbackName()
+      throws Exception {
+    Bitmap testScreenshot = Bitmap.createBitmap(400, 400, Config.RGB_565);
+
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshot);
+    String result = awaitTask(task);
+
+    assertThat(result).isEqualTo(FEEDBACK_NAME);
+    verify(mockTesterApiHttpClient)
+        .makeUploadRequest(any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any());
+  }
+
+  @Test
+  public void attachScreenshot_getFidError_throwsError() {
+    Exception expectedException = new Exception("test ex");
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
+    Bitmap testScreenshot = Bitmap.createBitmap(400, 400, Config.RGB_565);
+
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshot);
+
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+  }
+
+  @Test
+  public void attachScreenshot_getFisAuthTokenError_throwsError() {
+    Exception expectedException = new Exception("test ex");
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forException(expectedException));
+    Bitmap testScreenshot = Bitmap.createBitmap(400, 400, Config.RGB_565);
+
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshot);
+
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
+  }
+
+  @Test
+  public void attachScreenshot_whenClientThrowsException_failsTask() throws Exception {
+    when(mockTesterApiHttpClient.makeUploadRequest(
+            any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any()))
+        .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
+    Bitmap testScreenshot = Bitmap.createBitmap(400, 400, Config.RGB_565);
+
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshot);
+
+    awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
 
   private JSONObject buildFeedbackJson() throws JSONException {
