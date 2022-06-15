@@ -16,6 +16,7 @@ jobs:
           ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
           ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
+          find $ANDROID_SDK_ROOT/ndk -type d
 
       - name: Cache Gradle packages
         uses: actions/cache@v3
