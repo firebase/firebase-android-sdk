@@ -44,18 +44,18 @@ package com.google.firebase.firestore.ktx.serialization {
   }
 
   public final class NestListEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
-    ctor public NestListEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> list);
+    ctor public NestListEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> encodedList);
     ctor public NestListEncoder();
     method @NonNull public kotlinx.serialization.modules.SerializersModule getSerializersModule();
     property @NonNull public kotlinx.serialization.modules.SerializersModule serializersModule;
   }
 
   public final class NestedMapEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
-    ctor public NestedMapEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> list, @Nullable kotlinx.serialization.descriptors.SerialDescriptor descriptor);
+    ctor public NestedMapEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<?> propertyNamesToBeEncoded, @Nullable kotlinx.serialization.descriptors.SerialDescriptor descriptor);
     ctor public NestedMapEncoder();
     method @NonNull public error.NonExistentClass encodeEnum(@NonNull kotlinx.serialization.descriptors.SerialDescriptor enumDescriptor, int index);
     method @NonNull public kotlinx.serialization.modules.SerializersModule getSerializersModule();
-    method @NonNull public java.util.Map<java.lang.String,java.lang.Object> serializedResult();
+    method public error.NonExistentClass serializedResult();
     property @NonNull public kotlinx.serialization.modules.SerializersModule serializersModule;
     field public static final com.google.firebase.firestore.ktx.serialization.NestedMapEncoder.Companion Companion;
   }
