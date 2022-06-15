@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.ci;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
 import java.io.File;
@@ -54,6 +55,7 @@ public class AffectedProjectFinder {
                   return true;
                 })
             .collect(Collectors.toSet());
+    System.out.println(">> Changed paths:\n" + Joiner.on("\n").join(this.changedPaths));
   }
 
   Set<Project> find() {
