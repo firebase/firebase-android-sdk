@@ -18,8 +18,6 @@ import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appdistribution.FirebaseAppDistribution;
-import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
