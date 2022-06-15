@@ -20,7 +20,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.FirebaseApp;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
@@ -41,7 +40,7 @@ public class FeedbackActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
     screenshot = getIntent().getParcelableExtra(SCREENSHOT_EXTRA_KEY);
-    feedbackSender = FirebaseApp.getInstance().get(FeedbackSender.class);
+    feedbackSender = FeedbackSender.getInstance();
     setContentView(R.layout.activity_feedback);
   }
 

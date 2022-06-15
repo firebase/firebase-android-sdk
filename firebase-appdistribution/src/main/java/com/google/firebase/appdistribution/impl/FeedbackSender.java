@@ -15,7 +15,11 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
+import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.FirebaseAppDistribution;
+import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
@@ -24,6 +28,11 @@ class FeedbackSender {
 
   FeedbackSender(FirebaseAppDistributionTesterApiClient testerApiClient) {
     this.testerApiClient = testerApiClient;
+  }
+
+  @NonNull
+  static FeedbackSender getInstance() {
+    return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
 
   /** Send feedback text and screenshot to the Tester API for the given release. */
