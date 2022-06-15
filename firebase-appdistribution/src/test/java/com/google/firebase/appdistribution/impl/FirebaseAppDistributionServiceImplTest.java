@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
@@ -25,6 +26,8 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSIN
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,8 +47,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
@@ -71,6 +77,7 @@ import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
@@ -88,6 +95,7 @@ public class FirebaseAppDistributionServiceImplTest {
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
+  private static final Bitmap TEST_SCREENSHOT = Bitmap.createBitmap(400, 400, Config.RGB_565);
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -125,6 +133,7 @@ public class FirebaseAppDistributionServiceImplTest {
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
+  @Mock private ScreenshotTaker mockScreenshotTaker;
 
   static class TestActivity extends Activity {}
 
@@ -154,7 +163,8 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockAabUpdater,
                 mockSignInStorage,
                 mockLifecycleNotifier,
-                mockReleaseIdentifier));
+                mockReleaseIdentifier,
+                mockScreenshotTaker));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
 
@@ -180,7 +190,11 @@ public class FirebaseAppDistributionServiceImplTest {
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
         .thenAnswer(TestUtils.applyToForegroundActivityTaskAnswer(activity));
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(TestUtils.applyToForegroundActivityAnswer(activity));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+
+    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT));
   }
 
   @Test
@@ -588,5 +602,20 @@ public class FirebaseAppDistributionServiceImplTest {
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  @Test
+  public void collectAndSendFeedback_startsFeedbackActivity() throws InterruptedException {
+    ExecutorService testExecutor = Executors.newSingleThreadExecutor();
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
+    firebaseAppDistribution.collectAndSendFeedback(testExecutor);
+    TestUtils.awaitAsyncOperations(testExecutor);
+
+    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+    verify(activity).startActivity(argument.capture());
+    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
+    assertThat(argument.getValue().<Bitmap>getParcelableExtra(SCREENSHOT_EXTRA_KEY)).isEqualTo(TEST_SCREENSHOT);
   }
 }

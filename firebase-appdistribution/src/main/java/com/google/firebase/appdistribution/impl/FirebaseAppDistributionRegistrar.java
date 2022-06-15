@@ -46,23 +46,37 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(FirebaseAppDistributionTesterApiClient.class))
             .factory(this::buildFirebaseAppDistribution)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
+        Component.builder(FirebaseAppDistributionTesterApiClient.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .factory(this::buildFirebaseAppDistributionTesterApiClient)
+            .build(),
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
+  }
+
+  private FirebaseAppDistributionTesterApiClient buildFirebaseAppDistributionTesterApiClient(
+      ComponentContainer container) {
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
+        container.getProvider(FirebaseInstallationsApi.class);
+    return new FirebaseAppDistributionTesterApiClient(
+        firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        container.get(FirebaseAppDistributionTesterApiClient.class);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
     SignInStorage signInStorage = new SignInStorage(context);
-    FirebaseAppDistributionTesterApiClient testerApiClient =
-        new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
     ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
@@ -76,7 +90,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             new AabUpdater(),
             signInStorage,
             lifecycleNotifier,
-            releaseIdentifier);
+            releaseIdentifier,
+            new ScreenshotTaker());
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;

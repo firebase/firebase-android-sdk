@@ -26,7 +26,7 @@ class ErrorMessages {
       "Failed to authenticate the tester. The tester was either not signed in, or something went wrong. Try signing in again.";
 
   static final String AUTHORIZATION_ERROR =
-      "Failed to authorize the tester. The tester is not authorized to test this app. Verify that the tester has accepted an invitation to test this app.";
+      "Failed to authorize the tester. The tester does not have access to this resource (or it may not exist).";
 
   static final String AUTHENTICATION_CANCELED = "Tester canceled the authentication flow.";
 
@@ -46,7 +46,7 @@ class ErrorMessages {
       "Download URL not found. This was a most likely due to a transient condition and may be corrected by retrying.";
 
   static final String HOST_ACTIVITY_INTERRUPTED =
-      "Host activity interrupted while dialog was showing. Try calling updateIfNewReleaseAvailable() again.";
+      "Host activity interrupted while dialog was showing. Try calling the API again.";
 
   static final String APK_INSTALLATION_FAILED =
       "The APK failed to install or installation was canceled by the tester.";

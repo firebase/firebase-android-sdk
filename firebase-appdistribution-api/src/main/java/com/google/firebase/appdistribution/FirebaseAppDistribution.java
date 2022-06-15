@@ -109,6 +109,8 @@ public interface FirebaseAppDistribution {
   @NonNull
   UpdateTask updateApp();
 
+  void collectAndSendFeedback();
+
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
   static FirebaseAppDistribution getInstance() {

@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfoWithMetadata;
 
-import android.content.Context;
 import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -58,8 +57,6 @@ class ReleaseIdentifier {
 
   /** Identify the currently installed release, returning the release name. */
   Task<String> identifyRelease() {
-    Context context = firebaseApp.getApplicationContext();
-
     // Attempt to find release using IAS artifact ID, which identifies app bundle releases
     String iasArtifactId = null;
     try {
