@@ -1,0 +1,32 @@
+name: just-a-test
+on:
+  pull_request:
+    branches:
+      - 'master'
+jobs:
+  android_job:
+    name: "Hello"
+    runs-on: ubuntu-22.04
+    container:
+      image: docker://fabernovel/android:api-32-ndk-v1.6.0
+
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: "Checkout"
+        uses: actions/checkout@v2.3.1
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+             ${{ runner.os }}-gradle-
+      - name: Check Changed
+        run: |
+          ./ci/run.sh gradle -- --continue checkChanged withErrorProne
