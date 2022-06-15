@@ -124,7 +124,7 @@ public class FirebaseAppDistributionServiceImplTest {
   @Mock private AabUpdater mockAabUpdater;
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
-  private TestActivity mockedActivity;
+  @Mock private ReleaseIdentifier mockReleaseIdentifier;
 
   static class TestActivity extends Activity {}
 
@@ -153,7 +153,8 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockApkUpdater,
                 mockAabUpdater,
                 mockSignInStorage,
-                mockLifecycleNotifier));
+                mockLifecycleNotifier,
+                mockReleaseIdentifier));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
 

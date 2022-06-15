@@ -14,10 +14,11 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.graphics.Bitmap.CompressFormat.PNG;
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -58,30 +59,17 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String FIND_RELEASE_TAG = "Finding installed release";
   private static final String CREATE_FEEDBACK_TAG = "Creating feedback";
   private static final String COMMIT_FEEDBACK_TAG = "Committing feedback";
+  private static final String UPLOAD_SCREENSHOT_TAG = "Uploading screenshot";
 
   private final FirebaseApp firebaseApp;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
-  private final Executor taskExecutor;
+  private final Executor taskExecutor = Executors.newSingleThreadExecutor();
 
   FirebaseAppDistributionTesterApiClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull TesterApiHttpClient testerApiHttpClient) {
-    this(
-        Executors.newSingleThreadExecutor(),
-        firebaseApp,
-        firebaseInstallationsApiProvider,
-        testerApiHttpClient);
-  }
-
-  @VisibleForTesting
-  FirebaseAppDistributionTesterApiClient(
-      @NonNull Executor taskExecutor,
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull TesterApiHttpClient testerApiHttpClient) {
-    this.taskExecutor = taskExecutor;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.testerApiHttpClient = testerApiHttpClient;
@@ -154,6 +142,27 @@ class FirebaseAppDistributionTesterApiClient {
           JSONObject responseBody =
               testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
           return parseJsonFieldFromResponse(responseBody, "name");
+        });
+  }
+
+  /**
+   * Attaches a screenshot to feedback.
+   *
+   * @return a {@link Task} containing the feedback name, for convenience when chaining subsequent
+   *     requests off of this task
+   */
+  Task<String> attachScreenshot(String feedbackName, Bitmap screenshot) {
+    return runWithFidAndToken(
+        (unused, token) -> {
+          LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
+          String path =
+              String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
+          testerApiHttpClient.makeUploadRequest(
+              UPLOAD_SCREENSHOT_TAG,
+              path,
+              token,
+              stream -> screenshot.compress(PNG, /* quality= */ 100, stream));
+          return feedbackName;
         });
   }
 
@@ -258,8 +267,9 @@ class FirebaseAppDistributionTesterApiClient {
         firebaseInstallationsApiProvider.get().getToken(/* forceRefresh= */ false);
 
     return Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
-        .continueWithTask(TaskUtils::handleTaskFailure)
+        .continueWithTask(taskExecutor, TaskUtils::handleTaskFailure)
         .onSuccessTask(
+            taskExecutor,
             resultsList -> {
               // Tasks.whenAllSuccess combines task results into a list
               if (resultsList.size() != 2) {
