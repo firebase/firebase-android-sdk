@@ -30,4 +30,5 @@ jobs:
              ${{ runner.os }}-gradle-
       - name: Check Changed
         run: |
+          git log --graph --decorate --pretty=oneline --abbrev-commit
           ./gradlew --continue checkChanged withErrorProne
