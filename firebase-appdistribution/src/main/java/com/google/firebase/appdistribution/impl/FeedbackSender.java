@@ -15,18 +15,22 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 
-/** A class that takes screenshots of the host app. */
-class ScreenshotTaker {
+/** Sends tester feedback to the Tester API. */
+class FeedbackSender {
 
-  private static final Bitmap TEMP_FIXED_BITMAP = Bitmap.createBitmap(400, 400, Config.RGB_565);
+  private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
-  /** Take a screenshot of the running host app. */
-  Task<Bitmap> takeScreenshot() {
-    // TODO(lkellogg): Actually take a screenshot
-    return Tasks.forResult(TEMP_FIXED_BITMAP);
+  FeedbackSender(FirebaseAppDistributionTesterApiClient testerApiClient) {
+    this.testerApiClient = testerApiClient;
+  }
+
+  /** Send feedback text and screenshot to the Tester API for the given release. */
+  Task<Void> sendFeedback(String releaseName, String feedbackText, Bitmap screenshot) {
+    return testerApiClient
+        .createFeedback(releaseName, feedbackText)
+        .onSuccessTask(feedbackName -> testerApiClient.attachScreenshot(feedbackName, screenshot))
+        .onSuccessTask(testerApiClient::commitFeedback);
   }
 }

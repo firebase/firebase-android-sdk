@@ -46,36 +46,38 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppDistribution.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .add(Dependency.required(FirebaseAppDistributionTesterApiClient.class))
+            .add(Dependency.required(FeedbackSender.class))
             .factory(this::buildFirebaseAppDistribution)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
-        Component.builder(FirebaseAppDistributionTesterApiClient.class)
+        Component.builder(FeedbackSender.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .factory(this::buildFirebaseAppDistributionTesterApiClient)
+            .factory(this::buildFeedbackSender)
             .build(),
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistributionTesterApiClient buildFirebaseAppDistributionTesterApiClient(
-      ComponentContainer container) {
+  private FeedbackSender buildFeedbackSender(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
-    return new FirebaseAppDistributionTesterApiClient(
-        firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        new FirebaseAppDistributionTesterApiClient(
+            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
+    return new FeedbackSender(testerApiClient);
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseAppDistributionTesterApiClient testerApiClient =
-        container.get(FirebaseAppDistributionTesterApiClient.class);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        new FirebaseAppDistributionTesterApiClient(
+            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
     SignInStorage signInStorage = new SignInStorage(context);
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();

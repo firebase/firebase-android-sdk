@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
@@ -18,7 +32,7 @@ public class FeedbackActivity extends AppCompatActivity {
   public static final String SCREENSHOT_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT";
 
-  private FirebaseAppDistributionTesterApiClient testerApiClient;
+  private FeedbackSender feedbackSender;
   private String releaseName;
   private Bitmap screenshot;
 
@@ -27,17 +41,15 @@ public class FeedbackActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
     screenshot = getIntent().getParcelableExtra(SCREENSHOT_EXTRA_KEY);
-    testerApiClient = FirebaseApp.getInstance().get(FirebaseAppDistributionTesterApiClient.class);
+    feedbackSender = FirebaseApp.getInstance().get(FeedbackSender.class);
     setContentView(R.layout.activity_feedback);
   }
 
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     EditText feedbackText = (EditText) findViewById(R.id.feedbackText);
-    testerApiClient
-        .createFeedback(releaseName, feedbackText.getText().toString())
-        .onSuccessTask(feedbackName -> testerApiClient.attachScreenshot(feedbackName, screenshot))
-        .onSuccessTask(testerApiClient::commitFeedback)
+    feedbackSender
+        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshot)
         .addOnSuccessListener(
             unused -> {
               LogWrapper.getInstance().i(TAG, "Feedback submitted");

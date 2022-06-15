@@ -313,7 +313,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @VisibleForTesting
   public void collectAndSendFeedback(Executor taskExecutor) {
-    screenshotTaker.takeScreenshot()
+    screenshotTaker
+        .takeScreenshot()
         .onSuccessTask(
             taskExecutor,
             screenshot ->
@@ -325,8 +326,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                             LogWrapper.getInstance()
                                 .e("Failed to sign in tester. Could not collect feedback.", e))
                     .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
-                    .onSuccessTask(taskExecutor, releaseName -> launchFeedbackActivity(releaseName, screenshot)))
-        .addOnFailureListener(taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
+                    .onSuccessTask(
+                        taskExecutor,
+                        releaseName -> launchFeedbackActivity(releaseName, screenshot)))
+        .addOnFailureListener(
+            taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
   private Task<Void> launchFeedbackActivity(String releaseName, Bitmap screenshot) {

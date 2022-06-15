@@ -605,9 +605,8 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void collectAndSendFeedback_startsFeedbackActivity() throws InterruptedException {
+  public void collectAndSendFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
     ExecutorService testExecutor = Executors.newSingleThreadExecutor();
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.collectAndSendFeedback(testExecutor);
@@ -615,7 +614,10 @@ public class FirebaseAppDistributionServiceImplTest {
 
     ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
     verify(activity).startActivity(argument.capture());
-    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
-    assertThat(argument.getValue().<Bitmap>getParcelableExtra(SCREENSHOT_EXTRA_KEY)).isEqualTo(TEST_SCREENSHOT);
+    verify(mockTesterSignInManager).signInTester();
+    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
+        .isEqualTo("release-name");
+    assertThat(argument.getValue().<Bitmap>getParcelableExtra(SCREENSHOT_EXTRA_KEY))
+        .isEqualTo(TEST_SCREENSHOT);
   }
 }
