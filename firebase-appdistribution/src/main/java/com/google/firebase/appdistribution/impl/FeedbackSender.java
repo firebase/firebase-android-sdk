@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
-import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 
@@ -28,7 +27,7 @@ class FeedbackSender {
     this.testerApiClient = testerApiClient;
   }
 
-  @NonNull
+  /** Get an instance of FeedbackSender. */
   static FeedbackSender getInstance() {
     return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
