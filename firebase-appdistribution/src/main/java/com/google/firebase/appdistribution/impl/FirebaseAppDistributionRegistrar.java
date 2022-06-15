@@ -65,17 +65,18 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
-    ApkHashExtractor apkHashExtractor = new ApkHashExtractor(firebaseApp.getApplicationContext());
+    ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
     FirebaseAppDistribution appDistribution =
         new FirebaseAppDistributionImpl(
             firebaseApp,
             new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
             new NewReleaseFetcher(
-                firebaseApp.getApplicationContext(), testerApiClient, apkHashExtractor),
+                firebaseApp.getApplicationContext(), testerApiClient, releaseIdentifier),
             new ApkUpdater(firebaseApp, new ApkInstaller()),
             new AabUpdater(),
             signInStorage,
-            lifecycleNotifier);
+            lifecycleNotifier,
+            releaseIdentifier);
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;

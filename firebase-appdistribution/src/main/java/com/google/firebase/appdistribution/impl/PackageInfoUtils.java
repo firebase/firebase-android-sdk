@@ -17,15 +17,12 @@ package com.google.firebase.appdistribution.impl;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 
-final class ReleaseIdentificationUtils {
+final class PackageInfoUtils {
 
   private static final int NO_FLAGS = 0;
-  static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   /**
    * Get the package info for the currently installed app.
@@ -55,15 +52,5 @@ final class ReleaseIdentificationUtils {
       throw new FirebaseAppDistributionException(
           "Unable to find package with name " + context.getPackageName(), Status.UNKNOWN, e);
     }
-  }
-
-  @Nullable
-  static String extractInternalAppSharingArtifactId(@NonNull Context appContext)
-      throws FirebaseAppDistributionException {
-    PackageInfo packageInfo = getPackageInfoWithMetadata(appContext);
-    if (packageInfo.applicationInfo.metaData == null) {
-      throw new FirebaseAppDistributionException("Missing package info metadata", Status.UNKNOWN);
-    }
-    return packageInfo.applicationInfo.metaData.getString(IAS_ARTIFACT_ID_METADATA_KEY);
   }
 }
