@@ -7,8 +7,6 @@ jobs:
   android_job:
     name: "Hello"
     runs-on: ubuntu-22.04
-    container:
-      image: "../images/Dockerfile"
 
     steps:
       - name: "Checkout"
