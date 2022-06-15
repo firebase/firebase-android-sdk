@@ -67,6 +67,10 @@ public abstract class QueryEngineTestCase {
       doc("coll/a", 1, map("matches", true, "order", 1));
   private static final MutableDocument NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
+  private static final MutableDocument PENDING_MATCHING_DOC_A =
+      doc("coll/a", 1, map("matches", true, "order", 1)).setHasLocalMutations();
+  private static final MutableDocument PENDING_NON_MATCHING_DOC_A =
+      doc("coll/a", 1, map("matches", false, "order", 1)).setHasLocalMutations();
   private static final MutableDocument UPDATED_DOC_A =
       doc("coll/a", 11, map("matches", true, "order", 1));
   private static final MutableDocument MATCHING_DOC_B =
@@ -230,7 +234,7 @@ public abstract class QueryEngineTestCase {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add a mutated document that is not yet part of query's set of remote keys.
-    addDocumentWithEventVersion(version(1), NON_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_NON_MATCHING_DOC_A);
 
     DocumentSet docs =
         expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
@@ -314,9 +318,9 @@ public abstract class QueryEngineTestCase {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     addMutation(DOC_A_EMPTY_PATCH);
-    persistQueryMapping(MATCHING_DOC_A.getKey());
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -335,9 +339,9 @@ public abstract class QueryEngineTestCase {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     addMutation(DOC_A_EMPTY_PATCH);
-    persistQueryMapping(MATCHING_DOC_A.getKey());
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
