@@ -23,4 +23,4 @@ jobs:
              ${{ runner.os }}-gradle-
       - name: Check Changed
         run: |
-          ./ci/run.sh gradle -- --continue checkChanged withErrorProne
+          ./gradlew -- --continue checkChanged withErrorProne
