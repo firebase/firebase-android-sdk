@@ -29,4 +29,5 @@ jobs:
              ${{ runner.os }}-gradle-
       - name: Check Changed
         run: |
+          ls -l $ANDROID_NDK_ROOT
           ./gradlew -- --continue checkChanged withErrorProne
