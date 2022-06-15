@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -66,7 +67,7 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private Future<?> autoFetchThread;
+  private Future<?> autoFetchTask;
 
   @GuardedBy("this")
   private int RETRIES_REMAINING;
@@ -96,7 +97,7 @@ public class ConfigRealtimeHttpClient {
       ExecutorService executorService) {
 
     this.listeners = new LinkedHashSet<>();
-    this.autoFetchThread = null;
+    this.autoFetchTask = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     // Retry parameters
@@ -211,7 +212,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && autoFetchThread == null;
+    return !listeners.isEmpty() && autoFetchTask == null;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -284,7 +285,8 @@ public class ConfigRealtimeHttpClient {
 
     ConfigAutoFetch autoFetch =
         new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
-    return executorService.submit(autoFetch);
+    FutureTask<String> futureTask = new autoFetchFutureTask(autoFetch, httpURLConnection);
+    return executorService.submit(futureTask);
   }
 
   // Kicks off Http stream listening and autofetch
@@ -294,7 +296,7 @@ public class ConfigRealtimeHttpClient {
 
       if (httpURLConnection != null) {
         resetRetryParameters();
-        autoFetchThread = startAutoFetch(httpURLConnection);
+        autoFetchTask = startAutoFetch(httpURLConnection);
       } else {
         retryHTTPConnection();
       }
@@ -303,9 +305,9 @@ public class ConfigRealtimeHttpClient {
 
   // Pauses Http stream listening
   private synchronized void pauseRealtime() {
-    if (autoFetchThread != null && !autoFetchThread.isCancelled()) {
-      autoFetchThread.cancel(true);
-      autoFetchThread = null;
+    if (autoFetchTask != null && !autoFetchTask.isCancelled()) {
+      autoFetchTask.cancel(true);
+      autoFetchTask = null;
     }
   }
 
@@ -321,6 +323,20 @@ public class ConfigRealtimeHttpClient {
     listeners.remove(listener);
     if (listeners.isEmpty()) {
       pauseRealtime();
+    }
+  }
+
+  private class autoFetchFutureTask extends FutureTask<String> {
+    private final HttpURLConnection httpURLConnection;
+
+    public autoFetchFutureTask(Runnable runnable, HttpURLConnection httpURLConnection) {
+      super(runnable, null);
+      this.httpURLConnection = httpURLConnection;
+    }
+
+    @Override
+    protected void done() {
+      httpURLConnection.disconnect();
     }
   }
 
