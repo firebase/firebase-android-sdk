@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: Unit Results (${{ matrix.module }})
+          name: Unit Test Results
           path: "**/build/test-results/**/*.xml"
 
   integ_tests:
@@ -120,18 +120,11 @@ jobs:
           FIREBASE_CI: 1
         run: |
           ./gradlew ${{matrix.module}}:deviceCheck withErrorProne
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: Instrumentation Test Results (${{ matrix.module }})
-          path: "**/build/test-results/**/*.xml"
 
   publish-test-results:
     name: "Publish Tests Results"
     needs:
       - unit_tests
-      - integ_tests
     runs-on: ubuntu-22.04
 
     permissions:
