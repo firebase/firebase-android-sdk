@@ -6,9 +6,7 @@ on:
   pull_request:
     branches:
       - 'master'
-permissions:
-  checks: write
-  pull-requests: write
+
 jobs:
   determine_changed:
     name: "Determine changed modules"
@@ -78,8 +76,33 @@ jobs:
           FIREBASE_CI: 1
         run: |
           ./gradlew ${{matrix.module}}:check withErrorProne
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
         if: always()
         with:
-          files: "**/build/test-results/**/*.xml"
+          name: Test Results (Python ${{ matrix.python-version }})
+          path: "**/build/test-results/**/*.xml"
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: android_job
+    runs-on: ubuntu-22.04
+
+    permissions:
+      checks: write
+
+      # only needed unless run with comment_mode: off
+      pull-requests: write
+
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: "artifacts/**/*.xml"
