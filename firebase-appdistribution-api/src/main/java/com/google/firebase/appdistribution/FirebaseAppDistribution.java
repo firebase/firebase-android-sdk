@@ -112,7 +112,7 @@ public interface FirebaseAppDistribution {
   /**
    * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
    *
-   * Performs the following actions:
+   * <p>Performs the following actions:
    *
    * <ol>
    *   <li>Takes a screenshot of the current activity
