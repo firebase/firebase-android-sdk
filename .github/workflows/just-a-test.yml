@@ -41,39 +41,44 @@ jobs:
     steps:
       - name: Echo previous outputs
         run: echo "${{ toJSON(needs.determine_changed.outputs) }}"
-#  android_job:
-#    name: "Hello"
-#    runs-on: ubuntu-22.04
-#
-#    steps:
-#      - uses: actions/checkout@v3.0.2
-#        with:
-#          fetch-depth: 2
-#      - name: Setup NDK
-#        run: |
-#          ANDROID_ROOT=/usr/local/lib/android
-#          ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
-#          ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
-#          ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
-#
-#      - name: Setup Gradle
-#        uses: gradle/gradle-build-action@v2
-#        with:
-#          cache-read-only: false
-#
-#      - name: Add google-services.json
-#        env:
-#          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
-#        run: |
-#          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-#
-#      - name: Check Changed
-#        env:
-#          FIREBASE_CI: 1
-#        run: |
-#          ./gradlew --continue checkChanged withErrorProne
-#      - name: Publish Test Results
-#        uses: EnricoMi/publish-unit-test-result-action@v1
-#        if: always()
-#        with:
-#          files: "**/build/test-results/**/*.xml"
+  android_job:
+    name: "Hello"
+    runs-on: ubuntu-22.04
+    needs:
+      - determine_changed
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
+
+    steps:
+      - uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 2
+      - name: Setup NDK
+        run: |
+          ANDROID_ROOT=/usr/local/lib/android
+          ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
+          ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
+          ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: false
+
+      - name: Add google-services.json
+        env:
+          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        run: |
+          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
+
+      - name: Check Changed (${{ matrix.module }})
+        env:
+          FIREBASE_CI: 1
+        run: |
+          ./gradlew ${{matrix.module}}:check withErrorProne
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: "**/build/test-results/**/*.xml"
