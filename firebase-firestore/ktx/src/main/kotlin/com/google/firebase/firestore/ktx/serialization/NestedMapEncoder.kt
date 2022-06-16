@@ -47,7 +47,7 @@ import kotlinx.serialization.serializer
 class NestedMapEncoder(
     private val map: MutableMap<Int, MutableMap<String, Any?>> = mutableMapOf(),
     private var depth: Int = 0,
-    private val propertyNamesToBeEncoded: MutableList<out Any> = mutableListOf(),
+    private val propertyNamesToBeEncoded: MutableList<out Any> = mutableListOf()
 ) : AbstractEncoder() {
 
     companion object {
