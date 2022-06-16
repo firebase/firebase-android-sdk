@@ -25,25 +25,19 @@ jobs:
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
           ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-             ${{ runner.os }}-gradle-
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
+
       - name: Check Changed
         env:
           FIREBASE_CI: 1
         run: |
-          git log --graph --decorate --pretty=oneline --abbrev-commit
           ./gradlew --continue checkChanged withErrorProne
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
