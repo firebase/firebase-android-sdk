@@ -47,6 +47,7 @@ jobs:
     needs:
       - determine_changed
     strategy:
+      fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
