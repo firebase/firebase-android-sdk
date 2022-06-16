@@ -29,6 +29,7 @@
                 android:name="com.google.firebase.components:com.google.firebase.appdistribution.impl.FirebaseAppDistributionRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
+
         <!-- The launch mode for Install Activity is singleTask to ensure that after the unknown sources UI
         or the installation flow is complete, the Install Activity does not get recreated which causes loss of state
          See here for more info - https://developer.android.com/guide/components/activities/tasks-and-back-stack#ManifestForTasks -->
@@ -44,6 +45,11 @@
 
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".FeedbackActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
         <provider
             android:name="com.google.firebase.appdistribution.impl.FirebaseAppDistributionFileProvider"

@@ -188,7 +188,7 @@ public class TesterApiHttpClientTest {
   }
 
   @Test
-  public void makePostRequest_zipsRequestBodyAndSetsCorrectHeaders() throws Exception {
+  public void makePostRequest_writesRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
     InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
@@ -223,7 +223,7 @@ public class TesterApiHttpClientTest {
   }
 
   @Test
-  public void makeUploadRequest_zipsRequestBodyAndSetsCorrectHeaders() throws Exception {
+  public void makeUploadRequest_writesRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
     InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
     when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);

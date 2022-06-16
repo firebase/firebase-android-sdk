@@ -73,6 +73,11 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
     return new NotImplementedUpdateTask();
   }
 
+  @Override
+  public void collectAndSendFeedback() {
+    return;
+  }
+
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(
         new FirebaseAppDistributionException(
