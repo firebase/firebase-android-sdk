@@ -1,4 +1,7 @@
 name: just-a-test
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 on:
   pull_request:
     branches:
@@ -28,6 +31,11 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
              ${{ runner.os }}-gradle-
+      - name: Add google-services.json
+        env:
+          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        run: |
+          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
       - name: Check Changed
         env:
           FIREBASE_CI: 1
