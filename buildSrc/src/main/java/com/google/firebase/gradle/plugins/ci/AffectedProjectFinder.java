@@ -70,8 +70,8 @@ public class AffectedProjectFinder {
     try {
       // works on Prow only.
       Process process =
-              Runtime.getRuntime()
-                      .exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
+          Runtime.getRuntime()
+              .exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
       try {
         return ImmutableSet.copyOf(
             CharStreams.readLines(new InputStreamReader(process.getInputStream())));
