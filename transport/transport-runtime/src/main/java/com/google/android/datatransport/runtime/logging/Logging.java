@@ -24,7 +24,7 @@ public final class Logging {
   private Logging() {}
 
   private static String getTag(String tag) {
-    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return concatTag(LOG_PREFIX, tag);
+    if (android.os.Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) return concatTag(LOG_PREFIX, tag);
 
     return LOG_PREFIX + tag;
   }
