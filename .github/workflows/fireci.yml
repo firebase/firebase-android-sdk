@@ -16,4 +16,5 @@ jobs:
         with:
           python-version: 3.8
       - run: |
-          pip3 install -e ci/fireci --install-option test
+          pip3 install "setuptools==56.1.0"
+          ./ci/fireci/setup.py test
