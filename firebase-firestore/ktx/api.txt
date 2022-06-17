@@ -20,3 +20,19 @@ package com.google.firebase.firestore.ktx {
 
 }
 
+package com.google.firebase.firestore.ktx.annotations {
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.PROPERTY) public @interface KDocumentId {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.CLASS) public @interface KIgnoreExtraProperties {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.PROPERTY) public @interface KServerTimestamp {
+  }
+
+  @kotlin.annotation.Retention(AnnotationRetention.RUNTIME) @kotlin.annotation.Target(allowedTargets=AnnotationTarget.CLASS) public @interface KThrowOnExtraProperties {
+  }
+
+}
+
