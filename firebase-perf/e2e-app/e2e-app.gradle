@@ -81,10 +81,11 @@ dependencies {
         println("Building with latest public version ':firebase-perf:$latestReleasedVersion' of SDK")
         implementation "com.google.firebase:firebase-perf:$latestReleasedVersion"
     }
-    implementation project(":transport:transport-api")
-    implementation project(":transport:transport-backend-cct")
-    implementation project(":transport:transport-runtime")
+    compileOnly project(":transport:transport-api")
+    compileOnly project(":transport:transport-backend-cct")
+    compileOnly project(":transport:transport-runtime")
     implementation project(":transport:transport-runtime-testing")
+    runtimeOnly project(':firebase-datatransport')
 
     // Google Deps
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
