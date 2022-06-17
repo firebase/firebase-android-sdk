@@ -19,11 +19,11 @@ import kotlinx.serialization.SerialInfo
 /**
  * Annotation used to mark a @Serializable object's property to be automatically populated with the
  * document's ID when the object is created from a Cloud Firestore document. This annotation is the
- * Kotlin equivalent to Firestore's Java {@code @DocumentId} annotation.
+ * Kotlin equivalent to Firestore's Java [com.google.firebase.firestore.DocumentId] annotation.
  *
- * <p>When using a @Serializable object to write to a document, the property annotated by {@code
- * @KDocumentId} is ignored, which allows writing the @Serializable object back to any document,
- * even if it's not the origin of the @Serializable object.
+ * <p>When using a @Serializable object to write to a document, the property annotated by
+ * KDocumentId is ignored, which allows writing the @Serializable object back to any document, even
+ * if it's not the origin of the @Serializable object.
  */
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
@@ -32,9 +32,10 @@ annotation class KDocumentId()
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. This
- * annotation is the Kotlin equivalent to Firestore's Java {@code @ServerTimestamp} annotation. If a
- * @Serializable object being written contains {@code null} for a @KServerTimestamp-annotated field,
- * it will be replaced with a server-generated timestamp.
+ * annotation is the Kotlin equivalent to Firestore's Java
+ * [com.google.firebase.firestore.ServerTimestamp] annotation. If a
+ * @Serializable object being written contains null for a @KServerTimestamp-annotated field, it will
+ * be replaced with a server-generated timestamp.
  */
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
@@ -42,11 +43,11 @@ annotation class KDocumentId()
 annotation class KServerTimestamp()
 
 /**
- * Properties that don't map to class fields when serializing to a class annotated with this
- * annotation cause an exception to be thrown. A @Serializable object annotated with this annotation
- * can be understood as the equivalent to JSON serialization's {@code Json { ignoreUnknownKeys =
- * false }} configuration. This annotation is the Kotlin equivalent to Firestore's Java {@code
- * @ThrowOnExtraProperties} annotation.
+ * Annotation used to mark a property so that if this property doesn't map to any class fields
+ * during serializing process, an exception will be thrown. A @Serializable object annotated with
+ * this annotation can be understood as the equivalent to JSON serialization's `Json {
+ * ignoreUnknownKeys = false }` configuration. This annotation is the Kotlin equivalent to
+ * Firestore's Java [com.google.firebase.firestore.ThrowOnExtraProperties] annotation.
  */
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
@@ -54,12 +55,12 @@ annotation class KServerTimestamp()
 annotation class KThrowOnExtraProperties()
 
 /**
- * Properties that don't map to class fields are ignored when serializing to a class annotated with
- * this annotation. A @Serializable object annotated with this annotation can be understood as the
- * equivalent to JSON serialization's {@code Json { ignoreUnknownKeys = true }} configuration. This
- * is the default behavior even if the @Serializable custom object is defined without this
- * annotation. This annotation is the Kotlin equivalent to Firestore's Java {@code
- * @IgnoreExtraProperties} annotation.
+ * Annotation used to mark a property so that if this property doesn't map to any class fields
+ * during serializing process, this property will be ignored. A @Serializable object annotated with
+ * this annotation can be understood as the equivalent to JSON serialization's `Json {
+ * ignoreUnknownKeys = true }` configuration. This is the default behavior even if the @Serializable
+ * custom object is defined without this annotation. This annotation is the Kotlin equivalent to
+ * Firestore's Java [com.google.firebase.firestore.IgnoreExtraProperties] annotation.
  */
 @SerialInfo
 @Retention(AnnotationRetention.RUNTIME)
