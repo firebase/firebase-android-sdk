@@ -102,14 +102,14 @@ public class ConfigAutoFetch implements Runnable {
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
                 "Error handling stream messages while fetching.", ex.getCause()));
       }
+      httpURLConnection.disconnect();
     }
 
-    httpURLConnection.disconnect();
     scheduledExecutorService.shutdown();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
-      Log.i(TAG, "Thread Interuppted");
+      Log.i(TAG, "Thread Interrupted.");
     }
     retryCallback.onEvent();
   }
@@ -148,8 +148,8 @@ public class ConfigAutoFetch implements Runnable {
       return;
     }
 
-    // Needs fetch to occur between 2 - 12 seconds. Randomize to not cause ddos alerts in backend
-    int timeTillFetch = random.nextInt(3) + 1;
+    // Needs fetch to occur between 0 - 4 seconds. Randomize to not cause ddos alerts in backend
+    int timeTillFetch = random.nextInt(4);
     scheduledExecutorService.schedule(
         new Runnable() {
           @Override
@@ -171,7 +171,7 @@ public class ConfigAutoFetch implements Runnable {
             newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
           } else if (fetchResponse.getStatus()
               == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
-            return Tasks.forResult(null);
+            newTemplateVersion = targetVersion;
           }
 
           if (newTemplateVersion >= targetVersion) {

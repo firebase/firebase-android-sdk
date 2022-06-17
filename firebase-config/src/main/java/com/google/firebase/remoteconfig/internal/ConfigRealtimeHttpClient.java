@@ -207,7 +207,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void resetRetryParameters() {
-    RETRY_TIME_SECONDS = random.nextInt(5) + 2;
+    RETRY_TIME_SECONDS = random.nextInt(5) + 1;
     RETRIES_REMAINING = ORIGINAL_RETRIES;
   }
 
@@ -266,7 +266,7 @@ public class ConfigRealtimeHttpClient {
     } else {
       propagateErrors(
           new FirebaseRemoteConfigRealtimeUpdateStreamException(
-              "Unable to establish Realtime http stream"));
+              "Unable to establish Realtime http stream."));
     }
   }
 
