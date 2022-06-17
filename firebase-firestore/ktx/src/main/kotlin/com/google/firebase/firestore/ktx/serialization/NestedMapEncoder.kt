@@ -14,15 +14,17 @@
 
 package com.google.firebase.firestore.ktx.serialization
 
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serializers.FirestoreSerializersModule
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.StructureKind
-import kotlinx.serialization.descriptors.elementNames
+import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
+import java.lang.Exception
 
 /**
  * The entry point of Firestore Kotlin Serialization Process. It encodes a custom @Serializable
@@ -42,12 +44,12 @@ import kotlinx.serialization.serializer
  *
  * @param map the nested map that records the encoded result of the original @Serializable object.
  * @param depth the current encoding depth inside of the nested map.
- * @param propertyNamesToBeEncoded a list of all property names to be encoded at the current depth.
+ * @param descriptor a [SerialDescriptor] of the custom object.
  */
 class NestedMapEncoder(
     private val map: MutableMap<Int, MutableMap<String, Any?>> = mutableMapOf(),
     private var depth: Int = 0,
-    private val propertyNamesToBeEncoded: MutableList<out Any> = mutableListOf()
+    private val descriptor: SerialDescriptor? = null
 ) : AbstractEncoder() {
 
     companion object {
@@ -55,7 +57,21 @@ class NestedMapEncoder(
         private const val MAX_DEPTH: Int = 500
     }
 
-    private var elementIndex: Int = 0
+    private inner class NextElementToEncode(var elementIndex: Int = 0) {
+        val elementEncodeKey = descriptor?.elementNames?.toList()?.getOrNull(elementIndex) ?: ""
+        val elementKind = descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
+        val elementSerialName =
+            descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
+        val elementAnnotations = descriptor?.let {
+            try {
+                it.getElementAnnotations(elementIndex)
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    private var nextElement = NextElementToEncode()
 
     init {
         if (depth == ROOT_LEVEL) map[ROOT_LEVEL] = mutableMapOf()
@@ -73,18 +89,46 @@ class NestedMapEncoder(
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
         enumDescriptor.elementNames.toList().let { encodeValue(it[index]) }
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    /**
+     * Register serializers for Firestore native data types, DocumentId, Timestamp, and GeoPoint,
+     * so that these registered serializers can be used at run-time to serialize the fields with @Contextual annotations
+     */
+    override val serializersModule: SerializersModule = FirestoreSerializersModule
+
+    /**
+     * Encode the native Firestore datatype objects: DocumentId, Timestamp, and GeoPoint.
+     */
+    fun <T> encodeFirestoreNativeDataType(value: T) {
+        when {
+            validateKDocumentIdPresent() -> {
+            } // KDocumentId on DocumentReference, then ignore
+            else -> map.getValue(depth).put(nextElement.elementEncodeKey, value)
+        }
+        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+    }
 
     override fun encodeNull() {
-        val key = propertyNamesToBeEncoded[elementIndex++] as String
-        map.getValue(depth).put(key, null)
-        return
+        when {
+            validateKDocumentIdPresent() -> {
+            } // KDocumentId on String?, DocumentReference?, then ignore
+            validateKServerTimestampPresent() -> map.getValue(depth).put(
+                nextElement.elementEncodeKey,
+                FieldValue.serverTimestamp()
+            ) //KServerTimestamp on Timestamp? = null, then replace with FieldValue
+            else -> map.getValue(depth).put(nextElement.elementEncodeKey, null)
+        }
+        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
     }
 
     override fun encodeValue(value: Any) {
-        // TODO: Handle @DocumentId and @ServerTimestamp annotations from descriptor
-        val key = propertyNamesToBeEncoded[elementIndex++] as String
-        map.getValue(depth).put(key, value)
+        when {
+            validateKDocumentIdPresent() -> {
+            }  // KDocumentId on String, then ignore
+            validateKServerTimestampPresent() -> {
+            } //KServerTimestamp not on Primitives
+            else -> map.getValue(depth).put(nextElement.elementEncodeKey, value)
+        }
+        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
@@ -102,22 +146,21 @@ class NestedMapEncoder(
      */
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
         // TODO: @DocumentID and @ServerTimeStamp should not be applied on Structures
-        val listOfElementsToBeEncoded = descriptor.elementNames.toMutableList()
         if (depth == 0) {
-            return NestedMapEncoder(map, depth + 1, listOfElementsToBeEncoded)
+            return NestedMapEncoder(map, depth + 1, descriptor)
         }
         when (descriptor.kind) {
             StructureKind.CLASS -> {
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
-                val innerMapKey = propertyNamesToBeEncoded[elementIndex++] as String
-                map.getValue(depth).put(innerMapKey, map[nextDepth])
-                return NestedMapEncoder(map, nextDepth, listOfElementsToBeEncoded)
+                map.getValue(depth).put(nextElement.elementEncodeKey, map[nextDepth])
+                nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+                return NestedMapEncoder(map, nextDepth, descriptor)
             }
             StructureKind.LIST -> {
                 val emptyList = mutableListOf<Any?>()
-                val innerListKey = propertyNamesToBeEncoded[elementIndex++] as String
-                map.getValue(depth).put(innerListKey, emptyList)
+                map.getValue(depth).put(nextElement.elementEncodeKey, emptyList)
+                nextElement = NextElementToEncode(nextElement.elementIndex + 1)
                 return NestListEncoder(map, depth, emptyList)
             }
             else -> {
@@ -127,7 +170,58 @@ class NestedMapEncoder(
             }
         }
     }
+
+
+    /**
+     * Returns true is @[KDocumentId] is applied to a property of a type String or DocumentReference; Otherwise, a runtime exception will be thrown.
+     */
+    private fun kDocumentIdAppliedOnValidProperty(): Boolean {
+        if (nextElement.elementKind == PrimitiveKind.STRING || (nextElement.elementSerialName as String).contains(
+                "<DocumentReference>"
+            )
+        ) {
+            return true
+        } else {
+            throw IllegalArgumentException(
+                "Field is annotated with @KDocumentId but is class $nextElement.elementKind ( with serial name ${nextElement.elementSerialName} ) instead of String or DocumentReference."
+            )
+        }
+    }
+
+    /**
+     * Returns true if @[KDocumentId] is present and applied on a property of String or DocumentReference;
+     * Returns false if @[KDocumentId] is absent;
+     * Throws runtime exception is @[KDocumentId] is present but applied on a property with a invalid type.
+     */
+    private fun validateKDocumentIdPresent(): Boolean {
+        val kDocumentIdPresent = nextElement.elementAnnotations?.any { it is KDocumentId }
+        return if (kDocumentIdPresent == true) {
+            kDocumentIdAppliedOnValidProperty()
+        } else {
+            false
+        }
+    }
+
+    private fun kServerTimestampAppliedOnValidProperty(): Boolean {
+        if ((nextElement.elementSerialName as String).contains("<Timestamp>")) {
+            return true
+        } else {
+            throw IllegalArgumentException(
+                "Field is annotated with @KServerTimestamp but is class $nextElement.elementKind ( with serial name ${nextElement.elementSerialName} ) instead of Timestamp."
+            )
+        }
+    }
+
+    private fun validateKServerTimestampPresent(): Boolean {
+        val kServerTimestampPresent = nextElement.elementAnnotations?.any { it is KServerTimestamp }
+        return if (kServerTimestampPresent == true) {
+            kServerTimestampAppliedOnValidProperty()
+        } else {
+            false
+        }
+    }
 }
+
 
 /**
  * The entry point of encoding a List type property during Firestore Kotlin Serialization Process.
@@ -145,7 +239,19 @@ class NestListEncoder(
     private val encodedList: MutableList<Any?> = mutableListOf()
 ) : AbstractEncoder() {
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    /**
+     * Register serializers for Firestore native data types, DocumentId, Timestamp, and GeoPoint,
+     * so that these registered serializers can be used at run-time to serialize the fields with @Contextual annotations
+     */
+    override val serializersModule: SerializersModule = FirestoreSerializersModule
+
+    /**
+     * Encode the native Firestore datatype objects: DocumentId, Timestamp, and GeoPoint.
+     */
+    fun <T> encodeFirestoreNativeDataType(value: T) {
+        encodedList.add(value)
+        elementIndex++
+    }
 
     private var elementIndex: Int = 0
 
@@ -153,6 +259,7 @@ class NestListEncoder(
         encodedList.add(value)
         elementIndex++
     }
+
     override fun encodeNull() {
         encodedList.add(null)
         elementIndex++
@@ -178,7 +285,7 @@ class NestListEncoder(
                 return NestedMapEncoder(
                     map,
                     nextDepth,
-                    descriptor.elementNames.toList() as MutableList<Any>
+                    descriptor
                 )
             }
             else -> {
@@ -211,3 +318,9 @@ fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): MutableMap<
  */
 inline fun <reified T> encodeToMap(value: T): MutableMap<String, Any?> =
     encodeToMap(serializer(), value)
+
+//TODO:
+// For docummentId with annotation KDcoumentId, need to verify if this annotation is on String, DocumentReference type
+// For ServerTimestamp with annotation, need to verify if this annotation is not applied on Timestamp type
+// documentId test, if applied, the value will be ignored during set, and will be filled during get (does not matter if this is null, or have a value already??? I guess)
+// ServerTimestamp test, if applied, the value must be null (otherwise, thrown??? or just do nothing???), and will be replaced with Fieldvalue.time during set!!!

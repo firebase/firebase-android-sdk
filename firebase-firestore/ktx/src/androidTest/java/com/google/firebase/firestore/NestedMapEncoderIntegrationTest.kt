@@ -147,9 +147,11 @@ class NestedMapEncoderIntegrationTest {
     @Test
     fun nested_object_serialization_is_equivalent() {
 
-        @Serializable data class Owner(val name: String? = null, val age: Int? = 100)
+        @Serializable
+        data class Owner(val name: String? = null, val age: Int? = 100)
 
-        @Serializable data class Project(val name: String? = null, val owner: Owner? = null)
+        @Serializable
+        data class Project(val name: String? = null, val owner: Owner? = null)
 
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
@@ -177,10 +179,7 @@ class NestedMapEncoderIntegrationTest {
     fun nested_primitive_list_serialization_is_equivalent() {
 
         @Serializable
-        data class FinalExamMarks(
-            val name: String? = null,
-            val listOfOMarks: List<Long?>? = null
-        )
+        data class FinalExamMarks(val name: String? = null, val listOfOMarks: List<Long?>? = null)
 
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
@@ -212,6 +211,7 @@ class NestedMapEncoderIntegrationTest {
 
         @Serializable
         data class FinalExamMarksKtx(val collectionOfMarks: Array<Int?>? = null)
+
         // Java does not support serializing arrays (only support Lists)
         data class FinalExamMarksJava(val collectionOfMarks: List<Int>? = null)
 
@@ -225,7 +225,8 @@ class NestedMapEncoderIntegrationTest {
     @Test
     fun nested_custom_obj_list_serialization_is_equivalent() {
 
-        @Serializable data class Owner(val name: String? = null)
+        @Serializable
+        data class Owner(val name: String? = null)
 
         @Serializable
         data class Project(val name: String? = null, val listOfOwner: List<Owner?>? = null)
@@ -254,9 +255,11 @@ class NestedMapEncoderIntegrationTest {
     @Test
     fun deep_nested_object_serialization_is_equivalent() {
 
-        @Serializable data class People(val name: String? = null)
+        @Serializable
+        data class People(val name: String? = null)
 
-        @Serializable data class City(val name: String? = null, val people: People? = null)
+        @Serializable
+        data class City(val name: String? = null, val people: People? = null)
 
         @Serializable
         data class Region(
