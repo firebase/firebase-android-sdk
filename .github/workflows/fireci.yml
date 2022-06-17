@@ -1,0 +1,15 @@
+name: fireci
+
+on: pull_request
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fireci:
+    name: "fireci tests"
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          pip3 install -e ci/fireci --install-option test

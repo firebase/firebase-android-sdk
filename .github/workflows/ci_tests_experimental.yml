@@ -1,9 +1,12 @@
-name: just-a-test
+name: CI Tests (Experimental)
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 on:
   pull_request:
+    branches:
+      - '*'
+  push:
     branches:
       - 'master'
 
@@ -26,19 +29,11 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        with:
-          cache-read-only: false
       - id: changed-modules
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
           echo ::set-output name=modules::$(cat modules.json)
-  print_changed:
-    runs-on: ubuntu-22.04
-    needs:
-      - determine_changed
-    steps:
-      - name: Echo previous outputs
-        run: echo "${{ toJSON(needs.determine_changed.outputs) }}"
+
   unit_tests:
     name: "Unit Tests"
     runs-on: ubuntu-22.04
