@@ -14,9 +14,6 @@
 
 package com.google.firebase.testing.fireperf;
 
-import com.google.android.datatransport.Priority;
-import com.google.android.datatransport.cct.CCTDestination;
-import com.google.android.datatransport.runtime.TransportRuntimeTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -70,13 +67,5 @@ public class FireperfUtils {
         (float) (Math.sqrt(-2 * Math.log(randomValue1)) * Math.cos(2 * Math.PI * randomValue2));
 
     return mean + (deviation * gaussianValue);
-  }
-
-  /**
-   * Blocks calling thread until all of Fireperf's persisted events are sent by Firelog. Must be
-   * called after events have persisted.
-   */
-  static void flgForceUploadSync() {
-    TransportRuntimeTesting.forceUpload(CCTDestination.LEGACY_INSTANCE, Priority.DEFAULT);
   }
 }

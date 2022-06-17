@@ -56,6 +56,6 @@ public class FirebasePerformanceScreenTracesTest {
     // Wait for TransportManager and Firelog executors to finish
     Thread.sleep(5000);
     // Block until all Fireperf events are sent by Firelog
-    FireperfUtils.flgForceUploadSync();
+    InstrumentationTestUtil.flgForceUploadSync();
   }
 }
