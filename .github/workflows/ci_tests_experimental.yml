@@ -29,8 +29,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        with:
-          cache-disabled: true
       - id: changed-modules
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
@@ -59,8 +57,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        with:
-          cache-read-only: false
 
       - name: Add google-services.json
         env:
@@ -103,15 +99,13 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-        with:
-          cache-read-only: false
 
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-      - uses: google/setup-gcloud@v0
+      - uses: google/setup-gcloud@v0.6.0
         with:
           service_account_key: GCP_SERVICE_ACCOUNT
 
