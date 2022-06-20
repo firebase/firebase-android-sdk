@@ -618,7 +618,7 @@ public class Query {
         validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
       }
     }
-    Operator conflictingOp = findFilterWithOperator(query.getFilters(), conflictingOps(filterOp));
+    Operator conflictingOp = findOpInsideFilters(query.getFilters(), conflictingOps(filterOp));
     if (conflictingOp != null) {
       // We special case when it's a duplicate op to give a slightly clearer error message.
       if (conflictingOp == filterOp) {
@@ -649,7 +649,7 @@ public class Query {
    * returns the first one that is, or null if none are.
    */
   @Nullable
-  private Operator findFilterWithOperator(
+  private Operator findOpInsideFilters(
       List<com.google.firebase.firestore.core.Filter> filters, List<Operator> operators) {
     for (com.google.firebase.firestore.core.Filter filter : filters) {
       for (FieldFilter fieldFilter : filter.getFlattenedFilters()) {

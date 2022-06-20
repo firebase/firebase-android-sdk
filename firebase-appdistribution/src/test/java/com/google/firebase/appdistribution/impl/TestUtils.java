@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import static android.os.Looper.getMainLooper;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -28,7 +29,9 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -36,6 +39,16 @@ import org.mockito.stubbing.Answer;
 
 final class TestUtils {
   private TestUtils() {}
+
+  static void awaitTaskFailure(Task task, Status status, String messageSubstring) {
+    assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
+    assertTaskFailure(task, status, messageSubstring);
+  }
+
+  static void awaitTaskFailure(Task task, Status status, String messageSubstring, Throwable cause) {
+    assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
+    assertTaskFailure(task, status, messageSubstring, cause);
+  }
 
   static FirebaseAppDistributionException assertTaskFailure(
       Task task, Status status, String messageSubstring) {
@@ -52,6 +65,13 @@ final class TestUtils {
       Task task, Status status, String messageSubstring, Throwable cause) {
     assertTaskFailure(task, status, messageSubstring);
     assertThat(task.getException()).hasCauseThat().isEqualTo(cause);
+  }
+
+  static <T> T awaitTask(Task<T> task)
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    TestOnCompleteListener<T> onCompleteListener = new TestOnCompleteListener<>();
+    task.addOnCompleteListener(Executors.newSingleThreadExecutor(), onCompleteListener);
+    return onCompleteListener.await();
   }
 
   static void awaitAsyncOperations(ExecutorService executorService) throws InterruptedException {
