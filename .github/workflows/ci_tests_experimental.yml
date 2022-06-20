@@ -120,7 +120,7 @@ jobs:
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
       - uses: google-github-actions/setup-gcloud@v0.6.0
         with:
-          service_account_key: GCP_SERVICE_ACCOUNT
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
       - name: Instrumentation Tests (${{ matrix.module }})
         env:
