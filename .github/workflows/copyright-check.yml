@@ -1,4 +1,4 @@
-name: fireci
+name: Copyright check
 
 on: pull_request
 
