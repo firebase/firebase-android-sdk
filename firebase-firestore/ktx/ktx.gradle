@@ -87,6 +87,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+    testImplementation "com.google.truth:truth:1.1.3"
 
     androidTestImplementation project(path: ':firebase-firestore:ktx')
     androidTestImplementation 'junit:junit:4.12'
@@ -97,4 +98,5 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+    androidTestImplementation "com.google.truth:truth:1.1.3"
 }

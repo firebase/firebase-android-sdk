@@ -14,15 +14,15 @@
 
 package com.google.firebase.firestore
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.serialization.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
-class NestedMapEncoderIntegrationTest {
+class FirestoreMapEncoderIntegrationTest {
 
     @Serializable
     enum class Grade {
@@ -66,7 +66,7 @@ class NestedMapEncoderIntegrationTest {
             docRefPOJO.set(student)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertEquals(expected, actual)
+            assertThat(expected).containsExactlyEntriesIn(actual)
         }
     }
 
@@ -139,9 +139,9 @@ class NestedMapEncoderIntegrationTest {
         val expectedOptionalKtx = waitFor(docRefNonOptionalKotlin.get()).data
         val actualOptionalJava = waitFor(docRefNonOptionalJava.get()).data
 
-        assertEquals(expectedNonOptionalKtx, actualNonOptionalJava)
-        assertEquals(expectedOptionalKtx, actualOptionalJava)
-        assertEquals(expectedNonOptionalKtx, actualOptionalJava)
+        assertThat(expectedNonOptionalKtx).containsExactlyEntriesIn(actualNonOptionalJava)
+        assertThat(expectedOptionalKtx).containsExactlyEntriesIn(actualOptionalJava)
+        assertThat(expectedNonOptionalKtx).containsExactlyEntriesIn(actualOptionalJava)
     }
 
     @Test
@@ -169,7 +169,7 @@ class NestedMapEncoderIntegrationTest {
             docRefPOJO.set(project)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertEquals(expected, actual)
+            assertThat(expected).containsExactlyEntriesIn(actual)
         }
     }
 
@@ -177,10 +177,7 @@ class NestedMapEncoderIntegrationTest {
     fun nested_primitive_list_serialization_is_equivalent() {
 
         @Serializable
-        data class FinalExamMarks(
-            val name: String? = null,
-            val listOfOMarks: List<Long?>? = null
-        )
+        data class FinalExamMarks(val name: String? = null, val listOfOMarks: List<Long?>? = null)
 
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
@@ -201,7 +198,7 @@ class NestedMapEncoderIntegrationTest {
             docRefPOJO.set(mark)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertEquals(expected, actual)
+            assertThat(expected).containsExactlyEntriesIn(actual)
         }
     }
 
@@ -210,8 +207,7 @@ class NestedMapEncoderIntegrationTest {
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
 
-        @Serializable
-        data class FinalExamMarksKtx(val collectionOfMarks: Array<Int?>? = null)
+        @Serializable data class FinalExamMarksKtx(val collectionOfMarks: Array<Int?>? = null)
         // Java does not support serializing arrays (only support Lists)
         data class FinalExamMarksJava(val collectionOfMarks: List<Int>? = null)
 
@@ -219,7 +215,7 @@ class NestedMapEncoderIntegrationTest {
         docRefPOJO.set(FinalExamMarksJava(listOf(1, 2, 3)))
         val expected = waitFor(docRefPOJO.get()).data
         val actual = waitFor(docRefKotlin.get()).data
-        assertEquals(expected, actual)
+        assertThat(expected).containsExactlyEntriesIn(actual)
     }
 
     @Test
@@ -247,7 +243,7 @@ class NestedMapEncoderIntegrationTest {
             docRefPOJO.set(project)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertEquals(expected, actual)
+            assertThat(expected).containsExactlyEntriesIn(actual)
         }
     }
 
@@ -284,7 +280,7 @@ class NestedMapEncoderIntegrationTest {
             docRefPOJO.set(testedObject)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertEquals(expected, actual)
+            assertThat(expected).containsExactlyEntriesIn(actual)
         }
     }
 }

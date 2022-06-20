@@ -14,21 +14,22 @@
 
 package com.google.firebase.firestore.ktx
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class NestedMapEncoderTests {
+class FirestoreMapEncoderTests {
 
     @Test
-    fun `plan custom object encoding is supported`() {
+    fun `plain custom object encoding is supported`() {
         @Serializable data class PlainProject(val name: String, val ownerName: String)
         val plainObject = PlainProject("kotlinx.serialization", "kotlin")
         val encodedMap = encodeToMap(plainObject)
         val expectedMap = mapOf("name" to "kotlinx.serialization", "ownerName" to "kotlin")
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -39,20 +40,20 @@ class NestedMapEncoderTests {
         val encodedMap = encodeToMap(project)
         val expectedMap =
             mapOf("name" to "kotlinx.serialization", "owner" to mapOf("name" to "kotlin"))
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
-    fun `nested primitive list inside of custom object encoding`() {
+    fun `nested primitive list inside of custom object encoding is supported`() {
         @Serializable data class Product(val name: String, val serialNumList: List<Long>)
         val product = Product("kotlinx.serialization", listOf(1L, 10L, 100L, 1000L))
-        val encodeMap = encodeToMap(product)
+        val encodedMap = encodeToMap(product)
         val expectedMap =
             mapOf(
                 "name" to "kotlinx.serialization",
                 "serialNumList" to listOf(1L, 10L, 100L, 1000L)
             )
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -61,14 +62,14 @@ class NestedMapEncoderTests {
         @Serializable data class Store(val name: String, val listOfOwner: List<Owner>)
         val listOfOwner = listOf(Owner("a"), Owner("b"), Owner("c"))
         val store = Store("kotlinx.store", listOfOwner)
-        val encodeMap = encodeToMap(store)
+        val encodedMap = encodeToMap(store)
         val expectedMap =
             mapOf(
                 "name" to "kotlinx.store",
                 "listOfOwner" to
                     listOf(mapOf("name" to "a"), mapOf("name" to "b"), mapOf("name" to "c"))
             )
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Serializable
@@ -85,7 +86,7 @@ class NestedMapEncoderTests {
         val movement = Movement(Direction.EAST, 100)
         val encodedMap = encodeToMap(movement)
         val expectedMap = mapOf("direction" to "EAST", "distance" to 100L)
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -94,32 +95,32 @@ class NestedMapEncoderTests {
         val visitor = Visitor(age = "100")
         val encodedMap = encodeToMap(visitor)
         val expectedMap = mutableMapOf("name" to null, "age" to "100")
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     // need to copy more test from Line 1428
     @Test
-    open fun encodeStringBean() {
+    fun encodeStringBean() {
         @Serializable data class StringBean(val value: String? = null)
         val bean = StringBean("foo")
         val expectedMap = mutableMapOf("value" to "foo")
-        assertTrue((expectedMap == encodeToMap(bean)))
+        assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
-    open fun encodeDoubleBean() {
+    fun encodeDoubleBean() {
         @Serializable data class DoubleBean(val value: Double? = null)
         val bean = DoubleBean(1.1)
         val expectedMap = mutableMapOf("value" to 1.1)
-        assertTrue((expectedMap == encodeToMap(bean)))
+        assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
-    open fun encodeIntBean() {
+    fun encodeIntBean() {
         @Serializable data class IntBean(val value: Int? = null)
         val bean = IntBean(1)
         val expectedMap = mutableMapOf("value" to 1)
-        assertTrue((expectedMap == encodeToMap(bean)))
+        assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -127,7 +128,7 @@ class NestedMapEncoderTests {
         @Serializable data class LongBean(val value: Long? = null)
         val bean = LongBean(Int.MAX_VALUE + 100L)
         val expectedMap = mutableMapOf("value" to Int.MAX_VALUE + 100L)
-        assertTrue(expectedMap == encodeToMap(bean))
+        assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -135,16 +136,16 @@ class NestedMapEncoderTests {
         @Serializable data class BooleanBean(val value: Boolean? = null)
         val bean = BooleanBean(true)
         val expectedMap = mutableMapOf("value" to true)
-        assertTrue((expectedMap == encodeToMap(bean)))
+        assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
     fun `unicode object encoding is supported`() {
         @Serializable data class UnicodeObject(val 漢字: String? = null)
         val unicodeObject = UnicodeObject(漢字 = "foo")
-        val encodeMap = encodeToMap(unicodeObject)
+        val encodedMap = encodeToMap(unicodeObject)
         val expectedMap = mutableMapOf("漢字" to "foo")
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -153,9 +154,9 @@ class NestedMapEncoderTests {
         // IllegalArgumentException will be thrown when try to set this map to firebase
         @Serializable data class ShortObject(val value: Short? = null)
         val shortObject = ShortObject(value = 1)
-        val encodeMap = encodeToMap(shortObject)
+        val encodedMap = encodeToMap(shortObject)
         val expectedMap = mutableMapOf("value" to 1.toShort())
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -164,9 +165,9 @@ class NestedMapEncoderTests {
         // IllegalArgumentException will be thrown when try to set this map to firebase
         @Serializable data class ByteObject(val value: Byte? = null)
         val byteObject = ByteObject(value = 1)
-        val encodeMap = encodeToMap(byteObject)
+        val encodedMap = encodeToMap(byteObject)
         val expectedMap = mutableMapOf("value" to 1.toByte())
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -175,9 +176,9 @@ class NestedMapEncoderTests {
         // IllegalArgumentException will be thrown when try to set this map to firebase
         @Serializable data class CharObject(val value: Char? = null)
         val charObject = CharObject(value = 1.toChar())
-        val encodeMap = encodeToMap(charObject)
+        val encodedMap = encodeToMap(charObject)
         val expectedMap = mutableMapOf("value" to 1.toChar())
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -198,14 +199,14 @@ class NestedMapEncoderTests {
                 listValue = list,
                 javaArrayValue = javaIntArray
             )
-        val encodeMap = encodeToMap(intArrayObject)
+        val encodedMap = encodeToMap(intArrayObject)
         val expectedMap =
             mutableMapOf(
                 "kotlinArrayValue" to listOf(1, 2, 3),
                 "listValue" to listOf(4, 5, 6),
                 "javaArrayValue" to listOf(7, 8, 9)
             )
-        assertTrue(encodeMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Serializable private data class GenericObject<T>(val value: T? = null)
@@ -216,28 +217,29 @@ class NestedMapEncoderTests {
     @Test
     fun `generic encoding is supported`() {
         val stringObj = GenericObject("foo")
-        val encodeMapOfStringObj = encodeToMap(stringObj)
+        val encodedMapOfStringObj = encodeToMap(stringObj)
         val expectedMapOfStringObj = mutableMapOf("value" to "foo")
-        assertTrue(encodeMapOfStringObj == expectedMapOfStringObj)
+        assertThat(encodedMapOfStringObj).containsExactlyEntriesIn(expectedMapOfStringObj)
 
         val list = listOf("foo", "bar")
         val listObj = GenericObject(list)
-        val encodeMapOfListObj = encodeToMap(listObj)
+        val encodedMapOfListObj = encodeToMap(listObj)
         val expectedMapOfListObj = mutableMapOf("value" to listOf("foo", "bar"))
-        assertTrue(encodeMapOfListObj == expectedMapOfListObj)
+        assertThat(encodedMapOfListObj).containsExactlyEntriesIn(expectedMapOfListObj)
 
         val innerObj = GenericObject("foo")
         val recursiveObj = GenericObject(innerObj)
-        val encodeRecursiveObj = encodeToMap(recursiveObj)
+        val encodedRecursiveObj = encodeToMap(recursiveObj)
         val expectedRecursiveObj = mutableMapOf("value" to mutableMapOf("value" to "foo"))
-        assertTrue(encodeRecursiveObj == expectedRecursiveObj)
+        assertThat(encodedRecursiveObj).containsExactlyEntriesIn(expectedRecursiveObj)
 
         val doubleGenericObj = DoubleGenericObject(valueA = "foo", valueB = 1L)
-        val encodeDoubleGenericObj = encodeToMap(doubleGenericObj)
+        val encodedDoubleGenericObj = encodeToMap(doubleGenericObj)
         val expectedDoubleGenericObj = mutableMapOf("valueA" to "foo", "valueB" to 1L)
-        assertTrue(encodeDoubleGenericObj == expectedDoubleGenericObj)
+        assertThat(encodedDoubleGenericObj).containsExactlyEntriesIn(expectedDoubleGenericObj)
 
-        // TODO: Add support to encode a custom object with a generic map as field
+        // TODO: Add support to encode a custom object with a generic map as field,
+        //  currently it is not possible to obtain serializer for type Any at compile time
         val map = mapOf("foo" to "foo", "bar" to 1L)
         val mapObj = GenericObject(map)
         val expectedMapOfMapObj = mutableMapOf("value" to mutableMapOf("foo" to "foo", "bar" to 1L))
@@ -265,7 +267,7 @@ class NestedMapEncoderTests {
         StaticFieldBean.value1 = "x"
         val encodedMap = encodeToMap(value)
         val expectedMap = mutableMapOf("value2" to "foo")
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test
@@ -288,7 +290,7 @@ class NestedMapEncoderTests {
         nonConflictingSetterSubBean.value = 10
         val encodedMap = encodeToMap(nonConflictingSetterSubBean)
         val expectedMap = mutableMapOf("value" to -10)
-        assertTrue(encodedMap == expectedMap)
+        assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
     @Test

@@ -19,9 +19,9 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
 
@@ -38,14 +38,9 @@ private const val AUTO_ID_LENGTH = 20
 
 private val AUTO_ID_ALPHABET = ('A'..'Z') + ('a'..'z') + ('0'..'9')
 
-private var settingWithEmulator =
-    FirebaseFirestoreSettings.Builder().setPersistenceEnabled(true).build()
+private val settingsWithEmulator = firestoreSettings {}
 
-private var settingWithoutEmulator =
-    FirebaseFirestoreSettings.Builder()
-        .setHost("firestore.googleapis.com")
-        .setPersistenceEnabled(true)
-        .build()
+private val settingsWithoutEmulator = firestoreSettings { setHost("firestore.googleapis.com") }
 
 /**
  * Initializes a [FirebaseFirestore] instance that used for integration test.
@@ -57,9 +52,9 @@ val testFirestore: FirebaseFirestore by lazy {
         firestoreSettings =
             if (CONNECT_TO_EMULATOR) {
                 useEmulator("10.0.2.2", 8080)
-                settingWithEmulator
+                settingsWithEmulator
             } else {
-                settingWithoutEmulator
+                settingsWithoutEmulator
             }
     }
 }
