@@ -118,7 +118,7 @@ jobs:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-      - uses: google-github-actions/auth@0
+      - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
