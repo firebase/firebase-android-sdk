@@ -14,8 +14,10 @@
 
 package com.google.firebase.firestore;
 
+import android.app.Activity;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import java.util.concurrent.Executor;
 
 public class AggregateQuery {
 
@@ -27,7 +29,17 @@ public class AggregateQuery {
   }
 
   @NonNull
+  public Task<AggregateQuerySnapshot> get() {
+    throw new RuntimeException("not implemented");
+  }
+
+  @NonNull
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @NonNull
+  public ListenConfig listen() {
     throw new RuntimeException("not implemented");
   }
 
@@ -39,5 +51,31 @@ public class AggregateQuery {
   @Override
   public boolean equals(Object obj) {
     throw new RuntimeException("not implemented");
+  }
+
+  public static final class ListenConfig {
+
+    private ListenConfig() {}
+
+    @NonNull
+    public ListenConfig executeCallbacksOn(@NonNull Executor executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenConfig scopeTo(@NonNull Activity executor) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenConfig includeMetadataOnlyChanges(boolean includeMetadataOnlyChanges) {
+      throw new RuntimeException("not implemented");
+    }
+
+    @NonNull
+    public ListenerRegistration startDirectFromServer(
+        @NonNull EventListener<AggregateQuerySnapshot> listener) {
+      throw new RuntimeException("not implemented");
+    }
   }
 }

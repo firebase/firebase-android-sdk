@@ -14,20 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import androidx.annotation.NonNull;
-import javax.annotation.Nonnull;
-
-public class AggregateQuerySnapshot extends AggregateSnapshot {
-
-  AggregateQuerySnapshot() {}
-
-  @Nonnull
-  public AggregateQuery getQuery() {
-    throw new RuntimeException("not implemented");
-  }
-
-  @NonNull
-  public SnapshotMetadata getMetadata() {
-    throw new RuntimeException("not implemented");
-  }
+public enum GroupBySource {
+  SERVER_DIRECT,
 }

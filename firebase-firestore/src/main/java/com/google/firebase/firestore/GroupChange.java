@@ -15,19 +15,43 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import javax.annotation.Nonnull;
+import androidx.annotation.Nullable;
 
-public class AggregateQuerySnapshot extends AggregateSnapshot {
+public class GroupChange {
 
-  AggregateQuerySnapshot() {}
+  public enum Type {
+    ADDED,
+    MODIFIED,
+    REMOVED
+  }
 
-  @Nonnull
-  public AggregateQuery getQuery() {
+  GroupChange() {}
+
+  @NonNull
+  public Type getType() {
     throw new RuntimeException("not implemented");
   }
 
   @NonNull
-  public SnapshotMetadata getMetadata() {
+  public GroupSnapshot getGroup() {
+    throw new RuntimeException("not implemented");
+  }
+
+  public int getOldIndex() {
+    throw new RuntimeException("not implemented");
+  }
+
+  public int getNewIndex() {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public boolean equals(@Nullable Object object) {
+    throw new RuntimeException("not implemented");
+  }
+
+  @Override
+  public int hashCode() {
     throw new RuntimeException("not implemented");
   }
 }
