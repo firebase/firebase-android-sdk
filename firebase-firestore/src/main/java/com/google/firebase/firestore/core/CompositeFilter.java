@@ -19,12 +19,27 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
-import com.google.firestore.v1.StructuredQuery.CompositeFilter.Operator;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Represents a filter that is the conjunction or disjunction of other filters. */
 public class CompositeFilter extends Filter {
+  public enum Operator {
+    AND("and"),
+    OR("or");
+
+    private final String text;
+
+    Operator(String text) {
+      this.text = text;
+    }
+
+    @Override
+    public String toString() {
+      return text;
+    }
+  }
+
   private final List<Filter> filters;
   private final Operator operator;
 
@@ -76,8 +91,7 @@ public class CompositeFilter extends Filter {
   }
 
   public boolean isDisjunction() {
-    // TODO(orquery): Replace with Operator.OR.
-    return operator == Operator.OPERATOR_UNSPECIFIED;
+    return operator == Operator.OR;
   }
 
   /**
@@ -149,7 +163,7 @@ public class CompositeFilter extends Filter {
     // TODO(orquery): Add special case for flat AND filters.
 
     StringBuilder builder = new StringBuilder();
-    builder.append(isConjunction() ? "and(" : "or(");
+    builder.append(operator.toString() + "(");
     builder.append(TextUtils.join(",", filters));
     builder.append(")");
     return builder.toString();
