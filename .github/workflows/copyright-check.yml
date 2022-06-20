@@ -1,17 +1,13 @@
 name: fireci
 
-on:
-  pull_request:
-    paths:
-      - 'ci/**'
-      - '.github/workflows/fireci.yml'
+on: pull_request
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  fireci:
+  copyright-check:
     name: "fireci tests"
     runs-on: ubuntu-22.04
     steps:
@@ -21,5 +17,11 @@ jobs:
           python-version: '3.9'
           cache: 'pip'
       - run: |
-          pip install -e "ci/fireci[test]"
-          pytest ci/fireci
+          pip install -e "ci/fireci"
+          fireci copyright_check \
+            -e py                   \
+            -e gradle               \
+            -e java                 \
+            -e groovy               \
+            -e sh                   \
+            -e proto
