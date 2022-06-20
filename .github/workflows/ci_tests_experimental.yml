@@ -31,6 +31,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
           cache: gradle
 
       - id: changed-modules
@@ -63,6 +64,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
           cache: gradle
 
       - name: Add google-services.json
@@ -108,6 +110,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: 11
+          distribution: temurin
           cache: gradle
 
       - name: Add google-services.json
