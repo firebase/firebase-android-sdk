@@ -1223,6 +1223,11 @@ public class Query {
     }
   }
 
+  @NonNull
+  public AggregateQuery count() {
+    throw new RuntimeException("not implemented");
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
