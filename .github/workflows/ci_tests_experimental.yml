@@ -111,6 +111,9 @@ jobs:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
+      - uses: google/setup-gcloud@v0
+        with:
+          service_account_key: GCP_SERVICE_ACCOUNT
 
       - name: Instrumentation Tests (${{ matrix.module }})
         env:
