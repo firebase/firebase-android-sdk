@@ -21,4 +21,5 @@ jobs:
           python-version: '3.9'
       - run: |
           pip install -e "ci/fireci[test]"
+      - run: |
           pytest ci/fireci

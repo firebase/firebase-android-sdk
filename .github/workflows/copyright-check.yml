@@ -16,6 +16,7 @@ jobs:
           python-version: '3.9'
       - run: |
           pip install -e "ci/fireci"
+      - run: |
           fireci copyright_check \
             -e py                   \
             -e gradle               \
