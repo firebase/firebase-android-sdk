@@ -1,6 +1,10 @@
 name: fireci
 
-on: pull_request
+on:
+  pull_request:
+    paths:
+      - 'ci/**'
+      - '.github/workflows/fireci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -14,7 +18,7 @@ jobs:
       - uses: actions/checkout@v3.0.2
       - uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
       - run: |
-          pip install "setuptools==56.1.0"
-          ./ci/fireci/setup.py test
+          pip install -e ".[test]
+          pytest
