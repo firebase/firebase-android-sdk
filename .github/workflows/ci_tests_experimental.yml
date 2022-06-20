@@ -27,8 +27,12 @@ jobs:
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
           ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          cache: gradle
+
       - id: changed-modules
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
@@ -55,8 +59,11 @@ jobs:
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
           ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          cache: gradle
 
       - name: Add google-services.json
         env:
@@ -97,8 +104,11 @@ jobs:
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
           ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
 
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          cache: gradle
 
       - name: Add google-services.json
         env:
