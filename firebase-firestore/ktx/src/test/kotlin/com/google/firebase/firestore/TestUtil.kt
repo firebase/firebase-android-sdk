@@ -12,22 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.firebase.firestore
 
-package com.google.firebase.firestore.ktx.testutil
-
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.model.DocumentKey
-import kotlin.reflect.jvm.isAccessible
 
 /**
  * Returns a [DocumentReference] identified by document name for ktx unit test.
- * @param pathString A slash separated path for navigating resources (documents and collections) within Firestore.
+ * @param pathString A slash separated path for navigating resources (documents and collections)
+ * within Firestore.
  */
 fun documentReference(pathString: String): DocumentReference {
-    val reflectedDocumentRefClass = DocumentReference::class
     val documentKey = DocumentKey.fromPathString(pathString)
-    return reflectedDocumentRefClass.constructors.first().run {
-        isAccessible = true
-        call(documentKey, null)
-    }
+    return DocumentReference(documentKey, null)
 }

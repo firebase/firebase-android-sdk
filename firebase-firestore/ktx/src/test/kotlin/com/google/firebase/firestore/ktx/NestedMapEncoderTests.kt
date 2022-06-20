@@ -18,7 +18,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import com.google.firebase.firestore.ktx.testutil.documentReference
+import com.google.firebase.firestore.documentReference
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable

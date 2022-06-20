@@ -17,7 +17,7 @@ package com.google.firebase.firestore.ktx
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import com.google.firebase.firestore.ktx.testutil.documentReference
+import com.google.firebase.firestore.documentReference
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
