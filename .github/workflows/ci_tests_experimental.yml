@@ -127,8 +127,7 @@ jobs:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
           FTL_RESULTS_DIR: |
-            ${{
-              github.event_name == 'pull_request' &&
+            ${{ github.event_name == 'pull_request' &&
                 format('pr-logs/pull/{0}/{1}/{2}/{3}_{4}/artifacts/',
                        github.repository,
                        github.event.pull_request.number,
@@ -138,8 +137,7 @@ jobs:
                 format('logs/{0}/{1}_{2}/artifacts/',
                        github.workflow,
                        github.run_id,
-                       github.run_attempt)
-            }}
+                       github.run_attempt)}}
         run: |
           ./gradlew ${{matrix.module}}:deviceCheck withErrorProne
 
