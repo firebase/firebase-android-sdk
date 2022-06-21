@@ -133,6 +133,7 @@ dependencies {
     implementation project(':firebase-database-collection')
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck-interop')
+    testImplementation project(path: ':firebase-firestore')
 
 
     //To provide @Generated annotations
@@ -165,6 +166,7 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
