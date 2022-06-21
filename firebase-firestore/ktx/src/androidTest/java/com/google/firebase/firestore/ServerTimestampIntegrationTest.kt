@@ -2,13 +2,11 @@ package com.google.firebase.firestore
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
-import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
-import org.junit.Test
-import java.sql.Time
 import java.util.*
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class ServerTimestampIntegrationTest {
 

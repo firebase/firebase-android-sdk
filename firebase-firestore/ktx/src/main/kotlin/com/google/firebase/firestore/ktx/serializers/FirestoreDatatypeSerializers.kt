@@ -17,7 +17,7 @@ package com.google.firebase.firestore.ktx.serializers
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.firestore.ktx.serialization.NestedMapEncoder
+import com.google.firebase.firestore.ktx.serialization.FirestoreMapEncoder
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.Decoder
@@ -30,7 +30,7 @@ private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
         buildClassSerialDescriptor("__${javaClass.simpleName}__") // get the serializer's subclass simple name without the package name
 
     override fun serialize(encoder: Encoder, value: T) {
-        val nestedMapEncoder = encoder as NestedMapEncoder
+        val nestedMapEncoder = encoder as FirestoreMapEncoder
         println("=".repeat(50))
         println(descriptor.kind)
         println(descriptor.serialName)

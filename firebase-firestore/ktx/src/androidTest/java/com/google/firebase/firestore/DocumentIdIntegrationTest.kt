@@ -18,10 +18,10 @@ import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.serialization.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
+import kotlin.test.assertEquals
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class DocumentIdIntegrationTest {
 
