@@ -75,7 +75,7 @@ jobs:
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
 
-      - name: Unit Tests (${{ matrix.module }})
+      - name: ${{ matrix.module }} Unit Tests
         env:
           FIREBASE_CI: 1
         run: |
@@ -125,7 +125,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
-      - name: Instrumentation Tests (${{ matrix.module }})
+      - name: ${{ matrix.module }} Integ Tests
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
