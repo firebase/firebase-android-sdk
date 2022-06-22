@@ -47,7 +47,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.TargetIndexMatcher;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.admin.v1.Index;
-import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
@@ -363,9 +362,7 @@ final class SQLiteIndexManager implements IndexManager {
     } else {
       // There is an implicit AND operation between all the filters stored in the target.
       List<Filter> dnf =
-          getDnfTerms(
-              new CompositeFilter(
-                  target.getFilters(), StructuredQuery.CompositeFilter.Operator.AND));
+          getDnfTerms(new CompositeFilter(target.getFilters(), CompositeFilter.Operator.AND));
       for (Filter term : dnf) {
         subTargets.add(
             new Target(
