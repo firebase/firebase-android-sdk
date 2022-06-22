@@ -12,6 +12,12 @@ jobs:
           script: |
             const pr_repo = context.payload.pull_request.head.repo.full_name;
             const target_repo = context.payload.repository.full_name;
+            await Promise.all(["needs-ok-to-test", "ok-to-test"].map( label => github.rest.issues.removeLabel({
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              issue_number: context.payload.number,
+                              name: label
+                            })))
             if (pr_repo != target_repo) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
