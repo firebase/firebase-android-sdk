@@ -13,24 +13,24 @@ jobs:
             const pr_repo = context.payload.pull_request.head.repo.full_name;
             const target_repo = context.payload.repository.full_name;
             if (pr_repo != target_repo) {
-              await github.issues.createComment({
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: github.event.number,
                 body: 'ok-to-test label required'
-              })
-              await github.issues.addLabels({
+              });
+              await github.rest.issues.addLabels({
                               owner: context.repo.owner,
                               repo: context.repo.repo,
                               issue_number: github.event.number,
                               labels: ["needs-ok-to-test"]
-                            })
+                            });
             } else {
-              await github.issues.addLabels({
+              await github.rest.issues.addLabels({
                                             owner: context.repo.owner,
                                             repo: context.repo.repo,
                                             issue_number: github.event.number,
                                             labels: ["ok-to-test"]
-                                          })
+                                          });
             }
-            console.log(JSON.stringify(context))
+            console.log(JSON.stringify(context));
