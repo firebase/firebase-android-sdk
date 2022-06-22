@@ -14,13 +14,13 @@ jobs:
             const target_repo = context.payload.repository.full_name;
 
             if (pr_repo != target_repo) {
-              val commentPromise = github.rest.issues.createComment({
+              const commentPromise = github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.number,
                 body: '`ok-to-test` label required'
               });
-              val labelPromise = github.rest.issues.removeLabel({
+              const labelPromise = github.rest.issues.removeLabel({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.number,
