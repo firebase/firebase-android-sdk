@@ -14,20 +14,22 @@
       android:text="Enter feedback:"
       android:textSize="24sp"
       app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintHorizontal_bias="0.498"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toTopOf="parent" />
   <EditText
       android:id="@+id/feedbackText"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:ems="10"
+      android:ems="5"
       android:gravity="start|top"
       android:inputType="textMultiLine"
+      android:lines="6"
+      android:layout_margin="24dp"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toTopOf="parent" />
+      app:layout_constraintTop_toTopOf="parent"
+      app:layout_constraintVertical_bias="0.25" />
   <Button
       android:id="@+id/submitButton"
       android:layout_width="wrap_content"
@@ -36,7 +38,6 @@
       android:text="Submit"
       android:onClick="submitFeedback"
       app:layout_constraintEnd_toEndOf="parent"
-      app:layout_constraintHorizontal_bias="0.498"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
   <TextView
@@ -49,4 +50,26 @@
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
+  <ImageView
+      android:id="@+id/screenshot"
+      android:layout_width="200dp"
+      android:layout_height="200dp"
+      android:scaleType="centerInside"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/submitButton"
+      app:layout_constraintVertical_bias="0.312"/>
+  <TextView
+      android:id="@+id/screenshotErrorLabel"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Failed to take screenshot"
+      android:visibility="invisible"
+      app:layout_constraintBottom_toBottomOf="parent"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/submitButton"
+      app:layout_constraintVertical_bias="0.403" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

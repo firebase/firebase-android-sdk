@@ -27,7 +27,7 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERR
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -95,6 +95,7 @@ public class FirebaseAppDistributionServiceImplTest {
   private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
   private static final Bitmap TEST_SCREENSHOT = Bitmap.createBitmap(400, 400, Config.RGB_565);
+  private static final String TEST_SCREENSHOT_FILE_NAME = "screenshot.png";
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -190,7 +191,8 @@ public class FirebaseAppDistributionServiceImplTest {
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
 
-    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT));
+    when(mockScreenshotTaker.takeScreenshot())
+        .thenReturn(Tasks.forResult(TEST_SCREENSHOT_FILE_NAME));
   }
 
   @Test
@@ -613,7 +615,7 @@ public class FirebaseAppDistributionServiceImplTest {
     verify(mockTesterSignInManager).signInTester();
     assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
         .isEqualTo("release-name");
-    assertThat(argument.getValue().<Bitmap>getParcelableExtra(SCREENSHOT_EXTRA_KEY))
-        .isEqualTo(TEST_SCREENSHOT);
+    assertThat(argument.getValue().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY))
+        .isEqualTo(TEST_SCREENSHOT_FILE_NAME);
   }
 }

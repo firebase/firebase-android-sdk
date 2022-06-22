@@ -15,10 +15,13 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 /** Activity for tester to compose and submit feedback. */
@@ -28,20 +31,42 @@ public class FeedbackActivity extends AppCompatActivity {
 
   public static final String RELEASE_NAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
-  public static final String SCREENSHOT_EXTRA_KEY =
-      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT";
+  public static final String SCREENSHOT_FILENAME_EXTRA_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_FILE_NAME";
 
   private FeedbackSender feedbackSender;
   private String releaseName;
-  private Bitmap screenshot;
+  @Nullable private Bitmap screenshot;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
-    screenshot = getIntent().getParcelableExtra(SCREENSHOT_EXTRA_KEY);
+    screenshot = readScreenshot(getIntent().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY));
     feedbackSender = FeedbackSender.getInstance();
+    setupView();
+  }
+
+  private void setupView() {
     setContentView(R.layout.activity_feedback);
+    if (screenshot != null) {
+      ImageView screenshotImageView = (ImageView) this.findViewById(R.id.screenshot);
+      screenshotImageView.setImageBitmap(screenshot);
+    } else {
+      View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
+      screenshotErrorLabel.setVisibility(View.VISIBLE);
+    }
+  }
+
+  @Nullable
+  private Bitmap readScreenshot(String filename) {
+    try {
+      return BitmapFactory.decodeFile(getFileStreamPath(filename).getAbsolutePath());
+    } catch (Exception | OutOfMemoryError e) {
+      LogWrapper.getInstance()
+          .e("Failed to read screenshot from storage, preparing feedback without screenshot", e);
+      return null;
+    }
   }
 
   public void submitFeedback(View view) {

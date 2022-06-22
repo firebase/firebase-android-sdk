@@ -14,6 +14,8 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +64,21 @@ public class FeedbackSenderTest {
     verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
     verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
+  }
+
+  @Test
+  public void sendFeedback_withoutScreenshot_success() throws Exception {
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
+        .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME)).thenReturn(Tasks.forResult(null));
+
+    Task<Void> task =
+        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, /* screenshot= */ null);
+    TestUtils.awaitTask(task);
+
+    verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
+    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
+    verify(mockTesterApiClient, never()).attachScreenshot(any(), any());
   }
 
   @Test

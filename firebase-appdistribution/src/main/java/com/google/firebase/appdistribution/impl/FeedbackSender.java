@@ -15,7 +15,9 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 
 /** Sends tester feedback to the Tester API. */
@@ -32,11 +34,18 @@ class FeedbackSender {
     return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
 
-  /** Send feedback text and screenshot to the Tester API for the given release. */
-  Task<Void> sendFeedback(String releaseName, String feedbackText, Bitmap screenshot) {
+  /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
+  Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable Bitmap screenshot) {
     return testerApiClient
         .createFeedback(releaseName, feedbackText)
-        .onSuccessTask(feedbackName -> testerApiClient.attachScreenshot(feedbackName, screenshot))
+        .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshot))
         .onSuccessTask(testerApiClient::commitFeedback);
+  }
+
+  private Task<String> attachScreenshot(String feedbackName, @Nullable Bitmap screenshot) {
+    if (screenshot == null) {
+      return Tasks.forResult(feedbackName);
+    }
+    return testerApiClient.attachScreenshot(feedbackName, screenshot);
   }
 }
