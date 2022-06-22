@@ -98,22 +98,6 @@ public class LoadBundleTaskTest {
     }
   }
 
-  List<TaskCompletionSource> taskSourceOf(int size) {
-    List<TaskCompletionSource> result = new ArrayList<>();
-    for (int i = 0; i < size; i++) {
-      result.add(new TaskCompletionSource());
-    }
-    return result;
-  }
-
-  void assertSourcesResolveTo(@NonNull List<TaskCompletionSource> sources, Object... expected) {
-    Task<List<Object>> listTask =
-        Tasks.whenAllSuccess(sources.stream().map(s -> s.getTask()).collect(Collectors.toList()));
-    shadowOf(Looper.getMainLooper()).idle();
-    waitFor(listTask);
-    assertArrayEquals(Arrays.stream(expected).toArray(), listTask.getResult().toArray());
-  }
-
   @Test
   public void testSuccessListener() {
     List<TaskCompletionSource> sources = taskSourceOf(3);
@@ -214,7 +198,7 @@ public class LoadBundleTaskTest {
 
   @Test
   @LooperMode(LEGACY)
-  public void testProgressListenerCanAddProgressListener() throws InterruptedException {
+  public void testProgressListenerCanAddProgressListener() {
     List<TaskCompletionSource> sources = taskSourceOf(3);
 
     AtomicInteger outerTaskRun = new AtomicInteger();
@@ -382,5 +366,21 @@ public class LoadBundleTaskTest {
     LoadBundleTask task = new LoadBundleTask();
     task.setException(TEST_EXCEPTION);
     assertEquals(TEST_EXCEPTION, task.getException());
+  }
+
+  private List<TaskCompletionSource> taskSourceOf(int size) {
+    List<TaskCompletionSource> result = new ArrayList<>();
+    for (int i = 0; i < size; i++) {
+      result.add(new TaskCompletionSource());
+    }
+    return result;
+  }
+
+  private void assertSourcesResolveTo(@NonNull List<TaskCompletionSource> sources, Object... expected) {
+    Task<List<Object>> listTask =
+      Tasks.whenAllSuccess(sources.stream().map(s -> s.getTask()).collect(Collectors.toList()));
+    shadowOf(Looper.getMainLooper()).idle();
+    waitFor(listTask);
+    assertArrayEquals(Arrays.stream(expected).toArray(), listTask.getResult().toArray());
   }
 }
