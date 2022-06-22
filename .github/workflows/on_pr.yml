@@ -1,0 +1,9 @@
+
+name: On PR
+on: pull_request_target
+jobs:
+  hello:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: |
+          echo ${{ github }}
