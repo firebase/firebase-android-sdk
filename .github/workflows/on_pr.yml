@@ -24,7 +24,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.number,
-                name: "needs-ok-to-test"
+                name: "ok-to-test"
               }).catch( error => {
                 if(error.status != 404) throw error;
               })
