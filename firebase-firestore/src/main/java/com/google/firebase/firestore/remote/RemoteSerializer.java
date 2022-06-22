@@ -695,21 +695,21 @@ public final class RemoteSerializer {
     return StructuredQuery.Filter.newBuilder().setFieldFilter(proto).build();
   }
 
-  CompositeFilter.Operator encodeCompositeFilterOperator(
+  StructuredQuery.CompositeFilter.Operator encodeCompositeFilterOperator(
       com.google.firebase.firestore.core.CompositeFilter.Operator op) {
     switch (op) {
       case AND:
-        return CompositeFilter.Operator.AND;
+        return StructuredQuery.CompositeFilter.Operator.AND;
       case OR:
         // TODO(orquery): Use OPERATOR_OR once it's available.
-        return CompositeFilter.Operator.OPERATOR_UNSPECIFIED;
+        return StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED;
       default:
         throw fail("Unrecognized composite filter type.");
     }
   }
 
   com.google.firebase.firestore.core.CompositeFilter.Operator decodeCompositeFilterOperator(
-      CompositeFilter.Operator op) {
+      StructuredQuery.CompositeFilter.Operator op) {
     switch (op) {
       case AND:
         return com.google.firebase.firestore.core.CompositeFilter.Operator.AND;
