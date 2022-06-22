@@ -16,20 +16,20 @@ jobs:
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: github.payload.number,
+                issue_number: context.payload.number,
                 body: 'ok-to-test label required'
               });
               await github.rest.issues.addLabels({
                               owner: context.repo.owner,
                               repo: context.repo.repo,
-                              issue_number: github.payload.number,
+                              issue_number: context.payload.number,
                               labels: ["needs-ok-to-test"]
                             });
             } else {
               await github.rest.issues.addLabels({
                                             owner: context.repo.owner,
                                             repo: context.repo.repo,
-                                            issue_number: github.payload.number,
+                                            issue_number: context.payload.number,
                                             labels: ["ok-to-test"]
                                           });
             }
