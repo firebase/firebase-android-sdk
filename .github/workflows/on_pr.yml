@@ -12,34 +12,29 @@ jobs:
           script: |
             const pr_repo = context.payload.pull_request.head.repo.full_name;
             const target_repo = context.payload.repository.full_name;
-            await Promise.all(["needs-ok-to-test", "ok-to-test"].map( label => github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: context.payload.number,
-                  name: label
-                }).catch( error => {
-                  if(error.status != 404) throw error;
-                })
-              ))
+
             if (pr_repo != target_repo) {
-              await github.rest.issues.createComment({
+              val commentPromise = github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.number,
-                body: 'ok-to-test label required'
+                body: '`ok-to-test` label required'
               });
-              await github.rest.issues.addLabels({
-                              owner: context.repo.owner,
-                              repo: context.repo.repo,
-                              issue_number: context.payload.number,
-                              labels: ["needs-ok-to-test"]
-                            });
+              val labelPromise = github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.number,
+                name: "needs-ok-to-test"
+              }).catch( error => {
+                if(error.status != 404) throw error;
+              })
+              await Promise.all(commentPromise, labelPromise)
             } else {
               await github.rest.issues.addLabels({
-                                            owner: context.repo.owner,
-                                            repo: context.repo.repo,
-                                            issue_number: context.payload.number,
-                                            labels: ["ok-to-test"]
-                                          });
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.number,
+                labels: ["ok-to-test"]
+              });
             }
             console.log(JSON.stringify(context));
