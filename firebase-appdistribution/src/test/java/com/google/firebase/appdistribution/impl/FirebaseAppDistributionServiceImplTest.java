@@ -34,7 +34,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -167,6 +166,7 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockScreenshotTaker));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
+    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
@@ -188,11 +188,7 @@ public class FirebaseAppDistributionServiceImplTest {
     shadowPackageManager.installPackage(packageInfo);
 
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
-    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
-        .thenAnswer(TestUtils.applyToForegroundActivityTaskAnswer(activity));
-    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
-        .thenAnswer(TestUtils.applyToForegroundActivityAnswer(activity));
-    when(mockSignInStorage.getSignInStatus()).thenReturn(true);
+    TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
 
     when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT));
   }
