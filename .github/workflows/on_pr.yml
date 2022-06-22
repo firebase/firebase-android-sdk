@@ -13,22 +13,22 @@ jobs:
             const pr_repo = context.payload.pull_request.head.repo.full_name;
             const target_repo = context.payload.repository.full_name;
 
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.number,
+              name: "ok-to-test"
+            }).catch( error => {
+              if(error.status != 404) throw error;
+            })
+
             if (pr_repo != target_repo) {
-              const commentPromise = github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.number,
                 body: '`ok-to-test` label required'
               });
-              const labelPromise = github.rest.issues.removeLabel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.payload.number,
-                name: "ok-to-test"
-              }).catch( error => {
-                if(error.status != 404) throw error;
-              })
-              await Promise.all(commentPromise, labelPromise)
             } else {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
