@@ -8,6 +8,7 @@ jobs:
           echo '${{ toJSON(github) }}'
       - uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
           script: |
             const pr_repo = context.payload.pull_request.head.repo.full_name;
             const target_repo = context.payload.repository.full_name;
