@@ -5,7 +5,7 @@ on:
 jobs:
   testing:
     runs-on: ubuntu-22.04
-    if: contains(github.event.pull_request.labels.*.name, 'ok-to-test')
+    if: contains(github.event.pull_request.labels.*.name, 'ok-to-test') && github.event.label
     steps:
       - uses: actions/checkout@v3
         with:
