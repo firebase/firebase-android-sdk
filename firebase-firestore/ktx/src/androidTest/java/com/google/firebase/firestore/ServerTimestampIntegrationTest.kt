@@ -34,4 +34,6 @@ class ServerTimestampIntegrationTest {
         val actual = waitFor(docRefPOJO.get()).getData(ServerTimestampBehavior.NONE)
         assertThat(expected).containsExactlyEntriesIn(actual)
     }
+
+    // TODO: Add more integration test
 }

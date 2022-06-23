@@ -24,7 +24,6 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.descriptors.elementDescriptors
-import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.modules.SerializersModule
@@ -62,11 +61,17 @@ class FirestoreMapEncoder(
     }
 
     private inner class CurrentElementToEncode(val elementIndex: Int = 0) {
-        val elementEncodeKey: String? = descriptor?.elementNames?.toList()?.getOrNull(elementIndex)
-        val elementKind: SerialKind? =
-            descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
-        val elementSerialName: String? =
-            descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
+        val elementEncodeKey: String by lazy {
+            try {
+                descriptor?.getElementName(elementIndex) as String
+            } catch (err: Exception) {
+                throw IndexOutOfBoundsException(
+                    "The key of the element to be encoded can not be null"
+                )
+            }
+        }
+        val elementKind: SerialKind? = descriptor?.getElementKindOrNull(elementIndex)
+        val elementSerialName: String? = descriptor?.getElementSerialNameOrNull(elementIndex)
         val elementAnnotations: List<Annotation>? =
             descriptor?.elementAnnotationsOrNull(elementIndex)
     }
@@ -87,6 +92,14 @@ class FirestoreMapEncoder(
             }
         }
 
+    private fun SerialDescriptor.getElementKindOrNull(elementIndex: Int): SerialKind? =
+        elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
+
+    private fun SerialDescriptor.getElementSerialNameOrNull(elementIndex: Int): String? =
+        elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
+
+    private var theBeginOfEncodingProcess: Boolean = true
+
     private var currentElement = CurrentElementToEncode()
 
     init {
@@ -105,6 +118,13 @@ class FirestoreMapEncoder(
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
         encodeValue(enumDescriptor.getElementName(index))
 
+    private fun generateCurrentElementForEncoding() {
+        if (theBeginOfEncodingProcess) {
+            theBeginOfEncodingProcess = false
+        } else {
+            currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
+        }
+    }
     /**
      * Register serializers for Firestore native data types, DocumentId, Timestamp, Date, and
      * GeoPoint, so that these registered serializers can be used at run-time to serialize the
@@ -114,37 +134,37 @@ class FirestoreMapEncoder(
 
     /** Encode the native Firestore datatype objects: DocumentId, Timestamp, Date, and GeoPoint. */
     fun <T> encodeFirestoreNativeDataType(value: T) {
+        generateCurrentElementForEncoding()
         validateKServerTimestampPresentOrThrow()
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on DocumentReference, then
             // ignore
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, value)
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
         }
-        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun encodeNull() {
+        generateCurrentElementForEncoding()
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String?, DocumentReference?,
             // then ignore
             validateKServerTimestampPresentOrThrow() ->
                 map.getValue(depth)
                     .put(
-                        currentElement.elementEncodeKey as String,
+                        currentElement.elementEncodeKey,
                         FieldValue.serverTimestamp()
                     ) // KServerTimestamp on Timestamp? = null, then replace with FieldValue
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, null)
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, null)
         }
-        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun encodeValue(value: Any) {
+        generateCurrentElementForEncoding()
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String, then ignore
             validateKServerTimestampPresentOrThrow() -> {} // KServerTimestamp can not on Primitives
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, value)
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
         }
-        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
@@ -169,14 +189,14 @@ class FirestoreMapEncoder(
             StructureKind.CLASS -> {
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
-                map.getValue(depth).put(currentElement.elementEncodeKey as String, map[nextDepth])
-                currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
+                generateCurrentElementForEncoding()
+                map.getValue(depth).put(currentElement.elementEncodeKey, map[nextDepth])
                 return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
             StructureKind.LIST -> {
                 val emptyList = mutableListOf<Any?>()
-                map.getValue(depth).put(currentElement.elementEncodeKey as String, emptyList)
-                currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
+                generateCurrentElementForEncoding()
+                map.getValue(depth).put(currentElement.elementEncodeKey, emptyList)
                 return FirestoreListEncoder(map, depth, emptyList)
             }
             else -> {

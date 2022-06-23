@@ -386,4 +386,20 @@ class FirestoreMapEncoderTests {
             .hasMessageThat()
             .contains("instead of Date or Timestamp")
     }
+
+    @Test
+    fun `test for testing AssertThrows extension function`() {
+        // throw wrong type of exception
+        try {
+            AssertThrows<IllegalArgumentException> { -> listOf(1, 2, 3).get(100) }.hasMessageThat().contains("foobar")
+        } catch (error: AssertionError) {
+            assertThat(error).hasMessageThat().contains("expected:<java.lang.IllegalArgumentException> but was:<java.lang.ArrayIndexOutOfBoundsException>")
+        }
+        // does not throw any exception
+        try {
+            AssertThrows<IllegalArgumentException> { -> listOf(1, 2, 3).get(0) }.hasMessageThat().contains("foobar")
+        } catch (error: AssertionError) {
+            assertThat(error).hasMessageThat().contains("expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown")
+        }
+    }
 }
