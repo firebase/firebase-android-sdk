@@ -14,7 +14,10 @@
 
 package com.google.firebase.firestore
 
+import com.google.common.truth.ThrowableSubject
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.DocumentKey
+import org.junit.Assert.assertThrows
 
 /**
  * Returns a [DocumentReference] identified by document name for ktx unit test.
@@ -24,4 +27,15 @@ import com.google.firebase.firestore.model.DocumentKey
 fun documentReference(pathString: String): DocumentReference {
     val documentKey = DocumentKey.fromPathString(pathString)
     return DocumentReference(documentKey, null)
+}
+
+/**
+ * Inline function for AssertThrows provides integration of junit's [assertThrows] method and
+ * Truth's [assertThat] method for unit and integration test purpose.
+ */
+inline fun <reified T : Exception> AssertThrows(
+    crossinline runnable: () -> Any?
+): ThrowableSubject {
+    val exception: T = assertThrows(T::class.java) { runnable() }
+    return assertThat(exception)
 }

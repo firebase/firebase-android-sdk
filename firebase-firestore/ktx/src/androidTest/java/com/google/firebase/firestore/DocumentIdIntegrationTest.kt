@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.serialization.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
-import kotlin.test.assertEquals
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
@@ -31,48 +31,43 @@ class DocumentIdIntegrationTest {
         val docRefPOJO = testCollection("pojo").document("456")
 
         @Serializable
-        data class DocumentIdOnDocRefField(
-            @Contextual
-            var docId: DocumentReference? = null
-        )
+        data class DocumentIdOnDocRefField(@Contextual var docId: DocumentReference? = null)
 
         val docRefObject = DocumentIdOnDocRefField().apply { docId = docRefKotlin }
         docRefKotlin.setData(docRefObject)
         docRefPOJO.set(docRefObject)
         val expected = waitFor(docRefPOJO.get()).data
         val actual = waitFor(docRefKotlin.get()).data
-        assertEquals(expected, actual)
+        assertThat(expected).containsExactlyEntriesIn(actual)
     }
 
-// This test below does not run, but this is nothing really different from the test above;
-// I think this is not my problem, something wrong with Kotlin
-//    @Test
-//    fun this_test_will_not_run_for_some_reason() {
-//        val docRefKotlin = testCollection("ktx").document("123")
-//        val docRefPOJO = testCollection("pojo").document("456")
-//
-//        @Serializable
-//        data class DocumentIdOnDocRefField(
-//            @Contextual
-//            var docId: DocumentReference? = docRefKotlin
-//        )
-//
-//        val docRefObject = DocumentIdOnDocRefField()
-//        docRefKotlin.setData(docRefObject)
-//        docRefPOJO.set(docRefObject)
-//        val expected = waitFor(docRefPOJO.get()).data
-//        val actual = waitFor(docRefKotlin.get()).data
-//        assertEquals(expected, actual)
-//    }
+    // This test below does not run, but this is nothing really different from the test above;
+    // I think this is not my problem, something wrong with Kotlin
+    //    @Test
+    //    fun this_test_will_not_run_for_some_reason() {
+    //        val docRefKotlin = testCollection("ktx").document("123")
+    //        val docRefPOJO = testCollection("pojo").document("456")
+    //
+    //        @Serializable
+    //        data class DocumentIdOnDocRefField(
+    //            @Contextual
+    //            var docId: DocumentReference? = docRefKotlin
+    //        )
+    //
+    //        val docRefObject = DocumentIdOnDocRefField()
+    //        docRefKotlin.setData(docRefObject)
+    //        docRefPOJO.set(docRefObject)
+    //        val expected = waitFor(docRefPOJO.get()).data
+    //        val actual = waitFor(docRefKotlin.get()).data
+    //        assertEquals(expected, actual)
+    //    }
 
     @Test
     fun documentId_annotation_works_on_nested_object() {
 
         @Serializable
         class DocumentIdOnStringField {
-            @DocumentId
-            @KDocumentId
-            var docId = "doc-id"
+            @DocumentId @KDocumentId var docId = "doc-id"
         }
 
         @Serializable
@@ -86,6 +81,6 @@ class DocumentIdIntegrationTest {
         docRefPOJO.set(DocumentIdOnNestedObjects())
         val expected = waitFor(docRefPOJO.get()).data
         val actual = waitFor(docRefKotlin.get()).data
-        assertEquals(expected, actual)
+        assertThat(expected).containsExactlyEntriesIn(actual)
     }
 }

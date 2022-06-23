@@ -14,16 +14,15 @@
 
 package com.google.firebase.firestore.ktx
 
-import com.google.common.truth.ExpectFailure
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.AssertThrows
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -33,7 +32,6 @@ class DocumentIdTest {
 
     @Test
     fun `KDocumentId on wrong types throws`() {
-        val exceptionMessage = "instead of String or DocumentReference"
 
         @Serializable
         class DefaultValuePropertyWithDocumentIdOnWrongTypeBean(
@@ -55,6 +53,7 @@ class DocumentIdTest {
 
         @Serializable
         class KDocumentIdAndKServerTimestampTogetherOnWrongTypeBean(
+            // always throw for invalid KServerTimestamp first
             @KServerTimestamp @KDocumentId @Contextual var geoPoint: GeoPoint?
         )
 
@@ -63,45 +62,51 @@ class DocumentIdTest {
         @Serializable
         class KDocumentIdOnWrongTypeNestedObject(@KDocumentId var student: Student? = null)
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(DefaultValuePropertyWithDocumentIdOnWrongTypeBean()) }
-        )
+        val exceptionMessage = "instead of String or DocumentReference"
 
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(DefaultValuePropertyWithDocumentIdOnWrongTypeBean())
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean()) }
-        )
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean())
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean(123)) }
-        )
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean(123))
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(KDocumentIdOnWrongTypeTimestampBean()) }
-        )
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(KDocumentIdOnWrongTypeTimestampBean())
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(KDocumentIdOnTopOfKServerTimestampWrongTypeBean()) }
-        )
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(KDocumentIdOnTopOfKServerTimestampWrongTypeBean())
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = {
+        AssertThrows<IllegalArgumentException> {
                 encodeToMap(
                     KDocumentIdAndKServerTimestampTogetherOnWrongTypeBean(GeoPoint(1.0, 2.0))
                 )
             }
-        )
+            .hasMessageThat()
+            .contains("instead of Date or Timestamp")
 
-        assertFailsWith<IllegalArgumentException>(
-            message = exceptionMessage,
-            block = { encodeToMap(KDocumentIdOnWrongTypeNestedObject()) }
-        )
+        AssertThrows<IllegalArgumentException> {
+                encodeToMap(KDocumentIdOnWrongTypeNestedObject())
+            }
+            .hasMessageThat()
+            .contains("instead of String or DocumentReference")
     }
 
     @Test

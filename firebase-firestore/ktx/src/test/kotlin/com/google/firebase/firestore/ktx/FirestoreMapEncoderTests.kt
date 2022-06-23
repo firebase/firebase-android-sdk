@@ -16,19 +16,18 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.AssertThrows
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.documentReference
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class NestedMapEncoderTests {
+class FirestoreMapEncoderTests {
 
     @Test
     fun `plain custom object encoding is supported`() {
@@ -198,8 +197,8 @@ class NestedMapEncoderTests {
             val javaArrayValue: IntArray? = null
         )
 
-        val array = arrayOf<Int>(1, 2, 3)
-        val list = listOf<Int>(4, 5, 6)
+        val array = arrayOf(1, 2, 3)
+        val list = listOf(4, 5, 6)
         val javaIntArray = intArrayOf(7, 8, 9)
         val intArrayObject =
             IntArrayObject(
@@ -250,11 +249,9 @@ class NestedMapEncoderTests {
         //  currently it is not possible to obtain serializer for type Any at compile time
         val map = mapOf("foo" to "foo", "bar" to 1L)
         val mapObj = GenericObject(map)
-        val expectedMapOfMapObj = mutableMapOf("value" to mutableMapOf("foo" to "foo", "bar" to 1L))
-        assertFailsWith<IllegalArgumentException>(
-            message = "Incorrect format of nested object provided",
-            block = { assertTrue(expectedMapOfMapObj == encodeToMap(mapObj)) }
-        )
+        AssertThrows<IllegalArgumentException> { encodeToMap(mapObj) }
+            .hasMessageThat()
+            .contains("Mark the class as @Serializable or provide the serializer explicitly")
     }
 
     @Serializable
@@ -264,7 +261,7 @@ class NestedMapEncoderTests {
         companion object {
             var value1 = "static-value"
                 set(value) {
-                    field = value1 + "foobar"
+                    field = value + "foobar"
                 }
         }
     }
@@ -311,11 +308,11 @@ class NestedMapEncoderTests {
 
         val objectBean = ObjectBean()
         objectBean.value = objectBean
-        assertFailsWith<IllegalArgumentException>(
-            message =
-                "Exceeded maximum depth of 500, which likely indicates there's an object cycle",
-            block = { encodeToMap(objectBean) }
-        )
+        AssertThrows<IllegalArgumentException> { encodeToMap(objectBean) }
+            .hasMessageThat()
+            .contains(
+                "Exceeded maximum depth of 500, which likely indicates there's an object cycle"
+            )
     }
 
     @Test
@@ -355,7 +352,7 @@ class NestedMapEncoderTests {
     fun `encode GeoPoint is supported`() {
         @Serializable data class GeoPointObject(@Contextual val value: GeoPoint? = null)
 
-        val here: GeoPoint = GeoPoint(88.0, 66.0)
+        val here = GeoPoint(88.0, 66.0)
         val geoPointObject = GeoPointObject(here)
         val encodedMap = encodeToMap(geoPointObject)
         val expectedMap = mutableMapOf("value" to here)
@@ -383,18 +380,10 @@ class NestedMapEncoderTests {
     @Test
     fun `KServerTimestamp applied on wrong type should throw`() {
         @Serializable
-        data class ServerTimestampObject(
-            @Contextual @KDocumentId @KServerTimestamp val value: String? = null
-        )
-
-        val now: Timestamp = Timestamp.now()
+        data class ServerTimestampObject(@Contextual @KServerTimestamp val value: String? = null)
         val serverTimestampObject = ServerTimestampObject("100")
-
-        assertFailsWith<IllegalArgumentException>(
-            message = "instead of Timestamp",
-            block = {
-                val encodedMap = encodeToMap(serverTimestampObject)
-            }
-        )
+        AssertThrows<IllegalArgumentException> { encodeToMap(serverTimestampObject) }
+            .hasMessageThat()
+            .contains("instead of Date or Timestamp")
     }
 }

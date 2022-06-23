@@ -1,32 +1,37 @@
 package com.google.firebase.firestore
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serialization.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
-import java.util.*
-import kotlin.test.assertEquals
+import java.util.Date
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import org.junit.Test
 
 class ServerTimestampIntegrationTest {
 
     @Test
-    fun can_be_applied_on_not_null_field() {
+    fun encoding_Timestamp_is_supported() {
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
 
+        @Serializable
         class TimestampPOJO {
-            @ServerTimestamp
-            var timestamp1: Timestamp? = null
+            @Contextual @KServerTimestamp @ServerTimestamp var timestamp1: Timestamp? = null
 
-            @ServerTimestamp
-            val timestamp2: Date? = null
+            @Contextual @KServerTimestamp @ServerTimestamp val timestamp2: Date? = null
         }
 
         val timestampPOJO = TimestampPOJO()
         timestampPOJO.timestamp1 = Timestamp(Date(100L))
         docRefPOJO.set(timestampPOJO)
-        val expected = waitFor(docRefPOJO.get()).getData(ServerTimestampBehavior.NONE)
-        assertEquals(expected, mutableMapOf<String, Any?>("timestamp1" to null))
+        docRefKotlin.setData(timestampPOJO)
+        val expected = waitFor(docRefKotlin.get()).getData(ServerTimestampBehavior.NONE)
+        val actual = waitFor(docRefPOJO.get()).getData(ServerTimestampBehavior.NONE)
+        assertThat(expected).containsExactlyEntriesIn(actual)
     }
 }

@@ -21,6 +21,7 @@ import com.google.firebase.firestore.ktx.serializers.FirestoreSerializersModule
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.descriptors.elementDescriptors
 import kotlinx.serialization.descriptors.elementNames
@@ -61,19 +62,30 @@ class FirestoreMapEncoder(
     }
 
     private inner class CurrentElementToEncode(val elementIndex: Int = 0) {
-        val elementEncodeKey = descriptor?.elementNames?.toList()?.getOrNull(elementIndex) ?: ""
-        val elementKind = descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
-        val elementSerialName =
+        val elementEncodeKey: String? = descriptor?.elementNames?.toList()?.getOrNull(elementIndex)
+        val elementKind: SerialKind? =
+            descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
+        val elementSerialName: String? =
             descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
-        val elementAnnotations =
-            descriptor?.let {
-                try {
-                    it.getElementAnnotations(elementIndex)
-                } catch (e: Exception) {
-                    null
-                }
-            }
+        val elementAnnotations: List<Annotation>? =
+            descriptor?.elementAnnotationsOrNull(elementIndex)
     }
+
+    /**
+     * Return a list of annotations of the child element at a given index [elementIndex]; In case of
+     * [IndexOutOfBoundsException], and [IllegalArgumentException], null will be returned. Other
+     * types of exception will be raised.
+     */
+    private fun SerialDescriptor.elementAnnotationsOrNull(elementIndex: Int): List<Annotation>? =
+        try {
+            getElementAnnotations(elementIndex)
+        } catch (err: Exception) {
+            when (err) {
+                is IndexOutOfBoundsException,
+                is IllegalArgumentException -> null
+                else -> throw err
+            }
+        }
 
     private var currentElement = CurrentElementToEncode()
 
@@ -106,7 +118,7 @@ class FirestoreMapEncoder(
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on DocumentReference, then
             // ignore
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, value)
         }
         currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
@@ -118,10 +130,10 @@ class FirestoreMapEncoder(
             validateKServerTimestampPresentOrThrow() ->
                 map.getValue(depth)
                     .put(
-                        currentElement.elementEncodeKey,
+                        currentElement.elementEncodeKey as String,
                         FieldValue.serverTimestamp()
                     ) // KServerTimestamp on Timestamp? = null, then replace with FieldValue
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, null)
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, null)
         }
         currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
@@ -129,8 +141,8 @@ class FirestoreMapEncoder(
     override fun encodeValue(value: Any) {
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String, then ignore
-            validateKServerTimestampPresentOrThrow() -> {} // KServerTimestamp not on Primitives
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
+            validateKServerTimestampPresentOrThrow() -> {} // KServerTimestamp can not on Primitives
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey as String, value)
         }
         currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
@@ -157,13 +169,13 @@ class FirestoreMapEncoder(
             StructureKind.CLASS -> {
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
-                map.getValue(depth).put(currentElement.elementEncodeKey, map[nextDepth])
+                map.getValue(depth).put(currentElement.elementEncodeKey as String, map[nextDepth])
                 currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
                 return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
             StructureKind.LIST -> {
                 val emptyList = mutableListOf<Any?>()
-                map.getValue(depth).put(currentElement.elementEncodeKey, emptyList)
+                map.getValue(depth).put(currentElement.elementEncodeKey as String, emptyList)
                 currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
                 return FirestoreListEncoder(map, depth, emptyList)
             }
@@ -243,7 +255,7 @@ class FirestoreMapEncoder(
      * Throw runtime exception if [KDocumentId] or [KServerTimestamp] is applied on a property of an
      * invalid type
      */
-    private fun throwOnInvalidKDocumentIdAndKServerTimestampAnnotation(): Unit {
+    private fun throwOnInvalidKDocumentIdAndKServerTimestampAnnotation() {
         validateKDocumentIdPresentOrThrow()
         validateKServerTimestampPresentOrThrow()
     }
