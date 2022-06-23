@@ -97,7 +97,7 @@ class AabUpdater {
       runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
           .onSuccessTask(
               redirectUrl ->
-                  lifecycleNotifier.applyToForegroundActivity(
+                  lifecycleNotifier.consumeForegroundActivity(
                       activity -> openRedirectUrlInPlay(redirectUrl, activity)))
           .addOnFailureListener(this::setUpdateTaskCompletionError);
 

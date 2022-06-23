@@ -334,7 +334,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private Task<Void> launchFeedbackActivity(String releaseName, Bitmap screenshot) {
-    return lifecycleNotifier.applyToForegroundActivity(
+    return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);

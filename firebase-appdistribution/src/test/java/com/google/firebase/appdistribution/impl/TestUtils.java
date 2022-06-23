@@ -18,6 +18,8 @@ import static android.os.Looper.getMainLooper;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -27,6 +29,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
+import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
@@ -83,7 +86,32 @@ final class TestUtils {
     shadowOf(getMainLooper()).idle();
   }
 
-  static Answer<Task<Void>> applyToForegroundActivityAnswer(Activity activity) {
+  /**
+   * Mock out the given lifecycle notifier's applyToForegroundActivity(),
+   * consumeForegroundActivity(), and applyToForegroundActivityTask() methods, to immediately
+   * provide the given activity.
+   */
+  static void mockForegroundActivity(
+      FirebaseAppDistributionLifecycleNotifier mockLifeCycleNotifier, Activity activity) {
+    when(mockLifeCycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(applyToForegroundActivityAnswer(activity));
+    when(mockLifeCycleNotifier.consumeForegroundActivity(any()))
+        .thenAnswer(consumeForegroundActivityAnswer(activity));
+    when(mockLifeCycleNotifier.applyToForegroundActivityTask(any()))
+        .thenAnswer(applyToForegroundActivityTaskAnswer(activity));
+  }
+
+  private static <T> Answer<Task<T>> applyToForegroundActivityAnswer(Activity activity) {
+    return invocationOnMock -> {
+      ActivityFunction<T> function = (ActivityFunction<T>) invocationOnMock.getArgument(0);
+      if (function == null) {
+        return Tasks.forException(new IllegalStateException("ActivityFunction was null"));
+      }
+      return Tasks.forResult(function.apply(activity));
+    };
+  }
+
+  private static Answer<Task<Void>> consumeForegroundActivityAnswer(Activity activity) {
     return invocationOnMock -> {
       ActivityConsumer consumer = (ActivityConsumer) invocationOnMock.getArgument(0);
       if (consumer == null) {
@@ -94,12 +122,12 @@ final class TestUtils {
     };
   }
 
-  static <T> Answer<Task<T>> applyToForegroundActivityTaskAnswer(Activity activity) {
+  private static <T> Answer<Task<T>> applyToForegroundActivityTaskAnswer(Activity activity) {
     return invocationOnMock -> {
       SuccessContinuation<Activity, T> continuation =
           (SuccessContinuation<Activity, T>) invocationOnMock.getArgument(0);
       if (continuation == null) {
-        return Tasks.forException(new IllegalStateException("Success was null"));
+        return Tasks.forException(new IllegalStateException("SuccessContinuation was null"));
       }
       return continuation.then(activity);
     };

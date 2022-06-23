@@ -112,8 +112,7 @@ public class ApkUpdaterTest {
     when(mockFile.length()).thenReturn(TEST_FILE_LENGTH);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsUrlConnection);
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
-    when(mockLifecycleNotifier.applyToForegroundActivityTask(any()))
-        .thenAnswer(TestUtils.applyToForegroundActivityTaskAnswer(activity));
+    TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
     onCompleteListener = new TestOnCompleteListener<>();
 
     apkUpdater =
