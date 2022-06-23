@@ -30,7 +30,6 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Debug;
 import android.os.StatFs;
-import android.provider.Settings.Secure;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;

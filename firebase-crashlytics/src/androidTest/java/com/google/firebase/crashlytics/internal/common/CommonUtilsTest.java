@@ -170,9 +170,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.
     final boolean isRooted = CommonUtils.isRooted();
-    Log.d(
-        Logger.TAG,
-        "isRooted: " + isRooted + " isEmulator: " + CommonUtils.isEmulator());
+    Log.d(Logger.TAG, "isRooted: " + isRooted + " isEmulator: " + CommonUtils.isEmulator());
 
     // We don't care about the actual result of isRooted, just that we didn't cause an exception
     assertTrue(true);
