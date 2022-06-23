@@ -24,6 +24,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.contextual
+import java.util.Date
 
 private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
     override val descriptor: SerialDescriptor =
@@ -46,10 +47,12 @@ private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
     object DocumentIdSerializer : FirestoreNativeDataTypeSerializer<DocumentReference>()
     object TimestampSerializer : FirestoreNativeDataTypeSerializer<Timestamp>()
     object GeoPointSerializer : FirestoreNativeDataTypeSerializer<GeoPoint>()
+    object DateSerializer: FirestoreNativeDataTypeSerializer<Date>()
 }
 
 val FirestoreSerializersModule = SerializersModule {
     contextual(FirestoreNativeDataTypeSerializer.GeoPointSerializer)
     contextual(FirestoreNativeDataTypeSerializer.DocumentIdSerializer)
     contextual(FirestoreNativeDataTypeSerializer.TimestampSerializer)
+    contextual(FirestoreNativeDataTypeSerializer.DateSerializer)
 }

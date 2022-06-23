@@ -14,53 +14,98 @@
 
 package com.google.firebase.firestore.ktx
 
+import com.google.common.truth.ExpectFailure
+import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.documentReference
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 class DocumentIdTest {
 
     @Test
-    fun `documentId on Wrong Types throws`() {
+    fun `KDocumentId on wrong types throws`() {
+        val exceptionMessage = "instead of String or DocumentReference"
+
         @Serializable
-        class DefaultValuePropertyWithDocumentIdOnWrongTypeBean(@KDocumentId var intField: Int = 123)
+        class DefaultValuePropertyWithDocumentIdOnWrongTypeBean(
+            @KDocumentId var intField: Int = 123
+        )
 
         @Serializable
         class NullablePropertyWithDocumentIdOnWrongTypeBean(@KDocumentId var intField: Int? = null)
 
-        val exceptionMessage = "instead of String or DocumentReference"
+        @Serializable
+        class KDocumentIdOnWrongTypeTimestampBean(
+            @KDocumentId @Contextual var timestamp: Timestamp? = null
+        )
+
+        @Serializable
+        class KDocumentIdOnTopOfKServerTimestampWrongTypeBean(
+            @KServerTimestamp @KDocumentId @Contextual var timestamp: Timestamp? = null
+        )
+
+        @Serializable
+        class KDocumentIdAndKServerTimestampTogetherOnWrongTypeBean(
+            @KServerTimestamp @KDocumentId @Contextual var geoPoint: GeoPoint?
+        )
+
+        @Serializable class Student(val id: Int = 0, val name: String = "foo")
+
+        @Serializable
+        class KDocumentIdOnWrongTypeNestedObject(@KDocumentId var student: Student? = null)
 
         assertFailsWith<IllegalArgumentException>(
             message = exceptionMessage,
-            block = {
-                val encodedMap = encodeToMap(DefaultValuePropertyWithDocumentIdOnWrongTypeBean())
-            }
+            block = { encodeToMap(DefaultValuePropertyWithDocumentIdOnWrongTypeBean()) }
+        )
+
+
+        assertFailsWith<IllegalArgumentException>(
+            message = exceptionMessage,
+            block = { encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean()) }
+        )
+
+        assertFailsWith<IllegalArgumentException>(
+            message = exceptionMessage,
+            block = { encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean(123)) }
+        )
+
+        assertFailsWith<IllegalArgumentException>(
+            message = exceptionMessage,
+            block = { encodeToMap(KDocumentIdOnWrongTypeTimestampBean()) }
+        )
+
+        assertFailsWith<IllegalArgumentException>(
+            message = exceptionMessage,
+            block = { encodeToMap(KDocumentIdOnTopOfKServerTimestampWrongTypeBean()) }
         )
 
         assertFailsWith<IllegalArgumentException>(
             message = exceptionMessage,
             block = {
-                val encodedMap = encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean())
+                encodeToMap(
+                    KDocumentIdAndKServerTimestampTogetherOnWrongTypeBean(GeoPoint(1.0, 2.0))
+                )
             }
         )
 
         assertFailsWith<IllegalArgumentException>(
             message = exceptionMessage,
-            block = {
-                val encodedMap = encodeToMap(NullablePropertyWithDocumentIdOnWrongTypeBean(123))
-            }
+            block = { encodeToMap(KDocumentIdOnWrongTypeNestedObject()) }
         )
     }
 
     @Test
-    fun `documentId annotated on correct type without backfield is ignored during encoding`() {
+    fun `KDocumentId annotated on correct type without backfield is ignored during encoding`() {
         @Serializable
         class GetterWithoutBackingFieldOnDocumentIdBean {
             @KDocumentId
@@ -70,15 +115,16 @@ class DocumentIdTest {
         }
 
         // This is different than the current Java Solution's behavior
-        // Java will throw run time exception if @DocumentId applied to a non-writable field during serializing
-        // While, the field without a backing field is transparent to Kotlin, so no exception can be thrown rather than just ignore this property during serialization
-        val expectedMap = mutableMapOf<String, Any?>("bar" to 0)
-        val actualMap = encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean())
-        assertTrue { expectedMap == actualMap }
+        // Java will throw run time exception if @DocumentId applied to a non-writable field during
+        // serializing
+        // While, the field without a backing field is transparent to Kotlin, so no exception can be
+        // thrown rather than just ignore this property during serialization
+        assertThat(encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean()))
+            .containsExactlyEntriesIn(mutableMapOf("bar" to 0))
     }
 
     @Test
-    fun `documentId annotated on wrong type without backfield is ignored during encoding`() {
+    fun `KDocumentId annotated on wrong type without backfield is ignored during encoding`() {
         @Serializable
         class GetterWithoutBackingFieldOnDocumentIdBean {
             @KDocumentId
@@ -88,25 +134,25 @@ class DocumentIdTest {
         }
 
         // This is different than the current Java Solution's behavior
-        // Java will throw run time exception if @DocumentId applied to a non-writable field during serializing
-        // While, the field without a backing field is transparent to Kotlin, so no exception can be thrown rather than just ignore this property during serialization
-        val expectedMap = mutableMapOf<String, Any?>("bar" to 0)
-        val actualMap = encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean())
-        assertTrue { expectedMap == actualMap }
+        // Java will throw run time exception if @DocumentId applied to a non-writable field during
+        // serializing
+        // While, the field without a backing field is transparent to Kotlin, so no exception can be
+        // thrown rather than just ignore this property during serialization
+        // TODO: Write a compiler plugin to check if KServerTimestamp is applied on wrong types
+        assertThat(encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean()))
+            .containsExactlyEntriesIn(mutableMapOf("bar" to 0))
     }
 
     @Test
-    fun `documentId annotated on correct types with backing fields should be able to encode`() {
+    fun `KDocumentId annotated on correct types with backing fields should encode`() {
         val docRef = documentReference("coll/doc123")
 
         @Serializable
         class DocumentIdOnStringField {
-            @KDocumentId
-            var docId = "doc-id"
+            @KDocumentId var docId = "doc-id"
         }
-
-        val actualMapWithStringField = encodeToMap(DocumentIdOnStringField())
-        assertTrue { mutableMapOf<String, Any?>() == actualMapWithStringField }
+        assertThat(encodeToMap(DocumentIdOnStringField()))
+            .containsAtLeastEntriesIn(mutableMapOf<String, Any?>())
 
         @Serializable
         class DocumentIdOnStringFieldAsProperty {
@@ -115,24 +161,19 @@ class DocumentIdTest {
             var docId = "doc-id"
                 get() = field + "foobar"
 
-            @SerialName("AnotherProperty")
-            var someOtherProperty = 0
+            @SerialName("AnotherProperty") var someOtherProperty = 0
         }
-
-        val actualMapWithStringFieldAsProperty = encodeToMap(DocumentIdOnStringFieldAsProperty())
-        assertTrue { mutableMapOf<String, Any?>("AnotherProperty" to 0) == actualMapWithStringFieldAsProperty }
+        assertThat(encodeToMap(DocumentIdOnStringFieldAsProperty()))
+            .containsAtLeastEntriesIn(mutableMapOf<String, Any?>("AnotherProperty" to 0))
 
         @Serializable
         class DocumentIdOnDocRefField {
-            @Contextual
-            @KDocumentId
-            var docId: DocumentReference? = null
+            @Contextual @KDocumentId var docId: DocumentReference? = null
         }
 
         val documentIdOnDocRefField = DocumentIdOnDocRefField().apply { docId = docRef }
-
-        val actualMapWithDocRefField = encodeToMap(documentIdOnDocRefField)
-        assertTrue { mutableMapOf<String, Any?>() == actualMapWithDocRefField }
+        assertThat(encodeToMap(documentIdOnDocRefField))
+            .containsExactlyEntriesIn(mutableMapOf<String, Any?>())
 
         @Serializable
         open class DocumentIdOnDocRefAsProperty {
@@ -142,39 +183,34 @@ class DocumentIdTest {
             var docId: DocumentReference? = null
                 get() = field
 
-            @SerialName("AnotherProperty")
-            var someOtherProperty: Int = 0
+            @SerialName("AnotherProperty") var someOtherProperty: Int = 0
         }
 
-        val documentIdOnDocRefAsProperty = DocumentIdOnDocRefAsProperty().apply {
-            docId = docRef
-            someOtherProperty = 100
-        }
-
-        val actualMapWithDocRefFieldAsProperty = encodeToMap(documentIdOnDocRefAsProperty)
-        assertTrue { mutableMapOf<String, Any?>("AnotherProperty" to 100) == actualMapWithDocRefFieldAsProperty }
+        val documentIdOnDocRefAsProperty =
+            DocumentIdOnDocRefAsProperty().apply {
+                docId = docRef
+                someOtherProperty = 100
+            }
+        assertThat(encodeToMap(documentIdOnDocRefAsProperty))
+            .containsExactlyEntriesIn(mutableMapOf<String, Any?>("AnotherProperty" to 100))
 
         @Serializable
         class DocumentIdOnNestedObjects {
             @SerialName("nested")
             var nestedDocIdHolder: DocumentIdOnStringField? = DocumentIdOnStringField()
         }
-
-        val actualMapOfNestedObject = encodeToMap(DocumentIdOnNestedObjects())
-        assertTrue { mutableMapOf<String, Any?>("nested" to mapOf<String, Any>()) == actualMapOfNestedObject }
+        assertThat(encodeToMap(DocumentIdOnNestedObjects()))
+            .containsExactlyEntriesIn(mutableMapOf<String, Any?>("nested" to mapOf<String, Any>()))
 
         @Serializable
         class DocumentIdOnInheritedDocRefSetter : DocumentIdOnDocRefAsProperty() {
-            @Contextual
-            @KDocumentId
-            var inheritedDocRef: DocumentReference? = null
+            @Contextual @KDocumentId var inheritedDocRef: DocumentReference? = null
         }
 
         val inheritedObject = DocumentIdOnInheritedDocRefSetter()
         inheritedObject.inheritedDocRef = docRef
         val actualMapOfInheritedObject = encodeToMap(inheritedObject)
-        assertTrue { mutableMapOf<String, Any?>("AnotherProperty" to 0) == actualMapOfInheritedObject }
+        assertThat(actualMapOfInheritedObject)
+            .containsExactlyEntriesIn(mutableMapOf<String, Any?>("AnotherProperty" to 0))
     }
-
-
 }

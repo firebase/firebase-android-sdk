@@ -28,7 +28,6 @@ import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
-import java.lang.Exception
 
 /**
  * The entry point of Firestore Kotlin Serialization Process. It encodes a custom @Serializable
@@ -61,21 +60,22 @@ class FirestoreMapEncoder(
         private const val MAX_DEPTH: Int = 500
     }
 
-    private inner class NextElementToEncode(var elementIndex: Int = 0) {
+    private inner class CurrentElementToEncode(val elementIndex: Int = 0) {
         val elementEncodeKey = descriptor?.elementNames?.toList()?.getOrNull(elementIndex) ?: ""
         val elementKind = descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
         val elementSerialName =
             descriptor?.elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
-        val elementAnnotations = descriptor?.let {
-            try {
-                it.getElementAnnotations(elementIndex)
-            } catch (e: Exception) {
-                null
+        val elementAnnotations =
+            descriptor?.let {
+                try {
+                    it.getElementAnnotations(elementIndex)
+                } catch (e: Exception) {
+                    null
+                }
             }
-        }
     }
 
-    private var nextElement = NextElementToEncode()
+    private var currentElement = CurrentElementToEncode()
 
     init {
         if (depth == ROOT_LEVEL) map[ROOT_LEVEL] = mutableMapOf()
@@ -92,48 +92,47 @@ class FirestoreMapEncoder(
     /** Get the field name of an enum via index, and encode it to the nested map. */
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
         encodeValue(enumDescriptor.getElementName(index))
-    //        enumDescriptor.elementNames.toList().let { encodeValue(it[index]) }
 
     /**
-     * Register serializers for Firestore native data types, DocumentId, Timestamp, and GeoPoint,
-     * so that these registered serializers can be used at run-time to serialize the fields with @Contextual annotations
+     * Register serializers for Firestore native data types, DocumentId, Timestamp, Date, and
+     * GeoPoint, so that these registered serializers can be used at run-time to serialize the
+     * fields with @Contextual annotations
      */
     override val serializersModule: SerializersModule = FirestoreSerializersModule
 
-    /**
-     * Encode the native Firestore datatype objects: DocumentId, Timestamp, and GeoPoint.
-     */
+    /** Encode the native Firestore datatype objects: DocumentId, Timestamp, Date, and GeoPoint. */
     fun <T> encodeFirestoreNativeDataType(value: T) {
+        validateKServerTimestampPresentOrThrow()
         when {
-            validateKDocumentIdPresent() -> {
-            } // KDocumentId on DocumentReference, then ignore
-            else -> map.getValue(depth).put(nextElement.elementEncodeKey, value)
+            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on DocumentReference, then
+            // ignore
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
         }
-        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun encodeNull() {
         when {
-            validateKDocumentIdPresent() -> {
-            } // KDocumentId on String?, DocumentReference?, then ignore
-            validateKServerTimestampPresent() -> map.getValue(depth).put(
-                nextElement.elementEncodeKey,
-                FieldValue.serverTimestamp()
-            ) //KServerTimestamp on Timestamp? = null, then replace with FieldValue
-            else -> map.getValue(depth).put(nextElement.elementEncodeKey, null)
+            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String?, DocumentReference?,
+            // then ignore
+            validateKServerTimestampPresentOrThrow() ->
+                map.getValue(depth)
+                    .put(
+                        currentElement.elementEncodeKey,
+                        FieldValue.serverTimestamp()
+                    ) // KServerTimestamp on Timestamp? = null, then replace with FieldValue
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, null)
         }
-        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun encodeValue(value: Any) {
         when {
-            validateKDocumentIdPresent() -> {
-            }  // KDocumentId on String, then ignore
-            validateKServerTimestampPresent() -> {
-            } //KServerTimestamp not on Primitives
-            else -> map.getValue(depth).put(nextElement.elementEncodeKey, value)
+            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String, then ignore
+            validateKServerTimestampPresentOrThrow() -> {} // KServerTimestamp not on Primitives
+            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
         }
-        nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+        currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
@@ -150,7 +149,7 @@ class FirestoreMapEncoder(
      * @return a CompositeEncoder either to be a [FirestoreMapEncoder] or a [FirestoreListEncoder].
      */
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        // TODO: @DocumentID and @ServerTimeStamp should not be applied on Structures
+        throwOnInvalidKDocumentIdAndKServerTimestampAnnotation()
         if (depth == 0) {
             return FirestoreMapEncoder(map, depth + 1, descriptor)
         }
@@ -158,14 +157,14 @@ class FirestoreMapEncoder(
             StructureKind.CLASS -> {
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
-                map.getValue(depth).put(nextElement.elementEncodeKey, map[nextDepth])
-                nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+                map.getValue(depth).put(currentElement.elementEncodeKey, map[nextDepth])
+                currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
                 return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
             StructureKind.LIST -> {
                 val emptyList = mutableListOf<Any?>()
-                map.getValue(depth).put(nextElement.elementEncodeKey, emptyList)
-                nextElement = NextElementToEncode(nextElement.elementIndex + 1)
+                map.getValue(depth).put(currentElement.elementEncodeKey, emptyList)
+                currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
                 return FirestoreListEncoder(map, depth, emptyList)
             }
             else -> {
@@ -176,30 +175,30 @@ class FirestoreMapEncoder(
         }
     }
 
-
     /**
-     * Returns true is @[KDocumentId] is applied to a property of a type String or DocumentReference; Otherwise, a runtime exception will be thrown.
+     * Returns true is @[KDocumentId] is applied to a property of a type String or
+     * DocumentReference; Otherwise, a runtime exception will be thrown.
      */
     private fun kDocumentIdAppliedOnValidProperty(): Boolean {
-        if (nextElement.elementKind == PrimitiveKind.STRING || (nextElement.elementSerialName as String).contains(
-                "<DocumentReference>"
-            )
+        if (
+            currentElement.elementKind == PrimitiveKind.STRING ||
+                (currentElement.elementSerialName as String).contains("<DocumentReference>")
         ) {
             return true
         } else {
             throw IllegalArgumentException(
-                "Field is annotated with @KDocumentId but is class $nextElement.elementKind ( with serial name ${nextElement.elementSerialName} ) instead of String or DocumentReference."
+                "Field is annotated with @KDocumentId but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of String or DocumentReference."
             )
         }
     }
 
     /**
-     * Returns true if @[KDocumentId] is present and applied on a property of String or DocumentReference;
-     * Returns false if @[KDocumentId] is absent;
-     * Throws runtime exception is @[KDocumentId] is present but applied on a property with a invalid type.
+     * Returns true if @[KDocumentId] is present and applied on a property of String or
+     * DocumentReference; Returns false if @[KDocumentId] is absent; Throws runtime exception if @
+     * [KDocumentId] is present but applied on a property of an invalid type.
      */
-    private fun validateKDocumentIdPresent(): Boolean {
-        val kDocumentIdPresent = nextElement.elementAnnotations?.any { it is KDocumentId }
+    private fun validateKDocumentIdPresentOrThrow(): Boolean {
+        val kDocumentIdPresent = currentElement.elementAnnotations?.any { it is KDocumentId }
         return if (kDocumentIdPresent == true) {
             kDocumentIdAppliedOnValidProperty()
         } else {
@@ -207,23 +206,46 @@ class FirestoreMapEncoder(
         }
     }
 
+    /**
+     * Returns true is @[KServerTimestamp] is applied to a property of a type Date or Timestamp;
+     * Otherwise, a runtime exception will be thrown.
+     */
     private fun kServerTimestampAppliedOnValidProperty(): Boolean {
-        if ((nextElement.elementSerialName as String).contains("<Timestamp>")) {
+        if (
+            (currentElement.elementSerialName as String).run {
+                contains("<Timestamp>") || contains("<Date>")
+            }
+        ) {
             return true
         } else {
             throw IllegalArgumentException(
-                "Field is annotated with @KServerTimestamp but is class $nextElement.elementKind ( with serial name ${nextElement.elementSerialName} ) instead of Timestamp."
+                "Field is annotated with @KServerTimestamp but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of Date or Timestamp."
             )
         }
     }
 
-    private fun validateKServerTimestampPresent(): Boolean {
-        val kServerTimestampPresent = nextElement.elementAnnotations?.any { it is KServerTimestamp }
+    /**
+     * Returns true if @[KServerTimestamp] is present and applied on a property of Date or
+     * Timestamp; Returns false if @[KServerTimestamp] is absent; Throws runtime exception if @
+     * [KServerTimestamp] is present but applied on a property of an invalid type.
+     */
+    private fun validateKServerTimestampPresentOrThrow(): Boolean {
+        val kServerTimestampPresent =
+            currentElement.elementAnnotations?.any { it is KServerTimestamp }
         return if (kServerTimestampPresent == true) {
             kServerTimestampAppliedOnValidProperty()
         } else {
             false
         }
+    }
+
+    /**
+     * Throw runtime exception if [KDocumentId] or [KServerTimestamp] is applied on a property of an
+     * invalid type
+     */
+    private fun throwOnInvalidKDocumentIdAndKServerTimestampAnnotation(): Unit {
+        validateKDocumentIdPresentOrThrow()
+        validateKServerTimestampPresentOrThrow()
     }
 }
 
@@ -239,19 +261,18 @@ class FirestoreMapEncoder(
  */
 class FirestoreListEncoder(
     private val map: MutableMap<Int, MutableMap<String, Any?>> = mutableMapOf(),
-    private var depth: Int = 0,
+    private val depth: Int = 0,
     private val encodedList: MutableList<Any?> = mutableListOf()
 ) : AbstractEncoder() {
 
     /**
-     * Register serializers for Firestore native data types, DocumentId, Timestamp, and GeoPoint,
-     * so that these registered serializers can be used at run-time to serialize the fields with @Contextual annotations
+     * Register serializers for Firestore native data types, DocumentId, Timestamp, and GeoPoint, so
+     * that these registered serializers can be used at run-time to serialize the fields with
+     * @Contextual annotations
      */
     override val serializersModule: SerializersModule = FirestoreSerializersModule
 
-    /**
-     * Encode the native Firestore datatype objects: DocumentId, Timestamp, and GeoPoint.
-     */
+    /** Encode the native Firestore datatype objects: DocumentId, Timestamp, and GeoPoint. */
     fun <T> encodeFirestoreNativeDataType(value: T) {
         encodedList.add(value)
         elementIndex++
@@ -286,11 +307,7 @@ class FirestoreListEncoder(
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
                 encodedList.add(map[nextDepth])
-                return FirestoreMapEncoder(
-                    map,
-                    nextDepth,
-                    descriptor
-                )
+                return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
             else -> {
                 throw IllegalArgumentException(

@@ -14,19 +14,19 @@
 
 package com.google.firebase.firestore.ktx
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import com.google.firebase.firestore.documentReference
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlin.test.assertFailsWith
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 
 class NestedMapEncoderTests {
 
@@ -320,8 +320,7 @@ class NestedMapEncoderTests {
 
     @Test
     fun `documentReference is supported`() {
-        @Serializable
-        data class KtxDocRefObject(@Contextual val value: DocumentReference? = null)
+        @Serializable data class KtxDocRefObject(@Contextual val value: DocumentReference? = null)
 
         val docRef = documentReference("foo/bar")
         val ktxDocRefObject = KtxDocRefObject(docRef)
@@ -332,8 +331,7 @@ class NestedMapEncoderTests {
 
     @Test
     fun `documentReference without default value is supported`() {
-        @Serializable
-        data class KtxDocRefObject(@Contextual val value: DocumentReference)
+        @Serializable data class KtxDocRefObject(@Contextual val value: DocumentReference)
 
         val docRef = documentReference("foo/bar")
         val ktxDocRefObject = KtxDocRefObject(docRef)
@@ -344,8 +342,7 @@ class NestedMapEncoderTests {
 
     @Test
     fun `encode Timestamp is supported`() {
-        @Serializable
-        data class ServerTimestampObject(@Contextual val value: Timestamp? = null)
+        @Serializable data class ServerTimestampObject(@Contextual val value: Timestamp? = null)
 
         val now: Timestamp = Timestamp.now()
         val serverTimestampObject = ServerTimestampObject(now)
@@ -356,8 +353,7 @@ class NestedMapEncoderTests {
 
     @Test
     fun `encode GeoPoint is supported`() {
-        @Serializable
-        data class GeoPointObject(@Contextual val value: GeoPoint? = null)
+        @Serializable data class GeoPointObject(@Contextual val value: GeoPoint? = null)
 
         val here: GeoPoint = GeoPoint(88.0, 66.0)
         val geoPointObject = GeoPointObject(here)
@@ -375,7 +371,8 @@ class NestedMapEncoderTests {
             val bar: Int = 0 // property with a backing field -- serialized
         }
 
-        // this is different behavior than the current Java solution, Java will encode the getter even without a backing field
+        // this is different behavior than the current Java solution, Java will encode the getter
+        // even without a backing field
         // While, in Kotlin, only a class's properties with backing fields are serialized.
         val expectedMap = mutableMapOf<String, Any?>("bar" to 0)
         val encodedMap = encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean())
@@ -384,17 +381,20 @@ class NestedMapEncoderTests {
     }
 
     @Test
-    fun `KServerTimestamp applied on wrong type should throw`(){
+    fun `KServerTimestamp applied on wrong type should throw`() {
         @Serializable
-        data class ServerTimestampObject(@Contextual @KDocumentId @KServerTimestamp val value: String? = null)
+        data class ServerTimestampObject(
+            @Contextual @KDocumentId @KServerTimestamp val value: String? = null
+        )
 
         val now: Timestamp = Timestamp.now()
         val serverTimestampObject = ServerTimestampObject("100")
 
         assertFailsWith<IllegalArgumentException>(
             message = "instead of Timestamp",
-            block = { val encodedMap = encodeToMap(serverTimestampObject) }
+            block = {
+                val encodedMap = encodeToMap(serverTimestampObject)
+            }
         )
     }
-
 }

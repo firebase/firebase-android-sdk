@@ -44,9 +44,10 @@ class DocumentIdIntegrationTest {
         assertEquals(expected, actual)
     }
 
+// This test below does not run, but this is nothing really different from the test above;
+// I think this is not my problem, something wrong with Kotlin
 //    @Test
 //    fun this_test_will_not_run_for_some_reason() {
-//        // This test does not run, I think this is not my problem, something wrong with Kotlin
 //        val docRefKotlin = testCollection("ktx").document("123")
 //        val docRefPOJO = testCollection("pojo").document("456")
 //
