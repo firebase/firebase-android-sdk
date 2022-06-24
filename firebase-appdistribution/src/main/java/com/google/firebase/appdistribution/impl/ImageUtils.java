@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
@@ -13,6 +27,13 @@ public class ImageUtils {
     abstract int width();
 
     abstract int height();
+
+    static ImageSize read(File file) {
+      final BitmapFactory.Options options = new BitmapFactory.Options();
+      options.inJustDecodeBounds = true;
+      BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+      return new AutoValue_ImageUtils_ImageSize(options.outWidth, options.outHeight);
+    }
   }
 
   /**
@@ -33,18 +54,11 @@ public class ImageUtils {
           String.format(
               "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
     }
-    ImageSize imageSize = getImageSize(file);
+    ImageSize imageSize = ImageSize.read(file);
     final BitmapFactory.Options options = new BitmapFactory.Options();
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
     return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
-  }
-
-  private static ImageSize getImageSize(File file) {
-    final BitmapFactory.Options options = new BitmapFactory.Options();
-    options.inJustDecodeBounds = true;
-    BitmapFactory.decodeFile(file.getAbsolutePath(), options);
-    return new AutoValue_ImageUtils_ImageSize(options.outWidth, options.outHeight);
   }
 
   private static int calculateInSampleSize(
