@@ -205,9 +205,10 @@ class TesterApiHttpClient {
         // returns null. We return an empty string to reflect the empty body.
         return "";
       }
-      ByteArrayOutputStream result = new ByteArrayOutputStream();
-      writeInputStreamToOutputStream(inputStream, result);
-      return result.toString();
+      try (ByteArrayOutputStream result = new ByteArrayOutputStream()) {
+        writeInputStreamToOutputStream(inputStream, result);
+        return result.toString();
+      }
     }
   }
 
