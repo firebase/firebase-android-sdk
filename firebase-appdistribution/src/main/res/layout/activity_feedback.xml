@@ -50,10 +50,11 @@
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
+  <!-- Width and height should match bitmap created in setupView() -->
   <ImageView
-      android:id="@+id/screenshot"
-      android:layout_width="200dp"
-      android:layout_height="200dp"
+      android:id="@+id/thumbnail"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
       android:scaleType="centerInside"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
