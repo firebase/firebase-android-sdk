@@ -84,7 +84,7 @@ jobs:
   integ_tests:
     name: "Instrumentation Tests"
     # only run on post submit or PRs not originating from forks.
-    if: (github.repository == 'Firebase/firebase-ios-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.repo.full_name == github.repository)
+    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
