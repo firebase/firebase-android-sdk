@@ -14,9 +14,11 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.impl.TestUtils.applyToForegroundActivityAnswer;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
@@ -93,7 +95,8 @@ public class AabUpdaterTest {
         Mockito.spy(
             new AabUpdater(mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
 
-    TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(applyToForegroundActivityAnswer(activity));
   }
 
   @Test

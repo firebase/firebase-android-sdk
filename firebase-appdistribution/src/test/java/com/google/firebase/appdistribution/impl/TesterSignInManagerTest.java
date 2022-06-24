@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
+import static com.google.firebase.appdistribution.impl.TestUtils.applyToForegroundActivityAnswer;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -127,7 +128,9 @@ public class TesterSignInManagerTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
+
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+        .thenAnswer(applyToForegroundActivityAnswer(activity));
 
     testerSignInManager =
         new TesterSignInManager(
@@ -151,8 +154,8 @@ public class TesterSignInManagerTest {
   @Test
   public void signInTester_whenUnexpectedFailureInTask_failsWithUnknownError() {
     Exception unexpectedException = new Exception("unexpected exception");
-    // Raise an unexpected exception in our handler passed to consumeForegroundActivity
-    when(mockLifecycleNotifier.consumeForegroundActivity(any()))
+    // Raise an unexpected exception in our handler passed to applyToForegroundActivity
+    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
         .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();
