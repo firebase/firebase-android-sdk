@@ -14,6 +14,7 @@ jobs:
   determine_changed:
     name: "Determine changed modules"
     runs-on: ubuntu-22.04
+    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || github.event_name == 'pull_request'
     outputs:
       modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
