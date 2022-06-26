@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
@@ -143,6 +144,7 @@ public class TesterSignInManagerTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(fisException));
 
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(
         signInTask, Status.AUTHENTICATION_FAILURE, "Failed to authenticate", fisException);
@@ -156,6 +158,7 @@ public class TesterSignInManagerTest {
         .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
   }
@@ -170,6 +173,7 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
     testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -184,6 +188,7 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
     testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -211,9 +216,11 @@ public class TesterSignInManagerTest {
   @Test
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityResumed(activity);
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();
