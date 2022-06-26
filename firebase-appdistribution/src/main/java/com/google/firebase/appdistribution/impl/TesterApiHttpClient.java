@@ -23,8 +23,9 @@ import com.google.android.gms.common.util.Hex;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -124,12 +125,16 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(
-      String tag, String path, String token, RequestBodyWriter requestBodyWriter)
+  JSONObject makeUploadRequest(String tag, String path, String token, File file)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
+    RequestBodyWriter requestBodyWriter =
+        outputStream -> {
+          FileInputStream inputStream = new FileInputStream(file);
+          writeInputStreamToOutputStream(inputStream, outputStream);
+        };
     return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
   }
 
@@ -200,7 +205,10 @@ class TesterApiHttpClient {
         // returns null. We return an empty string to reflect the empty body.
         return "";
       }
-      return convertInputStreamToString(new BufferedInputStream(inputStream));
+      try (ByteArrayOutputStream result = new ByteArrayOutputStream()) {
+        writeInputStreamToOutputStream(inputStream, result);
+        return result.toString();
+      }
     }
   }
 
@@ -261,14 +269,13 @@ class TesterApiHttpClient {
     return String.format("%s: %s", tag, message);
   }
 
-  private static String convertInputStreamToString(InputStream is) throws IOException {
-    ByteArrayOutputStream result = new ByteArrayOutputStream();
+  private static void writeInputStreamToOutputStream(InputStream is, OutputStream os)
+      throws IOException {
     byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
     int length;
     while ((length = is.read(buffer)) != -1) {
-      result.write(buffer, 0, length);
+      os.write(buffer, 0, length);
     }
-    return result.toString();
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */
