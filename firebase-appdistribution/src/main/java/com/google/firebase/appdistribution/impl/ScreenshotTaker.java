@@ -37,12 +37,21 @@ class ScreenshotTaker {
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
-  private final Executor taskExecutor = Executors.newSingleThreadExecutor();
+  private final Executor taskExecutor;
 
   ScreenshotTaker(
       FirebaseApp firebaseApp, FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+    this(firebaseApp, lifecycleNotifier, Executors.newSingleThreadExecutor());
+  }
+
+  @VisibleForTesting
+  ScreenshotTaker(
+      FirebaseApp firebaseApp,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      Executor taskExecutor) {
     this.firebaseApp = firebaseApp;
     this.lifecycleNotifier = lifecycleNotifier;
+    this.taskExecutor = taskExecutor;
   }
 
   /**
@@ -62,6 +71,7 @@ class ScreenshotTaker {
     return TaskUtils.runAsyncInTask(
         taskExecutor,
         () -> {
+          // throw new IllegalStateException("We got this far");
           firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
           return null;
         });

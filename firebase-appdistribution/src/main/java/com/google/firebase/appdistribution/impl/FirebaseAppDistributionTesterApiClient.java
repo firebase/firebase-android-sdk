@@ -168,7 +168,6 @@ class FirebaseAppDistributionTesterApiClient {
         (unused, token) -> {
           LogWrapper.getInstance().i("Committing feedback: " + feedbackName);
           String path = "v1alpha/" + feedbackName + ":commit";
-          System.out.println("LKELLOGG: " + path);
           testerApiHttpClient.makePostRequest(
               COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "");
           return null;

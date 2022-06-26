@@ -50,8 +50,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
@@ -95,7 +93,6 @@ public class FirebaseAppDistributionServiceImplTest {
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
-  private static final Bitmap TEST_SCREENSHOT = Bitmap.createBitmap(400, 400, Config.RGB_565);
   private static final String TEST_SCREENSHOT_FILE_NAME = "screenshot.png";
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =

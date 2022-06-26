@@ -14,10 +14,12 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.impl.ScreenshotTaker.SCREENSHOT_FILE_NAME;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -26,6 +28,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import java.util.concurrent.Executor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +44,7 @@ public class ScreenshotTakerTest {
   private static final String TEST_PROJECT_ID = "project-id";
   private static final String TEST_PROJECT_NUMBER = "123456789";
   private static final Bitmap TEST_SCREENSHOT = Bitmap.createBitmap(400, 400, Config.RGB_565);
+  private static final Executor TEST_EXECUTOR = Runnable::run;
 
   private FirebaseApp firebaseApp;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -61,7 +65,9 @@ public class ScreenshotTakerTest {
                 .setApiKey(TEST_API_KEY)
                 .build());
 
-    screenshotTaker = spy(new ScreenshotTaker(firebaseApp, mockLifecycleNotifier));
+    screenshotTaker = spy(new ScreenshotTaker(firebaseApp, mockLifecycleNotifier, TEST_EXECUTOR));
+
+    // Taking a screenshot of an actual activity would require an instrumentation test
     doReturn(Tasks.forResult(TEST_SCREENSHOT)).when(screenshotTaker).captureScreenshot();
   }
 
@@ -74,6 +80,7 @@ public class ScreenshotTakerTest {
   public void takeAndDeleteScreenshot_success() throws Exception {
     // Take a screenshot
     Task<String> task = screenshotTaker.takeScreenshot();
+    shadowOf(getMainLooper()).idle();
     String screenshotFilename = TestUtils.awaitTask(task);
 
     assertThat(screenshotFilename).isEqualTo(SCREENSHOT_FILE_NAME);
