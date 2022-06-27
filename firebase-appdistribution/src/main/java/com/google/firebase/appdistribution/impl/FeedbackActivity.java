@@ -18,37 +18,64 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import java.io.File;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
 
   private static final String TAG = "FeedbackActivity";
+  private static final int THUMBNAIL_WIDTH = 200;
+  private static final int THUMBNAIL_HEIGHT = 200;
 
   public static final String RELEASE_NAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
-  public static final String SCREENSHOT_EXTRA_KEY =
-      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT";
+  public static final String SCREENSHOT_FILENAME_EXTRA_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_FILE_NAME";
 
   private FeedbackSender feedbackSender;
   private String releaseName;
-  private Bitmap screenshot;
+  @Nullable private File screenshotFile;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
-    screenshot = getIntent().getParcelableExtra(SCREENSHOT_EXTRA_KEY);
+    if (getIntent().hasExtra(SCREENSHOT_FILENAME_EXTRA_KEY)) {
+      screenshotFile = getFileStreamPath(getIntent().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY));
+    }
     feedbackSender = FeedbackSender.getInstance();
+    setupView();
+  }
+
+  private void setupView() {
     setContentView(R.layout.activity_feedback);
+    Bitmap thumbnail = readThumbnail();
+    if (thumbnail != null) {
+      ImageView screenshotImageView = (ImageView) this.findViewById(R.id.thumbnail);
+      screenshotImageView.setImageBitmap(thumbnail);
+    } else {
+      View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
+      screenshotErrorLabel.setVisibility(View.VISIBLE);
+    }
+  }
+
+  @Nullable
+  private Bitmap readThumbnail() {
+    if (screenshotFile == null) {
+      return null;
+    }
+    return ImageUtils.readScaledImage(screenshotFile, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
   }
 
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     EditText feedbackText = (EditText) findViewById(R.id.feedbackText);
     feedbackSender
-        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshot)
+        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotFile)
         .addOnSuccessListener(
             unused -> {
               LogWrapper.getInstance().i(TAG, "Feedback submitted");

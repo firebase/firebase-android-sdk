@@ -30,7 +30,6 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Debug;
 import android.os.StatFs;
-import android.provider.Settings.Secure;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -333,7 +332,7 @@ public class CommonUtils {
   }
 
   public static boolean getProximitySensorEnabled(Context context) {
-    if (isEmulator(context)) {
+    if (isEmulator()) {
       // For whatever reason, accessing the sensor manager locks up the emulator. Just return
       // false since it's doesn't really have one anyway.
       return false;
@@ -400,15 +399,14 @@ public class CommonUtils {
    *
    * @return boolean value indicating that we are or are not running in an emulator.
    */
-  public static boolean isEmulator(Context context) {
-    final String androidId = Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+  public static boolean isEmulator() {
+    // TODO(mrober): Consider other heuristics to decide if we are running on an Android emulator.
     return Build.PRODUCT.contains(SDK)
         || Build.HARDWARE.contains(GOLDFISH)
-        || Build.HARDWARE.contains(RANCHU)
-        || androidId == null;
+        || Build.HARDWARE.contains(RANCHU);
   }
 
-  public static boolean isRooted(Context context) {
+  public static boolean isRooted() {
     // No reliable way to determine if an android phone is rooted, since a rooted phone could
     // always disguise itself as non-rooted. Some common approaches can be found on SO:
     //   http://stackoverflow.com/questions/1101380/determine-if-running-on-a-rooted-device
@@ -416,7 +414,7 @@ public class CommonUtils {
     // http://stackoverflow.com/questions/3576989/how-can-you-detect-if-the-device-is-rooted-in-the-app
     //
     // http://stackoverflow.com/questions/7727021/how-can-androids-copy-protection-check-if-the-device-is-rooted
-    final boolean isEmulator = isEmulator(context);
+    final boolean isEmulator = isEmulator();
     final String buildTags = Build.TAGS;
     if (!isEmulator && buildTags != null && buildTags.contains("test-keys")) {
       return true;
@@ -451,13 +449,13 @@ public class CommonUtils {
   public static final int DEVICE_STATE_VENDORINTERNAL = 1 << 4;
   public static final int DEVICE_STATE_COMPROMISEDLIBRARIES = 1 << 5;
 
-  public static int getDeviceState(Context context) {
+  public static int getDeviceState() {
     int deviceState = 0;
-    if (CommonUtils.isEmulator(context)) {
+    if (CommonUtils.isEmulator()) {
       deviceState |= DEVICE_STATE_ISSIMULATOR;
     }
 
-    if (CommonUtils.isRooted(context)) {
+    if (CommonUtils.isRooted()) {
       deviceState |= DEVICE_STATE_JAILBROKEN;
     }
 

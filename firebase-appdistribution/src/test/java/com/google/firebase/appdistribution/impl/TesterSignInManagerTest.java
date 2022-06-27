@@ -14,9 +14,9 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
-import static com.google.firebase.appdistribution.impl.TestUtils.applyToForegroundActivityAnswer;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -128,9 +128,7 @@ public class TesterSignInManagerTest {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-
-    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
-        .thenAnswer(applyToForegroundActivityAnswer(activity));
+    TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
 
     testerSignInManager =
         new TesterSignInManager(
@@ -146,6 +144,7 @@ public class TesterSignInManagerTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(fisException));
 
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(
         signInTask, Status.AUTHENTICATION_FAILURE, "Failed to authenticate", fisException);
@@ -154,11 +153,12 @@ public class TesterSignInManagerTest {
   @Test
   public void signInTester_whenUnexpectedFailureInTask_failsWithUnknownError() {
     Exception unexpectedException = new Exception("unexpected exception");
-    // Raise an unexpected exception in our handler passed to applyToForegroundActivity
-    when(mockLifecycleNotifier.applyToForegroundActivity(any()))
+    // Raise an unexpected exception in our handler passed to consumeForegroundActivity
+    when(mockLifecycleNotifier.consumeForegroundActivity(any()))
         .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
   }
@@ -173,6 +173,7 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
     testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -187,6 +188,7 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
     testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -214,9 +216,11 @@ public class TesterSignInManagerTest {
   @Test
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
     Task signInTask = testerSignInManager.signInTester();
+    shadowOf(getMainLooper()).idle();
 
     // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityResumed(activity);
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();

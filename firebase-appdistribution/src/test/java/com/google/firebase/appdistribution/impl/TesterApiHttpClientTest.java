@@ -29,6 +29,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.net.ssl.HttpsURLConnection;
@@ -230,11 +232,16 @@ public class TesterApiHttpClientTest {
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
     ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
     when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
+    File testRequestBodyFile =
+        ApplicationProvider.getApplicationContext().getFileStreamPath("requestBody.txt");
+    try (FileWriter writer = new FileWriter(testRequestBodyFile)) {
+      writer.write("Test post body");
+    }
 
-    testerApiHttpClient.makeUploadRequest(
-        TAG, TEST_PATH, TEST_AUTH_TOKEN, stream -> stream.write(TEST_POST_BODY.getBytes(UTF_8)));
+    testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, testRequestBodyFile);
 
-    assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8)).isEqualTo(TEST_POST_BODY);
+    assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8))
+        .isEqualTo("Test post body");
     verify(mockHttpsURLConnection).setDoOutput(true);
     verify(mockHttpsURLConnection).setRequestMethod("POST");
     verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
