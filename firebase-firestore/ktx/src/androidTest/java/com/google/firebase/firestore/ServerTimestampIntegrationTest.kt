@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
-import com.google.firebase.firestore.ktx.serialization.setData
+import com.google.firebase.firestore.testutil.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
 import java.util.Date

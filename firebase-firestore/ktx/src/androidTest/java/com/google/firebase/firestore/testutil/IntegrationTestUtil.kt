@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
+import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
 
@@ -88,4 +89,16 @@ fun testDocument(name: String): DocumentReference {
 /** Returns a [DocumentReference] for integration test. */
 fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
+}
+
+/**
+ * Overwrites the document referred to by this [DocumentReference]. If the document does not
+ * yet exist, it will be created. If a document already exists, it will be overwritten.
+ *
+ * @param data The data to write to the document (the data must be a @Serializable Kotlin object).
+ * @return A Task that will be resolved when the write finishes.
+ */
+inline fun <reified T> DocumentReference.setData(data: T): Task<Void> {
+    val encodedMap = encodeToMap<T>(data)
+    return this.set(encodedMap)
 }

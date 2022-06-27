@@ -24,7 +24,8 @@ class MapEncoderKtxImp : MapEncoder {
      */
     override fun isAbleToBeEncoded(value: Any): Boolean {
         if (!isSerializable(value)) return false
-        // TODO: Recursively check each of its field does not contain java style annotations
+        // TODO: Recursively check each of its field to make sure any of the filed contains java
+        // style annotations
         return true
     }
 
