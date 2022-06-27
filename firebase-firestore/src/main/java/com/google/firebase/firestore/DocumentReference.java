@@ -41,6 +41,7 @@ import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.MapEncoder;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
 import java.util.Map;
@@ -161,6 +162,11 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    Object encodedData = isKtxSerializable(data) ? firestore.getMapEncoder().encode(data) : data;
+    return setParsedData(encodedData, options);
+  }
+
+  private Task<Void> setParsedData(Object data, SetOptions options) {
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
@@ -169,6 +175,24 @@ public class DocumentReference {
         .getClient()
         .write(Collections.singletonList(parsed.toMutation(key, Precondition.NONE)))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
+  }
+
+  /** Return true if a concrete implementation of MapEncoder is present at runtime; */
+  private boolean mapEncoderPresent() {
+    MapEncoder encoder = firestore.getMapEncoder();
+    return (encoder == null) ? false : true;
+  }
+
+  /**
+   * Return true if the custom object, data, is able to be encoded via the Kotlin serialization
+   * compiler plugin
+   *
+   * @param data an custom object that is need to be encoded.
+   * @return true if the Kotlin encoder component is available at runtime, and the custom object is
+   *     able to be encoded via the Kotlin serialization compiler plugin.
+   */
+  private boolean isKtxSerializable(Object data) {
+    return (mapEncoderPresent() && firestore.getMapEncoder().isAbleToBeEncoded(data));
   }
 
   /**

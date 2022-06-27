@@ -24,6 +24,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.ktx.serialization.MapEncoderKtxImp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -160,5 +161,8 @@ internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 @Keep
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
-            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+        listOf(
+            LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
+            MapEncoderKtxImp().component()
+        )
 }
