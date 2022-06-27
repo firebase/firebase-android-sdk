@@ -11,4 +11,4 @@ firebase-crashlytics-ndk/.externalNativeBuild/
 firebase-crashlytics-ndk/.cxx/
 smoke-test-logs/
 smoke-tests/build-debug-headGit-smoke-test
-smoke-tests/firehorn.log
+*.log
