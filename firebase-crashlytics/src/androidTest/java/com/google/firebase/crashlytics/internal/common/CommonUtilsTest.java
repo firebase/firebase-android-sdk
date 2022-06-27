@@ -169,10 +169,8 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   public void testIsRooted() {
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.
-    final boolean isRooted = CommonUtils.isRooted(getContext());
-    Log.d(
-        Logger.TAG,
-        "isRooted: " + isRooted + " isEmulator: " + CommonUtils.isEmulator(getContext()));
+    final boolean isRooted = CommonUtils.isRooted();
+    Log.d(Logger.TAG, "isRooted: " + isRooted + " isEmulator: " + CommonUtils.isEmulator());
 
     // We don't care about the actual result of isRooted, just that we didn't cause an exception
     assertTrue(true);
@@ -192,10 +190,10 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
 
   public void testGetDeviceState() {
 
-    final int state = CommonUtils.getDeviceState(getContext());
+    final int state = CommonUtils.getDeviceState();
     Log.d(Logger.TAG, "testGetDeviceState: state=" + state);
 
-    if (CommonUtils.isEmulator(getContext())) {
+    if (CommonUtils.isEmulator()) {
       assertTrue(isBitSet(state, CommonUtils.DEVICE_STATE_ISSIMULATOR));
     } else {
       assertFalse(isBitSet(state, CommonUtils.DEVICE_STATE_ISSIMULATOR));
@@ -207,7 +205,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
       assertFalse(isBitSet(state, CommonUtils.DEVICE_STATE_DEBUGGERATTACHED));
     }
 
-    if (CommonUtils.isRooted(getContext())) {
+    if (CommonUtils.isRooted()) {
       assertTrue(isBitSet(state, CommonUtils.DEVICE_STATE_JAILBROKEN));
     } else {
       assertFalse(isBitSet(state, CommonUtils.DEVICE_STATE_JAILBROKEN));
