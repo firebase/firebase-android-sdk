@@ -70,13 +70,10 @@ public class ConfigRealtimeHttpClient {
   private Future<?> autoFetchTask;
 
   @GuardedBy("this")
-  private int RETRIES_REMAINING;
+  private int httpRetriesRemaining;
 
   @GuardedBy("this")
-  private long RETRY_TIME_SECONDS;
-
-  @GuardedBy("this")
-  private final Random random;
+  private long httpRetrySeconds;
 
   private final int ORIGINAL_RETRIES = 7;
 
@@ -87,6 +84,7 @@ public class ConfigRealtimeHttpClient {
   private final Context context;
   private final String namespace;
   private final ExecutorService executorService;
+  private final Random random;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -207,8 +205,8 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void resetRetryParameters() {
-    RETRY_TIME_SECONDS = random.nextInt(5) + 1;
-    RETRIES_REMAINING = ORIGINAL_RETRIES;
+    httpRetrySeconds = random.nextInt(5) + 1;
+    httpRetriesRemaining = ORIGINAL_RETRIES;
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
@@ -249,11 +247,11 @@ public class ConfigRealtimeHttpClient {
 
   // Try to reopen HTTP connection after a random amount of time
   private synchronized void retryHTTPConnection() {
-    if (canMakeHttpStreamConnection() && RETRIES_REMAINING > 0) {
-      if (RETRIES_REMAINING < ORIGINAL_RETRIES) {
-        RETRY_TIME_SECONDS *= getRetryMultiplier();
+    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
+      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
+        httpRetrySeconds *= getRetryMultiplier();
       }
-      RETRIES_REMAINING--;
+      httpRetriesRemaining--;
       scheduledExecutorService.schedule(
           new Runnable() {
             @Override
@@ -261,7 +259,7 @@ public class ConfigRealtimeHttpClient {
               beginRealtime();
             }
           },
-          RETRY_TIME_SECONDS,
+          httpRetrySeconds,
           TimeUnit.SECONDS);
     } else {
       propagateErrors(

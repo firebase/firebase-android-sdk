@@ -76,11 +76,10 @@ public class RemoteConfigComponent {
   private static final Clock DEFAULT_CLOCK = DefaultClock.getInstance();
   private static final Random DEFAULT_RANDOM = new Random();
 
-  @GuardedBy("this")
-  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
+  private final ConfigUpdateListener EMPTY_CONFIG_LISTENER = createEmptyConfigListener();
 
   @GuardedBy("this")
-  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackground = new HashMap<>();
+  private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   private final Context context;
   private final ExecutorService executorService;
@@ -211,7 +210,6 @@ public class RemoteConfigComponent {
               getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
-      frcNamespaceInstancesBackground.put(namespace, in);
     }
     return frcNamespaceInstances.get(namespace);
   }
@@ -325,19 +323,22 @@ public class RemoteConfigComponent {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
   }
 
-  private synchronized void notifyRCInstances(boolean background) {
-    for (FirebaseRemoteConfig frc : frcNamespaceInstancesBackground.values()) {
-      if (!background) {
+  private ConfigUpdateListener createEmptyConfigListener() {
+    return new ConfigUpdateListener() {
+      @Override
+      public void onEvent() {}
+
+      @Override
+      public void onError(@NonNull Exception error) {}
+    };
+  }
+
+  private synchronized void notifyRCInstances(boolean isInBackground) {
+    for (FirebaseRemoteConfig frc : frcNamespaceInstances.values()) {
+      if (!isInBackground) {
         // Add dummy listener and remove to trigger http stream flow.
         ConfigUpdateListenerRegistration registration =
-            frc.addOnConfigUpdateListener(
-                new ConfigUpdateListener() {
-                  @Override
-                  public void onEvent() {}
-
-                  @Override
-                  public void onError(@NonNull Exception error) {}
-                });
+            frc.addOnConfigUpdateListener(EMPTY_CONFIG_LISTENER);
         registration.remove();
       }
     }
@@ -359,8 +360,8 @@ public class RemoteConfigComponent {
     }
 
     @Override
-    public void onBackgroundStateChanged(boolean b) {
-      notifyRCInstances(b);
+    public void onBackgroundStateChanged(boolean isInBackground) {
+      notifyRCInstances(isInBackground);
     }
   }
 }

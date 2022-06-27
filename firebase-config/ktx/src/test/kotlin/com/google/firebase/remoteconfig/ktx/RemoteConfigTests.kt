@@ -139,7 +139,7 @@ class ConfigTests : BaseTestCase() {
             fetchHandler = mock(ConfigFetchHandler::class.java),
             getHandler = mockGetHandler,
             frcMetadata = mock(ConfigMetadataClient::class.java),
-                realtimeClient = mock(ConfigRealtimeHttpClient::class.java)
+            realtimeClient = mock(ConfigRealtimeHttpClient::class.java)
         )
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))

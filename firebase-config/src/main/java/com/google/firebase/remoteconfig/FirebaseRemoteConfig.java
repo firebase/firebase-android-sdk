@@ -546,7 +546,7 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Starts realtime and returns registration.
+   * Starts listening for any config updates for this project.
    *
    * @param configUpdateListener A event listener that has one function that executes a callback
    * @return A registration object that allows the user to remove the event listener, and if it is

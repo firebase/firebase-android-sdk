@@ -53,6 +53,6 @@ fun createRemoteConfig(
             fetchHandler,
             getHandler,
             frcMetadata,
-                realtimeClient
+            realtimeClient
     )
 }
