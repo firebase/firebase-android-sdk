@@ -35,7 +35,7 @@ public class ConsoleUrlGeneratorTest {
         ConsoleUrlGenerator.generateCustomTraceUrl("test-project", "test-package", "test-trace");
     assertThat(url)
         .isEqualTo(
-            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/metrics/trace/DURATION_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
+            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/troubleshooting/trace/DURATION_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
   }
 
   @Test
@@ -44,6 +44,6 @@ public class ConsoleUrlGeneratorTest {
         ConsoleUrlGenerator.generateScreenTraceUrl("test-project", "test-package", "test-trace");
     assertThat(url)
         .isEqualTo(
-            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/metrics/trace/SCREEN_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
+            "https://console.firebase.google.com/project/test-project/performance/app/android:test-package/troubleshooting/trace/SCREEN_TRACE/test-trace?utm_source=perf-android-sdk&utm_medium=android-ide");
   }
 }
