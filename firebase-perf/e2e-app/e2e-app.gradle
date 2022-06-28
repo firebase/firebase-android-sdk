@@ -96,6 +96,10 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment:2.3.5'
     implementation 'androidx.navigation:navigation-ui:2.3.5'
     implementation 'com.google.android.material:material:1.4.0'
+    implementation project(":transport:transport-api")
+    implementation project(":transport:transport-backend-cct")
+    implementation project(":transport:transport-runtime")
+    implementation project(":transport:transport-runtime-testing")
 
     // 3rd party Deps
     implementation 'com.squareup.okhttp3:okhttp:4.9.0'
