@@ -30,6 +30,21 @@ class DocumentIdIntegrationTest {
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
 
+        @Serializable data class DocumentIdOnDocRefField(@Contextual val docId: DocumentReference)
+
+        val docRefObject = DocumentIdOnDocRefField(docId = docRefKotlin)
+        docRefKotlin.setData(docRefObject)
+        docRefPOJO.set(docRefObject)
+        val expected = waitFor(docRefPOJO.get()).data
+        val actual = waitFor(docRefKotlin.get()).data
+        assertThat(expected).containsExactlyEntriesIn(actual)
+    }
+
+    @Test
+    fun encoding_nullable_DocumentReference_is_supported() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefPOJO = testCollection("pojo").document("456")
+
         @Serializable
         data class DocumentIdOnDocRefField(@Contextual var docId: DocumentReference? = null)
 
@@ -50,8 +65,7 @@ class DocumentIdIntegrationTest {
     //
     //        @Serializable
     //        data class DocumentIdOnDocRefField(
-    //            @Contextual
-    //            var docId: DocumentReference? = docRefKotlin
+    //            @Contextual var docId: DocumentReference? = docRefKotlin
     //        )
     //
     //        val docRefObject = DocumentIdOnDocRefField()
@@ -59,7 +73,7 @@ class DocumentIdIntegrationTest {
     //        docRefPOJO.set(docRefObject)
     //        val expected = waitFor(docRefPOJO.get()).data
     //        val actual = waitFor(docRefKotlin.get()).data
-    //        assertEquals(expected, actual)
+    //        assertThat(expected).containsExactlyEntriesIn(actual)
     //    }
 
     @Test
