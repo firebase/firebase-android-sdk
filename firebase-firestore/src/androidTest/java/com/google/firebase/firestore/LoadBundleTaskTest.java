@@ -142,7 +142,7 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testProgressListener() throws InterruptedException {
+  public void testProgressListener() {
     List<TaskCompletionSource> sources = taskSourceOf(3);
 
     LoadBundleTask task = new LoadBundleTask();
@@ -172,7 +172,7 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testProgressListenerFireOnSpecifiedExecutor() throws InterruptedException {
+  public void testProgressListenerFireOnSpecifiedExecutor() {
     List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();
@@ -291,7 +291,7 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testContinueWith() throws InterruptedException {
+  public void testContinueWith() {
     List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();
@@ -313,7 +313,7 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testContinueWithTask() throws InterruptedException {
+  public void testContinueWithTask() {
     List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();

@@ -133,8 +133,6 @@ dependencies {
     implementation project(':firebase-database-collection')
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck-interop')
-    testImplementation project(path: ':firebase-firestore')
-
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
