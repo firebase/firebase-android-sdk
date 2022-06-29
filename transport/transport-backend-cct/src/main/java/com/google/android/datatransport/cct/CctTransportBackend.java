@@ -71,7 +71,7 @@ final class CctTransportBackend implements TransportBackend {
   private static final String LOG_TAG = "CctTransportBackend";
 
   private static final int CONNECTION_TIME_OUT = 30000;
-  private static final int READ_TIME_OUT = 40000;
+  private static final int READ_TIME_OUT = 130000;
   private static final int INVALID_VERSION_CODE = -1;
   private static final String ACCEPT_ENCODING_HEADER_KEY = "Accept-Encoding";
   private static final String CONTENT_ENCODING_HEADER_KEY = "Content-Encoding";
