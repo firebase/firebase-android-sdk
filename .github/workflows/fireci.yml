@@ -1,0 +1,25 @@
+name: fireci
+
+on:
+  pull_request:
+    paths:
+      - 'ci/**'
+      - '.github/workflows/fireci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fireci:
+    name: "fireci tests"
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3.0.2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - run: |
+          pip install -e "ci/fireci[test]"
+      - run: |
+          pytest ci/fireci
