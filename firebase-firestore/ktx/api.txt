@@ -38,11 +38,6 @@ package com.google.firebase.firestore.ktx.annotations {
 
 package com.google.firebase.firestore.ktx.serialization {
 
-  public final class ExtensionFunctionsKt {
-    ctor public ExtensionFunctionsKt();
-    method @NonNull public static inline <reified T> com.google.android.gms.tasks.Task<java.lang.Void> setData(@NonNull com.google.firebase.firestore.DocumentReference, @Nullable T data);
-  }
-
   public final class FirestoreListEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
     ctor public FirestoreListEncoder(@NonNull java.util.Map<java.lang.Integer,java.util.Map<java.lang.String,java.lang.Object>> map, int depth, @NonNull java.util.List<java.lang.Object> encodedList);
     ctor public FirestoreListEncoder();
@@ -70,11 +65,12 @@ package com.google.firebase.firestore.ktx.serialization {
     method @NonNull public static inline <reified T> java.util.Map<java.lang.String,java.lang.Object> encodeToMap(@Nullable T value);
   }
 
-  public final class MapEncoderKtxImp implements com.google.firebase.firestore.util.MapEncoder {
+  public final class MapEncoderKtxImp implements com.google.firebase.firestore.encoding.MapEncoder {
     ctor public MapEncoderKtxImp();
-    method @NonNull public com.google.firebase.components.Component<com.google.firebase.firestore.ktx.serialization.MapEncoderKtxImp> component();
+    method @NonNull public com.google.firebase.components.Component<?> create();
     method @NonNull public java.util.Map<java.lang.String,java.lang.Object> encode(@NonNull Object value);
     method public boolean isAbleToBeEncoded(@NonNull Object value);
+    method @NonNull public String mapEncoderId();
   }
 
 }

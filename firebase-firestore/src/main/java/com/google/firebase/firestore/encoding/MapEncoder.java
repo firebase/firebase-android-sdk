@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.encoding;
 
 import java.util.Map;
 
@@ -24,10 +24,13 @@ import java.util.Map;
  */
 public interface MapEncoder {
 
-  // encode an custom object to a nested map of firestore primitive data types
+  // Encodes an custom object to a nested map of firestore primitive data types
   Map<String, Object> encode(Object value);
 
-  // use reflection to determine if this object is suitable to be encoded with the Kotlin
+  // Uses reflection to determine if this object is suitable to be encoded with the Kotlin
   // serialization plugin
   boolean isAbleToBeEncoded(Object value);
+
+  // Id to uniquely identify an implementation of a MapEncoder
+  String mapEncoderId();
 }

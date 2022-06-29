@@ -24,13 +24,13 @@ import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
-import com.google.firebase.firestore.util.MapEncoder;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /** Multi-resource container for Cloud Firestore. */
 class FirestoreMultiDbComponent
@@ -46,7 +46,7 @@ class FirestoreMultiDbComponent
   private final Context context;
   private final Deferred<InternalAuthProvider> authProvider;
   private final Deferred<InternalAppCheckTokenProvider> appCheckProvider;
-  private final Provider<MapEncoder> mapEncoderProvider;
+  private final Set<MapEncoder> mapEncoders;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
@@ -54,13 +54,13 @@ class FirestoreMultiDbComponent
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
       @NonNull Deferred<InternalAppCheckTokenProvider> appCheckProvider,
-      @Nullable Provider<MapEncoder> mapEncoderProvider,
+      @NonNull Set<MapEncoder> mapEncoders,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
-    this.mapEncoderProvider = mapEncoderProvider;
+    this.mapEncoders = mapEncoders;
     this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
@@ -78,7 +78,7 @@ class FirestoreMultiDbComponent
               appCheckProvider,
               databaseId,
               this,
-              mapEncoderProvider,
+              mapEncoders,
               metadataProvider);
       instances.put(databaseId, firestore);
     }

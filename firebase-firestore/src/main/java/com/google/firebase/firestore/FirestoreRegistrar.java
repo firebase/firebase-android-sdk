@@ -24,8 +24,8 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.remote.FirebaseClientGrpcMetadataProvider;
-import com.google.firebase.firestore.util.MapEncoder;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.platforminfo.UserAgentPublisher;
@@ -51,7 +51,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
             .add(Dependency.optionalProvider(UserAgentPublisher.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
-            .add(Dependency.optionalProvider(MapEncoder.class))
+            .add(Dependency.setOf(MapEncoder.class))
             .add(Dependency.optional(FirebaseOptions.class))
             .factory(
                 c ->
@@ -60,7 +60,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class),
                         c.getDeferred(InternalAuthProvider.class),
                         c.getDeferred(InternalAppCheckTokenProvider.class),
-                        c.getProvider(MapEncoder.class),
+                        c.setOf(MapEncoder.class),
                         new FirebaseClientGrpcMetadataProvider(
                             c.getProvider(UserAgentPublisher.class),
                             c.getProvider(HeartBeatInfo.class),

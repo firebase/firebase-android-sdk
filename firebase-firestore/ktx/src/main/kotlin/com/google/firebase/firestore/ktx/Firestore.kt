@@ -163,6 +163,6 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
         listOf(
             LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
-            MapEncoderKtxImp().component()
+            MapEncoderKtxImp().create()
         )
 }

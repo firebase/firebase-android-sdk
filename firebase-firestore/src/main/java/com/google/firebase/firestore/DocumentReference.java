@@ -34,6 +34,7 @@ import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -41,10 +42,10 @@ import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
-import com.google.firebase.firestore.util.MapEncoder;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
@@ -162,7 +163,9 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
-    Object encodedData = isKtxSerializable(data) ? firestore.getMapEncoder().encode(data) : data;
+    // TODO: Support other encoders in the future.
+    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
+    Object encodedData = isKtxSerializable(data) ? ktxMapEncoder.encode(data) : data;
     return setParsedData(encodedData, options);
   }
 
@@ -177,10 +180,23 @@ public class DocumentReference {
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
-  /** Return true if a concrete implementation of MapEncoder is present at runtime; */
-  private boolean mapEncoderPresent() {
-    MapEncoder encoder = firestore.getMapEncoder();
-    return (encoder == null) ? false : true;
+  /**
+   * Returns a concrete implementation of MapEncoder with target encoder id
+   *
+   * @param targetEncoderId The string that uniquely define an implementation of {@code MapEncoder}.
+   * @param encoders A set of {@code MapEncoder} subclasses have been registered at runtime.
+   * @return The concrete MapEncoder subclass with target encoder id, or null if find no match.
+   */
+  private MapEncoder getMapEncoderById(String targetEncoderId, Set<MapEncoder> encoders) {
+    for (MapEncoder encoder : encoders) {
+      if (encoder.mapEncoderId().equals(targetEncoderId)) return encoder;
+    }
+    return null;
+  }
+
+  // Returns the Kotlin implementation of {@code MapEncoder} if available at runtime.
+  private MapEncoder getKtxMapEncoderById() {
+    return getMapEncoderById("fire-fst-ktx", firestore.getMapEncoders());
   }
 
   /**
@@ -192,7 +208,8 @@ public class DocumentReference {
    *     able to be encoded via the Kotlin serialization compiler plugin.
    */
   private boolean isKtxSerializable(Object data) {
-    return (mapEncoderPresent() && firestore.getMapEncoder().isAbleToBeEncoded(data));
+    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
+    return (ktxMapEncoder != null && ktxMapEncoder.isAbleToBeEncoded(data));
   }
 
   /**

@@ -15,12 +15,11 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.components.Component
-import com.google.firebase.firestore.util.MapEncoder
+import com.google.firebase.firestore.encoding.MapEncoder
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 class MapEncoderKtxImp : MapEncoder {
-
     /**
      * Encodes a custom serializable object to a nested map of Firebase firestore primitive types
      */
@@ -44,13 +43,16 @@ class MapEncoderKtxImp : MapEncoder {
     }
 
     /**
+     * The String value that uniquely identify an implementation of [MapEncoder] interface.
+     */
+    override fun mapEncoderId(): String = "fire-fst-ktx"
+
+    /**
      * Provides the concrete component that implements the [MapEncoder] interface to the component
      * registrar.
      */
-    fun component(): Component<MapEncoderKtxImp?> {
-        return Component.builder(MapEncoderKtxImp::class.java, MapEncoder::class.java)
-            .factory { MapEncoderKtxImp() }
-            .build()
+    fun create(): Component<*> {
+        return Component.intoSet(MapEncoderKtxImp(), MapEncoder::class.java)
     }
 
     /** Return true if the custom object, value, is annotated with @[Serializable] annotation. */

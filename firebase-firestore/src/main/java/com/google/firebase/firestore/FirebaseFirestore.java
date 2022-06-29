@@ -40,6 +40,7 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -53,15 +54,14 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
-import com.google.firebase.firestore.util.MapEncoder;
 import com.google.firebase.firestore.util.Preconditions;
 import com.google.firebase.inject.Deferred;
-import com.google.firebase.inject.Provider;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -103,7 +103,7 @@ public class FirebaseFirestore {
   @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
-  private final Provider<MapEncoder> mapEncoderProvider;
+  private final Set<MapEncoder> mapEncoders;
   private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
@@ -137,7 +137,7 @@ public class FirebaseFirestore {
       @NonNull Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
-      @Nullable Provider<MapEncoder> mapEncoderProvider,
+      @NonNull Set<MapEncoder> mapEncoders,
       @Nullable GrpcMetadataProvider metadataProvider) {
     String projectId = app.getOptions().getProjectId();
     if (projectId == null) {
@@ -168,7 +168,7 @@ public class FirebaseFirestore {
             queue,
             app,
             instanceRegistry,
-            mapEncoderProvider,
+            mapEncoders,
             metadataProvider);
     return firestore;
   }
@@ -183,7 +183,7 @@ public class FirebaseFirestore {
       AsyncQueue asyncQueue,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
-      @Nullable Provider<MapEncoder> mapEncoderProvider,
+      @NonNull Set<MapEncoder> mapEncoders,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
@@ -195,7 +195,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
-    this.mapEncoderProvider = mapEncoderProvider;
+    this.mapEncoders = mapEncoders;
     this.metadataProvider = metadataProvider;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
@@ -824,11 +824,8 @@ public class FirebaseFirestore {
     FirestoreChannel.setClientLanguage(languageToken);
   }
 
-  /**
-   * @return the Instance of a Kotlin Serialization Map Encoder if firebase-firestore ktx extension
-   *     is registered
-   */
-  MapEncoder getMapEncoder() {
-    return mapEncoderProvider.get();
+  /** @return A set of concrete implementations of {@code MapEncoder} */
+  Set<MapEncoder> getMapEncoders() {
+    return mapEncoders;
   }
 }

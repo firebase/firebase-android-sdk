@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.junit.Test
 
-class ComponentRegistraTest {
+class ComponentRegistrarTest {
     enum class Grade {
         FRESHMAN,
         SOPHOMORE,
@@ -50,7 +50,7 @@ class ComponentRegistraTest {
             val male: Boolean? = null,
             val grade: Grade? = null,
             @SerialName("NickName") val nickName: String? = null,
-            @Transient val homeAddress: String? = "295 Lester ST",
+            @Transient val homeAddress: String? = "295 Lester ST"
         )
 
         data class POJOStudent(
@@ -62,7 +62,7 @@ class ComponentRegistraTest {
             val male: Boolean? = null,
             val grade: Grade? = null,
             @get:PropertyName("NickName") val nickName: String? = null,
-            @get:Exclude var homeAddress: String? = "305 Webber ST",
+            @get:Exclude var homeAddress: String? = "305 Webber ST"
         )
 
         val ktxStudent =
@@ -98,14 +98,14 @@ class ComponentRegistraTest {
             val name: String? = null,
             val owner: Owner? = null, // nested object without @Serializable cannot be complied
             @Contextual @KDocumentId val docRef: DocumentReference? = null,
-            @KDocumentId val docId: String? = "foo",
+            @KDocumentId val docId: String? = "foo"
         )
 
         data class POJOProject(
             val name: String? = null,
             val owner: Owner? = null,
             @DocumentId val docRef: DocumentReference? = null,
-            @DocumentId val docId: String? = "bar",
+            @DocumentId val docId: String? = "bar"
         )
 
         docRefKotlin.set(KtxProject("foo", Owner("bar"), docRefKotlin))
