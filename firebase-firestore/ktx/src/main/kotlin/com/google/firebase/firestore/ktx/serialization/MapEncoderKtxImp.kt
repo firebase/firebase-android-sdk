@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.components.Component
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.encoding.MapEncoder
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -26,6 +27,16 @@ class MapEncoderKtxImp : MapEncoder {
     override fun encode(value: Any): MutableMap<String, Any?> {
         val serializer = serializer(value.javaClass)
         return encodeToMap(serializer, value)
+    }
+
+    override fun <T : Any?> decode(
+        data: MutableMap<String, Any?>,
+        valueType: Class<T>,
+        docRef: DocumentReference
+    ): T {
+        val deserializer = serializer(valueType)
+        val doc: FirestoreDocument = FirestoreDocument(docRef.id, docRef)
+        return decodeFromNestedMap(data, deserializer, doc) as T
     }
 
     /**
@@ -42,9 +53,12 @@ class MapEncoderKtxImp : MapEncoder {
         return true
     }
 
-    /**
-     * The String value that uniquely identify an implementation of [MapEncoder] interface.
-     */
+    override fun <T : Any?> isAbleToBeDecoded(valueType: Class<T>?): Boolean {
+        return true
+        TODO("Not yet implemented")
+    }
+
+    /** The String value that uniquely identify an implementation of [MapEncoder] interface. */
     override fun mapEncoderId(): String = "fire-fst-ktx"
 
     /**

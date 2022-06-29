@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.encoding;
 
+import com.google.firebase.firestore.DocumentReference;
 import java.util.Map;
 
 /**
@@ -27,9 +28,14 @@ public interface MapEncoder {
   // Encodes an custom object to a nested map of firestore primitive data types
   Map<String, Object> encode(Object value);
 
+  // Decodes a map to custom object
+  <T> T decode(Map<String, Object> data, Class<T> valueType, DocumentReference docRef);
+
   // Uses reflection to determine if this object is suitable to be encoded with the Kotlin
   // serialization plugin
   boolean isAbleToBeEncoded(Object value);
+
+  <T> boolean isAbleToBeDecoded(Class<T> valueType);
 
   // Id to uniquely identify an implementation of a MapEncoder
   String mapEncoderId();

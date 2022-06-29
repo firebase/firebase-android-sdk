@@ -19,12 +19,14 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firestore.v1.Value;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A {@code DocumentSnapshot} contains data read from a document in your Cloud Firestore database.
@@ -178,9 +180,29 @@ public class DocumentSnapshot {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Map<String, Object> data = getData(serverTimestampBehavior);
-    return data == null
-        ? null
+    // Ktx decoder goes here!
+    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
+    if (data == null) return null;
+    return isKtxSerializable(valueType)
+        ? ktxMapEncoder.decode(data, valueType, getReference())
         : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
+  }
+
+  private MapEncoder getMapEncoderById(String targetEncoderId, Set<MapEncoder> encoders) {
+    for (MapEncoder encoder : encoders) {
+      if (encoder.mapEncoderId().equals(targetEncoderId)) return encoder;
+    }
+    return null;
+  }
+
+  // Returns the Kotlin implementation of {@code MapEncoder} if available at runtime.
+  private MapEncoder getKtxMapEncoderById() {
+    return getMapEncoderById("fire-fst-ktx", firestore.getMapEncoders());
+  }
+
+  private <T> boolean isKtxSerializable(Class<T> valueType) {
+    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
+    return (ktxMapEncoder != null && ktxMapEncoder.isAbleToBeDecoded(valueType));
   }
 
   /**
