@@ -164,9 +164,14 @@ public class DocumentReference {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
     // TODO: Support other encoders in the future.
-    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
-    Object encodedData = isKtxSerializable(data) ? ktxMapEncoder.encode(data) : data;
-    return setParsedData(encodedData, options);
+    Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
+
+    for (MapEncoder encoder: availableEncoders){
+      if(encoder.supports(data.getClass())){
+        data = encoder.encode(data);
+      }
+    }
+    return setParsedData(data, options);
   }
 
   private Task<Void> setParsedData(Object data, SetOptions options) {
@@ -178,38 +183,6 @@ public class DocumentReference {
         .getClient()
         .write(Collections.singletonList(parsed.toMutation(key, Precondition.NONE)))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
-  }
-
-  /**
-   * Returns a concrete implementation of MapEncoder with target encoder id
-   *
-   * @param targetEncoderId The string that uniquely define an implementation of {@code MapEncoder}.
-   * @param encoders A set of {@code MapEncoder} subclasses have been registered at runtime.
-   * @return The concrete MapEncoder subclass with target encoder id, or null if find no match.
-   */
-  private MapEncoder getMapEncoderById(String targetEncoderId, Set<MapEncoder> encoders) {
-    for (MapEncoder encoder : encoders) {
-      if (encoder.mapEncoderId().equals(targetEncoderId)) return encoder;
-    }
-    return null;
-  }
-
-  // Returns the Kotlin implementation of {@code MapEncoder} if available at runtime.
-  private MapEncoder getKtxMapEncoderById() {
-    return getMapEncoderById("fire-fst-ktx", firestore.getMapEncoders());
-  }
-
-  /**
-   * Return true if the custom object, data, is able to be encoded via the Kotlin serialization
-   * compiler plugin
-   *
-   * @param data an custom object that is need to be encoded.
-   * @return true if the Kotlin encoder component is available at runtime, and the custom object is
-   *     able to be encoded via the Kotlin serialization compiler plugin.
-   */
-  private boolean isKtxSerializable(Object data) {
-    MapEncoder ktxMapEncoder = getKtxMapEncoderById();
-    return (ktxMapEncoder != null && ktxMapEncoder.isAbleToBeEncoded(data));
   }
 
   /**

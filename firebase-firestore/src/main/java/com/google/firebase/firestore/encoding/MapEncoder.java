@@ -31,12 +31,7 @@ public interface MapEncoder {
   // Decodes a map to custom object
   <T> T decode(Map<String, Object> data, Class<T> valueType, DocumentReference docRef);
 
-  // Uses reflection to determine if this object is suitable to be encoded with the Kotlin
-  // serialization plugin
-  boolean isAbleToBeEncoded(Object value);
 
-  <T> boolean isAbleToBeDecoded(Class<T> valueType);
-
-  // Id to uniquely identify an implementation of a MapEncoder
-  String mapEncoderId();
+  // Returns true if the class type supports encoding/decoding;
+  <T> boolean supports(Class<T> valueType);
 }
