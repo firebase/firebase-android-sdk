@@ -69,8 +69,7 @@ package com.google.firebase.firestore.ktx.serialization {
     ctor public MapEncoderKtxImp();
     method @NonNull public com.google.firebase.components.Component<?> create();
     method @NonNull public java.util.Map<java.lang.String,java.lang.Object> encode(@NonNull Object value);
-    method public boolean isAbleToBeEncoded(@NonNull Object value);
-    method @NonNull public String mapEncoderId();
+    method public <T> boolean supports(@NonNull Class<T> valueType);
   }
 
 }

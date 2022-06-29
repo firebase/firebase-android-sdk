@@ -27,10 +27,6 @@ public interface MapEncoder {
   // Encodes an custom object to a nested map of firestore primitive data types
   Map<String, Object> encode(Object value);
 
-  // Uses reflection to determine if this object is suitable to be encoded with the Kotlin
-  // serialization plugin
-  boolean isAbleToBeEncoded(Object value);
-
-  // Id to uniquely identify an implementation of a MapEncoder
-  String mapEncoderId();
+  // Returns true if the class type supports encoding/decoding;
+  <T> boolean supports(Class<T> valueType);
 }

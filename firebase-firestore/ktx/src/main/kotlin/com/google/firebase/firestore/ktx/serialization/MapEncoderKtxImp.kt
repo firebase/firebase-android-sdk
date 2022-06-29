@@ -28,24 +28,20 @@ class MapEncoderKtxImp : MapEncoder {
         return encodeToMap(serializer, value)
     }
 
-    /**
-     * Returns true if the custom object, value, is annotated with @[Serializable] annotation, and
-     * contains only firestore Ktx serialization annotations.
-     *
-     * <p>This method will return false if any of the Java style annotations (like @[DocumentId], @
-     * [ServerTimestamp], etc) is applied to this custom object's field.
-     */
-    override fun isAbleToBeEncoded(value: Any): Boolean {
-        if (!isSerializable(value)) return false
+    // a combination of isAbleToBeEncode and isAbleToBeDecoded
+    override fun <T : Any?> supports(valueType: Class<T>): Boolean {
+        if (!isSerializable(valueType)) return false
         // TODO: Recursively check each of its field to make sure any of the filed contains java
         // style annotations
         return true
     }
 
-    /**
-     * The String value that uniquely identify an implementation of [MapEncoder] interface.
-     */
-    override fun mapEncoderId(): String = "fire-fst-ktx"
+    /** Return true if the custom object, value, is annotated with @[Serializable] annotation. */
+    private fun <T : Any?> isSerializable(valueType: Class<T>): Boolean {
+        val annotations = valueType.annotations
+        val result = annotations.indexOfFirst { it.annotationClass == Serializable::class }
+        return result != -1
+    }
 
     /**
      * Provides the concrete component that implements the [MapEncoder] interface to the component
@@ -53,12 +49,5 @@ class MapEncoderKtxImp : MapEncoder {
      */
     fun create(): Component<*> {
         return Component.intoSet(MapEncoderKtxImp(), MapEncoder::class.java)
-    }
-
-    /** Return true if the custom object, value, is annotated with @[Serializable] annotation. */
-    private fun isSerializable(value: Any): Boolean {
-        val annotations = value.javaClass.annotations
-        val result = annotations.indexOfFirst { it.annotationClass == Serializable::class }
-        return result != -1
     }
 }
