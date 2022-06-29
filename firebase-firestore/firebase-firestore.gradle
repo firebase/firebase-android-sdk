@@ -134,7 +134,6 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck-interop')
 
-
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
@@ -158,17 +157,18 @@ dependencies {
     androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
+    testImplementation ("org.robolectric:robolectric:4.8.1") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
-    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
     }
