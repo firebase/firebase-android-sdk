@@ -31,6 +31,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -41,10 +42,14 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -62,7 +67,15 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private HttpURLConnection httpURLConnection;
+  private Future<?> autoFetchTask;
+
+  @GuardedBy("this")
+  private int httpRetriesRemaining;
+
+  @GuardedBy("this")
+  private long httpRetrySeconds;
+
+  private final int ORIGINAL_RETRIES = 7;
 
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
@@ -70,7 +83,8 @@ public class ConfigRealtimeHttpClient {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Context context;
   private final String namespace;
-  private final Executor executor;
+  private final ExecutorService executorService;
+  private final Random random;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -78,18 +92,22 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Executor executor) {
+      ExecutorService executorService) {
 
     this.listeners = new LinkedHashSet<>();
-    this.httpURLConnection = null;
+    this.autoFetchTask = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
+    // Retry parameters
+    this.random = new Random();
+    resetRetryParameters();
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
-    this.executor = executor;
+    this.executorService = executorService;
   }
 
   /**
@@ -175,8 +193,24 @@ public class ConfigRealtimeHttpClient {
     outputStream.close();
   }
 
+  private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
+    for (ConfigUpdateListener listener : listeners) {
+      listener.onError(exception);
+    }
+  }
+
+  private synchronized int getRetryMultiplier() {
+    // Return retry multiplier between range of 5 and 2.
+    return random.nextInt(3) + 2;
+  }
+
+  private synchronized void resetRetryParameters() {
+    httpRetrySeconds = random.nextInt(5) + 1;
+    httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null;
+    return !listeners.isEmpty() && autoFetchTask == null;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -197,58 +231,81 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private synchronized HttpURLConnection makeHttpConnection() {
+  private HttpURLConnection makeHttpConnection() {
     URL realtimeUrl = getUrl();
+    HttpURLConnection httpURLConnection = null;
     try {
-      this.httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+      httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
-      for (ConfigUpdateListener listener : listeners) {
-        listener.onError(
-            new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                "Can't establish http stream.", ex.getCause()));
-      }
+      Log.i(TAG, "Can't make connection, will retry after method returns.");
     }
 
     return httpURLConnection;
   }
 
-  private synchronized void startAutoFetch() {
+  // Try to reopen HTTP connection after a random amount of time
+  private synchronized void retryHTTPConnection() {
+    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
+      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
+        httpRetrySeconds *= getRetryMultiplier();
+      }
+      httpRetriesRemaining--;
+      scheduledExecutorService.schedule(
+          new Runnable() {
+            @Override
+            public void run() {
+              beginRealtime();
+            }
+          },
+          httpRetrySeconds,
+          TimeUnit.SECONDS);
+    } else {
+      propagateErrors(
+          new FirebaseRemoteConfigRealtimeUpdateStreamException(
+              "Unable to establish Realtime http stream."));
+    }
+  }
+
+  private synchronized Future<?> startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
           public void onEvent() {
             pauseRealtime();
+            retryHTTPConnection();
           }
 
           @Override
           public void onError(Exception error) {}
         };
+
     ConfigAutoFetch autoFetch =
-        new ConfigAutoFetch(
-            this.httpURLConnection,
-            configFetchHandler,
-            listeners,
-            retryCallback,
-            executor,
-            scheduledExecutorService);
-    autoFetch.beginAutoFetch();
+        new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
+    FutureTask<String> futureTask = new autoFetchFutureTask(autoFetch, httpURLConnection);
+    return executorService.submit(futureTask);
   }
 
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canMakeHttpStreamConnection()) {
-      this.httpURLConnection = makeHttpConnection();
-      startAutoFetch();
+      HttpURLConnection httpURLConnection = makeHttpConnection();
+
+      if (httpURLConnection != null) {
+        resetRetryParameters();
+        autoFetchTask = startAutoFetch(httpURLConnection);
+      } else {
+        retryHTTPConnection();
+      }
     }
   }
 
   // Pauses Http stream listening
   private synchronized void pauseRealtime() {
-    if (httpURLConnection != null) {
-      httpURLConnection.disconnect();
-      httpURLConnection = null;
+    if (autoFetchTask != null && !autoFetchTask.isCancelled()) {
+      autoFetchTask.cancel(true);
+      autoFetchTask = null;
     }
   }
 
@@ -264,6 +321,20 @@ public class ConfigRealtimeHttpClient {
     listeners.remove(listener);
     if (listeners.isEmpty()) {
       pauseRealtime();
+    }
+  }
+
+  private class autoFetchFutureTask extends FutureTask<String> {
+    private final HttpURLConnection httpURLConnection;
+
+    public autoFetchFutureTask(Runnable runnable, HttpURLConnection httpURLConnection) {
+      super(runnable, null);
+      this.httpURLConnection = httpURLConnection;
+    }
+
+    @Override
+    protected void done() {
+      httpURLConnection.disconnect();
     }
   }
 

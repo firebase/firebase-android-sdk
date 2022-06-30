@@ -30,6 +30,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Registrar for setting up Firebase Remote Config's dependency injections in Firebase Android
@@ -44,7 +45,7 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+    Qualified<ScheduledExecutorService> blockingExecutor = Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
     return Arrays.asList(
         Component.builder(RemoteConfigComponent.class)
             .name(LIBRARY_NAME)

@@ -41,6 +41,9 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,7 +78,7 @@ public class RemoteConfigComponentTest {
   @Mock private ConfigMetadataClient mockMetadataClient;
 
   private Context context;
-  private ExecutorService directExecutor;
+  private ScheduledExecutorService scheduledExecutorService;
   private FirebaseApp defaultApp;
 
   @Before
@@ -83,7 +86,7 @@ public class RemoteConfigComponentTest {
     MockitoAnnotations.initMocks(this);
 
     context = ApplicationProvider.getApplicationContext();
-    directExecutor = MoreExecutors.newDirectExecutorService();
+    scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     defaultApp = initializeFirebaseApp(context);
 
@@ -171,7 +174,7 @@ public class RemoteConfigComponentTest {
   private RemoteConfigComponent getNewFrcComponent() {
     return new RemoteConfigComponent(
         context,
-        directExecutor,
+        scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
@@ -182,7 +185,7 @@ public class RemoteConfigComponentTest {
   private RemoteConfigComponent getNewFrcComponentWithoutLoadingDefault() {
     return new RemoteConfigComponent(
         context,
-        directExecutor,
+            scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
@@ -197,7 +200,7 @@ public class RemoteConfigComponentTest {
         namespace,
         mockFirebaseInstallations,
         mockFirebaseAbt,
-        directExecutor,
+            scheduledExecutorService,
         mockFetchedCache,
         mockActivatedCache,
         mockDefaultsCache,

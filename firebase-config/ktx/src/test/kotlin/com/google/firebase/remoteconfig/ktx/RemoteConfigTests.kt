@@ -31,6 +31,7 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -38,6 +39,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.Executors
 
 const val APP_ID = "1:14368190084:android:09cb977358c6f241"
 const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
@@ -124,7 +126,7 @@ class ConfigTests : BaseTestCase() {
   @Test
   fun `Overloaded get() operator returns value when key exists`() {
     val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
-    val directExecutor = MoreExecutors.directExecutor()
+    val scheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
     val remoteConfig =
       createRemoteConfig(
@@ -132,18 +134,19 @@ class ConfigTests : BaseTestCase() {
         firebaseApp = Firebase.app(EXISTING_APP),
         firebaseInstallations = mock(FirebaseInstallationsApi::class.java),
         firebaseAbt = null,
-        executor = directExecutor,
+        executor = scheduledExecutorService,
         fetchedConfigsCache = mock(ConfigCacheClient::class.java),
         activatedConfigsCache = mock(ConfigCacheClient::class.java),
         defaultConfigsCache = mock(ConfigCacheClient::class.java),
         fetchHandler = mock(ConfigFetchHandler::class.java),
         getHandler = mockGetHandler,
-        frcMetadata = mock(ConfigMetadataClient::class.java)
+        frcMetadata = mock(ConfigMetadataClient::class.java),
+        realtimeClient = mock(ConfigRealtimeHttpClient::class.java)
       )
 
-    `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
-    assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
-  }
+        `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
+        assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)

@@ -26,7 +26,6 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
@@ -79,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -148,8 +146,6 @@ public final class FirebaseRemoteConfigTest {
   @Mock private HttpURLConnection mockHttpURLConnection;
   @Mock private ConfigUpdateListener mockListener;
   @Mock private ConfigUpdateListener mockRetryListener;
-  @Mock private ScheduledExecutorService mockScheduledExecutorService;
-  @Mock private Executor mockExecutor;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
@@ -215,7 +211,8 @@ public final class FirebaseRemoteConfigTest {
             mockDefaultsCache,
             mockFetchHandler,
             mockGetHandler,
-            metadataClient);
+            metadataClient,
+            mockRealtimeHttpClient);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -273,13 +270,7 @@ public final class FirebaseRemoteConfigTest {
     HashSet<ConfigUpdateListener> listeners = new HashSet();
     listeners.add(mockListener);
     configAutoFetch =
-        new ConfigAutoFetch(
-            mockHttpURLConnection,
-            mockFetchHandler,
-            listeners,
-            mockRetryListener,
-            mockExecutor,
-            mockScheduledExecutorService);
+        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
   }
 
   @Test
@@ -1076,7 +1067,20 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_addListener_success() {
+  public void realtime_frc_full_test() {
+    ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
+    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+        .thenReturn(mockRealtimeRegistration);
+
+    ConfigUpdateListenerRegistration registration = frc.addOnConfigUpdateListener(eventListener);
+    registration.remove();
+
+    verify(mockRealtimeRegistration).remove();
+    verify(mockRealtimeHttpClient).addRealtimeConfigUpdateListener(eventListener);
+  }
+
+  @Test
+  public void realtime_client_addListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(
@@ -1091,7 +1095,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_removeListener_success() {
+  public void realtime_client_removeListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(mockRealtimeRegistration);
@@ -1109,14 +1113,12 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
-                    .getBytes(StandardCharsets.UTF_8)));
+                "{ \\\"latestTemplateVersionNumber\\\": 1}".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onEvent();
-    verify(mockScheduledExecutorService).schedule(any(Runnable.class), anyLong(), any());
   }
 
   @Test

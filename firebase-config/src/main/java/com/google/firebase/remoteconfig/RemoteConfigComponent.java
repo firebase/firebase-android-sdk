@@ -14,12 +14,15 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.tasks.Tasks;
@@ -34,12 +37,15 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Component for providing multiple Firebase Remote Config (FRC) instances. Firebase Android
@@ -70,11 +76,13 @@ public class RemoteConfigComponent {
   private static final Clock DEFAULT_CLOCK = DefaultClock.getInstance();
   private static final Random DEFAULT_RANDOM = new Random();
 
+  private final ConfigUpdateListener EMPTY_CONFIG_LISTENER = createEmptyConfigListener();
+
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   private final Context context;
-  private final Executor executor;
+  private final ScheduledExecutorService executor;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
@@ -88,7 +96,7 @@ public class RemoteConfigComponent {
   /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
       Context context,
-      @Blocking Executor executor,
+      @Blocking ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
@@ -107,7 +115,7 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   protected RemoteConfigComponent(
       Context context,
-      Executor executor,
+      ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
@@ -199,7 +207,8 @@ public class RemoteConfigComponent {
               defaultsClient,
               fetchHandler,
               getHandler,
-              metadataClient);
+              metadataClient,
+              getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
@@ -246,6 +255,21 @@ public class RemoteConfigComponent {
         getFrcBackendApiClient(firebaseApp.getOptions().getApiKey(), namespace, metadataClient),
         metadataClient,
         this.customHeaders);
+  }
+
+  synchronized ConfigRealtimeHttpClient getRealtime(
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      Context context,
+      String namespace) {
+    return new ConfigRealtimeHttpClient(
+        firebaseApp,
+        firebaseInstallations,
+        configFetchHandler,
+        context,
+        namespace,
+        executor);
   }
 
   private ConfigGetParameterHandler getGetHandler(
@@ -297,5 +321,47 @@ public class RemoteConfigComponent {
    */
   private static boolean isPrimaryApp(FirebaseApp firebaseApp) {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
+  }
+
+  private ConfigUpdateListener createEmptyConfigListener() {
+    return new ConfigUpdateListener() {
+      @Override
+      public void onEvent() {}
+
+      @Override
+      public void onError(@NonNull Exception error) {}
+    };
+  }
+
+  private synchronized void notifyRCInstances(boolean isInBackground) {
+    for (FirebaseRemoteConfig frc : frcNamespaceInstances.values()) {
+      if (!isInBackground) {
+        // Add dummy listener and remove to trigger http stream flow.
+        ConfigUpdateListenerRegistration registration =
+            frc.addOnConfigUpdateListener(EMPTY_CONFIG_LISTENER);
+        registration.remove();
+      }
+    }
+  }
+
+  private class GlobalBackgroundListener
+      implements BackgroundDetector.BackgroundStateChangeListener {
+    private final AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
+
+    private void ensureBackgroundListenerIsRegistered(Context context) {
+      Application application = (Application) context.getApplicationContext();
+      if (INSTANCE.get() == null) {
+        GlobalBackgroundListener globalBackgroundListener = new GlobalBackgroundListener();
+        if (INSTANCE.compareAndSet(null, globalBackgroundListener)) {
+          BackgroundDetector.initialize(application);
+          BackgroundDetector.getInstance().addListener(globalBackgroundListener);
+        }
+      }
+    }
+
+    @Override
+    public void onBackgroundStateChanged(boolean isInBackground) {
+      notifyRCInstances(isInBackground);
+    }
   }
 }
