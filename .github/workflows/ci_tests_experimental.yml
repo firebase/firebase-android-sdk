@@ -82,6 +82,19 @@ jobs:
           name: Unit Test Results
           path: "**/build/test-results/**/*.xml"
 
+  # A job that fails if any job in the unit_tests matrix fails,
+  # to be used as a required check for merging.
+  check_all:
+    runs-on: ubuntu-22.04
+    if: always()
+    name: Unit Tests (matrix)
+    needs: unit_tests
+    steps:
+      - name: Check test matrix
+        if: needs.unit_tests.result != 'success'
+        run: exit 1
+
+
   integ_tests:
     name: "Instrumentation Tests"
     # only run on post submit or PRs not originating from forks.
