@@ -103,6 +103,8 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
     setupChangedTask(project, affectedProjects, "check");
     setupChangedTask(project, affectedProjects, "checkCoverage");
     setupChangedTask(project, affectedProjects, "deviceCheck");
+
+    project.getTasks().register("writeChangedProjects", ChangedModulesTask.class);
   }
 
   private static void setupChangedTask(
