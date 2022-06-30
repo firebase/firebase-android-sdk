@@ -1,0 +1,11 @@
+name: build-src-check
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'buildSrc/**'
+jobs:
+  build-src-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: 'echo "No build required" '

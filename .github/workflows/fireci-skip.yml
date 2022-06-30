@@ -1,0 +1,13 @@
+name: fireci
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'ci/**'
+      - '.github/workflows/fireci.yml'
+
+jobs:
+  fireci:
+    runs-on: ubuntu-22.04
+    steps:
+      - run: 'echo "No build required" '
