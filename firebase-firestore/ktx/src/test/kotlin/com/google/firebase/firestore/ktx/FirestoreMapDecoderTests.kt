@@ -15,9 +15,8 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth
-import com.google.firebase.firestore.DocumentSnapshot
-import kotlinx.serialization.Serializable
 import com.google.firebase.firestore.ktx.serialization.decodeFromNestedMap
+import kotlinx.serialization.Serializable
 import org.junit.Test
 
 class FirestoreMapDecoderTests {

@@ -56,4 +56,12 @@ class MapEncoderKtxImp : MapEncoder {
         val result = annotations.indexOfFirst { it.annotationClass == Serializable::class }
         return result != -1
     }
+
+    /**
+     * Provides the concrete component that implements the [MapEncoder] interface to the component
+     * registrar.
+     */
+    fun create(): Component<*> {
+        return Component.intoSet(MapEncoderKtxImp(), MapEncoder::class.java)
+    }
 }

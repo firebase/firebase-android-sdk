@@ -30,8 +30,6 @@ import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
-
-
 abstract class FirestoreAbstractDecoder(
     open val nestedObject: Any = Unit,
     open var documentId: FirestoreDocument? = null
@@ -101,7 +99,7 @@ abstract class FirestoreAbstractDecoder(
 }
 
 class FirestoreListDecoder(
-    override val nestedObject: List<*>,
+    override val nestedObject: List<*>
 ) : FirestoreAbstractDecoder() {
     private val list = nestedObject
     override val decodeValueList = list

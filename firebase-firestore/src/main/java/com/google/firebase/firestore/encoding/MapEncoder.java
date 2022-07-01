@@ -31,7 +31,6 @@ public interface MapEncoder {
   // Decodes a map to custom object
   <T> T decode(Map<String, Object> data, Class<T> valueType, DocumentReference docRef);
 
-
   // Returns true if the class type supports encoding/decoding;
   <T> boolean supports(Class<T> valueType);
 }

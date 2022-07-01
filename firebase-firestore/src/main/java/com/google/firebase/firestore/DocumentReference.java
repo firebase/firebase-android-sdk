@@ -166,8 +166,8 @@ public class DocumentReference {
     // TODO: Support other encoders in the future.
     Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
 
-    for (MapEncoder encoder: availableEncoders){
-      if(encoder.supports(data.getClass())){
+    for (MapEncoder encoder : availableEncoders) {
+      if (encoder.supports(data.getClass())) {
         data = encoder.encode(data);
       }
     }
