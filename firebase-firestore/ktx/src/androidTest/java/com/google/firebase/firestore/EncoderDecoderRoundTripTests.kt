@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.getField
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
@@ -51,5 +52,73 @@ class EncoderDecoderRoundTripTests {
         docRefKotlin.set(plainProject)
         val actualObj = waitFor(docRefKotlin.get()).toObject<PlainProject>()
         Truth.assertThat(actualObj).isEqualTo(plainProject)
+    }
+
+    data class PlainProject(
+        val Name: String? = null,
+        val OwnerName: String? = null,
+        val IsMyBoolField: Boolean? = null,
+        @DocumentId val DocID: String? = null
+    )
+
+    // The current pain point of POJO solution (with the toObject() method):
+    // 1. Must have the non-argument constructor, otherwise, it is a runtime error,
+    // 2. All the field must start with lower case letter, xYYY, otherwise, it will just return an object with default value (because the .data map can not match the object field)
+    // 3. Boolean field, if field start with 'is', must be annotated with @field:JvmField annotation, otherwise, it will just return an object with default value.
+
+    // The current pain points of the POJO solution (with the docSnapshot.data method)
+    // 1. Must have teh non-argument constructor, otherwise, it is a runtime error
+    // 2. If the field name does not start with lower case letter, the generated map will have the first letter be converted to lower case anyways (because this is converted during the encoding process)
+    // 3. If the boolean field name start with 'is', but is not annoated with @field:JvmField annotation, the generated map key will lost the leading 'is'
+    @Test
+    fun deocder_with_documetnId_path(){
+        val docRefKotlin = testCollection("ktx").document("123-456-789")
+
+        val plainProject = PlainProject("foo", "bar",true, null)
+        docRefKotlin.set(plainProject)
+//        val actualObj = waitFor(docRefKotlin.get()).toObject<PlainProject>()
+//        Truth.assertThat(actualObj).isEqualTo(plainProject)
+
+        val actualMap = waitFor(docRefKotlin.get()).data
+        Truth.assertThat(actualMap).isEqualTo(mutableMapOf<String, Any>())
+
+
+    }
+
+    data class School(
+        val name: String? = null,
+        val ownerName: String? = null,
+        val student: Student? = null,
+        @DocumentId
+        val outsideDocId: String? = null
+    )
+
+    data class Student(
+        val age: Int = 10,
+        val id: String = "foobar",
+        @DocumentId
+        val docId: String? = null
+    )
+
+    @Test
+    fun test_for_docSnapshot_get(){
+        val docRefKotlin = testCollection("ktx").document("123-456-789")
+        val school = School("foo", "bar", Student(100, "sname"))
+        docRefKotlin.set(mapOf("field" to school))
+
+        val docSnapshot = waitFor(docRefKotlin.get())
+        // snapshot.get(path) -> returns a map, I can decode a map to a object, should be no problem, this will be easy
+//        val docSnapshotGetField = docSnapshot.get(FieldPath.of("field")) as MutableMap<String, Any>
+//        Truth.assertThat(docSnapshotGetField["student"]).isEqualTo(mutableMapOf<String, Any>())
+
+//        val docSnapshotGetField = docSnapshot.getField<Student>(FieldPath.of("field", "student"))
+//        Truth.assertThat(docSnapshotGetField).isEqualTo(mutableMapOf<String, Any>())
+//        // Student(age=100, id=sname, docId=123-456-789)
+
+        val docSnapshotGetField = docSnapshot.getField<School>(FieldPath.of("field"))
+        Truth.assertThat(docSnapshotGetField).isEqualTo(mutableMapOf<String, Any>())
+//        but was : School(name=foo, ownerName=bar, student=Student(age=100, id=sname, docId=123-456-789), outsideDocId=123-456-789)
+
+
     }
 }
