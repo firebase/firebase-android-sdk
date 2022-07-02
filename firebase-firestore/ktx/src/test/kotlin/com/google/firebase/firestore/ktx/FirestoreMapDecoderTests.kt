@@ -15,7 +15,8 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth
-import com.google.firebase.firestore.ktx.serialization.decodeFromNestedMap
+import com.google.firebase.firestore.documentReference
+import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import kotlinx.serialization.Serializable
 import org.junit.Test
 
@@ -23,13 +24,13 @@ class FirestoreMapDecoderTests {
     @Serializable
     data class PlainProject(val name: String, val ownerName: String)
 
-    private val firestoreDocument = null
+    private val firestoreDocument = documentReference("abc/1234")
 
     @Test
     fun decodePlainMap() {
         val plainMap =
             mapOf<String, Any>("name" to "kotlinx.serialization", "ownerName" to "kotlin")
-        val decodedObject = decodeFromNestedMap<PlainProject>(plainMap, firestoreDocument)
+        val decodedObject = decodeFromMap<PlainProject>(plainMap, firestoreDocument)
         val expectedObject = PlainProject("kotlinx.serialization", "kotlin")
         Truth.assertThat(decodedObject).isEqualTo(expectedObject)
     }

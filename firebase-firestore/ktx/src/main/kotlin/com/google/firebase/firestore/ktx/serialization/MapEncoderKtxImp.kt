@@ -33,13 +33,13 @@ class MapEncoderKtxImp : MapEncoder {
      * decodes a nested map to a custom object
      */
     override fun <T : Any?> decode(
-        data: MutableMap<String, Any?>,
+        data: MutableMap<String, Any>,
         valueType: Class<T>,
         docRef: DocumentReference
     ): T {
         val deserializer = serializer(valueType)
-        val doc: FirestoreDocument = FirestoreDocument(docRef.id, docRef)
-        return decodeFromNestedMap(data, deserializer, doc) as T
+        val doc: DocumentReference = docRef
+        return decodeFromMap(data, deserializer, doc) as T
     }
 
     // a combination of isAbleToBeEncode and isAbleToBeDecoded
