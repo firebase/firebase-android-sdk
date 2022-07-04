@@ -15,6 +15,7 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.getField
 import com.google.firebase.firestore.ktx.toObject
@@ -117,5 +118,15 @@ class EncoderDecoderRoundTripTests {
 //        val docSnapshotGetField = docSnapshot.getField<School>(FieldPath.of("field"))
 //        Truth.assertThat(docSnapshotGetField).isEqualTo(mutableMapOf<String, Any>())
 //        but was : School(name=foo, ownerName=bar, student=Student(age=100, id=sname, docId=123-456-789), outsideDocId=123-456-789)
+    }
+
+    @Test
+    fun can_any_field_in_firestore_be_null() {
+        val docRefKotlin = testCollection("ktx").document("123-456-789")
+        data class Pig(val name: String? = null, val weight: Long? = 10L)
+        docRefKotlin.set(Pig())
+        val actualObj = waitFor(docRefKotlin.get()).data
+        assertThat(actualObj).isEqualTo(mutableMapOf<String, Any>())
+        // but was         : {name=null, weight=10}
     }
 }

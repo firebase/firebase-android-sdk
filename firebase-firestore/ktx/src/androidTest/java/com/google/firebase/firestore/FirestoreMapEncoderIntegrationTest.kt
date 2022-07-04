@@ -147,9 +147,11 @@ class FirestoreMapEncoderIntegrationTest {
     @Test
     fun nested_object_serialization_is_equivalent() {
 
-        @Serializable data class Owner(val name: String? = null, val age: Int? = 100)
+        @Serializable
+        data class Owner(val name: String? = null, val age: Int? = 100)
 
-        @Serializable data class Project(val name: String? = null, val owner: Owner? = null)
+        @Serializable
+        data class Project(val name: String? = null, val owner: Owner? = null)
 
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
@@ -207,7 +209,9 @@ class FirestoreMapEncoderIntegrationTest {
         val docRefKotlin = testCollection("ktx").document("123")
         val docRefPOJO = testCollection("pojo").document("456")
 
-        @Serializable data class FinalExamMarksKtx(val collectionOfMarks: Array<Int?>? = null)
+        @Serializable
+        data class FinalExamMarksKtx(val collectionOfMarks: Array<Int?>? = null)
+
         // Java does not support serializing arrays (only support Lists)
         data class FinalExamMarksJava(val collectionOfMarks: List<Int>? = null)
 
@@ -221,7 +225,8 @@ class FirestoreMapEncoderIntegrationTest {
     @Test
     fun nested_custom_obj_list_serialization_is_equivalent() {
 
-        @Serializable data class Owner(val name: String? = null)
+        @Serializable
+        data class Owner(val name: String? = null)
 
         @Serializable
         data class Project(val name: String? = null, val listOfOwner: List<Owner?>? = null)
@@ -250,9 +255,11 @@ class FirestoreMapEncoderIntegrationTest {
     @Test
     fun deep_nested_object_serialization_is_equivalent() {
 
-        @Serializable data class People(val name: String? = null)
+        @Serializable
+        data class People(val name: String? = null)
 
-        @Serializable data class City(val name: String? = null, val people: People? = null)
+        @Serializable
+        data class City(val name: String? = null, val people: People? = null)
 
         @Serializable
         data class Region(
