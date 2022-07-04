@@ -74,6 +74,11 @@ final class TestUtils {
       throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     TestOnCompleteListener<T> onCompleteListener = new TestOnCompleteListener<>();
     task.addOnCompleteListener(Executors.newSingleThreadExecutor(), onCompleteListener);
+
+    // Idle the main looper, which is also running these tests, so any Task or lifecycle callbacks
+    // can be handled. See http://robolectric.org/blog/2019/06/04/paused-looper/ for more info.
+    shadowOf(getMainLooper()).idle();
+
     return onCompleteListener.await();
   }
 

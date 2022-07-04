@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
@@ -27,7 +28,7 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERR
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,8 +50,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
@@ -94,7 +93,7 @@ public class FirebaseAppDistributionServiceImplTest {
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
-  private static final Bitmap TEST_SCREENSHOT = Bitmap.createBitmap(400, 400, Config.RGB_565);
+  private static final String TEST_SCREENSHOT_FILE_NAME = "screenshot.png";
 
   private static final AppDistributionReleaseInternal.Builder TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -190,7 +189,8 @@ public class FirebaseAppDistributionServiceImplTest {
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
 
-    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT));
+    when(mockScreenshotTaker.takeScreenshot())
+        .thenReturn(Tasks.forResult(TEST_SCREENSHOT_FILE_NAME));
   }
 
   @Test
@@ -202,6 +202,8 @@ public class FirebaseAppDistributionServiceImplTest {
                     ErrorMessages.JSON_PARSING_ERROR, Status.NETWORK_FAILURE)));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
+    shadowOf(getMainLooper()).idle();
+
     assertTaskFailure(task, NETWORK_FAILURE, JSON_PARSING_ERROR);
   }
 
@@ -210,6 +212,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(firebaseAppDistribution.isTesterSignedIn()).thenReturn(false);
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(task, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
@@ -222,6 +225,7 @@ public class FirebaseAppDistributionServiceImplTest {
                 TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("Newer version.").build()));
 
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
+    shadowOf(getMainLooper()).idle();
 
     assertNotNull(task.getResult());
     assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
@@ -235,7 +239,10 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(
                 new FirebaseAppDistributionException("Test", AUTHENTICATION_FAILURE)));
+
     firebaseAppDistribution.checkForNewRelease();
+    shadowOf(getMainLooper()).idle();
+
     verify(mockSignInStorage, times(1)).setSignInStatus(false);
   }
 
@@ -244,6 +251,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockSignInStorage.getSignInStatus()).thenReturn(false);
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, "Tester is not signed in");
   }
@@ -254,6 +262,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.build())));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
@@ -284,6 +293,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL.setReleaseNotes("").build())));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
@@ -301,6 +311,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(progressEvents::add);
+    shadowOf(getMainLooper()).idle();
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
@@ -316,6 +327,7 @@ public class FirebaseAppDistributionServiceImplTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(progressEvents::add);
 
+    shadowOf(getMainLooper()).idle();
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
@@ -335,6 +347,7 @@ public class FirebaseAppDistributionServiceImplTest {
     AlertDialog signInDialog = assertAlertDialogShown();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
 
+    shadowOf(getMainLooper()).idle();
     verify(mockTesterSignInManager, times(1)).signInTester();
     verify(mockNewReleaseFetcher, never()).checkForNewRelease();
     assertTaskFailure(updateTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
@@ -353,6 +366,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     AlertDialog signInDialog = assertAlertDialogShown();
     signInDialog.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(updateTask, AUTHENTICATION_FAILURE, AUTHENTICATION_ERROR);
   }
@@ -363,8 +377,11 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
+
     AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(updateDialog.isShowing());
     assertFalse(updateTask.isSuccessful());
@@ -377,9 +394,11 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL.build()));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.onBackPressed(); // cancels the dialog
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(updateDialog.isShowing());
 
@@ -399,6 +418,7 @@ public class FirebaseAppDistributionServiceImplTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(progressEvents::add);
 
+    shadowOf(getMainLooper()).idle();
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_CHECK_FAILED, progressEvents.get(0).getUpdateStatus());
 
@@ -411,6 +431,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }
@@ -422,6 +443,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     AlertDialog dialog = assertAlertDialogShown();
     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(updateTask.isSuccessful());
     Exception e = updateTask.getException();
@@ -437,6 +459,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     AlertDialog dialog = assertAlertDialogShown();
     dialog.onBackPressed(); // cancel dialog
+    shadowOf(getMainLooper()).idle();
 
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();
@@ -476,10 +499,12 @@ public class FirebaseAppDistributionServiceImplTest {
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(progressEvents::add);
+    shadowOf(getMainLooper()).idle();
 
     // Clicking the update button.
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     updateDialog.getButton(Dialog.BUTTON_POSITIVE).performClick();
+    shadowOf(getMainLooper()).idle();
 
     // Update flow
     assertEquals(1, progressEvents.size());
@@ -506,6 +531,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(activity.isChangingConfigurations()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     // Mimic activity recreation due to a configuration change
     firebaseAppDistribution.onActivityDestroyed(activity);
@@ -522,6 +548,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(activity.isChangingConfigurations()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     // Mimic activity recreation due to a configuration change
     firebaseAppDistribution.onActivityDestroyed(activity);
@@ -543,6 +570,7 @@ public class FirebaseAppDistributionServiceImplTest {
     firebaseAppDistribution.onActivityPaused(activity);
     firebaseAppDistribution.onActivityResumed(testActivity2);
 
+    shadowOf(getMainLooper()).idle();
     assertTaskFailure(
         updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
   }
@@ -555,10 +583,12 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
+    shadowOf(getMainLooper()).idle();
 
     // Mimic different activity getting resumed
     firebaseAppDistribution.onActivityPaused(activity);
     firebaseAppDistribution.onActivityResumed(testActivity2);
+    shadowOf(getMainLooper()).idle();
 
     assertTaskFailure(
         updateTask, HOST_ACTIVITY_INTERRUPTED, ErrorMessages.HOST_ACTIVITY_INTERRUPTED);
@@ -613,7 +643,7 @@ public class FirebaseAppDistributionServiceImplTest {
     verify(mockTesterSignInManager).signInTester();
     assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
         .isEqualTo("release-name");
-    assertThat(argument.getValue().<Bitmap>getParcelableExtra(SCREENSHOT_EXTRA_KEY))
-        .isEqualTo(TEST_SCREENSHOT);
+    assertThat(argument.getValue().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY))
+        .isEqualTo(TEST_SCREENSHOT_FILE_NAME);
   }
 }
