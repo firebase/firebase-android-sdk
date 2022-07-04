@@ -46,10 +46,10 @@ class EncoderDecoderRoundTripTests {
             val Name: String,
             val OwnerName: String,
             val BoolField: Boolean,
-            @KDocumentId var DocID: String?
+//            @KDocumentId var DocID: String?
         )
 
-        val plainProject = PlainProject("foo", "bar", true, null)
+        val plainProject = PlainProject("foo", "bar", true)
         docRefKotlin.set(plainProject)
         val actualObj = waitFor(docRefKotlin.get()).toObject<PlainProject>()
         Truth.assertThat(actualObj).isEqualTo(plainProject)
