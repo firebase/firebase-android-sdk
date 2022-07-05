@@ -16,6 +16,8 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.testutil.getData
+import com.google.firebase.firestore.testutil.getPojoData
 import com.google.firebase.firestore.testutil.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
@@ -84,4 +86,44 @@ class DocumentIdIntegrationTest {
         assertThat(expected).containsExactlyEntriesIn(actual)
     }
     // TODO: Add more integration test
+
+    @Serializable
+    private data class DocumentIdOnDocRefField(@Contextual val docId: DocumentReference? = null)
+
+    @Test
+    fun decoding_DocumentReference_is_supported() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefObject = DocumentIdOnDocRefField(docRefKotlin)
+        docRefKotlin.setData(docRefObject)
+        val actual = waitFor(docRefKotlin.get()).getData<DocumentIdOnDocRefField>()
+        val expected = waitFor(docRefKotlin.get()).getPojoData<DocumentIdOnDocRefField>()
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Serializable
+    private data class DocumentIdOnDocRefFieldWithAnnotation(
+        @Contextual @KDocumentId @DocumentId val docId: DocumentReference? = null,
+        @KDocumentId @DocumentId val stringDocId: String? = null
+    )
+
+    @Test
+    fun decoding_DocumentReference_with_KDocumentId_annotation_is_supported() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefObjectList =
+            listOf(
+                DocumentIdOnDocRefFieldWithAnnotation(),
+                DocumentIdOnDocRefFieldWithAnnotation(docRefKotlin),
+                DocumentIdOnDocRefFieldWithAnnotation(stringDocId = "foo/bar"),
+                DocumentIdOnDocRefFieldWithAnnotation(docRefKotlin, "foo/bar")
+            )
+
+        for (obj in docRefObjectList) {
+            docRefKotlin.setData(obj)
+            val actual =
+                waitFor(docRefKotlin.get()).getData<DocumentIdOnDocRefFieldWithAnnotation>()
+            val expected =
+                waitFor(docRefKotlin.get()).getPojoData<DocumentIdOnDocRefFieldWithAnnotation>()
+            assertThat(actual).isEqualTo(expected)
+        }
+    }
 }
