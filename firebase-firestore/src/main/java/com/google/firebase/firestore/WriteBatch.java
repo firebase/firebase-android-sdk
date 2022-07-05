@@ -22,12 +22,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Util;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A write batch, used to perform multiple writes as a single atomic unit.
@@ -84,6 +86,13 @@ public class WriteBatch {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
     verifyNotCommitted();
+    // TODO: Support other encoders in the future.
+    Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
+    for (MapEncoder encoder : availableEncoders) {
+      if (encoder.supports(data.getClass())) {
+        data = encoder.encode(data);
+      }
+    }
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())

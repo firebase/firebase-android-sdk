@@ -21,16 +21,20 @@ import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Transaction
+import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.mutation.FieldMask
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 
 /**
@@ -151,6 +155,20 @@ inline fun <reified T> DocumentReference.setPojoData(
         ?.call(this, data, options) as Task<Void>
 }
 
+
+val OVERWRITE_SET_OPTIONS: SetOptions?
+    get() = testSetOptions(false, null)
+
+/**
+ * Returns a [SetOptions] from its constructor, this is a helper function for integration test purpose.
+ */
+private fun testSetOptions(merge: Boolean, field: FieldMask?): SetOptions? =
+    SetOptions::class
+        .constructors
+        .firstOrNull { it.name == "<init>" }
+        ?.apply { isAccessible = true }
+        ?.call(merge, field)
+
 /**
  * Returns the contents of the document converted to a Custom POJO Object or null if the document
  * doesn't exist. This method always use the reflection based Java pojo method, and this is a helper
@@ -168,12 +186,49 @@ inline fun <reified T> DocumentSnapshot.getPojoData(
     return CustomClassMapper.convertToCustomClass(data, T::class.java, reference)
 }
 
-val OVERWRITE_SET_OPTIONS: SetOptions?
-    get() = testSetOptions(false, null)
 
-fun testSetOptions(merge: Boolean, field: FieldMask?): SetOptions? =
-    SetOptions::class
-        .constructors
-        .firstOrNull { it.name == "<init>" }
-        ?.apply { isAccessible = true }
-        ?.call(merge, field)
+/**
+ * Writes to the document referred to by the provided DocumentReference. If the document does not
+ * yet exist, it will be created. The provided data will always override the existing document
+ *
+ * <p> This method always use the reflection based Java pojo method, and this is a helper function
+ * for integration test purpose (to compare Kotlin transaction.set method is the same as Java POJO method)
+ *
+ * @param documentRef The [DocumentReference] to overwrite.
+ * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+ *     document contents).
+ * @return This [Transaction] instance. Used for chaining method calls.
+ */
+inline fun <reified T> Transaction.set(
+    documentRef: DocumentReference,
+    data: T,
+): Transaction {
+    val firestore =
+        Transaction::class
+            .memberProperties
+            .firstOrNull { it.name == "firestore" }
+            ?.apply { isAccessible = true }
+            ?.get(this) as FirebaseFirestore
+    val transaction =
+        Transaction::class
+            .memberProperties
+            .firstOrNull { it.name == "transaction" }
+            ?.apply { isAccessible = true }
+            ?.get(this) as com.google.firebase.firestore.core.Transaction
+    val firestoreUserDataReader =
+        FirebaseFirestore::class
+            .memberProperties
+            .firstOrNull { it.name == "userDataReader" }
+            ?.apply { isAccessible = true }
+            ?.get(firestore) as UserDataReader
+    val documentRefKey =
+        DocumentReference::class
+            .memberProperties
+            .firstOrNull { it.name == "key" }
+            ?.apply { isAccessible = true }
+            ?.get(documentRef) as DocumentKey
+
+    val parsed = firestoreUserDataReader.parseSetData(data)
+    transaction[documentRefKey] = parsed
+    return this
+}
