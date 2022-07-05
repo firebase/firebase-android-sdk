@@ -19,6 +19,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.testutil.getData
+import com.google.firebase.firestore.testutil.getPojoData
 import com.google.firebase.firestore.testutil.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
@@ -86,4 +87,18 @@ class ServerTimestampIntegrationTest {
     }
 
     // TODO: Add more integration test
+
+    // @Serializable
+    private data class TimestampKtx(
+        @Contextual @KServerTimestamp @ServerTimestamp var timestamp: Timestamp? = null,
+        @Contextual @KServerTimestamp @ServerTimestamp var date: Date? = null
+    )
+
+    @Test
+    fun no_need_of_default_value(){
+        val docRefKotlin = testCollection("ktx").document("123")
+        docRefKotlin.set(TimestampKtx(null, null)) // encoding with annotation
+        val actualObjWithEstimateTimestamp = waitFor(docRefKotlin.get()).getPojoData<TimestampKtx>(ServerTimestampBehavior.ESTIMATE)
+        assertThat(actualObjWithEstimateTimestamp).isEqualTo(TimestampKtx(null, null))
+    }
 }

@@ -86,7 +86,7 @@ class TransactionIntegrationTests {
             transaction.set(sfDocRef, City())
         }
 
-        val run = waitFor(testFirestore.runTransaction())
+//        val run = waitFor(testFirestore.runTransaction())
         testFirestore.runTransaction { transaction ->
             val snapshot = transaction.get(sfDocRef)
 

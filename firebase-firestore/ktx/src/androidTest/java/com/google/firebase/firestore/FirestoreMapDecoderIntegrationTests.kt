@@ -243,4 +243,20 @@ class FirestoreMapDecoderIntegrationTests {
             assertThat(actual).isEqualTo(expected)
         }
     }
+
+    @Test
+    // TODO: This feature need to be implemented at DocumentSnapshot Line 330
+    fun get_field_to_object_is_equivalent(){
+        val owner = Owner("foo", 10)
+        val project = Project("kotlin-project",owner = owner)
+        val docRefKotlin = testCollection("ktx").document("123")
+        docRefKotlin.setData(project)
+        val docSnapshot = waitFor(docRefKotlin.get())
+        // get itself will return a map if the field is a custom class, and will return the value if it is permitive type.
+        val actual = waitFor(docRefKotlin.get()).get("owner")
+
+        // must use class.java to get the field value as an POJO object
+//        val actual = docSnapshot.get("owner", Owner::class.java)
+        assertThat(actual).isEqualTo("123")
+    }
 }

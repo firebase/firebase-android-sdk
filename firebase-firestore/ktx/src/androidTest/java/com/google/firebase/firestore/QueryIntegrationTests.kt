@@ -10,13 +10,14 @@ import kotlinx.serialization.Serializable
 import org.junit.Test
 
 class QueryIntegrationTests {
-    @Serializable
+//    @Serializable
     data class City(
         val name: String? = null,
         val state: String? = null,
         val country: String? = null,
 //        @field:JvmField // use this annotation if your Boolean field is prefixed with 'is'
-        @SerialName("capital")
+//        @SerialName("capital")
+        @PropertyName("capital")
         val isCapital: Boolean? = null,
         val population: Long? = null,
         val regions: List<String>? = null
@@ -83,13 +84,13 @@ class QueryIntegrationTests {
         // Create a query against the collection.
         val query: Query = citiesRef.whereEqualTo("state", "CA")
         waitFor(query.get()).map {
-            val city = it.toObject<City>()
+            val city = it.toObject<City>() //queryDoc goes here
             Log.d("TestLog", city.toString())
         }
         Log.d("TestLog", "=".repeat(25) + " Now Test For QuerySnapshot.toObjects()")
 
         val querySnapshot = waitFor(query.get())
-        val listOfCitiess = querySnapshot.toObjects<City>()
+        val listOfCitiess = querySnapshot.toObjects<City>() // query get goes here
         for (city in listOfCitiess) {
             Log.d("TestLog", city.toString())
         }
