@@ -45,5 +45,6 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
-    implementation 'com.google.android.play:core:1.9.0'
+    implementation 'com.google.android.play:app-update:2.0.0'
+    implementation 'com.google.android.play:review:2.0.0'
 }
