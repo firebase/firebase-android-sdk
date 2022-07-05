@@ -415,3 +415,13 @@ package com.google.firebase.firestore {
 
 }
 
+package com.google.firebase.firestore.encoding {
+
+  public interface MapEncoder {
+    method public <T> T decode(java.util.Map<java.lang.String,java.lang.Object>, Class<T>, com.google.firebase.firestore.DocumentReference);
+    method public java.util.Map<java.lang.String,java.lang.Object> encode(Object);
+    method public <T> boolean supports(Class<T>);
+  }
+
+}
+

@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.testutil.setData
+import com.google.firebase.firestore.testutil.setPojoData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
 import kotlin.test.assertFailsWith
@@ -63,7 +64,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (student in studentList) {
             docRefKotlin.setData(student)
-            docRefPOJO.set(student)
+            docRefPOJO.setPojoData(student)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(expected).containsExactlyEntriesIn(actual)
@@ -135,7 +136,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         val optionalStudent = OptionalStudent("foo", 1, 20L, 100.0, 99.5F, true, Grade.FRESHMAN)
         docRefOptionalKotlin.setData(optionalStudent)
-        docRefOptionalJava.set(optionalStudent)
+        docRefOptionalJava.setPojoData(optionalStudent)
         val expectedOptionalKtx = waitFor(docRefNonOptionalKotlin.get()).data
         val actualOptionalJava = waitFor(docRefNonOptionalJava.get()).data
 
@@ -168,7 +169,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (project in listOfProjects) {
             docRefKotlin.setData(project)
-            docRefPOJO.set(project)
+            docRefPOJO.setPojoData(project)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(expected).containsExactlyEntriesIn(actual)
@@ -197,7 +198,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (mark in listOfFinalExamMarks) {
             docRefKotlin.setData(mark)
-            docRefPOJO.set(mark)
+            docRefPOJO.setPojoData(mark)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(expected).containsExactlyEntriesIn(actual)
@@ -216,7 +217,7 @@ class FirestoreMapEncoderIntegrationTest {
         data class FinalExamMarksJava(val collectionOfMarks: List<Int>? = null)
 
         docRefKotlin.setData(FinalExamMarksKtx(arrayOf(1, 2, 3)))
-        docRefPOJO.set(FinalExamMarksJava(listOf(1, 2, 3)))
+        docRefPOJO.setPojoData(FinalExamMarksJava(listOf(1, 2, 3)))
         val expected = waitFor(docRefPOJO.get()).data
         val actual = waitFor(docRefKotlin.get()).data
         assertThat(expected).containsExactlyEntriesIn(actual)
@@ -245,7 +246,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (project in listOfProjects) {
             docRefKotlin.setData(project)
-            docRefPOJO.set(project)
+            docRefPOJO.setPojoData(project)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(expected).containsExactlyEntriesIn(actual)
@@ -284,7 +285,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (testedObject in listOfTestedObject) {
             docRefKotlin.setData(testedObject)
-            docRefPOJO.set(testedObject)
+            docRefPOJO.setPojoData(testedObject)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(expected).containsExactlyEntriesIn(actual)

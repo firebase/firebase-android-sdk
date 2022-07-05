@@ -16,7 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.getField
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.testutil.testCollection
@@ -45,7 +44,7 @@ class EncoderDecoderRoundTripTests {
         data class PlainProject(
             val Name: String,
             val OwnerName: String,
-            val BoolField: Boolean,
+            val BoolField: Boolean
 //            @KDocumentId var DocID: String?
         )
 

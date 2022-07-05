@@ -20,14 +20,18 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import com.google.firebase.firestore.model.mutation.FieldMask
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.jvm.isAccessible
 
 /**
  * Whether the integration tests should run against a local Firestore emulator or the Production
@@ -95,8 +99,8 @@ fun testDocument(): DocumentReference {
 }
 
 /**
- * Overwrites the document referred to by this [DocumentReference]. If the document does not
- * yet exist, it will be created. If a document already exists, it will be overwritten.
+ * Overwrites the document referred to by this [DocumentReference]. If the document does not yet
+ * exist, it will be created. If a document already exists, it will be overwritten.
  *
  * @param data The data to write to the document (the data must be a @Serializable Kotlin object).
  * @return A Task that will be resolved when the write finishes.
@@ -107,28 +111,69 @@ inline fun <reified T> DocumentReference.setData(data: T): Task<Void> {
 }
 
 /**
- * Returns the contents of the document converted to a Serializable Custom Kotlin Object or null if the document doesn't exist.
- * This method always use the Kotlin Serialization plugin method,and this is a helper function for integration test purpose (to compare Kotlin decode method is the same as Java POJO method).
+ * Returns the contents of the document converted to a Serializable Custom Kotlin Object or null if
+ * the document doesn't exist. This method always use the Kotlin Serialization plugin method,and
+ * this is a helper function for integration test purpose (to compare Kotlin decode method is the
+ * same as Java POJO method).
  *
- * @return The contents of the document in an object of type T or null if the document
- *     doesn't exist.
+ * @return The contents of the document in an object of type T or null if the document doesn't
+ * exist.
  */
-inline fun <reified T> DocumentSnapshot.getData(): T? {
-    val mapToBeDecoded = this.data
+inline fun <reified T> DocumentSnapshot.getData(
+    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior =
+        DocumentSnapshot.ServerTimestampBehavior.NONE
+): T? {
+    val mapToBeDecoded = this.getData(serverTimestampBehavior)
     return mapToBeDecoded?.let { decodeFromMap<T>(it, reference) }
 }
 
 /**
- * Returns the contents of the document converted to a Custom POJO Object or null if the document doesn't exist.
- * This method always use the reflection based Java pojo method, and this is a helper function for integration test purpose (to compare Kotlin decode method is the same as Java POJO method).
+ * Overwrites the document referred to by this [DocumentReference]. If the document does not yet
+ * exist, it will be created. If a document already exists, it will be overwritten. If you pass
+ * [SetOptions], the provided data can be merged into an existing document.
  *
- * @return The contents of the document in an object of type T or null if the document
- *     doesn't exist.
+ * <p> This method always use the reflection based Java pojo method, and this is a helper function
+ * for integration test purpose (to compare Kotlin encode method is the same as Java POJO method).
+ *
+ * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+ * document contents).
+ * @param options An object to configure the set behavior, default is [SetOptions.OVERWRITE]
+ * @return A Task that will be resolved when the write finishes.
  */
-inline fun <reified T> DocumentSnapshot.getPojoData(serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE): T? {
-    val data = getData(serverTimestampBehavior)
-    return CustomClassMapper.convertToCustomClass(
-        data, T::class.java,
-        reference
-    )
+inline fun <reified T> DocumentReference.setPojoData(
+    data: T,
+    options: SetOptions? = OVERWRITE_SET_OPTIONS
+): Task<Void> {
+    return this::class
+        .declaredMemberFunctions
+        ?.firstOrNull { it.name == "setParsedData" }
+        ?.apply { isAccessible = true }
+        ?.call(this, data, options) as Task<Void>
 }
+
+/**
+ * Returns the contents of the document converted to a Custom POJO Object or null if the document
+ * doesn't exist. This method always use the reflection based Java pojo method, and this is a helper
+ * function for integration test purpose (to compare Kotlin decode method is the same as Java POJO
+ * method).
+ *
+ * @return The contents of the document in an object of type T or null if the document doesn't
+ * exist.
+ */
+inline fun <reified T> DocumentSnapshot.getPojoData(
+    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior =
+        DocumentSnapshot.ServerTimestampBehavior.NONE
+): T? {
+    val data = getData(serverTimestampBehavior)
+    return CustomClassMapper.convertToCustomClass(data, T::class.java, reference)
+}
+
+val OVERWRITE_SET_OPTIONS: SetOptions?
+    get() = testSetOptions(false, null)
+
+fun testSetOptions(merge: Boolean, field: FieldMask?): SetOptions? =
+    SetOptions::class
+        .constructors
+        .firstOrNull { it.name == "<init>" }
+        ?.apply { isAccessible = true }
+        ?.call(merge, field)

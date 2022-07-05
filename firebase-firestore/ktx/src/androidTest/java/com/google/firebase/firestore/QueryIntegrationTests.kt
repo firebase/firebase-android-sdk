@@ -1,7 +1,6 @@
 package com.google.firebase.firestore
 
 import android.util.Log
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.firestore.testutil.testFirestore
@@ -23,7 +22,6 @@ class QueryIntegrationTests {
         val regions: List<String>? = null
     )
 
-
     val cities = testFirestore.collection("cities")
     val TAG = "TestLog"
     val data1 = hashMapOf(
@@ -34,7 +32,6 @@ class QueryIntegrationTests {
         "population" to 860000,
         "regions" to listOf("west_coast", "norcal")
     )
-
 
     val data2 = hashMapOf(
         "name" to "Los Angeles",
@@ -93,9 +90,8 @@ class QueryIntegrationTests {
 
         val querySnapshot = waitFor(query.get())
         val listOfCitiess = querySnapshot.toObjects<City>()
-        for(city in listOfCitiess){
+        for (city in listOfCitiess) {
             Log.d("TestLog", city.toString())
         }
-
     }
 }

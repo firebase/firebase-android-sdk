@@ -15,7 +15,7 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.firestore.DocumentReference
-import java.lang.IllegalArgumentException
+import com.google.firebase.firestore.ktx.serializers.FirestoreSerializersModule
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -25,7 +25,6 @@ import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
@@ -63,6 +62,13 @@ abstract class FirestoreAbstractDecoder(
         return result
     }
 
+    fun decodeFirestoreNativeDataType(): Any {
+        val element = decodeValueList.elementAt(elementIndex - 1) ?: throw IllegalArgumentException(
+            "Can not assign a null value to a non-null field."
+        )
+        return element
+    }
+
     final override fun decodeValue(): Any {
         println("~".repeat(60))
         println("calling decode value")
@@ -76,7 +82,7 @@ abstract class FirestoreAbstractDecoder(
         }
     }
 
-    final override val serializersModule: SerializersModule = EmptySerializersModule
+    final override val serializersModule: SerializersModule = FirestoreSerializersModule
 
     final override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         val innerCompositeObject = getCompositeObject(elementIndex)

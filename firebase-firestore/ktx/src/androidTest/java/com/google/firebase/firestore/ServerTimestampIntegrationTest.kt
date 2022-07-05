@@ -18,12 +18,15 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.testutil.getData
 import com.google.firebase.firestore.testutil.setData
 import com.google.firebase.firestore.testutil.testCollection
 import com.google.firebase.firestore.testutil.waitFor
 import java.util.Date
+import kotlin.math.abs
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import org.junit.Assert
 import org.junit.Test
 
 class ServerTimestampIntegrationTest {
@@ -47,6 +50,39 @@ class ServerTimestampIntegrationTest {
         val expected = waitFor(docRefKotlin.get()).getData(ServerTimestampBehavior.NONE)
         val actual = waitFor(docRefPOJO.get()).getData(ServerTimestampBehavior.NONE)
         assertThat(expected).containsExactlyEntriesIn(actual)
+    }
+
+    @Test
+    fun kServerTimestamp_annotation_on_null_value_correct_field_round_trip() {
+        // Both Date and Timestamp are saved as Timestamp in Firestore
+        val docRefKotlin = testCollection("ktx").document("123")
+        @Serializable
+        data class TimestampKtx(
+            @Contextual @KServerTimestamp val timestamp: Timestamp? = null,
+            @Contextual @KServerTimestamp val date: Date? = null,
+            @Contextual val timestampWithDefaultValue: Timestamp = Timestamp(Date(100000L)),
+            @Contextual val dateWithDefaultValue: Date = Date(100000L)
+        )
+        docRefKotlin.set(TimestampKtx()) // encoding with annotation
+        val actualObjWithEstimateTimestamp =
+            waitFor(docRefKotlin.get()).getData<TimestampKtx>(ServerTimestampBehavior.ESTIMATE)
+        val serverGeneratedTimestamp = actualObjWithEstimateTimestamp?.timestamp!! // cannot be null
+        val serverGeneratedDate = Timestamp(actualObjWithEstimateTimestamp?.date!!) // cannot be null
+        assertThat(serverGeneratedTimestamp).isEquivalentAccordingToCompareTo(serverGeneratedDate)
+        // Tolerate up to 48*60*60 seconds of clock skew between client and server. This should be
+        // more than enough to compensate for timezone issues (even after taking daylight saving
+        // into account) and should allow local clocks to deviate from true time slightly and still
+        // pass the test.
+        val deltaSec = 48 * 60 * 60
+        val now = Timestamp.now()
+        Assert.assertTrue(
+            "resolved timestamp ($serverGeneratedTimestamp) should be within $deltaSec of now ( $now )",
+            abs(serverGeneratedTimestamp.seconds - now.seconds) < deltaSec
+        )
+
+        // Validate the rest of the document.
+        val actualObjWithNullTimestamp = waitFor(docRefKotlin.get()).getData<TimestampKtx>()
+        assertThat(actualObjWithNullTimestamp).isEqualTo(TimestampKtx())
     }
 
     // TODO: Add more integration test

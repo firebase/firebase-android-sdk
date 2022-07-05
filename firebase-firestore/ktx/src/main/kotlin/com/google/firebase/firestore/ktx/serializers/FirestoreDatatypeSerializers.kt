@@ -14,9 +14,11 @@
 
 package com.google.firebase.firestore.ktx.serializers
 
+import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.ktx.serialization.FirestoreMapDecoder
 import com.google.firebase.firestore.ktx.serialization.FirestoreMapEncoder
 import java.util.Date
 import kotlinx.serialization.Contextual
@@ -46,7 +48,19 @@ private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
     }
 
     override fun deserialize(decoder: Decoder): T {
-        TODO("Not yet implemented")
+        val nestedMapDecoder = decoder as FirestoreMapDecoder
+        Log.d("TestLog", "=".repeat(50))
+        Log.d("TestLog", this.descriptor.serialName.toString())
+        Log.d("TestLog", "=".repeat(50))
+        Log.d("TestLog", nestedMapDecoder.decodeFirestoreNativeDataType().toString())
+        Log.d("TestLog", "=".repeat(50))
+        val decodeValue = nestedMapDecoder.decodeFirestoreNativeDataType()
+        return when (descriptor.serialName) {
+            "__DateSerializer__" ->
+                (decodeValue as Timestamp).let { it.toDate() }
+                    as T // Date is saved as Timestamp in firestore
+            else -> decodeValue as T
+        }
     }
 
     object DocumentIdSerializer : FirestoreNativeDataTypeSerializer<DocumentReference>()

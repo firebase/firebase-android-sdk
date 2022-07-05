@@ -99,7 +99,6 @@ class FirestoreMapDecoderTests {
         @Serializable
         data class Movement(val direction: Direction, val distance: Long)
 
-        val movement = Movement(Direction.EAST, 100)
         val map = mapOf("direction" to "EAST", "distance" to 100L)
         val decodedObject = decodeFromMap<Movement>(map, firestoreDocument)
         val expectedObject = Movement(Direction.EAST, 100)

@@ -39,40 +39,33 @@ package com.google.firebase.firestore.ktx.annotations {
 package com.google.firebase.firestore.ktx.serialization {
 
   public abstract class FirestoreAbstractDecoder extends kotlinx.serialization.encoding.AbstractDecoder {
-    ctor public FirestoreAbstractDecoder(@NonNull Object nestedObject, @Nullable com.google.firebase.firestore.ktx.serialization.FirestoreDocument documentId);
-    ctor public FirestoreAbstractDecoder();
+    ctor public FirestoreAbstractDecoder(@NonNull Object nestedObject, @NonNull com.google.firebase.firestore.DocumentReference docRef);
     method @NonNull public final kotlinx.serialization.encoding.CompositeDecoder beginStructure(@NonNull kotlinx.serialization.descriptors.SerialDescriptor descriptor);
+    method public final int decodeEnum(@NonNull kotlinx.serialization.descriptors.SerialDescriptor enumDescriptor);
+    method @NonNull public final Object decodeFirestoreNativeDataType();
+    method public final boolean decodeNotNullMark();
     method @NonNull public final Object decodeValue();
-    method public final boolean getCurrentValueNotNull();
-    method @NonNull public abstract java.util.List<?> getDecodeValueList();
-    method @Nullable public com.google.firebase.firestore.ktx.serialization.FirestoreDocument getDocumentId();
-    method public final int getElementIndex();
-    method @NonNull public Object getNestedObject();
+    method @NonNull public abstract java.util.List<java.lang.Object> getDecodeValueList();
+    method @NonNull protected final kotlinx.serialization.descriptors.SerialKind getDecodedElementDataType();
+    method protected final int getElementIndex();
     method @NonNull public final kotlinx.serialization.modules.SerializersModule getSerializersModule();
-    method public final void setCurrentValueNotNull(boolean p);
-    method public void setDocumentId(@Nullable com.google.firebase.firestore.ktx.serialization.FirestoreDocument p);
-    method public final void setElementIndex(int p);
-    property public final boolean currentValueNotNull;
-    property @NonNull public abstract java.util.List<?> decodeValueList;
-    property public final int elementIndex;
+    method protected final boolean isCurrentDecodeElementNotNull();
+    method protected final void setCurrentDecodeElementNotNull(boolean p);
+    method protected final void setDecodedElementDataType(@NonNull kotlinx.serialization.descriptors.SerialKind p);
+    method protected final void setElementIndex(int p);
+    property @NonNull public abstract java.util.List<java.lang.Object> decodeValueList;
+    property @NonNull protected final kotlinx.serialization.descriptors.SerialKind decodedElementDataType;
+    property protected final int elementIndex;
+    property protected final boolean isCurrentDecodeElementNotNull;
     property @NonNull public final kotlinx.serialization.modules.SerializersModule serializersModule;
-  }
-
-  public final class FirestoreDocument {
-    ctor public FirestoreDocument(@NonNull String id, @NonNull com.google.firebase.firestore.DocumentReference documentReference);
-    method @NonNull public String component1();
-    method @NonNull public com.google.firebase.firestore.DocumentReference component2();
-    method @NonNull public com.google.firebase.firestore.ktx.serialization.FirestoreDocument copy(@NonNull String id, @NonNull com.google.firebase.firestore.DocumentReference documentReference);
-    method @NonNull public com.google.firebase.firestore.DocumentReference getDocumentReference();
-    method @NonNull public String getId();
+    field @NonNull protected kotlinx.serialization.descriptors.SerialKind decodedElementDataType;
   }
 
   public final class FirestoreListDecoder extends com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder {
-    ctor public FirestoreListDecoder(@NonNull java.util.List<?> nestedObject);
+    ctor public FirestoreListDecoder(@NonNull java.util.List<?> nestedObject, @NonNull com.google.firebase.firestore.DocumentReference docRef);
     method public int decodeElementIndex(@NonNull kotlinx.serialization.descriptors.SerialDescriptor descriptor);
-    method @NonNull public java.util.List<?> getDecodeValueList();
-    method @NonNull public java.util.List<?> getNestedObject();
-    property @NonNull public java.util.List<?> decodeValueList;
+    method @NonNull public java.util.List<java.lang.Object> getDecodeValueList();
+    property @NonNull public java.util.List<java.lang.Object> decodeValueList;
   }
 
   public final class FirestoreListEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
@@ -84,18 +77,16 @@ package com.google.firebase.firestore.ktx.serialization {
   }
 
   public final class FirestoreMapDecoder extends com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder {
-    ctor public FirestoreMapDecoder(@NonNull java.util.Map<?,?> nestedObject, @Nullable com.google.firebase.firestore.ktx.serialization.FirestoreDocument documentId);
+    ctor public FirestoreMapDecoder(@NonNull java.util.Map<java.lang.String,?> nestedObject, @NonNull com.google.firebase.firestore.DocumentReference docRef);
     method public int decodeElementIndex(@NonNull kotlinx.serialization.descriptors.SerialDescriptor descriptor);
-    method public error.NonExistentClass getDecodeValueList();
-    method @NonNull public java.util.Map<?,?> getNestedObject();
-    property public error.NonExistentClass decodeValueList;
+    method @NonNull public java.util.List<java.lang.Object> getDecodeValueList();
+    property @NonNull public java.util.List<java.lang.Object> decodeValueList;
   }
 
   public final class FirestoreMapDecoderKt {
     ctor public FirestoreMapDecoderKt();
-    method public static <T> T decodeFromNestedMap(@NonNull java.util.Map<java.lang.String,?> map, @NonNull kotlinx.serialization.DeserializationStrategy<T> deserializer, @Nullable com.google.firebase.firestore.ktx.serialization.FirestoreDocument firestoreDocument);
-    method public static inline <reified T> T decodeFromNestedMap(@NonNull java.util.Map<java.lang.String,?> map, @Nullable com.google.firebase.firestore.ktx.serialization.FirestoreDocument firestoreDocument);
-    method @Nullable public static inline <reified T> T get(@NonNull com.google.firebase.firestore.DocumentSnapshot);
+    method public static <T> T decodeFromMap(@NonNull java.util.Map<java.lang.String,?> map, @NonNull kotlinx.serialization.DeserializationStrategy<T> deserializer, @NonNull com.google.firebase.firestore.DocumentReference docRef);
+    method public static inline <reified T> T decodeFromMap(@NonNull java.util.Map<java.lang.String,?> map, @NonNull com.google.firebase.firestore.DocumentReference docRef);
   }
 
   public final class FirestoreMapEncoder extends kotlinx.serialization.encoding.AbstractEncoder {
@@ -122,9 +113,7 @@ package com.google.firebase.firestore.ktx.serialization {
     method @NonNull public com.google.firebase.components.Component<?> create();
     method public <T> T decode(@NonNull java.util.Map<java.lang.String,java.lang.Object> data, @NonNull Class<T> valueType, @NonNull com.google.firebase.firestore.DocumentReference docRef);
     method @NonNull public java.util.Map<java.lang.String,java.lang.Object> encode(@NonNull Object value);
-    method public <T> boolean isAbleToBeDecoded(@Nullable Class<T> valueType);
-    method public boolean isAbleToBeEncoded(@NonNull Object value);
-    method @NonNull public String mapEncoderId();
+    method public <T> boolean supports(@NonNull Class<T> valueType);
   }
 
 }
