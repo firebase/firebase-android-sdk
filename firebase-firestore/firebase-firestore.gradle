@@ -133,6 +133,8 @@ dependencies {
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
+    //To provide Kotlin @SerialInfo support
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.2'
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 

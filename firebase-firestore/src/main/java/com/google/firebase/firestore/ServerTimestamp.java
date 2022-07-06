@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import kotlin.annotation.AnnotationTarget;
+import kotlinx.serialization.SerialInfo;
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO
@@ -25,5 +28,14 @@ import java.lang.annotation.Target;
  * with a server-generated timestamp.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
-public @interface ServerTimestamp {}
+@Target({ElementType.FIELD, ElementType.METHOD})
+@SerialInfo
+@kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
+public @interface ServerTimestamp {
+  final class Impl implements ServerTimestamp {
+    @Override
+    public Class<? extends Annotation> annotationType() {
+      return (Class<? extends Annotation>) ServerTimestamp.class;
+    }
+  }
+}

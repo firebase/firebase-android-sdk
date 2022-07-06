@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import kotlin.annotation.AnnotationTarget;
+import kotlinx.serialization.SerialInfo;
 
 /**
  * Properties that don't map to class fields are ignored when serializing to a class annotated with
@@ -25,4 +28,13 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
-public @interface IgnoreExtraProperties {}
+@SerialInfo
+@kotlin.annotation.Target(allowedTargets = AnnotationTarget.CLASS)
+public @interface IgnoreExtraProperties {
+  final class Impl implements IgnoreExtraProperties {
+    @Override
+    public Class<? extends Annotation> annotationType() {
+      return (Class<? extends Annotation>) IgnoreExtraProperties.class;
+    }
+  }
+}

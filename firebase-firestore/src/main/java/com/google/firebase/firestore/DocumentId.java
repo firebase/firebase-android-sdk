@@ -14,10 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import kotlin.annotation.AnnotationTarget;
+import kotlinx.serialization.SerialInfo;
 
 /**
  * Annotation used to mark a POJO property to be automatically populated with the document's ID when
@@ -45,4 +48,13 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
-public @interface DocumentId {}
+@SerialInfo
+@kotlin.annotation.Target(allowedTargets = AnnotationTarget.PROPERTY)
+public @interface DocumentId {
+  final class Impl implements DocumentId {
+    @Override
+    public Class<? extends Annotation> annotationType() {
+      return (Class<? extends Annotation>) DocumentId.class;
+    }
+  }
+}
