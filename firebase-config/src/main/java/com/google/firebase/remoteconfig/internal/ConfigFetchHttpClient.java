@@ -353,7 +353,8 @@ public class ConfigFetchHttpClient {
   }
 
   private String convertToISOString(long millisFromEpoch) {
-    SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN);
+    // Locale.US ensures that the english numerals are not converted to the local language numerals.
+    SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN, Locale.US);
     isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     return isoDateFormat.format(millisFromEpoch);
   }
