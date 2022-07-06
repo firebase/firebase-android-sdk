@@ -33,7 +33,9 @@ abstract class ChangedModulesTask : DefaultTask() {
             AffectedProjectFinder(project, changedGitPaths.toSet(), listOf()).find().map { it.path }
                 .toSet()
 
-        val result = mutableMapOf<String, MutableSet<String>>()
+        val result = project.rootProject.subprojects.associateTo(mutableMapOf()) {
+            it.path to mutableSetOf<String>()
+        }
         project.rootProject.subprojects.forEach { p ->
             p.configurations.forEach { c ->
                 c.dependencies.filterIsInstance<ProjectDependency>().forEach {
