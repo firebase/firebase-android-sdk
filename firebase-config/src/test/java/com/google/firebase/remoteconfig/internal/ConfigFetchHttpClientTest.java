@@ -227,6 +227,22 @@ public class ConfigFetchHttpClientTest {
   }
 
   @Test
+  public void fetch_firstOpenTimeWithArabicLocale_fieldPresentInEnglishLocale() throws Exception {
+    Locale.setDefault(new Locale("ar", "AE"));
+    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
+    Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
+
+    long firstOpenTimeEpochFromMillis = 1636146000000L;
+    // ISO-8601 value corresponding to 1636146000000 ms-from-epoch in UTC
+    String firstOpenTimeIsoString = "2021-11-05T21:00:00.000Z";
+
+    fetch(FIRST_ETAG, customUserProperties, firstOpenTimeEpochFromMillis);
+
+    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
+    assertThat(requestBody.get(FIRST_OPEN_TIME)).isEqualTo(firstOpenTimeIsoString);
+  }
+
+  @Test
   public void fetch_nullFirstOpenTime_fieldNotPresentInRequestBody() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
     Map<String, String> customUserProperties = ImmutableMap.of("up1", "hello", "up2", "world");
