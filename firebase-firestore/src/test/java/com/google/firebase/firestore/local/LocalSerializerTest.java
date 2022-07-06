@@ -29,6 +29,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query;
@@ -81,6 +82,7 @@ public final class LocalSerializerTest {
       this.builder = Write.newBuilder();
     }
 
+    @CanIgnoreReturnValue
     TestWriteBuilder addSet() {
       builder.setUpdate(
           com.google.firestore.v1.Document.newBuilder()
@@ -90,6 +92,7 @@ public final class LocalSerializerTest {
       return this;
     }
 
+    @CanIgnoreReturnValue
     TestWriteBuilder addPatch() {
       builder
           .setUpdate(
@@ -102,11 +105,13 @@ public final class LocalSerializerTest {
       return this;
     }
 
+    @CanIgnoreReturnValue
     TestWriteBuilder addDelete() {
       builder.setDelete("projects/p/databases/d/documents/baz/quux");
       return this;
     }
 
+    @CanIgnoreReturnValue
     TestWriteBuilder addUpdateTransforms() {
       builder
           .addUpdateTransforms(
@@ -120,6 +125,7 @@ public final class LocalSerializerTest {
       return this;
     }
 
+    @CanIgnoreReturnValue
     TestWriteBuilder addLegacyTransform() {
       builder
           .setTransform(
