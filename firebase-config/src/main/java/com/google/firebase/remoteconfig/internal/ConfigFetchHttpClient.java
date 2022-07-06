@@ -348,12 +348,12 @@ public class ConfigFetchHttpClient {
     if (firstOpenTime != null) {
       requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));
     }
-
+    System.out.println(requestBodyMap);
     return new JSONObject(requestBodyMap);
   }
 
   private String convertToISOString(long millisFromEpoch) {
-    SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN);
+    SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN, Locale.US);
     isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     return isoDateFormat.format(millisFromEpoch);
   }
