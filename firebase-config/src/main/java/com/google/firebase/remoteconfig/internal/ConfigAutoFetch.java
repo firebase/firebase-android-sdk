@@ -119,7 +119,7 @@ public class ConfigAutoFetch implements Runnable {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
-      if (!message.contains("latestTemplateVersionNumber")) {
+      if (!message.contains("latestTemplateVersionNumber") && !message.contains("isAvailable")) {
         continue;
       }
 
@@ -128,8 +128,14 @@ public class ConfigAutoFetch implements Runnable {
         JSONObject jsonObject = new JSONObject("{" + message + "}");
         if (jsonObject.has("latestTemplateVersionNumber")) {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
+        } else {
+          boolean isBackendAvailable = jsonObject.getBoolean("isAvailable");
+          if (!isBackendAvailable) {
+            retryCallback.onError(
+                new FirebaseRemoteConfigRealtimeUpdateStreamException("Backend is unavailable"));
+            break;
+          }
         }
-
       } catch (JSONException ex) {
         Log.i(TAG, "Unable to parse latest config update message." + ex.toString());
       }

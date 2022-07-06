@@ -75,6 +75,9 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private long httpRetrySeconds;
 
+  @GuardedBy("this")
+  private boolean backendIsAvailable;
+
   private final int ORIGINAL_RETRIES = 7;
 
   private final ScheduledExecutorService scheduledExecutorService;
@@ -97,6 +100,7 @@ public class ConfigRealtimeHttpClient {
     this.listeners = new LinkedHashSet<>();
     this.autoFetchTask = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    this.backendIsAvailable = true;
 
     // Retry parameters
     this.random = new Random();
@@ -199,6 +203,10 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  private synchronized void setBackendStateToUnavailable() {
+    backendIsAvailable = false;
+  }
+
   private synchronized int getRetryMultiplier() {
     // Return retry multiplier between range of 5 and 2.
     return random.nextInt(3) + 2;
@@ -210,7 +218,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && autoFetchTask == null;
+    return !listeners.isEmpty() && autoFetchTask == null && backendIsAvailable;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -278,7 +286,11 @@ public class ConfigRealtimeHttpClient {
           }
 
           @Override
-          public void onError(Exception error) {}
+          public void onError(Exception error) {
+            if (error != null) {
+              setBackendStateToUnavailable();
+            }
+          }
         };
 
     ConfigAutoFetch autoFetch =
