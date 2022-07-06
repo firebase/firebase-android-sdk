@@ -46,5 +46,4 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation 'com.google.android.play:feature-delivery:2.0.0'
-
 }
