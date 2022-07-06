@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -29,6 +30,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -185,6 +187,8 @@ public class ConfigRealtimeHttpClient {
     body.put("namespace", this.namespace);
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
+    body.put("platform", "Android");
+    body.put(SDK_VERSION, BuildConfig.VERSION_NAME);
     return new JSONObject(body);
   }
 
