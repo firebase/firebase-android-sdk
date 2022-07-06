@@ -5,8 +5,6 @@ import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.firestore.testutil.testFirestore
 import com.google.firebase.firestore.testutil.waitFor
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import org.junit.Test
 
 class QueryIntegrationTests {
@@ -84,7 +82,7 @@ class QueryIntegrationTests {
         // Create a query against the collection.
         val query: Query = citiesRef.whereEqualTo("state", "CA")
         waitFor(query.get()).map {
-            val city = it.toObject<City>() //queryDoc goes here
+            val city = it.toObject<City>() // queryDoc goes here
             Log.d("TestLog", city.toString())
         }
         Log.d("TestLog", "=".repeat(25) + " Now Test For QuerySnapshot.toObjects()")

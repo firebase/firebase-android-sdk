@@ -95,7 +95,7 @@ class ServerTimestampIntegrationTest {
     )
 
     @Test
-    fun no_need_of_default_value(){
+    fun no_need_of_default_value() {
         val docRefKotlin = testCollection("ktx").document("123")
         docRefKotlin.set(TimestampKtx(null, null)) // encoding with annotation
         val actualObjWithEstimateTimestamp = waitFor(docRefKotlin.get()).getPojoData<TimestampKtx>(ServerTimestampBehavior.ESTIMATE)

@@ -327,7 +327,8 @@ public class DocumentSnapshot {
       @NonNull Class<T> valueType,
       @NonNull ServerTimestampBehavior serverTimestampBehavior) {
     Object data = get(fieldPath, serverTimestampBehavior);
-    // TODO: Add Kotlin decoder here, if data is a map, try to use Kotlin method to decode it, Otherwise, use the Java Bean Mapper
+    // TODO: Add Kotlin decoder here, if data is a map, try to use Kotlin method to decode it,
+    // Otherwise, use the Java Bean Mapper
     return data == null
         ? null
         : CustomClassMapper.convertToCustomClass(data, valueType, getReference());

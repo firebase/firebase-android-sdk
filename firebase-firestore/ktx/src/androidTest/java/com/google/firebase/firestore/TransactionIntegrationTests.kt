@@ -1,10 +1,7 @@
 package com.google.firebase.firestore
 
 import android.util.Log
-import com.google.firebase.firestore.ktx.toObject
-import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.firestore.testutil.testFirestore
-import com.google.firebase.firestore.testutil.waitFor
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
@@ -81,7 +78,7 @@ class TransactionIntegrationTests {
         val citiesRef = testFirestore.collection("cities")
         val sfDocRef = testFirestore.collection("cities").document("SF")
 
-        fun myTransactionfunction(transaction: Transaction){
+        fun myTransactionfunction(transaction: Transaction) {
             val snapshot = transaction.get(sfDocRef)
             transaction.set(sfDocRef, City())
         }
@@ -99,8 +96,6 @@ class TransactionIntegrationTests {
             null
         }.addOnSuccessListener { Log.d(TAG, "Transaction success!") }
             .addOnFailureListener { e -> Log.w(TAG, "Transaction failure.", e) }
-
-
 
         val nycRef = testFirestore.collection("cities").document("NYC")
         val sfRef = testFirestore.collection("cities").document("SF")

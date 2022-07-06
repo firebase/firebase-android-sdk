@@ -155,7 +155,6 @@ inline fun <reified T> DocumentReference.setPojoData(
         ?.call(this, data, options) as Task<Void>
 }
 
-
 val OVERWRITE_SET_OPTIONS: SetOptions?
     get() = testSetOptions(false, null)
 
@@ -186,7 +185,6 @@ inline fun <reified T> DocumentSnapshot.getPojoData(
     return CustomClassMapper.convertToCustomClass(data, T::class.java, reference)
 }
 
-
 /**
  * Writes to the document referred to by the provided DocumentReference. If the document does not
  * yet exist, it will be created. The provided data will always override the existing document
@@ -201,7 +199,7 @@ inline fun <reified T> DocumentSnapshot.getPojoData(
  */
 inline fun <reified T> Transaction.set(
     documentRef: DocumentReference,
-    data: T,
+    data: T
 ): Transaction {
     val firestore =
         Transaction::class

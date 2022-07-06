@@ -246,9 +246,9 @@ class FirestoreMapDecoderIntegrationTests {
 
     @Test
     // TODO: This feature need to be implemented at DocumentSnapshot Line 330
-    fun get_field_to_object_is_equivalent(){
+    fun get_field_to_object_is_equivalent() {
         val owner = Owner("foo", 10)
-        val project = Project("kotlin-project",owner = owner)
+        val project = Project("kotlin-project", owner = owner)
         val docRefKotlin = testCollection("ktx").document("123")
         docRefKotlin.setData(project)
         val docSnapshot = waitFor(docRefKotlin.get())
