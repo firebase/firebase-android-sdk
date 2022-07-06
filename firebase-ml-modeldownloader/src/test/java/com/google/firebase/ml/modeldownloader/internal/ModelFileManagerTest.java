@@ -189,6 +189,29 @@ public class ModelFileManagerTest {
   }
 
   @Test
+  public void deleteNonLatestCustomModels_whenModelOnDiskButNotInPreferences()
+      throws FirebaseMlException, IOException {
+    String modelDestinationFolder2 = setUpTestingFiles(app, MODEL_NAME_2);
+
+    // Was just downloaded
+    MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
+    // Was downloaded previously via FirebaseModelManager
+    MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 0);
+
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
+
+    // Download in progress, hence file path is not present
+    sharedPreferencesUtil.setLoadedCustomModelDetails(
+        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 100, 0));
+
+    fileManager.deleteNonLatestCustomModels();
+
+    assertTrue(new File(modelDestinationFolder + "/0").exists());
+    assertTrue(new File(modelDestinationFolder2 + "/0").exists());
+  }
+
+  @Test
   public void deleteNonLatestCustomModels_noFileToDelete()
       throws FirebaseMlException, FileNotFoundException {
     MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
