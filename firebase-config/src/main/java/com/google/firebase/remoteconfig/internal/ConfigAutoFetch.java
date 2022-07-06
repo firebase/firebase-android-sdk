@@ -119,7 +119,7 @@ public class ConfigAutoFetch implements Runnable {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
-      if (!message.contains("latestTemplateVersionNumber") && !message.contains("isAvailable")) {
+      if (!message.contains("latestTemplateVersionNumber") || !message.contains("isAvailable")) {
         continue;
       }
 
