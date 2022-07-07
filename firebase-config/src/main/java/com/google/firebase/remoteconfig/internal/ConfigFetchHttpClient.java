@@ -353,7 +353,8 @@ public class ConfigFetchHttpClient {
   }
 
   private String convertToISOString(long millisFromEpoch) {
-    // Locale.US ensures that the english numerals are not converted to the local language numerals.
+    // ISO-8601 Timestamp expects Western Arabic numerals. Locale.US ensures that the english
+    // numerals are not converted to the local language numerals.
     SimpleDateFormat isoDateFormat = new SimpleDateFormat(ISO_DATE_PATTERN, Locale.US);
     isoDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     return isoDateFormat.format(millisFromEpoch);
