@@ -78,7 +78,7 @@ public class ConfigRealtimeHttpClient {
   private long httpRetrySeconds;
 
   @GuardedBy("this")
-  private boolean backendIsAvailable;
+  private boolean isFeatureDisabled;
 
   private final int ORIGINAL_RETRIES = 7;
 
@@ -90,6 +90,7 @@ public class ConfigRealtimeHttpClient {
   private final String namespace;
   private final ExecutorService executorService;
   private final Random random;
+  private final String appId;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -102,7 +103,7 @@ public class ConfigRealtimeHttpClient {
     this.listeners = new LinkedHashSet<>();
     this.autoFetchTask = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    this.backendIsAvailable = true;
+    this.isFeatureDisabled = false;
 
     // Retry parameters
     this.random = new Random();
@@ -114,6 +115,7 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.executorService = executorService;
+    this.appId = firebaseApp.getOptions().getApplicationId();
   }
 
   /**
@@ -187,7 +189,7 @@ public class ConfigRealtimeHttpClient {
     body.put("namespace", this.namespace);
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
-    body.put("platform", "Android");
+    body.put("appId", appId);
     body.put(SDK_VERSION, BuildConfig.VERSION_NAME);
     return new JSONObject(body);
   }
@@ -207,8 +209,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized void setBackendStateToUnavailable() {
-    backendIsAvailable = false;
+  private synchronized void setBackendStateToDisabled() {
+    isFeatureDisabled = true;
   }
 
   private synchronized int getRetryMultiplier() {
@@ -222,7 +224,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && autoFetchTask == null && backendIsAvailable;
+    return !listeners.isEmpty() && autoFetchTask == null && !isFeatureDisabled;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -292,7 +294,7 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onError(Exception error) {
             if (error != null) {
-              setBackendStateToUnavailable();
+              setBackendStateToDisabled();
             }
           }
         };

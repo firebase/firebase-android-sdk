@@ -119,7 +119,8 @@ public class ConfigAutoFetch implements Runnable {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
     while ((message = reader.readLine()) != null) {
-      if (!message.contains("latestTemplateVersionNumber") || !message.contains("isAvailable")) {
+      if (!message.contains("latestTemplateVersionNumber")
+          || !message.contains("featureDisabled")) {
         continue;
       }
 
@@ -129,10 +130,10 @@ public class ConfigAutoFetch implements Runnable {
         if (jsonObject.has("latestTemplateVersionNumber")) {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
         } else {
-          boolean isBackendAvailable = jsonObject.getBoolean("isAvailable");
-          if (!isBackendAvailable) {
+          boolean isFeatureDisabled = jsonObject.getBoolean("featureDisabled");
+          if (isFeatureDisabled) {
             retryCallback.onError(
-                new FirebaseRemoteConfigRealtimeUpdateStreamException("Backend is unavailable"));
+                new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
             break;
           }
         }
