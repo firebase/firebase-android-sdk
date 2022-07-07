@@ -70,7 +70,6 @@ public final class FirestoreClient {
   private final BundleSerializer bundleSerializer;
   private final GrpcMetadataProvider metadataProvider;
 
-  private Datastore datastore;
   private Persistence persistence;
   private LocalStore localStore;
   private RemoteStore remoteStore;
@@ -262,7 +261,7 @@ public final class FirestoreClient {
     // completes.
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
-    this.datastore =
+    Datastore datastore =
         new Datastore(
             databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
     ComponentProvider.Configuration configuration =
@@ -307,10 +306,6 @@ public final class FirestoreClient {
     verifyNotTerminated();
     BundleReader bundleReader = new BundleReader(bundleSerializer, bundleData);
     asyncQueue.enqueueAndForget(() -> syncEngine.loadBundle(bundleReader, resultTask));
-  }
-
-  public Datastore getDatastore() {
-    return datastore;
   }
 
   public Task<Query> getNamedQuery(String queryName) {
