@@ -824,7 +824,8 @@ public class FirebaseFirestore {
     FirestoreChannel.setClientLanguage(languageToken);
   }
 
-  /** @return A set of concrete implementations of {@code MapEncoder} */
+  /** @return The set of registered {@code MapEncoder}s. */
+  @NonNull
   Set<MapEncoder> getMapEncoders() {
     return mapEncoders;
   }

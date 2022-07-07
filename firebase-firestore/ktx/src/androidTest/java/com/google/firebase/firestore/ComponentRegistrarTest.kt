@@ -28,6 +28,19 @@ import kotlinx.serialization.Transient
 import org.junit.Test
 
 class ComponentRegistrarTest {
+
+    @Test
+    fun documentReference_is_using_ktx_mapencoder_when_set_to_firestore() {
+        // Verify the DocumentReference.set() method is serializing @Serializable object via the
+        // MapEncoderKtxImp by saving an object with field name start with a capital letter;
+        // Java POJO mapper will always convert the first letter of a field name to lower case.
+        val docRefKotlin = testCollection("ktx").document("123")
+        @Serializable data class Student(val Name: String = "fool")
+        docRefKotlin.set(Student())
+        val actual = waitFor(docRefKotlin.get()).data
+        assertThat(actual?.keys).contains("Name")
+    }
+
     enum class Grade {
         FRESHMAN,
         SOPHOMORE,

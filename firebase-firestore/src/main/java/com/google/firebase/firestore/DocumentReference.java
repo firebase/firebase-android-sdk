@@ -163,11 +163,11 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
-    // TODO: Support other encoders in the future.
     Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
     for (MapEncoder encoder : availableEncoders) {
       if (encoder.supports(data.getClass())) {
         data = encoder.encode(data);
+        break;
       }
     }
     return setParsedData(data, options);
