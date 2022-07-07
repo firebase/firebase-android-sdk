@@ -120,7 +120,7 @@ public class ConfigAutoFetch implements Runnable {
     String message;
     while ((message = reader.readLine()) != null) {
       if (!message.contains("latestTemplateVersionNumber")
-          || !message.contains("featureDisabled")) {
+          && !message.contains("featureDisabled")) {
         continue;
       }
 
