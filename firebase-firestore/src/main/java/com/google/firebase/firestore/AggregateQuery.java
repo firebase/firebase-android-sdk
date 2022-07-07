@@ -17,8 +17,8 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.util.Executors;
+import java.util.Objects;
 
 public final class AggregateQuery {
 
@@ -37,15 +37,15 @@ public final class AggregateQuery {
   }
 
   @NonNull
-  public Task<AggregateQuerySnapshot> get() {
-    Datastore datastore = query.firestore.getClient().getDatastore();
+  public Task<AggregateQuerySnapshot> get(AggregateSource source) {
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
-
-    datastore
-        .runCountQuery(query.query.toTarget())
+    query
+        .firestore
+        .getClient()
+        .runCountQuery(query.query)
         .continueWith(
             Executors.DIRECT_EXECUTOR,
-            task -> {
+            (task) -> {
               if (task.isSuccessful()) {
                 tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
               } else {
@@ -55,5 +55,23 @@ public final class AggregateQuery {
             });
 
     return tcs.getTask();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    AggregateQuery that = (AggregateQuery) o;
+    return query.equals(that.query);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(query);
+  }
+
+  @Override
+  public String toString() {
+    return "AggregateQuery{" + "query=" + query + '}';
   }
 }

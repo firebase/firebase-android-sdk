@@ -26,7 +26,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
-import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -222,9 +222,9 @@ public class Datastore {
     return completionSource.getTask();
   }
 
-  public Task<Long> runCountQuery(Target queryTarget) {
+  public Task<Long> runCountQuery(Query query) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
-        serializer.encodeQueryTarget(queryTarget);
+        serializer.encodeQueryTarget(query.toTarget());
 
     StructuredAggregationQuery.Builder structuredAggregationQuery =
         StructuredAggregationQuery.newBuilder();
@@ -233,7 +233,7 @@ public class Datastore {
     StructuredAggregationQuery.Aggregation.Builder aggregation =
         StructuredAggregationQuery.Aggregation.newBuilder();
     aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
-    aggregation.setAlias("zzyzx_agg_alias_count");
+    aggregation.setAlias("count_alias");
     structuredAggregationQuery.addAggregations(aggregation);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
@@ -260,7 +260,7 @@ public class Datastore {
               hardAssert(
                   aggregateFieldsByAlias.size() == 1,
                   "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
-              Value countValue = aggregateFieldsByAlias.get("zzyzx_agg_alias_count");
+              Value countValue = aggregateFieldsByAlias.get("count_alias");
               hardAssert(countValue != null, "countValue == null");
               hardAssert(
                   countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,

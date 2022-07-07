@@ -14,18 +14,6 @@
 
 package com.google.firebase.firestore;
 
-import androidx.annotation.NonNull;
-
-abstract class AggregateField {
-
-  private AggregateField() {}
-
-  @NonNull
-  public static CountAggregateField count() {
-    return new CountAggregateField();
-  }
-
-  static final class CountAggregateField extends AggregateField {
-    CountAggregateField() {}
-  }
+public enum AggregateSource {
+  SERVER_DIRECT,
 }

@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
@@ -34,7 +35,7 @@ public class CountTest {
   }
 
   @Test
-  public void count() {
+  public void testCanRunCount() {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -42,7 +43,69 @@ public class CountTest {
                 "b", map("k", "b"),
                 "c", map("k", "c")));
 
-    AggregateQuerySnapshot snapshot = waitFor(collection.count().get());
-    assertEquals(Long.valueOf(3), snapshot.get(AggregateField.count()));
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(3), snapshot.getCount());
+  }
+
+  @Test
+  public void testCanRunCountWithFilters() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "b"),
+                "c", map("k", "c")));
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(1), snapshot.getCount());
+  }
+
+  @Test
+  public void testCanRunCountWithFiltersAndLimits() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "a"),
+                "c", map("k", "a"),
+                "d", map("k", "d")));
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(
+            collection.whereEqualTo("k", "a").limit(2).count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(2), snapshot.getCount());
+
+    snapshot =
+        waitFor(
+            collection
+                .whereEqualTo("k", "a")
+                .limitToLast(2)
+                .count()
+                .get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(2), snapshot.getCount());
+
+    snapshot =
+        waitFor(
+            collection
+                .whereEqualTo("k", "d")
+                .limitToLast(1000)
+                .count()
+                .get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(1), snapshot.getCount());
+  }
+
+  @Test
+  public void testCanRunCountOnNonExistentCollection() {
+    CollectionReference collection = testFirestore().collection("random-coll");
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(0), snapshot.getCount());
+
+    snapshot =
+        waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(0), snapshot.getCount());
   }
 }

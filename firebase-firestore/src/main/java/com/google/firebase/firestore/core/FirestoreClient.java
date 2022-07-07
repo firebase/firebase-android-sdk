@@ -21,8 +21,6 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.firestore.AggregateQuery;
-import com.google.firebase.firestore.AggregateQuerySnapshot;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -240,13 +238,11 @@ public final class FirestoreClient {
         () -> syncEngine.transaction(asyncQueue, options, updateFunction));
   }
 
-  public Task<AggregateQuerySnapshot> runCountQuery(AggregateQuery query) {
+  public Task<Long> runCountQuery(Query query) {
     this.verifyNotTerminated();
     return AsyncQueue.callTask(
-      asyncQueue.getExecutor(),
-      () -> syncEngine.runCountQuery(asyncQueue, query));
+        asyncQueue.getExecutor(), () -> syncEngine.runCountQuery(asyncQueue, query));
   }
-
 
   /**
    * Returns a task resolves when all the pending writes at the time when this method is called
