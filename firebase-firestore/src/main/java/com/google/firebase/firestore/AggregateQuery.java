@@ -37,7 +37,7 @@ public final class AggregateQuery {
   }
 
   @NonNull
-  public Task<AggregateQuerySnapshot> get(AggregateSource source) {
+  public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
     query
         .firestore
