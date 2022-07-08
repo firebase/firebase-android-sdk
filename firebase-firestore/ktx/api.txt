@@ -35,4 +35,3 @@ package com.google.firebase.firestore.ktx.annotations {
   }
 
 }
-

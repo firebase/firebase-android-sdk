@@ -60,47 +60,59 @@ class FirestoreMapEncoder(
         private const val MAX_DEPTH: Int = 500
     }
 
-    private inner class CurrentElementToEncode(val elementIndex: Int = 0) {
-        val elementEncodeKey: String by lazy {
-            try {
-                descriptor?.getElementName(elementIndex) as String
-            } catch (err: Exception) {
-                throw IndexOutOfBoundsException(
-                    "The key of the element to be encoded can not be null"
-                )
-            }
-        }
-        val elementKind: SerialKind? = descriptor?.getElementKindOrNull(elementIndex)
-        val elementSerialName: String? = descriptor?.getElementSerialNameOrNull(elementIndex)
-        val elementAnnotations: List<Annotation>? =
-            descriptor?.elementAnnotationsOrNull(elementIndex)
+    private sealed class Element {
+        // Invalid Element can be generated under situation like depth level 0, descriptor is null,
+        // etc, these no valid element will not be involved in the actual value-encoding process.
+        object NoValidElement : Element()
     }
 
     /**
-     * Return a list of annotations of the child element at a given index [elementIndex]; In case of
-     * [IndexOutOfBoundsException], and [IllegalArgumentException], null will be returned. Other
-     * types of exception will be raised.
+     * The data class records the information for the valid field element that needs to be encoded.
      */
-    private fun SerialDescriptor.elementAnnotationsOrNull(elementIndex: Int): List<Annotation>? =
-        try {
-            getElementAnnotations(elementIndex)
-        } catch (err: Exception) {
-            when (err) {
-                is IndexOutOfBoundsException,
-                is IllegalArgumentException -> null
-                else -> throw err
-            }
+    private inner class ValidElement(elementIndex: Int, elementEncodeKey: String) : Element() {
+        val elementIndex: Int = elementIndex
+        val elementEncodeKey: String = elementEncodeKey
+        val elementKind: SerialKind? = descriptor?.getElementKindOrNull(this.elementIndex)
+        val elementSerialName: String? = descriptor?.getElementSerialNameOrNull(this.elementIndex)
+        val elementAnnotations: List<Annotation>? =
+            descriptor?.elementAnnotationsOrNull(this.elementIndex)
+    }
+
+    /**
+     * Returns the [Element] that being encoded at a given index, elementIndex.
+     * [Element.NoValidElement] will be returned in case the element can not be obtained.
+     * [ValidElement] will be returned in case the element can be obtained.
+     */
+    private fun getEncodeElementFromIndex(elementIndex: Int = 0): Element {
+        val encodeKey =
+            descriptor?.getElementNameOrNull(elementIndex) ?: return Element.NoValidElement
+        return ValidElement(elementIndex, encodeKey)
+    }
+
+    private var isFirstEncodingElement: Boolean = true
+
+    private var currentElement: Element = getEncodeElementFromIndex()
+
+    // Factory method to update the [currentElement] property with the next element that need to
+    // be encoded.
+    private fun generateCurrentElementForEncoding() {
+        if (isFirstEncodingElement) {
+            isFirstEncodingElement = false
+        } else {
+            updateCurrentElementOrThrow(currentElement)
         }
+    }
 
-    private fun SerialDescriptor.getElementKindOrNull(elementIndex: Int): SerialKind? =
-        elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
-
-    private fun SerialDescriptor.getElementSerialNameOrNull(elementIndex: Int): String? =
-        elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
-
-    private var theBeginOfEncodingProcess: Boolean = true
-
-    private var currentElement = CurrentElementToEncode()
+    private fun updateCurrentElementOrThrow(currentElement: Element) {
+        when (currentElement) {
+            is Element.NoValidElement ->
+                throw IllegalArgumentException(
+                    "The current element that is being encoded is invalid."
+                )
+            is ValidElement ->
+                this.currentElement = getEncodeElementFromIndex(currentElement.elementIndex + 1)
+        }
+    }
 
     init {
         if (depth == ROOT_LEVEL) map[ROOT_LEVEL] = mutableMapOf()
@@ -118,52 +130,49 @@ class FirestoreMapEncoder(
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
         encodeValue(enumDescriptor.getElementName(index))
 
-    private fun generateCurrentElementForEncoding() {
-        if (theBeginOfEncodingProcess) {
-            theBeginOfEncodingProcess = false
-        } else {
-            currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
-        }
-    }
     /**
-     * Register serializers for Firestore native data types, DocumentId, Timestamp, Date, and
-     * GeoPoint, so that these registered serializers can be used at run-time to serialize the
-     * fields with @Contextual annotations
+     * Register serializers for Firestore native data types, [DocumentId], [Timestamp], [Date], and
+     * [GeoPoint], so that these registered serializers can be used at run-time to serialize the
+     * fields with @[Contextual] annotations
      */
     override val serializersModule: SerializersModule = FirestoreSerializersModule
 
-    /** Encode the native Firestore datatype objects: DocumentId, Timestamp, Date, and GeoPoint. */
+    /**
+     * Encode the native Firestore datatype objects: [DocumentId], [Timestamp], [Date], and
+     * [GeoPoint].
+     */
     fun <T> encodeFirestoreNativeDataType(value: T) {
         generateCurrentElementForEncoding()
-        validateKServerTimestampPresentOrThrow()
+        validateKServerTimestampPresentOrThrow(currentElement)
         when {
-            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on DocumentReference, then
-            // ignore
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
+            // KDocumentId on DocumentReference, then ignore
+            validateKDocumentIdPresentOrThrow(currentElement) -> {}
+            else -> encodeValidElementOrThrow(currentElement, value)
         }
     }
 
     override fun encodeNull() {
         generateCurrentElementForEncoding()
         when {
-            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String?, DocumentReference?,
-            // then ignore
-            validateKServerTimestampPresentOrThrow() ->
-                map.getValue(depth)
-                    .put(
-                        currentElement.elementEncodeKey,
-                        FieldValue.serverTimestamp()
-                    ) // KServerTimestamp on Timestamp? = null, then replace with FieldValue
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, null)
+            // KDocumentId on String?, DocumentReference?, then ignore,
+            validateKDocumentIdPresentOrThrow(currentElement) -> {}
+            validateKServerTimestampPresentOrThrow(currentElement) ->
+                encodeValidElementOrThrow(
+                    currentElement,
+                    FieldValue.serverTimestamp()
+                ) // KServerTimestamp on Timestamp? = null, then replace with FieldValue
+            else -> encodeValidElementOrThrow(currentElement, null)
         }
     }
 
     override fun encodeValue(value: Any) {
         generateCurrentElementForEncoding()
         when {
-            validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String, then ignore
-            validateKServerTimestampPresentOrThrow() -> {} // KServerTimestamp can not on Primitives
-            else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
+            // KDocumentId on String, then ignore
+            validateKDocumentIdPresentOrThrow(currentElement) -> {}
+            // KServerTimestamp can not on Primitives
+            validateKServerTimestampPresentOrThrow(currentElement) -> {}
+            else -> encodeValidElementOrThrow(currentElement, value)
         }
     }
 
@@ -190,13 +199,13 @@ class FirestoreMapEncoder(
                 val nextDepth = depth + 1
                 map[nextDepth] = mutableMapOf()
                 generateCurrentElementForEncoding()
-                map.getValue(depth).put(currentElement.elementEncodeKey, map[nextDepth])
+                encodeValidElementOrThrow(currentElement, map[nextDepth])
                 return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
             StructureKind.LIST -> {
                 val emptyList = mutableListOf<Any?>()
                 generateCurrentElementForEncoding()
-                map.getValue(depth).put(currentElement.elementEncodeKey, emptyList)
+                encodeValidElementOrThrow(currentElement, emptyList)
                 return FirestoreListEncoder(map, depth, emptyList)
             }
             else -> {
@@ -207,15 +216,24 @@ class FirestoreMapEncoder(
         }
     }
 
+    private fun encodeValidElementOrThrow(currentElement: Element, value: Any?) {
+        when (currentElement) {
+            is ValidElement -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
+            is Element.NoValidElement ->
+                throw IllegalArgumentException(
+                    "The current element that is being encoded is invalid."
+                )
+        }
+    }
+
     /**
-     * Returns true is @[KDocumentId] is applied to a property of a type String or
-     * DocumentReference; Otherwise, a runtime exception will be thrown.
+     * Returns true is @[KDocumentId] is applied to a property of a type [String] or
+     * [DocumentReference]; Otherwise, a runtime exception will be thrown.
      */
-    private fun kDocumentIdAppliedOnValidProperty(): Boolean {
-        if (
-            currentElement.elementKind == PrimitiveKind.STRING ||
-                (currentElement.elementSerialName as String).contains("<DocumentReference>")
-        ) {
+    private fun kDocumentIdAppliedOnValidProperty(currentElement: ValidElement): Boolean {
+        val isDocumentReference =
+            currentElement.elementSerialName?.contains("<DocumentReference>") ?: false
+        if (currentElement.elementKind == PrimitiveKind.STRING || isDocumentReference) {
             return true
         } else {
             throw IllegalArgumentException(
@@ -229,10 +247,19 @@ class FirestoreMapEncoder(
      * DocumentReference; Returns false if @[KDocumentId] is absent; Throws runtime exception if @
      * [KDocumentId] is present but applied on a property of an invalid type.
      */
-    private fun validateKDocumentIdPresentOrThrow(): Boolean {
+    private fun validateKDocumentIdPresentOrThrow(currentElement: Element): Boolean {
+        return when (currentElement) {
+            is Element.NoValidElement -> false
+            is ValidElement -> correctKDocumentIdPresentOnValidElementOrThrow(currentElement)
+        }
+    }
+
+    private fun correctKDocumentIdPresentOnValidElementOrThrow(
+        currentElement: ValidElement
+    ): Boolean {
         val kDocumentIdPresent = currentElement.elementAnnotations?.any { it is KDocumentId }
         return if (kDocumentIdPresent == true) {
-            kDocumentIdAppliedOnValidProperty()
+            kDocumentIdAppliedOnValidProperty(currentElement)
         } else {
             false
         }
@@ -242,12 +269,10 @@ class FirestoreMapEncoder(
      * Returns true is @[KServerTimestamp] is applied to a property of a type Date or Timestamp;
      * Otherwise, a runtime exception will be thrown.
      */
-    private fun kServerTimestampAppliedOnValidProperty(): Boolean {
-        if (
-            (currentElement.elementSerialName as String).run {
-                contains("<Timestamp>") || contains("<Date>")
-            }
-        ) {
+    private fun kServerTimestampAppliedOnValidProperty(currentElement: ValidElement): Boolean {
+        val isTimestamp = currentElement.elementSerialName?.contains("<Timestamp>") ?: false
+        val isDate = currentElement.elementSerialName?.contains("<Date>") ?: false
+        if (isTimestamp || isDate) {
             return true
         } else {
             throw IllegalArgumentException(
@@ -261,11 +286,20 @@ class FirestoreMapEncoder(
      * Timestamp; Returns false if @[KServerTimestamp] is absent; Throws runtime exception if @
      * [KServerTimestamp] is present but applied on a property of an invalid type.
      */
-    private fun validateKServerTimestampPresentOrThrow(): Boolean {
+    private fun validateKServerTimestampPresentOrThrow(currentElement: Element): Boolean {
+        return when (currentElement) {
+            is Element.NoValidElement -> false
+            is ValidElement -> correctKServerTimestampPresentOnValidElementOrThrow(currentElement)
+        }
+    }
+
+    private fun correctKServerTimestampPresentOnValidElementOrThrow(
+        currentElement: ValidElement
+    ): Boolean {
         val kServerTimestampPresent =
             currentElement.elementAnnotations?.any { it is KServerTimestamp }
         return if (kServerTimestampPresent == true) {
-            kServerTimestampAppliedOnValidProperty()
+            kServerTimestampAppliedOnValidProperty(currentElement)
         } else {
             false
         }
@@ -276,8 +310,8 @@ class FirestoreMapEncoder(
      * invalid type
      */
     private fun throwOnInvalidKDocumentIdAndKServerTimestampAnnotation() {
-        validateKDocumentIdPresentOrThrow()
-        validateKServerTimestampPresentOrThrow()
+        validateKDocumentIdPresentOrThrow(currentElement)
+        validateKServerTimestampPresentOrThrow(currentElement)
     }
 }
 
@@ -349,6 +383,39 @@ class FirestoreListEncoder(
         }
     }
 }
+
+/**
+ * Return a list of annotations of the child element at a given index [elementIndex]; In case of
+ * [IndexOutOfBoundsException], and [IllegalArgumentException], null will be returned. Other types
+ * of exception will be raised.
+ */
+private fun SerialDescriptor.elementAnnotationsOrNull(elementIndex: Int): List<Annotation>? =
+    try {
+        getElementAnnotations(elementIndex)
+    } catch (err: Exception) {
+        when (err) {
+            is IndexOutOfBoundsException,
+            is IllegalArgumentException -> null
+            else -> throw err
+        }
+    }
+
+private fun SerialDescriptor.getElementNameOrNull(elementIndex: Int): String? =
+    try {
+        getElementName(elementIndex)
+    } catch (err: Exception) {
+        when (err) {
+            is IndexOutOfBoundsException,
+            is IllegalArgumentException -> null
+            else -> throw err
+        }
+    }
+
+private fun SerialDescriptor.getElementKindOrNull(elementIndex: Int): SerialKind? =
+    elementDescriptors?.toList()?.getOrNull(elementIndex)?.kind
+
+private fun SerialDescriptor.getElementSerialNameOrNull(elementIndex: Int): String? =
+    elementDescriptors?.toList()?.getOrNull(elementIndex)?.serialName
 
 /**
  * Returns the encoded contents of a @Serializable object converted to a nested map.
