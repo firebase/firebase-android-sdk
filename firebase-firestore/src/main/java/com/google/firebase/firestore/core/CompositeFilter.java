@@ -16,6 +16,7 @@ package com.google.firebase.firestore.core;
 
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
+import com.google.common.collect.ImmutableList;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
@@ -40,15 +41,15 @@ public class CompositeFilter extends Filter {
     }
   }
 
-  private final List<Filter> filters;
+  private final ImmutableList<Filter> filters;
   private final Operator operator;
 
   // Memoized list of all field filters that can be found by traversing the tree of filters
   // contained in this composite filter.
-  private List<FieldFilter> memoizedFlattenedFilters;
+  private ImmutableList<FieldFilter> memoizedFlattenedFilters;
 
   public CompositeFilter(List<Filter> filters, Operator operator) {
-    this.filters = filters;
+    this.filters = ImmutableList.copyOf(filters);
     this.operator = operator;
   }
 
@@ -66,10 +67,11 @@ public class CompositeFilter extends Filter {
     if (memoizedFlattenedFilters != null) {
       return memoizedFlattenedFilters;
     }
-    memoizedFlattenedFilters = new ArrayList<>();
+    ImmutableList.Builder<FieldFilter> builder = ImmutableList.builder();
     for (Filter subfilter : filters) {
-      memoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
+      builder.addAll(subfilter.getFlattenedFilters());
     }
+    memoizedFlattenedFilters = builder.build();
     return memoizedFlattenedFilters;
   }
 
