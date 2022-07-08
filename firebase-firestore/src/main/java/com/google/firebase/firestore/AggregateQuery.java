@@ -20,8 +20,13 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
 import java.util.Objects;
 
+/**
+ * A {@code AggregateQuery} computes some aggregation statistics from the result set of a base
+ * {@link Query}.
+ */
 public final class AggregateQuery {
 
+  // The base query.
   private final Query query;
 
   AggregateQuery(@NonNull Query query, @NonNull AggregateField aggregateField) {
@@ -31,11 +36,18 @@ public final class AggregateQuery {
     }
   }
 
+  /** Returns the base {@link Query} for this aggregate query. */
   @NonNull
   public Query getQuery() {
     return query;
   }
 
+  /**
+   * Executes the aggregate query and returns the results as a {@code AggregateQuerySnapshot}.
+   *
+   * @param source A value to configure the get behavior.
+   * @return A Task that will be resolved with the results of the {@code AggregateQuery}.
+   */
   @NonNull
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();

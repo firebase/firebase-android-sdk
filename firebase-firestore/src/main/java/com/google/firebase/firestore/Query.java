@@ -1223,6 +1223,12 @@ public class Query {
     }
   }
 
+  /**
+   * Creates an {@link AggregateQuery} counting the number of documents matching this query.
+   *
+   * @return An {@link AggregateQuery} object that can be used to count the number of documents in
+   *     the result set of this query.
+   */
   @NonNull
   public AggregateQuery count() {
     return new AggregateQuery(this, AggregateField.count());

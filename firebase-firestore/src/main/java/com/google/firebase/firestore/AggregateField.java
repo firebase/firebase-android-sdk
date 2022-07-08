@@ -16,10 +16,18 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 
+/**
+ * Represents which field to aggregate on for a {@link AggregateQuery}, and what type of
+ * aggregations to perform.
+ */
 abstract class AggregateField {
 
   private AggregateField() {}
 
+  /**
+   * Returns a {@link CountAggregateField} which counts the number of documents matching the {@code
+   * AggregateQuery}.
+   */
   @NonNull
   public static CountAggregateField count() {
     return new CountAggregateField();
