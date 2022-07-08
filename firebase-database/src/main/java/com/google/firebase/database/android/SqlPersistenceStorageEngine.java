@@ -58,7 +58,7 @@ import java.util.Set;
 /**
  * This class is an Android/SQL-backed implementation of PersistenceStorageEngine.
  *
- * <p>The implementation uses 3 tables for persistence: - writes: A list of all currently
+ * <p>The implementation uses 4 tables for persistence: - writes: A list of all currently
  * outstanding (visible) writes. A row represents a single write containing a unique-across-restarts
  * write id, the path string, the type which can be 'o' for an overwrite or 'm' for a merge, and the
  * serialized node wrapped. Part number is NULL for normal writes. Large writes (>256K) are split
@@ -1058,6 +1058,7 @@ public class SqlPersistenceStorageEngine implements PersistenceStorageEngine {
     arguments[path.size() + 1] = pathPrefixStart;
     arguments[path.size() + 2] = pathPrefixEnd;
     String orderBy = PATH_COLUMN_NAME;
+    // TODO: We need to modify this to make sure that we limit based on trackedquerykeys
 
     return database.query(SERVER_CACHE_TABLE, columns, whereClause, arguments, null, null, orderBy);
   }

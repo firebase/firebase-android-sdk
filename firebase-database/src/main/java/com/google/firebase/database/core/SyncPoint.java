@@ -139,6 +139,16 @@ public class SyncPoint {
     return view;
   }
 
+  public void setTrackedQueryKeys(QuerySpec query, View view) {
+    if (!query.loadsAllData()) {
+      Set<ChildKey> allChildren = new HashSet<ChildKey>();
+      for (NamedNode node : view.getEventCache()) {
+        allChildren.add(node.getName());
+      }
+      this.persistenceManager.setTrackedQueryKeys(query, allChildren);
+    }
+  }
+
   /** Add an event callback for the specified query. */
   public List<DataEvent> addEventRegistration(
       @NotNull EventRegistration eventRegistration,
@@ -147,13 +157,7 @@ public class SyncPoint {
     QuerySpec query = eventRegistration.getQuerySpec();
     View view = getView(query, writesCache, serverCache);
     // If this is a non-default query we need to tell persistence our current view of the data
-    if (!query.loadsAllData()) {
-      Set<ChildKey> allChildren = new HashSet<ChildKey>();
-      for (NamedNode node : view.getEventCache()) {
-        allChildren.add(node.getName());
-      }
-      this.persistenceManager.setTrackedQueryKeys(query, allChildren);
-    }
+    setTrackedQueryKeys(query, view);
     if (!this.views.containsKey(query.getParams())) {
       this.views.put(query.getParams(), view);
     }
@@ -235,6 +239,13 @@ public class SyncPoint {
 
   public Node getCompleteServerCache(Path path) {
     for (View view : this.views.values()) {
+      /*
+       * TODO: Shouldn't this be cached?
+       * Node serverCache = view.getCompleteServerCache(path);
+       * if(serverCache != null) {
+       *  return serverCache;
+       * }
+       */
       if (view.getCompleteServerCache(path) != null) {
         return view.getCompleteServerCache(path);
       }

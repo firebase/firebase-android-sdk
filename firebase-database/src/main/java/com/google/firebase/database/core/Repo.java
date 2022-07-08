@@ -548,15 +548,23 @@ public class Repo implements PersistentConnection.Delegate {
                           source.setException(Objects.requireNonNull(task.getException()));
                         }
                       } else {
+                        /*
+                          Need to check if it's a full path query. If it is, then just override with serverOverwrite
+                          If not, check if the view already exists, and then add it if it doesn't already exist.
+                          Then, remove the event registration/view if needed.
+                          Also, do we actually need to post events? We should already be doing that on the listener
+                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                        postEvents(
-                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        QuerySpec spec = query.getSpec();
+                        serverSyncTree.addSyncpoint(spec);
+                        // Check if this needs to be isDefault or loadsAllData
+                        // Since addSyncpoint already calls setQueryActive for a query, we have to set the query as inactive after we get the result.
+                        serverSyncTree.setQueryInactive(query.getSpec());
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
                       }
-                      serverSyncTree.setQueryInactive(query.getSpec());
                     });
           }
         });
