@@ -19,44 +19,35 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 /**
- * (De)Encoding an custom object into(from) a nested map of primitive types. This class is intend to
- * be providing a [MapEncoder] component to other libraries at runtime.
+ * [MapEncoder] implementation for @[Serializable] kotlin classes
  *
- * <p>For the deserialization process, this [MapEncoderKtxImp] is going to be used by the following
- * Java classes: [DocumentSnapshot], [QueryDocumentSnapshot], and [QuerySnapshot]. For the
- * serialization process, this [MapEncoderKtxImp] is going to be used by the following Java classes:
+ * <p>For the deserialization process, if the target object is [Serializable], this
+ * [MapEncoderKtxImp] can be used by the following Java classes: [DocumentSnapshot],
+ * [QueryDocumentSnapshot], and [QuerySnapshot]. For the serialization process, if the source object
+ * is [Serializable], this [MapEncoderKtxImp] can be used by the following Java classes:
  * [DocumentReference], [Transaction] and [WriteBatch].
- *
- * <p><b>Note</b>: The class of the object being (de)encoded should be [Serializable], the max depth
- * of the encoded nested map should be less than 500, (de)encode a list of mixed data types, or a
- * list of list are not supported as these lists are not considered as Kotlin serializable
- * (serializers cannot be obtained at compile time).
  */
 class MapEncoderKtxImp : MapEncoder {
-    /**
-     * Encodes a custom serializable object to a nested map of Firebase firestore primitive types.
-     */
+    /** Encodes [Serializable] objects as nested maps of Firestore supported primitive types. */
     override fun encode(value: Any): MutableMap<String, Any?> {
         val serializer = serializer(value.javaClass)
         return encodeToMap(serializer, value)
     }
 
     /**
-     * Returns whether or not the class can be (de)encoded by the [MapEncoderKtxImp]. Returns false
-     * if this class cannot be (de)encoded by this [MapEncoderKtxImp].
+     * Returns whether or not the class can be (de)encoded by the [MapEncoderKtxImp].
      *
-     * @param valueType The Java class to be encoded from or decoded to.
-     * @return True iff the class can be (de)encoded by the {@code MapEncoder}.
+     * @param valueType The class to be encoded from or decoded to.
+     * @return True iff the class can be (de)encoded.
      */
-    // TODO: Recursively check each of its field to make sure none of the filed contains Java
+    // TODO: Recursively check each of its fields to make sure none of them contains Java
     // style annotations: @PropertyName, or @Exclude
     override fun <T : Any?> supports(valueType: Class<T>): Boolean = isSerializable(valueType)
 
     /**
-     * Returns whether or not the class is annotated with @[Serializable]. Returns false if the data
-     * type does not have @[Serializable] annotation.
+     * Returns whether or not the class is annotated with @[Serializable].
      *
-     * @param valueType The Java class to be encoded from or decoded to.
+     * @param valueType The class to be encoded from or decoded to.
      * @return True iff the class has @[Serializable] annotation.
      */
     private fun <T : Any?> isSerializable(valueType: Class<T>): Boolean {

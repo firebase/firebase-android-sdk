@@ -29,16 +29,24 @@ import org.junit.Test
 
 class ComponentRegistrarTest {
 
+    // Verify the DocumentReference.set() method is serializing @Serializable object via the
+    // MapEncoderKtxImp.
     @Test
     fun documentReference_is_using_ktx_mapencoder_when_set_to_firestore() {
-        // Verify the DocumentReference.set() method is serializing @Serializable object via the
-        // MapEncoderKtxImp by saving an object with field name start with a capital letter;
-        // Java POJO mapper will always convert the first letter of a field name to lower case.
         val docRefKotlin = testCollection("ktx").document("123")
-        @Serializable data class Student(val Name: String = "fool")
+        @Serializable
+        data class Student(
+            val Name: String = "fool",
+            @get:Exclude val isNotUsingJavaPOJOSetMethod: Boolean = true
+        )
         docRefKotlin.set(Student())
         val actual = waitFor(docRefKotlin.get()).data
+        // If Java POJO method is used for encoding, the first letter of the field name will be
+        // converted to lower case, key name will be "name", instead of "Name".
         assertThat(actual?.keys).contains("Name")
+        // If Java POJO method is used for encoding, this field will be excluded, then assertion
+        // will equal to "null", instead of "true".
+        assertThat(actual?.get("isNotUsingJavaPOJOSetMethod")).isEqualTo(true)
     }
 
     enum class Grade {
@@ -55,15 +63,16 @@ class ComponentRegistrarTest {
 
         @Serializable
         data class KtxStudent(
-            val name: String? = null,
-            val id: Int? = null,
-            val age: Long? = null,
-            val termAvg: Double? = null,
-            val accumulateAvg: Float? = null,
-            val male: Boolean? = null,
-            val grade: Grade? = null,
-            @SerialName("NickName") val nickName: String? = null,
-            @Transient val homeAddress: String? = "295 Lester ST"
+            val name: String,
+            val id: Int,
+            val age: Long,
+            val termAvg: Double,
+            val accumulateAvg: Float,
+            val male: Boolean,
+            val grade: Grade,
+            @SerialName("NickName") val nickName: String,
+            @Transient
+            val homeAddress: String = "295 Lester ST" // @Transient must have default value
         )
 
         data class POJOStudent(
@@ -108,21 +117,21 @@ class ComponentRegistrarTest {
 
         @Serializable
         data class KtxProject(
-            val name: String? = null,
-            val owner: Owner? = null, // nested object without @Serializable cannot be complied
-            @Contextual @KDocumentId val docRef: DocumentReference? = null,
-            @KDocumentId val docId: String? = "foo"
+            val name: String,
+            val owner: Owner, // nested object without @Serializable cannot be complied
+            @Contextual @KDocumentId val docRef: DocumentReference,
+            @KDocumentId val docId: String
         )
 
         data class POJOProject(
             val name: String? = null,
             val owner: Owner? = null,
             @DocumentId val docRef: DocumentReference? = null,
-            @DocumentId val docId: String? = "bar"
+            @DocumentId val docId: String? = null
         )
 
-        docRefKotlin.set(KtxProject("foo", Owner("bar"), docRefKotlin))
-        docRefPOJO.set(POJOProject("foo", Owner("bar"), docRefKotlin))
+        docRefKotlin.set(KtxProject("foo", Owner("bar"), docRefKotlin, "foo"))
+        docRefPOJO.set(POJOProject("foo", Owner("bar"), docRefKotlin, "bar"))
         val expected = waitFor(docRefPOJO.get()).data
         val actual = waitFor(docRefKotlin.get()).data
         assertThat(expected).containsExactlyEntriesIn(actual)
@@ -135,19 +144,21 @@ class ComponentRegistrarTest {
 
         @Serializable
         class KtxTimestamp(
-            @Contextual val timestamp0: Timestamp? = null,
+            @Contextual val timestamp0: Timestamp,
             @Contextual @KServerTimestamp var timestamp1: Timestamp? = null,
             @Contextual @KServerTimestamp val date: Date? = null
         )
 
         class POJOTimestamp(
-            @Contextual val timestamp0: Timestamp? = null,
+            val timestamp0: Timestamp? = null,
             @ServerTimestamp var timestamp1: Timestamp? = null,
             @ServerTimestamp val date: Date? = null
         )
 
         docRefKotlin.set(KtxTimestamp(timestamp0 = Timestamp(Date(100000L))))
         docRefPOJO.set(POJOTimestamp(timestamp0 = Timestamp(Date(100000L))))
+
+        // assert each of the fields equals to each other.
         val expected =
             waitFor(docRefPOJO.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
         val actual =
