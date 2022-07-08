@@ -21,7 +21,7 @@ import org.junit.Assert.assertThrows
 
 /**
  * Returns a [DocumentReference] identified by document name for ktx unit test purpose. The
- * firestore in this DocumentReference is always null.
+ * firestore field in this DocumentReference is always null.
  *
  * @param pathString A slash separated path represents the location of a document in the Firestore
  * database.

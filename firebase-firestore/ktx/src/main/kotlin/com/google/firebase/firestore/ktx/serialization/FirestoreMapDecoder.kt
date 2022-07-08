@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder.Constants.START_INDEX
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -29,15 +30,15 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 /**
- * A skeleton implementation of a decoder that decodes a nested map of firestore primitive types as
- * a custom @Serializable Kotlin object. SDK users don’t need to directly interact with
+ * A skeleton implementation of a decoder that decodes a nested map (or list) of Firestore supported
+ * types as a @[Serializable] object (or its field). SDK users don’t need to directly interact with
  * [FirestoreAbstractDecoder].
  *
- * <p>Most of the decode* methods have default implementation that delegates decodeValue(value: Any)
- * as TargetType. The [decodeElementIndex] method need to be override in its of the subclasses to
- * support decoding map or list.
+ * <p>Most of the decode* methods have default implementation that delegates decodeValue(value:
+ * Any). The [decodeElementIndex] method need to be override in each of the subclasses to support
+ * decoding of a nested map or list.
  *
- * @param nestedObject The nested object that that needs to be decoded.
+ * @param nestedObject The nested object (map or list) that that needs to be decoded.
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
 private abstract class FirestoreAbstractDecoder(
@@ -45,15 +46,17 @@ private abstract class FirestoreAbstractDecoder(
     private val docRef: DocumentReference
 ) : AbstractDecoder() {
 
-    protected val START_INDEX = 0
+    object Constants {
+        const val START_INDEX = 0
+    }
     protected var elementIndex: Int = START_INDEX
     protected var isCurrentDecodeElementNotNull: Boolean = true
     protected lateinit var decodedElementDataType: SerialKind
 
-    /** A list of values that need to be decoded as fields of the custom object. */
+    /** A list of values that need to be decoded as fields of the [Serializable] object. */
     abstract val decodeValueList: List<Any?>
 
-    /** Decodes an enum field by returning its index in the enum object's descriptor. */
+    /** Decodes an enum field by returning its index from the enum object's descriptor. */
     final override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
         val decodedEnumFieldName = decodeValueList.elementAt(elementIndex - 1)
         // TODO: Add a EnumNamingProperties parameter, and convert decodedEnumFieldName based on it
@@ -64,7 +67,8 @@ private abstract class FirestoreAbstractDecoder(
 
     /**
      * Returns true if the current element being decoded is not null. In case this method returns
-     * false, [decodeNull] method will be used instead of [decodeValue] to decode this element.
+     * false, [decodeNull] method will be used instead of [decodeValue] to decode this null value
+     * element.
      */
     final override fun decodeNotNullMark(): Boolean {
         val result = isCurrentDecodeElementNotNull
@@ -74,30 +78,31 @@ private abstract class FirestoreAbstractDecoder(
 
     /**
      * Returns a not null primitive value that is going to be assigned as a field of the decoded
-     * custom class.
+     * [Serializable] object.
      *
-     * <p>Note: Firestore saves Int field as Long, and Float field as Double from the server side;
+     * <p>Note: Firestore saves Int values as Long, and Float values as Double from the server side;
      * therefore, during decoding process, depending on the field's [SerialKind], cast might be
      * required to convert Long back to Int, and to convert Double back to Float.
      *
-     * @return a primitive value that is going to be assigned as a field value of the decoded custom
-     * class.
+     * @return a primitive value that is going to be assigned as a field value of the [Serializable]
+     * object.
      */
     final override fun decodeValue(): Any {
         val element: Any = validateDecodedElementNotNull()
         return when (decodedElementDataType) {
-            is PrimitiveKind.INT -> return (element as Long).toInt() // firestore saves Int as Long
+            is PrimitiveKind.INT -> return (element as Long).toInt() // Firestore saves Int as Long
             is PrimitiveKind.FLOAT ->
-                return (element as Double).toFloat() // firestore saves Float as Double
+                return (element as Double).toFloat() // Firestore saves Float as Double
             else -> element
         }
     }
 
     /**
-     * Returns a not null value from [decodeValueList], this is the value that is going to be
-     * decoded as the field value of the custom object.
+     * Returns a not null value from [decodeValueList]. This is the value that is going to be
+     * decoded as the field value of the [Serializable] object.
      *
-     * <p>An [IllegalArgumentException] will be thrown if get a null value from [decodeValueList].
+     * <p>An [IllegalArgumentException] will be thrown if the [elementIndex] is pointing to a null
+     * value from [decodeValueList].
      */
     private fun validateDecodedElementNotNull(): Any =
         decodeValueList.elementAt(elementIndex - 1)
@@ -125,8 +130,8 @@ private abstract class FirestoreAbstractDecoder(
     }
 
     /**
-     * Returns the inner structured object that need to be decoded. The inner structured object
-     * could be neither a nested Class object or a nested List object.
+     * Returns the nested structured object that needs to be decoded. The nested structured object
+     * could be either a nested [Serializable] object or a nested List.
      */
     private fun getCompositeObject(elementIndex: Int): Any? {
         return when (elementIndex) {
@@ -138,22 +143,21 @@ private abstract class FirestoreAbstractDecoder(
 }
 
 /**
- * The entry point of Firestore Kotlin deserialization process. It decodes a nested map of firestore
- * primitive types to a custom @Serializable Kotlin object. SDK users don’t need to directly
- * interact with [FirestoreMapDecoder], this entry point will be embedded into existing API (no new
- * API need to be introduced).
+ * The entry point of Firestore Kotlin deserialization process. It decodes a nested map of Firestore
+ * supported types to a [Serializable] Kotlin object. SDK users don’t need to directly interact with
+ * [FirestoreMapDecoder], this entry point will be embedded into existing API (no new API need to be
+ * introduced).
  *
- * <p>For a custom @Serializable object, at compile time, a serializer will be generated by the
- * Kotlin serialization compiler plugin (or a custom serializer can be manually passed in). The
- * structure information of the custom @Serializable object will be recorded inside of the
- * serializer’s descriptor (i.e. the name/type of each property to be encoded, the annotations on
- * each property).
+ * <p>For a [Serializable] object, at compile time, a serializer will be generated by the Kotlin
+ * serialization compiler plugin (or a custom serializer can be manually passed in). The structure
+ * information of the [Serializable] object will be recorded inside of the serializer’s descriptor
+ * (i.e. the name/type of each property to be encoded, the annotations on each property).
  *
- * <p>Based on the descriptor’s information, during the decoding process, a nested map will be fed
+ * <p>Based on the descriptor’s information, during the decoding process, a nested map will be send
  * to the decoder. Decoder will loop through all the key-value pairs in the nested map, use the key
- * to find the target field from the [SerialDescriptor] where the value should be assigned to.
+ * to find the target field from the [SerialDescriptor], then assign the value to the field.
  *
- * @param nestedObject The nested map that that needs to be decoded to a @Serializable object.
+ * @param nestedObject The nested map that that needs to be decoded to a @[Serializable] object.
  * @param docRef The [DocumentReference] where this nested map is obtained from.
  */
 private class FirestoreMapDecoder(nestedObject: Map<String, Any?>, docRef: DocumentReference) :
@@ -163,7 +167,10 @@ private class FirestoreMapDecoder(nestedObject: Map<String, Any?>, docRef: Docum
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>
 
-    /** Returns a list of keys and values that need to be decoded as fields of the custom object. */
+    /**
+     * Returns a list of keys and values that need to be decoded as fields of the [Serializable]
+     * object.
+     */
     init {
         val (decodeNameList, decodeValueList) = nestedObject.toList().unzip()
         this.decodeNameList = decodeNameList
@@ -178,8 +185,7 @@ private class FirestoreMapDecoder(nestedObject: Map<String, Any?>, docRef: Docum
      * [CompositeDecoder.UNKNOWN_NAME] to indicate that the element to be decode is not in
      * [descriptor].
      *
-     * @param descriptor The [SerialDescriptor] of the custom object that contains the meta data for
-     * each of its field.
+     * @param descriptor The [SerialDescriptor] of the [Serializable] object.
      * @return The index of the element that need to be decoded.
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
@@ -197,22 +203,10 @@ private class FirestoreMapDecoder(nestedObject: Map<String, Any?>, docRef: Docum
 }
 
 /**
- * Decodes a nested list of firestore primitive types as a field of a custom @Serializable Kotlin
- * object. SDK users don’t need to directly interact with [FirestoreListDecoder].
+ * Decodes a nested list of Firestore supported types as a field of a [Serializable] object. SDK
+ * users don’t need to directly interact with [FirestoreListDecoder].
  *
- * <p>For a custom @Serializable object, at compile time, a serializer will be generated by the
- * Kotlin serialization compiler plugin (or a custom serializer can be manually passed in). The
- * structure information of the custom @Serializable object will be recorded inside of the
- * serializer’s descriptor (i.e. the name/type of each property to be encoded, the annotations on
- * each property).
- *
- * <p>Based on the descriptor’s information, during the decoding process, if a nested list need to
- * be decoded as a field of the custom class, this decoder will loop through all the values in the
- * list, and pass these values to the deserializer, so that they can be assigned to the custom
- * object. The type of the list elements can be either firestore primitives or @Serializable custom
- * classes.
- *
- * @param nestedObject The nested list that that needs to be decoded to a field of a @Serializable
+ * @param nestedObject The nested list that that needs to be decoded as a field of a [Serializable]
  * object.
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
@@ -222,14 +216,11 @@ private class FirestoreListDecoder(nestedObject: List<Any>, docRef: DocumentRefe
     override val decodeValueList = nestedObject
 
     /**
-     * Returns the index of the element to be decoded. Index represents a position of the current
-     * element in the serial descriptor element that can be found with
-     * [SerialDescriptor.getElementIndex]. Additional to the element index, this method also returns
-     * [CompositeDecoder.DECODE_DONE] to indicate the decoding process is finished.
+     * Returns the index of the element to be decoded.
      *
-     * @param descriptor The [SerialDescriptor] of the custom object that contains the meta data for
-     * each of its field.
-     * @return The index of the element that need to be decoded.
+     * @param descriptor The [SerialDescriptor] of the [Serializable] object where this list field
+     * belongs to.
+     * @return The index of the element in the list that need to be decoded.
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == nestedList.size) return CompositeDecoder.DECODE_DONE
@@ -240,12 +231,12 @@ private class FirestoreListDecoder(nestedObject: List<Any>, docRef: DocumentRefe
 }
 
 /**
- * Returns the decoded @[Serializable] Kotlin object converted from a nested map.
+ * Returns a decoded [Serializable] object which is converted from a nested map.
  *
  * @param map A nested map that need to be decoded.
- * @param deserializer The [DeserializationStrategy] of the Custom object.
+ * @param deserializer The [DeserializationStrategy] of the target [Serializable] object.
  * @param docRef The [DocumentReference] where this nested map is from.
- * @return The decoded @[Serializable] Kotlin object.
+ * @return The decoded [Serializable] object.
  */
 fun <T> decodeFromMap(
     map: Map<String, Any?>,
@@ -257,11 +248,11 @@ fun <T> decodeFromMap(
 }
 
 /**
- * Returns the decoded @[Serializable] Kotlin object converted from a nested map.
+ * Returns a decoded [Serializable] object which is converted from a nested map.
  *
  * @param map A nested map that need to be decoded.
  * @param docRef The [DocumentReference] where this nested map is from.
- * @return The decoded @[Serializable] Kotlin object.
+ * @return The decoded [Serializable] object.
  */
 inline fun <reified T> decodeFromMap(map: Map<String, Any?>, docRef: DocumentReference): T =
     decodeFromMap(map, serializer(), docRef)
