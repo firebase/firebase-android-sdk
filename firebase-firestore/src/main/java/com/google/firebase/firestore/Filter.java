@@ -17,8 +17,8 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
-import com.google.firestore.v1.StructuredQuery;
 import java.util.Arrays;
 import java.util.List;
 
@@ -52,10 +52,11 @@ public class Filter {
 
   static class CompositeFilter extends Filter {
     private final List<Filter> filters;
-    private final StructuredQuery.CompositeFilter.Operator operator;
+    private final com.google.firebase.firestore.core.CompositeFilter.Operator operator;
 
     public CompositeFilter(
-        @NonNull List<Filter> filters, StructuredQuery.CompositeFilter.Operator operator) {
+        @NonNull List<Filter> filters,
+        com.google.firebase.firestore.core.CompositeFilter.Operator operator) {
       this.filters = filters;
       this.operator = operator;
     }
@@ -64,7 +65,7 @@ public class Filter {
       return filters;
     }
 
-    public StructuredQuery.CompositeFilter.Operator getOperator() {
+    public com.google.firebase.firestore.core.CompositeFilter.Operator getOperator() {
       return operator;
     }
   }
@@ -171,14 +172,13 @@ public class Filter {
 
   @NonNull
   public static Filter or(Filter... filters) {
-    // TODO(orquery): Change this to Operator.OR once it is available.
     return new CompositeFilter(
-        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED);
+        Arrays.asList(filters), com.google.firebase.firestore.core.CompositeFilter.Operator.OR);
   }
 
   @NonNull
   public static Filter and(Filter... filters) {
     return new CompositeFilter(
-        Arrays.asList(filters), StructuredQuery.CompositeFilter.Operator.AND);
+        Arrays.asList(filters), com.google.firebase.firestore.core.CompositeFilter.Operator.AND);
   }
 }

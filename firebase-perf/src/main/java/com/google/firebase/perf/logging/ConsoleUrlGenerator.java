@@ -40,7 +40,7 @@ public final class ConsoleUrlGenerator {
   public static String generateCustomTraceUrl(String projectId, String packageName, String name) {
     String rootUrl = getRootUrl(projectId, packageName);
     return String.format(
-        "%s/metrics/trace/DURATION_TRACE/%s?utm_source=%s&utm_medium=%s",
+        "%s/troubleshooting/trace/DURATION_TRACE/%s?utm_source=%s&utm_medium=%s",
         rootUrl, name, UTM_SOURCE, UTM_MEDIUM);
   }
 
@@ -54,7 +54,7 @@ public final class ConsoleUrlGenerator {
   public static String generateScreenTraceUrl(String projectId, String packageName, String name) {
     String rootUrl = getRootUrl(projectId, packageName);
     return String.format(
-        "%s/metrics/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
+        "%s/troubleshooting/trace/SCREEN_TRACE/%s?utm_source=%s&utm_medium=%s",
         rootUrl, name, UTM_SOURCE, UTM_MEDIUM);
   }
 

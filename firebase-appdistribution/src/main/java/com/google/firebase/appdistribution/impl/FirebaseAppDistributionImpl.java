@@ -19,7 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -27,7 +27,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -317,7 +316,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .takeScreenshot()
         .onSuccessTask(
             taskExecutor,
-            screenshot ->
+            screenshotFilename ->
                 testerSignInManager
                     .signInTester()
                     .addOnFailureListener(
@@ -328,17 +327,17 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
                     .onSuccessTask(
                         taskExecutor,
-                        releaseName -> launchFeedbackActivity(releaseName, screenshot)))
+                        releaseName -> launchFeedbackActivity(releaseName, screenshotFilename)))
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
-  private Task<Void> launchFeedbackActivity(String releaseName, Bitmap screenshot) {
-    return lifecycleNotifier.applyToForegroundActivity(
+  private Task<Void> launchFeedbackActivity(String releaseName, String screenshotFilename) {
+    return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
-          intent.putExtra(SCREENSHOT_EXTRA_KEY, screenshot);
+          intent.putExtra(SCREENSHOT_FILENAME_EXTRA_KEY, screenshotFilename);
           activity.startActivity(intent);
         });
   }
@@ -386,6 +385,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     // shows the dialog on a configuration change and does not check the activity reference.
     if (activity == dialogHostActivity) {
       dialogHostActivity = null;
+    }
+
+    // If the feedback activity finishes, clean up the screenshot that was taken before starting
+    // the activity. If this does not happen for some reason it will be cleaned up the next time
+    // before taking a new screenshot.
+    if (activity instanceof FeedbackActivity) {
+      screenshotTaker.deleteScreenshot();
     }
   }
 

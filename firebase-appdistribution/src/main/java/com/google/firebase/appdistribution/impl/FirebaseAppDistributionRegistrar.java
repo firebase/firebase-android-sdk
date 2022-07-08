@@ -92,7 +92,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             signInStorage,
             lifecycleNotifier,
             releaseIdentifier,
-            new ScreenshotTaker());
+            new ScreenshotTaker(firebaseApp, lifecycleNotifier));
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
