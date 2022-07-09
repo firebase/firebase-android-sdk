@@ -18,7 +18,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
@@ -324,13 +323,7 @@ public class RemoteConfigComponent {
   }
 
   private ConfigUpdateListener createEmptyConfigListener() {
-    return new ConfigUpdateListener() {
-      @Override
-      public void onEvent() {}
-
-      @Override
-      public void onError(@NonNull Exception error) {}
-    };
+    return new ConfigRealtimeHttpClient.EmptyConfigUpdateListener();
   }
 
   private synchronized void notifyRCInstances(boolean isInBackground) {
