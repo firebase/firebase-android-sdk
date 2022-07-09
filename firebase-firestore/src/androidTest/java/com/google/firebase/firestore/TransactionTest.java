@@ -29,6 +29,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -88,16 +89,19 @@ public class TransactionTest {
       db = inputDb;
     }
 
+    @CanIgnoreReturnValue
     public TransactionTester withExistingDoc() {
       fromExistingDoc = true;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public TransactionTester withNonexistentDoc() {
       fromExistingDoc = false;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public TransactionTester run(TransactionStage... inputStages) {
       stages = Arrays.asList(inputStages);
       return this;

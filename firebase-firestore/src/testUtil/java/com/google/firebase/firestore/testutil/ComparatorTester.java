@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assert_;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Ints;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.Comparator;
 import java.util.List;
@@ -101,6 +102,7 @@ public class ComparatorTester {
    * Activates enforcement of {@code a.equals(b) == (a.compareTo(b) == 0)}. This is off by default
    * when testing {@link Comparator}s, but can be turned on if required.
    */
+  @CanIgnoreReturnValue
   public ComparatorTester requireConsistencyWithEquals() {
     testForEqualsCompatibility = true;
     return this;
@@ -110,6 +112,7 @@ public class ComparatorTester {
    * Deactivates enforcement of {@code a.equals(b) == (a.compareTo(b) == 0)}. This is on by default
    * when testing {@link Comparable}s, but can be turned off if required.
    */
+  @CanIgnoreReturnValue
   public ComparatorTester permitInconsistencyWithEquals() {
     testForEqualsCompatibility = false;
     return this;
@@ -122,6 +125,7 @@ public class ComparatorTester {
    *
    * @return {@code this} (to allow chaining of calls)
    */
+  @CanIgnoreReturnValue
   public ComparatorTester addEqualityGroup(Object... objects) {
     Preconditions.checkNotNull(objects);
     Preconditions.checkArgument(objects.length > 0, "Array must not be empty");

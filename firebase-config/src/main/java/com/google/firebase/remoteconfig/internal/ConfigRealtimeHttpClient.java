@@ -331,7 +331,10 @@ public class ConfigRealtimeHttpClient {
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
-    beginRealtime();
+    if (configUpdateListener.getClass() != EmptyConfigUpdateListener.class
+        || listeners.size() > 1) {
+      beginRealtime();
+    }
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
@@ -367,5 +370,14 @@ public class ConfigRealtimeHttpClient {
     public void remove() {
       removeRealtimeConfigUpdateListener(listener);
     }
+  }
+
+  public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
+
+    @Override
+    public void onEvent() {}
+
+    @Override
+    public void onError(@NonNull Exception error) {}
   }
 }
