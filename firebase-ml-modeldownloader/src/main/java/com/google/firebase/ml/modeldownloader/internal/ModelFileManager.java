@@ -70,7 +70,6 @@ public class ModelFileManager {
   void deleteNonLatestCustomModels() throws FirebaseMlException {
     File root = getDirImpl("");
 
-    boolean ret = true;
     if (root.isDirectory()) {
       for (File f : root.listFiles()) {
         // for each custom model sub directory - extract customModelName and clean up old models.
@@ -212,7 +211,7 @@ public class ModelFileManager {
   public synchronized void deleteOldModels(
       @NonNull String modelName, @NonNull String latestModelFilePath) {
     File modelFolder = getModelDirUnsafe(modelName);
-    if (!modelFolder.exists()) {
+    if (!modelFolder.exists() || latestModelFilePath.isEmpty()) {
       return;
     }
 
