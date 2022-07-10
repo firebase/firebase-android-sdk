@@ -15,10 +15,16 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.ServerTimestamp
 import com.google.firebase.firestore.ThrowOnExtraProperties
+import com.google.firebase.firestore.documentReference
+import java.util.Date
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
 
@@ -68,5 +74,122 @@ class JavaLibKtxSupportTests {
         assertThat(annotations).hasSize(1)
         val annotation = annotations[0]
         assertThat(annotation::class.java).isAssignableTo(IgnoreExtraProperties::class.java)
+    }
+
+    @Test
+    fun `java GeoPoint Ktx's serializer should be seen during Ktx serialization`() {
+        @Serializable
+        data class JavaGeoPoint(val geoPoint: GeoPoint)
+
+        val geoPointObj = JavaGeoPoint.serializer().descriptor.getElementDescriptor(0)
+        assertThat(geoPointObj.serialName).isEqualTo("__GeoPointSerializer__")
+    }
+
+    @Test
+    fun `java Timestamp Ktx's serializer should be seen during Ktx serialization`() {
+        @Serializable
+        data class JavaTimestamp(val timestamp: Timestamp)
+
+        val timestampObj = JavaTimestamp.serializer().descriptor.getElementDescriptor(0)
+        assertThat(timestampObj.serialName).isEqualTo("__TimestampSerializer__")
+    }
+
+    @Test
+    fun `java DocumentReference Ktx's serializer should be seen during Ktx serialization`() {
+        @Serializable
+        data class JavaDocRef(val docRef: DocumentReference)
+
+        val docRefObj = JavaDocRef.serializer().descriptor.getElementDescriptor(0)
+        assertThat(docRefObj.serialName).isEqualTo("__DocumentReferenceSerializer__")
+    }
+
+    @Serializable
+    private data class User(val name: String)
+
+    @Serializable
+    private data class Project(val name: String, val owner: User, val votes: Int)
+
+    private val data = Project("kotlinx.serialization", User("kotlin"), 9000)
+
+    @Test
+    fun `ktx serialization unit test list encoder is working`() {
+        assertThat(encodeToList(data)).isEqualTo(listOf("kotlinx.serialization", "kotlin", 9000))
+    }
+
+    @Test
+    fun `ktx serialization unit test list decoder is working`() {
+        val list = encodeToList(data)
+        val actual = decodeFromList<Project>(list)
+        assertThat(actual).isEqualTo(data)
+    }
+
+    @Test
+    fun `ktx serialization unit test list encoder is working with firestore native types`() {
+
+        @Serializable
+        data class Project(
+            val name: String,
+            val geoPoints: GeoPoint,
+            val timestamp: Timestamp,
+            val docRef: DocumentReference,
+            @Contextual
+            val time: Date
+        )
+
+        val dateObj = Date(10000)
+        val geoPointObj = GeoPoint(10.0, 11.0)
+        val timeStampObj = Timestamp(dateObj)
+        val docRefObj = documentReference("foo/bar")
+
+        val actual =
+            encodeToList(Project("list serialization", geoPointObj, timeStampObj, docRefObj, dateObj))
+        val expected = listOf("list serialization", geoPointObj, timeStampObj, docRefObj, dateObj)
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `ktx serialization unit test list decoder is working with firestore native types`() {
+
+        @Serializable
+        data class Project(
+            val name: String,
+            val geoPoints: GeoPoint,
+            val timestamp: Timestamp,
+            val docRef: DocumentReference,
+            @Contextual
+            val time: Date
+        )
+
+        val dateObj = Date(10000)
+        val geoPointObj = GeoPoint(10.0, 11.0)
+        val timeStampObj = Timestamp(dateObj)
+        val docRefObj = documentReference("foo/bar")
+        val expected = Project("list serialization", geoPointObj, timeStampObj, docRefObj, dateObj)
+        // Note that the last field in Project is converted from Date to Timestamp by Firestore server:
+        val list = listOf("list serialization", geoPointObj, timeStampObj, docRefObj, timeStampObj)
+        val actual = decodeFromList<Project>(list)
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `ktx serialization unit test list-encoder-decoder round trip with firestore native types`() {
+        // TODO: test field of Date with integration test,
+        //  this data type's round trip cannot be done with unit test
+        @Serializable
+        data class Project(
+            val name: String,
+            val geoPoints: GeoPoint,
+            val timestamp: Timestamp,
+            val docRef: DocumentReference
+        )
+
+        val geoPointObj = GeoPoint(10.0, 11.0)
+        val timeStampObj = Timestamp(Date(10000))
+        val docRefObj = documentReference("foo/bar")
+        val expected = Project("list serialization", geoPointObj, timeStampObj, docRefObj)
+
+        val list = encodeToList(expected)
+        val actual = decodeFromList<Project>(list)
+        assertThat(actual).isEqualTo(expected)
     }
 }

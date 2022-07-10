@@ -14,15 +14,22 @@
 
 package com.google.firebase.firestore.encoding
 
-import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import java.util.*
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/**
+ * An abstract interface of [Encoder] that provides a method to encode Firestore supported non-primitive types ([DocumentReference], [Timestamp], [Date] and [GeoPoint]).
+ */
 interface FirestoreAbstractEncoder : Encoder {
-    fun <T> encodeFirestoreNativeDataType (value: T)
+    fun <T : Any> encodeFirestoreNativeDataType(value: T)
 }
 
+/**
+ * An abstract interface of [Decoder] that provides a method to decode Firestore supported non-primitive types ([DocumentReference], [Timestamp], [Date] and [GeoPoint]).
+ */
 interface FirestoreAbstractDecoder : Decoder {
-    fun decodeFirestoreNativeDataType()
+    fun decodeFirestoreNativeDataType(): Any
 }

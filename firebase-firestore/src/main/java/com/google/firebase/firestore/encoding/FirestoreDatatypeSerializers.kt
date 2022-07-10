@@ -16,19 +16,21 @@ package com.google.firebase.firestore.encoding
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import java.util.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.contextual
 
 /**
  * The generic serializer for data types that need special treatment during (de)serialization
  * process. The concrete implementation of this generic serializer class is restricted to four
- * firestore data types, respectively to be [DocumentReference], [Timestamp], [GeoPoint] and [Date]
- * (these are the firestore supported non-primitive data types).
+ * Firestore supported non-primitive types, respectively to be [DocumentReference], [Timestamp], [Date] and [GeoPoint].
  */
-private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
+sealed class FirestoreNativeDataTypeSerializer<T : Any>() : KSerializer<T> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor(
             // get the serializer's subclass simple name without the package name
@@ -36,13 +38,13 @@ private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
         )
 
     override fun serialize(encoder: Encoder, value: T) {
-        val nestedMapEncoder = encoder as FirestoreAbstractEncoder
-        nestedMapEncoder.encodeFirestoreNativeDataType(value)
+        val encoder = encoder as FirestoreAbstractEncoder
+        encoder.encodeFirestoreNativeDataType(value)
     }
 
     override fun deserialize(decoder: Decoder): T {
-        val nestedMapDecoder = decoder as FirestoreAbstractDecoder
-        val decodeValue = nestedMapDecoder.decodeFirestoreNativeDataType()
+        val decoder = decoder as FirestoreAbstractDecoder
+        val decodeValue = decoder.decodeFirestoreNativeDataType()
         return when (descriptor.serialName) {
             "__DateSerializer__" ->
                 (decodeValue as Timestamp).let { it.toDate() }
@@ -51,7 +53,20 @@ private sealed class FirestoreNativeDataTypeSerializer<T>() : KSerializer<T> {
         }
     }
 
+    object DateSerializer : FirestoreNativeDataTypeSerializer<Date>()
     object GeoPointSerializer : FirestoreNativeDataTypeSerializer<GeoPoint>()
     object TimestampSerializer : FirestoreNativeDataTypeSerializer<Timestamp>()
+    object DocumentReferenceSerializer :
+        FirestoreNativeDataTypeSerializer<DocumentReferenceSerializer>()
+}
 
+/**
+ * The [SerializersModule] that provides a [KSerializer] at runtime for data type: [Date]
+ *
+ * <p>Serializers inside of [SerializersModule] will be registered by the kotlin compiler plugin at compile time. Then, at
+ * runtime, the pre-registered serializers will be matched and utilized by the Encoder(Decoder),
+ * if the property of the custom object has the @[Contextual] annotation.
+ */
+val FirestoreSerializersModule = SerializersModule {
+    contextual(FirestoreNativeDataTypeSerializer.DateSerializer)
 }
