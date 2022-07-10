@@ -24,6 +24,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
@@ -50,18 +51,49 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
+        Component.builder(FeedbackSender.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .factory(this::buildFeedbackSender)
+            .build(),
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
+  }
+
+  private FeedbackSender buildFeedbackSender(ComponentContainer container) {
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
+        container.getProvider(FirebaseInstallationsApi.class);
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        new FirebaseAppDistributionTesterApiClient(
+            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
+    return new FeedbackSender(testerApiClient);
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistributionImpl(
-            firebaseApp, container.getProvider(FirebaseInstallationsApi.class));
+    Context context = firebaseApp.getApplicationContext();
+    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
+        container.getProvider(FirebaseInstallationsApi.class);
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        new FirebaseAppDistributionTesterApiClient(
+            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
+    SignInStorage signInStorage = new SignInStorage(context);
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
+    ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
+    FirebaseAppDistribution appDistribution =
+        new FirebaseAppDistributionImpl(
+            firebaseApp,
+            new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
+            new NewReleaseFetcher(
+                firebaseApp.getApplicationContext(), testerApiClient, releaseIdentifier),
+            new ApkUpdater(firebaseApp, new ApkInstaller()),
+            new AabUpdater(),
+            signInStorage,
+            lifecycleNotifier,
+            releaseIdentifier,
+            new ScreenshotTaker(firebaseApp, lifecycleNotifier));
 
-    Context context = firebaseApp.getApplicationContext();
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
       firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
