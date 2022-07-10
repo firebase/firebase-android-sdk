@@ -61,9 +61,9 @@ import java.util.concurrent.Executor;
  */
 public class DocumentReference {
 
-  private final DocumentKey key;
+  public final DocumentKey key;
 
-  private final FirebaseFirestore firestore;
+  public final FirebaseFirestore firestore;
 
   DocumentReference(DocumentKey key, FirebaseFirestore firestore) {
     this.key = checkNotNull(key);
@@ -86,7 +86,7 @@ public class DocumentReference {
     return new DocumentReference(DocumentKey.fromPath(path), firestore);
   }
 
-  DocumentKey getKey() {
+  public DocumentKey getKey() {
     return key;
   }
 

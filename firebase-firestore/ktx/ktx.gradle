@@ -15,7 +15,7 @@
 plugins {
     id 'firebase-library'
     id 'kotlin-android'
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.20'
+    id 'org.jetbrains.kotlin.plugin.serialization'
 }
 
 firebaseLibrary {

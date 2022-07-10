@@ -29,6 +29,12 @@ fun documentReference(pathString: String): DocumentReference {
     return DocumentReference(documentKey, null)
 }
 
+fun javaDocumentReference(pathString: String): JavaDocumentReference {
+    val documentKey = DocumentKey.fromPathString(pathString)
+    lateinit var fs: FirebaseFirestore
+    return JavaDocumentReference(documentKey, fs)
+}
+
 /**
  * Inline function for AssertThrows provides integration of junit's [assertThrows] method and
  * Truth's [assertThat] method for unit and integration test purpose.

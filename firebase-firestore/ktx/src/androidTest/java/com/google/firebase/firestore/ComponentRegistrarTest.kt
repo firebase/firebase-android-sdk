@@ -26,6 +26,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.junit.Test
+import java.util.Optional
 
 class ComponentRegistrarTest {
     enum class Grade {

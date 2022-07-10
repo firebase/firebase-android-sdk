@@ -29,9 +29,7 @@ class MapEncoderKtxImp : MapEncoder {
         return encodeToMap(serializer, value)
     }
 
-    /**
-     * decodes a nested map to a custom object
-     */
+    /** decodes a nested map to a custom object */
     override fun <T : Any?> decode(
         data: MutableMap<String, Any>,
         valueType: Class<T>,

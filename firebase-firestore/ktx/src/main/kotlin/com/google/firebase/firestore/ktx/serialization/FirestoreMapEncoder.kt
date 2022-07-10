@@ -15,6 +15,9 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.JavaDocumentReference
+import com.google.firebase.firestore.encoding.FirestoreAbstractEncoder
+import com.google.firebase.firestore.JavaGeoPoint
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serializers.FirestoreSerializersModule
@@ -53,7 +56,7 @@ class FirestoreMapEncoder(
     private val map: MutableMap<Int, MutableMap<String, Any?>> = mutableMapOf(),
     private var depth: Int = 0,
     private val descriptor: SerialDescriptor? = null
-) : AbstractEncoder() {
+) : AbstractEncoder(), FirestoreAbstractEncoder {
 
     companion object {
         private const val ROOT_LEVEL: Int = 1
@@ -125,6 +128,8 @@ class FirestoreMapEncoder(
             currentElement = CurrentElementToEncode(currentElement.elementIndex + 1)
         }
     }
+
+
     /**
      * Register serializers for Firestore native data types, DocumentId, Timestamp, Date, and
      * GeoPoint, so that these registered serializers can be used at run-time to serialize the
@@ -134,6 +139,7 @@ class FirestoreMapEncoder(
 
     /** Encode the native Firestore datatype objects: DocumentId, Timestamp, Date, and GeoPoint. */
     fun <T> encodeFirestoreNativeDataType(value: T) {
+        println(">".repeat(80))
         generateCurrentElementForEncoding()
         validateKServerTimestampPresentOrThrow()
         when {
@@ -141,6 +147,17 @@ class FirestoreMapEncoder(
             // ignore
             else -> map.getValue(depth).put(currentElement.elementEncodeKey, value)
         }
+    }
+
+
+    override fun encodeGeoPoint(value: JavaGeoPoint) {
+        generateCurrentElementForEncoding()
+        map.getValue(depth).put(currentElement.elementEncodeKey, value)
+    }
+
+    override fun encodeDocumentReference(value: JavaDocumentReference){
+        generateCurrentElementForEncoding()
+        map.getValue(depth).put(currentElement.elementEncodeKey, value)
     }
 
     override fun encodeNull() {
@@ -159,6 +176,8 @@ class FirestoreMapEncoder(
     }
 
     override fun encodeValue(value: Any) {
+        println("=".repeat(50))
+        println(value)
         generateCurrentElementForEncoding()
         when {
             validateKDocumentIdPresentOrThrow() -> {} // KDocumentId on String, then ignore
@@ -185,11 +204,15 @@ class FirestoreMapEncoder(
         if (depth == 0) {
             return FirestoreMapEncoder(map, depth + 1, descriptor)
         }
+        println(">>>>>>>>>>>>> ${descriptor.kind} >>>>>>>>>>> ${descriptor.serialName}")
         when (descriptor.kind) {
             StructureKind.CLASS -> {
                 val nextDepth = depth + 1
-                map[nextDepth] = mutableMapOf()
                 generateCurrentElementForEncoding()
+                println("<<<<<<<<<< key is ${currentElement.elementEncodeKey} ") // field name
+                println("<<<<<<<<<< serialName is ${currentElement.elementSerialName} ") // descriptor's GeoPointSerialName
+                // if I catched this, I should delegated to the FIrestore method
+                map[nextDepth] = mutableMapOf()
                 map.getValue(depth).put(currentElement.elementEncodeKey, map[nextDepth])
                 return FirestoreMapEncoder(map, nextDepth, descriptor)
             }
