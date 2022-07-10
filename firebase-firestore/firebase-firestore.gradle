@@ -15,6 +15,9 @@
 plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
+    id 'kotlin-android'
+    // need serialization plugin at least 1.6.20
+    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.10'
 }
 
 firebaseLibrary {
@@ -136,6 +139,9 @@ dependencies {
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'
+    //To provide Kotlin @SerialInfo support
+    compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.2'
+
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
