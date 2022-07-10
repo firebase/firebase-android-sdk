@@ -53,6 +53,10 @@ protobuf {
     }
 }
 android {
+    kotlinOptions {
+        freeCompilerArgs += ["-Xno-param-assertions"]
+    }
+
     adbOptions {
         timeOutInMs 60 * 1000
     }
