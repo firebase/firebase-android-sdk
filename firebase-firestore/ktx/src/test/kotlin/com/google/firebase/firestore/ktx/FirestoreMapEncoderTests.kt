@@ -16,8 +16,8 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlinx.serialization.Serializable
 import kotlin.test.assertFailsWith
+import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -101,7 +101,7 @@ class FirestoreMapEncoderTests {
     // need to copy more test from Line 1428
     @Test
     fun encodeStringBean() {
-        @Serializable data class StringBean(val value: String? = null)
+        @Serializable data class StringBean(val value: String)
         val bean = StringBean("foo")
         val expectedMap = mutableMapOf("value" to "foo")
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -109,7 +109,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeDoubleBean() {
-        @Serializable data class DoubleBean(val value: Double? = null)
+        @Serializable data class DoubleBean(val value: Double)
         val bean = DoubleBean(1.1)
         val expectedMap = mutableMapOf("value" to 1.1)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -117,7 +117,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeIntBean() {
-        @Serializable data class IntBean(val value: Int? = null)
+        @Serializable data class IntBean(val value: Int)
         val bean = IntBean(1)
         val expectedMap = mutableMapOf("value" to 1)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -125,7 +125,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeLongBean() {
-        @Serializable data class LongBean(val value: Long? = null)
+        @Serializable data class LongBean(val value: Long)
         val bean = LongBean(Int.MAX_VALUE + 100L)
         val expectedMap = mutableMapOf("value" to Int.MAX_VALUE + 100L)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -133,7 +133,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeBooleanBean() {
-        @Serializable data class BooleanBean(val value: Boolean? = null)
+        @Serializable data class BooleanBean(val value: Boolean)
         val bean = BooleanBean(true)
         val expectedMap = mutableMapOf("value" to true)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -141,7 +141,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun `unicode object encoding is supported`() {
-        @Serializable data class UnicodeObject(val 漢字: String? = null)
+        @Serializable data class UnicodeObject(val 漢字: String)
         val unicodeObject = UnicodeObject(漢字 = "foo")
         val encodedMap = encodeToMap(unicodeObject)
         val expectedMap = mutableMapOf("漢字" to "foo")
@@ -152,7 +152,7 @@ class FirestoreMapEncoderTests {
     fun `short encoding is supported`() {
         // encoding supports converting an object with short field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class ShortObject(val value: Short? = null)
+        @Serializable data class ShortObject(val value: Short)
         val shortObject = ShortObject(value = 1)
         val encodedMap = encodeToMap(shortObject)
         val expectedMap = mutableMapOf("value" to 1.toShort())
@@ -163,7 +163,7 @@ class FirestoreMapEncoderTests {
     fun `byte encoding is supported`() {
         // encoding supports converting an object with byte field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class ByteObject(val value: Byte? = null)
+        @Serializable data class ByteObject(val value: Byte)
         val byteObject = ByteObject(value = 1)
         val encodedMap = encodeToMap(byteObject)
         val expectedMap = mutableMapOf("value" to 1.toByte())
@@ -174,7 +174,7 @@ class FirestoreMapEncoderTests {
     fun `chars encoding is supported`() {
         // encoding supports converting an object with char field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class CharObject(val value: Char? = null)
+        @Serializable data class CharObject(val value: Char)
         val charObject = CharObject(value = 1.toChar())
         val encodedMap = encodeToMap(charObject)
         val expectedMap = mutableMapOf("value" to 1.toChar())
@@ -186,12 +186,12 @@ class FirestoreMapEncoderTests {
         // encoding supports both array and list;
         @Serializable
         data class IntArrayObject(
-            val kotlinArrayValue: Array<Int>? = null,
-            val listValue: List<Int>? = null,
-            val javaArrayValue: IntArray? = null
+            val kotlinArrayValue: Array<Int>,
+            val listValue: List<Int>,
+            val javaArrayValue: IntArray
         )
-        val array = arrayOf<Int>(1, 2, 3)
-        val list = listOf<Int>(4, 5, 6)
+        val array = arrayOf(1, 2, 3)
+        val list = listOf(4, 5, 6)
         val javaIntArray = intArrayOf(7, 8, 9)
         val intArrayObject =
             IntArrayObject(
@@ -209,10 +209,10 @@ class FirestoreMapEncoderTests {
         assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
-    @Serializable private data class GenericObject<T>(val value: T? = null)
+    @Serializable private data class GenericObject<T>(val value: T)
 
     @Serializable
-    private data class DoubleGenericObject<A, B>(val valueA: A? = null, val valueB: B? = null)
+    private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
 
     @Test
     fun `generic encoding is supported`() {
