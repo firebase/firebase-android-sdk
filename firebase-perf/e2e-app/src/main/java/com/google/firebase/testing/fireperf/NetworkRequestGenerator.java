@@ -25,7 +25,6 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -59,18 +58,13 @@ public class NetworkRequestGenerator {
   private static final ImmutableList<Integer> STATUS_CODES =
       ImmutableList.of(200, 201, 300, 400, 502, 503, 504);
 
-  private final Semaphore sem;
   private final Random rand;
-  private boolean isSemaphoreAcquired;
 
-  NetworkRequestGenerator(Semaphore sem) {
-    this.sem = sem;
+  NetworkRequestGenerator() {
     this.rand = new Random();
   }
 
-  Future<?> launchRequests(final int totalRequests, final int totalSets) {
-    isSemaphoreAcquired = sem.tryAcquire();
-
+  Future<?> generateRequests(final int totalRequests, final int totalSets) {
     return Executors.newSingleThreadExecutor()
         .submit(
             () -> {
@@ -113,10 +107,6 @@ public class NetworkRequestGenerator {
                 } catch (Exception e) {
                   Log.e(LOG_TAG, e.getMessage());
                 }
-              }
-
-              if (isSemaphoreAcquired) {
-                sem.release();
               }
             });
   }

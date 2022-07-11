@@ -36,20 +36,40 @@ class LogWrapper {
     Log.d(LOG_TAG, msg);
   }
 
+  void d(@NonNull String additionalTag, @NonNull String msg) {
+    Log.d(LOG_TAG, prependTag(additionalTag, msg));
+  }
+
   void v(@NonNull String msg) {
     Log.v(LOG_TAG, msg);
+  }
+
+  void v(@NonNull String additionalTag, @NonNull String msg) {
+    Log.v(LOG_TAG, prependTag(additionalTag, msg));
   }
 
   void i(@NonNull String msg) {
     Log.i(LOG_TAG, msg);
   }
 
+  void i(@NonNull String additionalTag, @NonNull String msg) {
+    Log.i(LOG_TAG, prependTag(additionalTag, msg));
+  }
+
   void w(@NonNull String msg) {
     Log.w(LOG_TAG, msg);
   }
 
+  void w(@NonNull String additionalTag, @NonNull String msg) {
+    Log.w(LOG_TAG, prependTag(additionalTag, msg));
+  }
+
   void w(@NonNull String msg, @NonNull Throwable tr) {
     Log.w(LOG_TAG, msg, tr);
+  }
+
+  void w(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
+    Log.w(LOG_TAG, prependTag(additionalTag, msg), tr);
   }
 
   void e(@NonNull String msg) {
@@ -58,6 +78,14 @@ class LogWrapper {
 
   void e(@NonNull String msg, @NonNull Throwable tr) {
     Log.e(LOG_TAG, msg, tr);
+  }
+
+  void e(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
+    Log.e(LOG_TAG, prependTag(additionalTag, msg), tr);
+  }
+
+  private String prependTag(String tag, String msg) {
+    return String.format("%s: %s", tag, msg);
   }
 
   private LogWrapper() {}

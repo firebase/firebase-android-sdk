@@ -83,9 +83,9 @@ public class IndexBackfillerTest {
             persistence.getMutationQueue(User.UNAUTHENTICATED, indexManager),
             documentOverlayCache,
             indexManager);
-    backfiller = new IndexBackfiller(persistence, new AsyncQueue());
-    backfiller.setIndexManager(indexManager);
-    backfiller.setLocalDocumentsView(localDocumentsView);
+    backfiller =
+        new IndexBackfiller(
+            persistence, new AsyncQueue(), () -> indexManager, () -> localDocumentsView);
   }
 
   @After

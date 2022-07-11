@@ -4,9 +4,11 @@ by opting into a release at
 
 # Unreleased
 
-# 24.1.2
+# 24.2.0
 - [feature] Added `TransactionOptions` to control how many times a transaction
   will retry commits before failing.
+  
+# 24.1.2
 - [fixed] Fixed an issue where patching multiple fields shadows each other (#3528).
 
 # 24.1.1
