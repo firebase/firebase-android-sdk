@@ -298,9 +298,6 @@ public class LogicUtils {
    * @return the terms in the DNF transform.
    */
   public static List<Filter> getDnfTerms(CompositeFilter filter) {
-    // TODO(orquery): write the DNF transform algorithm here.
-    // For now, assume all inputs are of the form AND(A, B, ...). Therefore the resulting DNF form
-    // is the same as the input.
     if (filter.getFilters().isEmpty()) {
       return Collections.emptyList();
     }
