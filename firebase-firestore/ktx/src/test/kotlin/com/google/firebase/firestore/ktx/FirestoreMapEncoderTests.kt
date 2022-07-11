@@ -16,8 +16,8 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
+import kotlin.test.assertFailsWith
 import org.junit.Assert.assertTrue
 import org.junit.Test
 

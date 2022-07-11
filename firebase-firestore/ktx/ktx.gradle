@@ -87,6 +87,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
+    //TODO: remove this after decoder's pr approved to use Truth to replace assertFailWith
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
 
     androidTestImplementation project(path: ':firebase-firestore:ktx')
     androidTestImplementation 'junit:junit:4.12'
@@ -96,6 +98,8 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    //TODO: remove this after decoder's pr approved to use to use Truth to replace assertFailWith
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlinVersion"
+
 }
