@@ -59,14 +59,3 @@ sealed class FirestoreNativeDataTypeSerializer<T : Any>() : KSerializer<T> {
     object DocumentReferenceSerializer :
         FirestoreNativeDataTypeSerializer<DocumentReferenceSerializer>()
 }
-
-/**
- * The [SerializersModule] that provides a [KSerializer] at runtime for data type: [Date]
- *
- * <p>Serializers inside of [SerializersModule] will be registered by the kotlin compiler plugin at compile time. Then, at
- * runtime, the pre-registered serializers will be matched and utilized by the Encoder(Decoder),
- * if the property of the custom object has the @[Contextual] annotation.
- */
-val FirestoreSerializersModule = SerializersModule {
-    contextual(FirestoreNativeDataTypeSerializer.DateSerializer)
-}

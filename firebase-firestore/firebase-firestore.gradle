@@ -103,6 +103,12 @@ tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    kotlinOptions {
+        freeCompilerArgs += ["-Xno-param-assertions"]
+    }
+}
+
 android.libraryVariants.all { variant ->
     if (findProperty("useProdBackendForTests")) {
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
@@ -145,7 +151,7 @@ dependencies {
     compileOnly 'javax.annotation:jsr250-api:1.0'
     //To provide Kotlin @SerialInfo support
     compileOnly 'org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.2'
-
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 

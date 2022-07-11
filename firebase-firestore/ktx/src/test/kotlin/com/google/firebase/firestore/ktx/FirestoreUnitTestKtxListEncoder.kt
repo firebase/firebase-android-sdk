@@ -15,17 +15,18 @@ import kotlinx.serialization.serializer
 /**
  * An encoder that encodes a @[Serializable] object to a plain list of Firestore supported types. This encoder is only supposed to be used for test purpose.
  */
-private class FirestoreUnitTestKtxListEncoder() : AbstractEncoder(), FirestoreAbstractEncoder {
+private class FirestoreUnitTestKtxListEncoder() : AbstractEncoder(),
+    FirestoreAbstractEncoder {
 
     val list = mutableListOf<Any>()
 
-    override val serializersModule: SerializersModule = FirestoreSerializersModule
-
-    override fun encodeValue(value: Any) {
+    override fun encodeFirestoreNativeDataType(value: Any) {
         list.add(value)
     }
 
-    override fun <T : Any> encodeFirestoreNativeDataType(value: T) {
+    override val serializersModule: SerializersModule = FirestoreSerializersModule.getFirestoreSerializersModule()
+
+    override fun encodeValue(value: Any) {
         list.add(value)
     }
 }
@@ -39,7 +40,7 @@ private class FirestoreUnitTestKtxListDecoder(val list: ArrayDeque<Any>) : Abstr
     FirestoreAbstractDecoder {
     private var elementIndex = 0
 
-    override val serializersModule: SerializersModule = FirestoreSerializersModule
+    override val serializersModule: SerializersModule = FirestoreSerializersModule.getFirestoreSerializersModule()
 
     override fun decodeValue(): Any = list.removeFirst()
 
