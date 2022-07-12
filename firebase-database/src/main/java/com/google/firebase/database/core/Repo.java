@@ -549,16 +549,24 @@ public class Repo implements PersistentConnection.Delegate {
                         }
                       } else {
                         /*
-                          Need to check if it's a full path query. If it is, then just override with serverOverwrite
-                          If not, check if the view already exists, and then add it if it doesn't already exist.
-                          Then, remove the event registration/view if needed.
-                          Also, do we actually need to post events? We should already be doing that on the listener
-                         */
+                         Need to check if it's a full path query. If it is, then just override with serverOverwrite
+                         If not, check if the view already exists, and then add it if it doesn't already exist.
+                         Then, remove the event registration/view if needed.
+                         Also, do we actually need to post events? We should already be doing that on the listener
+                        */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         QuerySpec spec = query.getSpec();
                         serverSyncTree.addSyncpoint(spec);
+                        // TODO: Need to actually add to persistence
+                        if (spec.loadsAllData()) {
+                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                        } else {
+                          serverSyncTree.applyTaggedQueryOverwrite(
+                              spec.getPath(), serverNode, serverSyncTree.tagForQuery(spec));
+                        }
                         // Check if this needs to be isDefault or loadsAllData
-                        // Since addSyncpoint already calls setQueryActive for a query, we have to set the query as inactive after we get the result.
+                        // Since addSyncpoint already calls setQueryActive for a query, we have to
+                        // set the query as inactive after we get the result.
                         serverSyncTree.setQueryInactive(query.getSpec());
                         source.setResult(
                             InternalHelpers.createDataSnapshot(

@@ -239,15 +239,9 @@ public class SyncPoint {
 
   public Node getCompleteServerCache(Path path) {
     for (View view : this.views.values()) {
-      /*
-       * TODO: Shouldn't this be cached?
-       * Node serverCache = view.getCompleteServerCache(path);
-       * if(serverCache != null) {
-       *  return serverCache;
-       * }
-       */
-      if (view.getCompleteServerCache(path) != null) {
-        return view.getCompleteServerCache(path);
+      Node serverCache = view.getCompleteServerCache(path);
+      if (serverCache != null) {
+        return serverCache;
       }
     }
     return null;

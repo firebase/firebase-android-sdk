@@ -537,99 +537,99 @@ public class SyncTree {
           return view.getCompleteNode();
         });
   }
-  public Void addSyncpoint(
-          @NotNull final QuerySpec query) {
+
+  public Void addSyncpoint(@NotNull final QuerySpec query) {
     return persistenceManager.runInTransaction(
-            new Callable<Void>() {
-              @Override
-              public Void call() {
-                Path path = query.getPath();
+        new Callable<Void>() {
+          @Override
+          public Void call() {
+            Path path = query.getPath();
 
-                Node serverCacheNode = null;
-                // Any covering writes will necessarily be at the root, so really all we need to find is
-                // the server cache. Consider optimizing this once there's a better understanding of
-                // what actual behavior will be.
-                // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
-                {
-                  ImmutableTree<SyncPoint> tree = syncPointTree;
-                  Path currentPath = path;
-                  while (!tree.isEmpty()) {
-                    SyncPoint currentSyncPoint = tree.getValue();
-                    if (currentSyncPoint != null) {
-                      serverCacheNode =
-                              serverCacheNode != null
-                                      ? serverCacheNode
-                                      : currentSyncPoint.getCompleteServerCache(currentPath);
-                    }
-                    ChildKey front =
-                            currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
-                    tree = tree.getChild(front);
-                    currentPath = currentPath.popFront();
-                  }
-                }
-
-                SyncPoint syncPoint = syncPointTree.get(path);
-                if (syncPoint == null) {
-                  syncPoint = new SyncPoint(persistenceManager);
-                } else {
+            Node serverCacheNode = null;
+            // Any covering writes will necessarily be at the root, so really all we need to find is
+            // the server cache. Consider optimizing this once there's a better understanding of
+            // what actual behavior will be.
+            // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
+            {
+              ImmutableTree<SyncPoint> tree = syncPointTree;
+              Path currentPath = path;
+              while (!tree.isEmpty()) {
+                SyncPoint currentSyncPoint = tree.getValue();
+                if (currentSyncPoint != null) {
                   serverCacheNode =
-                          serverCacheNode != null
-                                  ? serverCacheNode
-                                  : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+                      serverCacheNode != null
+                          ? serverCacheNode
+                          : currentSyncPoint.getCompleteServerCache(currentPath);
                 }
+                ChildKey front =
+                    currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
+                tree = tree.getChild(front);
+                currentPath = currentPath.popFront();
+              }
+            }
 
-                persistenceManager.setQueryActive(query);
+            SyncPoint syncPoint = syncPointTree.get(path);
+            if (syncPoint == null) {
+              syncPoint = new SyncPoint(persistenceManager);
+            } else {
+              serverCacheNode =
+                  serverCacheNode != null
+                      ? serverCacheNode
+                      : syncPoint.getCompleteServerCache(Path.getEmptyPath());
+            }
 
-                CacheNode serverCache;
-                if (serverCacheNode != null) {
-                  serverCache =
-                          new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
-                } else {
-                  // Hit persistence
-                  CacheNode persistentServerCache = persistenceManager.serverCache(query);
-                  if (persistentServerCache.isFullyInitialized()) {
-                    serverCache = persistentServerCache;
-                  } else {
-                    serverCacheNode = EmptyNode.Empty();
-                    ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
-                    for (Map.Entry<ChildKey, ImmutableTree<SyncPoint>> child : subtree.getChildren()) {
-                      SyncPoint childSyncPoint = child.getValue().getValue();
-                      if (childSyncPoint != null) {
-                        Node completeCache = childSyncPoint.getCompleteServerCache(Path.getEmptyPath());
-                        if (completeCache != null) {
-                          serverCacheNode =
-                                  serverCacheNode.updateImmediateChild(child.getKey(), completeCache);
-                        }
-                      }
+            persistenceManager.setQueryActive(query);
+
+            CacheNode serverCache;
+            if (serverCacheNode != null) {
+              serverCache =
+                  new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
+            } else {
+              // Hit persistence
+              CacheNode persistentServerCache = persistenceManager.serverCache(query);
+              if (persistentServerCache.isFullyInitialized()) {
+                serverCache = persistentServerCache;
+              } else {
+                serverCacheNode = EmptyNode.Empty();
+                ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
+                for (Map.Entry<ChildKey, ImmutableTree<SyncPoint>> child : subtree.getChildren()) {
+                  SyncPoint childSyncPoint = child.getValue().getValue();
+                  if (childSyncPoint != null) {
+                    Node completeCache = childSyncPoint.getCompleteServerCache(Path.getEmptyPath());
+                    if (completeCache != null) {
+                      serverCacheNode =
+                          serverCacheNode.updateImmediateChild(child.getKey(), completeCache);
                     }
-                    // Fill the node with any available children we have
-                    for (NamedNode child : persistentServerCache.getNode()) {
-                      if (!serverCacheNode.hasChild(child.getName())) {
-                        serverCacheNode =
-                                serverCacheNode.updateImmediateChild(child.getName(), child.getNode());
-                      }
-                    }
-                    serverCache =
-                            new CacheNode(
-                                    IndexedNode.from(serverCacheNode, query.getIndex()), false, false);
                   }
                 }
-
-                boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
-                if (!viewAlreadyExists && !query.loadsAllData()) {
-                  // We need to track a tag for this query
-                  hardAssert(
-                          !queryToTagMap.containsKey(query), "View does not exist but we have a tag");
-                  Tag tag = getNextQueryTag();
-                  queryToTagMap.put(query, tag);
-                  tagToQueryMap.put(tag, query);
+                // Fill the node with any available children we have
+                for (NamedNode child : persistentServerCache.getNode()) {
+                  if (!serverCacheNode.hasChild(child.getName())) {
+                    serverCacheNode =
+                        serverCacheNode.updateImmediateChild(child.getName(), child.getNode());
+                  }
                 }
-                WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
-                View view = syncPoint.getView(query, writesCache, serverCache);
-                syncPoint.setTrackedQueryKeys(query, view);
-                return null;
+                serverCache =
+                    new CacheNode(
+                        IndexedNode.from(serverCacheNode, query.getIndex()), false, false);
               }
-            });
+            }
+
+            boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
+            if (!viewAlreadyExists && !query.loadsAllData()) {
+              // We need to track a tag for this query
+              hardAssert(
+                  !queryToTagMap.containsKey(query), "View does not exist but we have a tag");
+              Tag tag = getNextQueryTag();
+              queryToTagMap.put(query, tag);
+              tagToQueryMap.put(tag, query);
+            }
+            WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
+            View view = syncPoint.getView(query, writesCache, serverCache);
+            syncPoint.setTrackedQueryKeys(query, view);
+            return null;
+          }
+        });
   }
 
   /** Add an event callback for the specified query. */
@@ -1009,7 +1009,7 @@ public class SyncTree {
   }
 
   /** Return the tag associated with the given query. */
-  private Tag tagForQuery(QuerySpec query) {
+  public Tag tagForQuery(QuerySpec query) {
     return this.queryToTagMap.get(query);
   }
 
