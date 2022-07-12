@@ -13,30 +13,26 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 /**
- * An encoder that encodes a @[Serializable] object to a plain list of Firestore supported types. This encoder is only supposed to be used for test purpose.
+ * An encoder of @[Serializable] objects to plain lists of Firestore supported types. Test only.
  */
-private class FirestoreUnitTestKtxListEncoder() : AbstractEncoder(),
+private class TestListEncoder() : AbstractEncoder(),
     FirestoreAbstractEncoder {
 
     val list = mutableListOf<Any>()
 
-    override fun encodeFirestoreNativeDataType(value: Any) {
-        list.add(value)
-    }
+    override fun encodeFirestoreNativeDataType(value: Any): Unit = list.let { it.add(value) }
 
     override val serializersModule: SerializersModule = FirestoreSerializersModule.getFirestoreSerializersModule()
 
-    override fun encodeValue(value: Any) {
-        list.add(value)
-    }
+    override fun encodeValue(value: Any): Unit = list.let { it.add(value) }
 }
 
 /**
- * A decoder that decodes a plain list of Firestore supported types to a @[Serializable] object. This decoder is only supposed to be used for test purpose.
+ * A decoder of plain lists of Firestore supported types to @[Serializable] objects. Test only.
  *
  * @param list A plain list of Firestore supported types that needs to be decoded.
  */
-private class FirestoreUnitTestKtxListDecoder(val list: ArrayDeque<Any>) : AbstractDecoder(),
+private class TestListDecoder(val list: ArrayDeque<Any>) : AbstractDecoder(),
     FirestoreAbstractDecoder {
     private var elementIndex = 0
 
@@ -52,32 +48,32 @@ private class FirestoreUnitTestKtxListDecoder(val list: ArrayDeque<Any>) : Abstr
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder =
-        FirestoreUnitTestKtxListDecoder(list)
+        TestListDecoder(list)
 }
 
 /**
- * Encodes a [Serializable] object of type T to a list of Firestore supported primitives
+ * Encodes a @[Serializable] object of type T to a list of Firestore supported primitives
  */
 fun <T> encodeToList(serializer: SerializationStrategy<T>, value: T): List<Any> {
-    val encoder = FirestoreUnitTestKtxListEncoder()
+    val encoder = TestListEncoder()
     encoder.encodeSerializableValue(serializer, value)
     return encoder.list
 }
 
 /**
- * Decodes a list of Firestore supported types to a [Serializable] object
+ * Decodes a list of Firestore supported types to a @[Serializable] object
  */
 fun <T> decodeFromList(deserializer: DeserializationStrategy<T>, list: List<Any>): T {
-    val decoder = FirestoreUnitTestKtxListDecoder(ArrayDeque(list))
+    val decoder = TestListDecoder(ArrayDeque(list))
     return decoder.decodeSerializableValue(deserializer)
 }
 
 /**
- * Encodes a [Serializable] object of type T to a list of Firestore supported types
+ * Encodes a @[Serializable] object of type T to a list of Firestore supported types
  */
 inline fun <reified T> encodeToList(value: T) = encodeToList(serializer(), value)
 
 /**
- * Decodes a list of Firestore supported primitives to a [Serializable] object
+ * Decodes a list of Firestore supported primitives to a @[Serializable] object
  */
 inline fun <reified T> decodeFromList(list: List<Any>): T = decodeFromList(serializer(), list)

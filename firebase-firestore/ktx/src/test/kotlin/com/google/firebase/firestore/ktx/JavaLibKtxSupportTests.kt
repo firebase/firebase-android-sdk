@@ -31,7 +31,7 @@ import org.junit.Test
 class JavaLibKtxSupportTests {
 
     @Test
-    fun `java converted Ktx ServerTimestamp annotations should be seen during Ktx serialization`() {
+    fun `ServerTimestamp annotations should be seen during Ktx serialization`() {
         @Serializable
         data class AnnotationTest(@ServerTimestamp val date: String? = null)
 
@@ -42,7 +42,7 @@ class JavaLibKtxSupportTests {
     }
 
     @Test
-    fun `java converted Ktx DocumentId annotations should be seen during Ktx serialization`() {
+    fun `DocumentId annotations should be seen during Ktx serialization`() {
         @Serializable
         data class AnnotationTest(@DocumentId val docId: String? = null)
 
@@ -53,7 +53,7 @@ class JavaLibKtxSupportTests {
     }
 
     @Test
-    fun `java converted Ktx ThrowOnExtraProperties annotations should be seen during Ktx serialization`() {
+    fun `ThrowOnExtraProperties annotations should be seen during Ktx serialization`() {
         @Serializable
         @ThrowOnExtraProperties
         data class AnnotationTest(val docId: String? = null)
@@ -65,7 +65,7 @@ class JavaLibKtxSupportTests {
     }
 
     @Test
-    fun `java converted Ktx IgnoreExtraProperties annotations should be seen during Ktx serialization`() {
+    fun `IgnoreExtraProperties annotations should be seen during Ktx serialization`() {
         @Serializable
         @IgnoreExtraProperties
         data class AnnotationTest(val docId: String? = null)
@@ -103,28 +103,8 @@ class JavaLibKtxSupportTests {
         assertThat(docRefObj.serialName).isEqualTo("__DocumentReferenceSerializer__")
     }
 
-    @Serializable
-    private data class User(val name: String)
-
-    @Serializable
-    private data class Project(val name: String, val owner: User, val votes: Int)
-
-    private val data = Project("kotlinx.serialization", User("kotlin"), 9000)
-
     @Test
-    fun `ktx serialization unit test list encoder is working`() {
-        assertThat(encodeToList(data)).isEqualTo(listOf("kotlinx.serialization", "kotlin", 9000))
-    }
-
-    @Test
-    fun `ktx serialization unit test list decoder is working`() {
-        val list = encodeToList(data)
-        val actual = decodeFromList<Project>(list)
-        assertThat(actual).isEqualTo(data)
-    }
-
-    @Test
-    fun `ktx serialization unit test list encoder is working with firestore native types`() {
+    fun `serializers for firestore supported types are working during encoding`() {
 
         @Serializable
         data class Project(
@@ -148,7 +128,7 @@ class JavaLibKtxSupportTests {
     }
 
     @Test
-    fun `ktx serialization unit test list decoder is working with firestore native types`() {
+    fun `serializers for firestore supported types are working during decoding`() {
 
         @Serializable
         data class Project(
@@ -172,7 +152,7 @@ class JavaLibKtxSupportTests {
     }
 
     @Test
-    fun `ktx serialization unit test list-encoder-decoder round trip with firestore native types`() {
+    fun `serializers for firestore supported types is working with round trip`() {
         // TODO: test field of Date with integration test,
         //  this data type's round trip cannot be done with unit test
         @Serializable

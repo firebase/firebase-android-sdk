@@ -16,8 +16,7 @@ plugins {
     id 'firebase-library'
     id 'com.google.protobuf'
     id 'kotlin-android'
-    // need serialization plugin at least 1.6.20
-    id 'org.jetbrains.kotlin.plugin.serialization' version '1.6.10'
+    id 'org.jetbrains.kotlin.plugin.serialization' version "$kotlinVersion"
 }
 
 firebaseLibrary {
