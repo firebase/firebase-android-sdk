@@ -16,12 +16,7 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.firestore.IgnoreExtraProperties
-import com.google.firebase.firestore.ServerTimestamp
-import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.documentReference
 import java.util.Date
 import kotlinx.serialization.Contextual
@@ -45,7 +40,7 @@ class JavaLibKtxSupportTests {
         val docRefObj = documentReference("foo/bar")
 
         val actual =
-            encodeToList(Project("list serialization",  docRefObj, dateObj))
+            encodeToList(Project("list serialization", docRefObj, dateObj))
         val expected = listOf("list serialization", docRefObj, dateObj)
         assertThat(actual).isEqualTo(expected)
     }
