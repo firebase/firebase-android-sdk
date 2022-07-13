@@ -97,7 +97,7 @@ class JavaLibKtxSupportTests {
     @Test
     fun `java DocumentReference Ktx's serializer should be seen during Ktx serialization`() {
         @Serializable
-        data class JavaDocRef(val docRef: DocumentReference)
+        data class JavaDocRef(@Contextual val docRef: DocumentReference)
 
         val docRefObj = JavaDocRef.serializer().descriptor.getElementDescriptor(0)
         assertThat(docRefObj.serialName).isEqualTo("__DocumentReferenceSerializer__")
@@ -135,7 +135,7 @@ class JavaLibKtxSupportTests {
             val name: String,
             val geoPoints: GeoPoint,
             val timestamp: Timestamp,
-            val docRef: DocumentReference,
+            @Contextual val docRef: DocumentReference,
             @Contextual
             val time: Date
         )
@@ -160,7 +160,7 @@ class JavaLibKtxSupportTests {
             val name: String,
             val geoPoints: GeoPoint,
             val timestamp: Timestamp,
-            val docRef: DocumentReference
+            @Contextual val docRef: DocumentReference
         )
 
         val geoPointObj = GeoPoint(10.0, 11.0)

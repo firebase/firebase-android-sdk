@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.encoding
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import java.util.*
 import kotlinx.serialization.KSerializer
@@ -30,7 +31,7 @@ import kotlinx.serialization.modules.contextual
  * process. The concrete implementation of this generic serializer class is restricted to four
  * Firestore supported non-primitive types, respectively to be [DocumentReference], [Timestamp], [Date] and [GeoPoint].
  */
-sealed class FirestoreNativeDataTypeSerializer<T : Any>() : KSerializer<T> {
+open class FirestoreNativeDataTypeSerializer<T : Any>() : KSerializer<T> {
     override val descriptor: SerialDescriptor =
         buildClassSerialDescriptor(
             // get the serializer's subclass simple name without the package name
@@ -57,5 +58,5 @@ sealed class FirestoreNativeDataTypeSerializer<T : Any>() : KSerializer<T> {
     object GeoPointSerializer : FirestoreNativeDataTypeSerializer<GeoPoint>()
     object TimestampSerializer : FirestoreNativeDataTypeSerializer<Timestamp>()
     object DocumentReferenceSerializer :
-        FirestoreNativeDataTypeSerializer<DocumentReferenceSerializer>()
+        FirestoreNativeDataTypeSerializer<DocumentReference>()
 }

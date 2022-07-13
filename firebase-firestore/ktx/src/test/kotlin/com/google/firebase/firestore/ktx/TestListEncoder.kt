@@ -1,8 +1,8 @@
 package com.google.firebase.firestore.ktx
 
+import com.google.firebase.firestore.FirestoreSerializersModule
 import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder
 import com.google.firebase.firestore.encoding.FirestoreAbstractEncoder
-import com.google.firebase.firestore.encoding.FirestoreSerializersModule
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -22,7 +22,7 @@ private class TestListEncoder() : AbstractEncoder(),
 
     override fun encodeFirestoreNativeDataType(value: Any): Unit = list.let { it.add(value) }
 
-    override val serializersModule: SerializersModule = FirestoreSerializersModule.getFirestoreSerializersModule()
+    override val serializersModule: SerializersModule = FirestoreSerializersModule
 
     override fun encodeValue(value: Any): Unit = list.let { it.add(value) }
 }
@@ -36,7 +36,7 @@ private class TestListDecoder(val list: ArrayDeque<Any>) : AbstractDecoder(),
     FirestoreAbstractDecoder {
     private var elementIndex = 0
 
-    override val serializersModule: SerializersModule = FirestoreSerializersModule.getFirestoreSerializersModule()
+    override val serializersModule: SerializersModule = FirestoreSerializersModule
 
     override fun decodeValue(): Any = list.removeFirst()
 

@@ -59,7 +59,7 @@ import kotlinx.serialization.Serializable;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-@Serializable(with = FirestoreNativeDataTypeSerializer.DocumentReferenceSerializer.class)
+@Serializable(with = DocumentRefContextualSerializer.class)
 public class DocumentReference {
 
   private final DocumentKey key;
