@@ -20,6 +20,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Represents a filter that is the conjunction or disjunction of other filters. */
@@ -48,13 +49,13 @@ public class CompositeFilter extends Filter {
   private List<FieldFilter> memoizedFlattenedFilters;
 
   public CompositeFilter(List<Filter> filters, Operator operator) {
-    this.filters = filters;
+    this.filters = new ArrayList<>(filters);
     this.operator = operator;
   }
 
   @Override
   public List<Filter> getFilters() {
-    return filters;
+    return Collections.unmodifiableList(filters);
   }
 
   public Operator getOperator() {
@@ -64,13 +65,13 @@ public class CompositeFilter extends Filter {
   @Override
   public List<FieldFilter> getFlattenedFilters() {
     if (memoizedFlattenedFilters != null) {
-      return memoizedFlattenedFilters;
+      return Collections.unmodifiableList(memoizedFlattenedFilters);
     }
     memoizedFlattenedFilters = new ArrayList<>();
     for (Filter subfilter : filters) {
       memoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
     }
-    return memoizedFlattenedFilters;
+    return Collections.unmodifiableList(memoizedFlattenedFilters);
   }
 
   /**
