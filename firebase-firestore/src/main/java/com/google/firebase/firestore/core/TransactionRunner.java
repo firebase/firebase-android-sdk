@@ -14,12 +14,12 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Util.isRetryableBackendError;
+
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.TransactionOptions;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -86,22 +86,10 @@ public class TransactionRunner<TResult> {
   }
 
   private void handleTransactionError(Task task) {
-    if (attemptsRemaining > 0 && isRetryableTransactionError(task.getException())) {
+    if (attemptsRemaining > 0 && isRetryableBackendError(task.getException())) {
       runWithBackoff();
     } else {
       taskSource.setException(task.getException());
     }
-  }
-
-  private static boolean isRetryableTransactionError(Exception e) {
-    if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
-      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
-      return code == FirebaseFirestoreException.Code.ABORTED
-          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
-    }
-    return false;
   }
 }

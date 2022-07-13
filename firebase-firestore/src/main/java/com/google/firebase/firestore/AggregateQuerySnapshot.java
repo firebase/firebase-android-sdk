@@ -17,6 +17,13 @@ package com.google.firebase.firestore;
 import androidx.annotation.Nullable;
 import java.util.Objects;
 
+/**
+ * A {@code AggregateQuerySnapshot} contains results of a {@link AggregateQuery}.
+ *
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
+ */
 public class AggregateQuerySnapshot {
 
   private final long count;
@@ -25,6 +32,10 @@ public class AggregateQuerySnapshot {
     this.count = count;
   }
 
+  /**
+   * @return The result of a document count aggregation. Returns null if no count aggregation is
+   *     available in the result.
+   */
   @Nullable
   public Long getCount() {
     return count;

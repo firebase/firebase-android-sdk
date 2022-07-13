@@ -19,7 +19,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Transaction;
@@ -52,7 +54,7 @@ import java.util.Map.Entry;
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
  * class is not thread safe and should be only called from the worker AsyncQueue.
  */
-public final class RemoteStore<TResult> implements WatchChangeAggregator.TargetMetadataProvider {
+public final class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider {
 
   /** The maximum number of pending writes to allow. TODO: Negotiate this value with the backend. */
   private static final int MAX_PENDING_WRITES = 10;
@@ -751,6 +753,12 @@ public final class RemoteStore<TResult> implements WatchChangeAggregator.TargetM
   }
 
   public Task<Long> runCountQuery(Query query) {
-    return datastore.runCountQuery(query);
+    if (canUseNetwork()) {
+      return datastore.runCountQuery(query);
+    }
+
+    return Tasks.forException(
+        new FirebaseFirestoreException(
+            "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
   }
 }

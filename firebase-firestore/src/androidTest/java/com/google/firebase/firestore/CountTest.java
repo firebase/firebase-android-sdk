@@ -17,8 +17,10 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -107,5 +109,26 @@ public class CountTest {
     snapshot =
         waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER_DIRECT));
     assertEquals(Long.valueOf(0), snapshot.getCount());
+  }
+
+  @Test
+  public void testFailWithoutNetwork() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "b"),
+                "c", map("k", "c")));
+    waitFor(collection.getFirestore().disableNetwork());
+
+    Exception e = waitForException(collection.count().get(AggregateSource.SERVER_DIRECT));
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(
+        FirebaseFirestoreException.Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
+
+    waitFor(collection.getFirestore().enableNetwork());
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
+    assertEquals(Long.valueOf(3), snapshot.getCount());
   }
 }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Util.isRetryableBackendError;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -31,7 +33,7 @@ public class OnlineQueryRunner {
   private TaskCompletionSource<Long> taskSource = new TaskCompletionSource<>();
 
   public OnlineQueryRunner(AsyncQueue asyncQueue, RemoteStore remoteStore) {
-    backoff = new ExponentialBackoff(asyncQueue, AsyncQueue.TimerId.RETRY_TRANSACTION);
+    backoff = new ExponentialBackoff(asyncQueue, AsyncQueue.TimerId.RETRY_ONLINE_QUERY);
     this.asyncQueue = asyncQueue;
     this.remoteStore = remoteStore;
   }
@@ -61,7 +63,7 @@ public class OnlineQueryRunner {
   }
 
   private void handleError(Task<Long> result, Query query) {
-    if (attemptsRemaining > 0) {
+    if (attemptsRemaining > 0 && isRetryableBackendError(result.getException())) {
       runWithBackoff(query);
     } else {
       taskSource.setException(result.getException());

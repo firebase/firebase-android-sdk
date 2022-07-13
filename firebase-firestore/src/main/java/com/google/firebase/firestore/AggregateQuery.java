@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
-import java.util.Objects;
 
 /**
  * A {@code AggregateQuery} computes some aggregation statistics from the result set of a base
@@ -79,7 +78,7 @@ public final class AggregateQuery {
 
   @Override
   public int hashCode() {
-    return Objects.hash(query);
+    return query.hashCode();
   }
 
   @Override

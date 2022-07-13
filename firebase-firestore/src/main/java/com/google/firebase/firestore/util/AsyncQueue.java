@@ -78,6 +78,11 @@ public class AsyncQueue {
      */
     RETRY_TRANSACTION,
     /**
+     * A timer used to retry queries sent to DFE. Since there can be multiple active queries,
+     * multiple of these may be in the queue at a given time.
+     */
+    RETRY_ONLINE_QUERY,
+    /**
      * A timer used to monitor when a connection attempt in gRPC is unsuccessful and retry
      * accordingly.
      */
