@@ -1,8 +1,8 @@
 package com.google.firebase.firestore.ktx
 
-import com.google.firebase.firestore.FirestoreSerializersModule
 import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder
 import com.google.firebase.firestore.encoding.FirestoreAbstractEncoder
+import com.google.firebase.firestore.ktx.annotations.FirestoreSerializersModule
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
