@@ -67,6 +67,10 @@ public abstract class QueryEngineTestCase {
       doc("coll/a", 1, map("matches", true, "order", 1));
   private static final MutableDocument NON_MATCHING_DOC_A =
       doc("coll/a", 1, map("matches", false, "order", 1));
+  private static final MutableDocument PENDING_MATCHING_DOC_A =
+      doc("coll/a", 1, map("matches", true, "order", 1)).setHasLocalMutations();
+  private static final MutableDocument PENDING_NON_MATCHING_DOC_A =
+      doc("coll/a", 1, map("matches", false, "order", 1)).setHasLocalMutations();
   private static final MutableDocument UPDATED_DOC_A =
       doc("coll/a", 11, map("matches", true, "order", 1));
   private static final MutableDocument MATCHING_DOC_B =
@@ -230,7 +234,7 @@ public abstract class QueryEngineTestCase {
     persistQueryMapping(MATCHING_DOC_A.getKey(), MATCHING_DOC_B.getKey());
 
     // Add a mutated document that is not yet part of query's set of remote keys.
-    addDocumentWithEventVersion(version(1), NON_MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_NON_MATCHING_DOC_A);
 
     DocumentSet docs =
         expectOptimizedCollectionScan(() -> runQuery(query, LAST_LIMBO_FREE_SNAPSHOT));
@@ -314,9 +318,9 @@ public abstract class QueryEngineTestCase {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     addMutation(DOC_A_EMPTY_PATCH);
-    persistQueryMapping(MATCHING_DOC_A.getKey());
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -335,9 +339,9 @@ public abstract class QueryEngineTestCase {
 
     // Add a query mapping for a document that matches, but that sorts below another document due to
     // a pending write.
-    addDocumentWithEventVersion(version(1), MATCHING_DOC_A);
+    addDocumentWithEventVersion(version(1), PENDING_MATCHING_DOC_A);
     addMutation(DOC_A_EMPTY_PATCH);
-    persistQueryMapping(MATCHING_DOC_A.getKey());
+    persistQueryMapping(PENDING_MATCHING_DOC_A.getKey());
 
     addDocument(MATCHING_DOC_B);
 
@@ -346,7 +350,7 @@ public abstract class QueryEngineTestCase {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentHasBeenUpdatedOutOfBand()
+  public void doesNotUseInitialResultsForLimitQueryWhenLastDocumentUpdatedOutOfBand()
       throws Exception {
     Query query =
         query("coll")
@@ -366,7 +370,7 @@ public abstract class QueryEngineTestCase {
   }
 
   @Test
-  public void doesNotUseInitialResultsForLimitToLastQueryWhenFirstDocumentHasBeenUpdatedOutOfBand()
+  public void doesNotUseInitialResultsForLimitToLastWhenLastDocumentUpdatedOutOfBand()
       throws Exception {
     Query query =
         query("coll")
@@ -482,5 +486,104 @@ public abstract class QueryEngineTestCase {
     DocumentSet result5 =
         expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query5.comparator(), doc3), result5);
+
+    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
+    Query query6 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", ">", 0))).limitToFirst(2);
+    DocumentSet result6 =
+        expectFullCollectionScan(() -> runQuery(query6, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query6.comparator(), doc1, doc2), result6);
+
+    // Test with limits (implicit order by DESC): (a==1) || (b > 0) LIMIT_TO_LAST 2
+    Query query7 =
+        query("coll").filter(orFilters(filter("a", "==", 1), filter("b", ">", 0))).limitToLast(2);
+    DocumentSet result7 =
+        expectFullCollectionScan(() -> runQuery(query7, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query7.comparator(), doc3, doc4), result7);
+
+    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
+    Query query8 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "==", 1)))
+            .limitToFirst(1)
+            .orderBy(orderBy("a", "asc"));
+    DocumentSet result8 =
+        expectFullCollectionScan(() -> runQuery(query8, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query8.comparator(), doc5), result8);
+
+    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
+    Query query9 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "==", 1)))
+            .limitToLast(1)
+            .orderBy(orderBy("a", "asc"));
+    DocumentSet result9 =
+        expectFullCollectionScan(() -> runQuery(query9, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query9.comparator(), doc2), result9);
+
+    // Test with limits without orderBy (the __name__ ordering is the tie breaker).
+    Query query10 =
+        query("coll").filter(orFilters(filter("a", "==", 2), filter("b", "==", 1))).limitToFirst(1);
+    DocumentSet result10 = expectFullCollectionScan(() -> runQuery(query10, SnapshotVersion.NONE));
+    assertEquals(docSet(query10.comparator(), doc2), result10);
+  }
+
+  @Test
+  public void orQueryDoesNotIncludeDocumentsWithMissingFields() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    // Query: a==1 || b==1 order by a.
+    // doc2 should not be included because it's missing the field 'a', and we have "orderBy a".
+    Query query1 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)))
+            .orderBy(orderBy("a", "asc"));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc4, doc5), result1);
+
+    // Query: a==1 || b==1 order by b.
+    // doc5 should not be included because it's missing the field 'b', and we have "orderBy b".
+    Query query2 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)))
+            .orderBy(orderBy("b", "asc"));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc1, doc2, doc4), result2);
+
+    // Query: a>2 || b==1.
+    // This query has an implicit 'order by a'.
+    // doc2 should not be included because it's missing the field 'a'.
+    Query query3 = query("coll").filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
+    DocumentSet result3 =
+        expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query3.comparator(), doc3), result3);
+
+    // Query: a>1 || b==1 order by a order by b.
+    // doc6 should not be included because it's missing the field 'b'.
+    // doc2 should not be included because it's missing the field 'a'.
+    Query query4 =
+        query("coll")
+            .filter(orFilters(filter("a", ">", 1), filter("b", "==", 1)))
+            .orderBy(orderBy("a", "asc"))
+            .orderBy(orderBy("b", "asc"));
+    DocumentSet result4 =
+        expectFullCollectionScan(() -> runQuery(query4, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query4.comparator(), doc3), result4);
+
+    // Query: a==1 || b==1
+    // There's no explicit nor implicit orderBy. Documents with missing 'a' or missing 'b' should be
+    // allowed if the document matches at least one disjunction term.
+    Query query5 = query("coll").filter(orFilters(filter("a", "==", 1), filter("b", "==", 1)));
+    DocumentSet result5 =
+        expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query5.comparator(), doc1, doc2, doc4, doc5), result5);
   }
 }

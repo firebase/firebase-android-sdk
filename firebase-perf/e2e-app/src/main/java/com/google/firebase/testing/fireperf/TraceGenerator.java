@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 
 /** Generates traces with all the appropriate information. */
 public class TraceGenerator {
@@ -33,16 +32,7 @@ public class TraceGenerator {
   private static final int TRACE_MEAN_DURATION = 3;
   private static final float TRACE_DURATION_STD_DEVIATION = .3f;
 
-  private final Semaphore sem;
-  private boolean isSemaphoreAcquired;
-
-  TraceGenerator(Semaphore sem) {
-    this.sem = sem;
-  }
-
-  Future<?> launchTraces(final int totalTraces, final int totalSets) {
-    isSemaphoreAcquired = sem.tryAcquire();
-
+  Future<?> generateTraces(final int totalTraces, final int totalSets) {
     return Executors.newSingleThreadExecutor()
         .submit(
             () -> {
@@ -77,10 +67,6 @@ public class TraceGenerator {
                 for (TraceHolder traceHolder : traceHolderList) {
                   traceHolder.stopTrace();
                 }
-              }
-
-              if (isSemaphoreAcquired) {
-                sem.release();
               }
             });
   }

@@ -15,6 +15,7 @@ package com.google.firebase.appdistribution {
 
   public interface FirebaseAppDistribution {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
+    method public void collectAndSendFeedback();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
@@ -24,10 +25,6 @@ package com.google.firebase.appdistribution {
   }
 
   public class FirebaseAppDistributionException extends com.google.firebase.FirebaseException {
-    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status);
-    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @Nullable com.google.firebase.appdistribution.AppDistributionRelease);
-    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @NonNull Throwable);
-    ctor public FirebaseAppDistributionException(@NonNull String, @NonNull com.google.firebase.appdistribution.FirebaseAppDistributionException.Status, @Nullable com.google.firebase.appdistribution.AppDistributionRelease, @NonNull Throwable);
     method @NonNull public com.google.firebase.appdistribution.FirebaseAppDistributionException.Status getErrorCode();
     method @Nullable public com.google.firebase.appdistribution.AppDistributionRelease getRelease();
   }
@@ -50,8 +47,8 @@ package com.google.firebase.appdistribution {
   }
 
   public interface UpdateProgress {
-    method @NonNull public long getApkBytesDownloaded();
-    method @NonNull public long getApkFileTotalBytes();
+    method public long getApkBytesDownloaded();
+    method public long getApkFileTotalBytes();
     method @NonNull public com.google.firebase.appdistribution.UpdateStatus getUpdateStatus();
   }
 

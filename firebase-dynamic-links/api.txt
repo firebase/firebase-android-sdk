@@ -116,7 +116,7 @@ package com.google.firebase.dynamiclinks {
   public abstract class FirebaseDynamicLinks {
     ctor public FirebaseDynamicLinks();
     method @NonNull public abstract com.google.firebase.dynamiclinks.DynamicLink.Builder createDynamicLink();
-    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull android.content.Intent);
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@Nullable android.content.Intent);
     method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.dynamiclinks.PendingDynamicLinkData> getDynamicLink(@NonNull android.net.Uri);
     method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance();
     method @NonNull public static com.google.firebase.dynamiclinks.FirebaseDynamicLinks getInstance(@NonNull com.google.firebase.FirebaseApp);

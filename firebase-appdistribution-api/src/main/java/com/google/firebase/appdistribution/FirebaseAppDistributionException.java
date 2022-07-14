@@ -26,8 +26,9 @@ public class FirebaseAppDistributionException extends FirebaseException {
     UNKNOWN,
 
     /**
-     * The authentication process failed. The tester was either not signed in, or something went
-     * wrong. Try signing in again by calling {@link FirebaseAppDistribution#signInTester}.
+     * The authentication process failed. The tester was either not signed in, does not have access,
+     * or something went wrong. Try signing in again by calling {@link
+     * FirebaseAppDistribution#signInTester}.
      */
     AUTHENTICATION_FAILURE,
 
@@ -83,10 +84,12 @@ public class FirebaseAppDistributionException extends FirebaseException {
   @NonNull private final Status status;
   @Nullable private final AppDistributionRelease release;
 
+  /** @hide */
   public FirebaseAppDistributionException(@NonNull String message, @NonNull Status status) {
     this(message, status, (AppDistributionRelease) null);
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @Nullable AppDistributionRelease release) {
     super(message);
@@ -94,11 +97,13 @@ public class FirebaseAppDistributionException extends FirebaseException {
     this.release = release;
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
     this(message, status, null, cause);
   }
 
+  /** @hide */
   public FirebaseAppDistributionException(
       @NonNull String message,
       @NonNull Status status,

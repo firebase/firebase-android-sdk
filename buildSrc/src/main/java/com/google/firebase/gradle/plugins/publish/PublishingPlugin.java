@@ -17,7 +17,7 @@ package com.google.firebase.gradle.plugins.publish;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import digital.wup.android_maven_publish.AndroidMavenPublishPlugin;
-import java.net.URI;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -118,11 +118,9 @@ public class PublishingPlugin implements Plugin<Project> {
                         repos ->
                             repos.maven(
                                 repo -> {
-                                  repo.setUrl(
-                                      URI.create(
-                                          "file://"
-                                              + sub.getRootProject().getBuildDir()
-                                              + "/m2repository"));
+                                  String s = sub.getRootProject().getBuildDir() + "/m2repository";
+                                  File file = new File(s);
+                                  repo.setUrl(file.toURI());
                                   repo.setName("BuildDir");
                                 }));
                     publishing.publications(
