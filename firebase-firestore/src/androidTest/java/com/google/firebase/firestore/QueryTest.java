@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -986,6 +987,8 @@ public class QueryTest {
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
   }
 
+  // TODO(orquery): Enable this test when prod supports OR queries.
+  @Ignore
   @Test
   public void testOrQueries() {
     Map<String, Map<String, Object>> testDocs =
@@ -1075,6 +1078,8 @@ public class QueryTest {
         "doc2");
   }
 
+  // TODO(orquery): Enable this test when prod supports OR queries.
+  @Ignore
   @Test
   public void testOrQueriesWithInAndNotIn() {
     Map<String, Map<String, Object>> testDocs =
@@ -1102,6 +1107,8 @@ public class QueryTest {
         "doc2");
   }
 
+  // TODO(orquery): Enable this test when prod supports OR queries.
+  @Ignore
   @Test
   public void testOrQueriesWithArrayMembership() {
     Map<String, Map<String, Object>> testDocs =
