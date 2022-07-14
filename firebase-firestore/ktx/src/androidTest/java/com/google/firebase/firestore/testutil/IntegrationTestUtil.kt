@@ -71,6 +71,15 @@ fun FirebaseFirestore.setMapper(mapper: MutableSet<MapEncoder>){
     mapEncoders.addAll(mapper)
 }
 
+fun testJavaCollection(name: String): CollectionReference {
+    return testFirestore.run {
+        val currentMapper = this.clearMapper()
+        val result = this.collection("${name}_${autoId()}")
+        setMapper(currentMapper)
+        result
+    }
+}
+
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)
 }
@@ -90,12 +99,6 @@ private fun autoId(): String {
  */
 fun testCollection(name: String): CollectionReference {
     return testFirestore.collection("${name}_${autoId()}")
-}
-
-fun testJavaCollection(name: String): CollectionReference {
-    return testFirestore.apply {
-        val currentMapper = this.clearMapper()
-    }.collection("${name}_${autoId()}")
 }
 
 /** Returns a [DocumentReference] identified by document name for integration test. */

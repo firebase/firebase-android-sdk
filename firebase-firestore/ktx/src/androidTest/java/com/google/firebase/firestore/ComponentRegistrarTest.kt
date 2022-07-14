@@ -178,15 +178,20 @@ class ComponentRegistrarTest {
     @Test
     fun remove_mapper_test(){
 
-        val docRefKotlin = testCollection("ktx").document("123")
-        val docRefPOJO = testJavaCollection("pojo").document("456")
 
         @Serializable
-        data class TestObj(val str:String?=null)
-        docRefKotlin.set(TestObj("123"))
-        docRefPOJO.set(TestObj("456"))
+        data class TestObj(@Transient var str:String?="foo")
 
-        val actual = waitFor(docRefPOJO.get()).data
+
+        val docRefKotlin = testCollection("ktx").document("123")
+        docRefKotlin.set(TestObj("123"))
+        val actual = waitFor(docRefKotlin.get()).data
+
+        val docRefPOJO = testJavaCollection("pojo").document("456")
+        docRefPOJO.set(TestObj("456"))
+        val expected = waitFor(docRefPOJO.get()).data
+
+        assertThat(actual).containsExactlyEntriesIn(expected)
 
 
     }
