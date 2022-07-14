@@ -18,9 +18,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
-import com.google.firebase.firestore.testutil.setData
-import com.google.firebase.firestore.testutil.testCollection
-import com.google.firebase.firestore.testutil.waitFor
+import com.google.firebase.firestore.setData
+import com.google.firebase.firestore.testCollection
+import com.google.firebase.firestore.waitFor
 import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable

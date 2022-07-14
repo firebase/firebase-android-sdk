@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.testutil
+package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.encoding.MapEncoder
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
@@ -60,6 +61,16 @@ val testFirestore: FirebaseFirestore by lazy {
     }
 }
 
+fun FirebaseFirestore.clearMapper(): MutableSet<MapEncoder> {
+    val currentMapper = mapEncoders
+    mapEncoders.clear()
+    return currentMapper
+}
+
+fun FirebaseFirestore.setMapper(mapper: MutableSet<MapEncoder>){
+    mapEncoders.addAll(mapper)
+}
+
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)
 }
@@ -79,6 +90,12 @@ private fun autoId(): String {
  */
 fun testCollection(name: String): CollectionReference {
     return testFirestore.collection("${name}_${autoId()}")
+}
+
+fun testJavaCollection(name: String): CollectionReference {
+    return testFirestore.apply {
+        val currentMapper = this.clearMapper()
+    }.collection("${name}_${autoId()}")
 }
 
 /** Returns a [DocumentReference] identified by document name for integration test. */

@@ -18,8 +18,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
-import com.google.firebase.firestore.testutil.testCollection
-import com.google.firebase.firestore.testutil.waitFor
+import com.google.firebase.firestore.testCollection
+import com.google.firebase.firestore.waitFor
 import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
@@ -173,5 +173,21 @@ class ComponentRegistrarTest {
         val expectedDateRoundToSeconds = (expected?.get("date") as Timestamp).seconds
         val actualDateRoundToSeconds = (actual?.get("date") as Timestamp).seconds
         assertThat(expectedDateRoundToSeconds).isEqualTo(actualDateRoundToSeconds)
+    }
+
+    @Test
+    fun remove_mapper_test(){
+
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefPOJO = testJavaCollection("pojo").document("456")
+
+        @Serializable
+        data class TestObj(val str:String?=null)
+        docRefKotlin.set(TestObj("123"))
+        docRefPOJO.set(TestObj("456"))
+
+        val actual = waitFor(docRefPOJO.get()).data
+
+
     }
 }
