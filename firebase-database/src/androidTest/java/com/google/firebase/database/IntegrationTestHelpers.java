@@ -218,7 +218,7 @@ public class IntegrationTestHelpers {
   }
 
   public static DatabaseReference rootWithConfig(DatabaseConfig config) {
-    return new DatabaseReference(IntegrationTestValues.getNamespace(), config);
+    return new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), config);
   }
 
   public static DatabaseReference getRandomNode() throws DatabaseException {
@@ -240,7 +240,7 @@ public class IntegrationTestHelpers {
     String name = null;
     for (int i = 0; i < count; ++i) {
       DatabaseReference ref =
-          new DatabaseReference(IntegrationTestValues.getNamespace(), contexts.get(i));
+          new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), contexts.get(i));
       if (name == null) {
         name = ref.push().getKey();
       }
@@ -307,7 +307,7 @@ public class IntegrationTestHelpers {
     if (testSecret == null) {
       try {
         InputStream response =
-            new URL(IntegrationTestValues.getNamespace() + "/.nsadmin/.json?key=1234").openStream();
+            new URL(IntegrationTestValues.getDatabaseUrl() + "/.nsadmin/.json?key=1234").openStream();
         TypeReference<Map<String, Object>> t = new TypeReference<Map<String, Object>>() {};
         Map<String, Object> data = new ObjectMapper().readValue(response, t);
         testSecret = (String) ((List) data.get("secrets")).get(0);

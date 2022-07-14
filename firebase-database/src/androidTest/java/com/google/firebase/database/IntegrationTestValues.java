@@ -17,6 +17,9 @@ package com.google.firebase.database;
 import android.content.Context;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 public class IntegrationTestValues {
   private static final String TEST_ALT_NAMESPACE = "https://test.firebaseio.com";
   private static final String TEST_SERVER = "firebaseio.com";
@@ -24,9 +27,20 @@ public class IntegrationTestValues {
 
   private IntegrationTestValues() {}
 
-  public static String getNamespace() {
+  public static String getDatabaseUrl() {
     Context c = InstrumentationRegistry.getInstrumentation().getContext();
     return c.getResources().getString(R.string.firebase_database_url);
+  }
+
+  public static String getNamespace() {
+    String dbUrl = getDatabaseUrl();
+    String namespaceWithScheme = dbUrl.substring(0, dbUrl.indexOf('.'));
+    return namespaceWithScheme.substring(namespaceWithScheme.lastIndexOf("/") + 1);
+  }
+
+  public static String getHostname() {
+    String dbUrl = getDatabaseUrl();
+    return dbUrl.substring(dbUrl.lastIndexOf("/") + 1);
   }
 
   public static String getAltNamespace() {
