@@ -41,7 +41,7 @@ import kotlinx.serialization.serializer
  *
  * @param descriptor: The [SerialDescriptor] of the encoding object.
  * @param depth Object depth, defined as objects within objects.
- * @param callback Puts encoded nested maps back to the parent map.
+ * @param callback Sends the encoded nested map back to the caller.
  */
 private class FirestoreMapEncoder(
     private val descriptor: SerialDescriptor,
@@ -70,7 +70,7 @@ private class FirestoreMapEncoder(
     }
 
     /** Returns the final encoded result. */
-    fun serializedResult() = encodedMap.toMutableMap() // a defensive deep copy
+    fun serializedResult() = encodedMap.toMap() // a defensive deep copy
 
     /** The data class records the information for the element that needs to be encoded. */
     private inner class Element(elementIndex: Int = 0) {
@@ -129,7 +129,7 @@ private class FirestoreMapEncoder(
  * Encodes a list of the @[Serializable] objects into a list of Firestore supported types.
  *
  * @param depth Object depth, defined as objects within objects.
- * @param callback Puts encoded nested maps back to the parent map.
+ * @param callback PSends the encoded nested map back to the caller.
  */
 private class FirestoreListEncoder(
     private val depth: Int = 0,
@@ -153,19 +153,9 @@ private class FirestoreListEncoder(
 
     override val serializersModule: SerializersModule = EmptySerializersModule
 
-    private var index: Int = 0
+    override fun encodeValue(value: Any): Unit = encodedList.let { it.add(value) }
 
-    override fun encodeValue(value: Any): Unit =
-        encodedList.let {
-            it.add(value)
-            index++
-        }
-
-    override fun encodeNull(): Unit =
-        encodedList.let {
-            it.add(null)
-            index++
-        }
+    override fun encodeNull(): Unit = encodedList.let { it.add(null) }
 
     override fun endStructure(descriptor: SerialDescriptor) = callback(encodedList)
 
@@ -198,11 +188,11 @@ private const val MAX_DEPTH: Int = 500
  * @param value The @[Serializable] object.
  * @return The encoded nested map of Firestore supported types.
  */
-fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): MutableMap<String, Any?> {
+fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): Map<String, Any?> {
     val encoder = FirestoreMapEncoder(serializer.descriptor) {}
     encoder.encodeSerializableValue(serializer, value)
     return encoder.serializedResult()
 }
 
-inline fun <reified T> encodeToMap(value: T): MutableMap<String, Any?> =
+inline fun <reified T> encodeToMap(value: T): Map<String, Any?> =
     encodeToMap(serializer(), value)
