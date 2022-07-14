@@ -17,6 +17,25 @@ the [applicationId](https://developer.android.com/studio/build/application-id.ht
 
 ## Build & Install
 
+### Enable the test-app as a subproject ###
+
+You'll need to do this on a fresh checkout, otherwise you will see the error `Project 'test-app' not found in project ':firebase-appdistribution'.` when running `./gradlew` tasks for the test app.
+
+By default, product-specific subprojects are disabled in the SDK because their `google-services.json` files aren't always available in CI and therefore they can't be reliably built.  To do local development with this test app, it needs to be manually enabled by uncommenting it out at the bottom of [subprojects.cfg](https://github.com/firebase/firebase-android-sdk/blob/master/subprojects.cfg) (*Don't check this in*)
+
+```
+# <near the bottom of the file>
+# Test Apps
+# If needed for development, uncomment but don't submit
+
+#
+#some-other-app:test-app
+#and-another:test-app
+#...
+firebase-appdistribution:test-app
+
+```
+
 ### Build with HEAD version of `firebase-appdistribution` SDK.
 
 ```
