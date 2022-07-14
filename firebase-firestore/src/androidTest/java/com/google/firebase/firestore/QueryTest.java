@@ -53,6 +53,27 @@ public class QueryTest {
     IntegrationTestUtil.tearDown();
   }
 
+  /**
+   * Checks that running the query while online (against the backend/emulator) results in the same
+   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
+   * that both online and offline query result is equal to the expected documents.
+   *
+   * @param query The query to check
+   * @param expectedDocs Ordered list of document keys that are expected to match the query
+   */
+  public void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
+    QuerySnapshot docsOnline = waitFor(query.get());
+    waitFor(query.firestore.getClient().disableNetwork());
+    QuerySnapshot docsOffline = waitFor(query.get());
+    waitFor(query.firestore.getClient().enableNetwork());
+
+    assertEquals(querySnapshotToIds(docsOnline), querySnapshotToIds(docsOffline));
+    List<String> expected = asList(expectedDocs);
+    if (!expected.isEmpty()) {
+      assertEquals(expected, querySnapshotToIds(docsOffline));
+    }
+  }
+
   @Test
   public void testLimitQueries() {
     CollectionReference collection =
@@ -963,5 +984,149 @@ public class QueryTest {
 
     QuerySnapshot snapshot2 = waitFor(collection.get(Source.CACHE));
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
+  }
+
+  @Test
+  public void testOrQueries() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("a", 2, "b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1, "b", 1));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // Two equalities: a==1 || b==1.
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.equalTo("b", 1))),
+        "doc1",
+        "doc2",
+        "doc4",
+        "doc5");
+
+    // with one inequality: a>2 || b==1.
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.greaterThan("a", 2), Filter.equalTo("b", 1))),
+        "doc5",
+        "doc2",
+        "doc3");
+
+    // (a==1 && b==0) || (a==3 && b==2)
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(
+            Filter.or(
+                Filter.and(Filter.equalTo("a", 1), Filter.equalTo("b", 0)),
+                Filter.and(Filter.equalTo("a", 3), Filter.equalTo("b", 2)))),
+        "doc1",
+        "doc3");
+
+    // a==1 && (b==0 || b==3).
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(
+            Filter.and(
+                Filter.equalTo("a", 1), Filter.or(Filter.equalTo("b", 0), Filter.equalTo("b", 3)))),
+        "doc1",
+        "doc4");
+
+    // (a==2 || b==2) && (a==3 || b==3)
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(
+            Filter.and(
+                Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 2)),
+                Filter.or(Filter.equalTo("a", 3), Filter.equalTo("b", 3)))),
+        "doc3");
+
+    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0))).limit(2),
+        "doc1",
+        "doc2");
+
+    // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
+    // Note: The public query API does not allow implicit ordering when limitToLast is used.
+    checkOnlineAndOfflineResultsMatch(
+        collection
+            .where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0)))
+            .limitToLast(2)
+            .orderBy("b"),
+        "doc3",
+        "doc4");
+
+    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
+    checkOnlineAndOfflineResultsMatch(
+        collection
+            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
+            .limit(1)
+            .orderBy("a"),
+        "doc5");
+
+    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
+    checkOnlineAndOfflineResultsMatch(
+        collection
+            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
+            .limitToLast(1)
+            .orderBy("a"),
+        "doc2");
+
+    // Test with limits without orderBy (the __name__ ordering is the tie breaker).
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1))).limit(1),
+        "doc2");
+  }
+
+  @Test
+  public void testOrQueriesWithInAndNotIn() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // a==2 || b in [2,3]
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.inArray("b", asList(2, 3)))),
+        "doc3",
+        "doc4",
+        "doc6");
+
+    // a==2 || b not-in [2,3]
+    // Has implicit orderBy b.
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.notInArray("b", asList(2, 3)))),
+        "doc1",
+        "doc2");
+  }
+
+  @Test
+  public void testOrQueriesWithArrayMembership() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", asList(0)),
+            "doc2", map("b", asList(1)),
+            "doc3", map("a", 3, "b", asList(2, 7)),
+            "doc4", map("a", 1, "b", asList(3, 7)),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // a==2 || b array-contains 7
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.arrayContains("b", 7))),
+        "doc3",
+        "doc4",
+        "doc6");
+
+    // a==2 || b array-contains-any [0, 3]
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(
+            Filter.or(Filter.equalTo("a", 2), Filter.arrayContainsAny("b", asList(0, 3)))),
+        "doc1",
+        "doc4",
+        "doc6");
   }
 }
