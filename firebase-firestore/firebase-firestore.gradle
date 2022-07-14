@@ -102,12 +102,6 @@ tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-    kotlinOptions {
-        freeCompilerArgs += ["-Xno-param-assertions"]
-    }
-}
-
 android.libraryVariants.all { variant ->
     if (findProperty("useProdBackendForTests")) {
         variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
