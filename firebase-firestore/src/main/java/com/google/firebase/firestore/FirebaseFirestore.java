@@ -550,6 +550,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> waitForPendingWrites() {
+    ensureClientConfigured();
     return client.waitForPendingWrites();
   }
 
