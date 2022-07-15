@@ -18,8 +18,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
-import com.google.firebase.firestore.testCollection
-import com.google.firebase.firestore.waitFor
 import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
@@ -28,26 +26,6 @@ import kotlinx.serialization.Transient
 import org.junit.Test
 
 class ComponentRegistrarTest {
-
-    // Verify the DocumentReference.set() method is serializing @Serializable object via the
-    // MapEncoderKtxImp.
-    @Test
-    fun documentReference_is_using_ktx_mapencoder_when_set_to_firestore() {
-        val docRefKotlin = testCollection("ktx").document("123")
-        @Serializable
-        data class Student(
-            val Name: String = "fool",
-            @get:Exclude val isNotUsingJavaPOJOSetMethod: Boolean = true
-        )
-        docRefKotlin.set(Student())
-        val actual = waitFor(docRefKotlin.get()).data
-        // If Java POJO method is used for encoding, the first letter of the field name will be
-        // converted to lower case, key name will be "name", instead of "Name".
-        assertThat(actual?.keys).contains("Name")
-        // If Java POJO method is used for encoding, this field will be excluded, then assertion
-        // will equal to "null", instead of "true".
-        assertThat(actual?.get("isNotUsingJavaPOJOSetMethod")).isEqualTo(true)
-    }
 
     enum class Grade {
         FRESHMAN,
@@ -58,9 +36,6 @@ class ComponentRegistrarTest {
 
     @Test
     fun ktx_serialization_is_the_same_as_java_pojo_serialization() {
-        val docRefKotlin = testCollection("ktx").document("123")
-        val docRefPOJO = testCollection("pojo").document("456")
-
         @Serializable
         data class KtxStudent(
             val name: String,
@@ -101,8 +76,9 @@ class ComponentRegistrarTest {
                 "bar",
                 "bar-home-address"
             )
-        docRefKotlin.set(ktxStudent)
-        docRefPOJO.set(pojoStudent)
+
+        val docRefKotlin = setDataToDocRefWithKotlinMapper(ktxStudent)
+        val docRefPOJO = setDataToDocRefWithJavaMapper(pojoStudent)
         val actual = waitFor(docRefKotlin.get()).data
         val expected = waitFor(docRefPOJO.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
@@ -110,8 +86,7 @@ class ComponentRegistrarTest {
 
     @Test
     fun nested_object_serialization_is_equivalent() {
-        val docRefKotlin = testCollection("ktx").document("123")
-        val docRefPOJO = testCollection("pojo").document("456")
+        val dummyDocRef = testCollection("ktx").document("123")
 
         @Serializable data class Owner(val name: String? = null, val age: Int? = 100)
 
@@ -130,18 +105,18 @@ class ComponentRegistrarTest {
             @DocumentId val docId: String? = null
         )
 
-        docRefKotlin.set(KtxProject("foo", Owner("bar"), docRefKotlin, "foo"))
-        docRefPOJO.set(POJOProject("foo", Owner("bar"), docRefKotlin, "bar"))
-        val expected = waitFor(docRefPOJO.get()).data
+        val ktxProject = KtxProject("foo", Owner("bar"), dummyDocRef, "foo")
+        val pojoProject = POJOProject("foo", Owner("bar"), dummyDocRef, "bar")
+
+        val docRefKotlin = setDataToDocRefWithKotlinMapper(ktxProject)
+        val docRefPOJO = setDataToDocRefWithJavaMapper(pojoProject)
         val actual = waitFor(docRefKotlin.get()).data
-        assertThat(expected).containsExactlyEntriesIn(actual)
+        val expected = waitFor(docRefPOJO.get()).data
+        assertThat(actual).containsExactlyEntriesIn(expected)
     }
 
     @Test
     fun serverTimestamp_annotated_serialization_is_equivalent() {
-        val docRefKotlin = testCollection("ktx").document("123")
-        val docRefPOJO = testCollection("pojo").document("456")
-
         @Serializable
         class KtxTimestamp(
             @Contextual val timestamp0: Timestamp,
@@ -155,8 +130,10 @@ class ComponentRegistrarTest {
             @ServerTimestamp val date: Date? = null
         )
 
-        docRefKotlin.set(KtxTimestamp(timestamp0 = Timestamp(Date(100000L))))
-        docRefPOJO.set(POJOTimestamp(timestamp0 = Timestamp(Date(100000L))))
+        val docRefKotlin =
+            setDataToDocRefWithKotlinMapper(KtxTimestamp(timestamp0 = Timestamp(Date(100000L))))
+        val docRefPOJO =
+            setDataToDocRefWithJavaMapper(POJOTimestamp(timestamp0 = Timestamp(Date(100000L))))
 
         // assert each of the fields equals to each other.
         val expected =
@@ -173,26 +150,5 @@ class ComponentRegistrarTest {
         val expectedDateRoundToSeconds = (expected?.get("date") as Timestamp).seconds
         val actualDateRoundToSeconds = (actual?.get("date") as Timestamp).seconds
         assertThat(expectedDateRoundToSeconds).isEqualTo(actualDateRoundToSeconds)
-    }
-
-    @Test
-    fun remove_mapper_test(){
-
-
-        @Serializable
-        data class TestObj(@Transient var str:String?="foo")
-
-
-        val docRefKotlin = testCollection("ktx").document("123")
-        docRefKotlin.set(TestObj("123"))
-        val actual = waitFor(docRefKotlin.get()).data
-
-        val docRefPOJO = testJavaCollection("pojo").document("456")
-        docRefPOJO.set(TestObj("456"))
-        val expected = waitFor(docRefPOJO.get()).data
-
-        assertThat(actual).containsExactlyEntriesIn(expected)
-
-
     }
 }

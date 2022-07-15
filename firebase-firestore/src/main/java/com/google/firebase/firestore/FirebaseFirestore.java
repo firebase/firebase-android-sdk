@@ -60,6 +60,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -103,7 +104,7 @@ public class FirebaseFirestore {
   @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
-  private final Set<MapEncoder> mapEncoders;
+  private final HashSet<MapEncoder> mapEncoders;
   private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
@@ -195,7 +196,7 @@ public class FirebaseFirestore {
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
-    this.mapEncoders = mapEncoders;
+    this.mapEncoders = new HashSet<>(mapEncoders);
     this.metadataProvider = metadataProvider;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
@@ -827,6 +828,6 @@ public class FirebaseFirestore {
   /** @return The set of registered {@code MapEncoder}s. */
   @NonNull
   Set<MapEncoder> getMapEncoders() {
-    return mapEncoders;
+    return mapEncoders; // return a shallow copy for integration test
   }
 }

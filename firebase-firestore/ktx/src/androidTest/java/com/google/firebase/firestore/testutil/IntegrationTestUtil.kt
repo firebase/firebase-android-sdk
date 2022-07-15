@@ -16,9 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.encoding.MapEncoder
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
@@ -47,7 +44,7 @@ private val settingsWithoutEmulator = firestoreSettings { setHost("firestore.goo
 /**
  * Initializes a [FirebaseFirestore] instance that used for integration test.
  *
- * <p>Note: the Android Emulator treats "10.0.2.2" as its host machine.
+ * Note: the Android Emulator treats "10.0.2.2" as its host machine.
  */
 val testFirestore: FirebaseFirestore by lazy {
     Firebase.firestore.apply {
@@ -61,24 +58,47 @@ val testFirestore: FirebaseFirestore by lazy {
     }
 }
 
-fun FirebaseFirestore.clearMapper(): MutableSet<MapEncoder> {
-    val currentMapper = mapEncoders
+/** Remove all registered MapEncoder from FirebaseFirestore, and return them. */
+private fun FirebaseFirestore.clearMapper(): Set<MapEncoder> {
+    val currentMapper = mapEncoders.toSet()
     mapEncoders.clear()
     return currentMapper
 }
 
-fun FirebaseFirestore.setMapper(mapper: MutableSet<MapEncoder>){
+/** Register a Set of MapEncoder to FirebaseFirestore. */
+private fun FirebaseFirestore.setMapper(mapper: Set<MapEncoder>) {
     mapEncoders.addAll(mapper)
 }
 
-fun testJavaCollection(name: String): CollectionReference {
-    return testFirestore.run {
-        val currentMapper = this.clearMapper()
-        val result = this.collection("${name}_${autoId()}")
-        setMapper(currentMapper)
-        result
+/**
+ * Sets @[Serializable] objects to [DocumentReference] using the Kotlin Mapper.
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun setDataToDocRefWithKotlinMapper(
+    data: Any,
+    collectionName: String = "serialization",
+    documentName: String = "ktx"
+): DocumentReference =
+    testFirestore.collection(collectionName).document(documentName).apply {
+        val currentMapper = this.firestore.mapEncoders
+        if (currentMapper.isEmpty())
+            throw IllegalArgumentException("No Registered Mapper Obtained at runtime!")
+        set(data)
     }
-}
+
+/** Sets a custom object to [DocumentReference] using the default Java POJO Mapper. */
+fun setDataToDocRefWithJavaMapper(
+    data: Any,
+    collectionName: String = "serialization",
+    documentName: String = "ktx"
+): DocumentReference =
+    testFirestore.collection(collectionName).document(documentName).apply {
+        val currentMapper = this.firestore.clearMapper()
+        set(data)
+        this.firestore.setMapper(currentMapper)
+    }
 
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)
@@ -112,8 +132,8 @@ fun testDocument(): DocumentReference {
 }
 
 /**
- * Overwrites the document referred to by this [DocumentReference]. If the document does not
- * yet exist, it will be created. If a document already exists, it will be overwritten.
+ * Overwrites the document referred to by this [DocumentReference]. If the document does not yet
+ * exist, it will be created. If a document already exists, it will be overwritten.
  *
  * @param data The data to write to the document (the data must be a @Serializable Kotlin object).
  * @return A Task that will be resolved when the write finishes.
