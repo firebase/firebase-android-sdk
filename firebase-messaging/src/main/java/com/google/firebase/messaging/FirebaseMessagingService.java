@@ -19,12 +19,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
@@ -73,6 +81,10 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   static final String EXTRA_TOKEN = "token";
 
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
+
+  @Nullable
+  private final Map<String, Object> mTags = new HashMap<>();
+  private volatile boolean mDestroyed = false;
 
   /**
    * Last N message IDs that have been received by this app to prevent duplicate messages.
@@ -144,6 +156,57 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
   ;
+
+  @Override
+  @CallSuper
+  public void onDestroy() {
+    mDestroyed = true;
+    if (mTags != null) {
+      synchronized (mTags) {
+        // Close all the added Closeables
+        for (Object value : mTags.values()) {
+          closeWithRuntimeException(value);
+        }
+      }
+    }
+    super.onDestroy();
+  }
+
+  /** @hide */
+  public <T> T setTagIfAbsent(@NonNull String key, @NonNull T newValue) {
+    // As this method is final, it will still be called on mock objects even
+    // though mCloseables won't actually be created...we'll just not do anything
+    // in that case.
+    if (mTags == null) {
+      return null;
+    }
+    T previous;
+    synchronized (mTags) {
+      previous = (T) mTags.get(key);
+      if (previous == null) {
+        mTags.put(key, newValue);
+      }
+    }
+    T result = previous == null ? newValue : previous;
+    if (mDestroyed) {
+      // It is possible that we'll call close() multiple times on the same object, but
+      // Closeable interface requires close method to be idempotent:
+      // "if the stream is already closed then invoking this method has no effect." (c)
+      closeWithRuntimeException(result);
+    }
+    return result;
+  }
+
+  /** @hide */
+  @Nullable
+  public <T> T getTag(@NonNull String key) {
+    if (mTags == null) {
+      return null;
+    }
+    synchronized (mTags) {
+      return (T) mTags.get(key);
+    }
+  }
 
   /** @hide */
   @Override
@@ -259,6 +322,19 @@ public class FirebaseMessagingService extends EnhancedIntentService {
       messageId = intent.getStringExtra(MessagePayloadKeys.MSGID_SERVER);
     }
     return messageId;
+  }
+
+  private void closeWithRuntimeException(Object obj) {
+    if (obj instanceof Closeable) {
+      try {
+        ((Closeable) obj).close();
+      } catch (IOException e) {
+        // close() throws an IOException if an I/O error occurs.
+        // We convert it into an Unchecked Exception to
+        // let the developer know
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   @VisibleForTesting
