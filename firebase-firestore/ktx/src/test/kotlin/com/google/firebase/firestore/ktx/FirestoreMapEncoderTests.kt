@@ -20,7 +20,10 @@ import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FirestoreMapEncoderTests {
 
     @Test
@@ -246,7 +249,7 @@ class FirestoreMapEncoderTests {
                 assertTrue(expectedMapOfMapObj == encodeToMap(mapObj))
             }
             .hasMessageThat()
-            .contains("Incorrect format of nested object provided")
+            .contains("Serializer for class 'Any' is not found")
     }
 
     @Serializable

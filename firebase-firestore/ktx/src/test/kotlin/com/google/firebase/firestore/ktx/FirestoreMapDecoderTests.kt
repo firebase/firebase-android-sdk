@@ -22,7 +22,10 @@ import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import kotlinx.serialization.Serializable
 import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FirestoreMapDecoderTests {
 
     companion object {
