@@ -49,7 +49,7 @@ private abstract class FirestoreAbstractDecoder(
         const val START_INDEX = 0
     }
     protected var elementIndex: Int = START_INDEX
-    protected lateinit var decodedElementDataType: SerialKind
+    protected lateinit var elementDataType: SerialKind
 
     /** A list of values that need to be decoded as fields of the [Serializable] object. */
     abstract val decodeValueList: List<Any?>
@@ -82,7 +82,7 @@ private abstract class FirestoreAbstractDecoder(
      */
     final override fun decodeValue(): Any {
         val element: Any = decodedElementNotNullOrThrow()
-        return when (decodedElementDataType) {
+        return when (elementDataType) {
             is PrimitiveKind.INT -> return (element as Long).toInt() // Firestore saves Int as Long
             is PrimitiveKind.FLOAT ->
                 return (element as Double).toFloat() // Firestore saves Float as Double
@@ -180,11 +180,11 @@ private class FirestoreMapDecoder(
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
-        val decodeElementName = decodeNameList[elementIndex]
+        val elementName = decodeNameList[elementIndex]
         elementIndex++
-        decodedElementDataType =
-            descriptor.getElementDescriptor(descriptor.getElementIndex(decodeElementName)).kind
-        return descriptor.getElementIndex(decodeElementName)
+        elementDataType =
+            descriptor.getElementDescriptor(descriptor.getElementIndex(elementName)).kind
+        return descriptor.getElementIndex(elementName)
         // TODO: To support annotation @IgnoreOnExtraProperties, loop this method
         // to next element which descriptor.getElementIndex() does not return
         // [CompositeDecoder.UNKNOWN_NAME]
@@ -213,7 +213,7 @@ private class FirestoreListDecoder(
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == decodeValueList.size) return CompositeDecoder.DECODE_DONE
-        decodedElementDataType = descriptor.getElementDescriptor(elementIndex).kind
+        elementDataType = descriptor.getElementDescriptor(elementIndex).kind
         return elementIndex++
     }
 }
