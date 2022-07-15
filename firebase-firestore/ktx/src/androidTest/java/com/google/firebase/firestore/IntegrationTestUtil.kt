@@ -16,7 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.firestore.encoding.MapEncoder
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
@@ -57,47 +56,20 @@ val testFirestore: FirebaseFirestore by lazy {
     }
 }
 
-/** Remove all registered MapEncoder from FirebaseFirestore, and return them. */
-private fun FirebaseFirestore.clearMapper(): Set<MapEncoder> {
-    val currentMapper = mapEncoders.toSet()
-    mapEncoders.clear()
-    return currentMapper
-}
-
-/** Register a Set of MapEncoder to FirebaseFirestore. */
-private fun FirebaseFirestore.setMapper(mapper: Set<MapEncoder>) {
-    mapEncoders.addAll(mapper)
-}
-
 /**
- * Sets @[Serializable] objects to [DocumentReference] using the Kotlin Mapper.
+ * Sets custom objects to [DocumentReference] using the default Java POJO Mapper.
  *
  * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
  * [FirebaseFirestore] at runtime.
  */
-fun setDataToDocRefWithKotlinMapper(
-    data: Any,
-    collectionName: String = "serialization",
-    documentName: String = "ktx"
-): DocumentReference =
-    testFirestore.collection(collectionName).document(documentName).apply {
-        val currentMapper = this.firestore.mapEncoders
-        if (currentMapper.isEmpty())
-            throw IllegalArgumentException("No Registered Mapper Obtained at runtime!")
-        set(data)
-    }
-
-/** Sets custom objects to [DocumentReference] using the default Java POJO Mapper. */
-fun setDataToDocRefWithJavaMapper(
-    data: Any,
-    collectionName: String = "serialization",
-    documentName: String = "ktx"
-): DocumentReference =
-    testFirestore.collection(collectionName).document(documentName).apply {
-        val currentMapper = this.firestore.clearMapper()
-        set(data)
-        this.firestore.setMapper(currentMapper)
-    }
+fun DocumentReference.withEmptyMapper(lambda: DocumentReference.() -> Unit) {
+    val currentMapper = firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Kotlin Mapper Obtained at runtime!")
+    firestore.mapEncoders.clear()
+    lambda()
+    firestore.mapEncoders.addAll(currentMapper)
+}
 
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)

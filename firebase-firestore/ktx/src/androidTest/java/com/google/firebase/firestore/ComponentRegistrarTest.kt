@@ -74,12 +74,12 @@ class ComponentRegistrarTest {
                 "bar-home-address"
             )
 
-        val docRefKotlin = setDataToDocRefWithKotlinMapper(ktxStudent)
-        val docRefPOJO = setDataToDocRefWithJavaMapper(pojoStudent)
-        val actual = waitFor(docRefKotlin.get()).data
-        val expected = waitFor(docRefPOJO.get()).data
+        val docRefActual = testCollection("ktx").document("123")
+        val docRefExpected = testCollection("pojo").document("456")
+        docRefActual.set(ktxStudent)
+        docRefExpected.withEmptyMapper { set(pojoStudent) }
+        val actual = waitFor(docRefActual.get()).data
+        val expected = waitFor(docRefExpected.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
     }
 }
-
-
