@@ -17,9 +17,6 @@ package com.google.firebase.database;
 import android.content.Context;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
 public class IntegrationTestValues {
   private static final String TEST_ALT_NAMESPACE = "https://test.firebaseio.com";
   private static final String TEST_SERVER = "firebaseio.com";

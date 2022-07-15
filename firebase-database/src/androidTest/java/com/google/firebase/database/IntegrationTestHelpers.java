@@ -307,7 +307,8 @@ public class IntegrationTestHelpers {
     if (testSecret == null) {
       try {
         InputStream response =
-            new URL(IntegrationTestValues.getDatabaseUrl() + "/.nsadmin/.json?key=1234").openStream();
+            new URL(IntegrationTestValues.getDatabaseUrl() + "/.nsadmin/.json?key=1234")
+                .openStream();
         TypeReference<Map<String, Object>> t = new TypeReference<Map<String, Object>>() {};
         Map<String, Object> data = new ObjectMapper().readValue(response, t);
         testSecret = (String) ((List) data.get("secrets")).get(0);

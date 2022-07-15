@@ -201,7 +201,8 @@ public class FirebaseDatabaseTest {
   @Test
   public void getReference() {
     FirebaseDatabase db = FirebaseDatabase.getInstance();
-    assertEquals(IntegrationTestValues.getDatabaseUrl() + "/foo", db.getReference("foo").toString());
+    assertEquals(
+        IntegrationTestValues.getDatabaseUrl() + "/foo", db.getReference("foo").toString());
   }
 
   @Test
