@@ -14,62 +14,31 @@
 
 package com.google.firebase.testing.fireperf;
 
-import android.util.Log;
-import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 
 /** A helper class that generates all of the traces and network requests. */
 public class FireperfUtils {
-
-  private static final String LOG_TAG = FireperfUtils.class.getSimpleName();
   private static final int MILLIS_IN_SECONDS = 1000;
-  private static final int MAX_SEMAPHORE_PERMITS = 2;
-  private static final Semaphore SEMAPHORE = new Semaphore(MAX_SEMAPHORE_PERMITS);
+  private static final int TRACES_PER_ITERATION = 32;
+  private static final int REQUESTS_PER_ITERATION = 32;
 
   /** Creates all the traces and network requests. */
-  static void startEvents(final int iterations) {
-    if (SEMAPHORE.availablePermits() < MAX_SEMAPHORE_PERMITS) {
-      return;
-    }
-
-    final TraceGenerator traceGenerator = new TraceGenerator(SEMAPHORE);
-    final NetworkRequestGenerator networkRequestGenerator = new NetworkRequestGenerator(SEMAPHORE);
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    Future<?> unusedFuture =
-        Executors.newSingleThreadExecutor()
-            .submit(
-                () -> {
-                  try {
-                    traceGenerator.launchTraces(/* totalTraces= */ 32, iterations).get();
-                    networkRequestGenerator
-                        .launchRequests(/* totalRequests= */ 32, iterations)
-                        .get();
-                  } catch (Exception e) {
-                    Log.e(LOG_TAG, e.getMessage(), e);
-                  }
-                });
+  static List<Future<?>> generateEvents(final int iterations) {
+    List<Future<?>> futures = new ArrayList<>();
+    futures.add(generateTraces(iterations));
+    futures.add(generateNetworkRequests(iterations));
+    return futures;
   }
 
-  static void startTraces(int iterations) {
-    if (SEMAPHORE.availablePermits() < 1) {
-      return;
-    }
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    Future<?> unusedTraceFuture =
-        new TraceGenerator(SEMAPHORE).launchTraces(/* totalTraces= */ 32, iterations);
+  static Future<?> generateTraces(int iterations) {
+    return new TraceGenerator().generateTraces(/* totalTraces= */ TRACES_PER_ITERATION, iterations);
   }
 
-  static void startNetworkRequests(int iterations) {
-    if (SEMAPHORE.availablePermits() < 1) {
-      return;
-    }
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    Future<?> unusedNetworkFuture =
-        new NetworkRequestGenerator(SEMAPHORE).launchRequests(/* totalRequests= */ 32, iterations);
+  static Future<?> generateNetworkRequests(int iterations) {
+    return new NetworkRequestGenerator()
+        .generateRequests(/* totalRequests= */ REQUESTS_PER_ITERATION, iterations);
   }
 
   /**
@@ -98,14 +67,5 @@ public class FireperfUtils {
         (float) (Math.sqrt(-2 * Math.log(randomValue1)) * Math.cos(2 * Math.PI * randomValue2));
 
     return mean + (deviation * gaussianValue);
-  }
-
-  /**
-   * Tries to acquire all allocated semaphore permits, and blocks the thread until they are all
-   * available.
-   */
-  public static void blockUntilAllEventsSent() throws InterruptedException {
-    SEMAPHORE.acquire(MAX_SEMAPHORE_PERMITS);
-    SEMAPHORE.release(MAX_SEMAPHORE_PERMITS);
   }
 }

@@ -24,7 +24,6 @@ public interface UpdateProgress {
    * @returns the number of bytes downloaded, or -1 if called when updating to an AAB or if no new
    *     release is available.
    */
-  @NonNull
   long getApkBytesDownloaded();
 
   /**
@@ -33,7 +32,6 @@ public interface UpdateProgress {
    * @returns the file size in bytes, or -1 if called when updating to an AAB or if no new release
    *     is available.
    */
-  @NonNull
   long getApkFileTotalBytes();
 
   /** Returns the current {@link UpdateStatus} of the update. */

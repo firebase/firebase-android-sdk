@@ -18,12 +18,15 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,8 +43,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
-import com.google.firebase.inject.Provider;
-import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -58,6 +61,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ApkUpdater apkUpdater;
   private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
+  private final ReleaseIdentifier releaseIdentifier;
+  private final ScreenshotTaker screenshotTaker;
 
   private final Object updateIfNewReleaseTaskLock = new Object();
 
@@ -88,45 +93,21 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ApkUpdater apkUpdater,
       @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @NonNull ReleaseIdentifier releaseIdentifier,
+      @NonNull ScreenshotTaker screenshotTaker) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
     this.apkUpdater = apkUpdater;
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
+    this.releaseIdentifier = releaseIdentifier;
     this.lifecycleNotifier = lifecycleNotifier;
+    this.screenshotTaker = screenshotTaker;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
-  }
-
-  FirebaseAppDistributionImpl(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
-    this(
-        firebaseApp,
-        new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
-        new NewReleaseFetcher(
-            firebaseApp,
-            new FirebaseAppDistributionTesterApiClient(),
-            firebaseInstallationsApiProvider),
-        new ApkUpdater(firebaseApp, new ApkInstaller()),
-        new AabUpdater(),
-        signInStorage,
-        lifecycleNotifier);
-  }
-
-  FirebaseAppDistributionImpl(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider) {
-    this(
-        firebaseApp,
-        firebaseInstallationsApiProvider,
-        new SignInStorage(firebaseApp.getApplicationContext()),
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   @Override
@@ -306,7 +287,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         LogWrapper.getInstance().v("New release not found.");
         return getErrorUpdateTask(
             new FirebaseAppDistributionException(
-                ErrorMessages.NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+                ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
       }
       if (cachedNewRelease.getDownloadUrl() == null) {
         LogWrapper.getInstance().v("Download failed to execute.");
@@ -322,6 +303,43 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         return apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
       }
     }
+  }
+
+  @Override
+  public void collectAndSendFeedback() {
+    collectAndSendFeedback(Executors.newSingleThreadExecutor());
+  }
+
+  @VisibleForTesting
+  public void collectAndSendFeedback(Executor taskExecutor) {
+    screenshotTaker
+        .takeScreenshot()
+        .onSuccessTask(
+            taskExecutor,
+            screenshotFilename ->
+                testerSignInManager
+                    .signInTester()
+                    .addOnFailureListener(
+                        taskExecutor,
+                        e ->
+                            LogWrapper.getInstance()
+                                .e("Failed to sign in tester. Could not collect feedback.", e))
+                    .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
+                    .onSuccessTask(
+                        taskExecutor,
+                        releaseName -> launchFeedbackActivity(releaseName, screenshotFilename)))
+        .addOnFailureListener(
+            taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
+  }
+
+  private Task<Void> launchFeedbackActivity(String releaseName, String screenshotFilename) {
+    return lifecycleNotifier.consumeForegroundActivity(
+        activity -> {
+          Intent intent = new Intent(activity, FeedbackActivity.class);
+          intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
+          intent.putExtra(SCREENSHOT_FILENAME_EXTRA_KEY, screenshotFilename);
+          activity.startActivity(intent);
+        });
   }
 
   @VisibleForTesting
@@ -367,6 +385,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     // shows the dialog on a configuration change and does not check the activity reference.
     if (activity == dialogHostActivity) {
       dialogHostActivity = null;
+    }
+
+    // If the feedback activity finishes, clean up the screenshot that was taken before starting
+    // the activity. If this does not happen for some reason it will be cleaned up the next time
+    // before taking a new screenshot.
+    if (activity instanceof FeedbackActivity) {
+      screenshotTaker.deleteScreenshot();
     }
   }
 

@@ -17,5 +17,5 @@
 set -e
 
 DIRECTORY=$(cd `dirname $0` && pwd)
-$DIRECTORY/fireci/setup.py develop >> /dev/null
+pip3 install -e $DIRECTORY/fireci >> /dev/null
 fireci $@

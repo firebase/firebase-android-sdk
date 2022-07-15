@@ -14,39 +14,50 @@
 
 package com.google.firebase.firestore;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import android.app.Activity;
+import androidx.annotation.NonNull;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.rule.ActivityTestRule;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ErrorCollector;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.android.controller.ActivityController;
-import org.robolectric.annotation.Config;
 
-@RunWith(RobolectricTestRunner.class)
-@Config(manifest = Config.NONE)
+@RunWith(AndroidJUnit4.class)
 public class LoadBundleTaskTest {
   static final LoadBundleTaskProgress SUCCESS_RESULT =
       new LoadBundleTaskProgress(0, 0, 0, 0, null, LoadBundleTaskProgress.TaskState.SUCCESS);
   static final Exception TEST_EXCEPTION = new Exception("Test Exception");
   static final String TEST_THREAD_NAME = "test-thread";
 
-  @Rule public ErrorCollector collector = new ErrorCollector();
+  static class TestActivity extends Activity {}
+
+  @Rule
+  public ActivityTestRule<ListenerRegistrationTest.TestActivity> activityTestRule =
+      new ActivityTestRule<>(
+          ListenerRegistrationTest.TestActivity.class,
+          /*initialTouchMode=*/ false,
+          /*launchActivity=*/ false);
 
   Executor testExecutor =
       Executors.newSingleThreadExecutor(
@@ -55,9 +66,6 @@ public class LoadBundleTaskTest {
             t.setName(TEST_THREAD_NAME);
             return t;
           });
-  ActivityController<Activity> activityController =
-      Robolectric.buildActivity(Activity.class).create();
-  Activity activity = activityController.get();
 
   @Test
   public void testImplementsAllTaskInterface() {
@@ -86,59 +94,67 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testSuccessListener() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+  public void testSuccessListener() {
+    List<TaskCompletionSource> sources = taskSourceOf(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnSuccessListener(progress -> latch.countDown());
-    task.addOnSuccessListener(testExecutor, progress -> latch.countDown());
-    task.addOnSuccessListener(activity, progress -> latch.countDown());
+    task.addOnSuccessListener(progress -> sources.get(0).setResult(0));
+    task.addOnSuccessListener(testExecutor, progress -> sources.get(1).setResult(1));
+    ListenerRegistrationTest.TestActivity activity =
+        activityTestRule.launchActivity(/*intent=*/ null);
+    task.addOnSuccessListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1, 2);
   }
 
   @Test
-  public void testFailureListener() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+  public void testFailureListener() {
+    List<TaskCompletionSource> sources = taskSourceOf(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnFailureListener(progress -> latch.countDown());
-    task.addOnFailureListener(testExecutor, progress -> latch.countDown());
-    task.addOnFailureListener(activity, progress -> latch.countDown());
+    task.addOnFailureListener(progress -> sources.get(0).setResult(0));
+    task.addOnFailureListener(testExecutor, progress -> sources.get(1).setResult(1));
+    ListenerRegistrationTest.TestActivity activity =
+        activityTestRule.launchActivity(/*intent=*/ null);
+    task.addOnFailureListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setException(TEST_EXCEPTION);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1, 2);
   }
 
   @Test
-  public void testCompleteListener() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+  public void testCompleteListener() {
+    List<TaskCompletionSource> sources = taskSourceOf(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnCompleteListener(progress -> latch.countDown());
-    task.addOnCompleteListener(testExecutor, progress -> latch.countDown());
-    task.addOnCompleteListener(activity, progress -> latch.countDown());
+    task.addOnCompleteListener(progress -> sources.get(0).setResult(0));
+    task.addOnCompleteListener(testExecutor, progress -> sources.get(1).setResult(1));
+    ListenerRegistrationTest.TestActivity activity =
+        activityTestRule.launchActivity(/*intent=*/ null);
+    task.addOnCompleteListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1, 2);
   }
 
   @Test
-  public void testProgressListener() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+  public void testProgressListener() {
+    List<TaskCompletionSource> sources = taskSourceOf(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(progress -> latch.countDown());
-    task.addOnProgressListener(testExecutor, progress -> latch.countDown());
-    task.addOnProgressListener(activity, progress -> latch.countDown());
+    task.addOnProgressListener(progress -> sources.get(0).setResult(0));
+    task.addOnProgressListener(testExecutor, progress -> sources.get(1).setResult(1));
+    ListenerRegistrationTest.TestActivity activity =
+        activityTestRule.launchActivity(/*intent=*/ null);
+    task.addOnProgressListener(activity, progress -> sources.get(2).setResult(2));
 
     task.updateProgress(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1, 2);
   }
 
   @Test
@@ -156,53 +172,56 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testProgressListenerFireOnSpecifiedExecutor() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(2);
+  public void testProgressListenerFireOnSpecifiedExecutor() {
+    List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();
     task.addOnProgressListener(
         p -> {
           try {
-            collector.checkThat(Thread.currentThread().getName(), not(equalTo(TEST_THREAD_NAME)));
+            assertNotEquals(Thread.currentThread().getName(), TEST_THREAD_NAME);
           } finally {
-            latch.countDown();
+            sources.get(0).setResult(0);
           }
         });
     task.addOnProgressListener(
         testExecutor,
         p -> {
           try {
-            collector.checkThat(Thread.currentThread().getName(), equalTo(TEST_THREAD_NAME));
+            assertEquals(Thread.currentThread().getName(), TEST_THREAD_NAME);
           } finally {
-            latch.countDown();
+            sources.get(1).setResult(1);
           }
         });
 
     task.updateProgress(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1);
   }
 
   @Test
-  public void testProgressListenerCanAddProgressListener() throws InterruptedException {
-    BlockingQueue<Integer> blockingQueue = new ArrayBlockingQueue<>(3);
+  public void testProgressListenerCanAddProgressListener() {
+    List<TaskCompletionSource> sources = taskSourceOf(3);
 
+    AtomicInteger outerTaskRun = new AtomicInteger();
     LoadBundleTask task = new LoadBundleTask();
     task.addOnProgressListener(
         p1 -> {
-          blockingQueue.add(1);
+          sources.get(outerTaskRun.getAndIncrement()).setResult(outerTaskRun.get());
           task.addOnProgressListener(
               p2 -> {
-                blockingQueue.add(2);
+                sources.get(2).setResult(3);
               });
         });
 
+    // First update runs the outer listener, and registers the inner listener.
     task.updateProgress(SUCCESS_RESULT);
-    assertEquals(1, (long) blockingQueue.take());
 
+    waitFor(sources.get(0).getTask());
+    // Second update runs the outer listener, then the inner listener.
     task.updateProgress(SUCCESS_RESULT);
-    assertEquals(1, (long) blockingQueue.take());
-    assertEquals(2, (long) blockingQueue.take());
+
+    assertSourcesResolveTo(sources, 1, 2, 3);
   }
 
   @Test
@@ -210,7 +229,7 @@ public class LoadBundleTaskTest {
     BlockingQueue<LoadBundleTaskProgress> actualSnapshots = new ArrayBlockingQueue<>(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(actualSnapshots::add);
+    task.addOnProgressListener(testExecutor, actualSnapshots::add);
 
     LoadBundleTaskProgress initialProgress =
         new LoadBundleTaskProgress(
@@ -236,7 +255,7 @@ public class LoadBundleTaskTest {
     BlockingQueue<LoadBundleTaskProgress> actualSnapshots = new ArrayBlockingQueue<>(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(actualSnapshots::add);
+    task.addOnProgressListener(testExecutor, actualSnapshots::add);
 
     LoadBundleTaskProgress initialProgress =
         new LoadBundleTaskProgress(
@@ -262,7 +281,7 @@ public class LoadBundleTaskTest {
     BlockingQueue<LoadBundleTaskProgress> actualSnapshots = new ArrayBlockingQueue<>(3);
 
     LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(actualSnapshots::add);
+    task.addOnProgressListener(testExecutor, actualSnapshots::add);
 
     LoadBundleTaskProgress failureProgress =
         new LoadBundleTaskProgress(
@@ -272,47 +291,47 @@ public class LoadBundleTaskTest {
   }
 
   @Test
-  public void testContinueWith() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(2);
+  public void testContinueWith() {
+    List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();
     task.continueWith(
         task1 -> {
-          latch.countDown();
+          sources.get(0).setResult(0);
           return null;
         });
     task.continueWith(
         testExecutor,
         task1 -> {
-          latch.countDown();
+          sources.get(1).setResult(1);
           return null;
         });
 
     task.setResult(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1);
   }
 
   @Test
-  public void testContinueWithTask() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(2);
+  public void testContinueWithTask() {
+    List<TaskCompletionSource> sources = taskSourceOf(2);
 
     LoadBundleTask task = new LoadBundleTask();
     task.continueWithTask(
         task1 -> {
-          latch.countDown();
+          sources.get(0).setResult(0);
           return null;
         });
     task.continueWithTask(
         testExecutor,
         task1 -> {
-          latch.countDown();
+          sources.get(1).setResult(1);
           return null;
         });
 
     task.setResult(SUCCESS_RESULT);
 
-    latch.await();
+    assertSourcesResolveTo(sources, 0, 1);
   }
 
   @Test
@@ -351,5 +370,21 @@ public class LoadBundleTaskTest {
     LoadBundleTask task = new LoadBundleTask();
     task.setException(TEST_EXCEPTION);
     assertEquals(TEST_EXCEPTION, task.getException());
+  }
+
+  private List<TaskCompletionSource> taskSourceOf(int size) {
+    List<TaskCompletionSource> result = new ArrayList<>();
+    for (int i = 0; i < size; i++) {
+      result.add(new TaskCompletionSource());
+    }
+    return result;
+  }
+
+  private void assertSourcesResolveTo(
+      @NonNull List<TaskCompletionSource> sources, Object... expected) {
+    Task<List<Object>> listTask =
+        Tasks.whenAllSuccess(sources.stream().map(s -> s.getTask()).collect(Collectors.toList()));
+    waitFor(listTask);
+    assertArrayEquals(Arrays.stream(expected).toArray(), listTask.getResult().toArray());
   }
 }

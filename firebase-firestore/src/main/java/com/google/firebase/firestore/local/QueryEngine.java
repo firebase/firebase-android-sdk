@@ -54,17 +54,9 @@ import javax.annotation.Nullable;
  * least once and allow the query engine to only read documents that previously matched a query plus
  * any documents that were edited after the query was last listened to.
  *
- * <p>There are some cases where this specific optimization is not guaranteed to produce the same
- * results as full collection scans. In these cases, query processing falls back to full scans.
- * These cases are:
- *
- * <ol>
- *   <li>Limit queries where a document that matched the query previously no longer matches the
- *       query.
- *   <li>Limit queries where a document edit may cause the document to sort below another document
- *       that is in the local cache.
- *   <li>Queries that have never been CURRENT or free of limbo documents.
- * </ol>
+ * <p>For queries that have never been CURRENT or free of limbo documents, this specific
+ * optimization is not guaranteed to produce the same results as full collection scans. So in these
+ * cases, query processing falls back to full scans.
  */
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
