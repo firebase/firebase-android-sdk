@@ -16,14 +16,12 @@ package com.google.firebase.firestore.encoding
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import java.util.*
+import java.util.Date
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 
 /**
  * The generic serializer for data types that need special treatment during (de)serialization

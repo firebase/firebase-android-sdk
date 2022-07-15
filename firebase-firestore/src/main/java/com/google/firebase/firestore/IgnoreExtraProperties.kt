@@ -13,9 +13,9 @@
 // limitations under the License.
 package com.google.firebase.firestore
 
-import kotlinx.serialization.SerialInfo
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
+import kotlinx.serialization.SerialInfo
 
 /**
  * Properties that don't map to class fields are ignored when serializing to a class annotated with
@@ -24,4 +24,4 @@ import java.lang.annotation.RetentionPolicy
 @SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
-annotation class IgnoreExtraProperties 
+annotation class IgnoreExtraProperties
