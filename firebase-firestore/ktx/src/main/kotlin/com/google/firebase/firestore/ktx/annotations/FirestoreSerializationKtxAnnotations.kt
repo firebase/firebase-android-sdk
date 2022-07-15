@@ -16,6 +16,7 @@ package com.google.firebase.firestore.ktx.annotations
 
 import kotlinx.serialization.SerialInfo
 
+// TODO: This file to be removed after the "Java Kotlin Environment" support PR is merged.
 /**
  * Annotation used to mark a @Serializable object's property to be automatically populated with the
  * document's ID when the object is created from a Cloud Firestore document. This annotation is the
