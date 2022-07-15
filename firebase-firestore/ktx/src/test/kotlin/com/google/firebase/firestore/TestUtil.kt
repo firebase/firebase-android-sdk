@@ -14,10 +14,7 @@
 
 package com.google.firebase.firestore
 
-import com.google.common.truth.ThrowableSubject
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.DocumentKey
-import org.junit.Assert.assertThrows
 
 /**
  * Returns a [DocumentReference] identified by document name for ktx unit test.
