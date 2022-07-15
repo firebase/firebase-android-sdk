@@ -81,3 +81,5 @@ class ComponentRegistrarTest {
         assertThat(actual).containsExactlyEntriesIn(expected)
     }
 }
+
+
