@@ -16,3 +16,7 @@
 # Okhttp warnings.
 -dontwarn okio.**
 -dontwarn com.google.j2objc.annotations.**
+
+# Kotlin warnings:
+-dontwarn org.jetbrains.kotlinx:kotlinx-serialization-core:1.3.2
+-dontwarn org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion
