@@ -21,7 +21,7 @@ import java.util.Map;
  * supported primitive types.
  *
  * <p><b>Implementation Note</b>: The concrete implementation of this interface in the Firestore
- * Kotlin extension library has the following restrictions: Only [Serializable] objects are
+ * Kotlin extension library has the following restrictions: Only @{@code Serializable} objects are
  * supported; object depth, defined as objects within objects, cannot be larger than 500;
  * (de)encoding lists of mixed data types, or lists of lists is not supported as they are not
  * considered as Kotlin serializable (serializers cannot be obtained at compile time).
@@ -29,10 +29,10 @@ import java.util.Map;
 public interface MapEncoder {
 
   /**
-   * Encodes a object to a nested map of Firestore supported primitive types.
+   * Encodes a object to a nested map of Firestore supported types.
    *
    * @param value An object need to be encoded.
-   * @return A nested map of Firestore supported primitive types.
+   * @return A nested map of Firestore supported types.
    */
   Map<String, Object> encode(Object value);
 

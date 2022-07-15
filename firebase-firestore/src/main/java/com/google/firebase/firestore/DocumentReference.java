@@ -34,6 +34,7 @@ import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.encoding.FirestoreNativeDataTypeSerializer;
 import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import kotlinx.serialization.Serializable;
 
 /**
  * A {@code DocumentReference} refers to a document location in a Cloud Firestore database and can
@@ -59,6 +61,7 @@ import java.util.concurrent.Executor;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
+@Serializable(with = FirestoreNativeDataTypeSerializer.DocumentReferenceSerializer.class)
 public class DocumentReference {
 
   private final DocumentKey key;

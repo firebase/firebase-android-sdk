@@ -47,7 +47,7 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.DocumentChange.Type REMOVED;
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD}) public @interface DocumentId {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD}) public @interface DocumentId {
   }
 
   public class DocumentReference {
@@ -218,7 +218,7 @@ package com.google.firebase.firestore {
     method public double getLongitude();
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS}) public @interface IgnoreExtraProperties {
   }
 
   public interface ListenerRegistration {
@@ -350,7 +350,7 @@ package com.google.firebase.firestore {
     method @NonNull public <T> java.util.List<T> toObjects(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface ServerTimestamp {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD}) public @interface ServerTimestamp {
   }
 
   public final class SetOptions {
@@ -371,7 +371,7 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.Source SERVER;
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface ThrowOnExtraProperties {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @kotlin.annotation.Target(allowedTargets={AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS}) public @interface ThrowOnExtraProperties {
   }
 
   public class Transaction {

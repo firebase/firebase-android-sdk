@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
-import com.google.firestore.v1.StructuredQuery.CompositeFilter.Operator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -198,7 +197,7 @@ public class LogicUtils {
 
   private static Filter applyDistribution(FieldFilter lhs, FieldFilter rhs) {
     // Conjunction distribution for two field filters is the conjunction of them.
-    return new CompositeFilter(Arrays.asList(lhs, rhs), Operator.AND);
+    return new CompositeFilter(Arrays.asList(lhs, rhs), CompositeFilter.Operator.AND);
   }
 
   private static Filter applyDistribution(
@@ -215,8 +214,7 @@ public class LogicUtils {
       for (Filter subfilter : compositeFilter.getFilters()) {
         newFilters.add(applyDistribution(fieldFilter, subfilter));
       }
-      // TODO(orquery): Use OPERATOR_OR.
-      return new CompositeFilter(newFilters, Operator.OPERATOR_UNSPECIFIED);
+      return new CompositeFilter(newFilters, CompositeFilter.Operator.OR);
     }
   }
 
@@ -245,8 +243,7 @@ public class LogicUtils {
     for (Filter subfilter : disjunctionSide.getFilters()) {
       results.add(applyDistribution(subfilter, otherSide));
     }
-    // TODO(orquery): Use OPERATOR_OR.
-    return new CompositeFilter(results, Operator.OPERATOR_UNSPECIFIED);
+    return new CompositeFilter(results, CompositeFilter.Operator.OR);
   }
 
   protected static Filter computeDistributedNormalForm(Filter filter) {

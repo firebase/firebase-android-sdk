@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,19 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.firestore
 
-package com.google.firebase.firestore;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import kotlinx.serialization.SerialInfo
+import java.lang.annotation.Retention
+import java.lang.annotation.RetentionPolicy
 
 /**
- * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO
- * being written contains {@code null} for a @ServerTimestamp-annotated field, it will be replaced
- * with a server-generated timestamp.
+ * Properties that don't map to class fields when serializing to a class annotated with this
+ * annotation cause an exception to be thrown.
  */
+@SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
-public @interface ServerTimestamp {}
+@Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
+annotation class ThrowOnExtraProperties 

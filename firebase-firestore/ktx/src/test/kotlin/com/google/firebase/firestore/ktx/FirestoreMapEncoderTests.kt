@@ -15,14 +15,8 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.AssertThrows
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.GeoPoint
-import com.google.firebase.firestore.documentReference
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlinx.serialization.Contextual
+import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -107,7 +101,7 @@ class FirestoreMapEncoderTests {
     // need to copy more test from Line 1428
     @Test
     fun encodeStringBean() {
-        @Serializable data class StringBean(val value: String? = null)
+        @Serializable data class StringBean(val value: String)
         val bean = StringBean("foo")
         val expectedMap = mutableMapOf("value" to "foo")
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -115,7 +109,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeDoubleBean() {
-        @Serializable data class DoubleBean(val value: Double? = null)
+        @Serializable data class DoubleBean(val value: Double)
         val bean = DoubleBean(1.1)
         val expectedMap = mutableMapOf("value" to 1.1)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -123,7 +117,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeIntBean() {
-        @Serializable data class IntBean(val value: Int? = null)
+        @Serializable data class IntBean(val value: Int)
         val bean = IntBean(1)
         val expectedMap = mutableMapOf("value" to 1)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -131,7 +125,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeLongBean() {
-        @Serializable data class LongBean(val value: Long? = null)
+        @Serializable data class LongBean(val value: Long)
         val bean = LongBean(Int.MAX_VALUE + 100L)
         val expectedMap = mutableMapOf("value" to Int.MAX_VALUE + 100L)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -139,7 +133,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun encodeBooleanBean() {
-        @Serializable data class BooleanBean(val value: Boolean? = null)
+        @Serializable data class BooleanBean(val value: Boolean)
         val bean = BooleanBean(true)
         val expectedMap = mutableMapOf("value" to true)
         assertThat(encodeToMap(bean)).containsExactlyEntriesIn(expectedMap)
@@ -147,7 +141,7 @@ class FirestoreMapEncoderTests {
 
     @Test
     fun `unicode object encoding is supported`() {
-        @Serializable data class UnicodeObject(val 漢字: String? = null)
+        @Serializable data class UnicodeObject(val 漢字: String)
         val unicodeObject = UnicodeObject(漢字 = "foo")
         val encodedMap = encodeToMap(unicodeObject)
         val expectedMap = mutableMapOf("漢字" to "foo")
@@ -158,7 +152,7 @@ class FirestoreMapEncoderTests {
     fun `short encoding is supported`() {
         // encoding supports converting an object with short field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class ShortObject(val value: Short? = null)
+        @Serializable data class ShortObject(val value: Short)
         val shortObject = ShortObject(value = 1)
         val encodedMap = encodeToMap(shortObject)
         val expectedMap = mutableMapOf("value" to 1.toShort())
@@ -169,7 +163,7 @@ class FirestoreMapEncoderTests {
     fun `byte encoding is supported`() {
         // encoding supports converting an object with byte field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class ByteObject(val value: Byte? = null)
+        @Serializable data class ByteObject(val value: Byte)
         val byteObject = ByteObject(value = 1)
         val encodedMap = encodeToMap(byteObject)
         val expectedMap = mutableMapOf("value" to 1.toByte())
@@ -180,7 +174,7 @@ class FirestoreMapEncoderTests {
     fun `chars encoding is supported`() {
         // encoding supports converting an object with char field to a map; However,
         // IllegalArgumentException will be thrown when try to set this map to firebase
-        @Serializable data class CharObject(val value: Char? = null)
+        @Serializable data class CharObject(val value: Char)
         val charObject = CharObject(value = 1.toChar())
         val encodedMap = encodeToMap(charObject)
         val expectedMap = mutableMapOf("value" to 1.toChar())
@@ -192,11 +186,10 @@ class FirestoreMapEncoderTests {
         // encoding supports both array and list;
         @Serializable
         data class IntArrayObject(
-            val kotlinArrayValue: Array<Int>? = null,
-            val listValue: List<Int>? = null,
-            val javaArrayValue: IntArray? = null
+            val kotlinArrayValue: Array<Int>,
+            val listValue: List<Int>,
+            val javaArrayValue: IntArray
         )
-
         val array = arrayOf(1, 2, 3)
         val list = listOf(4, 5, 6)
         val javaIntArray = intArrayOf(7, 8, 9)
@@ -216,10 +209,10 @@ class FirestoreMapEncoderTests {
         assertThat(encodedMap).containsExactlyEntriesIn(expectedMap)
     }
 
-    @Serializable private data class GenericObject<T>(val value: T? = null)
+    @Serializable private data class GenericObject<T>(val value: T)
 
     @Serializable
-    private data class DoubleGenericObject<A, B>(val valueA: A? = null, val valueB: B? = null)
+    private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
 
     @Test
     fun `generic encoding is supported`() {
@@ -249,19 +242,20 @@ class FirestoreMapEncoderTests {
         //  currently it is not possible to obtain serializer for type Any at compile time
         val map = mapOf("foo" to "foo", "bar" to 1L)
         val mapObj = GenericObject(map)
-        AssertThrows<IllegalArgumentException> { encodeToMap(mapObj) }
-            .hasMessageThat()
-            .contains("Mark the class as @Serializable or provide the serializer explicitly")
+        val expectedMapOfMapObj = mutableMapOf("value" to mutableMapOf("foo" to "foo", "bar" to 1L))
+        assertFailsWith<IllegalArgumentException>(
+            message = "Incorrect format of nested object provided",
+            block = { assertTrue(expectedMapOfMapObj == encodeToMap(mapObj)) }
+        )
     }
 
     @Serializable
     private class StaticFieldBean {
         var value2: String? = null
-
         companion object {
             var value1 = "static-value"
                 set(value) {
-                    field = value + "foobar"
+                    field = value1 + "foobar"
                 }
         }
     }
@@ -305,101 +299,12 @@ class FirestoreMapEncoderTests {
         class ObjectBean {
             var value: ObjectBean? = null
         }
-
         val objectBean = ObjectBean()
         objectBean.value = objectBean
-        AssertThrows<IllegalArgumentException> { encodeToMap(objectBean) }
-            .hasMessageThat()
-            .contains(
-                "Exceeded maximum depth of 500, which likely indicates there's an object cycle"
-            )
-    }
-
-    @Test
-    fun `documentReference is supported`() {
-        @Serializable data class KtxDocRefObject(@Contextual val value: DocumentReference? = null)
-
-        val docRef = documentReference("foo/bar")
-        val ktxDocRefObject = KtxDocRefObject(docRef)
-        val encodedMap = encodeToMap(ktxDocRefObject)
-        val expectedMap = mutableMapOf("value" to docRef)
-        assertTrue(encodedMap == expectedMap)
-    }
-
-    @Test
-    fun `documentReference without default value is supported`() {
-        @Serializable data class KtxDocRefObject(@Contextual val value: DocumentReference)
-
-        val docRef = documentReference("foo/bar")
-        val ktxDocRefObject = KtxDocRefObject(docRef)
-        val encodedMap = encodeToMap(ktxDocRefObject)
-        val expectedMap = mutableMapOf("value" to docRef)
-        assertTrue(encodedMap == expectedMap)
-    }
-
-    @Test
-    fun `encode Timestamp is supported`() {
-        @Serializable data class ServerTimestampObject(@Contextual val value: Timestamp? = null)
-
-        val now: Timestamp = Timestamp.now()
-        val serverTimestampObject = ServerTimestampObject(now)
-        val encodedMap = encodeToMap(serverTimestampObject)
-        val expectedMap = mutableMapOf("value" to now)
-        assertTrue(encodedMap == expectedMap)
-    }
-
-    @Test
-    fun `encode GeoPoint is supported`() {
-        @Serializable data class GeoPointObject(@Contextual val value: GeoPoint? = null)
-
-        val here = GeoPoint(88.0, 66.0)
-        val geoPointObject = GeoPointObject(here)
-        val encodedMap = encodeToMap(geoPointObject)
-        val expectedMap = mutableMapOf("value" to here)
-        assertTrue(encodedMap == expectedMap)
-    }
-
-    @Test
-    fun `field without backing field is not encoded`() {
-        @Serializable
-        class GetterWithoutBackingFieldOnDocumentIdBean {
-            val foo: String
-                get() = "doc-id" // getter only, no backing field -- not serialized
-            val bar: Int = 0 // property with a backing field -- serialized
-        }
-
-        // this is different behavior than the current Java solution, Java will encode the getter
-        // even without a backing field
-        // While, in Kotlin, only a class's properties with backing fields are serialized.
-        val expectedMap = mutableMapOf<String, Any?>("bar" to 0)
-        val encodedMap = encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean())
-        println(encodedMap)
-        assertTrue(encodedMap == expectedMap)
-    }
-
-    @Test
-    fun `KServerTimestamp applied on wrong type should throw`() {
-        @Serializable
-        data class ServerTimestampObject(@Contextual @KServerTimestamp val value: String? = null)
-        val serverTimestampObject = ServerTimestampObject("100")
-        AssertThrows<IllegalArgumentException> { encodeToMap(serverTimestampObject) }
-            .hasMessageThat()
-            .contains("instead of Date or Timestamp")
-    }
-
-    @Test
-    fun `test for testing AssertThrows extension function`() {
-        // throw wrong type of exception
-        try {
-            AssertThrows<IllegalArgumentException> { -> listOf(1, 2, 3).get(100) }.hasMessageThat().contains("foobar")
-        } catch (error: AssertionError) {
-            assertThat(error).hasMessageThat().contains("expected:<java.lang.IllegalArgumentException> but was:<java.lang.ArrayIndexOutOfBoundsException>")
-        }
-        // does not throw any exception
-        try {
-            AssertThrows<IllegalArgumentException> { -> listOf(1, 2, 3).get(0) }.hasMessageThat().contains("foobar")
-        } catch (error: AssertionError) {
-            assertThat(error).hasMessageThat().contains("expected java.lang.IllegalArgumentException to be thrown, but nothing was thrown")
-        }
+        assertFailsWith<IllegalArgumentException>(
+            message =
+                "Exceeded maximum depth of 500, which likely indicates there's an object cycle",
+            block = { encodeToMap(objectBean) }
+        )
     }
 }

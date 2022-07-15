@@ -15,11 +15,6 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
-import java.util.Date
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -35,6 +30,8 @@ class ComponentRegistrarTest {
     }
 
     @Test
+    // Verify component registrar is working via assert Ktx mapper and POJO mapper save the same
+    // result to Firestore.
     fun ktx_serialization_is_the_same_as_java_pojo_serialization() {
         @Serializable
         data class KtxStudent(
@@ -82,73 +79,5 @@ class ComponentRegistrarTest {
         val actual = waitFor(docRefKotlin.get()).data
         val expected = waitFor(docRefPOJO.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
-    }
-
-    @Test
-    fun nested_object_serialization_is_equivalent() {
-        val dummyDocRef = testCollection("ktx").document("123")
-
-        @Serializable data class Owner(val name: String? = null, val age: Int? = 100)
-
-        @Serializable
-        data class KtxProject(
-            val name: String,
-            val owner: Owner, // nested object without @Serializable cannot be complied
-            @Contextual @KDocumentId val docRef: DocumentReference,
-            @KDocumentId val docId: String
-        )
-
-        data class POJOProject(
-            val name: String? = null,
-            val owner: Owner? = null,
-            @DocumentId val docRef: DocumentReference? = null,
-            @DocumentId val docId: String? = null
-        )
-
-        val ktxProject = KtxProject("foo", Owner("bar"), dummyDocRef, "foo")
-        val pojoProject = POJOProject("foo", Owner("bar"), dummyDocRef, "bar")
-
-        val docRefKotlin = setDataToDocRefWithKotlinMapper(ktxProject)
-        val docRefPOJO = setDataToDocRefWithJavaMapper(pojoProject)
-        val actual = waitFor(docRefKotlin.get()).data
-        val expected = waitFor(docRefPOJO.get()).data
-        assertThat(actual).containsExactlyEntriesIn(expected)
-    }
-
-    @Test
-    fun serverTimestamp_annotated_serialization_is_equivalent() {
-        @Serializable
-        class KtxTimestamp(
-            @Contextual val timestamp0: Timestamp,
-            @Contextual @KServerTimestamp var timestamp1: Timestamp? = null,
-            @Contextual @KServerTimestamp val date: Date? = null
-        )
-
-        class POJOTimestamp(
-            val timestamp0: Timestamp? = null,
-            @ServerTimestamp var timestamp1: Timestamp? = null,
-            @ServerTimestamp val date: Date? = null
-        )
-
-        val docRefKotlin =
-            setDataToDocRefWithKotlinMapper(KtxTimestamp(timestamp0 = Timestamp(Date(100000L))))
-        val docRefPOJO =
-            setDataToDocRefWithJavaMapper(POJOTimestamp(timestamp0 = Timestamp(Date(100000L))))
-
-        // assert each of the fields equals to each other.
-        val expected =
-            waitFor(docRefPOJO.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
-        val actual =
-            waitFor(docRefKotlin.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
-        assertThat(expected?.get("timestamp0")).isEqualTo(actual?.get("timestamp0"))
-
-        // there will be nanosecond level difference between two set methods
-        val expectedTimestampRoundToSeconds = (expected?.get("timestamp0") as Timestamp).seconds
-        val actualTimestampRoundToSeconds = (actual?.get("timestamp0") as Timestamp).seconds
-        assertThat(expectedTimestampRoundToSeconds).isEqualTo(actualTimestampRoundToSeconds)
-
-        val expectedDateRoundToSeconds = (expected?.get("date") as Timestamp).seconds
-        val actualDateRoundToSeconds = (actual?.get("date") as Timestamp).seconds
-        assertThat(expectedDateRoundToSeconds).isEqualTo(actualDateRoundToSeconds)
     }
 }

@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import androidx.annotation.NonNull;
+import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -31,7 +32,8 @@ import java.util.concurrent.TimeUnit;
  * <p>Note: Calling {@link #await()} from a Robolectric test does block the main thread, since those
  * tests are executed on the main thread.
  */
-public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResult> {
+public class TestOnCompleteListener<TResult>
+    implements OnCompleteListener<TResult>, OnCanceledListener {
   private static final long TIMEOUT_MS = 5000;
   private final CountDownLatch latch = new CountDownLatch(1);
   private volatile TResult result;
@@ -49,6 +51,11 @@ public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResu
     latch.countDown();
   }
 
+  @Override
+  public void onCanceled() {
+    latch.countDown();
+  }
+
   /** Blocks until the {@link #onComplete} is called. */
   public TResult await()
       throws InterruptedException, ExecutionException, FirebaseAppDistributionException {
@@ -58,6 +65,9 @@ public class TestOnCompleteListener<TResult> implements OnCompleteListener<TResu
     if (successful) {
       return result;
     } else {
+      if (exception == null) {
+        throw new IllegalStateException("task was canceled");
+      }
       if (exception instanceof InterruptedException) {
         throw (InterruptedException) exception;
       }

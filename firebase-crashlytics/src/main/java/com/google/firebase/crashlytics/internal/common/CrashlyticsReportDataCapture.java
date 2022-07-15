@@ -164,7 +164,7 @@ public class CrashlyticsReportDataCapture {
         .setPlatform(SESSION_ANDROID_PLATFORM)
         .setVersion(VERSION.RELEASE)
         .setBuildVersion(VERSION.CODENAME)
-        .setJailbroken(CommonUtils.isRooted(context))
+        .setJailbroken(CommonUtils.isRooted())
         .build();
   }
 
@@ -174,8 +174,8 @@ public class CrashlyticsReportDataCapture {
     final int availableProcessors = Runtime.getRuntime().availableProcessors();
     final long totalRam = CommonUtils.getTotalRamInBytes();
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
-    final boolean isEmulator = CommonUtils.isEmulator(context);
-    final int state = CommonUtils.getDeviceState(context);
+    final boolean isEmulator = CommonUtils.isEmulator();
+    final int state = CommonUtils.getDeviceState();
     final String manufacturer = Build.MANUFACTURER;
     final String modelClass = Build.PRODUCT;
 

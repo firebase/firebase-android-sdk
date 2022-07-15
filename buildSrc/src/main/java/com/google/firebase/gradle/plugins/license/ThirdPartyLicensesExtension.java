@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.license;
 
+import java.io.File;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
@@ -27,18 +28,25 @@ public class ThirdPartyLicensesExtension {
    * supported
    */
   public void add(String name, String... licenseUris) {
-    customLicenses.add(new CustomLicense(name, licenseUris));
+    customLicenses.add(CustomLicense.buildFromStrings(name, licenseUris));
   }
 
   static class CustomLicense implements Serializable {
     final String name;
-    final List<URI> licenseUris = new ArrayList<>();
+    final List<URI> licenseUris;
 
-    CustomLicense(String name, String[] licenseUris) {
+    CustomLicense(String name, List<URI> licenseUris) {
       this.name = name;
+      this.licenseUris = licenseUris;
+    }
+
+    static CustomLicense buildFromStrings(String name, String[] licenseUris) {
+      List<URI> uris = new ArrayList<>();
       for (String s : licenseUris) {
-        this.licenseUris.add(URI.create(s));
+        File file = new File(s);
+        uris.add(file.toURI());
       }
+      return new CustomLicense(name, uris);
     }
   }
 

@@ -21,15 +21,15 @@ import kotlinx.serialization.serializer
 /**
  * [MapEncoder] implementation for @[Serializable] kotlin classes
  *
- * <p>For the deserialization process, if the target object is [Serializable], this
+ * For the deserialization process, if the target object is @[Serializable], this
  * [MapEncoderKtxImp] can be used by the following Java classes: [DocumentSnapshot],
  * [QueryDocumentSnapshot], and [QuerySnapshot]. For the serialization process, if the source object
- * is [Serializable], this [MapEncoderKtxImp] can be used by the following Java classes:
+ * is @[Serializable], this [MapEncoderKtxImp] can be used by the following Java classes:
  * [DocumentReference], [Transaction] and [WriteBatch].
  */
 class MapEncoderKtxImp : MapEncoder {
-    /** Encodes [Serializable] objects as nested maps of Firestore supported primitive types. */
-    override fun encode(value: Any): MutableMap<String, Any?> {
+    /** Encodes @[Serializable] objects as nested maps of Firestore supported types. */
+    override fun encode(value: Any): Map<String, Any?> {
         val serializer = serializer(value.javaClass)
         return encodeToMap(serializer, value)
     }
@@ -40,8 +40,6 @@ class MapEncoderKtxImp : MapEncoder {
      * @param valueType The class to be encoded from or decoded to.
      * @return True iff the class can be (de)encoded.
      */
-    // TODO: Recursively check each of its fields to make sure none of them contains Java
-    // style annotations: @PropertyName, or @Exclude
     override fun <T : Any?> supports(valueType: Class<T>): Boolean = isSerializable(valueType)
 
     /**

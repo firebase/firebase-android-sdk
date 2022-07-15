@@ -28,14 +28,3 @@ fun documentReference(pathString: String): DocumentReference {
     val documentKey = DocumentKey.fromPathString(pathString)
     return DocumentReference(documentKey, null)
 }
-
-/**
- * Inline function for AssertThrows provides integration of junit's [assertThrows] method and
- * Truth's [assertThat] method for unit and integration test purpose.
- */
-inline fun <reified T : Exception> AssertThrows(
-    crossinline runnable: () -> Any?
-): ThrowableSubject {
-    val exception: T = assertThrows(T::class.java) { runnable() }
-    return assertThat(exception)
-}
