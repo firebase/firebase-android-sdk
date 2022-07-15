@@ -20,7 +20,10 @@ import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlinx.serialization.Serializable
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class FirestoreMapEncoderTests {
 
     @Test

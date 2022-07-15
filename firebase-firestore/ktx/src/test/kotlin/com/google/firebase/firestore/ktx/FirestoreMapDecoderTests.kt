@@ -15,14 +15,28 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import kotlinx.serialization.Serializable
+import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class FirestoreMapDecoderTests {
-    private val firestoreDocument = documentReference("abc/1234")
+
+    companion object {
+        lateinit var firestoreDocument: DocumentReference
+
+        @BeforeClass
+        @JvmStatic
+        fun generateDocRef() {
+            firestoreDocument = documentReference("abc/1234")
+        }
+    }
 
     @Test
     fun `plain custom object decoding is supported`() {
@@ -189,7 +203,7 @@ class FirestoreMapDecoderTests {
         val nonConflictingSetterMap = mutableMapOf("value" to -10L)
         val decodedObj =
             decodeFromMap<NonConflictingSetterSubBean>(nonConflictingSetterMap, firestoreDocument)
-        assertThat(decodedObj.value).isEqualTo(nonConflictingSetterSubBean.value)
+        assertThat(decodedObj?.value).isEqualTo(nonConflictingSetterSubBean.value)
     }
 
     @Test
