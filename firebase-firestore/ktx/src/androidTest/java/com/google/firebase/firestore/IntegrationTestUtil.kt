@@ -57,7 +57,7 @@ val testFirestore: FirebaseFirestore by lazy {
 }
 
 /**
- * Sets custom objects to [DocumentReference] using the default Java POJO Mapper.
+ * Runs a [DocumentReference] method with temporary absence of any [FirebaseFirestore.mapEncoders].
  *
  * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
  * [FirebaseFirestore] at runtime.
