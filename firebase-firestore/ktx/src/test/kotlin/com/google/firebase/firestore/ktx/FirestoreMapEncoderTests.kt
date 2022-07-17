@@ -18,7 +18,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlinx.serialization.Serializable
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -245,9 +244,7 @@ class FirestoreMapEncoderTests {
         val map = mapOf("foo" to "foo", "bar" to 1L)
         val mapObj = GenericObject(map)
         val expectedMapOfMapObj = mutableMapOf("value" to mutableMapOf("foo" to "foo", "bar" to 1L))
-        assertThrows<IllegalArgumentException> {
-                assertTrue(expectedMapOfMapObj == encodeToMap(mapObj))
-            }
+        assertThrows<IllegalArgumentException> { encodeToMap(mapObj) }
             .hasMessageThat()
             .contains("Serializer for class 'Any' is not found")
     }
