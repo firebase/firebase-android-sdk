@@ -19,7 +19,9 @@ import static com.google.firebase.firestore.util.Preconditions.checkArgument;
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
+import com.google.firebase.firestore.encoding.FirestoreNativeDataTypeSerializer;
 import java.util.Date;
+import kotlinx.serialization.Serializable;
 
 /**
  * A Timestamp represents a point in time independent of any time zone or calendar, represented as
@@ -34,6 +36,7 @@ import java.util.Date;
  *     https://github.com/google/protobuf/blob/master/src/google/protobuf/timestamp.proto">The
  *     reference timestamp definition</a>
  */
+@Serializable(with = FirestoreNativeDataTypeSerializer.TimestampSerializer.class)
 public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
   @NonNull

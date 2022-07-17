@@ -16,9 +16,12 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.encoding.FirestoreNativeDataTypeSerializer;
 import com.google.firebase.firestore.util.Util;
+import kotlinx.serialization.Serializable;
 
 /** Immutable class representing a {@code GeoPoint} in Cloud Firestore */
+@Serializable(with = FirestoreNativeDataTypeSerializer.GeoPointSerializer.class)
 public class GeoPoint implements Comparable<GeoPoint> {
   private final double latitude;
   private final double longitude;
