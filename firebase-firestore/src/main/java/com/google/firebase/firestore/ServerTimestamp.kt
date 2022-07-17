@@ -33,4 +33,3 @@ import kotlinx.serialization.SerialInfo
 
 )
 annotation class ServerTimestamp
-

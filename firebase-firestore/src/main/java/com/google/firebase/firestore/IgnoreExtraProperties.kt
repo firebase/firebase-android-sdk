@@ -25,4 +25,3 @@ import kotlinx.serialization.SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
 @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
 annotation class IgnoreExtraProperties
-

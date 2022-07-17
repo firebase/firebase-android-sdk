@@ -45,4 +45,3 @@ import kotlinx.serialization.SerialInfo
     AnnotationTarget.FIELD
 )
 annotation class DocumentId
-
