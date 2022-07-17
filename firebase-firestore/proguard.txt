@@ -18,5 +18,6 @@
 -dontwarn com.google.j2objc.annotations.**
 
 # Kotlin warnings:
--dontwarn org.jetbrains.kotlinx.kotlinx_serialization_core.1.3.2
--dontwarn org.jetbrains.kotlin.kotlin_stdlib_jdk7.$kotlinVersion
+# TODO: Add a test that nothing new gets added to gradle file without updating this list
+-dontwarn kotlinx.serialization.**
+-dontwarn kotlin.**

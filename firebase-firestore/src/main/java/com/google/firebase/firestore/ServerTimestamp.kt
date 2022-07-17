@@ -13,9 +13,9 @@
 // limitations under the License.
 package com.google.firebase.firestore
 
-import kotlinx.serialization.SerialInfo
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
+import kotlinx.serialization.SerialInfo
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO

@@ -13,9 +13,9 @@
 // limitations under the License.
 package com.google.firebase.firestore
 
-import kotlinx.serialization.SerialInfo
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
+import kotlinx.serialization.SerialInfo
 
 /**
  * Annotation used to mark a POJO property to be automatically populated with the document's ID when
