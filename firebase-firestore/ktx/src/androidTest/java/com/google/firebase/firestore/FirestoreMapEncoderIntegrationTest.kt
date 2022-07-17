@@ -15,7 +15,13 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serialization.setData
+import com.google.firebase.firestore.ktx.toObject
+import java.util.Date
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
 
@@ -87,7 +93,7 @@ class FirestoreMapEncoderIntegrationTest {
             )
 
         for (student in studentList) {
-            assertThrows<IllegalArgumentException> { docRefKotlin.setData(student) }
+            testAssertThrows<IllegalArgumentException> { docRefKotlin.set(student) }
                 .hasMessageThat()
                 .contains("not supported, please use")
         }
@@ -239,7 +245,7 @@ class FirestoreMapEncoderIntegrationTest {
             docRefPOJO.set(project)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertThat(expected).containsExactlyEntriesIn(actual)
+            assertThat(actual).containsExactlyEntriesIn(expected)
         }
     }
 
@@ -276,7 +282,124 @@ class FirestoreMapEncoderIntegrationTest {
             docRefPOJO.set(testedObject)
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
-            assertThat(expected).containsExactlyEntriesIn(actual)
+            assertThat(actual).containsExactlyEntriesIn(expected)
+        }
+    }
+
+    @Test
+    fun encoding_DocumentReference_is_supported() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefPOJO = testCollection("pojo").document("456")
+
+        @Serializable data class DocumentIdOnDocRefField(val docId: DocumentReference?)
+
+        val listOfObjects =
+            listOf(
+                DocumentIdOnDocRefField(docId = null),
+                DocumentIdOnDocRefField(docId = docRefKotlin)
+            )
+        for (docRefObject in listOfObjects) {
+            docRefKotlin.set(docRefObject)
+            docRefPOJO.withEmptyMapper { set(docRefObject) }
+            val expected = waitFor(docRefPOJO.get()).data
+            val actual = waitFor(docRefKotlin.get()).data
+            assertThat(actual).containsExactlyEntriesIn(expected)
+        }
+    }
+
+    @Serializable
+    private data class DocumentIdOnStringField(@DocumentId @KDocumentId val docId: String? = null)
+
+    @Serializable
+    private data class DocumentIdOnNestedObjects(
+        val nested: DocumentIdOnStringField = DocumentIdOnStringField()
+    )
+
+    @Test
+    fun documentId_annotation_works_on_nested_object() {
+        val docRefPOJO = testCollection("pojo").document("123")
+        val docRefKotlin = testCollection("ktx").document("123")
+        docRefKotlin.set(DocumentIdOnNestedObjects())
+        docRefPOJO.withEmptyMapper { set(DocumentIdOnNestedObjects()) }
+        val actualMap = waitFor(docRefKotlin.get()).data
+        val expectedMap = waitFor(docRefPOJO.get()).data
+        assertThat(actualMap).containsExactlyEntriesIn(mapOf("nested" to mapOf<String, Any>()))
+        assertThat(actualMap).containsExactlyEntriesIn(expectedMap)
+
+        val actual = waitFor(docRefKotlin.get()).toObject<DocumentIdOnNestedObjects>()
+        val expected = waitFor(docRefPOJO.get()).toObject<DocumentIdOnNestedObjects>()
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun encoding_Timestamp_and_Date_is_supported() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val docRefPOJO = testCollection("pojo").document("456")
+
+        @Serializable
+        class TimestampAndDatePOJO(
+            val timestamp1: Timestamp? = null,
+            @Contextual val timestamp2: Date? = null
+        )
+
+        val listOfObjects =
+            listOf(
+                TimestampAndDatePOJO(null, null),
+                TimestampAndDatePOJO(timestamp1 = Timestamp.now()),
+                TimestampAndDatePOJO(timestamp2 = Date(100L)),
+                TimestampAndDatePOJO(timestamp1 = Timestamp.now(), timestamp2 = Date(100L))
+            )
+
+        for (timeStampObject in listOfObjects) {
+            docRefKotlin.setData(timeStampObject)
+            docRefPOJO.withEmptyMapper { set(timeStampObject) }
+            val actual =
+                waitFor(docRefKotlin.get()).getData(DocumentSnapshot.ServerTimestampBehavior.NONE)
+            val expected =
+                waitFor(docRefPOJO.get()).getData(DocumentSnapshot.ServerTimestampBehavior.NONE)
+            assertThat(actual).containsExactlyEntriesIn(expected)
+        }
+    }
+
+    @Serializable
+    private data class ServerTimestampOnDate(
+        @Contextual @ServerTimestamp @KServerTimestamp val date: Date? = null
+    )
+
+    @Serializable
+    private data class ServerTimestampOnTimestamp(
+        @ServerTimestamp @KServerTimestamp val date: Timestamp? = null
+    )
+
+    @Serializable
+    private data class ServerTimestampOnNestedObjects(
+        val nestedDate: ServerTimestampOnDate = ServerTimestampOnDate(),
+        val nestedTimestamp: ServerTimestampOnTimestamp = ServerTimestampOnTimestamp()
+    )
+
+    @Test
+    fun timestamp_annotation_works_on_nested_object() {
+        val docRefPOJO = testCollection("pojo").document("123")
+        val docRefKotlin = testCollection("ktx").document("123")
+
+        val listOfObjects =
+            listOf(
+                ServerTimestampOnNestedObjects(),
+                ServerTimestampOnNestedObjects(nestedDate = ServerTimestampOnDate(Date(100L))),
+                ServerTimestampOnNestedObjects(
+                    nestedTimestamp = ServerTimestampOnTimestamp(Timestamp.now())
+                ),
+                ServerTimestampOnNestedObjects(
+                    ServerTimestampOnDate(Date(100L)),
+                    ServerTimestampOnTimestamp(Timestamp.now())
+                )
+            )
+        for (timeObject in listOfObjects) {
+            docRefKotlin.set(timeObject)
+            docRefPOJO.withEmptyMapper { set(timeObject) }
+            val actualMap = waitFor(docRefKotlin.get()).data
+            val expectedMap = waitFor(docRefPOJO.get()).data
+            assertThat(actualMap).containsExactlyEntriesIn(expectedMap)
         }
     }
 }

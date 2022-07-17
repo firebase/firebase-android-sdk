@@ -14,13 +14,20 @@
 
 package com.google.firebase.firestore.ktx.serialization
 
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ServerTimestamp
+import com.google.firebase.firestore.encoding.FirestoreAbstractEncoder
+import com.google.firebase.firestore.encoding.FirestoreSerializersModule
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.builtins.LongAsStringSerializer.descriptor
+import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
@@ -47,7 +54,7 @@ private class FirestoreMapEncoder(
     private val descriptor: SerialDescriptor,
     private val depth: Int = 0,
     private val callback: (MutableMap<String, Any?>) -> Unit
-) : AbstractEncoder() {
+) : FirestoreAbstractEncoder, AbstractEncoder() {
 
     /** A map that saves the encoding result. */
     private val encodedMap: MutableMap<String, Any?> = mutableMapOf()
@@ -76,19 +83,61 @@ private class FirestoreMapEncoder(
     private inner class Element(elementIndex: Int = 0) {
         val encodeKey: String = descriptor.getElementName(elementIndex)
         // TODO: Provide elementSerialKind, elementSerialName, and elementAnnotations as properties
+        val elementAnnotations: List<Annotation> = descriptor.getElementAnnotations(elementIndex)
+        val elementSerialName = descriptor.getElementDescriptor(elementIndex).serialName
+        val elementSerialKind = descriptor.getElementDescriptor(elementIndex).kind
     }
 
     /** Get the field name of an enum via index, and encode it. */
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
         encodeValue(enumDescriptor.getElementName(index))
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    override val serializersModule: SerializersModule =
+        FirestoreSerializersModule.getFirestoreSerializersModule()
 
-    override fun encodeNull(): Unit = encodedMap.let { it[Element(index++).encodeKey] = null }
+    /**
+     * Encode the native Firestore datatype objects: [DocumentId], [Timestamp], [Date], and
+     * [GeoPoint].
+     */
+    override fun encodeFirestoreNativeDataType(value: Any): Unit =
+        encodedMap.let {
+            val element: Element = Element(index++)
+            validateAnnotations(element)
+            when {
+                // @DocumentId on DocumentReference, then ignore
+                validateDocumentIdPresentOrThrow(element) -> {}
+                // @ServerTimestamp on Date, Timestamp, then encode as it is.
+                else -> it[element.encodeKey] = value
+            }
+        }
+
+    override fun encodeNull(): Unit =
+        encodedMap.let {
+            val element: Element = Element(index++)
+            validateAnnotations(element)
+            when {
+                // @DocumentId on String?, DocumentReference?, then ignore.
+                validateDocumentIdPresentOrThrow(element) -> {}
+                // @ServerTimestamp on Date?, Timestamp?, then encode as FieldValue.
+                validateServerTimestampPresentOrThrow(element) ->
+                    it[element.encodeKey] = FieldValue.serverTimestamp()
+                else -> it[element.encodeKey] = null
+            }
+        }
 
     // TODO: Handle @DocumentId and @ServerTimestamp annotations from descriptor
     override fun encodeValue(value: Any): Unit =
-        encodedMap.let { it[Element(index++).encodeKey] = value }
+        encodedMap.let {
+            val element: Element = Element(index++)
+            validateAnnotations(element)
+            when {
+                // @DocumentId on String, then ignore.
+                validateDocumentIdPresentOrThrow(element) -> {}
+                // @ServerTimestamp cannot on Primitive types
+                validateServerTimestampPresentOrThrow(element) -> {}
+                else -> it[element.encodeKey] = value
+            }
+        }
 
     override fun endStructure(descriptor: SerialDescriptor) = callback(encodedMap)
 
@@ -105,6 +154,7 @@ private class FirestoreMapEncoder(
             return FirestoreMapEncoder(descriptor, depth = depth + 1) { encodedMap.putAll(it) }
         }
         val currentElement = Element(index++)
+        validateAnnotations(currentElement)
         return when (descriptor.kind) {
             StructureKind.CLASS -> {
                 FirestoreMapEncoder(descriptor, depth = depth + 1) {
@@ -123,6 +173,73 @@ private class FirestoreMapEncoder(
             }
         }
     }
+
+    /**
+     * Returns true if @[DocumentId] is present and applied on a property of String or
+     * DocumentReference; Returns false if @[DocumentId] is absent; Throws runtime exception if @
+     * [DocumentId] is present but applied on a property of an invalid type.
+     */
+    private fun validateDocumentIdPresentOrThrow(currentElement: Element): Boolean {
+        val documentIdPresent = currentElement.elementAnnotations?.any { it is KDocumentId }
+        return if (documentIdPresent) {
+            documentIdAppliedOnValidProperty(currentElement)
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Returns true if the @[DocumentId] is applied on a property of a type [String] or
+     * [DocumentReference]; Otherwise, a runtime exception will be thrown.
+     */
+    private fun documentIdAppliedOnValidProperty(currentElement: Element): Boolean {
+        val regex = Regex("<DocumentReference>|__DocumentReferenceSerializer__")
+        val isDocumentReference =
+            currentElement.elementSerialName?.contains(regex)
+        if (currentElement.elementSerialKind == PrimitiveKind.STRING || isDocumentReference) {
+            return true
+        } else {
+            throw IllegalArgumentException(
+                "Field is annotated with @DocumentId but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of String or DocumentReference."
+            )
+        }
+    }
+
+    /**
+     * Returns true if @[ServerTimestamp] is present and applied on a property of Date or Timestamp;
+     * Returns false if @[ServerTimestamp] is absent; Throws runtime exception if @
+     * [ServerTimestamp] is present but applied on a property of an invalid type.
+     */
+    private fun validateServerTimestampPresentOrThrow(currentElement: Element): Boolean {
+        val serverTimestampPresent = currentElement.elementAnnotations.any { it is KServerTimestamp }
+        return if (serverTimestampPresent) {
+            serverTimestampAppliedOnValidProperty(currentElement)
+        } else {
+            false
+        }
+    }
+
+    /**
+     * Returns true if the @[ServerTimestamp] is applied on a property of a type Date or Timestamp;
+     * Otherwise, a runtime exception will be thrown.
+     */
+    private fun serverTimestampAppliedOnValidProperty(currentElement: Element): Boolean {
+        val regex = Regex("<Timestamp>|__TimestampSerializer__")
+        val isOnTimestamp = currentElement.elementSerialName.contains(regex)
+        val isOnDate = currentElement.elementSerialName.contains("<Date>")
+        if (isOnTimestamp || isOnDate) {
+            return true
+        } else {
+            throw IllegalArgumentException(
+                "Field is annotated with @ServerTimestamp but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of Date or Timestamp."
+            )
+        }
+    }
+
+    private fun validateAnnotations(currentElement: Element) {
+        validateDocumentIdPresentOrThrow(currentElement)
+        validateServerTimestampPresentOrThrow(currentElement)
+    }
 }
 
 /**
@@ -134,7 +251,7 @@ private class FirestoreMapEncoder(
 private class FirestoreListEncoder(
     private val depth: Int = 0,
     private val callback: (MutableList<Any?>) -> Unit
-) : AbstractEncoder() {
+) : FirestoreAbstractEncoder, AbstractEncoder() {
 
     /** A list that saves the encoding result. */
     private val encodedList: MutableList<Any?> = mutableListOf()
@@ -151,11 +268,14 @@ private class FirestoreListEncoder(
         }
     }
 
-    override val serializersModule: SerializersModule = EmptySerializersModule
+    override val serializersModule: SerializersModule =
+        FirestoreSerializersModule.getFirestoreSerializersModule()
 
     override fun encodeValue(value: Any): Unit = encodedList.let { it.add(value) }
 
     override fun encodeNull(): Unit = encodedList.let { it.add(null) }
+
+    override fun encodeFirestoreNativeDataType(value: Any): Unit = encodedList.let { it.add(value) }
 
     override fun endStructure(descriptor: SerialDescriptor) = callback(encodedList)
 
@@ -194,5 +314,4 @@ fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): Map<String,
     return encoder.serializedResult()
 }
 
-inline fun <reified T> encodeToMap(value: T): Map<String, Any?> =
-    encodeToMap(serializer(), value)
+inline fun <reified T> encodeToMap(value: T): Map<String, Any?> = encodeToMap(serializer(), value)

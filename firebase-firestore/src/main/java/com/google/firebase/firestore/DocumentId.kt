@@ -38,7 +38,7 @@ import kotlinx.serialization.SerialInfo
 @SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
 @Target(
-    AnnotationTarget.PROPERTY,
+//    AnnotationTarget.PROPERTY,
     AnnotationTarget.FUNCTION,
     AnnotationTarget.PROPERTY_GETTER,
     AnnotationTarget.PROPERTY_SETTER,

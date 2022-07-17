@@ -16,11 +16,14 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.common.truth.ThrowableSubject
+import com.google.common.truth.Truth
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
+import org.junit.Assert
 
 /**
  * Whether the integration tests should run against a local Firestore emulator or the Production
@@ -100,4 +103,11 @@ fun testDocument(name: String): DocumentReference {
 /** Returns a [DocumentReference] for integration test. */
 fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
+}
+
+inline fun <reified T : Exception> testAssertThrows(
+    crossinline runnable: () -> Any?
+): ThrowableSubject {
+    val exception: T = Assert.assertThrows(T::class.java) { runnable() }
+    return Truth.assertThat(exception)
 }
