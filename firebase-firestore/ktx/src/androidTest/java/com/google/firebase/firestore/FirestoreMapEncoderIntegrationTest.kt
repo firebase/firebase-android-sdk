@@ -16,10 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.serialization.setData
-import com.google.firebase.firestore.testutil.testCollection
-import com.google.firebase.firestore.testutil.waitFor
 import kotlinx.serialization.Serializable
-import org.junit.Assert
 import org.junit.Test
 
 class FirestoreMapEncoderIntegrationTest {
@@ -90,9 +87,7 @@ class FirestoreMapEncoderIntegrationTest {
             )
 
         for (student in studentList) {
-            assertThrows<IllegalArgumentException> {
-                    Assert.assertTrue(docRefKotlin.setData(student))
-                }
+            assertThrows<IllegalArgumentException> { docRefKotlin.setData(student) }
                 .hasMessageThat()
                 .contains("not supported, please use")
         }

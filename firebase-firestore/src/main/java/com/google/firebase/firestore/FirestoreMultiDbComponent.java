@@ -24,11 +24,13 @@ import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /** Multi-resource container for Cloud Firestore. */
 class FirestoreMultiDbComponent
@@ -44,6 +46,7 @@ class FirestoreMultiDbComponent
   private final Context context;
   private final Deferred<InternalAuthProvider> authProvider;
   private final Deferred<InternalAppCheckTokenProvider> appCheckProvider;
+  private final Set<MapEncoder> mapEncoders;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
@@ -51,11 +54,13 @@ class FirestoreMultiDbComponent
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
       @NonNull Deferred<InternalAppCheckTokenProvider> appCheckProvider,
+      @NonNull Set<MapEncoder> mapEncoders,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
+    this.mapEncoders = mapEncoders;
     this.metadataProvider = metadataProvider;
     this.app.addLifecycleEventListener(this);
   }
@@ -67,7 +72,14 @@ class FirestoreMultiDbComponent
     if (firestore == null) {
       firestore =
           FirebaseFirestore.newInstance(
-              context, app, authProvider, appCheckProvider, databaseId, this, metadataProvider);
+              context,
+              app,
+              authProvider,
+              appCheckProvider,
+              databaseId,
+              this,
+              mapEncoders,
+              metadataProvider);
       instances.put(databaseId, firestore);
     }
     return firestore;

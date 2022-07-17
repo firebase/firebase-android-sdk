@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.testutil
+package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.firestore.BuildConfig.USE_EMULATOR_FOR_TESTS
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
@@ -46,7 +42,7 @@ private val settingsWithoutEmulator = firestoreSettings { setHost("firestore.goo
 /**
  * Initializes a [FirebaseFirestore] instance that used for integration test.
  *
- * <p>Note: the Android Emulator treats "10.0.2.2" as its host machine.
+ * Note: the Android Emulator treats "10.0.2.2" as its host machine.
  */
 val testFirestore: FirebaseFirestore by lazy {
     Firebase.firestore.apply {
@@ -58,6 +54,21 @@ val testFirestore: FirebaseFirestore by lazy {
                 settingsWithoutEmulator
             }
     }
+}
+
+/**
+ * Runs a [DocumentReference] method with temporary absence of any [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun DocumentReference.withEmptyMapper(lambda: DocumentReference.() -> Unit) {
+    val currentMapper = firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Kotlin Mapper Obtained at runtime!")
+    firestore.mapEncoders.clear()
+    lambda()
+    firestore.mapEncoders.addAll(currentMapper)
 }
 
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
