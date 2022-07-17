@@ -213,7 +213,8 @@ class FirestoreMapEncoderTests {
 
     @Serializable private data class GenericObject<T>(val value: T)
 
-    @Serializable private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
+    @Serializable
+    private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
 
     @Test
     fun `generic encoding is supported`() {
