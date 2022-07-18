@@ -20,6 +20,7 @@ import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
+import java.util.Collections;
 
 /** Gives access to package private methods in integration tests. */
 public final class AccessHelper {
@@ -43,6 +44,7 @@ public final class AccessHelper {
         asyncQueue,
         firebaseApp,
         instanceRegistry,
+        Collections.emptySet(),
         null);
   }
 
