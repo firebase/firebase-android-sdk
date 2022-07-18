@@ -15,7 +15,10 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class ServerTimestampTests {
     @Test
     fun `KServerTimestamp on wrong types throws`() {

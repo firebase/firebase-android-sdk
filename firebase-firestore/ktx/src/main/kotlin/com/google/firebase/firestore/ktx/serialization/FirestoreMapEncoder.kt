@@ -191,7 +191,7 @@ private class FirestoreMapEncoder(
      * [DocumentReference]; Otherwise, a runtime exception will be thrown.
      */
     private fun documentIdAppliedOnValidProperty(currentElement: Element): Boolean {
-        val regex = Regex("<DocumentReference>|__DocumentReferenceSerializer__")
+        val regex = Regex("<DocumentReference>|__DocumentReferenceSerializer__|<String>")
         val isDocumentReference = currentElement.elementSerialName?.contains(regex)
         if (currentElement.elementSerialKind == PrimitiveKind.STRING || isDocumentReference) {
             return true
