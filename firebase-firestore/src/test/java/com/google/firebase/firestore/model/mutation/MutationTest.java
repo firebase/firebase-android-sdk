@@ -842,6 +842,58 @@ public class MutationTest {
   }
 
   @Test
+  public void testOverlayWithFieldDeletionOfNestedFieldAndParentField() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation patch1 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar.baz", FieldValue.increment(1)));
+    Mutation patch2 =
+        patchMutation(
+            "collection/key",
+            map(
+                "foo",
+                "foo-patched-value",
+                "bar.baz",
+                FieldValue.serverTimestamp(),
+                "a.b.c",
+                FieldValue.increment(1)));
+    Mutation patch3 =
+        patchMutation(
+            "collection/key",
+            map(
+                "foo",
+                "foo-patched-value",
+                "bar.baz",
+                FieldValue.delete(),
+                "a.b.c",
+                FieldValue.delete()));
+    Mutation patch4 =
+        patchMutation(
+            "collection/key",
+            map(
+                "foo",
+                "foo-patched-value",
+                "bar",
+                FieldValue.delete(),
+                "a.b",
+                FieldValue.delete()));
+
+    verifyOverlayRoundTrips(doc, patch1, patch2, patch3, patch4);
+  }
+
+  @Test
+  public void testOverlayWithSameFieldDeletion() {
+    MutableDocument doc = doc("collection/key", 1, map("foo", 1));
+    Mutation patch1 =
+        patchMutation(
+            "collection/key", map("foo", "foo-patched-value", "bar", FieldValue.serverTimestamp()));
+    Mutation patch2 = patchMutation("collection/key", map("bar", FieldValue.delete()));
+    Mutation patch3 = patchMutation("collection/key", map("bar", FieldValue.delete()));
+
+    verifyOverlayRoundTrips(doc, patch1, patch2, patch3);
+  }
+
+  @Test
   public void testOverlayCreatedFromSetToEmptyWithMerge() {
     MutableDocument doc = deletedDoc("collection/key", 1);
     Mutation merge = mergeMutation("collection/key", map(), Arrays.asList());
@@ -1037,7 +1089,7 @@ public class MutationTest {
     MutableDocument docForOverlay = doc.mutableCopy();
     Timestamp now = Timestamp.now();
 
-    FieldMask mask = null;
+    FieldMask mask = FieldMask.EMPTY;
     for (Mutation m : mutations) {
       mask = m.applyToLocalView(docForMutations, mask, now);
     }

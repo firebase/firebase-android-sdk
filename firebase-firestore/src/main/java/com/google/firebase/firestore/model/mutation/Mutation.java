@@ -89,7 +89,7 @@ public abstract class Mutation {
    */
   @Nullable
   public static Mutation calculateOverlayMutation(MutableDocument doc, @Nullable FieldMask mask) {
-    if ((!doc.hasLocalMutations()) || (mask != null && mask.getMask().isEmpty())) {
+    if (!doc.hasLocalMutations()) {
       return null;
     }
 
