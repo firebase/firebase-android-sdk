@@ -23,27 +23,29 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.ExponentialBackoff;
 
-public class OnlineQueryRunner {
-  private AsyncQueue asyncQueue;
-  private RemoteStore remoteStore;
+public final class OnlineQueryRunner {
+  private final AsyncQueue asyncQueue;
+  private final RemoteStore remoteStore;
 
-  private int attemptsRemaining = 1;
+  private int attemptsRemaining;
 
-  private ExponentialBackoff backoff;
-  private TaskCompletionSource<Long> taskSource = new TaskCompletionSource<>();
+  private final ExponentialBackoff backoff;
 
-  public OnlineQueryRunner(AsyncQueue asyncQueue, RemoteStore remoteStore) {
+  public OnlineQueryRunner(
+      Query query, AsyncQueue asyncQueue, RemoteStore remoteStore, int maxAttempts) {
     backoff = new ExponentialBackoff(asyncQueue, AsyncQueue.TimerId.RETRY_ONLINE_QUERY);
     this.asyncQueue = asyncQueue;
     this.remoteStore = remoteStore;
+    this.attemptsRemaining = maxAttempts;
   }
 
   public Task<Long> runCountQuery(Query query) {
-    runWithBackoff(query);
+    TaskCompletionSource<Long> taskSource = new TaskCompletionSource<>();
+    runWithBackoff(query, taskSource);
     return taskSource.getTask();
   }
 
-  private void runWithBackoff(Query query) {
+  private void runWithBackoff(Query query, TaskCompletionSource<Long> taskSource) {
     attemptsRemaining -= 1;
     backoff.backoffAndRun(
         () -> {
@@ -56,15 +58,15 @@ public class OnlineQueryRunner {
                         if (task.isSuccessful()) {
                           taskSource.setResult(task.getResult());
                         } else {
-                          handleError(task, query);
+                          handleError(task, query, taskSource);
                         }
                       });
         });
   }
 
-  private void handleError(Task<Long> result, Query query) {
+  private void handleError(Task<Long> result, Query query, TaskCompletionSource<Long> taskSource) {
     if (attemptsRemaining > 0 && isRetryableBackendError(result.getException())) {
-      runWithBackoff(query);
+      runWithBackoff(query, taskSource);
     } else {
       taskSource.setException(result.getException());
     }

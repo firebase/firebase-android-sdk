@@ -14,26 +14,21 @@
 
 package com.google.firebase.firestore;
 
-import androidx.annotation.NonNull;
+import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 
-/**
- * Represents which field to aggregate on for a {@link AggregateQuery}, and what type of
- * aggregations to perform.
- */
-abstract class AggregateField {
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
-  private AggregateField() {}
+@RunWith(RobolectricTestRunner.class)
+@Config(manifest = Config.NONE)
+public class AggregateQueryTest {
 
-  /**
-   * Returns a {@link CountAggregateField} which counts the number of documents matching the {@link
-   * AggregateQuery}.
-   */
-  @NonNull
-  public static CountAggregateField count() {
-    return new CountAggregateField();
-  }
-
-  static final class CountAggregateField extends AggregateField {
-    CountAggregateField() {}
+  @Test
+  public void testSourceMustNotBeNull() {
+    assertThrows(
+        NullPointerException.class,
+        () -> TestUtil.collectionReference("foo/bar/baz").count().get(null));
   }
 }

@@ -237,10 +237,10 @@ public final class FirestoreClient {
         () -> syncEngine.transaction(asyncQueue, options, updateFunction));
   }
 
-  public Task<Long> runCountQuery(Query query) {
+  public Task<Long> runCountQuery(Query query, int maxAttempts) {
     this.verifyNotTerminated();
     return AsyncQueue.callTask(
-        asyncQueue.getExecutor(), () -> syncEngine.runCountQuery(asyncQueue, query));
+        asyncQueue.getExecutor(), () -> syncEngine.runCountQuery(asyncQueue, query, maxAttempts));
   }
 
   /**

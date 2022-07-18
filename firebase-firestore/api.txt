@@ -19,7 +19,7 @@ package com.google.firebase {
 
 package com.google.firebase.firestore {
 
-  public final class AggregateQuery {
+  public class AggregateQuery {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.AggregateQuerySnapshot> get(@NonNull com.google.firebase.firestore.AggregateSource);
     method @NonNull public com.google.firebase.firestore.Query getQuery();
   }

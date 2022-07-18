@@ -15,15 +15,21 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.Preconditions;
 
 /**
  * A {@code AggregateQuery} computes some aggregation statistics from the result set of a base
  * {@link Query}.
+ *
+ * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
+ * in test mocks. Subclassing is not supported in production code and new SDK releases may break
+ * code that does so.
  */
-public final class AggregateQuery {
+public class AggregateQuery {
 
   // The base query.
   private final Query query;
@@ -49,11 +55,17 @@ public final class AggregateQuery {
    */
   @NonNull
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
+    return get(source, 1);
+  }
+
+  @VisibleForTesting
+  Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source, int maxAttempts) {
+    Preconditions.checkNotNull(source, "AggregateSource must not be null");
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
     query
         .firestore
         .getClient()
-        .runCountQuery(query.query)
+        .runCountQuery(query.query, maxAttempts)
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             (task) -> {
@@ -71,7 +83,7 @@ public final class AggregateQuery {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (o == null || !(o instanceof AggregateQuery)) return false;
     AggregateQuery that = (AggregateQuery) o;
     return query.equals(that.query);
   }
