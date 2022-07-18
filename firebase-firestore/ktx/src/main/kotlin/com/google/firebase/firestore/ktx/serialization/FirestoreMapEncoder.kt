@@ -131,10 +131,8 @@ private class FirestoreMapEncoder(
             val element: Element = Element(index++)
             validateAnnotations(element)
             when {
-                // @DocumentId on String, then ignore.
+                // @DocumentId on String, then ignore, @ServerTimestamp cannot on Primitive types
                 validateDocumentIdPresentOrThrow(element) -> {}
-                // @ServerTimestamp cannot on Primitive types
-                validateServerTimestampPresentOrThrow(element) -> {}
                 else -> it[element.encodeKey] = value
             }
         }
@@ -194,8 +192,7 @@ private class FirestoreMapEncoder(
      */
     private fun documentIdAppliedOnValidProperty(currentElement: Element): Boolean {
         val regex = Regex("<DocumentReference>|__DocumentReferenceSerializer__")
-        val isDocumentReference =
-            currentElement.elementSerialName?.contains(regex)
+        val isDocumentReference = currentElement.elementSerialName?.contains(regex)
         if (currentElement.elementSerialKind == PrimitiveKind.STRING || isDocumentReference) {
             return true
         } else {
@@ -211,7 +208,8 @@ private class FirestoreMapEncoder(
      * [ServerTimestamp] is present but applied on a property of an invalid type.
      */
     private fun validateServerTimestampPresentOrThrow(currentElement: Element): Boolean {
-        val serverTimestampPresent = currentElement.elementAnnotations.any { it is KServerTimestamp }
+        val serverTimestampPresent =
+            currentElement.elementAnnotations.any { it is KServerTimestamp }
         return if (serverTimestampPresent) {
             serverTimestampAppliedOnValidProperty(currentElement)
         } else {
