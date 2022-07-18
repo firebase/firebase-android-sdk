@@ -250,16 +250,16 @@ public class ConfigFetchHttpClient {
   }
 
   private String getFetchUrl(String projectNumber, String namespace) {
-    String fetchRegexUrl = FETCH_REGEX_URL;
     if (emulatedServiceSettings != null) {
-      fetchRegexUrl =
-          "http://"
+      return "http://"
               + emulatedServiceSettings.getHost()
               + ":"
               + emulatedServiceSettings.getPort()
-              + "/v1/projects/%s/namespaces/%s:fetch";
+              + "/v1/projects/" + projectNumber
+              + "/namespaces/" + namespace
+              + ":fetch";
     }
-    return String.format(fetchRegexUrl, projectNumber, namespace);
+    return String.format(FETCH_REGEX_URL, projectNumber, namespace);
   }
 
   private void setCommonRequestHeaders(
