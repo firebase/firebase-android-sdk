@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder as FireDecoder
 import com.google.firebase.firestore.encoding.FirestoreSerializersModule
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
@@ -213,15 +214,23 @@ private class FirestoreMapDecoder(val nestedMap: Map<String, Any?>, docRef: Docu
      * @param descriptor The [SerialDescriptor] of the [Serializable] object.
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
-        val elementName = decodeNameList[elementIndex]
-        elementIndex++
-        elementDataType =
-            descriptor.getElementDescriptor(descriptor.getElementIndex(elementName)).kind
-        return descriptor.getElementIndex(elementName)
-        // TODO: To support annotation @IgnoreOnExtraProperties, loop this method
-        // to next element which descriptor.getElementIndex() does not return
-        // [CompositeDecoder.UNKNOWN_NAME]
+        val isThrowOnExtraProperties: Boolean =
+            descriptor.annotations.any { it is ThrowOnExtraProperties }
+        while (true) {
+            if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
+            val elementName = decodeNameList[elementIndex]
+            val elementDescriptorIndex = descriptor.getElementIndex(elementName)
+            elementIndex++
+            if (elementDescriptorIndex != CompositeDecoder.UNKNOWN_NAME) {
+                elementDataType = descriptor.getElementDescriptor(elementDescriptorIndex).kind
+                return elementDescriptorIndex
+            }
+            if (elementDescriptorIndex == CompositeDecoder.UNKNOWN_NAME && isThrowOnExtraProperties) {
+                throw IllegalArgumentException(
+                    "Can not match $elementName to any properties inside of Object: ${descriptor.serialName}"
+                )
+            }
+        }
     }
 }
 

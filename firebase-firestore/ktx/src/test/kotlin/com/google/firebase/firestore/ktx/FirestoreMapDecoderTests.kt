@@ -18,6 +18,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.IgnoreExtraProperties
+import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
@@ -257,5 +259,48 @@ class FirestoreMapDecoderTests {
         val docRefMap = mapOf("value1" to Timestamp(date), "value2" to Timestamp(date))
         val decodedObj = decodeFromMap<TimeObject>(docRefMap, firestoreDocument)
         assertThat(decodedObj).isEqualTo(timeObject)
+    }
+
+    @Test
+    fun `ignoreOnExtraProperties is the default behavior during decoding`() {
+        @Serializable data class ExtraPropertiesObj(val str: String = "123")
+        val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
+        val decodedObj = decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument)
+        assertThat(decodedObj).isEqualTo(ExtraPropertiesObj())
+    }
+
+    @Test
+    fun `ignoreOnExtraProperties works for object with no-argument constructor during decoding`() {
+        @Serializable @IgnoreExtraProperties data class ExtraPropertiesObj(val str: String = "123")
+        val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
+        val decodedObj = decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument)
+        assertThat(decodedObj).isEqualTo(ExtraPropertiesObj())
+    }
+
+    @Test
+    fun `throwOnExtraProperties works for object with no-argument constructor during decoding`() {
+        @Serializable @ThrowOnExtraProperties data class ExtraPropertiesObj(val str: String = "123")
+        val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
+        assertThrows<Exception> { decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument) }
+            .hasMessageThat()
+            .contains("Can not match")
+    }
+
+    @Test
+    fun `ignoreOnExtraProperties without default constructor should throw anyways`() {
+        @Serializable @IgnoreExtraProperties data class ExtraPropertiesObj(val str: String)
+        val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
+        assertThrows<Exception> { decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument) }
+            .hasMessageThat()
+            .contains("but it was missing")
+    }
+
+    @Test
+    fun `throwOnExtraProperties works for object without default constructor`() {
+        @Serializable @ThrowOnExtraProperties data class ExtraPropertiesObj(val str: String)
+        val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
+        assertThrows<Exception> { decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument) }
+            .hasMessageThat()
+            .contains("Can not match")
     }
 }

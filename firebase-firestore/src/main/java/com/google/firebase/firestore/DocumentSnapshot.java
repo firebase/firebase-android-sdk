@@ -113,12 +113,6 @@ public class DocumentSnapshot {
     return metadata;
   }
 
-  /** Gets the Cloud Firestore instance associated with this document snapshot. */
-  @NonNull
-  public FirebaseFirestore getFirestore() {
-    return firestore;
-  }
-
   /** @return true if the document existed in this snapshot. */
   public boolean exists() {
     return doc != null;

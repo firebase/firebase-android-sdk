@@ -82,12 +82,12 @@ fun DocumentReference.withoutCustomMappers(lambda: DocumentReference.() -> Unit)
  * [FirebaseFirestore] at runtime.
  */
 fun DocumentSnapshot.withoutCustomMappers(lambda: DocumentSnapshot.() -> Any?): Any? {
-    val currentMapper = firestore.mapEncoders.toSet()
+    val currentMapper = reference.firestore.mapEncoders.toSet()
     if (currentMapper.isEmpty())
         throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
-    firestore.mapEncoders.clear()
+    reference.firestore.mapEncoders.clear()
     val result = lambda()
-    firestore.mapEncoders.addAll(currentMapper)
+    reference.firestore.mapEncoders.addAll(currentMapper)
     return result
 }
 
