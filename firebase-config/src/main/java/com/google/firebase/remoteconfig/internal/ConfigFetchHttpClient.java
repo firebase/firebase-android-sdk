@@ -252,12 +252,14 @@ public class ConfigFetchHttpClient {
   private String getFetchUrl(String projectNumber, String namespace) {
     if (emulatedServiceSettings != null) {
       return "http://"
-              + emulatedServiceSettings.getHost()
-              + ":"
-              + emulatedServiceSettings.getPort()
-              + "/v1/projects/" + projectNumber
-              + "/namespaces/" + namespace
-              + ":fetch";
+          + emulatedServiceSettings.getHost()
+          + ":"
+          + emulatedServiceSettings.getPort()
+          + "/v1/projects/"
+          + projectNumber
+          + "/namespaces/"
+          + namespace
+          + ":fetch";
     }
     return String.format(FETCH_REGEX_URL, projectNumber, namespace);
   }
