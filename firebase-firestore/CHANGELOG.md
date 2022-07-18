@@ -3,8 +3,7 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # Unreleased
-- [feature] Add COUNT queries that go to server directly for the result, without applying local
-  documents and mutations.
+- [fixed] Fixed an issue `waitForPendingWrites()` could lead to NullPointerException.
 
 # 24.2.0
 - [feature] Added `TransactionOptions` to control how many times a transaction

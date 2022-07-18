@@ -54,6 +54,7 @@ public class ScreenshotTakerTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    FirebaseApp.clearInstancesForTest();
 
     firebaseApp =
         FirebaseApp.initializeApp(
