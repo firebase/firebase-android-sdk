@@ -16,14 +16,11 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.common.truth.ThrowableSubject
-import com.google.common.truth.Truth
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
-import org.junit.Assert
 
 /**
  * Whether the integration tests should run against a local Firestore emulator or the Production
@@ -122,9 +119,20 @@ fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
 }
 
-inline fun <reified T : Exception> testAssertThrows(
-    crossinline runnable: () -> Any?
-): ThrowableSubject {
-    val exception: T = Assert.assertThrows(T::class.java) { runnable() }
-    return Truth.assertThat(exception)
-}
+
+/**
+ * Uncomment the code below to see the Compile time IDE Error: "Conflicting overloads Error".
+ *
+ * The reason for this error is I already have this method name defined in my unit test direcotry,
+ * since the package name: "package com.google.firebase.firestore" are the same, so IDE thought I
+ * used the same method name twice.
+ */
+
+
+
+// inline fun <reified T : Exception> assertThrows(
+//    crossinline runnable: () -> Any?
+// ): ThrowableSubject {
+//    val exception: T = Assert.assertThrows(T::class.java) { runnable() }
+//    return Truth.assertThat(exception)
+// }

@@ -49,13 +49,13 @@ class IgnoreOnExtraPropertiesTest {
         docRefKtx.set(Mouse())
         docRefPOJO.withoutCustomMappers { set(Mouse()) }
 
-        testAssertThrows<Exception> { waitFor(docRefKtx.get()).toObject<Elephant>() }
+        assertThrows<Exception> { waitFor(docRefKtx.get()).toObject<Elephant>() }
             .hasMessageThat()
             .contains("Can not match")
 
-        testAssertThrows<Exception> {
-                waitFor(docRefPOJO.get()).withoutCustomMappers { toObject<Elephant>() }
-            }
+        assertThrows<Exception> {
+            waitFor(docRefPOJO.get()).withoutCustomMappers { toObject<Elephant>() }
+        }
             .hasMessageThat()
             .contains("No setter/field for")
     }

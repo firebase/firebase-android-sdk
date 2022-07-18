@@ -93,7 +93,15 @@ class FirestoreMapEncoderIntegrationTest {
             )
 
         for (student in studentList) {
-            testAssertThrows<IllegalArgumentException> { docRefKotlin.set(student) }
+            /**
+             * At compile time, this assertThrow shows no error, and if I hold control and click the
+             * "assertThrows" method name, IDE bring me to the unit test testUtil file.
+             *
+             * But at runtime, this method will generate a "Unresolved reference: assertThrows"
+             * error as at runtime, files in integration test cannot see unit test test util (unit
+             * test files cannot see integration test testutil neither).
+             */
+            assertThrows<IllegalArgumentException> { docRefKotlin.set(student) }
                 .hasMessageThat()
                 .contains("not supported, please use")
         }
