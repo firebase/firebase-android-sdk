@@ -29,7 +29,7 @@ import java.util.Map;
 public interface MapEncoder {
 
   /**
-   * Encodes a object to a nested map of Firestore supported types.
+   * Encodes objects to nested maps of Firestore supported types.
    *
    * @param value An object need to be encoded.
    * @return A nested map of Firestore supported types.
