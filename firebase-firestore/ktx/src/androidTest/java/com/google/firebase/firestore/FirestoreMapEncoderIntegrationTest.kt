@@ -300,7 +300,7 @@ class FirestoreMapEncoderIntegrationTest {
             )
         for (docRefObject in listOfObjects) {
             docRefKotlin.set(docRefObject)
-            docRefPOJO.withEmptyMapper { set(docRefObject) }
+            docRefPOJO.withoutCustomMappers { set(docRefObject) }
             val expected = waitFor(docRefPOJO.get()).data
             val actual = waitFor(docRefKotlin.get()).data
             assertThat(actual).containsExactlyEntriesIn(expected)
@@ -320,7 +320,7 @@ class FirestoreMapEncoderIntegrationTest {
         val docRefPOJO = testCollection("pojo").document("123")
         val docRefKotlin = testCollection("ktx").document("123")
         docRefKotlin.set(DocumentIdOnNestedObjects())
-        docRefPOJO.withEmptyMapper { set(DocumentIdOnNestedObjects()) }
+        docRefPOJO.withoutCustomMappers { set(DocumentIdOnNestedObjects()) }
         val actualMap = waitFor(docRefKotlin.get()).data
         val expectedMap = waitFor(docRefPOJO.get()).data
         assertThat(actualMap).containsExactlyEntriesIn(mapOf("nested" to mapOf<String, Any>()))
@@ -352,7 +352,7 @@ class FirestoreMapEncoderIntegrationTest {
 
         for (timeStampObject in listOfObjects) {
             docRefKotlin.setData(timeStampObject)
-            docRefPOJO.withEmptyMapper { set(timeStampObject) }
+            docRefPOJO.withoutCustomMappers { set(timeStampObject) }
             val actual =
                 waitFor(docRefKotlin.get()).getData(DocumentSnapshot.ServerTimestampBehavior.NONE)
             val expected =
@@ -396,7 +396,7 @@ class FirestoreMapEncoderIntegrationTest {
             )
         for (timeObject in listOfObjects) {
             docRefKotlin.set(timeObject)
-            docRefPOJO.withEmptyMapper { set(timeObject) }
+            docRefPOJO.withoutCustomMappers { set(timeObject) }
             val actualMap = waitFor(docRefKotlin.get()).data
             val expectedMap = waitFor(docRefPOJO.get()).data
             assertThat(actualMap).containsExactlyEntriesIn(expectedMap)
