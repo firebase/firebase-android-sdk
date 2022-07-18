@@ -44,7 +44,7 @@ class DocumentIdIntegrationTests {
             val actual =
                 waitFor(docRefKotlin.get()).toObject<DocumentIdOnDocRefFieldWithAnnotation>()
             val expected =
-                waitFor(docRefKotlin.get()).withEmptyMapper {
+                waitFor(docRefKotlin.get()).withoutCustomMappers {
                     toObject<DocumentIdOnDocRefFieldWithAnnotation>()
                 }
             assertThat(actual).isEqualTo(expected)
@@ -63,14 +63,14 @@ class DocumentIdIntegrationTests {
         docRefKotlin.set(docRefObject)
         val actual = waitFor(docRefKotlin.get()).data
 
-        docRefKotlin.withEmptyMapper { set(docRefObject) }
+        docRefKotlin.withoutCustomMappers { set(docRefObject) }
         val expected = waitFor(docRefKotlin.get()).data
 
         // encoding are the same
         assertThat(actual).containsExactlyEntriesIn(expected)
 
         val expectedObj =
-            waitFor(docRefKotlin.get()).withEmptyMapper { toObject<DocumentIdOnDocRefField>() }
+            waitFor(docRefKotlin.get()).withoutCustomMappers { toObject<DocumentIdOnDocRefField>() }
         val actualObj = waitFor(docRefKotlin.get()).toObject<DocumentIdOnDocRefField>()
         // decoding are the same
         assertThat(actualObj).isEqualTo(expectedObj)
@@ -91,9 +91,9 @@ class DocumentIdIntegrationTests {
         val docRefPOJO = testCollection("pojo").document("java_kxt_same_docRef_str")
         val docRefKotlin = testCollection("ktx").document("java_kxt_same_docRef_str")
         docRefKotlin.set(DocumentIdOnNestedObjects())
-        docRefPOJO.withEmptyMapper { set(DocumentIdOnNestedObjects()) }
+        docRefPOJO.withoutCustomMappers { set(DocumentIdOnNestedObjects()) }
         val expected =
-            waitFor(docRefPOJO.get()).withEmptyMapper { toObject<DocumentIdOnNestedObjects>() }
+            waitFor(docRefPOJO.get()).withoutCustomMappers { toObject<DocumentIdOnNestedObjects>() }
         val actual = waitFor(docRefKotlin.get()).toObject<DocumentIdOnNestedObjects>()
         assertThat(actual).isEqualTo(expected)
     }

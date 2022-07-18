@@ -68,7 +68,7 @@ val testFirestore: FirebaseFirestore by lazy {
 fun DocumentReference.withoutCustomMappers(lambda: DocumentReference.() -> Unit) {
     val currentMapper = firestore.mapEncoders.toSet()
     if (currentMapper.isEmpty())
-        throw IllegalArgumentException("No Registered Custom Mapper Obtained at runtime!")
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
     firestore.mapEncoders.clear()
     lambda()
     firestore.mapEncoders.addAll(currentMapper)
@@ -81,10 +81,10 @@ fun DocumentReference.withoutCustomMappers(lambda: DocumentReference.() -> Unit)
  * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
  * [FirebaseFirestore] at runtime.
  */
-fun DocumentSnapshot.withEmptyMapper(lambda: DocumentSnapshot.() -> Any?): Any? {
+fun DocumentSnapshot.withoutCustomMappers(lambda: DocumentSnapshot.() -> Any?): Any? {
     val currentMapper = firestore.mapEncoders.toSet()
     if (currentMapper.isEmpty())
-        throw IllegalArgumentException("No Registered Kotlin Mapper Obtained at runtime!")
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
     firestore.mapEncoders.clear()
     val result = lambda()
     firestore.mapEncoders.addAll(currentMapper)

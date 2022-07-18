@@ -50,9 +50,9 @@ class ServerTimestampIntegrationTests {
         val timestampPOJO = TimestampPOJO()
 
         docRefKotlin.set(timestampPOJO)
-        docRefPOJO.withEmptyMapper { set(timestampPOJO) }
+        docRefPOJO.withoutCustomMappers { set(timestampPOJO) }
         val expected =
-            waitFor(docRefPOJO.get()).withEmptyMapper {
+            waitFor(docRefPOJO.get()).withoutCustomMappers {
                 toObject<TimestampPOJO>(ServerTimestampBehavior.ESTIMATE)
             } as TimestampPOJO
         val actual =
