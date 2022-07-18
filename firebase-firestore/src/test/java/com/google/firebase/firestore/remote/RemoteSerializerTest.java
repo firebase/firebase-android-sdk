@@ -702,8 +702,7 @@ public final class RemoteSerializerTest {
                 Filter.newBuilder()
                     .setCompositeFilter(
                         StructuredQuery.CompositeFilter.newBuilder()
-                            // TODO(orquery): Replace with Operator.OR once it's available.
-                            .setOp(CompositeFilter.Operator.OPERATOR_UNSPECIFIED)
+                            .setOp(CompositeFilter.Operator.OR)
                             .addFilters(
                                 Filter.newBuilder()
                                     .setFieldFilter(

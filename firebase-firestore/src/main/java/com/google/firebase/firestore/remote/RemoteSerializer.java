@@ -701,8 +701,7 @@ public final class RemoteSerializer {
       case AND:
         return StructuredQuery.CompositeFilter.Operator.AND;
       case OR:
-        // TODO(orquery): Use OPERATOR_OR once it's available.
-        return StructuredQuery.CompositeFilter.Operator.OPERATOR_UNSPECIFIED;
+        return StructuredQuery.CompositeFilter.Operator.OR;
       default:
         throw fail("Unrecognized composite filter type.");
     }
@@ -713,8 +712,7 @@ public final class RemoteSerializer {
     switch (op) {
       case AND:
         return com.google.firebase.firestore.core.CompositeFilter.Operator.AND;
-        // TODO(orquery): Use OPERATOR_OR once it's available.
-      case OPERATOR_UNSPECIFIED:
+      case OR:
         return com.google.firebase.firestore.core.CompositeFilter.Operator.OR;
       default:
         throw fail("Only AND and OR composite filter types are supported.");
