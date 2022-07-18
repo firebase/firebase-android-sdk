@@ -74,6 +74,23 @@ fun DocumentReference.withEmptyMapper(lambda: DocumentReference.() -> Unit) {
     firestore.mapEncoders.addAll(currentMapper)
 }
 
+/**
+ * Runs a [DocumentSnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun DocumentSnapshot.withEmptyMapper(lambda: DocumentSnapshot.() -> Any?): Any? {
+    val currentMapper = firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Kotlin Mapper Obtained at runtime!")
+    firestore.mapEncoders.clear()
+    val result = lambda()
+    firestore.mapEncoders.addAll(currentMapper)
+    return result
+}
+
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)
 }

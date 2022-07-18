@@ -22,12 +22,28 @@ import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class DocumentIdTests {
+
+    companion object {
+        lateinit var firestoreDocument: DocumentReference
+
+        @BeforeClass
+        @JvmStatic
+        fun generateDocRef() {
+            firestoreDocument = documentReference("abc/1234")
+        }
+    }
 
     @Test
     fun `KDocumentId on wrong types throws`() {
@@ -214,5 +230,44 @@ class DocumentIdTests {
         val actualMapOfInheritedObject = encodeToMap(inheritedObject)
         assertThat(actualMapOfInheritedObject)
             .containsExactlyEntriesIn(mutableMapOf<String, Any>("AnotherProperty" to 0))
+    }
+
+    @Test
+    fun `non_null value fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @KDocumentId val doc: DocumentReference,
+            @KDocumentId val docStr: String
+        )
+
+        val map = encodeToMap(DocRefObject(firestoreDocument, "foobar"))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
+    }
+
+    @Test
+    fun `null value fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @KDocumentId val doc: DocumentReference?,
+            @KDocumentId val docStr: String?
+        )
+
+        val map = encodeToMap(DocRefObject(null, null))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
+    }
+
+    @Test
+    fun `null value contextual fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @Contextual @KDocumentId val doc: DocumentReference?,
+            @Contextual @KDocumentId val docStr: String?
+        )
+
+        val map = encodeToMap(DocRefObject(firestoreDocument, "foobar"))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
     }
 }

@@ -27,7 +27,10 @@ import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class JavaLibKtxSupportTests {
 
     @Test

@@ -15,10 +15,14 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
+import java.util.Date
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.BeforeClass
 import org.junit.Test
@@ -222,5 +226,36 @@ class FirestoreMapDecoderTests {
         val floatAsDoubleMap = mapOf("gpa" to 4.95)
         val decodedObj = decodeFromMap<Student>(floatAsDoubleMap, firestoreDocument)
         assertThat(decodedObj).isEqualTo(Student(4.95F))
+    }
+
+    @Test
+    fun `geoPoint value in map can be decoded`() {
+        @Serializable data class GeoPointObject(val value: GeoPoint)
+
+        val geoPoint = GeoPointObject(GeoPoint(1.0, 2.0))
+        val geoPointMap = mapOf("value" to GeoPoint(1.0, 2.0))
+        val decodedObj = decodeFromMap<GeoPointObject>(geoPointMap, firestoreDocument)
+        assertThat(decodedObj).isEqualTo(geoPoint)
+    }
+
+    @Test
+    fun `documentRef value in map can be decoded`() {
+        @Serializable data class DocRefObject(val value: DocumentReference)
+
+        val docRef = DocRefObject(firestoreDocument)
+        val docRefMap = mapOf("value" to firestoreDocument)
+        val decodedObj = decodeFromMap<DocRefObject>(docRefMap, firestoreDocument)
+        assertThat(decodedObj).isEqualTo(docRef)
+    }
+
+    @Test
+    fun `timeStamp value in map can be decoded as timeStamp and date`() {
+        @Serializable data class TimeObject(val value1: Timestamp, @Contextual val value2: Date)
+
+        val date = Date(123581321L)
+        val timeObject = TimeObject(Timestamp(date), date)
+        val docRefMap = mapOf("value1" to Timestamp(date), "value2" to Timestamp(date))
+        val decodedObj = decodeFromMap<TimeObject>(docRefMap, firestoreDocument)
+        assertThat(decodedObj).isEqualTo(timeObject)
     }
 }

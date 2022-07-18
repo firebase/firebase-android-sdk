@@ -15,6 +15,9 @@
 package com.google.firebase.firestore.ktx.serialization
 
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder as FireDecoder
+import com.google.firebase.firestore.encoding.FirestoreSerializersModule
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder.Constants.START_INDEX
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -25,7 +28,6 @@ import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
@@ -43,7 +45,7 @@ import kotlinx.serialization.serializer
 private abstract class FirestoreAbstractDecoder(
     private val nestedObject: Any,
     private val docRef: DocumentReference
-) : AbstractDecoder() {
+) : FireDecoder, AbstractDecoder() {
 
     object Constants {
         const val START_INDEX = 0
@@ -103,13 +105,19 @@ private abstract class FirestoreAbstractDecoder(
                 "Got a null value while trying to decode a not null field."
             )
 
-    final override val serializersModule: SerializersModule = EmptySerializersModule
+    final override val serializersModule: SerializersModule =
+        FirestoreSerializersModule.getFirestoreSerializersModule()
+
+    override fun decodeFirestoreNativeDataType(): Any = decodedElementNotNullOrThrow()
 
     final override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         val innerObject = getCompositeObject(elementIndex)
         when (descriptor.kind) {
             is StructureKind.CLASS -> {
-                val innerMap = innerObject as Map<String, Any?>
+                val innerMap =
+                    (innerObject as Map<String, Any?>).run {
+                        replaceKDocumentIdFieldWithCurrentDocRef(descriptor, docRef)
+                    }
                 return FirestoreMapDecoder(innerMap, docRef)
             }
             is StructureKind.LIST -> {
@@ -135,6 +143,34 @@ private abstract class FirestoreAbstractDecoder(
     }
 }
 
+/** replaces the @[DocumentId] annotated field with [DocumentReference] value. */
+private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
+    descriptor: SerialDescriptor,
+    docRef: DocumentReference
+): MutableMap<String, Any?> =
+    this.toMutableMap().apply {
+        for (propertyName in descriptor.elementNames) {
+            val propertyIndex: Int = descriptor.getElementIndex(propertyName)
+            val annotationsOnProperty: List<Annotation> =
+                descriptor.getElementAnnotations(propertyIndex)
+            if (annotationsOnProperty.any { it is KDocumentId }) {
+                val propertyDescriptor = descriptor.getElementDescriptor(propertyIndex)
+                val propertyType: SerialKind = propertyDescriptor.kind
+                val propertySerialName: String = propertyDescriptor.serialName
+                val docRefRegex = Regex("<DocumentReference>|__DocumentReferenceSerializer__")
+                val strDocRefRegex = Regex("<String>")
+                when {
+                    propertyType is PrimitiveKind.STRING -> this[propertyName] = docRef.id
+                    propertySerialName.contains(strDocRefRegex) -> this[propertyName] = docRef.id
+                    propertySerialName.contains(docRefRegex) -> this[propertyName] = docRef
+                    else ->
+                        throw IllegalArgumentException(
+                            "Field is annotated with @KDocumentId but is class $propertyType (with SerialName $propertySerialName) instead of String or DocumentReference."
+                        )
+                }
+            }
+        }
+    }
 /**
  * The entry point of Firestore Kotlin deserialization process. It decodes a nested map of Firestore
  * supported types to a [Serializable] Kotlin object.
@@ -151,10 +187,8 @@ private abstract class FirestoreAbstractDecoder(
  * @param nestedMap The nested map that that needs to be decoded to a @[Serializable] object.
  * @param docRef The [DocumentReference] where this nested map is obtained from.
  */
-private class FirestoreMapDecoder(
-    val nestedMap: Map<String, Any?>,
-    docRef: DocumentReference
-) : FirestoreAbstractDecoder(nestedMap, docRef) {
+private class FirestoreMapDecoder(val nestedMap: Map<String, Any?>, docRef: DocumentReference) :
+    FirestoreAbstractDecoder(nestedMap, docRef) {
 
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>

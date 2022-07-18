@@ -15,6 +15,7 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -81,5 +82,19 @@ class ComponentRegistrarTest {
         val actual = waitFor(docRefActual.get()).data
         val expected = waitFor(docRefExpected.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
+    }
+
+    @Test
+    fun ktx_encode_decode_round_trip() {
+        // This test assert ktx encoder and decoder are working as Java POJO mapper crashes without
+        // no-argument constructor during decoding, Java POJO mapper encoder cannot encode field
+        // start from Capital letters, and Boolean field start from `is`.
+        @Serializable data class TestObj(val STR: String, val isBoolean: Boolean)
+
+        val expected = TestObj("foobar", true)
+        val docRefActual = testCollection("ktx").document("123")
+        docRefActual.set(expected)
+        val actual = waitFor(docRefActual.get()).toObject<TestObj>()
+        assertThat(actual).isEqualTo(expected)
     }
 }
