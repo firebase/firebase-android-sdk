@@ -119,7 +119,6 @@ fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
 }
 
-
 /**
  * Uncomment the code below to see the Compile time IDE Error: "Conflicting overloads Error".
  *
@@ -127,8 +126,6 @@ fun testDocument(): DocumentReference {
  * since the package name: "package com.google.firebase.firestore" are the same, so IDE thought I
  * used the same method name twice.
  */
-
-
 
 // inline fun <reified T : Exception> assertThrows(
 //    crossinline runnable: () -> Any?

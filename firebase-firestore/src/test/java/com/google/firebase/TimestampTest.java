@@ -44,6 +44,9 @@ public class TimestampTest {
     assertThat(actual.getNanoseconds()).isEqualTo(750000000);
     expected = new Timestamp(-2, 750000000);
     assertThat(actual).isEqualTo(expected);
+    // This test should break here, This is a proof that my branch's CICD is not running all the
+    // tests.
+    assertThat(1).isEqualTo(2);
   }
 
   @Test
