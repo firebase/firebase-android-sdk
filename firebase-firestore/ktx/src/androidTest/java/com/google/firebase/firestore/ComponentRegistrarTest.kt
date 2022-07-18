@@ -78,7 +78,7 @@ class ComponentRegistrarTest {
         val docRefActual = testCollection("ktx").document("123")
         val docRefExpected = testCollection("pojo").document("456")
         docRefActual.set(ktxStudent)
-        docRefExpected.withEmptyMapper { set(pojoStudent) }
+        docRefExpected.withoutCustomMappers { set(pojoStudent) }
         val actual = waitFor(docRefActual.get()).data
         val expected = waitFor(docRefExpected.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
