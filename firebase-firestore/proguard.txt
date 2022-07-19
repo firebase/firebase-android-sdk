@@ -18,5 +18,6 @@
 -dontwarn com.google.j2objc.annotations.**
 
 # Kotlin warnings:
+# TODO: Add a test that nothing new gets added to gradle file without updating this list
 -dontwarn kotlinx.serialization.**
 -dontwarn kotlin.**
