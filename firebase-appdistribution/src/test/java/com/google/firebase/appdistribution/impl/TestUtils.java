@@ -138,8 +138,12 @@ final class TestUtils {
     };
   }
 
+  static InputStream getTestFileInputStream(String fileName) throws IOException {
+    return getContext().getResources().getAssets().open(fileName);
+  }
+
   static String readTestFile(String fileName) throws IOException {
-    final InputStream jsonInputStream = getContext().getResources().getAssets().open(fileName);
+    final InputStream jsonInputStream = getTestFileInputStream(fileName);
     return streamToString(jsonInputStream);
   }
 

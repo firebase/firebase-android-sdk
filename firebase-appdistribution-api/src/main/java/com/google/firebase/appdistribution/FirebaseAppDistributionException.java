@@ -79,6 +79,17 @@ public class FirebaseAppDistributionException extends FirebaseException {
      * com.google.firebase:firebase-appdistribution}.
      */
     NOT_IMPLEMENTED,
+
+    /**
+     * The Firebase App Distribution Tester API is disabled for this project.
+     *
+     * <p>The developer of this app must enable the API in the Google Cloud Console before using the
+     * App Distribution SDK. See the <a
+     * href="https://firebase.google.com/docs/app-distribution/set-up-alerts?platform=android">documentation</a>
+     * for more information. If you enabled this API recently, wait a few minutes for the action to
+     * propagate to our systems and retry.
+     */
+    API_DISABLED,
   }
 
   @NonNull private final Status status;

@@ -182,7 +182,7 @@ class TesterApiHttpClient {
     String responseBody = readResponseBody(connection);
     LogWrapper.getInstance().v(tag, String.format("Response (%d): %s", responseCode, responseBody));
     if (!isResponseSuccess(responseCode)) {
-      throw getExceptionForHttpResponse(tag, responseCode);
+      throw getExceptionForHttpResponse(tag, responseCode, responseBody);
     }
     return parseJson(tag, responseBody);
   }
@@ -234,18 +234,15 @@ class TesterApiHttpClient {
   }
 
   private static FirebaseAppDistributionException getExceptionForHttpResponse(
-      String tag, int responseCode) {
+      String tag, int responseCode, String responseBody) {
     switch (responseCode) {
       case 400:
         return getException(tag, "Bad request", Status.UNKNOWN);
       case 401:
         return getException(tag, ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE);
       case 403:
-        return getException(tag, ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
+        return getExceptionFor403(tag, responseBody);
       case 404:
-        // TODO(lkellogg): Change this to a different status once 404s no longer indicate missing
-        //  access (the backend should return 403s for those cases, including when the resource
-        //  doesn't exist but the tester doesn't have the access to see that information)
         return getException(tag, ErrorMessages.NOT_FOUND_ERROR, Status.AUTHENTICATION_FAILURE);
       case 408:
       case 504:
@@ -253,6 +250,22 @@ class TesterApiHttpClient {
       default:
         return getException(tag, "Received error status: " + responseCode, Status.UNKNOWN);
     }
+  }
+
+  private static FirebaseAppDistributionException getExceptionFor403(
+      String tag, String responseBody) {
+    // Check if this is an API disabled error
+    TesterApiDisabledErrorDetails apiDisabledErrorDetails =
+        TesterApiDisabledErrorDetails.tryParse(responseBody);
+    if (apiDisabledErrorDetails != null) {
+      String messageWithHelpLinks =
+          String.format(
+              "%s\n\n%s", ErrorMessages.API_DISABLED, apiDisabledErrorDetails.formatLinks());
+      return getException(tag, messageWithHelpLinks, Status.API_DISABLED);
+    }
+
+    // Otherwise return a basic 403 exception
+    return getException(tag, ErrorMessages.AUTHORIZATION_ERROR, Status.AUTHENTICATION_FAILURE);
   }
 
   private static FirebaseAppDistributionException getException(
