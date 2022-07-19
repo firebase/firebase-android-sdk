@@ -228,16 +228,18 @@ private class FirestoreMapDecoder(
         while (true) {
             if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
             val elementName = decodeNameList[elementIndex]
-            val elementValue = decodeValueList[elementIndex]
             val descriptorIndex = descriptor.getElementIndex(elementName)
-            currentDecodeElement = Element(elementValue, descriptorIndex)
-            elementIndex++
-            if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) return descriptorIndex
+            if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) {
+                val elementValue = decodeValueList[elementIndex++]
+                currentDecodeElement = Element(elementValue, descriptorIndex)
+                return descriptorIndex
+            }
             if (descriptorIndex == CompositeDecoder.UNKNOWN_NAME && isThrowOnExtraProperties) {
                 throw IllegalArgumentException(
                     "Can not match $elementName to any properties inside of Object: ${descriptor.serialName}"
                 )
             }
+            elementIndex++
         }
     }
 }
