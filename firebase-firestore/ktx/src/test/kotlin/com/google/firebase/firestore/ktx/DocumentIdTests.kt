@@ -27,23 +27,12 @@ import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class DocumentIdTests {
-
-    companion object {
-        lateinit var firestoreDocument: DocumentReference
-
-        @BeforeClass
-        @JvmStatic
-        fun generateDocRef() {
-            firestoreDocument = documentReference("abc/1234")
-        }
-    }
 
     @Test
     fun `KDocumentId on wrong types throws`() {
@@ -271,3 +260,5 @@ class DocumentIdTests {
         assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
     }
 }
+
+private val firestoreDocument: DocumentReference = documentReference("abc/1234")

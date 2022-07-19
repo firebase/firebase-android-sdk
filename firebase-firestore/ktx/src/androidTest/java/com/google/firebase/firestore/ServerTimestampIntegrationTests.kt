@@ -28,14 +28,6 @@ import org.junit.Test
 
 class ServerTimestampIntegrationTests {
 
-    companion object {
-        // Tolerate up to 48*60*60 seconds of clock skew between client and server. This should be
-        // more than enough to compensate for timezone issues (even after taking daylight saving
-        // into account) and should allow local clocks to deviate from true time slightly and still
-        // pass the test.
-        private const val deltaSec = 48 * 60 * 60
-    }
-
     @Serializable
     private data class TimestampPOJO(
         @KServerTimestamp @ServerTimestamp val timestamp: Timestamp? = null,
@@ -106,3 +98,9 @@ class ServerTimestampIntegrationTests {
         assertThat(actualObjWithNullTimestamp).isEqualTo(TimestampKtx())
     }
 }
+
+// Tolerate up to 48*60*60 seconds of clock skew between client and server. This should be
+// more than enough to compensate for timezone issues (even after taking daylight saving
+// into account) and should allow local clocks to deviate from true time slightly and still
+// pass the test.
+private const val deltaSec = 48 * 60 * 60
