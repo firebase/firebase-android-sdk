@@ -16,13 +16,13 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.IgnoreExtraProperties
-import com.google.firebase.firestore.ServerTimestamp
 import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.documentReference
+import com.google.firebase.firestore.ktx.annotations.KDocumentId
+import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -36,23 +36,23 @@ class JavaLibKtxSupportTests {
     @Test
     fun `ServerTimestamp annotations should be seen during Ktx serialization`() {
         @Serializable
-        data class AnnotationTest(@ServerTimestamp val date: String? = null)
+        data class AnnotationTest(@KServerTimestamp val date: String? = null)
 
         val annotations = AnnotationTest.serializer().descriptor.getElementAnnotations(0)
         assertThat(annotations).hasSize(1)
         val annotation = annotations[0]
-        assertThat(annotation::class.java).isAssignableTo(ServerTimestamp::class.java)
+        assertThat(annotation::class.java).isAssignableTo(KServerTimestamp::class.java)
     }
 
     @Test
     fun `DocumentId annotations should be seen during Ktx serialization`() {
         @Serializable
-        data class AnnotationTest(@DocumentId val docId: String? = null)
+        data class AnnotationTest(@KDocumentId val docId: String? = null)
 
         val annotations = AnnotationTest.serializer().descriptor.getElementAnnotations(0)
         assertThat(annotations).hasSize(1)
         val annotation = annotations[0]
-        assertThat(annotation::class.java).isAssignableTo(DocumentId::class.java)
+        assertThat(annotation::class.java).isAssignableTo(KDocumentId::class.java)
     }
 
     @Test

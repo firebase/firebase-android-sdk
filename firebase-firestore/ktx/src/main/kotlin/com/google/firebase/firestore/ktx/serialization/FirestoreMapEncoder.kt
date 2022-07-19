@@ -82,7 +82,6 @@ private class FirestoreMapEncoder(
     /** The data class records the information for the element that needs to be encoded. */
     private inner class Element(elementIndex: Int = 0) {
         val encodeKey: String = descriptor.getElementName(elementIndex)
-        // TODO: Provide elementSerialKind, elementSerialName, and elementAnnotations as properties
         val elementAnnotations: List<Annotation> = descriptor.getElementAnnotations(elementIndex)
         val elementSerialName = descriptor.getElementDescriptor(elementIndex).serialName
         val elementSerialKind = descriptor.getElementDescriptor(elementIndex).kind
@@ -125,7 +124,6 @@ private class FirestoreMapEncoder(
             }
         }
 
-    // TODO: Handle @DocumentId and @ServerTimestamp annotations from descriptor
     override fun encodeValue(value: Any): Unit =
         encodedMap.let {
             val element: Element = Element(index++)
@@ -147,7 +145,6 @@ private class FirestoreMapEncoder(
      * @return a CompositeEncoder either to be a [FirestoreMapEncoder] or a [FirestoreListEncoder].
      */
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        // TODO: @DocumentID and @ServerTimeStamp should not be applied on Structures
         if (depth == 0) {
             return FirestoreMapEncoder(descriptor, depth = depth + 1) { encodedMap.putAll(it) }
         }
