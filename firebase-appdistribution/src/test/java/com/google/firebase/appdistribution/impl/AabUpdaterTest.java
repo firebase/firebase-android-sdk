@@ -32,7 +32,6 @@ import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -143,11 +142,11 @@ public class AabUpdaterTest {
 
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-
+    TestOnProgressListener listener = new TestOnProgressListener(1);
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    updateTask.addOnProgressListener(testExecutor, progressEvents::add);
-    awaitAsyncOperations(testExecutor);
+    updateTask.addOnProgressListener(testExecutor, listener);
+
+    List<UpdateProgress> progressEvents = listener.await();
 
     // Task is not completed in this case, because app is expected to terminate during update
     assertThat(shadowActivity.getNextStartedActivity().getData())
