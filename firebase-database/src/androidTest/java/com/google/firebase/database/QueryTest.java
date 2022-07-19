@@ -4668,6 +4668,7 @@ public class QueryTest {
     }
   }
 
+  @Test
   public void testGetResolvesToCacheWhenOnlineAndSameLevelListener()
       throws DatabaseException, InterruptedException {
     FirebaseApp app =
@@ -4705,6 +4706,7 @@ public class QueryTest {
     }
   }
 
+  @Test
   public void testGetResolvesToCacheWhenOnlineAndChildLevelListener()
       throws DatabaseException, InterruptedException {
     FirebaseApp app =
