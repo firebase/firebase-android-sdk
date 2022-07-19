@@ -4589,7 +4589,7 @@ public class QueryTest {
   @Test
   public void testGetResolvesToCacheWhenOfflineAndNoListeners() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-            appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+            appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node =
             db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
@@ -4607,7 +4607,7 @@ public class QueryTest {
   @Test
   public void testGetResolvesToCacheWhenOnlineAndNoListeners() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-            appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+            appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node =
             db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
@@ -4623,7 +4623,7 @@ public class QueryTest {
   @Test
   public void testGetResolvesToCacheWhenOnlineAndParentListener() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-            appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+            appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference topLevelNode = db.getReference();
     Semaphore semaphore = new Semaphore(0);
@@ -4642,8 +4642,8 @@ public class QueryTest {
         //no-op
       }
     };
-    topLevelNode.addValueEventListener(listener);
     node.setValue(val);
+    topLevelNode.addValueEventListener(listener);
 
     try {
       IntegrationTestHelpers.waitFor(semaphore);
@@ -4655,7 +4655,7 @@ public class QueryTest {
   }
   public void testGetResolvesToCacheWhenOnlineAndSameLevelListener() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-            appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+            appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     Semaphore semaphore = new Semaphore(0);
     long val = 34;
@@ -4686,7 +4686,7 @@ public class QueryTest {
   }
   public void testGetResolvesToCacheWhenOnlineAndChildLevelListener() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-            appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+            appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     Semaphore semaphore = new Semaphore(0);
     long val = 34;

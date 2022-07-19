@@ -52,6 +52,7 @@ import com.google.firebase.database.snapshot.NodeUtilities;
 import com.google.firebase.database.snapshot.RangeMerge;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EventListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -514,6 +515,7 @@ public class Repo implements PersistentConnection.Delegate {
    */
   public Task<DataSnapshot> getValue(Query query) {
     TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    final Repo repo = this;
     this.scheduleNow(
         new Runnable() {
           @Override
@@ -556,18 +558,20 @@ public class Repo implements PersistentConnection.Delegate {
                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         QuerySpec spec = query.getSpec();
-                        serverSyncTree.addSyncpoint(spec);
-                        // TODO: Need to actually add to persistence
-                        if (spec.loadsAllData()) {
-                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
-                        } else {
-                          serverSyncTree.applyTaggedQueryOverwrite(
-                              spec.getPath(), serverNode, serverSyncTree.tagForQuery(spec));
-                        }
-                        // Check if this needs to be isDefault or loadsAllData
-                        // Since addSyncpoint already calls setQueryActive for a query, we have to
-                        // set the query as inactive after we get the result.
-                        serverSyncTree.setQueryInactive(query.getSpec());
+                        ValueEventListener listener = new ValueEventListener() {
+                          @Override
+                          public void onDataChange(@NonNull DataSnapshot snapshot) {
+                            // noOp
+                          }
+
+                          @Override
+                          public void onCancelled(@NonNull DatabaseError error) {
+                            // noOp
+                          }
+                        };
+                        ValueEventRegistration eventRegistration = new ValueEventRegistration(repo, listener, spec);
+                        serverSyncTree.addEventRegistration(eventRegistration, true);
+                        serverSyncTree.removeEventRegistration(eventRegistration, true);
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),

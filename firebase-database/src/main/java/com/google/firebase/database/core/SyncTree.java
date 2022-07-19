@@ -632,9 +632,15 @@ public class SyncTree {
         });
   }
 
+  public List<? extends Event> addEventRegistration(
+          @NotNull final EventRegistration eventRegistration) {
+    return addEventRegistration(eventRegistration, false);
+  }
+
+
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
-      @NotNull final EventRegistration eventRegistration) {
+      @NotNull final EventRegistration eventRegistration, final boolean skipListenerSetup) {
     return persistenceManager.runInTransaction(
         new Callable<List<? extends Event>>() {
           @Override
@@ -729,7 +735,7 @@ public class SyncTree {
             WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
             List<? extends Event> events =
                 syncPoint.addEventRegistration(eventRegistration, writesCache, serverCache);
-            if (!viewAlreadyExists && !foundAncestorDefaultView) {
+            if (!viewAlreadyExists && !foundAncestorDefaultView && !skipListenerSetup) {
               View view = syncPoint.viewForQuery(query);
               setupListener(query, view);
             }
@@ -744,7 +750,11 @@ public class SyncTree {
    * <p>If query is the default query, we'll check all queries for the specified eventRegistration.
    */
   public List<Event> removeEventRegistration(@NotNull EventRegistration eventRegistration) {
-    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null);
+    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null, false);
+  }
+
+  public List<Event> removeEventRegistration(@NotNull EventRegistration eventRegistration, boolean skipDedup) {
+    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
   }
 
   /**
@@ -754,13 +764,13 @@ public class SyncTree {
    */
   public List<Event> removeAllEventRegistrations(
       @NotNull QuerySpec query, @NotNull DatabaseError error) {
-    return this.removeEventRegistration(query, null, error);
+    return this.removeEventRegistration(query, null, error, false);
   }
 
   private List<Event> removeEventRegistration(
       final @NotNull QuerySpec query,
       final @Nullable EventRegistration eventRegistration,
-      final @Nullable DatabaseError cancelError) {
+      final @Nullable DatabaseError cancelError, final boolean skipDedup) {
     return persistenceManager.runInTransaction(
         new Callable<List<Event>>() {
           @Override
@@ -782,6 +792,7 @@ public class SyncTree {
               if (maybeSyncPoint.isEmpty()) {
                 syncPointTree = syncPointTree.remove(path);
               }
+
               List<QuerySpec> removed = removedAndEvents.getFirst();
               cancelEvents = removedAndEvents.getSecond();
               // We may have just removed one of many listeners and can short-circuit this whole
@@ -794,6 +805,9 @@ public class SyncTree {
               for (QuerySpec queryRemoved : removed) {
                 persistenceManager.setQueryInactive(query);
                 removingDefault = removingDefault || queryRemoved.loadsAllData();
+              }
+              if(skipDedup) {
+                return null;
               }
               ImmutableTree<SyncPoint> currentTree = syncPointTree;
               boolean covered =
