@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Helper listener that awaits a specific number of progress events on a {@code UpdateTask}.
+ * Helper listener that awaits a specific number of progress events on an {@code UpdateTask}.
  *
  * <p>This works around a limitation of the Tasks API where await() cannot be called on the main
  * thread. This listener works around it by running itself on a different thread, thus allowing the
@@ -38,9 +38,13 @@ class TestOnProgressListener implements OnProgressListener {
   private final CountDownLatch latch;
   private final List<UpdateProgress> progressUpdates = new ArrayList<>();
 
-  TestOnProgressListener(int expectedProgressCount) {
+  private TestOnProgressListener(int expectedProgressCount) {
     this.expectedProgressCount = expectedProgressCount;
     this.latch = new CountDownLatch(expectedProgressCount);
+  }
+
+  static TestOnProgressListener withExpectedCount(int expectedCount) {
+    return new TestOnProgressListener(expectedCount);
   }
 
   @Override
