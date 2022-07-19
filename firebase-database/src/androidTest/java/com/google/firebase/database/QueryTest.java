@@ -4662,7 +4662,7 @@ public class QueryTest {
       assertEquals(
           snapshot.getValue(),
           val); // TODO(mtewani): We might be getting this data straight from serverCache, so we may
-                // need to rewrite it
+      // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4699,7 +4699,7 @@ public class QueryTest {
       assertEquals(
           snapshot.getValue(),
           val); // TODO(mtewani): We might be getting this data straight from serverCache, so we may
-                // need to rewrite it
+      // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4737,7 +4737,7 @@ public class QueryTest {
       assertEquals(
           snapshot.getValue(),
           val); // TODO(mtewani): We might be getting this data straight from serverCache, so we may
-                // need to rewrite it
+      // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
