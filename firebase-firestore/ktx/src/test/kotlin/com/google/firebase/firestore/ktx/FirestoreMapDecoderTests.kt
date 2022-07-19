@@ -20,23 +20,12 @@ import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import kotlinx.serialization.Serializable
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class FirestoreMapDecoderTests {
-
-    companion object {
-        lateinit var firestoreDocument: DocumentReference
-
-        @BeforeClass
-        @JvmStatic
-        fun generateDocRef() {
-            firestoreDocument = documentReference("abc/1234")
-        }
-    }
 
     @Test
     fun `plain custom object decoding is supported`() {
@@ -224,3 +213,5 @@ class FirestoreMapDecoderTests {
         assertThat(decodedObj).isEqualTo(Student(4.95F))
     }
 }
+
+private val firestoreDocument: DocumentReference = documentReference("abc/1234")

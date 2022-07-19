@@ -41,6 +41,7 @@ import kotlinx.serialization.serializer
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
 private abstract class FirestoreAbstractDecoder(
+    private val descriptor: SerialDescriptor,
     private val nestedObject: Any,
     private val docRef: DocumentReference
 ) : AbstractDecoder() {
@@ -49,15 +50,20 @@ private abstract class FirestoreAbstractDecoder(
         const val START_INDEX = 0
     }
     protected var elementIndex: Int = START_INDEX
-    protected lateinit var elementDataType: SerialKind
+
+    /** The data class records the information for the element that needs to be decoded. */
+    protected inner class Element(val decodeValue: Any?, serialIndex: Int) {
+        val elementDescriptor: SerialDescriptor = descriptor.getElementDescriptor(serialIndex)
+        val elementDataType: SerialKind = elementDescriptor.kind
+    }
+    protected lateinit var currentDecodeElement: Element
 
     /** A list of values that need to be decoded as fields of the [Serializable] object. */
     abstract val decodeValueList: List<Any?>
-    abstract val decodeValueNotNullMarkList: List<Boolean>
 
     /** Decodes an enum field by returning its index from the enum object's descriptor. */
     final override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-        val decodedEnumFieldName = decodeValueList.elementAt(elementIndex - 1)
+        val decodedEnumFieldName = currentDecodeElement.decodeValue
         // TODO: Add a EnumNamingProperties parameter, and convert decodedEnumFieldName based on it
         // i.e. case insensitive, snake_case match camelCase, etc
         val enumFieldNames = enumDescriptor.elementNames.toList()
@@ -70,7 +76,9 @@ private abstract class FirestoreAbstractDecoder(
      * In case this method returns false, [decodeNull] method will be used instead of [decodeValue]
      * to decode this null value element.
      */
-    final override fun decodeNotNullMark(): Boolean = decodeValueNotNullMarkList[elementIndex - 1]
+    final override fun decodeNotNullMark(): Boolean {
+        return currentDecodeElement.decodeValue != null
+    }
 
     /**
      * Returns a not null primitive value that is going to be assigned as a field of the decoded
@@ -81,12 +89,12 @@ private abstract class FirestoreAbstractDecoder(
      * be required to convert [Long] back to [Int], and to convert [Double] back to [Float].
      */
     final override fun decodeValue(): Any {
-        val element: Any = decodedElementNotNullOrThrow()
-        return when (elementDataType) {
-            is PrimitiveKind.INT -> return (element as Long).toInt() // Firestore saves Int as Long
+        val value = decodedElementNotNullOrThrow()
+        return when (currentDecodeElement.elementDataType) {
+            is PrimitiveKind.INT -> return (value as Long).toInt() // Firestore saves Int as Long
             is PrimitiveKind.FLOAT ->
-                return (element as Double).toFloat() // Firestore saves Float as Double
-            else -> element
+                return (value as Double).toFloat() // Firestore saves Float as Double
+            else -> value
         }
     }
 
@@ -98,7 +106,7 @@ private abstract class FirestoreAbstractDecoder(
      * null value from [decodeValueList].
      */
     private fun decodedElementNotNullOrThrow(): Any =
-        decodeValueList.elementAt(elementIndex - 1)
+        currentDecodeElement.decodeValue
             ?: throw IllegalArgumentException(
                 "Got a null value while trying to decode a not null field."
             )
@@ -110,11 +118,11 @@ private abstract class FirestoreAbstractDecoder(
         when (descriptor.kind) {
             is StructureKind.CLASS -> {
                 val innerMap = innerObject as Map<String, Any?>
-                return FirestoreMapDecoder(innerMap, docRef)
+                return FirestoreMapDecoder(descriptor, innerMap, docRef)
             }
             is StructureKind.LIST -> {
                 val innerList = innerObject as List<Any?>
-                return FirestoreListDecoder(innerList, docRef)
+                return FirestoreListDecoder(descriptor, innerList, docRef)
             }
             else -> {
                 throw Exception("Incorrect format of nested data provided: <$innerObject>")
@@ -152,20 +160,19 @@ private abstract class FirestoreAbstractDecoder(
  * @param docRef The [DocumentReference] where this nested map is obtained from.
  */
 private class FirestoreMapDecoder(
+    descriptor: SerialDescriptor,
     val nestedMap: Map<String, Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(nestedMap, docRef) {
+) : FirestoreAbstractDecoder(descriptor, nestedMap, docRef) {
 
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>
-    override val decodeValueNotNullMarkList: List<Boolean>
 
     /** Separates keys and values that need to be decoded. */
     init {
         val (decodeNameList, decodeValueList) = nestedMap.toList().unzip()
         this.decodeNameList = decodeNameList
         this.decodeValueList = decodeValueList
-        this.decodeValueNotNullMarkList = this.decodeValueList.map { it != null }
     }
 
     /**
@@ -179,15 +186,17 @@ private class FirestoreMapDecoder(
      * @param descriptor The [SerialDescriptor] of the [Serializable] object.
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
-        val elementName = decodeNameList[elementIndex]
-        elementIndex++
-        elementDataType =
-            descriptor.getElementDescriptor(descriptor.getElementIndex(elementName)).kind
-        return descriptor.getElementIndex(elementName)
-        // TODO: To support annotation @IgnoreOnExtraProperties, loop this method
-        // to next element which descriptor.getElementIndex() does not return
-        // [CompositeDecoder.UNKNOWN_NAME]
+        // TODO: To support annotation @ThrowOnExtraProperties, make a throw if get
+        // CompositeDecoder.UNKNOWN_NAME
+        while (true) {
+            if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
+            val elementName = decodeNameList[elementIndex]
+            val elementValue = decodeValueList[elementIndex]
+            val descriptorIndex = descriptor.getElementIndex(elementName)
+            currentDecodeElement = Element(elementValue, descriptorIndex)
+            elementIndex++
+            if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) return descriptorIndex
+        }
     }
 }
 
@@ -199,10 +208,10 @@ private class FirestoreMapDecoder(
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
 private class FirestoreListDecoder(
+    descriptor: SerialDescriptor,
     override val decodeValueList: List<Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(decodeValueList, docRef) {
-    override val decodeValueNotNullMarkList: List<Boolean> = this.decodeValueList.map { it != null }
+) : FirestoreAbstractDecoder(descriptor, decodeValueList, docRef) {
 
     /**
      * Returns the index of the element to be decoded.
@@ -213,7 +222,7 @@ private class FirestoreListDecoder(
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == decodeValueList.size) return CompositeDecoder.DECODE_DONE
-        elementDataType = descriptor.getElementDescriptor(elementIndex).kind
+        currentDecodeElement = Element(decodeValueList[elementIndex], elementIndex)
         return elementIndex++
     }
 }
@@ -231,7 +240,7 @@ fun <T> decodeFromMap(
     deserializer: DeserializationStrategy<T>,
     docRef: DocumentReference
 ): T {
-    val decoder: Decoder = FirestoreMapDecoder(map, docRef)
+    val decoder: Decoder = FirestoreMapDecoder(deserializer.descriptor, map, docRef)
     return decoder.decodeSerializableValue(deserializer)
 }
 
