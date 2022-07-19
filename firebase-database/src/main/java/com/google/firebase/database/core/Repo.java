@@ -52,7 +52,6 @@ import com.google.firebase.database.snapshot.NodeUtilities;
 import com.google.firebase.database.snapshot.RangeMerge;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EventListener;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -558,18 +557,20 @@ public class Repo implements PersistentConnection.Delegate {
                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         QuerySpec spec = query.getSpec();
-                        ValueEventListener listener = new ValueEventListener() {
-                          @Override
-                          public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            // noOp
-                          }
+                        ValueEventListener listener =
+                            new ValueEventListener() {
+                              @Override
+                              public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                // noOp
+                              }
 
-                          @Override
-                          public void onCancelled(@NonNull DatabaseError error) {
-                            // noOp
-                          }
-                        };
-                        ValueEventRegistration eventRegistration = new ValueEventRegistration(repo, listener, spec);
+                              @Override
+                              public void onCancelled(@NonNull DatabaseError error) {
+                                // noOp
+                              }
+                            };
+                        ValueEventRegistration eventRegistration =
+                            new ValueEventRegistration(repo, listener, spec);
                         serverSyncTree.addEventRegistration(eventRegistration, true);
                         serverSyncTree.removeEventRegistration(eventRegistration, true);
                         source.setResult(

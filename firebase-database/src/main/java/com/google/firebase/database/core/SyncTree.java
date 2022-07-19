@@ -633,10 +633,9 @@ public class SyncTree {
   }
 
   public List<? extends Event> addEventRegistration(
-          @NotNull final EventRegistration eventRegistration) {
+      @NotNull final EventRegistration eventRegistration) {
     return addEventRegistration(eventRegistration, false);
   }
-
 
   /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
@@ -750,11 +749,14 @@ public class SyncTree {
    * <p>If query is the default query, we'll check all queries for the specified eventRegistration.
    */
   public List<Event> removeEventRegistration(@NotNull EventRegistration eventRegistration) {
-    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null, false);
+    return this.removeEventRegistration(
+        eventRegistration.getQuerySpec(), eventRegistration, null, false);
   }
 
-  public List<Event> removeEventRegistration(@NotNull EventRegistration eventRegistration, boolean skipDedup) {
-    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
+  public List<Event> removeEventRegistration(
+      @NotNull EventRegistration eventRegistration, boolean skipDedup) {
+    return this.removeEventRegistration(
+        eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
   }
 
   /**
@@ -770,7 +772,8 @@ public class SyncTree {
   private List<Event> removeEventRegistration(
       final @NotNull QuerySpec query,
       final @Nullable EventRegistration eventRegistration,
-      final @Nullable DatabaseError cancelError, final boolean skipDedup) {
+      final @Nullable DatabaseError cancelError,
+      final boolean skipDedup) {
     return persistenceManager.runInTransaction(
         new Callable<List<Event>>() {
           @Override
@@ -806,7 +809,7 @@ public class SyncTree {
                 persistenceManager.setQueryInactive(query);
                 removingDefault = removingDefault || queryRemoved.loadsAllData();
               }
-              if(skipDedup) {
+              if (skipDedup) {
                 return null;
               }
               ImmutableTree<SyncPoint> currentTree = syncPointTree;
