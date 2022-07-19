@@ -26,23 +26,12 @@ import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class FirestoreMapDecoderTests {
-
-    companion object {
-        lateinit var firestoreDocument: DocumentReference
-
-        @BeforeClass
-        @JvmStatic
-        fun generateDocRef() {
-            firestoreDocument = documentReference("abc/1234")
-        }
-    }
 
     @Test
     fun `plain custom object decoding is supported`() {
@@ -304,3 +293,5 @@ class FirestoreMapDecoderTests {
             .contains("Can not match")
     }
 }
+
+private val firestoreDocument: DocumentReference = documentReference("abc/1234")

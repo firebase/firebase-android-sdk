@@ -122,6 +122,9 @@ fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
 }
 
+/**
+ * Asserts that [runnable] throws an exception of type [T] when executed. Test only.
+ */
 inline fun <reified T : Exception> testAssertThrows(
     crossinline runnable: () -> Any?
 ): ThrowableSubject {
