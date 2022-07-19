@@ -142,7 +142,7 @@ public class AabUpdaterTest {
 
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
-    TestOnProgressListener listener = new TestOnProgressListener(1);
+    TestOnProgressListener listener = TestOnProgressListener.withExpectedCount(1);
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     updateTask.addOnProgressListener(testExecutor, listener);
 
