@@ -550,13 +550,14 @@ public class Repo implements PersistentConnection.Delegate {
                         }
                       } else {
                         /*
-                         Need to check if it's a full path query. If it is, then just override with serverOverwrite
-                         If not, check if the view already exists, and then add it if it doesn't already exist.
-                         Then, remove the event registration/view if needed.
-                         Also, do we actually need to post events? We should already be doing that on the listener
+                         We need to replicate the behavior that occurs when running `once()`. In other words,
+                         we need to create a new eventRegistration, register it with a view and then
+                         overwrite the data at that location, and then remove the view.
                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         QuerySpec spec = query.getSpec();
+                        // EventRegistrations require a listener to be attached, so a dummy
+                        // ValueEventListener was created.
                         ValueEventListener listener =
                             new ValueEventListener() {
                               @Override
@@ -572,6 +573,12 @@ public class Repo implements PersistentConnection.Delegate {
                         ValueEventRegistration eventRegistration =
                             new ValueEventRegistration(repo, listener, spec);
                         serverSyncTree.addEventRegistration(eventRegistration, true);
+                        if (spec.loadsAllData()) {
+                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                        } else {
+                          serverSyncTree.applyTaggedQueryOverwrite(
+                              spec.getPath(), serverNode, getServerSyncTree().tagForQuery(spec));
+                        }
                         serverSyncTree.removeEventRegistration(eventRegistration, true);
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
