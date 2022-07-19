@@ -14,14 +14,38 @@
 
 package com.google.firebase.firestore
 
+import com.google.common.truth.ThrowableSubject
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.DocumentKey
+import org.junit.Assert.assertThrows
 
 /**
- * Returns a [DocumentReference] identified by document name for ktx unit test.
- * @param pathString A slash separated path for navigating resources (documents and collections)
- * within Firestore.
+ * Returns a [DocumentReference] identified by document name for ktx unit test purpose. The
+ * firestore field in this DocumentReference is always null.
+ *
+ * @param pathString A slash separated path represents the location of a document in the Firestore
+ * database.
+ * @return The [DocumentReference] identified by the slash separated path.
  */
 fun documentReference(pathString: String): DocumentReference {
     val documentKey = DocumentKey.fromPathString(pathString)
     return DocumentReference(documentKey, null)
+}
+
+/**
+ * Asserts that [runnable] throws an exception of type [T] when executed. If it does not throw an
+ * exception, or if it throws the wrong type of exception, an [AssertionError] is thrown describing
+ * the mismatch; If it throws the correct type of exception, a [ThrowableSubject] of
+ * assertThat(exception) is returned, this return value can be used for the following Truth
+ * assertion tests.
+ *
+ * @param T The expected type of the exception.
+ * @param runnable A function that is expected to throw an exception when executed.
+ * @return A throwableSubject that can be used for the following Truth assertion checks.
+ */
+inline fun <reified T : Exception> assertThrows(
+    crossinline runnable: () -> Any?
+): ThrowableSubject {
+    val exception: T = assertThrows(T::class.java) { runnable() }
+    return assertThat(exception)
 }

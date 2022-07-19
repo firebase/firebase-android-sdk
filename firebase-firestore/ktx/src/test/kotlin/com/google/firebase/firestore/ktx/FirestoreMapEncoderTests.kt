@@ -15,12 +15,14 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
-import kotlin.test.assertFailsWith
 import kotlinx.serialization.Serializable
-import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class FirestoreMapEncoderTests {
 
     @Test
@@ -243,10 +245,9 @@ class FirestoreMapEncoderTests {
         val map = mapOf("foo" to "foo", "bar" to 1L)
         val mapObj = GenericObject(map)
         val expectedMapOfMapObj = mutableMapOf("value" to mutableMapOf("foo" to "foo", "bar" to 1L))
-        assertFailsWith<IllegalArgumentException>(
-            message = "Incorrect format of nested object provided",
-            block = { assertTrue(expectedMapOfMapObj == encodeToMap(mapObj)) }
-        )
+        assertThrows<IllegalArgumentException> { encodeToMap(mapObj) }
+            .hasMessageThat()
+            .contains("Serializer for class 'Any' is not found")
     }
 
     @Serializable
@@ -301,10 +302,10 @@ class FirestoreMapEncoderTests {
         }
         val objectBean = ObjectBean()
         objectBean.value = objectBean
-        assertFailsWith<IllegalArgumentException>(
-            message =
-                "Exceeded maximum depth of 500, which likely indicates there's an object cycle",
-            block = { encodeToMap(objectBean) }
-        )
+        assertThrows<IllegalArgumentException> { encodeToMap(objectBean) }
+            .hasMessageThat()
+            .contains(
+                "Exceeded maximum depth of 500, which likely indicates there's an object cycle"
+            )
     }
 }
