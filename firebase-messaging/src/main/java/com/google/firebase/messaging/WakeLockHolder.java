@@ -104,13 +104,13 @@ final class WakeLockHolder {
 
       setAsWakefulIntent(intent, true);
 
-      connection
-          .sendIntent(intent)
-          .addOnCompleteListener(Runnable::run, t -> completeWakefulIntent(intent));
-
       if (!isWakeLockAlreadyAcquired) {
         wakeLock.acquire(WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS);
       }
+
+      connection
+          .sendIntent(intent)
+          .addOnCompleteListener(Runnable::run, t -> completeWakefulIntent(intent));
     }
   }
 
