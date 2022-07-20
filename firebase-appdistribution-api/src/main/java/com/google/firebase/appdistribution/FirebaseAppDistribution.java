@@ -109,6 +109,20 @@ public interface FirebaseAppDistribution {
   @NonNull
   UpdateTask updateApp();
 
+  /**
+   * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
+   *
+   * <p>Performs the following actions:
+   *
+   * <ol>
+   *   <li>Takes a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Looks up the currently installed App Distribution release
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   */
+  void collectAndSendFeedback();
+
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
   static FirebaseAppDistribution getInstance() {
