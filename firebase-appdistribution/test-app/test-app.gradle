@@ -15,6 +15,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'com.google.gms.google-services'
+    id 'com.google.firebase.appdistribution'
 }
 
 android {
@@ -31,10 +32,17 @@ android {
     }
 
     buildTypes {
-        // This is so we can build the "release" variant for the "dev-app" (and the SDK) without
-        // needing to have the app signed.
         release {
+            // This is so we can build the "release" variant for the "dev-app" (and the SDK) without
+            // needing to have the app signed.
             initWith debug
+        }
+
+        debug {
+            firebaseAppDistribution {
+                releaseNotes "Debug variant of Android SDK test app"
+                // testers "your email here"
+            }
         }
     }
     compileOptions {
@@ -50,12 +58,10 @@ dependencies {
     // TODO(rachelprince): Add flag to build with public version of SDK
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
 
-    // Debug variant uses full SDK
-    debugImplementation project(':firebase-appdistribution-api') // TODO(lkellogg): why doesn't this get picked up transitively?
+    // Include the API in all variants
+    implementation project(':firebase-appdistribution-api')
+    // Only include the full SDK implementation in the debug variant
     debugImplementation project(':firebase-appdistribution')
-
-    // Release variant just uses the API, as if publishing to Play
-    releaseImplementation project(':firebase-appdistribution-api')
 
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
