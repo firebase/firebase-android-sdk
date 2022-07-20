@@ -25,11 +25,8 @@ import kotlinx.serialization.SerialInfo
 @SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
 @Target(
-// TODO: revert this file back to Java or find out a method to share this file between Java and Ktx.
+    AnnotationTarget.PROPERTY,
     AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.FIELD
-
 )
 annotation class ServerTimestamp

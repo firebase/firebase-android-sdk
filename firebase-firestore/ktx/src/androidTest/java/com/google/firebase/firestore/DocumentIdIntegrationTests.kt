@@ -15,7 +15,6 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.Serializable
 import org.junit.Test
@@ -24,8 +23,8 @@ class DocumentIdIntegrationTests {
 
     @Serializable
     private data class DocumentIdOnDocRefFieldWithAnnotation(
-        @KDocumentId @DocumentId val docId: DocumentReference? = null,
-        @KDocumentId @DocumentId val stringDocId: String? = null
+        @DocumentId val docId: DocumentReference? = null,
+        @DocumentId val stringDocId: String? = null
     )
 
     @Test
@@ -53,8 +52,8 @@ class DocumentIdIntegrationTests {
 
     @Serializable
     private data class DocumentIdOnDocRefField(
-        @KDocumentId @DocumentId val docRef: DocumentReference? = null,
-        @KDocumentId @DocumentId val docRefStr: String? = null
+        @DocumentId val docRef: DocumentReference? = null,
+        @DocumentId val docRefStr: String? = null
     )
     @Test
     fun ktx_resolved_documentReference_is_equivalent_to_java() {
@@ -77,9 +76,7 @@ class DocumentIdIntegrationTests {
     }
 
     @Serializable
-    private data class DocumentIdOnStringField(
-        @DocumentId @KDocumentId val docId: String? = "doc-id"
-    )
+    private data class DocumentIdOnStringField(@DocumentId val docId: String? = "doc-id")
 
     @Serializable
     private data class DocumentIdOnNestedObjects(

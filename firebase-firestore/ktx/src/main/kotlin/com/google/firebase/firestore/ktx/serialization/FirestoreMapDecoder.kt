@@ -14,11 +14,11 @@
 
 package com.google.firebase.firestore.ktx.serialization
 
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder as FireDecoder
 import com.google.firebase.firestore.encoding.FirestoreSerializersModule
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder.Constants.START_INDEX
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -162,7 +162,7 @@ private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
             val propertyIndex: Int = descriptor.getElementIndex(propertyName)
             val annotationsOnProperty: List<Annotation> =
                 descriptor.getElementAnnotations(propertyIndex)
-            if (annotationsOnProperty.any { it is KDocumentId }) {
+            if (annotationsOnProperty.any { it is DocumentId }) {
                 val propertyDescriptor = descriptor.getElementDescriptor(propertyIndex)
                 val propertyType: SerialKind = propertyDescriptor.kind
                 val propertySerialName: String = propertyDescriptor.serialName
@@ -174,7 +174,7 @@ private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
                     propertySerialName.contains(docRefRegex) -> this[propertyName] = docRef
                     else ->
                         throw IllegalArgumentException(
-                            "Field is annotated with @KDocumentId but is class $propertyType (with SerialName $propertySerialName) instead of String or DocumentReference."
+                            "Field is annotated with @DocumentId but is class $propertyType (with SerialName $propertySerialName) instead of String or DocumentReference."
                         )
                 }
             }

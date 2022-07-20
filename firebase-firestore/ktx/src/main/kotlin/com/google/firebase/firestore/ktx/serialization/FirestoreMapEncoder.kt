@@ -19,8 +19,6 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ServerTimestamp
 import com.google.firebase.firestore.encoding.FirestoreAbstractEncoder
 import com.google.firebase.firestore.encoding.FirestoreSerializersModule
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.builtins.LongAsStringSerializer.descriptor
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -175,7 +173,7 @@ private class FirestoreMapEncoder(
      * [DocumentId] is present but applied on a property of an invalid type.
      */
     private fun validateDocumentIdPresentOrThrow(currentElement: Element): Boolean {
-        val documentIdPresent = currentElement.elementAnnotations?.any { it is KDocumentId }
+        val documentIdPresent = currentElement.elementAnnotations?.any { it is DocumentId }
         return if (documentIdPresent) {
             documentIdAppliedOnValidProperty(currentElement)
         } else {
@@ -206,7 +204,7 @@ private class FirestoreMapEncoder(
      */
     private fun validateServerTimestampPresentOrThrow(currentElement: Element): Boolean {
         val serverTimestampPresent =
-            currentElement.elementAnnotations.any { it is KServerTimestamp }
+            currentElement.elementAnnotations.any { it is ServerTimestamp }
         return if (serverTimestampPresent) {
             serverTimestampAppliedOnValidProperty(currentElement)
         } else {

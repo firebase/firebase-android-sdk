@@ -15,6 +15,7 @@
 package com.google.firebase.firestore
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -97,4 +98,42 @@ class ComponentRegistrarTest {
         val actual = waitFor(docRefActual.get()).toObject<TestObj>()
         assertThat(actual).isEqualTo(expected)
     }
+
+    @Serializable
+    private data class DocumentIdObj(@DocumentId val docId: String = "should be null in Java")
+
+    @Test
+    fun docId_annotation_should_be_shared_between_java_and_kotlin() {
+        // Kotlin can see this @DocumentId annotation
+        val annotations = DocumentIdObj.serializer().descriptor.getElementAnnotations(0)
+        val annotation = annotations[0]
+        annotation::class.java isAssignableTo DocumentId::class.java
+
+        // Java POJO should also see this annotation and use it to skip the annotated field
+        val docRef = testCollection("pojo").document("456")
+        docRef.withoutCustomMappers { set(DocumentIdObj()) }
+        val pojoMap = waitFor(docRef.get()).data
+        pojoMap shouldBe emptyMap
+    }
+
+    @Serializable private data class TimestampObj(@ServerTimestamp val time: Timestamp? = null)
+
+    @Test
+    fun serverTimestamp_annotation_should_be_shared_between_java_and_kotlin() {
+        // Kotlin can see this @ServerTimestamp annotation
+        val annotations = TimestampObj.serializer().descriptor.getElementAnnotations(0)
+        val annotation = annotations[0]
+        annotation::class.java isAssignableTo ServerTimestamp::class.java
+
+        // Java POJO should also see this annotation and fill timestamp to the annotated field
+        val docRef = testCollection("pojo").document("456")
+        docRef.withoutCustomMappers { set(TimestampObj()) }
+        val pojoMap: Map<String, Timestamp> =
+            waitFor(docRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                as Map<String, Timestamp>
+        // check generated timestamp equals `now` on second level
+        pojoMap["time"] should_Almost_Equal Timestamp.now()
+    }
 }
+
+private val emptyMap = emptyMap<String, Any?>()
