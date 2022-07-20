@@ -118,11 +118,14 @@ public class FcmBroadcastProcessor {
     if (Log.isLoggable(TAG, Log.DEBUG)) {
       Log.d(TAG, "Binding to service");
     }
+    if (ServiceStarter.getInstance().hasWakeLockPermission(context)) {
+      WakeLockHolder.sendWakefulServiceIntent(
+          context, getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT), intent);
+    } else {
+      getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT).sendIntent(intent);
+    }
 
-    return getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT)
-        .sendIntent(intent)
-        // ok to use direct executor because we're just immediately returning an int
-        .continueWith(Runnable::run, t -> ServiceStarter.SUCCESS);
+    return Tasks.forResult(ServiceStarter.SUCCESS);
   }
 
   /** Connect to a service via bind. This is used to process intents in Android O+ */
