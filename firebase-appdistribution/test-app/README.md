@@ -48,3 +48,27 @@ and install the apk:
 ```
 firebase-android-sdk$ adb install firebase-appdistribution/test-app/build/outputs/apk/release/test-app-release.apk
 ```
+
+## Test In-App Feedback Locally
+
+In-App Feedback is currently tricky to test locally because it relies on the
+fact that a release exists with the same hash of the running binary.
+
+To build the debug APK, upload it to App Distribution, and install it on the running emulator:
+1. Start an emulator
+2. Run the following command from the repo's root directory:
+
+    ```
+    ./gradlew :firebase-appdistribution:test-app:build :firebase-appdistribution:test-app:appDistributionUploadDebug && adb install firebase-appdistribution/test-app/build/outputs/apk/debug/test-app-debug.apk
+   ```
+
+After that, if you want to avoid having to do this every time you want to test
+locally:
+
+1. Submit feedback in the locally running app, to generate some logs
+2. In the Logcat output, find the release name (i.e. "projects/1095562444941/installations/fCmpB677QTybkwfKbViGI-/releases/3prs96fui9kb0")
+3. Modify the body of `ReleaseIdentifier.identifyRelease()` to be:
+
+    ```
+    return Tasks.forResult("<your release name>");
+   ```
