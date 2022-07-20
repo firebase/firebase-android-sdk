@@ -4627,34 +4627,25 @@ public class QueryTest {
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference topLevelNode = db.getReference();
-    Semaphore semaphore = new Semaphore(0);
     long val = 34;
     DatabaseReference node = db.getReference().push();
-    ValueEventListener listener =
-        new ValueEventListener() {
-          @Override
-          public void onDataChange(@NonNull DataSnapshot snapshot) {
-            assertEquals(snapshot.child(Objects.requireNonNull(node.getKey())).getValue(), 34L);
-            semaphore.release();
-          }
-
-          @Override
-          public void onCancelled(@NonNull DatabaseError error) {
-            // no-op
-          }
-        };
     node.setValue(val);
-    topLevelNode.addValueEventListener(listener);
-
     try {
-      IntegrationTestHelpers.waitFor(semaphore);
-      DataSnapshot snapshot = await(node.get());
-      assertEquals(
-          snapshot.getValue(),
-          val); // TODO(mtewani): We might be getting this data straight from serverCache, so we may
-      // need to rewrite it
-    } catch (ExecutionException e) {
-      fail("get threw an exception: " + e);
+      new ReadFuture(topLevelNode, events -> {
+        assertEquals(1, events.size());
+        DataSnapshot childNode = events.get(0).getSnapshot().child(node.getKey());
+        assertEquals(childNode.getValue(), 34L);
+        DataSnapshot snapshot = null;
+        try {
+          snapshot = await(node.get());
+        } catch (ExecutionException | InterruptedException e) {
+          e.printStackTrace();
+        }
+        assertEquals(Objects.requireNonNull(snapshot.getValue()), val);
+        return true;
+      }).timedGet();
+    } catch (TestFailure | TimeoutException e) {
+      e.printStackTrace();
     }
   }
 
