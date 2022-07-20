@@ -51,22 +51,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
-        Component.builder(FeedbackSender.class)
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .factory(this::buildFeedbackSender)
-            .build(),
         LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
-  }
-
-  private FeedbackSender buildFeedbackSender(ComponentContainer container) {
-    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
-        container.getProvider(FirebaseInstallationsApi.class);
-    FirebaseAppDistributionTesterApiClient testerApiClient =
-        new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
-    return new FeedbackSender(testerApiClient);
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
@@ -90,9 +75,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             new ApkUpdater(firebaseApp, new ApkInstaller()),
             new AabUpdater(),
             signInStorage,
-            lifecycleNotifier,
-            releaseIdentifier,
-            new ScreenshotTaker(firebaseApp, lifecycleNotifier));
+            lifecycleNotifier);
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
