@@ -46,6 +46,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".FeedbackActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+
         <provider
             android:name="com.google.firebase.appdistribution.impl.FirebaseAppDistributionFileProvider"
             android:authorities="${applicationId}.FirebaseAppDistributionFileProvider"
