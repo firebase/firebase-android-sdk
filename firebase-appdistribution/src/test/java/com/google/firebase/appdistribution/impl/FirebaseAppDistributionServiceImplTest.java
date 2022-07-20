@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static android.os.Looper.getMainLooper;
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
@@ -26,6 +27,8 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSIN
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,6 +47,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.os.Bundle;
@@ -71,6 +75,7 @@ import java.util.concurrent.Future;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
@@ -126,6 +131,7 @@ public class FirebaseAppDistributionServiceImplTest {
   @Mock private SignInStorage mockSignInStorage;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
+  @Mock private ScreenshotTaker mockScreenshotTaker;
 
   static class TestActivity extends Activity {}
 
@@ -154,7 +160,9 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockApkUpdater,
                 mockAabUpdater,
                 mockSignInStorage,
-                mockLifecycleNotifier));
+                mockLifecycleNotifier,
+                mockReleaseIdentifier,
+                mockScreenshotTaker));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
@@ -180,6 +188,9 @@ public class FirebaseAppDistributionServiceImplTest {
 
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
+
+    when(mockScreenshotTaker.takeScreenshot())
+        .thenReturn(Tasks.forResult(TEST_SCREENSHOT_FILE_NAME));
   }
 
   @Test
@@ -617,5 +628,22 @@ public class FirebaseAppDistributionServiceImplTest {
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
 
     assertEquals(updateTask, updateTaskToReturn);
+  }
+
+  @Test
+  public void collectAndSendFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
+    ExecutorService testExecutor = Executors.newSingleThreadExecutor();
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
+    firebaseAppDistribution.collectAndSendFeedback(testExecutor);
+    TestUtils.awaitAsyncOperations(testExecutor);
+
+    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+    verify(activity).startActivity(argument.capture());
+    verify(mockTesterSignInManager).signInTester();
+    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
+        .isEqualTo("release-name");
+    assertThat(argument.getValue().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY))
+        .isEqualTo(TEST_SCREENSHOT_FILE_NAME);
   }
 }
