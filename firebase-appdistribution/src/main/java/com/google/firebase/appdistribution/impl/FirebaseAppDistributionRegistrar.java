@@ -58,11 +58,25 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
+        Component.builder(FeedbackSender.class)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
+            .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(
-      ComponentContainer container, Executor blockingExecutor) {
+  private FeedbackSender buildFeedbackSender(ComponentContainer container, Executor blockingExecutor) {
+    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
+        container.getProvider(FirebaseInstallationsApi.class);
+    FirebaseAppDistributionTesterApiClient testerApiClient =
+        new FirebaseAppDistributionTesterApiClient(
+            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp), blockingExecutor);
+    return new FeedbackSender(testerApiClient);
+  }
+
+  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
@@ -86,7 +100,9 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             new ApkUpdater(firebaseApp, new ApkInstaller(), blockingExecutor),
             new AabUpdater(blockingExecutor),
             signInStorage,
-            lifecycleNotifier);
+            lifecycleNotifier,
+            releaseIdentifier,
+            new ScreenshotTaker(firebaseApp, lifecycleNotifier));
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
