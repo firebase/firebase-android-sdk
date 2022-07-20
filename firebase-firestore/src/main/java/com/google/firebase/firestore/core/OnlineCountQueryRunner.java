@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.isRetryableBackendError;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -23,25 +24,37 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.ExponentialBackoff;
 
-public final class OnlineQueryRunner {
+/**
+ * This class creates a count query from a base query, and run the query directly against Firestore
+ * DBE, by passing Watch and local cache processing.
+ *
+ * <p>NOTE: Eventually, when there are more queries need online-only support, we can modify this
+ * class to take the actual queries (count, sum, min, max, etc), instead of limiting this to running
+ * count queries only.
+ */
+public final class OnlineCountQueryRunner {
   private final AsyncQueue asyncQueue;
   private final RemoteStore remoteStore;
 
   private int attemptsRemaining;
 
   private final ExponentialBackoff backoff;
+  private final Query baseQuery;
+  private final TaskCompletionSource<Long> taskSource;
 
-  public OnlineQueryRunner(
-      Query query, AsyncQueue asyncQueue, RemoteStore remoteStore, int maxAttempts) {
+  public OnlineCountQueryRunner(
+      Query baseQuery, AsyncQueue asyncQueue, RemoteStore remoteStore, int maxAttempts) {
     backoff = new ExponentialBackoff(asyncQueue, AsyncQueue.TimerId.RETRY_ONLINE_QUERY);
     this.asyncQueue = asyncQueue;
     this.remoteStore = remoteStore;
     this.attemptsRemaining = maxAttempts;
+    this.baseQuery = baseQuery;
+    taskSource = new TaskCompletionSource<>();
   }
 
-  public Task<Long> runCountQuery(Query query) {
-    TaskCompletionSource<Long> taskSource = new TaskCompletionSource<>();
-    runWithBackoff(query, taskSource);
+  public Task<Long> run() {
+    hardAssert(!taskSource.getTask().isComplete(), "run() can only be called once.");
+    runWithBackoff(baseQuery, taskSource);
     return taskSource.getTask();
   }
 

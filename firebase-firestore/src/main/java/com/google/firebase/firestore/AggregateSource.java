@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-/** Configures the behavior of {@code get()} calls on {@link AggregateQuery}. */
+/** Configures the behavior of {@code get()} calls on {@link AggregateQuery#get}. */
 public enum AggregateSource {
   /**
    * Reach to the Firestore backend and surface the result verbatim, that is no local documents or

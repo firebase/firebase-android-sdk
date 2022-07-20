@@ -43,23 +43,30 @@ public class CountTest {
   public void testCountQueryEquals() {
     CollectionReference coll1 = testCollection("foo");
     CollectionReference coll1_same = coll1.firestore.collection(coll1.getPath());
-    Query query1 = coll1.document("bar").collection("baz").whereEqualTo("a", 1).limit(100);
-    Query query1_same = coll1.document("bar").collection("baz").whereEqualTo("a", 1).limit(100);
-    Query query2 = coll1.document("bar").collection("baz").whereEqualTo("b", 1).orderBy("c");
-    Query query2_same = coll1.document("bar").collection("baz").whereEqualTo("b", 1).orderBy("c");
+    AggregateQuery query1 = coll1.count();
+    AggregateQuery query1_same = coll1_same.count();
+    AggregateQuery query2 =
+        coll1.document("bar").collection("baz").whereEqualTo("a", 1).limit(100).count();
+    AggregateQuery query2_same =
+        coll1.document("bar").collection("baz").whereEqualTo("a", 1).limit(100).count();
+    AggregateQuery query3 =
+        coll1.document("bar").collection("baz").whereEqualTo("b", 1).orderBy("c").count();
+    AggregateQuery query3_same =
+        coll1.document("bar").collection("baz").whereEqualTo("b", 1).orderBy("c").count();
 
-    assertEquals(coll1, coll1_same);
     assertEquals(query1, query1_same);
     assertEquals(query2, query2_same);
+    assertEquals(query3, query3_same);
 
-    assertEquals(coll1.hashCode(), coll1_same.hashCode());
     assertEquals(query1.hashCode(), query1_same.hashCode());
     assertEquals(query2.hashCode(), query2_same.hashCode());
+    assertEquals(query3.hashCode(), query3_same.hashCode());
 
-    assertNotEquals(coll1, query1);
+    assertNotEquals(null, query1);
     assertNotEquals(query1, query2);
-    assertNotEquals(coll1.hashCode(), query1.hashCode());
+    assertNotEquals(query2, query3);
     assertNotEquals(query1.hashCode(), query2.hashCode());
+    assertNotEquals(query2.hashCode(), query3.hashCode());
   }
 
   @Test
@@ -88,6 +95,36 @@ public class CountTest {
     AggregateQuerySnapshot snapshot =
         waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
     assertEquals(Long.valueOf(1), snapshot.getCount());
+  }
+
+  @Test
+  public void testSnapshotEquals() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "b"),
+                "c", map("k", "c")));
+
+    AggregateQuerySnapshot snapshot1 =
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
+    AggregateQuerySnapshot snapshot1_same =
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
+
+    AggregateQuerySnapshot snapshot2 =
+        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER_DIRECT));
+    waitFor(collection.document("d").set(map("k", "a")));
+    AggregateQuerySnapshot snapshot2_different =
+        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER_DIRECT));
+
+    assertEquals(snapshot1, snapshot1_same);
+    assertEquals(snapshot1.hashCode(), snapshot1_same.hashCode());
+    assertEquals(snapshot1.getQuery(), collection.whereEqualTo("k", "b").count());
+
+    assertNotEquals(snapshot1, snapshot2);
+    assertNotEquals(snapshot1.hashCode(), snapshot2.hashCode());
+    assertNotEquals(snapshot2, snapshot2_different);
+    assertNotEquals(snapshot2.hashCode(), snapshot2_different.hashCode());
   }
 
   @Test

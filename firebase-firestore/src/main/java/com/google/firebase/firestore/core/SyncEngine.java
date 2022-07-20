@@ -315,7 +315,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   public Task<Long> runCountQuery(AsyncQueue asyncQueue, Query query, int maxAttempts) {
-    return new OnlineQueryRunner(query, asyncQueue, remoteStore, maxAttempts).runCountQuery(query);
+    return new OnlineCountQueryRunner(query, asyncQueue, remoteStore, maxAttempts).run();
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */

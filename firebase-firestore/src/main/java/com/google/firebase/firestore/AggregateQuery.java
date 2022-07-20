@@ -30,6 +30,7 @@ import com.google.firebase.firestore.util.Preconditions;
  * code that does so.
  */
 public class AggregateQuery {
+  private static final int DEFAULT_ATTEMPTS = 2;
 
   // The base query.
   private final Query query;
@@ -55,7 +56,7 @@ public class AggregateQuery {
    */
   @NonNull
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
-    return get(source, 1);
+    return get(source, DEFAULT_ATTEMPTS);
   }
 
   @VisibleForTesting
@@ -70,7 +71,7 @@ public class AggregateQuery {
             Executors.DIRECT_EXECUTOR,
             (task) -> {
               if (task.isSuccessful()) {
-                tcs.setResult(new AggregateQuerySnapshot(task.getResult()));
+                tcs.setResult(new AggregateQuerySnapshot(this, task.getResult()));
               } else {
                 tcs.setException(task.getException());
               }
@@ -95,6 +96,6 @@ public class AggregateQuery {
 
   @Override
   public String toString() {
-    return "AggregateQuery{" + "query=" + query + '}';
+    return "AggregateQuery{" + "query=" + query.toString() + '}';
   }
 }

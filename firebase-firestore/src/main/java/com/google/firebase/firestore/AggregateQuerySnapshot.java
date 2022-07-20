@@ -14,6 +14,9 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Objects;
 
@@ -27,9 +30,18 @@ import java.util.Objects;
 public class AggregateQuerySnapshot {
 
   private final long count;
+  private final AggregateQuery query;
 
-  AggregateQuerySnapshot(long count) {
+  AggregateQuerySnapshot(@NonNull AggregateQuery query, long count) {
+    checkNotNull(query);
+    this.query = query;
     this.count = count;
+  }
+
+  /** @return The original {@link AggregateQuery} this snapshot is a result of. */
+  @NonNull
+  public AggregateQuery getQuery() {
+    return query;
   }
 
   /**
@@ -45,17 +57,12 @@ public class AggregateQuerySnapshot {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || !(o instanceof AggregateQuerySnapshot)) return false;
-    AggregateQuerySnapshot that = (AggregateQuerySnapshot) o;
-    return count == that.count;
+    AggregateQuerySnapshot snapshot = (AggregateQuerySnapshot) o;
+    return count == snapshot.count && query.equals(snapshot.query);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(count);
-  }
-
-  @Override
-  public String toString() {
-    return "AggregateQuerySnapshot{" + "count=" + count + '}';
+    return Objects.hash(count, query);
   }
 }
