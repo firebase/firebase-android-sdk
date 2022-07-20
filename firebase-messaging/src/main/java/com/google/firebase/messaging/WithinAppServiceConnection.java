@@ -14,6 +14,7 @@
 package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.FirebaseMessaging.TAG;
+import static com.google.firebase.messaging.WakeLockHolder.WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -41,8 +42,8 @@ import java.util.concurrent.TimeUnit;
  */
 class WithinAppServiceConnection implements ServiceConnection {
 
-  // Time out requests by finishing the pending result and thus unblocking the receiver after
-  // 9s to avoid causing the receiver to time out after 10s.
+  // Time out WakeLock after 9s to match previous behavior of forcing the broadcast to finish after
+  // that much time.
   private static final int REQUEST_TIMEOUT_MS = 9000;
 
   static class BindRequest {
@@ -54,6 +55,10 @@ class WithinAppServiceConnection implements ServiceConnection {
     }
 
     void arrangeTimeout(ScheduledExecutorService executor) {
+      // Allow the same maximum WakeLock duration for high priority messages as when using
+      // startService(), otherwise allow up to 9 seconds to match the time that the service was
+      // allowed to run before finishing the BroadcastReceiver.
+      boolean isHighPriority = (intent.getFlags() & Intent.FLAG_RECEIVER_FOREGROUND) != 0;
       ScheduledFuture<?> timeoutFuture =
           executor.schedule(
               () -> {
@@ -61,10 +66,10 @@ class WithinAppServiceConnection implements ServiceConnection {
                     TAG,
                     "Service took too long to process intent: "
                         + intent.getAction()
-                        + " App may get closed.");
+                        + " Releasing WakeLock.");
                 finish();
               },
-              REQUEST_TIMEOUT_MS,
+              isHighPriority ? WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS : REQUEST_TIMEOUT_MS,
               TimeUnit.MILLISECONDS);
 
       getTask()
