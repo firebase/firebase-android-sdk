@@ -40,8 +40,6 @@ import kotlinx.serialization.SerialInfo
 @Target(
     AnnotationTarget.PROPERTY,
     AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
     AnnotationTarget.FIELD
 )
 annotation class DocumentId
