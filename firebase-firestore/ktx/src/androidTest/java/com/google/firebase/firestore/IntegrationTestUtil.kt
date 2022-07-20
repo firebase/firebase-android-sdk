@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.common.truth.Ordered
 import com.google.common.truth.ThrowableSubject
 import com.google.common.truth.Truth
 import com.google.firebase.Timestamp
@@ -92,6 +93,23 @@ fun DocumentSnapshot.withoutCustomMappers(lambda: DocumentSnapshot.() -> Any?): 
     return result
 }
 
+/**
+ * Runs a [QuerySnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun QuerySnapshot.withoutCustomMappers(lambda: QuerySnapshot.() -> Any?): Any? {
+    val currentMapper = query.firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
+    query.firestore.mapEncoders.clear()
+    val result = lambda()
+    query.firestore.mapEncoders.addAll(currentMapper)
+    return result
+}
+
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
     return Tasks.await(task, timeoutMS, TimeUnit.MILLISECONDS)
 }
@@ -123,9 +141,7 @@ fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
 }
 
-/**
- * Asserts that [runnable] throws an exception of type [T] when executed. Test only.
- */
+/** Asserts that [runnable] throws an exception of type [T] when executed. Test only. */
 inline fun <reified T : Exception> testAssertThrows(
     crossinline runnable: () -> Any?
 ): ThrowableSubject {
@@ -133,8 +149,9 @@ inline fun <reified T : Exception> testAssertThrows(
     return Truth.assertThat(exception)
 }
 
-infix fun Map<*, *>?.shouldBe(expected: Any?): Unit =
-    Truth.assertThat(this).isEqualTo(expected)
+infix fun Map<*, *>?.shouldBe(expected: Map<*, *>?): Ordered? = Truth.assertThat(this).containsExactlyEntriesIn(expected)
+
+infix fun Any?.shouldBe(expected: Any?): Unit = Truth.assertThat(this).isEqualTo(expected)
 
 infix fun Class<*>?.isAssignableTo(expected: Class<*>?): Unit =
     Truth.assertThat(this).isAssignableTo(expected)
