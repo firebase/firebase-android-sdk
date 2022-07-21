@@ -65,7 +65,7 @@ class QueryIntegrationTests {
         waitFor(query.get()).map {
             val javaCity = it.withoutCustomMappers { toObject<JavaCity>() } as JavaCity
             val ktxCity = it.toObject<KtxCity>()
-            Gson().toJson(ktxCity) shouldBe Gson().toJson(javaCity)
+            ktxCity() shouldBe javaCity()
         }
 
         // Test for QuerySnapshot
