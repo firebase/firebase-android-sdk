@@ -35,7 +35,7 @@ class QueryIntegrationTests {
         val population: Long? = null,
         val regions: List<String>? = null,
         @DocumentId val docId: String? = null
-    )
+    ) : ToGsonStringAble()
 
     @Serializable
     private data class KtxCity(
@@ -46,7 +46,7 @@ class QueryIntegrationTests {
         val population: Long,
         val regions: List<String>,
         @DocumentId val docId: String
-    )
+    ) : ToGsonStringAble()
 
     // Create a reference to host the collection for cities
     private val cities =
@@ -77,8 +77,7 @@ class QueryIntegrationTests {
         for (i in listOfJavaCities.indices) {
             val javaCity = listOfJavaCities.get(i)
             val ktxCity = listOfKtxCities.get(i)
-
-            Gson().toJson(ktxCity) shouldBe Gson().toJson(javaCity)
+            ktxCity() shouldBe javaCity()
         }
     }
 
