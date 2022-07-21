@@ -73,7 +73,7 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void collectAndSendFeedback() {
-    delegate.collectAndSendFeedback();
+  public void startFeedback() {
+    delegate.startFeedback();
   }
 }
