@@ -39,10 +39,16 @@ android {
         }
     }
     testOptions.unitTests.includeAndroidResources = true
+
+    // Kotlin Coroutines requires JVM target 1.8
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
 
     implementation project(':firebase-common')
     implementation project(':firebase-components')
