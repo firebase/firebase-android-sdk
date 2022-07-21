@@ -631,11 +631,11 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void collectAndSendFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
+  public void startFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
     ExecutorService testExecutor = Executors.newSingleThreadExecutor();
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
-    firebaseAppDistribution.collectAndSendFeedback(testExecutor);
+    firebaseAppDistribution.startFeedback(testExecutor);
     TestUtils.awaitAsyncOperations(testExecutor);
 
     ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
