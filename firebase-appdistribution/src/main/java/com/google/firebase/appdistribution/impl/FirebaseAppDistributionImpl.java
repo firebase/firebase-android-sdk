@@ -307,12 +307,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void collectAndSendFeedback() {
-    collectAndSendFeedback(Executors.newSingleThreadExecutor());
+  public void startFeedback() {
+    startFeedback(Executors.newSingleThreadExecutor());
   }
 
   @VisibleForTesting
-  public void collectAndSendFeedback(Executor taskExecutor) {
+  public void startFeedback(Executor taskExecutor) {
     screenshotTaker
         .takeScreenshot()
         .onSuccessTask(
