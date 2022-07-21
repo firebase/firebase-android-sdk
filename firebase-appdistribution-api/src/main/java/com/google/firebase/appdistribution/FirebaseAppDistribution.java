@@ -117,11 +117,10 @@ public interface FirebaseAppDistribution {
    * <ol>
    *   <li>Takes a screenshot of the current activity
    *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Looks up the currently installed App Distribution release
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    */
-  void collectAndSendFeedback();
+  void startFeedback();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
