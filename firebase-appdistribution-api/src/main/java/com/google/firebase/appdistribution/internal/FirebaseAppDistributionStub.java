@@ -74,7 +74,7 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void collectAndSendFeedback() {
+  public void startFeedback() {
     return;
   }
 

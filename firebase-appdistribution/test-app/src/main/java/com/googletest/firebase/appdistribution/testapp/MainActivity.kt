@@ -13,7 +13,6 @@ import androidx.appcompat.widget.AppCompatButton
 import com.google.android.gms.tasks.Task
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.FirebaseAppDistribution
-import com.google.firebase.appdistribution.FirebaseAppDistributionException
 import com.google.firebase.appdistribution.UpdateProgress
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -169,7 +168,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         feedbackButton.setOnClickListener {
-            firebaseAppDistribution.collectAndSendFeedback()
+            firebaseAppDistribution.startFeedback()
         }
     }
 
