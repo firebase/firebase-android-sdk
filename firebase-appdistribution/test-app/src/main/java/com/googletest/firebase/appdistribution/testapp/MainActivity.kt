@@ -171,7 +171,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         feedbackButton.setOnClickListener {
-            firebaseAppDistribution.collectAndSendFeedback()
+            firebaseAppDistribution.startFeedback()
         }
     }
 
