@@ -17,7 +17,6 @@ package com.google.firebase.firestore
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
-import com.google.gson.Gson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test

@@ -17,9 +17,9 @@ package com.google.firebase.firestore.ktx.serialization
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.ThrowOnExtraProperties
-import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder as FireDecoder
+import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder
 import com.google.firebase.firestore.encoding.FirestoreSerializersModule
-import com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder.Constants.START_INDEX
+import com.google.firebase.firestore.ktx.serialization.FirestoreKtxAbstractDecoder.Constants.START_INDEX
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -43,11 +43,11 @@ import kotlinx.serialization.serializer
  * @param nestedObject The nested object (map or list) that that needs to be decoded.
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
-private abstract class FirestoreAbstractDecoder(
+private abstract class FirestoreKtxAbstractDecoder(
     private val descriptor: SerialDescriptor,
     private val nestedObject: Any,
     private val docRef: DocumentReference
-) : FireDecoder, AbstractDecoder() {
+) : FirestoreAbstractDecoder, AbstractDecoder() {
 
     object Constants {
         const val START_INDEX = 0
@@ -160,8 +160,7 @@ private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
     this.toMutableMap().apply {
         for (propertyName in descriptor.elementNames) {
             val propertyIndex: Int = descriptor.getElementIndex(propertyName)
-            val annotationsOnProperty: List<Annotation> =
-                descriptor.getElementAnnotations(propertyIndex)
+            val annotationsOnProperty = descriptor.getElementAnnotations(propertyIndex)
             if (annotationsOnProperty.any { it is DocumentId }) {
                 val propertyDescriptor = descriptor.getElementDescriptor(propertyIndex)
                 val propertyType: SerialKind = propertyDescriptor.kind
@@ -200,7 +199,7 @@ private class FirestoreMapDecoder(
     descriptor: SerialDescriptor,
     val nestedMap: Map<String, Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(descriptor, nestedMap, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, nestedMap, docRef) {
 
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>
@@ -255,7 +254,7 @@ private class FirestoreListDecoder(
     descriptor: SerialDescriptor,
     override val decodeValueList: List<Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(descriptor, decodeValueList, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, decodeValueList, docRef) {
 
     /**
      * Returns the index of the element to be decoded.
