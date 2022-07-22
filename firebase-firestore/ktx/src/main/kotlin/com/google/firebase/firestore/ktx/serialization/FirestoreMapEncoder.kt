@@ -82,7 +82,7 @@ private class FirestoreMapEncoder(
     /** The data class records the information for the element that needs to be encoded. */
     private inner class Element(elementIndex: Int = 0) {
         val encodeKey: String = descriptor.getElementName(elementIndex)
-        val elementAnnotations: List<Annotation> = descriptor.getElementAnnotations(elementIndex)
+        val elementAnnotations = descriptor.getElementAnnotations(elementIndex)
         val elementSerialName = descriptor.getElementDescriptor(elementIndex).serialName
         val elementSerialKind = descriptor.getElementDescriptor(elementIndex).kind
     }
@@ -100,7 +100,7 @@ private class FirestoreMapEncoder(
      */
     override fun encodeFirestoreNativeDataType(value: Any): Unit =
         encodedMap.let {
-            val element: Element = Element(index++)
+            val element = Element(index++)
             validateAnnotations(element)
             when {
                 // @DocumentId on DocumentReference, then ignore
@@ -112,7 +112,7 @@ private class FirestoreMapEncoder(
 
     override fun encodeNull(): Unit =
         encodedMap.let {
-            val element: Element = Element(index++)
+            val element = Element(index++)
             validateAnnotations(element)
             when {
                 // @DocumentId on String?, DocumentReference?, then ignore.
@@ -126,7 +126,7 @@ private class FirestoreMapEncoder(
 
     override fun encodeValue(value: Any): Unit =
         encodedMap.let {
-            val element: Element = Element(index++)
+            val element = Element(index++)
             validateAnnotations(element)
             when {
                 // @DocumentId on String, then ignore, @ServerTimestamp cannot on Primitive types
@@ -175,7 +175,7 @@ private class FirestoreMapEncoder(
      * [DocumentId] is present but applied on a property of an invalid type.
      */
     private fun validateDocumentIdPresentOrThrow(currentElement: Element): Boolean {
-        val documentIdPresent = currentElement.elementAnnotations?.any { it is KDocumentId }
+        val documentIdPresent = currentElement.elementAnnotations.any { it is KDocumentId }
         return if (documentIdPresent) {
             documentIdAppliedOnValidProperty(currentElement)
         } else {
@@ -189,14 +189,12 @@ private class FirestoreMapEncoder(
      */
     private fun documentIdAppliedOnValidProperty(currentElement: Element): Boolean {
         val regex = Regex("<DocumentReference>|__DocumentReferenceSerializer__|<String>")
-        val isDocumentReference = currentElement.elementSerialName?.contains(regex)
-        if (currentElement.elementSerialKind == PrimitiveKind.STRING || isDocumentReference) {
-            return true
-        } else {
-            throw IllegalArgumentException(
-                "Field is annotated with @DocumentId but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of String or DocumentReference."
-            )
-        }
+        val isDocumentReference = currentElement.elementSerialName.contains(regex)
+        val isPrimitiveString = currentElement.elementSerialKind == PrimitiveKind.STRING
+        if (isPrimitiveString || isDocumentReference) return true
+        throw IllegalArgumentException(
+            "Field is annotated with @DocumentId but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of String or DocumentReference."
+        )
     }
 
     /**
@@ -222,13 +220,10 @@ private class FirestoreMapEncoder(
         val regex = Regex("<Timestamp>|__TimestampSerializer__")
         val isOnTimestamp = currentElement.elementSerialName.contains(regex)
         val isOnDate = currentElement.elementSerialName.contains("<Date>")
-        if (isOnTimestamp || isOnDate) {
-            return true
-        } else {
-            throw IllegalArgumentException(
-                "Field is annotated with @ServerTimestamp but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of Date or Timestamp."
-            )
-        }
+        if (isOnTimestamp || isOnDate) return true
+        throw IllegalArgumentException(
+            "Field is annotated with @ServerTimestamp but is class $currentElement.elementKind ( with serial name ${currentElement.elementSerialName} ) instead of Date or Timestamp."
+        )
     }
 
     private fun validateAnnotations(currentElement: Element) {
