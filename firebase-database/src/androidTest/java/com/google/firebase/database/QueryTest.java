@@ -4552,7 +4552,7 @@ public class QueryTest {
   public void testGetReturnsNullForEmptyNodeWhenOnline()
       throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     assertNull(Tasks.await(db.getReference(UUID.randomUUID().toString()).get()).getValue());
   }
@@ -4560,7 +4560,7 @@ public class QueryTest {
   @Test
   public void testGetWaitsForConnection() throws DatabaseException, InterruptedException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node =
         db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
@@ -4589,7 +4589,7 @@ public class QueryTest {
   public void testGetSendsServerGetForNodeWithNoListenerWhenOnline()
       throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     DatabaseReference node = db.getReference();
     Tasks.await(node.setValue(42));
@@ -4601,9 +4601,9 @@ public class QueryTest {
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
     FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
     readerDb.setPersistenceEnabled(true);
     FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
@@ -4676,9 +4676,9 @@ public class QueryTest {
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
     FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
     readerDb.setPersistenceEnabled(true);
     FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
@@ -4721,9 +4721,9 @@ public class QueryTest {
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
     FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
     readerDb.setPersistenceEnabled(true);
     FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
@@ -4749,9 +4749,9 @@ public class QueryTest {
   public void testGetSkipsPersistenceCacheWhenOnline()
       throws InterruptedException, ExecutionException, TimeoutException, TestFailure {
     FirebaseApp readerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseApp writerApp =
-        appForDatabaseUrl(IntegrationTestValues.getNamespace(), UUID.randomUUID().toString());
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase readerDb = FirebaseDatabase.getInstance(readerApp);
     readerDb.setPersistenceEnabled(true);
     FirebaseDatabase writerDb = FirebaseDatabase.getInstance(writerApp);
