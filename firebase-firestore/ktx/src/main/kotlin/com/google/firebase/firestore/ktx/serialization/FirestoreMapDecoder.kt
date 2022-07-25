@@ -70,7 +70,12 @@ private abstract class FirestoreKtxAbstractDecoder(
         // TODO: Add a EnumNamingProperties parameter, and convert decodedEnumFieldName based on it
         // i.e. case insensitive, snake_case match camelCase, etc
         val enumFieldNames = enumDescriptor.elementNames.toList()
-        return enumFieldNames.indexOf(decodedEnumFieldName)
+        val index = enumFieldNames.indexOf(decodedEnumFieldName)
+        if (index == -1)
+            throw IllegalArgumentException(
+                "Could not find a match for enum field name of $enumFieldNames."
+            )
+        return index
     }
 
     /**
