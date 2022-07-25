@@ -4591,8 +4591,7 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference node =
-        db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
+    DatabaseReference node = db.getReference().push();
     long val = 34;
     node.setValue(val);
     db.goOffline();
@@ -4610,13 +4609,12 @@ public class QueryTest {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
-    DatabaseReference node =
-        db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
+    DatabaseReference node = db.getReference().push();
     long val = 34;
     try {
       node.setValue(val);
       DataSnapshot snapshot = await(node.get());
-      assertEquals(snapshot.getValue(), val); // TODO(mtewani): Check why this is always long?
+      assertEquals(snapshot.getValue(), val);
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4631,20 +4629,12 @@ public class QueryTest {
     DatabaseReference topLevelNode = db.getReference();
     Semaphore semaphore = new Semaphore(0);
     long val = 34;
-    DatabaseReference node =
-        db.getReference().child(Objects.requireNonNull(db.getReference().push().getKey()));
+    DatabaseReference node = db.getReference().push();
     ValueEventListener listener =
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            assertTrue(snapshot.hasChildren());
-            DataSnapshot childNode = null;
-            for (DataSnapshot child : snapshot.getChildren()) {
-              if (child.getKey().equals(node.getKey())) {
-                childNode = child;
-              }
-            }
-            assertEquals(childNode.getValue(), 34L);
+            assertEquals(snapshot.child(Objects.requireNonNull(node.getKey())).getValue(), 34L);
             semaphore.release();
           }
 
