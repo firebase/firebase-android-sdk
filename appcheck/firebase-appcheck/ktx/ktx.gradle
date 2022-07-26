@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,32 +18,55 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-common')
+    releaseWith project(':appcheck:firebase-appcheck')
+    testLab.enabled = true
+    publishJavadoc = true
+    publishSources = true
 }
 
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion project.minSdkVersion
+        minSdkVersion 16
+        multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
-        test.java.srcDirs += 'src/test/kotlin'
+        test.java {
+            srcDir 'src/test/kotlin'
+        }
+        androidTest.java.srcDirs += 'src/androidTest/kotlin'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
     testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':firebase-common:ktx')
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation project(path: ':appcheck:firebase-appcheck')
+    implementation project(path: ':appcheck:firebase-appcheck-interop')
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
+
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test:core:1.2.0'
 }
