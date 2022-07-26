@@ -121,44 +121,6 @@ class DocumentIdTests {
     }
 
     @Test
-    fun `DocumentId annotated on correct type without backfield is ignored during encoding`() {
-        @Serializable
-        class GetterWithoutBackingFieldOnDocumentIdBean {
-            @DocumentId
-            val foo: String
-                get() = "doc-id" // getter only, no backing field -- not serialized
-            val bar: Int = 0 // property with a backing field -- serialized
-        }
-
-        // This is different than the current Java Solution's behavior
-        // Java will throw run time exception if @DocumentId applied to a non-writable field during
-        // serializing
-        // While, the field without a backing field is transparent to Kotlin, so no exception can be
-        // thrown rather than just ignore this property during serialization
-        assertThat(encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean()))
-            .containsExactlyEntriesIn(mutableMapOf("bar" to 0))
-    }
-
-    @Test
-    fun `DocumentId annotated on wrong type without backfield is ignored during encoding`() {
-        @Serializable
-        class GetterWithoutBackingFieldOnDocumentIdBean {
-            @DocumentId
-            val foo: Long
-                get() = 123L // getter only, no backing field -- not serialized
-            val bar: Int = 0 // property with a backing field -- serialized
-        }
-
-        // This is different than the current Java Solution's behavior
-        // Java will throw run time exception if @DocumentId applied to a non-writable field during
-        // serializing
-        // While, the field without a backing field is transparent to Kotlin, so no exception can be
-        // thrown rather than just ignore this property during serialization
-        assertThat(encodeToMap(GetterWithoutBackingFieldOnDocumentIdBean()))
-            .containsExactlyEntriesIn(mutableMapOf("bar" to 0))
-    }
-
-    @Test
     fun `DocumentId annotated on correct types with backing fields should encode`() {
         val docRef = documentReference("coll/doc123")
 

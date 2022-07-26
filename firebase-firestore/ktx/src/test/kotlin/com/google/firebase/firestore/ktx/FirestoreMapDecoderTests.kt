@@ -72,6 +72,20 @@ class FirestoreMapDecoderTests {
     }
 
     @Test
+    fun `nullable nested primitive list inside of custom object decoding is supported`() {
+        @Serializable data class Product(val name: String, val serialNumList: List<Long?>)
+
+        val map =
+            mapOf(
+                "name" to "kotlinx.serialization",
+                "serialNumList" to listOf(null, 1L, 10L, 100L, 1000L)
+            )
+        val decodedObject = decodeFromMap<Product>(map, firestoreDocument)
+        val expectedObject = Product("kotlinx.serialization", listOf(null, 1L, 10L, 100L, 1000L))
+        assertThat(decodedObject).isEqualTo(expectedObject)
+    }
+
+    @Test
     fun `nested custom obj list inside of custom object decoding is supported`() {
         @Serializable data class Owner(val name: String)
 
@@ -85,6 +99,24 @@ class FirestoreMapDecoderTests {
             )
         val decodedObject = decodeFromMap<Store>(map, firestoreDocument)
         val listOfOwner = listOf(Owner("a"), Owner("b"), Owner("c"))
+        val expectedObject = Store("kotlinx.store", listOfOwner)
+        assertThat(decodedObject).isEqualTo(expectedObject)
+    }
+
+    @Test
+    fun `nullable nested custom obj list inside of custom object decoding is supported`() {
+        @Serializable data class Owner(val name: String)
+
+        @Serializable data class Store(val name: String, val listOfOwner: List<Owner?>)
+
+        val map =
+            mapOf(
+                "name" to "kotlinx.store",
+                "listOfOwner" to
+                        listOf(null, mapOf("name" to "a"), mapOf("name" to "b"), mapOf("name" to "c"))
+            )
+        val decodedObject = decodeFromMap<Store>(map, firestoreDocument)
+        val listOfOwner = listOf(null, Owner("a"), Owner("b"), Owner("c"))
         val expectedObject = Store("kotlinx.store", listOfOwner)
         assertThat(decodedObject).isEqualTo(expectedObject)
     }

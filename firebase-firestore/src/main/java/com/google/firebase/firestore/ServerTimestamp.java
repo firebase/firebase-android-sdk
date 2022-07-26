@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,22 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.firestore
 
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
-import kotlinx.serialization.SerialInfo
+package com.google.firebase.firestore;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO
- * being written contains `null` for a @ServerTimestamp-annotated field, it will be replaced with a
- * server-generated timestamp.
+ * being written contains {@code null} for a @ServerTimestamp-annotated field, it will be replaced
+ * with a server-generated timestamp.
  */
-@SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
-@Target(
-    AnnotationTarget.PROPERTY,
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.FIELD
-)
-annotation class ServerTimestamp
+@Target({ElementType.METHOD, ElementType.FIELD})
+public @interface ServerTimestamp {}

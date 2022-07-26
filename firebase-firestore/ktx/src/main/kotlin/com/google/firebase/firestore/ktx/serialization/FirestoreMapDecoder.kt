@@ -20,7 +20,11 @@ import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder
 import com.google.firebase.firestore.encoding.FirestoreSerializersModule
 import com.google.firebase.firestore.ktx.serialization.FirestoreKtxAbstractDecoder.Constants.START_INDEX
+import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaField
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
@@ -45,6 +49,7 @@ import kotlinx.serialization.serializer
  */
 private abstract class FirestoreKtxAbstractDecoder(
     private val descriptor: SerialDescriptor,
+    private val clazz: Class<*>,
     private val nestedObject: Any,
     private val docRef: DocumentReference
 ) : FirestoreAbstractDecoder, AbstractDecoder() {
@@ -55,7 +60,11 @@ private abstract class FirestoreKtxAbstractDecoder(
     protected var elementIndex: Int = START_INDEX
 
     /** The data class records the information for the element that needs to be decoded. */
-    protected inner class Element(val decodeValue: Any?, serialIndex: Int) {
+    protected inner class Element(
+        val decodeValue: Any?,
+        serialIndex: Int,
+        val elementName: String?
+    ) {
         val elementDescriptor: SerialDescriptor = descriptor.getElementDescriptor(serialIndex)
         val elementDataType: SerialKind = elementDescriptor.kind
     }
@@ -126,17 +135,22 @@ private abstract class FirestoreKtxAbstractDecoder(
 
     final override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         val innerObject = getCompositeObject(elementIndex)
+        val innerClazz =
+            getCompositeClazz(elementIndex)
+                ?: throw IllegalArgumentException(
+                    "Cannot decode ${descriptor.serialName} due to lack of Class information."
+                )
         when (descriptor.kind) {
             is StructureKind.CLASS -> {
                 val innerMap =
                     (innerObject as Map<String, Any?>).run {
-                        replaceKDocumentIdFieldWithCurrentDocRef(descriptor, docRef)
+                        replaceKDocumentIdFieldWithCurrentDocRef(descriptor, innerClazz, docRef)
                     }
-                return FirestoreMapDecoder(descriptor, innerMap, docRef)
+                return FirestoreMapDecoder(descriptor, innerClazz, innerMap, docRef)
             }
             is StructureKind.LIST -> {
-                val innerList = innerObject as List<Any?>
-                return FirestoreListDecoder(descriptor, innerList, docRef)
+                val innerList = innerObject as List<*>
+                return FirestoreListDecoder(descriptor, innerClazz, innerList, docRef)
             }
             else -> {
                 throw Exception("Incorrect format of nested data provided: <$innerObject>")
@@ -155,17 +169,39 @@ private abstract class FirestoreKtxAbstractDecoder(
             else -> decodeValueList[elementIndex - 1]
         }
     }
+
+    /** Returns the nested structured object's java class type. */
+    private fun getCompositeClazz(elementIndex: Int): Class<*>? {
+        return when (elementIndex) {
+            START_INDEX -> clazz
+            else -> getCompositeClazzForNestedListOrMap(currentDecodeElement.elementName)
+        }
+    }
+
+    private fun getCompositeClazzForNestedListOrMap(elementName: String?): Class<*>? {
+        return when (elementName) {
+            // nested list
+            null -> currentDecodeElement.decodeValue?.let { it::class.java }
+            // nested map
+            else -> JavaAndKtxAnnotationMapper(clazz).elementKeyToClazzType[elementName]
+        }
+    }
 }
 
 /** replaces the @[DocumentId] annotated field with [DocumentReference] value. */
 private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
     descriptor: SerialDescriptor,
+    clazz: Class<*>,
     docRef: DocumentReference
 ): MutableMap<String, Any?> =
     this.toMutableMap().apply {
+        val annotationMapper = JavaAndKtxAnnotationMapper(clazz)
         for (propertyName in descriptor.elementNames) {
             val propertyIndex: Int = descriptor.getElementIndex(propertyName)
-            val annotationsOnProperty = descriptor.getElementAnnotations(propertyIndex)
+            val annotationsFromReflection =
+                annotationMapper.elementKeyToAnnotations[propertyName] ?: emptyList()
+            val annotationsOnProperty =
+                descriptor.getElementAnnotations(propertyIndex) + annotationsFromReflection
             if (annotationsOnProperty.any { it is DocumentId }) {
                 val propertyDescriptor = descriptor.getElementDescriptor(propertyIndex)
                 val propertyType: SerialKind = propertyDescriptor.kind
@@ -202,9 +238,10 @@ private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
  */
 private class FirestoreMapDecoder(
     descriptor: SerialDescriptor,
+    clazz: Class<*>,
     val nestedMap: Map<String, Any?>,
     docRef: DocumentReference
-) : FirestoreKtxAbstractDecoder(descriptor, nestedMap, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, clazz, nestedMap, docRef) {
 
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>
@@ -235,7 +272,7 @@ private class FirestoreMapDecoder(
             val descriptorIndex = descriptor.getElementIndex(elementName)
             if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) {
                 val elementValue = decodeValueList[elementIndex++]
-                currentDecodeElement = Element(elementValue, descriptorIndex)
+                currentDecodeElement = Element(elementValue, descriptorIndex, elementName)
                 return descriptorIndex
             }
             if (descriptorIndex == CompositeDecoder.UNKNOWN_NAME && isThrowOnExtraProperties) {
@@ -257,9 +294,10 @@ private class FirestoreMapDecoder(
  */
 private class FirestoreListDecoder(
     descriptor: SerialDescriptor,
+    clazz: Class<*>,
     override val decodeValueList: List<Any?>,
     docRef: DocumentReference
-) : FirestoreKtxAbstractDecoder(descriptor, decodeValueList, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, clazz, decodeValueList, docRef) {
 
     /**
      * Returns the index of the element to be decoded.
@@ -270,8 +308,40 @@ private class FirestoreListDecoder(
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (elementIndex == decodeValueList.size) return CompositeDecoder.DECODE_DONE
-        currentDecodeElement = Element(decodeValueList[elementIndex], elementIndex)
+        currentDecodeElement = Element(decodeValueList[elementIndex], elementIndex, null)
         return elementIndex++
+    }
+}
+
+/**
+ * A data class that stores the information of all the annotations (both Java and Ktx) associated
+ * with each field name, and the Java class types associated with each field name.
+ */
+class JavaAndKtxAnnotationMapper(clazz: Class<*>) {
+    val elementKeyToAnnotations = mutableMapOf<String, List<Annotation>>()
+    val elementKeyToClazzType = mutableMapOf<String, Class<*>?>()
+    private val kClazz = clazz.kotlin
+
+    init {
+        for (property in kClazz.memberProperties) {
+            // replace the elementKey with the value of SerialName annotation.
+            val elementKey =
+                ((property?.annotations?.firstOrNull { it is SerialName } as? SerialName)?.value)
+                    ?: property.name
+            // get the generic type of List content
+            val field = property.javaField
+            if (field?.type == List::class.java) {
+                val listArgument = property.returnType.arguments.first().type
+                val listContentClazz = (listArgument?.classifier as KClass<*>).java
+                elementKeyToClazzType[elementKey] = listContentClazz
+            } else { // TODO: find out a way to support recursively generic types
+                elementKeyToClazzType[elementKey] = field?.type
+            }
+            // merge all the annotations from java fields and ktx properties
+            val ktxAnnotations = property.annotations
+            val javaAnnotation = field?.declaredAnnotations?.toList() ?: emptyList()
+            elementKeyToAnnotations[elementKey] = ktxAnnotations + javaAnnotation
+        }
     }
 }
 
@@ -285,12 +355,13 @@ private class FirestoreListDecoder(
  */
 fun <T> decodeFromMap(
     map: Map<String, Any?>,
+    clazz: Class<*>,
     deserializer: DeserializationStrategy<T>,
     docRef: DocumentReference
 ): T {
-    val decoder: Decoder = FirestoreMapDecoder(deserializer.descriptor, map, docRef)
+    val decoder: Decoder = FirestoreMapDecoder(deserializer.descriptor, clazz, map, docRef)
     return decoder.decodeSerializableValue(deserializer)
 }
 
 inline fun <reified T> decodeFromMap(map: Map<String, Any?>, docRef: DocumentReference): T =
-    decodeFromMap(map, serializer(), docRef)
+    decodeFromMap(map, T::class.java, serializer(), docRef)

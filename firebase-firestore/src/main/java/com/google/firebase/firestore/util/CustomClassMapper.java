@@ -29,7 +29,6 @@ import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -53,8 +52,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import kotlin.reflect.KProperty;
-import kotlin.reflect.jvm.ReflectJvmMapping;
 
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
@@ -915,8 +912,7 @@ public class CustomClassMapper {
     }
 
     private void applyFieldAnnotations(Field field) {
-      if (field.isAnnotationPresent(ServerTimestamp.class)
-          || isAnnotationPresentOnProperty(field, ServerTimestamp.class)) {
+      if (field.isAnnotationPresent(ServerTimestamp.class)) {
         Class<?> fieldType = field.getType();
         if (fieldType != Date.class && fieldType != Timestamp.class) {
           throw new IllegalArgumentException(
@@ -929,22 +925,11 @@ public class CustomClassMapper {
         serverTimestamps.add(propertyName(field));
       }
 
-      if (field.isAnnotationPresent(DocumentId.class)
-          || isAnnotationPresentOnProperty(field, DocumentId.class)) {
+      if (field.isAnnotationPresent(DocumentId.class)) {
         Class<?> fieldType = field.getType();
         ensureValidDocumentIdType("Field", "is", fieldType);
         documentIdPropertyNames.add(propertyName(field));
       }
-    }
-
-    private boolean isAnnotationPresentOnProperty(
-        Field field, Class<? extends Annotation> annotationType) {
-      KProperty<?> property = ReflectJvmMapping.getKotlinProperty(field);
-      List<Annotation> annotationsOnProperty = property.getAnnotations();
-      for (Annotation annotation : annotationsOnProperty) {
-        if (annotation.annotationType().equals(annotationType)) return true;
-      }
-      return false;
     }
 
     private void applyGetterAnnotations(Method method) {

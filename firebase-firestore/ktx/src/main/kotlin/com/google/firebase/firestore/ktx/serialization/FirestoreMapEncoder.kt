@@ -50,6 +50,7 @@ import kotlinx.serialization.serializer
  */
 private class FirestoreMapEncoder(
     private val descriptor: SerialDescriptor,
+    private val clazz: Class<*>,
     private val depth: Int = 0,
     private val callback: (MutableMap<String, Any?>) -> Unit
 ) : FirestoreAbstractEncoder, AbstractEncoder() {
@@ -77,12 +78,22 @@ private class FirestoreMapEncoder(
     /** Returns the final encoded result. */
     fun serializedResult() = encodedMap.toMap() // a defensive deep copy
 
+    private val annotationMapper = JavaAndKtxAnnotationMapper(clazz)
+
     /** The data class records the information for the element that needs to be encoded. */
     private inner class Element(elementIndex: Int = 0) {
         val encodeKey: String = descriptor.getElementName(elementIndex)
-        val elementAnnotations = descriptor.getElementAnnotations(elementIndex)
+        val ktxReflectionAnnotations =
+            annotationMapper.elementKeyToAnnotations[encodeKey] ?: emptyList()
+        val elementAnnotations =
+            descriptor.getElementAnnotations(elementIndex) + ktxReflectionAnnotations
         val elementSerialName = descriptor.getElementDescriptor(elementIndex).serialName
         val elementSerialKind = descriptor.getElementDescriptor(elementIndex).kind
+        val elementClazz =
+            annotationMapper.elementKeyToClazzType[encodeKey]
+                ?: throw IllegalArgumentException(
+                    "Cannot retrieve Class type for field $encodeKey"
+                )
     }
 
     /** Get the field name of an enum via index, and encode it. */
@@ -144,18 +155,20 @@ private class FirestoreMapEncoder(
      */
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
         if (depth == 0) {
-            return FirestoreMapEncoder(descriptor, depth = depth + 1) { encodedMap.putAll(it) }
+            return FirestoreMapEncoder(descriptor, clazz, depth = depth + 1) {
+                encodedMap.putAll(it)
+            }
         }
         val currentElement = Element(index++)
         validateAnnotations(currentElement)
         return when (descriptor.kind) {
             StructureKind.CLASS -> {
-                FirestoreMapEncoder(descriptor, depth = depth + 1) {
+                FirestoreMapEncoder(descriptor, currentElement.elementClazz, depth = depth + 1) {
                     encodedMap[currentElement.encodeKey] = it
                 }
             }
             StructureKind.LIST -> {
-                FirestoreListEncoder(depth = depth + 1) {
+                FirestoreListEncoder(currentElement.elementClazz, depth = depth + 1) {
                     encodedMap[currentElement.encodeKey] = it
                 }
             }
@@ -201,8 +214,7 @@ private class FirestoreMapEncoder(
      * [ServerTimestamp] is present but applied on a property of an invalid type.
      */
     private fun validateServerTimestampPresentOrThrow(currentElement: Element): Boolean {
-        val serverTimestampPresent =
-            currentElement.elementAnnotations.any { it is ServerTimestamp }
+        val serverTimestampPresent = currentElement.elementAnnotations.any { it is ServerTimestamp }
         return if (serverTimestampPresent) {
             serverTimestampAppliedOnValidProperty(currentElement)
         } else {
@@ -237,6 +249,7 @@ private class FirestoreMapEncoder(
  * @param callback PSends the encoded nested map back to the caller.
  */
 private class FirestoreListEncoder(
+    private val clazz: Class<*>,
     private val depth: Int = 0,
     private val callback: (MutableList<Any?>) -> Unit
 ) : FirestoreAbstractEncoder, AbstractEncoder() {
@@ -276,7 +289,9 @@ private class FirestoreListEncoder(
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
         when (descriptor.kind) {
             StructureKind.CLASS -> {
-                return FirestoreMapEncoder(descriptor, depth = depth + 1) { encodedList.add(it) }
+                return FirestoreMapEncoder(descriptor, clazz, depth = depth + 1) {
+                    encodedList.add(it)
+                }
             }
             else -> {
                 throw IllegalArgumentException(
@@ -296,10 +311,11 @@ private const val MAX_DEPTH: Int = 500
  * @param value The @[Serializable] object.
  * @return The encoded nested map of Firestore supported types.
  */
-fun <T> encodeToMap(serializer: SerializationStrategy<T>, value: T): Map<String, Any?> {
-    val encoder = FirestoreMapEncoder(serializer.descriptor) {}
+fun <T : Any> encodeToMap(serializer: SerializationStrategy<T>, value: T): Map<String, Any?> {
+    val encoder = FirestoreMapEncoder(serializer.descriptor, value::class.java) {}
     encoder.encodeSerializableValue(serializer, value)
     return encoder.serializedResult()
 }
 
-inline fun <reified T> encodeToMap(value: T): Map<String, Any?> = encodeToMap(serializer(), value)
+inline fun <reified T : Any> encodeToMap(value: T): Map<String, Any?> =
+    encodeToMap(serializer(), value)

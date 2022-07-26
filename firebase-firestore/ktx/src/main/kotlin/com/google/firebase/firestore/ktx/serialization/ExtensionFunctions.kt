@@ -25,7 +25,7 @@ import com.google.firebase.firestore.DocumentReference
  * @return A Task that will be resolved when the write finishes.
  */
 // TODO: This extension function need to be removed after merge the component registrar in.
-inline fun <reified T> DocumentReference.setData(data: T): Task<Void> {
-    val encodedMap = encodeToMap<T>(data)
+inline fun <reified T : Any> DocumentReference.setData(data: T): Task<Void> {
+    val encodedMap = encodeToMap(data)
     return this.set(encodedMap)
 }

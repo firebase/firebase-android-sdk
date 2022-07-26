@@ -77,6 +77,7 @@ dependencies {
     implementation project(':firebase-firestore')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion" //cannot be compileOnly
 
     testImplementation project(':firebase-database-collection')
     testImplementation 'org.mockito:mockito-core:2.25.0'

@@ -20,3 +20,10 @@ package com.google.firebase.firestore.ktx {
 
 }
 
+package com.google.firebase.firestore.ktx.annotations {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD}) public @interface JavaTestAnnotation {
+  }
+
+}
+

@@ -43,7 +43,7 @@ class MapEncoderKtxImp : MapEncoder {
     ): T {
         val deserializer = serializer(valueType)
         val doc: DocumentReference = docRef
-        return decodeFromMap(data, deserializer, doc) as T
+        return decodeFromMap(data, valueType, deserializer, doc) as T
     }
 
     /**
