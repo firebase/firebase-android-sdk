@@ -538,99 +538,6 @@ public class SyncTree {
         });
   }
 
-  public Void addSyncpoint(@NotNull final QuerySpec query) {
-    return persistenceManager.runInTransaction(
-        new Callable<Void>() {
-          @Override
-          public Void call() {
-            Path path = query.getPath();
-
-            Node serverCacheNode = null;
-            // Any covering writes will necessarily be at the root, so really all we need to find is
-            // the server cache. Consider optimizing this once there's a better understanding of
-            // what actual behavior will be.
-            // for (Map.Entry<QuerySpec, View> entry: views.entrySet()) {
-            {
-              ImmutableTree<SyncPoint> tree = syncPointTree;
-              Path currentPath = path;
-              while (!tree.isEmpty()) {
-                SyncPoint currentSyncPoint = tree.getValue();
-                if (currentSyncPoint != null) {
-                  serverCacheNode =
-                      serverCacheNode != null
-                          ? serverCacheNode
-                          : currentSyncPoint.getCompleteServerCache(currentPath);
-                }
-                ChildKey front =
-                    currentPath.isEmpty() ? ChildKey.fromString("") : currentPath.getFront();
-                tree = tree.getChild(front);
-                currentPath = currentPath.popFront();
-              }
-            }
-
-            SyncPoint syncPoint = syncPointTree.get(path);
-            if (syncPoint == null) {
-              syncPoint = new SyncPoint(persistenceManager);
-            } else {
-              serverCacheNode =
-                  serverCacheNode != null
-                      ? serverCacheNode
-                      : syncPoint.getCompleteServerCache(Path.getEmptyPath());
-            }
-
-            persistenceManager.setQueryActive(query);
-
-            CacheNode serverCache;
-            if (serverCacheNode != null) {
-              serverCache =
-                  new CacheNode(IndexedNode.from(serverCacheNode, query.getIndex()), true, false);
-            } else {
-              // Hit persistence
-              CacheNode persistentServerCache = persistenceManager.serverCache(query);
-              if (persistentServerCache.isFullyInitialized()) {
-                serverCache = persistentServerCache;
-              } else {
-                serverCacheNode = EmptyNode.Empty();
-                ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
-                for (Map.Entry<ChildKey, ImmutableTree<SyncPoint>> child : subtree.getChildren()) {
-                  SyncPoint childSyncPoint = child.getValue().getValue();
-                  if (childSyncPoint != null) {
-                    Node completeCache = childSyncPoint.getCompleteServerCache(Path.getEmptyPath());
-                    if (completeCache != null) {
-                      serverCacheNode =
-                          serverCacheNode.updateImmediateChild(child.getKey(), completeCache);
-                    }
-                  }
-                }
-                // Fill the node with any available children we have
-                for (NamedNode child : persistentServerCache.getNode()) {
-                  if (!serverCacheNode.hasChild(child.getName())) {
-                    serverCacheNode =
-                        serverCacheNode.updateImmediateChild(child.getName(), child.getNode());
-                  }
-                }
-                serverCache =
-                    new CacheNode(
-                        IndexedNode.from(serverCacheNode, query.getIndex()), false, false);
-              }
-            }
-
-            boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
-            if (!viewAlreadyExists && !query.loadsAllData()) {
-              // We need to track a tag for this query
-              hardAssert(
-                  !queryToTagMap.containsKey(query), "View does not exist but we have a tag");
-              Tag tag = getNextQueryTag();
-              queryToTagMap.put(query, tag);
-              tagToQueryMap.put(tag, query);
-            }
-            WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
-            View view = syncPoint.getView(query, writesCache, serverCache);
-            syncPoint.setTrackedQueryKeys(query, view);
-            return null;
-          }
-        });
-  }
 
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {
@@ -759,6 +666,13 @@ public class SyncTree {
         eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
   }
 
+  public List<Event> removeEventRegistration(
+          QuerySpec query,
+          @NotNull EventRegistration eventRegistration) {
+    return this.removeEventRegistration(
+            query, eventRegistration, null, false);
+  }
+
   /**
    * Remove all event callback(s).
    *
@@ -766,7 +680,7 @@ public class SyncTree {
    */
   public List<Event> removeAllEventRegistrations(
       @NotNull QuerySpec query, @NotNull DatabaseError error) {
-    return this.removeEventRegistration(query, null, error, false);
+    return this.removeEventRegistration(query, null);
   }
 
   private List<Event> removeEventRegistration(
@@ -809,9 +723,10 @@ public class SyncTree {
                 persistenceManager.setQueryInactive(query);
                 removingDefault = removingDefault || queryRemoved.loadsAllData();
               }
-              // This is to handle removeRegistration by get(). Specifically to avoid the scenario
+
+              /** This is to handle removeRegistration by {@link Repo#getValue(Query)}. Specifically to avoid the scenario
               // where:
-              // A listener is attached at a child path, and a get() is called on the parent path.
+              // A listener is attached at a child path, and {@link Repo#getValue(Query)} is called on the parent path.
               // Normally, when a listener is attached on a child path and then a parent path has a
               // listener attached to it, to reduce the number of listeners,
               // the listen() function will unlisten to the child path and listen instead on the
@@ -823,6 +738,7 @@ public class SyncTree {
               // listener has been removed and attempts to call listen again, but since we are still
               // listening on that location, listen would be called twice on the same query.
               // skipDedup allows us to skip this deduping process altogether.
+               */
               if (skipDedup) {
                 return null;
               }

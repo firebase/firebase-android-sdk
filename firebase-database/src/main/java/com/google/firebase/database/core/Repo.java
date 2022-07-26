@@ -520,7 +520,7 @@ public class Repo implements PersistentConnection.Delegate {
           @Override
           public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
-            // up to date as the persistence cache.
+            // up to date as the persistence cache
             Node serverValue = serverSyncTree.getServerValue(query.getSpec());
             if (serverValue != null) {
               source.setResult(
