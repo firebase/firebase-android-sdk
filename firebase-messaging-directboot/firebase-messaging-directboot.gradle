@@ -33,7 +33,7 @@ android {
 
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion project.targetSdkVersion
         versionName version
 
@@ -47,26 +47,8 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-installations-interop')
-    implementation project(':firebase-datatransport')
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
-    implementation project(':transport:transport-backend-cct')
-    implementation project(':encoders:firebase-encoders')
-    implementation project(':encoders:firebase-encoders-json')
+    implementation project(':firebase-messaging')
 
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation "com.google.android.gms:play-services-tasks:18.0.1"
-    implementation "com.google.android.gms:play-services-basement:18.0.0"
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation ("com.google.firebase:firebase-iid:20.2.3") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-        exclude group: "com.google.firebase", module: "firebase-installations-interop"
-    }
-    implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
-    implementation "com.google.firebase:firebase-iid-interop:17.0.0"
+    implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.2'
     implementation "com.google.errorprone:error_prone_annotations:2.9.0"
 }

@@ -38,7 +38,7 @@ final class WakeLockHolder {
   private static final String EXTRA_WAKEFUL_INTENT =
       "com.google.firebase.iid.WakeLockHolder.wakefulintent";
   /** Release wakelocks after 60s, because we don't expect operations to take longer than that. */
-  private static final long WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(1);
+  static final long WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(1);
   // Object to sync threads
   private static final Object syncObject = new Object();
 
@@ -83,6 +83,34 @@ final class WakeLockHolder {
       }
 
       return comp;
+    }
+  }
+
+  /**
+   * Sends an Intent to a Service, binding to it, if necessary. Acquires a WakeLock based on the
+   * Intent and holds until the Service has finished processing the Intent or after a certain amount
+   * of time.
+   *
+   * @param context Application context.
+   * @param connection ServiceConnection to send the Intent to.
+   * @param intent Intent for starting the service.
+   */
+  static void sendWakefulServiceIntent(
+      Context context, WithinAppServiceConnection connection, Intent intent) {
+    synchronized (syncObject) {
+      checkAndInitWakeLock(context);
+
+      boolean isWakeLockAlreadyAcquired = isWakefulIntent(intent);
+
+      setAsWakefulIntent(intent, true);
+
+      if (!isWakeLockAlreadyAcquired) {
+        wakeLock.acquire(WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS);
+      }
+
+      connection
+          .sendIntent(intent)
+          .addOnCompleteListener(Runnable::run, t -> completeWakefulIntent(intent));
     }
   }
 
