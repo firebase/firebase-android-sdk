@@ -579,11 +579,11 @@ public class Repo implements PersistentConnection.Delegate {
                           serverSyncTree.applyTaggedQueryOverwrite(
                               spec.getPath(), serverNode, getServerSyncTree().tagForQuery(spec));
                         }
-                        serverSyncTree.removeEventRegistration(eventRegistration, true);
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        serverSyncTree.removeEventRegistration(eventRegistration, true);
                       }
                     });
           }

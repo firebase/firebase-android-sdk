@@ -4646,7 +4646,7 @@ public class QueryTest {
 
   @Test
   public void testGetResolvesToCacheWhenOnlineAndSameLevelListener()
-      throws DatabaseException, InterruptedException {
+          throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp writeApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     // To ensure that we don't read the cached results, we need a separate app.
@@ -4658,12 +4658,14 @@ public class QueryTest {
     long val = 34;
     String writeKey = Objects.requireNonNull(writeDb.getReference().push().getKey());
     DatabaseReference writeNode = writeDb.getReference().child(writeKey);
-    writeNode.setValue(val);
+    await(writeNode.setValue(val));
     DatabaseReference readNode = readDb.getReference().child(writeKey);
+    final int testArr[] = {0};
     ValueEventListener listener =
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
+            assertEquals(0, testArr[0]++);
             assertEquals(34L, snapshot.getValue());
             semaphore.release();
           }
@@ -4679,6 +4681,7 @@ public class QueryTest {
       IntegrationTestHelpers.waitFor(semaphore);
       DataSnapshot snapshot = await(readNode.get());
       assertEquals(val, snapshot.getValue());
+      readNode.removeEventListener(listener);
       // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
@@ -4740,7 +4743,6 @@ public class QueryTest {
     DatabaseReference childReadNode =
         readDb.getReference().child(parentNodeKey).child(childReadKey);
     DatabaseReference childWriteNode = parentWriteNode.child(childReadKey);
-
     ValueEventListener listener =
         new ValueEventListener() {
           @Override
@@ -4765,6 +4767,7 @@ public class QueryTest {
       parentWriteNode.setValue(new MapBuilder().put(childReadKey, val).build());
       DataSnapshot parentSnapshot = await(childReadNode.get());
       assertEquals(parentSnapshot.getValue(), val);
+      childReadNode.removeEventListener(listener);
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
