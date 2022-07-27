@@ -730,11 +730,12 @@ public class SyncTree {
                * unlisten to the child path and listen instead on the // parent path. And then, when
                * removeRegistration is called on the parent // path, the child path will get
                * listened to, since it doesn't have anything covering // its path. However, for
-               * {@link Repo#getValue(Query)}, we do not call listen on the parent path, and the // child path is still
-               * listened to // and so when the deduping happens below, the SyncTree assumes that
-               * the child // listener has been removed and attempts to call listen again, but since
-               * we are still // listening on that location, listen would be called twice on the
-               * same query. // skipDedup allows us to skip this deduping process altogether.
+               * {@link Repo#getValue(Query)}, we do not call listen on the parent path, and the //
+               * child path is still listened to // and so when the deduping happens below, the
+               * SyncTree assumes that the child // listener has been removed and attempts to call
+               * listen again, but since we are still // listening on that location, listen would be
+               * called twice on the same query. // skipDedup allows us to skip this deduping
+               * process altogether.
                */
               if (skipDedup) {
                 return null;
