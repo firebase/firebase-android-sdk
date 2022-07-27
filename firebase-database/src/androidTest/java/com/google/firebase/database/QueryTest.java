@@ -4694,7 +4694,7 @@ public class QueryTest {
     FirebaseDatabase db = FirebaseDatabase.getInstance(app);
     Semaphore semaphore = new Semaphore(0);
     long val = 34;
-    DatabaseReference node = db.getReference().child(db.getReference().push().getKey());
+    DatabaseReference node = db.getReference().push();
     node.setValue(val);
 
     ValueEventListener listener =
