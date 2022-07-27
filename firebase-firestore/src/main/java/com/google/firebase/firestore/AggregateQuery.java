@@ -93,9 +93,4 @@ public class AggregateQuery {
   public int hashCode() {
     return query.hashCode();
   }
-
-  @Override
-  public String toString() {
-    return "AggregateQuery{" + "query=" + query.toString() + '}';
-  }
 }

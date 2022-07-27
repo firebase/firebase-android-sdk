@@ -23,7 +23,9 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -54,17 +56,18 @@ public class CountTest {
     AggregateQuery query3_same =
         coll1.document("bar").collection("baz").whereEqualTo("b", 1).orderBy("c").count();
 
-    assertEquals(query1, query1_same);
-    assertEquals(query2, query2_same);
-    assertEquals(query3, query3_same);
+    assertTrue(query1.equals(query1_same));
+    assertTrue(query2.equals(query2_same));
+    assertTrue(query3.equals(query3_same));
 
     assertEquals(query1.hashCode(), query1_same.hashCode());
     assertEquals(query2.hashCode(), query2_same.hashCode());
     assertEquals(query3.hashCode(), query3_same.hashCode());
 
-    assertNotEquals(null, query1);
-    assertNotEquals(query1, query2);
-    assertNotEquals(query2, query3);
+    assertFalse(query1.equals(null));
+    assertFalse(query1.equals("string"));
+    assertFalse(query1.equals(query2));
+    assertFalse(query2.equals(query3));
     assertNotEquals(query1.hashCode(), query2.hashCode());
     assertNotEquals(query2.hashCode(), query3.hashCode());
   }
@@ -117,13 +120,15 @@ public class CountTest {
     AggregateQuerySnapshot snapshot2_different =
         waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER_DIRECT));
 
-    assertEquals(snapshot1, snapshot1_same);
+    assertTrue(snapshot1.equals(snapshot1_same));
     assertEquals(snapshot1.hashCode(), snapshot1_same.hashCode());
-    assertEquals(snapshot1.getQuery(), collection.whereEqualTo("k", "b").count());
+    assertTrue(snapshot1.getQuery().equals(collection.whereEqualTo("k", "b").count()));
 
-    assertNotEquals(snapshot1, snapshot2);
+    assertFalse(snapshot1.equals(null));
+    assertFalse(snapshot1.equals("string"));
+    assertFalse(snapshot1.equals(snapshot2));
     assertNotEquals(snapshot1.hashCode(), snapshot2.hashCode());
-    assertNotEquals(snapshot2, snapshot2_different);
+    assertFalse(snapshot2.equals(snapshot2_different));
     assertNotEquals(snapshot2.hashCode(), snapshot2_different.hashCode());
   }
 
