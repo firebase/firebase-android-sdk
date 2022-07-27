@@ -53,8 +53,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import kotlin.reflect.KProperty;
-import kotlin.reflect.jvm.ReflectJvmMapping;
 
 /** Helper class to convert to/from custom POJO classes and plain Java types. */
 public class CustomClassMapper {
@@ -592,6 +590,7 @@ public class CustomClassMapper {
     private final Map<String, Method> getters;
     private final Map<String, Method> setters;
     private final Map<String, Field> fields;
+    private final Map<String, Method> ktxGeneratedGetters;
 
     // A set of property names that were annotated with @ServerTimestamp.
     private final HashSet<String> serverTimestamps;
@@ -610,6 +609,7 @@ public class CustomClassMapper {
       setters = new HashMap<>();
       getters = new HashMap<>();
       fields = new HashMap<>();
+      ktxGeneratedGetters = new HashMap<>();
 
       serverTimestamps = new HashSet<>();
       documentIdPropertyNames = new HashSet<>();
@@ -625,7 +625,12 @@ public class CustomClassMapper {
       this.constructor = constructor;
       // Add any public getters to properties (including isXyz())
       for (Method method : clazz.getMethods()) {
-        if (shouldIncludeGetter(method)) {
+        if (isKtxAnnotationGeneratedGetter((method))) {
+          // collects ktx generated getters, which are containing annotations on Target.PROPERTY
+          String propertyName = propertyName(method);
+          propertyName = propertyName.replace("$annotations", "");
+          ktxGeneratedGetters.put(propertyName, method);
+        } else if (shouldIncludeGetter(method)) {
           String propertyName = propertyName(method);
           addProperty(propertyName);
           method.setAccessible(true);
@@ -916,7 +921,7 @@ public class CustomClassMapper {
 
     private void applyFieldAnnotations(Field field) {
       if (field.isAnnotationPresent(ServerTimestamp.class)
-          || isAnnotationPresentOnProperty(field, ServerTimestamp.class)) {
+          || isAnnotationPresentOnKtxGetters(field, ServerTimestamp.class)) {
         Class<?> fieldType = field.getType();
         if (fieldType != Date.class && fieldType != Timestamp.class) {
           throw new IllegalArgumentException(
@@ -930,19 +935,19 @@ public class CustomClassMapper {
       }
 
       if (field.isAnnotationPresent(DocumentId.class)
-          || isAnnotationPresentOnProperty(field, DocumentId.class)) {
+          || isAnnotationPresentOnKtxGetters(field, DocumentId.class)) {
         Class<?> fieldType = field.getType();
         ensureValidDocumentIdType("Field", "is", fieldType);
         documentIdPropertyNames.add(propertyName(field));
       }
     }
 
-    private boolean isAnnotationPresentOnProperty(
+    // Ktx only apply annotations on top of getters: public void getXxx$annotations()
+    private boolean isAnnotationPresentOnKtxGetters(
         Field field, Class<? extends Annotation> annotationType) {
-      KProperty<?> property = ReflectJvmMapping.getKotlinProperty(field);
-      List<Annotation> annotationsOnProperty = property.getAnnotations();
-      for (Annotation annotation : annotationsOnProperty) {
-        if (annotation.annotationType().equals(annotationType)) return true;
+      String fieldName = propertyName(field);
+      if (ktxGeneratedGetters.containsKey(fieldName)) {
+        return ktxGeneratedGetters.get(field.getName()).isAnnotationPresent(annotationType);
       }
       return false;
     }
@@ -995,6 +1000,10 @@ public class CustomClassMapper {
                 + type
                 + " instead of String or DocumentReference.");
       }
+    }
+
+    private static boolean isKtxAnnotationGeneratedGetter(Method method) {
+      return method.getName().endsWith("$annotations");
     }
 
     private static boolean shouldIncludeGetter(Method method) {

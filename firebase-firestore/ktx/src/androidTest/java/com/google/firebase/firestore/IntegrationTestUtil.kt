@@ -18,7 +18,6 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.ThrowableSubject
 import com.google.common.truth.Truth
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
@@ -132,12 +131,3 @@ inline fun <reified T : Exception> testAssertThrows(
     val exception: T = Assert.assertThrows(T::class.java) { runnable() }
     return Truth.assertThat(exception)
 }
-
-infix fun Map<*, *>?.shouldBe(expected: Any?): Unit =
-    Truth.assertThat(this).isEqualTo(expected)
-
-infix fun Class<*>?.isAssignableTo(expected: Class<*>?): Unit =
-    Truth.assertThat(this).isAssignableTo(expected)
-
-infix fun Timestamp?.should_Almost_Equal(expected: Timestamp?): Unit =
-    Truth.assertThat(this?.seconds).isEqualTo(expected?.seconds)
