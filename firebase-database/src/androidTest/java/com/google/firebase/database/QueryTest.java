@@ -4601,7 +4601,7 @@ public class QueryTest {
       // Resolves to serverCache since persistence is turned off, and we are offline.
       DataSnapshot snapshot =
           await(node.get()); // This does not time out. We need to get it to do so.
-      assertEquals(snapshot.getValue(), val);
+      assertEquals(val, snapshot.getValue());
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4619,26 +4619,27 @@ public class QueryTest {
     FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
     long val = 34;
     DatabaseReference node = writeDb.getReference().push();
-    node.setValue(val);
-    DatabaseReference topLevelNode = readDb.getReference();
+
     try {
+      await(node.setValue(val));
+      DatabaseReference topLevelNode = readDb.getReference();
       new ReadFuture(
               topLevelNode,
               events -> {
                 assertEquals(1, events.size());
                 DataSnapshot childNode = events.get(0).getSnapshot().child(node.getKey());
-                assertEquals(childNode.getValue(), 34L);
+                assertEquals(34L, childNode.getValue());
                 DataSnapshot snapshot = null;
                 try {
                   snapshot = await(node.get());
                 } catch (ExecutionException | InterruptedException e) {
                   e.printStackTrace();
                 }
-                assertEquals(Objects.requireNonNull(snapshot.getValue()), val);
+                assertEquals(val, Objects.requireNonNull(snapshot.getValue()));
                 return true;
               })
           .timedGet();
-    } catch (TestFailure | TimeoutException e) {
+    } catch (TestFailure | TimeoutException | ExecutionException e) {
       e.printStackTrace();
     }
   }
@@ -4663,7 +4664,7 @@ public class QueryTest {
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            assertEquals(snapshot.getValue(), 34L);
+            assertEquals(34L, snapshot.getValue());
             semaphore.release();
           }
 
@@ -4677,7 +4678,7 @@ public class QueryTest {
     try {
       IntegrationTestHelpers.waitFor(semaphore);
       DataSnapshot snapshot = await(readNode.get());
-      assertEquals(snapshot.getValue(), val);
+      assertEquals(val, snapshot.getValue());
       // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
@@ -4700,7 +4701,7 @@ public class QueryTest {
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            assertEquals(snapshot.getValue(), 34L);
+            assertEquals(34L, snapshot.getValue());
             semaphore.release();
           }
 
@@ -4715,7 +4716,7 @@ public class QueryTest {
       IntegrationTestHelpers.waitFor(semaphore);
       db.goOffline();
       DataSnapshot snapshot = await(node.get());
-      assertEquals(snapshot.getValue(), val);
+      assertEquals(val, snapshot.getValue());
       // need to rewrite it
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
@@ -4744,7 +4745,7 @@ public class QueryTest {
         new ValueEventListener() {
           @Override
           public void onDataChange(@NonNull DataSnapshot snapshot) {
-            assertEquals(snapshot.getValue(), val);
+            assertEquals(val, snapshot.getValue());
             semaphore.release();
           }
 
@@ -4760,13 +4761,10 @@ public class QueryTest {
       DatabaseReference parentReadNode = readDb.getReference().child(parentNodeKey);
       IntegrationTestHelpers.waitFor(semaphore);
       DataSnapshot snapshot = await(parentReadNode.get());
-      assertEquals(val, snapshot.child(childReadKey).getValue());
+      assertEquals(snapshot.child(childReadKey).getValue(), val);
       parentWriteNode.setValue(new MapBuilder().put(childReadKey, val).build());
       DataSnapshot parentSnapshot = await(childReadNode.get());
-      assertEquals(
-          val,
-          parentSnapshot
-              .getValue()); // TODO(mtewani): Check for correct assertion order for all tests
+      assertEquals(parentSnapshot.getValue(), val);
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4910,14 +4908,14 @@ public class QueryTest {
     try {
       new WriteFuture(writer, 42L).timedGet();
 
-      assertEquals(await(reader.get()).getValue(), 42L);
+      assertEquals(42L, await(reader.get()).getValue());
 
       Semaphore semaphore = new Semaphore(0);
       listener =
           new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-              assertEquals(snapshot.getValue(), 42L);
+              assertEquals(42L, snapshot.getValue());
               semaphore.release();
             }
 
@@ -4927,7 +4925,7 @@ public class QueryTest {
       reader.addValueEventListener(listener);
       IntegrationTestHelpers.waitFor(semaphore);
       readerDb.goOffline();
-      assertEquals(await(reader.get()).getValue(), 42L);
+      assertEquals(42L, await(reader.get()).getValue());
     } finally {
       if (listener != null) {
         reader.removeEventListener(listener);
@@ -4944,7 +4942,7 @@ public class QueryTest {
       Map<String, Object> expected = new MapBuilder().put("foo", "bar").build();
       node.setValue(expected);
       DataSnapshot snapshot = await(node.get());
-      assertEquals(snapshot.getValue(), expected);
+      assertEquals(expected, snapshot.getValue());
     } finally {
       node.getDatabase().goOnline();
     }
@@ -4957,7 +4955,7 @@ public class QueryTest {
     try {
       node.setValue(new MapBuilder().put("foo", "bar").build());
       DataSnapshot snapshot = await(node.child("foo").get());
-      assertEquals(snapshot.getValue(), "bar");
+      assertEquals("bar", snapshot.getValue());
     } finally {
       node.getDatabase().goOnline();
     }
@@ -5002,7 +5000,7 @@ public class QueryTest {
     readerDb.goOffline();
     try {
       reader.removeEventListener(listener);
-      assertEquals(await(reader.get()).getValue(), 42L);
+      assertEquals(42L, await(reader.get()).getValue());
     } finally {
       readerDb.goOnline();
     }
