@@ -33,7 +33,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -152,7 +152,7 @@ public class FirebaseRemoteConfig {
   private final ConfigGetParameterHandler getHandler;
   private final ConfigMetadataClient frcMetadata;
   private final FirebaseInstallationsApi firebaseInstallations;
-  private final ConfigRealtimeHttpClient configRealtimeHttpClient;
+  private final ConfigRealtimeHandler configRealtimeHandler;
 
   /**
    * Firebase Remote Config constructor.
@@ -171,7 +171,7 @@ public class FirebaseRemoteConfig {
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
       ConfigMetadataClient frcMetadata,
-      ConfigRealtimeHttpClient configRealtimeHttpClient) {
+      ConfigRealtimeHandler configRealtimeHandler) {
     this.context = context;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
@@ -183,7 +183,7 @@ public class FirebaseRemoteConfig {
     this.fetchHandler = fetchHandler;
     this.getHandler = getHandler;
     this.frcMetadata = frcMetadata;
-    this.configRealtimeHttpClient = configRealtimeHttpClient;
+    this.configRealtimeHandler = configRealtimeHandler;
   }
 
   /**
@@ -555,7 +555,7 @@ public class FirebaseRemoteConfig {
   @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
-    return configRealtimeHttpClient.addRealtimeConfigUpdateListener(configUpdateListener);
+    return configRealtimeHandler.addRealtimeConfigUpdateListener(configUpdateListener);
   }
 
   /**
