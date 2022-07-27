@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class ConfigAutoFetch implements Runnable {
+public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
 
@@ -63,11 +63,6 @@ public class ConfigAutoFetch implements Runnable {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.random = new Random();
-  }
-
-  @Override
-  public void run() {
-    listenForNotifications();
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -101,17 +96,18 @@ public class ConfigAutoFetch implements Runnable {
         propagateErrors(
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
                 "Error handling stream messages while fetching.", ex.getCause()));
+      } finally {
+        httpURLConnection.disconnect();
       }
-      httpURLConnection.disconnect();
     }
 
+    retryCallback.onEvent();
     scheduledExecutorService.shutdown();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
       Log.i(TAG, "Thread Interrupted.");
     }
-    retryCallback.onEvent();
   }
 
   // Auto-fetch new config and execute callbacks on each new message
@@ -125,7 +121,8 @@ public class ConfigAutoFetch implements Runnable {
 
       long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
       try {
-        JSONObject jsonObject = new JSONObject("{" + message + "}");
+        JSONObject jsonObject =
+            new JSONObject("{" + message.substring(0, message.length() - 1) + " }");
         if (jsonObject.has("latestTemplateVersionNumber")) {
           targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
         }

@@ -64,7 +64,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -141,7 +141,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigGetParameterHandler mockGetHandler;
   @Mock private ConfigMetadataClient metadataClient;
 
-  @Mock private ConfigRealtimeHttpClient mockRealtimeHttpClient;
+  @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
   @Mock private ConfigUpdateListenerRegistration mockRealtimeRegistration;
   @Mock private HttpURLConnection mockHttpURLConnection;
   @Mock private ConfigUpdateListener mockListener;
@@ -212,7 +212,7 @@ public final class FirebaseRemoteConfigTest {
             mockFetchHandler,
             mockGetHandler,
             metadataClient,
-            mockRealtimeHttpClient);
+            mockConfigRealtimeHandler);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -1069,39 +1069,39 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void realtime_frc_full_test() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
-    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+    when(mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(mockRealtimeRegistration);
 
     ConfigUpdateListenerRegistration registration = frc.addOnConfigUpdateListener(eventListener);
     registration.remove();
 
     verify(mockRealtimeRegistration).remove();
-    verify(mockRealtimeHttpClient).addRealtimeConfigUpdateListener(eventListener);
+    verify(mockConfigRealtimeHandler).addRealtimeConfigUpdateListener(eventListener);
   }
 
   @Test
   public void realtime_client_addListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
-    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+    when(mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(
             new ConfigUpdateListenerRegistration() {
               @Override
               public void remove() {}
             });
     ConfigUpdateListenerRegistration registration =
-        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener);
-    verify(mockRealtimeHttpClient).addRealtimeConfigUpdateListener(eventListener);
+        mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener);
+    verify(mockConfigRealtimeHandler).addRealtimeConfigUpdateListener(eventListener);
     assertThat(registration).isNotNull();
   }
 
   @Test
   public void realtime_client_removeListener_success() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
-    when(mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener))
+    when(mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener))
         .thenReturn(mockRealtimeRegistration);
 
     ConfigUpdateListenerRegistration registration =
-        mockRealtimeHttpClient.addRealtimeConfigUpdateListener(eventListener);
+        mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener);
     registration.remove();
 
     verify(mockRealtimeRegistration).remove();

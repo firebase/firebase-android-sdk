@@ -20,6 +20,10 @@ import com.google.firebase.abt.FirebaseABTesting
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.remoteconfig.internal.*
 import java.util.concurrent.ScheduledExecutorService
+import com.google.firebase.remoteconfig.internal.ConfigCacheClient
+import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
+import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
@@ -35,7 +39,7 @@ fun createRemoteConfig(
   fetchHandler: ConfigFetchHandler,
   getHandler: ConfigGetParameterHandler,
   frcMetadata: ConfigMetadataClient,
-  realtimeClient: ConfigRealtimeHttpClient
+  realtimeClient: ConfigRealtimeHandler
 ): FirebaseRemoteConfig {
   return FirebaseRemoteConfig(
     context,

@@ -36,7 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.util.HashMap;
@@ -256,13 +256,13 @@ public class RemoteConfigComponent {
         this.customHeaders);
   }
 
-  synchronized ConfigRealtimeHttpClient getRealtime(
+  synchronized ConfigRealtimeHandler getRealtime(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace) {
-    return new ConfigRealtimeHttpClient(
+    return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
         configFetchHandler,
@@ -323,7 +323,7 @@ public class RemoteConfigComponent {
   }
 
   private ConfigUpdateListener createEmptyConfigListener() {
-    return new ConfigRealtimeHttpClient.EmptyConfigUpdateListener();
+    return new ConfigRealtimeHandler.EmptyConfigUpdateListener();
   }
 
   private synchronized void notifyRCInstances(boolean isInBackground) {
