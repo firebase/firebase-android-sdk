@@ -55,7 +55,7 @@ import org.junit.Test;
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class QueryTest {
-  @Rule public RetryRule retryRule = new RetryRule(1);
+  @Rule public RetryRule retryRule = new RetryRule(3);
 
   @After
   public void tearDown() {
