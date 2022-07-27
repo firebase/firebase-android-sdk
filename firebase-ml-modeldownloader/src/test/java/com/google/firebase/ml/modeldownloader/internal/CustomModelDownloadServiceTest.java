@@ -20,6 +20,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -52,6 +53,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -706,6 +708,38 @@ public class CustomModelDownloadServiceTest {
     verify(mockEventLogger, times(1))
         .logDownloadFailureWithReason(
             any(), eq(false), eq(ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue()));
+  }
+
+  @Test
+  public void downloadService_nullModelHashPassedUnauthenticatedToken() {
+    when(installationsApiMock.getToken(anyBoolean()))
+        .thenReturn(Tasks.forException(new IllegalArgumentException("bad request")));
+
+    CustomModelDownloadService service =
+        new CustomModelDownloadService(
+            ApplicationProvider.getApplicationContext(),
+            installationsApiMock,
+            directExecutor,
+            API_KEY,
+            PACKAGE_FINGERPRINT_HASH,
+            TEST_ENDPOINT,
+            mockEventLogger);
+
+    Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, null);
+
+    Assert.assertTrue(modelTask.getException() instanceof FirebaseMlException);
+    Assert.assertEquals(
+        ((FirebaseMlException) modelTask.getException()).getCode(),
+        FirebaseMlException.UNAUTHENTICATED);
+    Assert.assertTrue(modelTask.getException().getMessage().contains("authentication error"));
+
+    ArgumentCaptor<CustomModel> captor = ArgumentCaptor.forClass(CustomModel.class);
+    verify(mockEventLogger, times(1))
+        .logDownloadFailureWithReason(
+            captor.capture(),
+            eq(false),
+            eq(ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue()));
+    assertThat(captor.getValue().getModelHash()).isNotNull();
   }
 
   @Test
