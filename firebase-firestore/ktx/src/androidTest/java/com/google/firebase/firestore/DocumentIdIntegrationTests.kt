@@ -94,4 +94,21 @@ class DocumentIdIntegrationTests {
         val actual = waitFor(docRefKotlin.get()).toObject<DocumentIdOnNestedObjects>()
         assertThat(actual).isEqualTo(expected)
     }
+
+
+    data class JavaDocIdTest(
+        val value1: String = "should be kept",
+        @DocumentId
+        val value2: String = "should be ignored"
+    )
+    @Test
+    fun java_annotation_and_ktx_annotation_should_work_together() {
+        // DocumentId annotated field will be ignored in encoding
+        val javaDocumentId = JavaDocIdTest()
+        val docRefPOJO = testCollection("pojo").document("java_kxt_same_docRef_str")
+        docRefPOJO.set(javaDocumentId)
+        val actual = waitFor(docRefPOJO.get()).data
+        val expected = mutableMapOf("value1" to "should be kept", "value2" to "java_kxt_same_docRef_str")
+        assertThat(actual).isEqualTo(expected)
+    }
 }

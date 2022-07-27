@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import kotlinx.serialization.SerialInfo
+import java.lang.annotation.ElementType
 
 /**
  * Annotation used to mark a timestamp field to be populated with a server timestamp. If a POJO
@@ -24,9 +25,6 @@ import kotlinx.serialization.SerialInfo
  */
 @SerialInfo
 @Retention(RetentionPolicy.RUNTIME)
-@Target(
-    AnnotationTarget.PROPERTY,
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.FIELD
-)
+@Target(AnnotationTarget.PROPERTY)
+@java.lang.annotation.Target(ElementType.METHOD, ElementType.FIELD)
 annotation class ServerTimestamp
