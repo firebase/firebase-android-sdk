@@ -18,7 +18,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
-import com.google.gson.Gson
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
@@ -66,7 +65,14 @@ class QueryIntegrationTests {
         waitFor(query.get()).map {
             val javaCity = it.withoutCustomMappers { toObject<JavaCity>() } as JavaCity
             val ktxCity = it.toObject<KtxCity>()
-            assertThat(Gson().toJson(ktxCity)).isEqualTo(Gson().toJson(javaCity))
+            // assert all the fields are the same
+            assertThat(ktxCity.name).isEqualTo(javaCity.name)
+            assertThat(ktxCity.state).isEqualTo(javaCity.state)
+            assertThat(ktxCity.country).isEqualTo(javaCity.country)
+            assertThat(ktxCity.isCapital).isEqualTo(javaCity.isCapital)
+            assertThat(ktxCity.population).isEqualTo(javaCity.population)
+            assertThat(ktxCity.regions).containsExactlyElementsIn(javaCity.regions)
+            assertThat(ktxCity.docId).isEqualTo(javaCity.docId)
         }
 
         // Test for QuerySnapshot
@@ -78,7 +84,14 @@ class QueryIntegrationTests {
         for (i in listOfJavaCities.indices) {
             val javaCity = listOfJavaCities.get(i)
             val ktxCity = listOfKtxCities.get(i)
-            assertThat(Gson().toJson(ktxCity)).isEqualTo(Gson().toJson(javaCity))
+            // assert all the fields are the same
+            assertThat(ktxCity.name).isEqualTo(javaCity.name)
+            assertThat(ktxCity.state).isEqualTo(javaCity.state)
+            assertThat(ktxCity.country).isEqualTo(javaCity.country)
+            assertThat(ktxCity.isCapital).isEqualTo(javaCity.isCapital)
+            assertThat(ktxCity.population).isEqualTo(javaCity.population)
+            assertThat(ktxCity.regions).containsExactlyElementsIn(javaCity.regions)
+            assertThat(ktxCity.docId).isEqualTo(javaCity.docId)
         }
     }
 

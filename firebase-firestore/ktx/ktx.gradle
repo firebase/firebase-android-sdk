@@ -95,5 +95,4 @@ dependencies {
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'com.google.code.gson:gson:2.8.2'
 }
