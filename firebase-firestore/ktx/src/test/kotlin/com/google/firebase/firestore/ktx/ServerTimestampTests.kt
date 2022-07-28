@@ -2,13 +2,13 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.ServerTimestamp
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import java.util.Date
 import kotlinx.serialization.Contextual
@@ -26,7 +26,7 @@ class ServerTimestampTests {
 
         @Serializable
         class DefaultValuePropertyWithServerTimestampOnWrongTypeBean(
-            @KServerTimestamp val intField: Int?
+            @ServerTimestamp val intField: Int?
         )
 
         assertThrows<IllegalArgumentException> {
@@ -43,7 +43,7 @@ class ServerTimestampTests {
 
         @Serializable
         class KServerTimestampOnWrongTypeDocRefBean(
-            @KServerTimestamp val documentReference: DocumentReference?
+            @ServerTimestamp val documentReference: DocumentReference?
         )
         assertThrows<IllegalArgumentException> {
                 encodeToMap(KServerTimestampOnWrongTypeDocRefBean(null))
@@ -59,7 +59,7 @@ class ServerTimestampTests {
 
         @Serializable
         class KServerTimestampOnTopOfKDocumentIdWrongTypeBean(
-            @KServerTimestamp @KDocumentId val documentReference: DocumentReference?
+            @ServerTimestamp @DocumentId val documentReference: DocumentReference?
         )
 
         assertThrows<IllegalArgumentException> {
@@ -76,7 +76,7 @@ class ServerTimestampTests {
 
         @Serializable
         class KServerTimestampAndKDocumentIdTogetherOnWrongTypeBean(
-            @KServerTimestamp @KDocumentId @Contextual val geoPoint: GeoPoint?
+            @ServerTimestamp @DocumentId @Contextual val geoPoint: GeoPoint?
         )
 
         assertThrows<IllegalArgumentException> {
@@ -96,7 +96,7 @@ class ServerTimestampTests {
         @Serializable class Student(val id: Int = 0, val name: String = "foo")
 
         @Serializable
-        class KServerTimestampOnWrongTypeNestedObject(@KServerTimestamp val student: Student?)
+        class KServerTimestampOnWrongTypeNestedObject(@ServerTimestamp val student: Student?)
 
         assertThrows<IllegalArgumentException> {
                 encodeToMap(KServerTimestampOnWrongTypeNestedObject(null))
@@ -112,7 +112,7 @@ class ServerTimestampTests {
 
         @Serializable
         class KServerTimestampOnWrongTypeNestedListObject(
-            @KServerTimestamp
+            @ServerTimestamp
             val listOfStudent: List<Student>? = listOf(Student(1), Student(2), Student(3))
         )
 
@@ -134,7 +134,7 @@ class ServerTimestampTests {
         // correct type with null value will be replaced by FieldValue
         // correct type with non-null value will remain
         @Serializable
-        class KServerTimestampOnDateField(@Contextual @KServerTimestamp val value: Date?)
+        class KServerTimestampOnDateField(@Contextual @ServerTimestamp val value: Date?)
 
         val dateFieldWithNullValue = encodeToMap(KServerTimestampOnDateField(null))
         assertThat(dateFieldWithNullValue)
@@ -147,7 +147,7 @@ class ServerTimestampTests {
         class KServerTimestampOnDateFieldAsProperty {
             @SerialName("DateProperty")
             @Contextual
-            @KServerTimestamp
+            @ServerTimestamp
             var value: Date? = null
                 get() =
                     if (field == null) {
@@ -174,7 +174,7 @@ class ServerTimestampTests {
             )
 
         @Serializable
-        class KServerTimestampOnTimestampField(@KServerTimestamp val value: Timestamp?)
+        class KServerTimestampOnTimestampField(@ServerTimestamp val value: Timestamp?)
 
         val annotationOnTimestampFieldWithNullValue =
             encodeToMap(KServerTimestampOnTimestampField(null))
@@ -187,7 +187,7 @@ class ServerTimestampTests {
 
         @Serializable
         open class KTimestampOnTimestampFieldAsProperty {
-            @KServerTimestamp
+            @ServerTimestamp
             @SerialName("TimestampProperty")
             var docId: Timestamp? = null
                 get() = field
@@ -224,10 +224,10 @@ class ServerTimestampTests {
     fun `KServerTimestamp annotated on correct types without backing fields is ignored during encoding`() {
         @Serializable
         class GetterWithoutBackingFieldOnCorrectTypeBean {
-            @KServerTimestamp
+            @ServerTimestamp
             val foo: Timestamp
                 get() = Timestamp(Date(100000L)) // getter only, no backing field -- not serialized
-            @KServerTimestamp
+            @ServerTimestamp
             val bar: Date
                 get() = Date(100000L) // getter only, no backing field --not serialized
             val foobar: Int = 0 // property with a backing field -- serialized
@@ -243,22 +243,22 @@ class ServerTimestampTests {
         // annotation applied can not be verified
         @Serializable
         class GetterWithoutBackingFieldOnWrongTypeBean {
-            @KServerTimestamp
+            @ServerTimestamp
             val fooStr: String
                 get() = "foobar"
-            @KServerTimestamp
+            @ServerTimestamp
             val fooLong: Long
                 get() = 100000L
-            @KServerTimestamp
+            @ServerTimestamp
             val fooINt: Int
                 get() = 0
-            @KServerTimestamp
+            @ServerTimestamp
             val fooBool: Boolean
                 get() = true
-            @KServerTimestamp
+            @ServerTimestamp
             val fooDouble: Double
                 get() = 200.0
-            @KServerTimestamp
+            @ServerTimestamp
             val fooGeoPoint: GeoPoint
                 get() = GeoPoint(100.0, 200.0)
         }

@@ -13,8 +13,7 @@
 // limitations under the License.
 package com.google.firebase.firestore
 
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.ElementType
 import kotlinx.serialization.SerialInfo
 
 /**
@@ -23,13 +22,6 @@ import kotlinx.serialization.SerialInfo
  * server-generated timestamp.
  */
 @SerialInfo
-@Retention(RetentionPolicy.RUNTIME)
-@Target(
-// TODO: revert this file back to Java or find out a method to share this file between Java and Ktx.
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
-    AnnotationTarget.FIELD
-
-)
+@Target(AnnotationTarget.PROPERTY)
+@java.lang.annotation.Target(ElementType.METHOD, ElementType.FIELD)
 annotation class ServerTimestamp

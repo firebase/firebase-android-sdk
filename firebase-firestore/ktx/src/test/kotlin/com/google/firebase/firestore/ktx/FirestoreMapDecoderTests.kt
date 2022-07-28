@@ -23,8 +23,10 @@ import com.google.firebase.firestore.ThrowOnExtraProperties
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.decodeFromMap
+import com.google.firebase.firestore.ktx.serialization.encodeToMap
 import java.util.Date
 import kotlinx.serialization.Contextual
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -103,6 +105,15 @@ class FirestoreMapDecoderTests {
         val decodedObject = decodeFromMap<Movement>(map, firestoreDocument)
         val expectedObject = Movement(Direction.EAST, 100)
         assertThat(decodedObject).isEqualTo(expectedObject)
+    }
+
+    @Test
+    fun `miss-matched enum field decoding throws`() {
+        @Serializable data class Movement(val direction: Direction, val distance: Long)
+        val map = mapOf("direction" to "snake_case_enum_value", "distance" to 100L)
+        assertThrows<IllegalArgumentException> { decodeFromMap<Movement>(map, firestoreDocument) }
+            .hasMessageThat()
+            .contains("Could not find a match for enum field name of snake_case_enum_value.")
     }
 
     @Test
@@ -291,6 +302,374 @@ class FirestoreMapDecoderTests {
         assertThrows<Exception> { decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument) }
             .hasMessageThat()
             .contains("Can not match")
+    }
+
+    @Serializable private data class StringBean(val value: String)
+
+    @Test
+    fun `primitive deserialize string`() {
+        val bean = decodeFromMap<StringBean>(mapOf("value" to "foo"), firestoreDocument)
+        assertThat(bean).isEqualTo(StringBean("foo"))
+
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(mapOf("value" to 1.1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(mapOf("value" to 1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(mapOf("value" to 1234567890123L), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(mapOf("value" to true), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable private data class BooleanBean(val value: Boolean)
+
+    @Test
+    fun `primitive deserialize boolean`() {
+        val bean = decodeFromMap<BooleanBean>(mapOf("value" to true), firestoreDocument)
+        assertThat(bean).isEqualTo(BooleanBean(true))
+
+        assertThrows<Exception> {
+                decodeFromMap<BooleanBean>(mapOf("value" to 1.1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<BooleanBean>(mapOf("value" to 1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<BooleanBean>(mapOf("value" to 1234567890123L), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<BooleanBean>(mapOf("value" to "foo"), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable private data class DoubleBean(val value: Double)
+
+    @Test
+    fun `primitive deserialize double`() {
+        val bean = decodeFromMap<DoubleBean>(mapOf("value" to 1.1), firestoreDocument)
+        assertThat(bean).isEqualTo(DoubleBean(1.1))
+
+        assertThrows<Exception> {
+                decodeFromMap<DoubleBean>(mapOf("value" to true), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<DoubleBean>(mapOf("value" to 1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<DoubleBean>(mapOf("value" to 1234567890123L), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<DoubleBean>(mapOf("value" to "foo"), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable private data class FloatBean(val value: Float)
+
+    @Test
+    fun `primitive deserialize float`() {
+        val bean = decodeFromMap<FloatBean>(mapOf("value" to 1.1), firestoreDocument)
+        // Firestore saves Float as Double on the server side
+        assertThat(bean.value).isEqualTo(1.1F)
+
+        assertThrows<Exception> {
+                decodeFromMap<FloatBean>(mapOf("value" to 1.1F), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<FloatBean>(mapOf("value" to true), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> { decodeFromMap<FloatBean>(mapOf("value" to 1), firestoreDocument) }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<FloatBean>(mapOf("value" to 1234567890123L), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<FloatBean>(mapOf("value" to "foo"), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable private data class IntBean(val value: Int)
+
+    @Test
+    fun `primitive deserialize int`() {
+        val bean = decodeFromMap<IntBean>(mapOf("value" to 1L), firestoreDocument)
+        // Firestore saves Int as Long on the server side
+        assertThat(bean.value).isEqualTo(1)
+
+        assertThrows<Exception> { decodeFromMap<IntBean>(mapOf("value" to 1), firestoreDocument) }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<IntBean>(mapOf("value" to true), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<IntBean>(mapOf("value" to 1e10), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<FloatBean>(mapOf("value" to "foo"), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable private data class LongBean(val value: Long)
+
+    @Test
+    fun `primitive deserialize long`() {
+        val bean = decodeFromMap<LongBean>(mapOf("value" to 1234567890123L), firestoreDocument)
+        // Firestore saves Int as Long on the server side
+        assertThat(bean.value).isEqualTo(1234567890123L)
+
+        assertThrows<Exception> { decodeFromMap<LongBean>(mapOf("value" to 1), firestoreDocument) }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<LongBean>(mapOf("value" to true), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<LongBean>(mapOf("value" to 1.1), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<LongBean>(mapOf("value" to 1e300), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+
+        assertThrows<Exception> {
+                decodeFromMap<LongBean>(mapOf("value" to "foo"), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Test
+    fun `primitive deserialize wrong type map`() {
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(
+                    mapOf("value" to mapOf("foo" to "bar")),
+                    firestoreDocument
+                )
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Test
+    fun `primitive deserialize wrong type list`() {
+        assertThrows<Exception> {
+                decodeFromMap<StringBean>(mapOf("value" to listOf("foo", "bar")), firestoreDocument)
+            }
+            .hasMessageThat()
+            .contains("cannot be cast to")
+    }
+
+    @Serializable
+    private data class PublicPrivateFieldBean(
+        var value1: String,
+        var value2: String,
+        private val value3: String
+    )
+
+    @Test
+    fun `public private field deserialize`() {
+        // All the field with backing field will be deserialized
+        val bean =
+            decodeFromMap<PublicPrivateFieldBean>(
+                mapOf("value1" to "foo", "value2" to "bar", "value3" to "baz"),
+                firestoreDocument
+            )
+        assertThat(bean).isEqualTo(PublicPrivateFieldBean("foo", "bar", "baz"))
+    }
+
+    @Test
+    fun ignoreExtraProperties() {
+        val bean =
+            decodeFromMap<StringBean>(
+                mapOf("value" to "bar", "unknown" to "bar"),
+                firestoreDocument
+            )
+        assertThat(bean).isEqualTo(StringBean("bar"))
+    }
+
+    @ThrowOnExtraProperties
+    @Serializable
+    private data class ThrowOnUnknownPropertiesBean(val value: String)
+
+    @Test
+    fun throwOnUnknownProperties() {
+        assertThrows<Exception> {
+                decodeFromMap<ThrowOnUnknownPropertiesBean>(
+                    mapOf("value" to "bar", "unknown" to "bar"),
+                    firestoreDocument
+                )
+            }
+            .hasMessageThat()
+            .contains("Can not match unknown to any properties inside of Object")
+    }
+
+    @Serializable private data class XMLAndURLBean(val XMLAndURL1: String, val XMLAndURL2: String)
+
+    @Test
+    fun `XML And URL Bean`() {
+        // Kotlin serialization will not change the first letter of each properties to lower case.
+        val bean =
+            decodeFromMap<XMLAndURLBean>(
+                mapOf("XMLAndURL1" to "foo", "XMLAndURL2" to "bar"),
+                firestoreDocument
+            )
+        assertThat(bean.XMLAndURL1).isEqualTo("foo")
+        assertThat(bean.XMLAndURL2).isEqualTo("bar")
+    }
+
+    @Serializable
+    private data class AllCapsDefaultHandlingBean(@SerialName("uuid") val UUID: String)
+
+    @Test
+    fun `convert upper case property name to lower case`() {
+        // Customer can add @SerialName to set custom property names to match Java POJO behavior
+        val bean = AllCapsDefaultHandlingBean("value")
+        val actual =
+            decodeFromMap<AllCapsDefaultHandlingBean>(mapOf("uuid" to "value"), firestoreDocument)
+        assertThat(actual).isEqualTo(bean)
+    }
+
+    @Serializable
+    private data class GetterBeanNoField(val lastName: String) {
+        val fullName: String // getter only, no backing field
+            get() = "Jone $lastName"
+    }
+
+    @Test
+    fun `property with no backing field is not deserialized`() {
+        val bean = decodeFromMap<GetterBeanNoField>(mapOf("lastName" to "Snow"), firestoreDocument)
+        assertThat(bean).isEqualTo(GetterBeanNoField("Snow"))
+    }
+
+    @Serializable
+    private data class CaseInSensitiveFieldBean(
+        val VALUE: String,
+        val value: String,
+        val valUE: String
+    )
+
+    @Test
+    fun `ktx serialization is case insensitive roundtrip test`() {
+        val expected = CaseInSensitiveFieldBean("foo", "bar", "baz")
+        val actual =
+            decodeFromMap<CaseInSensitiveFieldBean>(
+                mapOf("VALUE" to "foo", "value" to "bar", "valUE" to "baz"),
+                firestoreDocument
+            )
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Serializable private data class UnicodeObject(val 漢字: String)
+
+    @Test
+    fun `roundtrip unicode bean`() {
+        val unicodeObject = UnicodeObject("foo")
+        val encodeMap = encodeToMap(unicodeObject)
+        val decodeObj = decodeFromMap<UnicodeObject>(encodeMap, firestoreDocument)
+        assertThat(decodeObj).isEqualTo(unicodeObject)
+    }
+
+    @Serializable private data class ShortBean(val value: Short)
+
+    @Test
+    fun `shorts can be deserialized`() {
+        val num: Short = 100
+        val bean = decodeFromMap<ShortBean>(mapOf("value" to num), firestoreDocument)
+        assertThat(bean).isEqualTo(ShortBean(num))
+    }
+
+    @Serializable private data class ByteBean(val value: Byte)
+
+    @Test
+    fun `bytes can be deserialized`() {
+        val byte: Byte = 100
+        val bean = decodeFromMap<ByteBean>(mapOf("value" to byte), firestoreDocument)
+        assertThat(bean).isEqualTo(ByteBean(byte))
+    }
+
+    @Serializable private data class CharBean(val value: Char)
+
+    @Test
+    fun `chars can be deserialized`() {
+        val bean = decodeFromMap<CharBean>(mapOf("value" to '1'), firestoreDocument)
+        assertThat(bean).isEqualTo(CharBean('1'))
+    }
+
+    @Serializable private data class IntArrayBean(val values: Array<Int>)
+
+    @Test
+    fun `intArray can be deserialized`() {
+        // Firestore saves int as long from the server side
+        val bean =
+            decodeFromMap<IntArrayBean>(mapOf("values" to listOf(1L, 2L, 3L)), firestoreDocument)
+        assertThat(bean.values).isEqualTo(IntArrayBean(arrayOf(1, 2, 3)).values)
     }
 }
 

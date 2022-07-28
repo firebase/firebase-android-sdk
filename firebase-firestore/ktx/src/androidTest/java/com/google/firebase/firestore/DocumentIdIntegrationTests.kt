@@ -14,18 +14,20 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.Serializable
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class DocumentIdIntegrationTests {
 
     @Serializable
     private data class DocumentIdOnDocRefFieldWithAnnotation(
-        @KDocumentId @DocumentId val docId: DocumentReference? = null,
-        @KDocumentId @DocumentId val stringDocId: String? = null
+        @DocumentId val docId: DocumentReference? = null,
+        @DocumentId val stringDocId: String? = null
     )
 
     @Test
@@ -52,9 +54,27 @@ class DocumentIdIntegrationTests {
     }
 
     @Serializable
+    private open class Parent {
+        @DocumentId open val docRefStr: String? = null
+    }
+
+    @Serializable
+    private data class Child(@DocumentId val docRef: DocumentReference? = null) : Parent()
+
+    @Test
+    fun documentId_from_parent_class_is_not_serialized() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val child = Child()
+        docRefKotlin.set(child)
+        val actual = waitFor(docRefKotlin.get()).toObject<Child>()
+        val expected = waitFor(docRefKotlin.get()).withoutCustomMappers { toObject<Child>() }
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Serializable
     private data class DocumentIdOnDocRefField(
-        @KDocumentId @DocumentId val docRef: DocumentReference? = null,
-        @KDocumentId @DocumentId val docRefStr: String? = null
+        @DocumentId val docRef: DocumentReference? = null,
+        @DocumentId val docRefStr: String? = null
     )
     @Test
     fun ktx_resolved_documentReference_is_equivalent_to_java() {
@@ -77,9 +97,7 @@ class DocumentIdIntegrationTests {
     }
 
     @Serializable
-    private data class DocumentIdOnStringField(
-        @DocumentId @KDocumentId val docId: String? = "doc-id"
-    )
+    private data class DocumentIdOnStringField(@DocumentId val docId: String? = "doc-id")
 
     @Serializable
     private data class DocumentIdOnNestedObjects(

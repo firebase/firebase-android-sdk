@@ -14,10 +14,10 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
 import com.google.firebase.firestore.ktx.toObject
 import java.lang.Math.abs
 import java.util.Date
@@ -25,13 +25,15 @@ import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Assert
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class ServerTimestampIntegrationTests {
 
     @Serializable
     private data class TimestampPOJO(
-        @KServerTimestamp @ServerTimestamp val timestamp: Timestamp? = null,
-        @Contextual @KServerTimestamp @ServerTimestamp val date: Date? = null
+        @ServerTimestamp val timestamp: Timestamp? = null,
+        @Contextual @ServerTimestamp val date: Date? = null
     )
 
     @Test
@@ -72,8 +74,8 @@ class ServerTimestampIntegrationTests {
         val docRefKotlin = testCollection("ktx").document("123")
         @Serializable
         data class TimestampKtx(
-            @KServerTimestamp val timestamp: Timestamp? = null,
-            @Contextual @KServerTimestamp val date: Date? = null,
+            @ServerTimestamp val timestamp: Timestamp? = null,
+            @Contextual @ServerTimestamp val date: Date? = null,
             val timestampWithDefaultValue: Timestamp = Timestamp(Date(100000L)),
             @Contextual val dateWithDefaultValue: Date = Date(100000L)
         )
