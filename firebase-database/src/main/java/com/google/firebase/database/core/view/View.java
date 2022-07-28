@@ -101,8 +101,6 @@ public class View {
     if (cache != null) {
       // If this isn't a "loadsAllData" view, then cache isn't actually a complete cache and
       // we need to see if it contains the child we're interested in.
-      // Clarify: just because this is a loadsAllData() doesn't mean that it'll contain the child,
-      // right?
       if (this.query.loadsAllData()
           || (!path.isEmpty() && !cache.getImmediateChild(path.getFront()).isEmpty())) {
         return cache.getChild(path);
