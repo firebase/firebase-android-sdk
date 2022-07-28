@@ -108,13 +108,12 @@ class FirestoreMapDecoderTests {
     }
 
     @Test
-    fun `throw on unmatched enum`() {
+    fun `miss-matched enum field decoding throws`() {
         @Serializable data class Movement(val direction: Direction, val distance: Long)
-
-        val map = mapOf("direction" to "east", "distance" to 100L)
-        assertThrows<Exception> { decodeFromMap<Movement>(map, firestoreDocument) }
+        val map = mapOf("direction" to "snake_case_enum_value", "distance" to 100L)
+        assertThrows<IllegalArgumentException> { decodeFromMap<Movement>(map, firestoreDocument) }
             .hasMessageThat()
-            .contains("Could not find a match for")
+            .contains("Could not find a match for enum field name of snake_case_enum_value.")
     }
 
     @Test

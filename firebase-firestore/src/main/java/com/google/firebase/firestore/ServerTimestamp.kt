@@ -14,8 +14,6 @@
 package com.google.firebase.firestore
 
 import java.lang.annotation.ElementType
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
 import kotlinx.serialization.SerialInfo
 
 /**
@@ -24,7 +22,6 @@ import kotlinx.serialization.SerialInfo
  * server-generated timestamp.
  */
 @SerialInfo
-@Retention(RetentionPolicy.RUNTIME)
 @Target(AnnotationTarget.PROPERTY)
 @java.lang.annotation.Target(ElementType.METHOD, ElementType.FIELD)
 annotation class ServerTimestamp

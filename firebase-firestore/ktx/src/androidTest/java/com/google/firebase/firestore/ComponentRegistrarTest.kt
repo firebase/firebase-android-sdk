@@ -112,6 +112,12 @@ class ComponentRegistrarTest {
         val annotation = annotations[0]
         assertThat(annotation::class.java).isAssignableTo(DocumentId::class.java)
 
+        // Kotlin can use this annotation to skip saving the annotated field to Firestore
+        val ktxDocRef = testCollection("ktx").document("456")
+        ktxDocRef.set(DocumentIdObj())
+        val ktxMap = waitFor(ktxDocRef.get()).data
+        assertThat(ktxMap).containsExactlyEntriesIn(emptyMap)
+
         // Java POJO should also see this annotation and use it to skip the annotated field
         val docRef = testCollection("pojo").document("456")
         docRef.withoutCustomMappers { set(DocumentIdObj()) }
@@ -128,6 +134,17 @@ class ComponentRegistrarTest {
         val annotation = annotations[0]
         assertThat(annotation::class.java).isAssignableTo(ServerTimestamp::class.java)
 
+        // Kotlin can use this annotation to fill timestamp to the annotated field
+        val ktxDocRef = testCollection("ktx").document("456")
+        ktxDocRef.set(TimestampObj())
+        val ktxMap =
+            waitFor(ktxDocRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                as Map<String, Timestamp>
+        // check generated timestamp equals `now` within 3 seconds
+        val ktxReadTime = Timestamp.now().seconds
+        val ktxSaveTime = ktxMap["time"]?.seconds ?: 0
+        assertThat(ktxReadTime - ktxSaveTime).isAtMost(3)
+
         // Java POJO should also see this annotation and fill timestamp to the annotated field
         val docRef = testCollection("pojo").document("456")
         docRef.withoutCustomMappers { set(TimestampObj()) }
@@ -135,7 +152,9 @@ class ComponentRegistrarTest {
             waitFor(docRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
                 as Map<String, Timestamp>
         // check generated timestamp equals `now` on second level
-        assertThat(pojoMap["time"]).isEqualTo(Timestamp.now())
+        val pojoReadTime = Timestamp.now().seconds
+        val pojoSaveTime = pojoMap["time"]?.seconds ?: 0
+        assertThat(pojoReadTime - pojoSaveTime).isAtMost(3)
     }
 }
 
