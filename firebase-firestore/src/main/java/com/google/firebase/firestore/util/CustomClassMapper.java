@@ -947,7 +947,7 @@ public class CustomClassMapper {
         Field field, Class<? extends Annotation> annotationType) {
       String fieldName = propertyName(field);
       if (ktxGeneratedGetters.containsKey(fieldName)) {
-        return ktxGeneratedGetters.get(field.getName()).isAnnotationPresent(annotationType);
+        return ktxGeneratedGetters.get(fieldName).isAnnotationPresent(annotationType);
       }
       return false;
     }
