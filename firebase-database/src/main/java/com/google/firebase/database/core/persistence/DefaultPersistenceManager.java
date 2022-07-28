@@ -157,7 +157,6 @@ public class DefaultPersistenceManager implements PersistenceManager {
     }
 
     // TODO[persistence]: Only load the tracked key data rather than load everything and then filter
-    // We could pass the query id to the
     Node serverCacheNode = storageLayer.serverCache(query.getPath());
     if (trackedKeys != null) {
       Node filteredNode = EmptyNode.Empty();
