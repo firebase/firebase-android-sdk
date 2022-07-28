@@ -22,7 +22,6 @@ import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
-import com.google.gson.Gson
 import java.util.concurrent.TimeUnit
 import org.junit.Assert
 
@@ -148,11 +147,4 @@ inline fun <reified T : Exception> testAssertThrows(
 ): ThrowableSubject {
     val exception: T = Assert.assertThrows(T::class.java) { runnable() }
     return Truth.assertThat(exception)
-}
-
-/**
- * makes the class can be converted to Gson JsonStr with empty constructor.
- */
-abstract class ToGsonStringAble {
-    operator fun invoke(): String = Gson().toJson(this)
 }
