@@ -106,6 +106,15 @@ class FirestoreMapDecoderTests {
     }
 
     @Test
+    fun `miss-matched enum field decoding throws`() {
+        @Serializable data class Movement(val direction: Direction, val distance: Long)
+        val map = mapOf("direction" to "snake_case_enum_value", "distance" to 100L)
+        assertThrows<IllegalArgumentException> { decodeFromMap<Movement>(map, firestoreDocument) }
+            .hasMessageThat()
+            .contains("Could not find a match for enum field name of snake_case_enum_value.")
+    }
+
+    @Test
     fun `null-able field decoding is supported`() {
         @Serializable data class Visitor(val name: String? = null, val age: String)
 
@@ -268,7 +277,9 @@ class FirestoreMapDecoderTests {
 
     @Test
     fun `throwOnExtraProperties works for object with no-argument constructor during decoding`() {
-        @Serializable @ThrowOnExtraProperties data class ExtraPropertiesObj(val str: String = "123")
+        @Serializable
+        @ThrowOnExtraProperties
+        data class ExtraPropertiesObj(val str: String = "123")
         val docRefMap = mapOf("foo" to 123L, "bar" to 456L)
         assertThrows<Exception> { decodeFromMap<ExtraPropertiesObj>(docRefMap, firestoreDocument) }
             .hasMessageThat()
