@@ -68,10 +68,44 @@ val testFirestore: FirebaseFirestore by lazy {
 fun DocumentReference.withoutCustomMappers(lambda: DocumentReference.() -> Unit) {
     val currentMapper = firestore.mapEncoders.toSet()
     if (currentMapper.isEmpty())
-        throw IllegalArgumentException("No Registered Custom Mapper Obtained at runtime!")
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
     firestore.mapEncoders.clear()
     lambda()
     firestore.mapEncoders.addAll(currentMapper)
+}
+
+/**
+ * Runs a [DocumentSnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun DocumentSnapshot.withoutCustomMappers(lambda: DocumentSnapshot.() -> Any?): Any? {
+    val currentMapper = reference.firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
+    reference.firestore.mapEncoders.clear()
+    val result = lambda()
+    reference.firestore.mapEncoders.addAll(currentMapper)
+    return result
+}
+
+/**
+ * Runs a [QuerySnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun QuerySnapshot.withoutCustomMappers(lambda: QuerySnapshot.() -> Any?): Any? {
+    val currentMapper = query.firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
+    query.firestore.mapEncoders.clear()
+    val result = lambda()
+    query.firestore.mapEncoders.addAll(currentMapper)
+    return result
 }
 
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {

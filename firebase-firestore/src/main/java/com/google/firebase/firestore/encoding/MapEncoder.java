@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.encoding;
 
+import com.google.firebase.firestore.DocumentReference;
 import java.util.Map;
 
 /**
@@ -35,6 +36,9 @@ public interface MapEncoder {
    * @return A nested map of Firestore supported types.
    */
   Map<String, Object> encode(Object value);
+
+  /** Decodes from maps of Firestore supported types to objects. */
+  <T> T decode(Map<String, Object> data, Class<T> valueType, DocumentReference docRef);
 
   /**
    * Returns whether or not the class can be (de)encoded by the {@code MapEncoder}.

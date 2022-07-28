@@ -19,12 +19,14 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firestore.v1.Value;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A {@code DocumentSnapshot} contains data read from a document in your Cloud Firestore database.
@@ -178,9 +180,15 @@ public class DocumentSnapshot {
     checkNotNull(
         serverTimestampBehavior, "Provided serverTimestampBehavior value must not be null.");
     Map<String, Object> data = getData(serverTimestampBehavior);
-    return data == null
-        ? null
-        : CustomClassMapper.convertToCustomClass(data, valueType, getReference());
+    // Ktx decoder goes here!
+    if (data == null) return null;
+    Set<MapEncoder> availableDecoders = firestore.getMapEncoders();
+    for (MapEncoder decoder : availableDecoders) {
+      if (decoder.supports(valueType)) {
+        return decoder.decode(data, valueType, getReference());
+      }
+    }
+    return CustomClassMapper.convertToCustomClass(data, valueType, getReference());
   }
 
   /**

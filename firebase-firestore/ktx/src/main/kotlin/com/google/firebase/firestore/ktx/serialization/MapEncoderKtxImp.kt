@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.ktx.serialization
 
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.encoding.MapEncoder
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -21,17 +22,28 @@ import kotlinx.serialization.serializer
 /**
  * [MapEncoder] implementation for @[Serializable] kotlin classes
  *
- * For the deserialization process, if the target object is @[Serializable], this
- * [MapEncoderKtxImp] can be used by the following Java classes: [DocumentSnapshot],
- * [QueryDocumentSnapshot], and [QuerySnapshot]. For the serialization process, if the source object
- * is @[Serializable], this [MapEncoderKtxImp] can be used by the following Java classes:
- * [DocumentReference], [Transaction] and [WriteBatch].
+ * For the deserialization process, if the target object is @[Serializable], this [MapEncoderKtxImp]
+ * can be used by the following Java classes: [DocumentSnapshot], [QueryDocumentSnapshot], and
+ * [QuerySnapshot]. For the serialization process, if the source object is @[Serializable], this
+ * [MapEncoderKtxImp] can be used by the following Java classes: [DocumentReference], [Transaction]
+ * and [WriteBatch].
  */
 class MapEncoderKtxImp : MapEncoder {
     /** Encodes @[Serializable] objects as nested maps of Firestore supported types. */
     override fun encode(value: Any): Map<String, Any?> {
         val serializer = serializer(value.javaClass)
         return encodeToMap(serializer, value)
+    }
+
+    /** decodes maps to custom objects */
+    override fun <T : Any?> decode(
+        data: MutableMap<String, Any>,
+        valueType: Class<T>,
+        docRef: DocumentReference
+    ): T {
+        val deserializer = serializer(valueType)
+        val doc: DocumentReference = docRef
+        return decodeFromMap(data, deserializer, doc) as T
     }
 
     /**

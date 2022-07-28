@@ -16,13 +16,15 @@ package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.ServerTimestamp
 import com.google.firebase.firestore.assertThrows
 import com.google.firebase.firestore.documentReference
-import com.google.firebase.firestore.ktx.annotations.KDocumentId
-import com.google.firebase.firestore.ktx.annotations.KServerTimestamp
+import com.google.firebase.firestore.ktx.serialization.decodeFromMap
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.junit.Test
@@ -35,7 +37,7 @@ class DocumentIdTests {
     @Test
     fun `KDocumentId on wrong types throws`() {
 
-        @Serializable class DocumentIdOnWrongTypeBean(@KDocumentId val intField: Int?)
+        @Serializable class DocumentIdOnWrongTypeBean(@DocumentId val intField: Int?)
 
         assertThrows<IllegalArgumentException> { encodeToMap(DocumentIdOnWrongTypeBean(null)) }
             .hasMessageThat()
@@ -46,7 +48,7 @@ class DocumentIdTests {
             .contains("instead of String or DocumentReference")
 
         @Serializable
-        class DocumentIdOnWrongTypeTimestampBean(@KDocumentId val timestamp: Timestamp?)
+        class DocumentIdOnWrongTypeTimestampBean(@DocumentId val timestamp: Timestamp?)
 
         assertThrows<IllegalArgumentException> {
                 encodeToMap(DocumentIdOnWrongTypeTimestampBean(null))
@@ -63,7 +65,7 @@ class DocumentIdTests {
         @Serializable
         class DocumentIdAndKServerTimestampTogetherOnWrongTypeBean(
             // always throw for invalid DocumentId first
-            @KServerTimestamp @KDocumentId val geoPoint: GeoPoint?
+            @ServerTimestamp @DocumentId val geoPoint: GeoPoint?
         )
 
         assertThrows<IllegalArgumentException> {
@@ -83,7 +85,7 @@ class DocumentIdTests {
         @Serializable class Student(val id: Int = 0, val name: String = "foo")
 
         @Serializable
-        class KDocumentIdOnWrongTypeNestedObject(@KDocumentId val student: Student? = null)
+        class KDocumentIdOnWrongTypeNestedObject(@DocumentId val student: Student? = null)
 
         assertThrows<IllegalArgumentException> { encodeToMap(KDocumentIdOnWrongTypeNestedObject()) }
             .hasMessageThat()
@@ -98,7 +100,7 @@ class DocumentIdTests {
 
     @Test
     fun `DocumentId annotated on list should throw`() {
-        @Serializable class DocumentRefBean(@KDocumentId val value: List<DocumentReference?>)
+        @Serializable class DocumentRefBean(@DocumentId val value: List<DocumentReference?>)
 
         val docRef = documentReference("111/222")
         val docRefBean = DocumentRefBean(listOf(docRef, null, docRef))
@@ -110,7 +112,7 @@ class DocumentIdTests {
     @Test
     fun `DocumentId annotated on custom object should throw`() {
         @Serializable class Student(val name: String)
-        @Serializable class DocumentRefBean(@KDocumentId val student: Student)
+        @Serializable class DocumentRefBean(@DocumentId val student: Student)
 
         val docRefBean = DocumentRefBean(Student("foo"))
         assertThrows<IllegalArgumentException> { encodeToMap(docRefBean) }
@@ -122,7 +124,7 @@ class DocumentIdTests {
     fun `DocumentId annotated on correct type without backfield is ignored during encoding`() {
         @Serializable
         class GetterWithoutBackingFieldOnDocumentIdBean {
-            @KDocumentId
+            @DocumentId
             val foo: String
                 get() = "doc-id" // getter only, no backing field -- not serialized
             val bar: Int = 0 // property with a backing field -- serialized
@@ -141,7 +143,7 @@ class DocumentIdTests {
     fun `DocumentId annotated on wrong type without backfield is ignored during encoding`() {
         @Serializable
         class GetterWithoutBackingFieldOnDocumentIdBean {
-            @KDocumentId
+            @DocumentId
             val foo: Long
                 get() = 123L // getter only, no backing field -- not serialized
             val bar: Int = 0 // property with a backing field -- serialized
@@ -160,14 +162,14 @@ class DocumentIdTests {
     fun `DocumentId annotated on correct types with backing fields should encode`() {
         val docRef = documentReference("coll/doc123")
 
-        @Serializable class DocumentIdOnStringField(@KDocumentId val docId: String)
+        @Serializable class DocumentIdOnStringField(@DocumentId val docId: String)
         assertThat(encodeToMap(DocumentIdOnStringField("docId")))
             .containsAtLeastEntriesIn(mutableMapOf<String, Any>())
 
         @Serializable
         class DocumentIdOnStringFieldAsProperty {
             @SerialName("DocIdProperty")
-            @KDocumentId
+            @DocumentId
             val docId = "doc-id"
                 get() = field + "foobar"
 
@@ -176,7 +178,7 @@ class DocumentIdTests {
         assertThat(encodeToMap(DocumentIdOnStringFieldAsProperty()))
             .containsAtLeastEntriesIn(mutableMapOf<String, Any>("AnotherProperty" to 0))
 
-        @Serializable class DocumentIdOnDocRefProperty(@KDocumentId val docId: DocumentReference?)
+        @Serializable class DocumentIdOnDocRefProperty(@DocumentId val docId: DocumentReference?)
 
         val documentIdOnDocRefField = DocumentIdOnDocRefProperty(docRef)
         assertThat(encodeToMap(documentIdOnDocRefField))
@@ -184,7 +186,7 @@ class DocumentIdTests {
 
         @Serializable
         open class DocumentIdOnDocRefWithCustomGetter {
-            @KDocumentId
+            @DocumentId
             @SerialName("DocIdProperty")
             var docId: DocumentReference? = null
                 get() = documentReference("coll/doc123456")
@@ -210,7 +212,7 @@ class DocumentIdTests {
 
         @Serializable
         class DocumentIdOnInheritedDocRefSetter(
-            @KDocumentId val inheritedDocRef: DocumentReference
+            @DocumentId val inheritedDocRef: DocumentReference
         ) : DocumentIdOnDocRefWithCustomGetter()
 
         val inheritedObject = DocumentIdOnInheritedDocRefSetter(inheritedDocRef = docRef)
@@ -218,4 +220,45 @@ class DocumentIdTests {
         assertThat(actualMapOfInheritedObject)
             .containsExactlyEntriesIn(mutableMapOf<String, Any>("AnotherProperty" to 0))
     }
+
+    @Test
+    fun `non_null value fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @DocumentId val doc: DocumentReference,
+            @DocumentId val docStr: String
+        )
+
+        val map = encodeToMap(DocRefObject(firestoreDocument, "foobar"))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
+    }
+
+    @Test
+    fun `null value fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @DocumentId val doc: DocumentReference?,
+            @DocumentId val docStr: String?
+        )
+
+        val map = encodeToMap(DocRefObject(null, null))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
+    }
+
+    @Test
+    fun `null value contextual fields with DocumentId annotation are replaced by docRef in decoding`() {
+        @Serializable
+        data class DocRefObject(
+            @Contextual @DocumentId val doc: DocumentReference?,
+            @Contextual @DocumentId val docStr: String?
+        )
+
+        val map = encodeToMap(DocRefObject(firestoreDocument, "foobar"))
+        val decodedObject = decodeFromMap<DocRefObject>(map, firestoreDocument)
+        assertThat(decodedObject).isEqualTo(DocRefObject(firestoreDocument, firestoreDocument.id))
+    }
 }
+
+private val firestoreDocument: DocumentReference = documentReference("abc/1234")
