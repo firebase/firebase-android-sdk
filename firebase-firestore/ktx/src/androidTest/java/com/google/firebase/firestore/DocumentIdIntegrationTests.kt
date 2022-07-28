@@ -51,6 +51,24 @@ class DocumentIdIntegrationTests {
     }
 
     @Serializable
+    private open class Parent {
+        @DocumentId open val docRefStr: String? = null
+    }
+
+    @Serializable
+    private data class Child(@DocumentId val docRef: DocumentReference? = null) : Parent()
+
+    @Test
+    fun documentId_from_parent_class_is_not_serialized() {
+        val docRefKotlin = testCollection("ktx").document("123")
+        val child = Child()
+        docRefKotlin.set(child)
+        val actual = waitFor(docRefKotlin.get()).toObject<Child>()
+        val expected = waitFor(docRefKotlin.get()).withoutCustomMappers { toObject<Child>() }
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Serializable
     private data class DocumentIdOnDocRefField(
         @DocumentId val docRef: DocumentReference? = null,
         @DocumentId val docRefStr: String? = null
