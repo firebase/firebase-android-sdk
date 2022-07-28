@@ -4594,6 +4594,7 @@ public class QueryTest {
     db.setPersistenceEnabled(true);
     DatabaseReference node = db.getReference().push();
     long val = 34;
+    Thread.currentThread().getId();
 
     try {
       await(node.setValue(val));
@@ -4602,6 +4603,7 @@ public class QueryTest {
       DataSnapshot snapshot =
           await(node.get()); // This does not time out. We need to get it to do so.
       assertEquals(val, snapshot.getValue());
+      db.goOnline();
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
@@ -4615,30 +4617,31 @@ public class QueryTest {
     // To ensure that we don't read the cached results, we need a separate app.
     FirebaseApp readApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+    //    String topLevelKey = UUID.randomUUID().toString();
     FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
     FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
     long val = 34;
-    DatabaseReference node = writeDb.getReference().push();
+    DatabaseReference writeNode = writeDb.getReference().push();
+    String writeKey = writeNode.getKey();
+    DatabaseReference readNode = readDb.getReference().child(writeKey);
 
     try {
-      await(node.setValue(val));
+      await(writeNode.setValue(val));
       DatabaseReference topLevelNode = readDb.getReference();
-      new ReadFuture(
+      ReadFuture readFuture =
+          new ReadFuture(
               topLevelNode,
               events -> {
                 assertEquals(1, events.size());
-                DataSnapshot childNode = events.get(0).getSnapshot().child(node.getKey());
+                DataSnapshot childNode = events.get(0).getSnapshot().child(writeKey);
                 assertEquals(34L, childNode.getValue());
-                DataSnapshot snapshot = null;
-                try {
-                  snapshot = await(node.get());
-                } catch (ExecutionException | InterruptedException e) {
-                  e.printStackTrace();
-                }
-                assertEquals(val, Objects.requireNonNull(snapshot.getValue()));
+
                 return true;
-              })
-          .timedGet();
+              });
+      readFuture.timedGet();
+      DataSnapshot snapshot = null;
+      snapshot = await(readNode.get());
+      assertEquals(val, Objects.requireNonNull(snapshot.getValue()));
     } catch (TestFailure | TimeoutException | ExecutionException e) {
       e.printStackTrace();
     }
@@ -4646,7 +4649,7 @@ public class QueryTest {
 
   @Test
   public void testGetResolvesToCacheWhenOnlineAndSameLevelListener()
-          throws DatabaseException, InterruptedException, ExecutionException {
+      throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp writeApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     // To ensure that we don't read the cached results, we need a separate app.
@@ -4720,7 +4723,7 @@ public class QueryTest {
       db.goOffline();
       DataSnapshot snapshot = await(node.get());
       assertEquals(val, snapshot.getValue());
-      // need to rewrite it
+      db.goOnline();
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
