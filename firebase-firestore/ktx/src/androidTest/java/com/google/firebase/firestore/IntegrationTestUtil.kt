@@ -16,11 +16,14 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.common.truth.ThrowableSubject
+import com.google.common.truth.Truth
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
 import com.google.firebase.ktx.Firebase
 import java.util.concurrent.TimeUnit
+import org.junit.Assert
 
 /**
  * Whether the integration tests should run against a local Firestore emulator or the Production
@@ -65,10 +68,44 @@ val testFirestore: FirebaseFirestore by lazy {
 fun DocumentReference.withoutCustomMappers(lambda: DocumentReference.() -> Unit) {
     val currentMapper = firestore.mapEncoders.toSet()
     if (currentMapper.isEmpty())
-        throw IllegalArgumentException("No Registered Custom Mapper Obtained at runtime!")
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
     firestore.mapEncoders.clear()
     lambda()
     firestore.mapEncoders.addAll(currentMapper)
+}
+
+/**
+ * Runs a [DocumentSnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun DocumentSnapshot.withoutCustomMappers(lambda: DocumentSnapshot.() -> Any?): Any? {
+    val currentMapper = reference.firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
+    reference.firestore.mapEncoders.clear()
+    val result = lambda()
+    reference.firestore.mapEncoders.addAll(currentMapper)
+    return result
+}
+
+/**
+ * Runs a [QuerySnapshot] method and return the result with temporary absence of any
+ * [FirebaseFirestore.mapEncoders].
+ *
+ * Note: IllegalArgumentException will be thrown if there is no Mapper registered to
+ * [FirebaseFirestore] at runtime.
+ */
+fun QuerySnapshot.withoutCustomMappers(lambda: QuerySnapshot.() -> Any?): Any? {
+    val currentMapper = query.firestore.mapEncoders.toSet()
+    if (currentMapper.isEmpty())
+        throw IllegalArgumentException("No Registered Custom Mapper Obtained at Runtime!")
+    query.firestore.mapEncoders.clear()
+    val result = lambda()
+    query.firestore.mapEncoders.addAll(currentMapper)
+    return result
 }
 
 fun <T> waitFor(task: Task<T>, timeoutMS: Long): T {
@@ -100,4 +137,14 @@ fun testDocument(name: String): DocumentReference {
 /** Returns a [DocumentReference] for integration test. */
 fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
+}
+
+/**
+ * Asserts that [runnable] throws an exception of type [T] when executed. Test only.
+ */
+inline fun <reified T : Exception> testAssertThrows(
+    crossinline runnable: () -> Any?
+): ThrowableSubject {
+    val exception: T = Assert.assertThrows(T::class.java) { runnable() }
+    return Truth.assertThat(exception)
 }

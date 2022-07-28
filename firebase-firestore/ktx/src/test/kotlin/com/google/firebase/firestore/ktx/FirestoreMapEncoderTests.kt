@@ -15,8 +15,14 @@
 package com.google.firebase.firestore.ktx
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.assertThrows
+import com.google.firebase.firestore.documentReference
 import com.google.firebase.firestore.ktx.serialization.encodeToMap
+import java.util.Date
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -213,8 +219,7 @@ class FirestoreMapEncoderTests {
 
     @Serializable private data class GenericObject<T>(val value: T)
 
-    @Serializable
-    private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
+    @Serializable private data class DoubleGenericObject<A, B>(val valueA: A, val valueB: B)
 
     @Test
     fun `generic encoding is supported`() {
@@ -306,6 +311,73 @@ class FirestoreMapEncoderTests {
             .hasMessageThat()
             .contains(
                 "Exceeded maximum depth of 500, which likely indicates there's an object cycle"
+            )
+    }
+
+    @Test
+    fun `documentReference is encoded`() {
+        @Serializable class DocumentRefBean(val value: DocumentReference)
+
+        val docRef = documentReference("111/222")
+        val docRefBean = DocumentRefBean(docRef)
+        assertThat(encodeToMap(docRefBean)).containsExactlyEntriesIn(mapOf("value" to docRef))
+    }
+
+    @Test
+    fun `date is encoded`() {
+        @Serializable class DateBean(@Contextual val value: Date)
+
+        val dateBean = DateBean(Date(10000L))
+        assertThat(encodeToMap(dateBean)).containsExactlyEntriesIn(mapOf("value" to Date(10000L)))
+    }
+
+    @Test
+    fun `timestamp is encoded`() {
+        @Serializable class TimestampBean(@Contextual val value: Timestamp)
+
+        val timestampBean = TimestampBean(Timestamp(Date(10000L)))
+        assertThat(encodeToMap(timestampBean))
+            .containsExactlyEntriesIn(mapOf("value" to Timestamp(Date(10000L))))
+    }
+
+    @Test
+    fun `geoPoint is encoded`() {
+        @Serializable class GeoPointBean(@Contextual val value: GeoPoint)
+
+        val geoPointBean = GeoPointBean(GeoPoint(1.1, 2.2))
+        assertThat(encodeToMap(geoPointBean))
+            .containsExactlyEntriesIn(mapOf("value" to GeoPoint(1.1, 2.2)))
+    }
+
+    @Test
+    fun `list of firestore supported type is encoded`() {
+        @Serializable
+        class FirestoreSupportedTypeLists(
+            val docRef: List<DocumentReference?>,
+            val date: List<@Contextual Date?>,
+            val timestamp: List<Timestamp?>,
+            val geoPoint: List<GeoPoint?>
+        )
+
+        val docRef = documentReference("111/222")
+        val date = Date(123L)
+        val timestamp = Timestamp(date)
+        val geoPoint = GeoPoint(1.1, 2.2)
+        val firestoreSupportedTypeLists =
+            FirestoreSupportedTypeLists(
+                listOf(docRef, null, docRef),
+                listOf(date, null, date),
+                listOf(timestamp, null, timestamp),
+                listOf(geoPoint, null, geoPoint)
+            )
+        assertThat(encodeToMap(firestoreSupportedTypeLists))
+            .containsExactlyEntriesIn(
+                mapOf(
+                    "docRef" to listOf(docRef, null, docRef),
+                    "date" to listOf(date, null, date),
+                    "timestamp" to listOf(timestamp, null, timestamp),
+                    "geoPoint" to listOf(geoPoint, null, geoPoint)
+                )
             )
     }
 }

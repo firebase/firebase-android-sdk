@@ -13,8 +13,7 @@
 // limitations under the License.
 package com.google.firebase.firestore
 
-import java.lang.annotation.Retention
-import java.lang.annotation.RetentionPolicy
+import java.lang.annotation.ElementType
 import kotlinx.serialization.SerialInfo
 
 /**
@@ -36,12 +35,6 @@ import kotlinx.serialization.SerialInfo
  * POJO.
  */
 @SerialInfo
-@Retention(RetentionPolicy.RUNTIME)
-@Target(
-    AnnotationTarget.PROPERTY,
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
-    AnnotationTarget.FIELD
-)
+@Target(AnnotationTarget.PROPERTY)
+@java.lang.annotation.Target(ElementType.METHOD, ElementType.FIELD)
 annotation class DocumentId

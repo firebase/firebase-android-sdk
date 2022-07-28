@@ -14,12 +14,17 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class ComponentRegistrarTest {
 
     enum class Grade {
@@ -82,4 +87,75 @@ class ComponentRegistrarTest {
         val expected = waitFor(docRefExpected.get()).data
         assertThat(actual).containsExactlyEntriesIn(expected)
     }
+
+    @Test
+    fun ktx_encode_decode_round_trip() {
+        // This test assert ktx encoder and decoder are working as Java POJO mapper crashes without
+        // no-argument constructor during decoding, Java POJO mapper encoder cannot encode field
+        // start from Capital letters, and Boolean field start from `is`.
+        @Serializable data class TestObj(val STR: String, val isBoolean: Boolean)
+
+        val expected = TestObj("foobar", true)
+        val docRefActual = testCollection("ktx").document("123")
+        docRefActual.set(expected)
+        val actual = waitFor(docRefActual.get()).toObject<TestObj>()
+        assertThat(actual).isEqualTo(expected)
+    }
+
+    @Serializable
+    private data class DocumentIdObj(@DocumentId val docId: String = "should be null in Java")
+
+    @Test
+    fun docId_annotation_should_be_shared_between_java_and_kotlin() {
+        // Kotlin can see this @DocumentId annotation
+        val annotations = DocumentIdObj.serializer().descriptor.getElementAnnotations(0)
+        val annotation = annotations[0]
+        assertThat(annotation::class.java).isAssignableTo(DocumentId::class.java)
+
+        // Kotlin can use this annotation to skip saving the annotated field to Firestore
+        val ktxDocRef = testCollection("ktx").document("456")
+        ktxDocRef.set(DocumentIdObj())
+        val ktxMap = waitFor(ktxDocRef.get()).data
+        assertThat(ktxMap).containsExactlyEntriesIn(emptyMap)
+
+        // Java POJO should also see this annotation and use it to skip the annotated field
+        val docRef = testCollection("pojo").document("456")
+        docRef.withoutCustomMappers { set(DocumentIdObj()) }
+        val pojoMap = waitFor(docRef.get()).data
+        assertThat(pojoMap).containsExactlyEntriesIn(emptyMap)
+    }
+
+    @Serializable private data class TimestampObj(@ServerTimestamp val time: Timestamp? = null)
+
+    @Test
+    fun serverTimestamp_annotation_should_be_shared_between_java_and_kotlin() {
+        // Kotlin can see this @ServerTimestamp annotation
+        val annotations = TimestampObj.serializer().descriptor.getElementAnnotations(0)
+        val annotation = annotations[0]
+        assertThat(annotation::class.java).isAssignableTo(ServerTimestamp::class.java)
+
+        // Kotlin can use this annotation to fill timestamp to the annotated field
+        val ktxDocRef = testCollection("ktx").document("456")
+        ktxDocRef.set(TimestampObj())
+        val ktxMap =
+            waitFor(ktxDocRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                as Map<String, Timestamp>
+        // check generated timestamp equals `now` within 3 seconds
+        val ktxReadTime = Timestamp.now().seconds
+        val ktxSaveTime = ktxMap["time"]?.seconds ?: 0
+        assertThat(ktxReadTime - ktxSaveTime).isAtMost(3)
+
+        // Java POJO should also see this annotation and fill timestamp to the annotated field
+        val docRef = testCollection("pojo").document("456")
+        docRef.withoutCustomMappers { set(TimestampObj()) }
+        val pojoMap: Map<String, Timestamp> =
+            waitFor(docRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                as Map<String, Timestamp>
+        // check generated timestamp equals `now` on second level
+        val pojoReadTime = Timestamp.now().seconds
+        val pojoSaveTime = pojoMap["time"]?.seconds ?: 0
+        assertThat(pojoReadTime - pojoSaveTime).isAtMost(3)
+    }
 }
+
+private val emptyMap = emptyMap<String, Any?>()

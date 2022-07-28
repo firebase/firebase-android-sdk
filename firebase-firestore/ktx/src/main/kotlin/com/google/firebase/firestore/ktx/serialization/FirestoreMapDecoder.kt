@@ -14,8 +14,12 @@
 
 package com.google.firebase.firestore.ktx.serialization
 
+import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.ktx.serialization.FirestoreAbstractDecoder.Constants.START_INDEX
+import com.google.firebase.firestore.ThrowOnExtraProperties
+import com.google.firebase.firestore.encoding.FirestoreAbstractDecoder
+import com.google.firebase.firestore.encoding.FirestoreSerializersModule
+import com.google.firebase.firestore.ktx.serialization.FirestoreKtxAbstractDecoder.Constants.START_INDEX
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -25,7 +29,6 @@ import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
@@ -40,11 +43,11 @@ import kotlinx.serialization.serializer
  * @param nestedObject The nested object (map or list) that that needs to be decoded.
  * @param docRef The [DocumentReference] where this nested object is obtained from.
  */
-private abstract class FirestoreAbstractDecoder(
+private abstract class FirestoreKtxAbstractDecoder(
     private val descriptor: SerialDescriptor,
     private val nestedObject: Any,
     private val docRef: DocumentReference
-) : AbstractDecoder() {
+) : FirestoreAbstractDecoder, AbstractDecoder() {
 
     object Constants {
         const val START_INDEX = 0
@@ -66,8 +69,13 @@ private abstract class FirestoreAbstractDecoder(
         val decodedEnumFieldName = currentDecodeElement.decodeValue
         // TODO: Add a EnumNamingProperties parameter, and convert decodedEnumFieldName based on it
         // i.e. case insensitive, snake_case match camelCase, etc
-        val enumFieldNames = enumDescriptor.elementNames.toList()
-        return enumFieldNames.indexOf(decodedEnumFieldName)
+        when (val index = enumDescriptor.elementNames.indexOf(decodedEnumFieldName)) {
+            -1 ->
+                throw IllegalArgumentException(
+                    "Could not find a match for enum field name of $decodedEnumFieldName."
+                )
+            else -> return index
+        }
     }
 
     /**
@@ -111,13 +119,19 @@ private abstract class FirestoreAbstractDecoder(
                 "Got a null value while trying to decode a not null field."
             )
 
-    final override val serializersModule: SerializersModule = EmptySerializersModule
+    final override val serializersModule: SerializersModule =
+        FirestoreSerializersModule.getFirestoreSerializersModule()
+
+    override fun decodeFirestoreNativeDataType(): Any = decodedElementNotNullOrThrow()
 
     final override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
         val innerObject = getCompositeObject(elementIndex)
         when (descriptor.kind) {
             is StructureKind.CLASS -> {
-                val innerMap = innerObject as Map<String, Any?>
+                val innerMap =
+                    (innerObject as Map<String, Any?>).run {
+                        replaceKDocumentIdFieldWithCurrentDocRef(descriptor, docRef)
+                    }
                 return FirestoreMapDecoder(descriptor, innerMap, docRef)
             }
             is StructureKind.LIST -> {
@@ -143,6 +157,33 @@ private abstract class FirestoreAbstractDecoder(
     }
 }
 
+/** replaces the @[DocumentId] annotated field with [DocumentReference] value. */
+private fun Map<String, Any?>.replaceKDocumentIdFieldWithCurrentDocRef(
+    descriptor: SerialDescriptor,
+    docRef: DocumentReference
+): MutableMap<String, Any?> =
+    this.toMutableMap().apply {
+        for (propertyName in descriptor.elementNames) {
+            val propertyIndex: Int = descriptor.getElementIndex(propertyName)
+            val annotationsOnProperty = descriptor.getElementAnnotations(propertyIndex)
+            if (annotationsOnProperty.any { it is DocumentId }) {
+                val propertyDescriptor = descriptor.getElementDescriptor(propertyIndex)
+                val propertyType: SerialKind = propertyDescriptor.kind
+                val propertySerialName: String = propertyDescriptor.serialName
+                val docRefRegex = Regex("<DocumentReference>|__DocumentReferenceSerializer__")
+                val strDocRefRegex = Regex("<String>")
+                when {
+                    propertyType is PrimitiveKind.STRING -> this[propertyName] = docRef.id
+                    propertySerialName.contains(strDocRefRegex) -> this[propertyName] = docRef.id
+                    propertySerialName.contains(docRefRegex) -> this[propertyName] = docRef
+                    else ->
+                        throw IllegalArgumentException(
+                            "Field is annotated with @DocumentId but is class $propertyType (with SerialName $propertySerialName) instead of String or DocumentReference."
+                        )
+                }
+            }
+        }
+    }
 /**
  * The entry point of Firestore Kotlin deserialization process. It decodes a nested map of Firestore
  * supported types to a [Serializable] Kotlin object.
@@ -163,7 +204,7 @@ private class FirestoreMapDecoder(
     descriptor: SerialDescriptor,
     val nestedMap: Map<String, Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(descriptor, nestedMap, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, nestedMap, docRef) {
 
     private val decodeNameList: List<String>
     override val decodeValueList: List<Any?>
@@ -186,16 +227,23 @@ private class FirestoreMapDecoder(
      * @param descriptor The [SerialDescriptor] of the [Serializable] object.
      */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        // TODO: To support annotation @ThrowOnExtraProperties, make a throw if get
-        // CompositeDecoder.UNKNOWN_NAME
+        val isThrowOnExtraProperties: Boolean =
+            descriptor.annotations.any { it is ThrowOnExtraProperties }
         while (true) {
             if (elementIndex == nestedMap.size) return CompositeDecoder.DECODE_DONE
             val elementName = decodeNameList[elementIndex]
-            val elementValue = decodeValueList[elementIndex]
             val descriptorIndex = descriptor.getElementIndex(elementName)
-            currentDecodeElement = Element(elementValue, descriptorIndex)
+            if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) {
+                val elementValue = decodeValueList[elementIndex++]
+                currentDecodeElement = Element(elementValue, descriptorIndex)
+                return descriptorIndex
+            }
+            if (descriptorIndex == CompositeDecoder.UNKNOWN_NAME && isThrowOnExtraProperties) {
+                throw IllegalArgumentException(
+                    "Can not match $elementName to any properties inside of Object: ${descriptor.serialName}"
+                )
+            }
             elementIndex++
-            if (descriptorIndex != CompositeDecoder.UNKNOWN_NAME) return descriptorIndex
         }
     }
 }
@@ -211,7 +259,7 @@ private class FirestoreListDecoder(
     descriptor: SerialDescriptor,
     override val decodeValueList: List<Any?>,
     docRef: DocumentReference
-) : FirestoreAbstractDecoder(descriptor, decodeValueList, docRef) {
+) : FirestoreKtxAbstractDecoder(descriptor, decodeValueList, docRef) {
 
     /**
      * Returns the index of the element to be decoded.
