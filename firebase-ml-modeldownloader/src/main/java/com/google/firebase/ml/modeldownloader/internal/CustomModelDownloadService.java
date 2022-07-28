@@ -176,7 +176,9 @@ public class CustomModelDownloadService {
                 exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
               }
               eventLogger.logDownloadFailureWithReason(
-                  new CustomModel(modelName, modelHash, 0, 0L), false, errorCode.getValue());
+                  new CustomModel(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                  false,
+                  errorCode.getValue());
               return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
             }
 

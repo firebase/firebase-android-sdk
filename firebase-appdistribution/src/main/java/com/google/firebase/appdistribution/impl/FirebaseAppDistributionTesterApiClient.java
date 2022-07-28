@@ -136,7 +136,7 @@ class FirebaseAppDistributionTesterApiClient {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.getInstance().i("Creating feedback for release: " + testerReleaseName);
-          String path = String.format("v1alpha/%s/feedback", testerReleaseName);
+          String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
           JSONObject responseBody =
               testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
