@@ -16,10 +16,8 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.common.truth.Ordered
 import com.google.common.truth.ThrowableSubject
 import com.google.common.truth.Truth
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.BuildConfig
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.firestore.ktx.firestoreSettings
@@ -142,23 +140,15 @@ fun testDocument(): DocumentReference {
     return testCollection("test-collection").document()
 }
 
-/** Asserts that [runnable] throws an exception of type [T] when executed. Test only. */
+/**
+ * Asserts that [runnable] throws an exception of type [T] when executed. Test only.
+ */
 inline fun <reified T : Exception> testAssertThrows(
     crossinline runnable: () -> Any?
 ): ThrowableSubject {
     val exception: T = Assert.assertThrows(T::class.java) { runnable() }
     return Truth.assertThat(exception)
 }
-
-infix fun Map<*, *>?.shouldBe(expected: Map<*, *>?): Ordered? = Truth.assertThat(this).containsExactlyEntriesIn(expected)
-
-infix fun Any?.shouldBe(expected: Any?): Unit = Truth.assertThat(this).isEqualTo(expected)
-
-infix fun Class<*>?.isAssignableTo(expected: Class<*>?): Unit =
-    Truth.assertThat(this).isAssignableTo(expected)
-
-infix fun Timestamp?.should_Almost_Equal(expected: Timestamp?): Unit =
-    Truth.assertThat(this?.seconds).isEqualTo(expected?.seconds)
 
 /**
  * makes the class can be converted to Gson JsonStr with empty constructor.

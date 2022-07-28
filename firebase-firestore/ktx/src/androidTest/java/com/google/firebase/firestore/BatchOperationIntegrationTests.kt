@@ -15,6 +15,7 @@
 package com.google.firebase.firestore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.firestore.ktx.toObjects
 import kotlinx.serialization.SerialName
@@ -64,7 +65,7 @@ class QueryIntegrationTests {
         waitFor(query.get()).map {
             val javaCity = it.withoutCustomMappers { toObject<JavaCity>() } as JavaCity
             val ktxCity = it.toObject<KtxCity>()
-            ktxCity() shouldBe javaCity()
+            assertThat(ktxCity()).isEqualTo(javaCity())
         }
 
         // Test for QuerySnapshot
@@ -76,7 +77,7 @@ class QueryIntegrationTests {
         for (i in listOfJavaCities.indices) {
             val javaCity = listOfJavaCities.get(i)
             val ktxCity = listOfKtxCities.get(i)
-            ktxCity() shouldBe javaCity()
+            assertThat(ktxCity()).isEqualTo(javaCity())
         }
     }
 
@@ -98,7 +99,7 @@ class QueryIntegrationTests {
         )
         val javaSnapshot = waitFor(javaTransactionDocRef.get()).data
         val ktxSnapshot = waitFor(ktxTransactionDocRef.get()).data
-        ktxSnapshot shouldBe javaSnapshot
+        assertThat(ktxSnapshot).containsExactlyEntriesIn(javaSnapshot)
     }
 
     @Test
@@ -118,7 +119,7 @@ class QueryIntegrationTests {
         )
         val javaSnapshot = waitFor(javaTransactionDocRef.get()).data
         val ktxSnapshot = waitFor(ktxTransactionDocRef.get()).data
-        ktxSnapshot shouldBe javaSnapshot
+        assertThat(ktxSnapshot).containsExactlyEntriesIn(javaSnapshot)
     }
 }
 

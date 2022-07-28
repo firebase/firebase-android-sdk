@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.toObject
@@ -21,7 +22,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class ComponentRegistrarTest {
 
     enum class Grade {
@@ -107,13 +110,13 @@ class ComponentRegistrarTest {
         // Kotlin can see this @DocumentId annotation
         val annotations = DocumentIdObj.serializer().descriptor.getElementAnnotations(0)
         val annotation = annotations[0]
-        annotation::class.java isAssignableTo DocumentId::class.java
+        assertThat(annotation::class.java).isAssignableTo(DocumentId::class.java)
 
         // Java POJO should also see this annotation and use it to skip the annotated field
         val docRef = testCollection("pojo").document("456")
         docRef.withoutCustomMappers { set(DocumentIdObj()) }
         val pojoMap = waitFor(docRef.get()).data
-        pojoMap shouldBe emptyMap
+        assertThat(pojoMap).containsExactlyEntriesIn(emptyMap)
     }
 
     @Serializable private data class TimestampObj(@ServerTimestamp val time: Timestamp? = null)
@@ -123,7 +126,7 @@ class ComponentRegistrarTest {
         // Kotlin can see this @ServerTimestamp annotation
         val annotations = TimestampObj.serializer().descriptor.getElementAnnotations(0)
         val annotation = annotations[0]
-        annotation::class.java isAssignableTo ServerTimestamp::class.java
+        assertThat(annotation::class.java).isAssignableTo(ServerTimestamp::class.java)
 
         // Java POJO should also see this annotation and fill timestamp to the annotated field
         val docRef = testCollection("pojo").document("456")
@@ -132,7 +135,7 @@ class ComponentRegistrarTest {
             waitFor(docRef.get()).getData(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
                 as Map<String, Timestamp>
         // check generated timestamp equals `now` on second level
-        pojoMap["time"] should_Almost_Equal Timestamp.now()
+        assertThat(pojoMap["time"]).isEqualTo(Timestamp.now())
     }
 }
 

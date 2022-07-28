@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ktx.serialization.setData
@@ -22,7 +23,9 @@ import java.util.Date
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class FirestoreMapEncoderIntegrationTest {
 
     @Serializable
