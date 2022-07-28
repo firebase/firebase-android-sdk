@@ -23,12 +23,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -82,6 +84,13 @@ public class Transaction {
     firestore.validateReference(documentRef);
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
+    for (MapEncoder encoder : availableEncoders) {
+      if (encoder.supports(data.getClass())) {
+        data = encoder.encode(data);
+        break;
+      }
+    }
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())

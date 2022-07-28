@@ -14,11 +14,14 @@
 
 package com.google.firebase.firestore
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.ktx.toObject
 import kotlinx.serialization.Serializable
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class IgnoreOnExtraPropertiesTest {
     @Serializable private data class Cat(val miao: String? = "miao")
     @Serializable private data class Dog(val wow: String? = "wow")
