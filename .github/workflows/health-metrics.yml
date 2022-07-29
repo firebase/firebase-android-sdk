@@ -5,7 +5,7 @@ on: [ pull_request ]
 jobs:
   coverage:
     name: Coverage
-    if: !(github.event.pull_request.head.repo.fork)
+    # if: !(github.event.pull_request.head.repo.fork)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -22,7 +22,7 @@ jobs:
         run: fireci binary_size --pull-request
   size:
     name: Size
-    if: !(github.event.pull_request.head.repo.fork)
+    # if: !(github.event.pull_request.head.repo.fork)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
