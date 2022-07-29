@@ -4637,7 +4637,6 @@ public class QueryTest {
               });
       readFuture.timedGet();
       DataSnapshot snapshot = await(readNode.get());
-      ;
       assertEquals(val, Objects.requireNonNull(snapshot.getValue()));
     } catch (TestFailure | TimeoutException | ExecutionException e) {
       e.printStackTrace();
