@@ -1,0 +1,39 @@
+name: Health Metrics
+
+on: pull_request
+
+jobs:
+  coverage:
+    name: Coverage
+    if: !(github.event.pull_request.head.repo.fork)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
+      - uses: google-github-actions/setup-gcloud@v0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: setup fireci
+        run: pip3 install -e ci/fireci
+      - name: run size tests
+        run: fireci binary_size --pull-request
+  size:
+    name: Size
+    if: !(github.event.pull_request.head.repo.fork)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
+      - uses: google-github-actions/setup-gcloud@v0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: setup fireci
+        run: pip3 install -e ci/fireci
+      - name: run size tests
+        run: fireci coverage --pull-request
