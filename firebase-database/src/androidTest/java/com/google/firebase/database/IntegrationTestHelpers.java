@@ -334,6 +334,16 @@ public class IntegrationTestHelpers {
     assertTrue("Operation timed out", success);
   }
 
+  // Note: This assumes that the key is at the root. If the key is nested, then another solution
+  // needs to be found.
+  public static DatabaseReference translateReference(DatabaseReference node, FirebaseDatabase db) {
+    return db.getReference().child(node.getKey());
+  }
+
+  public static DataSnapshot referenceAtPath(DatabaseReference node, EventRecord record) {
+    return record.getSnapshot().child(node.getKey());
+  }
+
   public static DataSnapshot getSnap(Query ref) throws InterruptedException {
 
     final Semaphore semaphore = new Semaphore(0);

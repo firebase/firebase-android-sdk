@@ -4608,6 +4608,8 @@ public class QueryTest {
     }
   }
 
+
+
   @Test
   public void testGetResolvesToCacheWhenOnlineAndParentListener()
       throws DatabaseException, InterruptedException {
@@ -4620,8 +4622,7 @@ public class QueryTest {
     FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
     long val = 34;
     DatabaseReference writeNode = writeDb.getReference().push();
-    String writeKey = writeNode.getKey();
-    DatabaseReference readNode = readDb.getReference().child(writeKey);
+    DatabaseReference readNode = IntegrationTestHelpers.translateReference(writeNode, readDb);
 
     try {
       await(writeNode.setValue(val));
@@ -4631,13 +4632,13 @@ public class QueryTest {
               topLevelNode,
               events -> {
                 assertEquals(1, events.size());
-                DataSnapshot childNode = events.get(0).getSnapshot().child(writeKey);
+                DataSnapshot childNode = IntegrationTestHelpers.referenceAtPath(writeNode, events.get(0));
                 assertEquals(val, childNode.getValue());
                 return true;
               });
       readFuture.timedGet();
-      DataSnapshot snapshot = null;
-      snapshot = await(readNode.get());
+      DataSnapshot snapshot = await(readNode.get());
+      ;
       assertEquals(val, Objects.requireNonNull(snapshot.getValue()));
     } catch (TestFailure | TimeoutException | ExecutionException e) {
       e.printStackTrace();
@@ -4656,10 +4657,9 @@ public class QueryTest {
     FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
     FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
     long val = 34;
-    String writeKey = Objects.requireNonNull(writeDb.getReference().push().getKey());
-    DatabaseReference writeNode = writeDb.getReference().child(writeKey);
+    DatabaseReference writeNode = writeDb.getReference().push();
     await(writeNode.setValue(val));
-    DatabaseReference readNode = readDb.getReference().child(writeKey);
+    DatabaseReference readNode = IntegrationTestHelpers.translateReference(writeNode, readDb);
     new ReadFuture(
             readNode,
             events -> {
@@ -4747,14 +4747,7 @@ public class QueryTest {
 
     try {
       await(childWriteNode.setValue(val));
-      new ReadFuture(
-              childReadNode,
-              events -> {
-                assertEquals(1, events.size());
-                assertEquals(val, events.get(0).getSnapshot().getValue());
-                return true;
-              })
-          .timedGet();
+      ReadFuture.untilEquals(childReadNode, val).timedGet();
       childReadNode.addValueEventListener(listener);
       DatabaseReference parentReadNode = readDb.getReference().child(parentNodeKey);
       IntegrationTestHelpers.waitFor(semaphore);
