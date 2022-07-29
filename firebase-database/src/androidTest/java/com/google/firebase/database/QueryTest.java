@@ -4608,8 +4608,6 @@ public class QueryTest {
     }
   }
 
-
-
   @Test
   public void testGetResolvesToCacheWhenOnlineAndParentListener()
       throws DatabaseException, InterruptedException {
@@ -4632,7 +4630,8 @@ public class QueryTest {
               topLevelNode,
               events -> {
                 assertEquals(1, events.size());
-                DataSnapshot childNode = IntegrationTestHelpers.referenceAtPath(writeNode, events.get(0));
+                DataSnapshot childNode =
+                    IntegrationTestHelpers.referenceAtPath(writeNode, events.get(0));
                 assertEquals(val, childNode.getValue());
                 return true;
               });
