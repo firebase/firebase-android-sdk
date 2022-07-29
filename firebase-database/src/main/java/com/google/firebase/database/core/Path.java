@@ -75,6 +75,8 @@ public class Path implements Iterable<ChildKey>, Comparable<Path> {
         count++;
       }
     }
+    // We are essentially doing the same work twice; once here, and once again in the constructor on
+    // line 60
     pieces = new ChildKey[count];
     int j = 0;
     for (String segment : segments) {
