@@ -550,10 +550,10 @@ public class Repo implements PersistentConnection.Delegate {
                         }
                       } else {
                         /*
-                         We need to replicate the behavior that occurs when running `once()`. In other words,
-                         we need to create a new eventRegistration, register it with a view and then
-                         overwrite the data at that location, and then remove the view.
-                        */
+                         * We need to replicate the behavior that occurs when running `once()`. In other words,
+                         * we need to create a new eventRegistration, register it with a view and then
+                         * overwrite the data at that location, and then remove the view.
+                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
                         QuerySpec spec = query.getSpec();
                         // EventRegistrations require a listener to be attached, so a dummy
@@ -572,7 +572,8 @@ public class Repo implements PersistentConnection.Delegate {
                             };
                         ValueEventRegistration eventRegistration =
                             new ValueEventRegistration(repo, listener, spec);
-                        serverSyncTree.addEventRegistration(eventRegistration, true);
+                        serverSyncTree.addEventRegistration(
+                            eventRegistration, /*skipListenerSetup=*/ true);
                         if (spec.loadsAllData()) {
                           serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
                         } else {
@@ -583,7 +584,8 @@ public class Repo implements PersistentConnection.Delegate {
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        serverSyncTree.removeEventRegistration(eventRegistration, true);
+                        serverSyncTree.removeEventRegistration(
+                            eventRegistration, /*skipDedup=*/ true);
                       }
                     });
           }

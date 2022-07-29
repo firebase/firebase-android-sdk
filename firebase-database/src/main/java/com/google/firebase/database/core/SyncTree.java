@@ -665,11 +665,6 @@ public class SyncTree {
         eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
   }
 
-  public List<Event> removeEventRegistration(
-      QuerySpec query, @NotNull EventRegistration eventRegistration) {
-    return this.removeEventRegistration(query, eventRegistration, null, false);
-  }
-
   /**
    * Remove all event callback(s).
    *
@@ -677,7 +672,7 @@ public class SyncTree {
    */
   public List<Event> removeAllEventRegistrations(
       @NotNull QuerySpec query, @NotNull DatabaseError error) {
-    return this.removeEventRegistration(query, null);
+    return this.removeEventRegistration(query, null, error, false);
   }
 
   private List<Event> removeEventRegistration(
