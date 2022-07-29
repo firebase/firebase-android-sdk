@@ -4632,7 +4632,7 @@ public class QueryTest {
               events -> {
                 assertEquals(1, events.size());
                 DataSnapshot childNode = events.get(0).getSnapshot().child(writeKey);
-                assertEquals(34L, childNode.getValue());
+                assertEquals(val, childNode.getValue());
                 return true;
               });
       readFuture.timedGet();
