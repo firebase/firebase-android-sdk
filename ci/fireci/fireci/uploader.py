@@ -19,7 +19,6 @@ import requests
 import subprocess
 import urllib.parse
 
-from . import prow_utils
 
 _logger = logging.getLogger('fireci.uploader')
 
@@ -49,11 +48,10 @@ def _construct_request_endpoint_for_github_actions(metric_type):
   repo = og.getenv('GITHUB_REPOSITORY')
   commit = os.getenv('GITHUB_SHA')
   event_name = os.getenv('GITHUB_EVENT_NAME')
-  run_id = os.getenv('GITHUB_RUN_ID')
-  log = f'https://github.com/{repo}/actions/runs/{runId}'
 
-  endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/{metric_type}'
+  endpoint = f'/repos/{repo}/commits/{commit}/{metric_type}'
   if event_name == 'pull_request':
+    pull_request = os.getenv('GITHUB_PULL_REQUEST_NUMBER')
     base_commit = os.getenv('GITHUB_PULL_REQUEST_BASE_SHA')
     head_commit = os.getenv('GITHUB_PULL_REQUEST_HEAD_SHA')
     endpoint += f'&pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
@@ -66,11 +64,8 @@ def _construct_request_endpoint_for_github_actions(metric_type):
 def _construct_request_endpoint_for_prow(metric_type):
   repo_owner = os.getenv('REPO_OWNER')
   repo_name = os.getenv('REPO_NAME')
-  branch = os.getenv('PULL_BASE_REF')
-  pull_request = os.getenv('PULL_NUMBER')
-
   commit = _get_commit_hash('HEAD@{0}')
-  log = prow_utils.prow_job_log_link()
+  pull_request = os.getenv('PULL_NUMBER')
 
   endpoint = f'/repos/{repo_owner}/{repo_name}/commits/{commit}/{metric_type}'
   if pull_request:
@@ -78,6 +73,7 @@ def _construct_request_endpoint_for_prow(metric_type):
     head_commit = os.getenv('PULL_PULL_SHA')
     endpoint += f'&pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
   else:
+    branch = os.getenv('PULL_BASE_REF')
     endpoint += f'&branch={branch}'
 
   return endpoint
