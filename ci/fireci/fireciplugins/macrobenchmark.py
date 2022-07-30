@@ -30,8 +30,8 @@ import yaml
 from google.cloud import storage
 
 from fireci import ci_command
+from fireci import ci_utils
 from fireci.dir_utils import chdir
-from fireci import prow_utils
 from fireci import uploader
 
 _logger = logging.getLogger('fireci.macrobenchmark')

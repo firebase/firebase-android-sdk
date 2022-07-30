@@ -20,8 +20,8 @@ import os
 import re
 
 from fireci import ci_command
+from fireci import ci_utils
 from fireci import gradle
-from fireci import prow_utils
 from fireci import uploader
 
 _logger = logging.getLogger('fireci.binary_size')

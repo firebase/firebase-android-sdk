@@ -19,8 +19,8 @@ import re
 import xml.etree.ElementTree as ElementTree
 
 from fireci import ci_command
+from fireci import ci_utils
 from fireci import gradle
-from fireci import prow_utils
 from fireci import uploader
 
 _logger = logging.getLogger('fireci.coverage')
