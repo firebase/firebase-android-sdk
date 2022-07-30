@@ -34,8 +34,8 @@ _logger = logging.getLogger('fireci.binary_size')
 )
 @click.option(
   '--log',
-  default=prow_utils.prow_job_log_link,
-  help='The link to the log of the prow job, which runs this coverage check.'
+  default=ci_utils.ci_log_link,
+  help='The link to the log of the current job, which runs this size test.'
 )
 @click.option(
   '--metrics-service-url',
@@ -44,7 +44,7 @@ _logger = logging.getLogger('fireci.binary_size')
 )
 @click.option(
   '--access-token',
-  default=prow_utils.gcloud_identity_token,
+  default=ci_utils.gcloud_identity_token,
   help='The access token, used to authorize http requests to the metrics service.'
 )
 @ci_command()
@@ -61,9 +61,9 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)
 
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes()
-  test_report = {'metric': 'BinarySize', 'results': test_results, 'log': log}
+  test_report = {'sizes': test_results, 'log': log}
 
-  uploader.post_report(test_report, metrics_service_url, access_token)
+  uploader.post_report(test_report, metrics_service_url, access_token, 'size')
 
 
 def _measure_aar_sizes(artifacts):
@@ -91,7 +91,7 @@ def _measure_apk_sizes():
     apk_type = build_type if abi == 'universal' else f'{build_type} / {abi}'
     apk_size = os.path.getsize(apk_file)
 
-    test_results.append({'sdk': artifact, 'type': f'apk ({apk_type})', 'value': apk_size})
+    test_results.append({'sdk': artifact, 'type': f'apk ({apk_type})', 'size': apk_size})
 
   return test_results
 

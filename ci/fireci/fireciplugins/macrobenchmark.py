@@ -113,9 +113,12 @@ async def _post_processing(results):
     if not isinstance(result, Exception):
       measurements.extend(result)
 
+  log = ci_utils.ci_log_link()
+  test_report = {'benchmarks': measurements, 'log': log}
+
   metrics_service_url = os.getenv('METRICS_SERVICE_URL')
-  access_token = prow_utils.gcloud_identity_token()
-  uploader.post_report(measurements, metrics_service_url, access_token, metric='macrobenchmark')
+  access_token = ci_utils.gcloud_identity_token()
+  uploader.post_report(test_report, metrics_service_url, access_token, 'macrobenchmark')
 
   # Raise exceptions for failed measurements
   if any(map(lambda x: isinstance(x, Exception), results)):

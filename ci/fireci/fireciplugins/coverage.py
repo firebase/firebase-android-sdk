@@ -33,8 +33,8 @@ _logger = logging.getLogger('fireci.coverage')
 )
 @click.option(
   '--log',
-  default=prow_utils.prow_job_log_link,
-  help='The link to the log of the prow job, which runs this coverage check.'
+  default=ci_utils.ci_log_link,
+  help='The link to the log of the current job, which runs this coverage check.'
 )
 @click.option(
   '--metrics-service-url',
@@ -43,7 +43,7 @@ _logger = logging.getLogger('fireci.coverage')
 )
 @click.option(
   '--access-token',
-  default=prow_utils.gcloud_identity_token,
+  default=ci_utils.gcloud_identity_token,
   help='The access token, used to authorize http requests to the metrics service.'
 )
 @ci_command()
@@ -54,14 +54,9 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   gradle.run(coverage_task, '--continue', check=False)
 
   test_results = _parse_xml_reports()
-  test_report = {'metric': 'Coverage', 'results': test_results, 'log': log}
+  test_report = {'coverages': test_results, 'log': log}
 
-  note = '''
-HTML coverage reports can be produced locally with `./gradlew <product>:checkCoverage`.
-Report files are located at `<product-build-dir>/reports/jacoco/`.
-'''
-
-  uploader.post_report(test_report, metrics_service_url, access_token, note=note)
+  uploader.post_report(test_report, metrics_service_url, access_token, metric='coverage')
 
 
 def _parse_xml_reports():
@@ -79,7 +74,7 @@ def _parse_xml_reports():
     for source_file in report.findall('.//sourcefile'):
       file_name = source_file.attrib['name']
       file_coverage = _calculate_coverage(source_file)
-      test_results.append({'sdk': sdk, 'type': file_name, 'value': file_coverage})
+      test_results.append({'sdk': sdk, 'filename': file_name, 'coverage': file_coverage})
 
   return test_results
 

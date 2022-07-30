@@ -34,7 +34,7 @@ jobs:
       - name: Set up fireci
         run: pip3 install -e ci/fireci
       - name: Run size tests
-        run: fireci binary_size --pull-request
+        run: fireci coverage --pull-request
   size:
     name: Size
     # if: !(github.event.pull_request.head.repo.fork)
@@ -66,4 +66,4 @@ jobs:
       - name: Set up fireci
         run: pip3 install -e ci/fireci
       - name: run coverage tests
-        run: fireci coverage --pull-request
+        run: fireci binary_size --pull-request
