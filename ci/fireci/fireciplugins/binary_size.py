@@ -75,7 +75,7 @@ def _measure_aar_sizes(artifacts):
 
     if aar_files:
       aar_size = os.path.getsize(aar_files[0])
-      test_results.append({'sdk': artifact_id, 'type': 'aar', 'value': aar_size})
+      test_results.append({'sdk': artifact_id, 'type': 'aar', 'size': aar_size})
 
   return test_results
 

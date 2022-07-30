@@ -23,18 +23,18 @@ def ci_log_link():
   """Returns the link to the log of the current CI test."""
 
   if os.getenv('GITHUB_ACTIONS'):
-      return github_actions_run_log_link()
-    else if os.getenv('PROW_JOB_ID'):
-      return prow_job_log_link()
+    return github_actions_run_log_link()
+  elif os.getenv('PROW_JOB_ID'):
+    return prow_job_log_link()
 
 
 def github_actions_run_log_link():
   """Returns the link to the log of the current GitHub Actions run."""
 
-  repo = og.getenv('GITHUB_REPOSITORY')
+  repo = os.getenv('GITHUB_REPOSITORY')
   run_id = os.getenv('GITHUB_RUN_ID')
 
-  return f'https://github.com/{repo}/actions/runs/{runId}'
+  return f'https://github.com/{repo}/actions/runs/{run_id}'
 
 
 def prow_job_log_link():

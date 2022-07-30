@@ -26,9 +26,10 @@ _logger = logging.getLogger('fireci.uploader')
 def post_report(test_report, metrics_service_url, access_token, metric_type):
   """Post a report to the metrics service backend."""
 
+  endpoint = ''
   if os.getenv('GITHUB_ACTIONS') == 'true':
     endpoint = _construct_request_endpoint_for_github_actions(metric_type)
-  else if os.getenv('PROW_JOB_ID'):
+  elif os.getenv('PROW_JOB_ID'):
     endpoint = _construct_request_endpoint_for_prow(metric_type)
 
   headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
@@ -45,7 +46,7 @@ def post_report(test_report, metrics_service_url, access_token, metric_type):
 
 
 def _construct_request_endpoint_for_github_actions(metric_type):
-  repo = og.getenv('GITHUB_REPOSITORY')
+  repo = os.getenv('GITHUB_REPOSITORY')
   commit = os.getenv('GITHUB_SHA')
   event_name = os.getenv('GITHUB_EVENT_NAME')
 
