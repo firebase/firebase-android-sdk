@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import subprocess
 
 import click
 import glob
@@ -52,6 +53,8 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   """Produces and uploads binary size reports."""
 
   gradle.run('assembleAllForSmokeTests')
+
+  subprocess.run(["tree", "-L", "10"])
 
   affected_artifacts, all_artifacts = _parse_artifacts()
   artifacts = affected_artifacts if pull_request else all_artifacts

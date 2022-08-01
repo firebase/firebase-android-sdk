@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import subprocess
 
 import click
 import glob
@@ -52,6 +53,8 @@ def coverage(pull_request, log, metrics_service_url, access_token):
 
   coverage_task = 'checkCoverageChanged' if pull_request else 'checkCoverage'
   gradle.run(coverage_task, '--continue', check=False)
+
+  subprocess.run(["tree", "-L", "10"])
 
   test_results = _parse_xml_reports()
   test_report = {'coverages': test_results, 'log': log}
