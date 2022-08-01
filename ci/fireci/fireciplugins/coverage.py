@@ -56,7 +56,7 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   test_results = _parse_xml_reports()
   test_report = {'coverages': test_results, 'log': log}
 
-  uploader.post_report(test_report, metrics_service_url, access_token, metric='coverage')
+  uploader.post_report(test_report, metrics_service_url, access_token, 'coverage')
 
 
 def _parse_xml_reports():
