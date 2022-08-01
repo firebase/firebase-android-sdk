@@ -36,6 +36,7 @@ jobs:
       - name: Run size tests
         run: fireci coverage --pull-request
       - name: Show build artifacts
+        if: always()
         run: |
           ls -R build
           tree -L 10
@@ -72,6 +73,7 @@ jobs:
       - name: run coverage tests
         run: fireci binary_size --pull-request
       - name: Show build artifacts
+        if: always()
         run: |
           ls -R build
           tree -L 10
