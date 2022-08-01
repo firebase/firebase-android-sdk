@@ -33,7 +33,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - name: Run size tests
+      - name: Run coverage tests
         run: fireci coverage --pull-request
       - name: Show build artifacts
         if: always()
@@ -70,7 +70,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - name: run coverage tests
+      - name: Run size tests
         run: fireci binary_size --pull-request
       - name: Show build artifacts
         if: always()
