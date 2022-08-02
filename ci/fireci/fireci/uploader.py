@@ -55,10 +55,10 @@ def _construct_request_endpoint_for_github_actions(metric_type):
     pull_request = os.getenv('GITHUB_PULL_REQUEST_NUMBER')
     base_commit = _get_commit_hash('HEAD^1')
     head_commit = _get_commit_hash('HEAD^2')
-    endpoint += f'&pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
+    endpoint += f'?pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
   else:
     branch = os.getenv('GITHUB_REF_NAME')
-    endpoint += f'&branch={branch}'
+    endpoint += f'?branch={branch}'
 
   return endpoint
 
