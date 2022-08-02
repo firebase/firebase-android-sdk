@@ -34,7 +34,5 @@ jobs:
         run: curl $SMOKE_TESTS_RUNNER_JAR_URL --output runner.jar
       - name: Run smoke tests
         run: |
-          echo $RUNNER_TEMP
-          ARTIFACTS=$RUNNER_TEMP
-          echo $ARTIFACTS
+          export ARTIFACTS=$RUNNER_TEMP
           java -jar runner.jar smoke-tests/runner.config
