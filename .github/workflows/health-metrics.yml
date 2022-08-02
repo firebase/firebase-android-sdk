@@ -1,11 +1,10 @@
 name: Health Metrics
 
-on: [ pull_request ]
+on: [ pull_request, push ]
 
 jobs:
   coverage:
     name: Coverage
-    # if: !(github.event.pull_request.head.repo.fork)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -18,7 +17,7 @@ jobs:
           java-version: 11
           distribution: temurin
           cache: gradle
-      - name: Set up NDK
+      - name: Set up NDK 21.4.7075529
         run: |
           ANDROID_ROOT=/usr/local/lib/android
           ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
@@ -33,16 +32,15 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - name: Run coverage tests
+      - name: Run coverage tests (presubmit)
+        if: ${{ github.event_name == 'pull_request' }}
         run: fireci coverage --pull-request
-      - name: Show build artifacts
-        if: always()
-        run: |
-          ls -R build
-          tree -L 10
+      - name: Run coverage tests (postsubmit)
+        if: ${{ github.event_name == 'push' }}
+        run: fireci coverage
+
   size:
     name: Size
-    # if: !(github.event.pull_request.head.repo.fork)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -55,7 +53,7 @@ jobs:
           java-version: 11
           distribution: temurin
           cache: gradle
-      - name: Set up NDK
+      - name: Set up NDK 21.4.7075529
         run: |
           ANDROID_ROOT=/usr/local/lib/android
           ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
@@ -70,10 +68,9 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - name: Run size tests
+      - name: Run size tests (presubmit)
+        if: ${{ github.event_name == 'pull_request' }}
         run: fireci binary_size --pull-request
-      - name: Show build artifacts
-        if: always()
-        run: |
-          ls -R build
-          tree -L 10
+      - name: Run size tests (postsubmit)
+        if: ${{ github.event_name == 'push' }}
+        run: fireci binary_size
