@@ -33,4 +33,7 @@ jobs:
       - name: Download smoke tests runner
         run: curl $SMOKE_TESTS_RUNNER_JAR_URL --output runner.jar
       - name: Run smoke tests
-        run: java -jar runner.jar smoke-tests/runner.config
+        run: |
+          ARTIFACTS=$RUNNER_TEMP
+          ln -sfn $(which gcloud) /usr/bin/gcloud
+          java -jar runner.jar smoke-tests/runner.config
