@@ -54,9 +54,6 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
 
   gradle.run('assembleAllForSmokeTests')
 
-  subprocess.run(["tree", "-L", "10", "build"])
-  subprocess.run(["cat", "build/m2repository/changed-artifacts.json"])
-
   affected_artifacts, all_artifacts = _parse_artifacts()
   artifacts = affected_artifacts if pull_request else all_artifacts
   sdks = ','.join(artifacts)
@@ -102,9 +99,5 @@ def _measure_apk_sizes():
 
 def _parse_artifacts():
   with open('./build/m2repository/changed-artifacts.json') as json_file:
-    print("yifany: json_file")
-    print(json_file.read())
-    print("yifany: artifacts")
     artifacts = json.load(json_file)
-    print(artifacts)
     return artifacts['default'], artifacts['headGit']
