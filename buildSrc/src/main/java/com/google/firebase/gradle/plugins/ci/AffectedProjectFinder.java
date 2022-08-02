@@ -69,12 +69,27 @@ public class AffectedProjectFinder {
   private static Set<String> changedPaths(File workDir) {
     try {
       // works on Prow only.
-      Runtime.getRuntime().exec("git log --oneline --graph --decorate -10");
-      Runtime.getRuntime().exec("echo HEAD@0 `git rev-parse HEAD@{0}`");
-      Runtime.getRuntime().exec("echo HEAD@1 `git rev-parse HEAD@{1}`");
-      Runtime.getRuntime().exec("echo HEAD `git rev-parse HEAD`");
-      Runtime.getRuntime().exec("echo HEAD^1 `git rev-parse HEAD^1`");
-      Runtime.getRuntime().exec("echo HEAD^2 `git rev-parse HEAD^2`");
+      Runtime runtime = Runtime.getRuntime();
+      Process p = null;
+      List<String> lines = null;
+      p = runtime.exec("git log --oneline --graph --decorate -10");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
+      p = runtime.exec("echo HEAD@0 `git rev-parse HEAD@{0}`");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
+      p = runtime.exec("echo HEAD@1 `git rev-parse HEAD@{1}`");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
+      p = runtime.exec("echo HEAD `git rev-parse HEAD`");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
+      p = runtime.exec("echo HEAD^1 `git rev-parse HEAD^1`");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
+      p = runtime.exec("echo HEAD^2 `git rev-parse HEAD^2`");
+      lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
+      lines.forEach(System.out::println);
       Process process =
           Runtime.getRuntime()
               .exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
