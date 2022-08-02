@@ -57,12 +57,16 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   sdks = ','.join(artifacts)
 
   workdir = 'health-metrics/apk-size'
-  gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)
+  process = gradle.run('assemble', '--continue', gradle.P('sdks', sdks), workdir=workdir, check=False)
 
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes()
   test_report = {'sizes': test_results, 'log': log}
 
   uploader.post_report(test_report, metrics_service_url, access_token, 'size')
+
+  if process.returncode != 0:
+    _logger.error(f'{process.args} failed with error code: {process.returncode}.')
+    raise click.ClickException('Binary size test failed with above errors.')
 
 
 def _measure_aar_sizes(artifacts):

@@ -51,12 +51,16 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   """Produces and uploads code coverage reports."""
 
   coverage_task = 'checkCoverageChanged' if pull_request else 'checkCoverage'
-  gradle.run(coverage_task, '--continue', check=False)
+  process = gradle.run(coverage_task, '--continue', check=False)
 
   test_results = _parse_xml_reports()
   test_report = {'coverages': test_results, 'log': log}
 
   uploader.post_report(test_report, metrics_service_url, access_token, 'coverage')
+
+  if process.returncode != 0:
+    _logger.error(f'{process.args} failed with error code: {process.returncode}.')
+    raise click.ClickException('Coverage test failed with above errors.')
 
 
 def _parse_xml_reports():
